@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Sales;
 
 use App\Models\DeliveryNote;
+use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
 use App\Services\Inventory\StockService;
 use App\Services\Sales\DocumentEventRecorder;
@@ -35,8 +36,13 @@ class ConvertOrderToDeliveryNote
 
         return DB::transaction(function () use ($order, $lines, $attributes): DeliveryNote {
             $toShip = [];
-            foreach ($order->items()->lockForUpdate()->get() as $item) {
-                $open = round((float) $item->quantity - (float) $item->quantity_delivered, 4);
+            foreach ($order->items()->orderBy('id')->lockForUpdate()->get() as $item) {
+                $deliveredAcrossPriorNotes = (float) DeliveryNoteItem::where('sales_order_item_id', $item->id)
+                    ->whereHas('deliveryNote', fn ($q) => $q->whereNull('deleted_at'))
+                    ->sum('quantity');
+
+                $delivered = max((float) $item->quantity_delivered, $deliveredAcrossPriorNotes);
+                $open = round(max(0.0, (float) $item->quantity - $delivered), 4);
                 $requested = $lines === [] ? $open : round((float) ($lines[$item->id] ?? 0), 4);
 
                 if ($requested <= 0) {
@@ -47,7 +53,7 @@ class ConvertOrderToDeliveryNote
                     throw ValidationException::withMessages(['lines' => "Quantity for '{$item->description}' exceeds the open quantity."]);
                 }
 
-                $toShip[] = [$item, $requested];
+                $toShip[] = [$item, $requested, $delivered];
             }
 
             if ($toShip === []) {
@@ -65,7 +71,7 @@ class ConvertOrderToDeliveryNote
                 'status' => 'issued',
             ]));
 
-            foreach ($toShip as [$item, $quantity]) {
+            foreach ($toShip as [$item, $quantity, $delivered]) {
                 $note->items()->create([
                     'sales_order_item_id' => $item->id,
                     'product_id' => $item->product_id,
@@ -74,7 +80,7 @@ class ConvertOrderToDeliveryNote
                     'unit_price' => $item->unit_price,
                     'tax_rate' => $item->tax_rate,
                 ]);
-                $item->increment('quantity_delivered', $quantity);
+                $item->update(['quantity_delivered' => $delivered + $quantity]);
             }
 
             $this->stock->recordForLines('out', $note, $note->items()->get());
@@ -83,7 +89,7 @@ class ConvertOrderToDeliveryNote
             $order->update(['status' => $fullyDelivered ? 'shipped' : 'confirmed']);
             $this->events->record($order, 'delivery_note_created', ['delivery_note_id' => $note->id]);
 
-            return $note->load('items');
+            return $note->load(['items' => fn ($query) => $query->orderBy('id')]);
         });
     }
 }

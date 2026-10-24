@@ -67,6 +67,6 @@ class DeliveryNote extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(DeliveryNoteItem::class);
+        return $this->hasMany(DeliveryNoteItem::class)->orderBy('id');
     }
 }

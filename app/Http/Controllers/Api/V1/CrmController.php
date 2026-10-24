@@ -29,7 +29,12 @@ class CrmController extends Controller
         $query = Contact::with('addresses')->latest();
 
         if ($request->filled('type')) {
-            $query->where('type', $request->query('type'));
+            $type = (string) $request->query('type');
+            if ($type === 'customer' || $type === 'client') {
+                $query->whereIn('type', ['client', 'customer']);
+            } else {
+                $query->where('type', $type);
+            }
         }
 
         if ($request->filled('country')) {
@@ -56,7 +61,7 @@ class CrmController extends Controller
     public function clients(Request $request): JsonResponse
     {
         $clients = Contact::with('addresses')
-            ->whereIn('type', ['client', 'both'])
+            ->whereIn('type', ['client', 'customer', 'both'])
             ->latest()
             ->paginate(25);
 
@@ -76,7 +81,7 @@ class CrmController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'type' => ['required', 'in:client,supplier,both'],
+            'type' => ['required', 'string', 'in:client,customer,supplier,both,lead'],
             'country' => ['required', 'string', 'regex:/^[A-Z]{2}$/'], // ISO 3166-1 alpha-2 code
             'company_name' => ['nullable', 'string', 'max:255'],
             'first_name' => ['nullable', 'string', 'max:100'],

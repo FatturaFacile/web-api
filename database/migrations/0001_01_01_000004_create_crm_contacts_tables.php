@@ -16,8 +16,8 @@ return new class extends Migration
         Schema::create('contacts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
-            $table->enum('type', ['client', 'supplier', 'both'])->default('client')->index();
-            $table->enum('country', ['IT', 'CH'])->default('IT')->index();
+            $table->string('type', 30)->default('client')->index();
+            $table->string('country', 2)->default('IT')->index();
             $table->string('company_name')->nullable();
             $table->string('first_name')->nullable();
             $table->string('last_name')->nullable();

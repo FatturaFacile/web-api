@@ -111,7 +111,7 @@ class ReceivePassiveInvoice
         $supplier = ($data['vat'] !== null || $data['fiscal_code'] !== null) ? $query->first() : null;
 
         if ($supplier !== null) {
-            if ($supplier->type === 'client') {
+            if ($supplier->type === 'client' || $supplier->type === 'customer') {
                 $supplier->update(['type' => 'both']);
             }
 

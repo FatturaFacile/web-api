@@ -63,7 +63,7 @@ class SalesOrder extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(SalesOrderItem::class);
+        return $this->hasMany(SalesOrderItem::class)->orderBy('id');
     }
 
     /**

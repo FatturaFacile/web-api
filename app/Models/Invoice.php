@@ -99,7 +99,7 @@ class Invoice extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(InvoiceItem::class);
+        return $this->hasMany(InvoiceItem::class)->orderBy('id');
     }
 
     /**

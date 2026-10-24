@@ -1,7 +1,4 @@
-version: '3.8'
-
 services:
-  # 0. Reverse Proxy Nginx
   reverse-proxy:
     image: nginx:alpine
     container_name: erp_nginx
@@ -18,7 +15,6 @@ services:
     networks:
       - erp_network
 
-  # 0b. Certbot per rilascio e rinnovo automatico certificati
   certbot:
     image: certbot/certbot:latest
     container_name: erp_certbot
@@ -30,7 +26,6 @@ services:
     networks:
       - erp_network
 
-  # 1. Applicazione Core ERP (Web API)
   app:
     image: ghcr.io/fatturafacile/web-api:latest
     container_name: erp_app
@@ -53,7 +48,6 @@ services:
     networks:
       - erp_network
 
-  # 2. Worker Code Asincrone
   queue_worker:
     image: ghcr.io/fatturafacile/web-api:latest
     container_name: erp_queue_worker
@@ -70,7 +64,6 @@ services:
     networks:
       - erp_network
 
-  # 3. Scheduler Cron per task notturni
   scheduler:
     image: ghcr.io/fatturafacile/web-api:latest
     container_name: erp_scheduler
@@ -86,7 +79,6 @@ services:
     networks:
       - erp_network
 
-  # 4. Database PostgreSQL
   postgres:
     image: postgres:16-alpine
     container_name: erp_postgres
@@ -105,7 +97,6 @@ services:
     networks:
       - erp_network
 
-  # 5. Cache e Code Redis
   redis:
     image: redis:7-alpine
     container_name: erp_redis

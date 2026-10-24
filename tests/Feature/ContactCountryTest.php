@@ -37,3 +37,13 @@ test('country codes must be two uppercase letters', function (): void {
             ->assertUnprocessable()->assertJsonValidationErrors('country');
     }
 });
+
+test('contacts accept client customer supplier both and lead types', function (): void {
+    foreach (['client', 'customer', 'supplier', 'both', 'lead'] as $type) {
+        contactApi()->postJson('/api/v1/crm/contacts', [
+            'type' => $type,
+            'country' => 'DE',
+            'company_name' => "Company {$type}",
+        ])->assertCreated()->assertJsonPath('data.type', $type);
+    }
+});

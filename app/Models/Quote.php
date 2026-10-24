@@ -59,6 +59,6 @@ class Quote extends Model
      */
     public function items(): HasMany
     {
-        return $this->hasMany(QuoteItem::class);
+        return $this->hasMany(QuoteItem::class)->orderBy('id');
     }
 }
