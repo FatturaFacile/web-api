@@ -76,7 +76,7 @@ jobs:
 
       - name: Execute Tests with Coverage & JUnit Reports
         run: |
-          vendor/bin/phpunit \
+          ./vendor/bin/pest \
             --log-junit build/logs/junit.xml \
             --coverage-clover build/logs/clover.xml
         env:
@@ -95,6 +95,8 @@ jobs:
           args: >
             -Dsonar.organization=${{ secrets.SONAR_ORGANIZATION }}
             -Dsonar.projectKey=${{ secrets.SONAR_PROJECT_KEY }}
+            -Dsonar.php.coverage.reportPaths=build/logs/clover.xml
+            -Dsonar.php.tests.reportPath=build/logs/junit.xml
 
       - name: SonarQube Quality Gate Check
         uses: SonarSource/sonarqube-quality-gate-action@v1
