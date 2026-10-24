@@ -5,7 +5,7 @@
 #   - Dart (dio) client and models for Flutter   -> clients/flutter/erp_client
 #
 # Usage:  scripts/generate-clients.sh [--refresh] [angular|flutter|all]
-#   --refresh   regenerate docs/api/openapi.* first (php artisan docs:export)
+#   --refresh    regenerate docs/api/openapi.* first (php artisan docs:export)
 #
 # Requirements: Node.js 18+ (npx downloads @openapitools/openapi-generator-cli) and a Java 11+ runtime, which the
 # generator needs. Pin the generator version with OPENAPI_GENERATOR_VERSION if you need reproducible output.
@@ -26,18 +26,18 @@ for argument in "$@"; do
     esac
 done
 
-if [ "$REFRESH" -eq 1 ]; then
+if [[ "$REFRESH" -eq 1 ]]; then
     php -d memory_limit=2G artisan docs:export
 fi
 
-if [ ! -f "$SPEC" ]; then
+if [[ ! -f "$SPEC" ]]; then
     echo "Missing $SPEC: run 'php -d memory_limit=2G artisan docs:export' first." >&2
     exit 1
 fi
 
 GENERATOR="npx --yes @openapitools/openapi-generator-cli"
 
-if [ "$TARGET" = "angular" ] || [ "$TARGET" = "all" ]; then
+if [[ "$TARGET" == "angular" || "$TARGET" == "all" ]]; then
     $GENERATOR generate \
         -i "$SPEC" \
         -g typescript-angular \
@@ -45,7 +45,7 @@ if [ "$TARGET" = "angular" ] || [ "$TARGET" = "all" ]; then
         --additional-properties=ngVersion=17,npmName=@erp/client,supportsES6=true
 fi
 
-if [ "$TARGET" = "flutter" ] || [ "$TARGET" = "all" ]; then
+if [[ "$TARGET" == "flutter" || "$TARGET" == "all" ]]; then
     $GENERATOR generate \
         -i "$SPEC" \
         -g dart-dio \
