@@ -16,11 +16,18 @@ return new class extends Migration
         Schema::create('product_categories', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
-            $table->foreignUuid('parent_id')->nullable()->constrained('product_categories')->nullOnDelete();
+            $table->uuid('parent_id')->nullable();
             $table->string('name', 100);
             $table->timestamps();
 
             $table->unique(['tenant_id', 'name']);
+        });
+
+        Schema::table('product_categories', function (Blueprint $table): void {
+            $table->foreign('parent_id')
+                ->references('id')
+                ->on('product_categories')
+                ->nullOnDelete();
         });
 
         Schema::create('product_brands', function (Blueprint $table): void {
@@ -121,6 +128,10 @@ return new class extends Migration
             $table->dropConstrainedForeignId('category_id');
             $table->dropConstrainedForeignId('brand_id');
             $table->dropConstrainedForeignId('unit_of_measure_id');
+        });
+
+        Schema::table('product_categories', function (Blueprint $table): void {
+            $table->dropForeign(['parent_id']);
         });
 
         Schema::dropIfExists('payment_term_installments');
