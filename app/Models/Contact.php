@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Contact extends Model
+{
+    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+
+    protected $fillable = [
+        'tenant_id',
+        'type',
+        'country',
+        'company_name',
+        'first_name',
+        'last_name',
+        'email',
+        'phone',
+        'vat_number',
+        'fiscal_code',
+        'uid_number',
+        'sdi_code',
+        'pec',
+        'iban',
+        'qr_iban',
+        'payment_terms_days',
+        'price_list_id',
+        'payment_term_id',
+    ];
+
+    /**
+     * @return HasMany<ContactAddress, $this>
+     */
+    public function addresses(): HasMany
+    {
+        return $this->hasMany(ContactAddress::class);
+    }
+
+    /**
+     * @return HasMany<Invoice, $this>
+     */
+    public function invoices(): HasMany
+    {
+        return $this->hasMany(Invoice::class);
+    }
+}

@@ -1,0 +1,138 @@
+version: '3.8'
+
+services:
+  # 0. Reverse Proxy Nginx
+  reverse-proxy:
+    image: nginx:alpine
+    container_name: erp_nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - certbot_www:/var/www/certbot:ro
+      - certbot_conf:/etc/letsencrypt:ro
+    depends_on:
+      - app
+    networks:
+      - erp_network
+
+  # 0b. Certbot per rilascio e rinnovo automatico certificati
+  certbot:
+    image: certbot/certbot:latest
+    container_name: erp_certbot
+    restart: always
+    volumes:
+      - certbot_www:/var/www/certbot:rw
+      - certbot_conf:/etc/letsencrypt:rw
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    networks:
+      - erp_network
+
+  # 1. Applicazione Core ERP (Web API)
+  app:
+    image: ghcr.io/fatturafacile/web-api:latest
+    container_name: erp_app
+    restart: always
+    working_dir: /var/www/html
+    environment:
+      - APP_ENV=production
+      - APP_DEBUG=false
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage
+    expose:
+      - "80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - erp_network
+
+  # 2. Worker Code Asincrone
+  queue_worker:
+    image: ghcr.io/fatturafacile/web-api:latest
+    container_name: erp_queue_worker
+    restart: always
+    working_dir: /var/www/html
+    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      - app
+      - redis
+    networks:
+      - erp_network
+
+  # 3. Scheduler Cron per task notturni
+  scheduler:
+    image: ghcr.io/fatturafacile/web-api:latest
+    container_name: erp_scheduler
+    restart: always
+    working_dir: /var/www/html
+    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - erp_network
+
+  # 4. Database PostgreSQL
+  postgres:
+    image: postgres:16-alpine
+    container_name: erp_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:-erp_db}
+      POSTGRES_USER: ${DB_USERNAME:-erp_user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecretStrongPassword2026}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-erp_user} -d ${DB_DATABASE:-erp_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - erp_network
+
+  # 5. Cache e Code Redis
+  redis:
+    image: redis:7-alpine
+    container_name: erp_redis
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-RedisStrongPass2026}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisStrongPass2026}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - erp_network
+
+volumes:
+  app_storage:
+    driver: local
+  pg_data:
+    driver: local
+  redis_data:
+    driver: local
+  certbot_www:
+    driver: local
+  certbot_conf:
+    driver: local
+
+networks:
+  erp_network:
+    driver: bridge

@@ -1,0 +1,32 @@
+name: Telegram Notifications
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  issues:
+    types:
+      - opened
+      - closed
+      - reopened
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Send Telegram Message
+        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_TOKEN }}
+          message: |
+            🚀 Repository: ${{ github.repository }}
+            👤 User: ${{ github.actor }}
+            📌 Event: ${{ github.event_name }}
+            🔗 https://github.com/${{ github.repository }}

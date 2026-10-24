@@ -1,0 +1,27 @@
+#-------------------------------------------------------------------------------#
+#               Qodana analysis is configured by qodana.yaml file               #
+#             https://www.jetbrains.com/help/qodana/qodana-yaml.html            #
+#-------------------------------------------------------------------------------#
+
+version: "1.0"
+
+#Specify inspection profile for code analysis
+profile:
+  name: qodana.starter
+
+#Disable inspections for vendor/analysis/storage directories
+exclude:
+  - name: PhpDuplicateCodeInspection
+    paths:
+      - analisi
+  - name: All
+    paths:
+      - node_modules
+      - vendor
+      - storage
+      - dockers
+
+php:
+  version: 8.5
+
+linter: jetbrains/qodana-php:2026.2

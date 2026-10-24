@@ -1,0 +1,6 @@
+extends: ["spectral:oas"]
+rules:
+  # The specification is generated from the routes; these rules only add noise for generated documents.
+  operation-description: off
+  info-contact: off
+  info-license: off
