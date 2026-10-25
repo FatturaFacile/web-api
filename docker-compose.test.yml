@@ -1,0 +1,17 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: fatturafacile_test_db
+    environment:
+      POSTGRES_DB: fatturafacile_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: secret_password
+    ports:
+      - "5432:5432"
+    tmpfs:
+      - /var/lib/postgresql/data # DB in memoria RAM: migrazioni e test ultra-rapidi
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d fatturafacile_test"]
+      interval: 2s
+      timeout: 3s
+      retries: 5

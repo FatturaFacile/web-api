@@ -14,7 +14,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('bank_statement_lines', function (Blueprint $table): void {
-            $table->string('reconciliation_category', 30)->nullable()->index(); // invoice, tax_payment, payroll, bank_expense, internal_transfer, generic_expense
+            $table->string('reconciliation_category', 50)->nullable()->index(); // invoice, tax_payment, payroll, bank_expense, internal_transfer, generic_expense
             $table->string('ledger_account_code', 20)->nullable();
             $table->text('reconciliation_notes')->nullable();
         });

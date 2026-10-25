@@ -50,7 +50,7 @@ return new class extends Migration
             $table->string('counterpart_iban', 34)->nullable();
             $table->boolean('reconciled')->default(false);
             $table->uuid('matched_document_id')->nullable()->index(); // invoices.id
-            $table->string('reconciliation_type', 20)->nullable(); // exact, qr_reference, fuzzy_tolerance, partial, manual
+            $table->string('reconciliation_type', 50)->nullable(); // exact, qr_reference, fuzzy_tolerance, partial, manual
             $table->timestamps();
 
             $table->index(['tenant_id', 'reconciled']);

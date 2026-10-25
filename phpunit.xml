@@ -6,55 +6,56 @@
          failOnRisky="true"
          failOnWarning="true"
 >
-    <testsuites>
-        <testsuite name="Unit">
-            <directory>tests/Unit</directory>
-        </testsuite>
-        <testsuite name="Feature">
-            <directory>tests/Feature</directory>
-        </testsuite>
-    </testsuites>
+   <testsuites>
+    <testsuite name="Unit">
+        <directory>tests/Unit</directory>
+    </testsuite>
+    <testsuite name="Feature">
+        <directory>tests/Feature</directory>
+    </testsuite>
+</testsuites>
 
-    <source>
-        <include>
-            <directory>app</directory>
-        </include>
-        <exclude>
-            <!-- Esclude file boilerplate non testabili unitariamente per non sporcare il coverage -->
-            <directory>app/Console</directory>
-            <file>app/Http/Middleware/Authenticate.php</file>
-            <file>app/Http/Middleware/TrustHosts.php</file>
-            <file>app/Http/Middleware/TrustProxies.php</file>
-        </exclude>
-    </source>
+<source>
+    <include>
+        <directory>app</directory>
+    </include>
+    <exclude>
+        <!-- Esclude file boilerplate non testabili unitariamente per non sporcare il coverage -->
+        <directory>app/Console</directory>
+        <file>app/Http/Middleware/Authenticate.php</file>
+        <file>app/Http/Middleware/TrustHosts.php</file>
+        <file>app/Http/Middleware/TrustProxies.php</file>
+    </exclude>
+</source>
 
-    <coverage>
-        <report>
-            <!-- Genera il report Clover per SonarCloud e HTML per ispezione locale -->
-            <clover outputFile="build/logs/clover.xml"/>
-            <html outputDirectory="build/coverage"/>
-        </report>
-    </coverage>
+<coverage>
+    <report>
+        <!-- Genera il report Clover per SonarCloud e HTML per ispezione locale -->
+        <clover outputFile="build/logs/clover.xml"/>
+        <html outputDirectory="build/coverage"/>
+    </report>
+</coverage>
 
-    <logging>
-        <junit outputFile="build/logs/junit.xml"/>
-    </logging>
+<logging>
+    <junit outputFile="build/logs/junit.xml"/>
+</logging>
 
-    <php>
-        <env name="APP_ENV" value="testing"/>
-        <env name="APP_MAINTENANCE_DRIVER" value="file"/>
-        <env name="BCRYPT_ROUNDS" value="4"/>
-        <env name="BROADCAST_CONNECTION" value="null"/>
-        <env name="CACHE_STORE" value="array"/>
-        <!-- Fallback standard SQLite in-memory per run locali (sovrascritto da env in CI su Postgres) -->
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-        <env name="DB_URL" value=""/>
-        <env name="MAIL_MAILER" value="array"/>
-        <env name="QUEUE_CONNECTION" value="sync"/>
-        <env name="SESSION_DRIVER" value="array"/>
-        <env name="PULSE_ENABLED" value="false"/>
-        <env name="TELESCOPE_ENABLED" value="false"/>
-        <env name="NIGHTWATCH_ENABLED" value="false"/>
-    </php>
+<php>
+    <env name="APP_ENV" value="testing"/>
+    <env name="APP_MAINTENANCE_DRIVER" value="file"/>
+    <env name="BCRYPT_ROUNDS" value="4"/>
+    <env name="BROADCAST_CONNECTION" value="null"/>
+    <env name="CACHE_STORE" value="array"/>
+
+    <!--
+        Le impostazioni DB sono state rimosse per permettere a Laravel di caricare
+        la configurazione PostgreSQL dal file .env.testing sia in locale che in CI.
+    -->
+    <env name="MAIL_MAILER" value="array"/>
+    <env name="QUEUE_CONNECTION" value="sync"/>
+    <env name="SESSION_DRIVER" value="array"/>
+    <env name="PULSE_ENABLED" value="false"/>
+    <env name="TELESCOPE_ENABLED" value="false"/>
+    <env name="NIGHTWATCH_ENABLED" value="false"/>
+</php>
 </phpunit>

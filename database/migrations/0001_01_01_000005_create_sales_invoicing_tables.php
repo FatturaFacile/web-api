@@ -135,7 +135,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('invoice_id')->unique()->constrained('invoices')->cascadeOnDelete();
             $table->string('qr_iban', 34);
-            $table->string('scor_reference', 27)->index(); // 27-digit SCOR reference
+            $table->string('scor_reference', 35)->index(); // 27-digit SCOR reference
             $table->json('creditor_info');
             $table->json('debtor_info');
             $table->longText('qr_bill_svg')->nullable();
