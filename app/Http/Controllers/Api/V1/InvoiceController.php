@@ -15,6 +15,7 @@ use App\Services\SwissQrBill\QrBillGeneratorService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceController extends Controller
@@ -30,6 +31,74 @@ class InvoiceController extends Controller
     /**
      * List paginated invoices with optional status/jurisdiction filters.
      */
+    #[OA\Get(
+        path: '/api/v1/sales/invoices',
+        operationId: 'getInvoices',
+        description: 'List paginated invoices with optional status, jurisdiction, and search keyword filters.',
+        summary: 'List invoices',
+        security: [['bearerAuth' => []]],
+        tags: ['Invoices', 'Sales'],
+        parameters: [
+            new OA\Parameter(
+                name: 'payment_status',
+                in: 'query',
+                required: false,
+                description: 'Filter by payment status',
+                schema: new OA\Schema(type: 'string', enum: ['unpaid', 'partially_paid', 'paid', 'overdue'])
+            ),
+            new OA\Parameter(
+                name: 'jurisdiction',
+                in: 'query',
+                required: false,
+                description: 'Filter by tax jurisdiction',
+                schema: new OA\Schema(type: 'string', enum: ['IT', 'CH'])
+            ),
+            new OA\Parameter(
+                name: 'search',
+                in: 'query',
+                required: false,
+                description: 'Search invoice number or contact name',
+                schema: new OA\Schema(type: 'string')
+            ),
+            new OA\Parameter(
+                name: 'per_page',
+                in: 'query',
+                required: false,
+                description: 'Number of results per page (5-100)',
+                schema: new OA\Schema(type: 'integer', default: 15)
+            ),
+            new OA\Parameter(
+                name: 'page',
+                in: 'query',
+                required: false,
+                description: 'Page number for pagination',
+                schema: new OA\Schema(type: 'integer', default: 1)
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Invoices retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Invoices retrieved successfully'),
+                        new OA\Property(
+                            property: 'data',
+                            type: 'array',
+                            items: new OA\Items(ref: '#/components/schemas/InvoiceResource')
+                        ),
+                        new OA\Property(property: 'meta', ref: '#/components/schemas/PaginationMeta'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $query = Invoice::with(['contact', 'items', 'sdiMetadata', 'qrBillData'])
@@ -73,6 +142,71 @@ class InvoiceController extends Controller
     /**
      * Store a newly created invoice with validated items and tax computations.
      */
+    #[OA\Post(
+        path: '/api/v1/sales/invoices',
+        operationId: 'createInvoice',
+        description: 'Store a newly created invoice with validated items and tax computations.',
+        summary: 'Create new invoice',
+        security: [['bearerAuth' => []]],
+        tags: ['Invoices', 'Sales'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['contact_id', 'invoice_type', 'invoice_number', 'date', 'currency', 'jurisdiction', 'items'],
+                properties: [
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'),
+                    new OA\Property(property: 'invoice_type', type: 'string', enum: ['standard', 'sdi_electronic', 'ch_qr_bill', 'credit_note', 'proforma'], example: 'standard'),
+                    new OA\Property(property: 'invoice_number', type: 'string', maxLength: 50, example: 'INV-2026-0001'),
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-10-25'),
+                    new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true, example: '2026-11-24'),
+                    new OA\Property(property: 'currency', type: 'string', example: 'CHF'),
+                    new OA\Property(property: 'exchange_rate', type: 'number', format: 'float', nullable: true, example: 1.0),
+                    new OA\Property(property: 'jurisdiction', type: 'string', enum: ['IT', 'CH'], example: 'CH'),
+                    new OA\Property(property: 'split_payment', type: 'boolean', nullable: true, example: false),
+                    new OA\Property(property: 'reverse_charge', type: 'boolean', nullable: true, example: false),
+                    new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true, example: 'Payment within 30 days.'),
+                    new OA\Property(
+                        property: 'items',
+                        type: 'array',
+                        items: new OA\Items(
+                            required: ['description', 'quantity', 'unit_price', 'tax_rate'],
+                            properties: [
+                                new OA\Property(property: 'product_id', type: 'string', format: 'uuid', nullable: true),
+                                new OA\Property(property: 'description', type: 'string', example: 'Consulting services'),
+                                new OA\Property(property: 'quantity', type: 'number', format: 'float', example: 10),
+                                new OA\Property(property: 'unit_price', type: 'number', format: 'float', example: 120.00),
+                                new OA\Property(property: 'tax_rate', type: 'number', format: 'float', example: 8.1),
+                                new OA\Property(property: 'discount_percentage', type: 'number', format: 'float', nullable: true, example: 0),
+                            ]
+                        )
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Invoice created successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Invoice created successfully'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/InvoiceResource'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')
+            ),
+        ]
+    )]
     public function store(StoreInvoiceRequest $request): JsonResponse
     {
         $invoice = $this->invoiceService->createInvoice($request->validated());
@@ -87,6 +221,46 @@ class InvoiceController extends Controller
     /**
      * Display the specified invoice with details.
      */
+    #[OA\Get(
+        path: '/api/v1/sales/invoices/{id}',
+        operationId: 'getInvoiceById',
+        description: 'Display the specified invoice with contact details, items, SDI status and QR-bill information.',
+        summary: 'Get invoice details',
+        security: [['bearerAuth' => []]],
+        tags: ['Invoices', 'Sales'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Unique UUID of the invoice',
+                schema: new OA\Schema(type: 'string', format: 'uuid', example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Invoice details retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Invoice details retrieved successfully'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/InvoiceResource'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Invoice not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $invoice = Invoice::with(['contact.addresses', 'items', 'sdiMetadata', 'qrBillData'])->findOrFail($id);
@@ -100,6 +274,40 @@ class InvoiceController extends Controller
     /**
      * Generate official Italian SDI electronic invoice XML (FatturaPA v1.2.2).
      */
+    #[OA\Post(
+        path: '/api/v1/sales/invoices/{id}/generate-sdi-xml',
+        operationId: 'generateSdiXml',
+        description: 'Generate official Italian SDI electronic invoice XML (FatturaPA v1.2.2) and store SDI metadata.',
+        summary: 'Generate SDI XML',
+        security: [['bearerAuth' => []]],
+        tags: ['Invoices', 'SDI'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Unique UUID of the invoice',
+                schema: new OA\Schema(type: 'string', format: 'uuid', example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'FatturaPA electronic XML invoice generated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Invoice not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function generateSdiXml(string $id): JsonResponse
     {
         $invoice = Invoice::with(['tenant', 'contact.addresses', 'items'])->findOrFail($id);
@@ -137,6 +345,41 @@ class InvoiceController extends Controller
      *
      * @deprecated Produces a placeholder slip. Use GET /api/v1/sales/invoices/{id}/qr-bill for the real Swiss QR code.
      */
+    #[OA\Post(
+        path: '/api/v1/sales/invoices/{id}/generate-qr-bill',
+        operationId: 'generateQrBill',
+        description: 'Generate Swiss QR-Bill data structure, SCOR reference, and SVG payment slip.',
+        summary: 'Generate Swiss QR-Bill',
+        deprecated: true,
+        security: [['bearerAuth' => []]],
+        tags: ['Invoices', 'Swiss QR'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Unique UUID of the invoice',
+                schema: new OA\Schema(type: 'string', format: 'uuid', example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Swiss QR-Bill payment slip generated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Invoice not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function generateQrBill(string $id): JsonResponse
     {
         $invoice = Invoice::with(['tenant', 'contact.addresses'])->findOrFail($id);
@@ -182,6 +425,41 @@ class InvoiceController extends Controller
      *
      * @deprecated Serves a placeholder slip. Use GET /api/v1/sales/invoices/{id}/qr-bill or the invoice PDF instead.
      */
+    #[OA\Get(
+        path: '/api/v1/sales/invoices/{id}/download-qr-bill',
+        operationId: 'downloadQrBill',
+        description: 'Download the Swiss QR-Bill SVG payment slip file directly.',
+        summary: 'Download Swiss QR-Bill SVG',
+        deprecated: true,
+        security: [['bearerAuth' => []]],
+        tags: ['Invoices', 'Swiss QR'],
+        parameters: [
+            new OA\Parameter(
+                name: 'id',
+                in: 'path',
+                required: true,
+                description: 'Unique UUID of the invoice',
+                schema: new OA\Schema(type: 'string', format: 'uuid', example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11')
+            ),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'SVG payment slip file stream',
+                content: new OA\MediaType(mediaType: 'image/svg+xml')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 404,
+                description: 'Invoice not found',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function downloadQrBill(string $id): HttpResponse
     {
         $invoice = Invoice::with(['qrBillData', 'tenant', 'contact'])->findOrFail($id);

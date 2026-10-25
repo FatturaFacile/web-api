@@ -61,12 +61,8 @@ use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
-use App\Http\Controllers\ApiDocumentationController;
 use Illuminate\Support\Facades\Route;
 
-// Interactive API documentation (Scalar) and its OpenAPI specification.
-Route::get('/documentation', [ApiDocumentationController::class, 'ui'])->middleware('throttle:60,1')->name('documentation');
-Route::get('/documentation/openapi.json', [ApiDocumentationController::class, 'spec'])->middleware('throttle:60,1')->name('documentation.spec');
 Route::prefix('v1')->group(function (): void {
 
     // ----------------------------------------------------

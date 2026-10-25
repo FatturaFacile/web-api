@@ -10,6 +10,7 @@ use App\Models\Invoice;
 use App\Services\Tenancy\TenantContext;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OA;
 
 class DashboardController extends Controller
 {
@@ -22,6 +23,18 @@ class DashboardController extends Controller
     /**
      * Get executive KPI summary (Total revenue, unpaid invoices, open tickets, cross-border metrics).
      */
+    #[OA\Get(
+        path: '/api/v1/dashboard/kpi-summary',
+        operationId: 'getKpiSummary',
+        description: 'Get executive KPI summary (total revenue, unpaid receivables, invoice count).',
+        summary: 'Get KPI summary',
+        security: [['bearerAuth' => []]],
+        tags: ['Dashboard'],
+        responses: [
+            new OA\Response(response: 200, description: 'Dashboard KPI summary retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function kpiSummary(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -54,6 +67,18 @@ class DashboardController extends Controller
     /**
      * Cash flow 30-60-90 days forecast based on active receivables and payables.
      */
+    #[OA\Get(
+        path: '/api/v1/dashboard/cash-flow-forecast',
+        operationId: 'getCashFlowForecast',
+        description: 'Cash flow 30-60-90 days forecast based on active receivables and payables.',
+        summary: 'Cash flow forecast',
+        security: [['bearerAuth' => []]],
+        tags: ['Dashboard'],
+        responses: [
+            new OA\Response(response: 200, description: 'Cash flow forecast generated', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function cashFlowForecast(): JsonResponse
     {
         $now = Carbon::now();
@@ -89,6 +114,18 @@ class DashboardController extends Controller
     /**
      * Tax and compliance deadlines (Italian Liquidazione IVA / Swiss MWST Abrechnung / Frontalieri reporting).
      */
+    #[OA\Get(
+        path: '/api/v1/dashboard/tax-deadlines',
+        operationId: 'getTaxDeadlines',
+        description: 'Tax and compliance deadlines (Italian Liquidazione IVA / Swiss MWST Abrechnung / Frontalieri reporting).',
+        summary: 'Tax and compliance deadlines',
+        security: [['bearerAuth' => []]],
+        tags: ['Dashboard', 'Fiscal'],
+        responses: [
+            new OA\Response(response: 200, description: 'Fiscal deadlines retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function taxDeadlines(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();

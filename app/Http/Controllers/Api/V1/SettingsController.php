@@ -12,6 +12,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 
 class SettingsController extends Controller
 {
@@ -21,6 +22,32 @@ class SettingsController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/settings/tenant',
+        operationId: 'getTenantSettings',
+        description: 'Get current tenant organization settings.',
+        summary: 'Get tenant settings',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings', 'Tenants'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Tenant settings retrieved successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Tenant settings retrieved'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/TenantResource'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function tenant(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -28,6 +55,55 @@ class SettingsController extends Controller
         return $this->successResponse(data: $tenant, message: 'Tenant settings retrieved');
     }
 
+    #[OA\Put(
+        path: '/api/v1/settings/tenant',
+        operationId: 'updateTenantSettings',
+        description: 'Update current tenant organization settings.',
+        summary: 'Update tenant settings',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings', 'Tenants'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'name', type: 'string', maxLength: 255, nullable: true, example: 'Acme Corp SA'),
+                    new OA\Property(property: 'legal_name', type: 'string', maxLength: 255, nullable: true, example: 'Acme Corporation SA'),
+                    new OA\Property(property: 'fiscal_code', type: 'string', maxLength: 16, nullable: true, example: 'RSSMRA85M01H501Q'),
+                    new OA\Property(property: 'vat_number', type: 'string', maxLength: 30, nullable: true, example: 'CHE-123.456.789'),
+                    new OA\Property(property: 'uid_number', type: 'string', maxLength: 20, nullable: true, example: 'CHE123456789'),
+                    new OA\Property(property: 'default_currency', type: 'string', maxLength: 3, nullable: true, example: 'CHF'),
+                    new OA\Property(property: 'iban', type: 'string', maxLength: 34, nullable: true, example: 'CH9300000000000000000'),
+                    new OA\Property(property: 'qr_iban', type: 'string', maxLength: 34, nullable: true, example: 'CH4430000000000000000'),
+                    new OA\Property(property: 'sdi_code', type: 'string', maxLength: 7, nullable: true, example: 'M5UXCR1'),
+                    new OA\Property(property: 'pec_email', type: 'string', format: 'email', nullable: true, example: 'acme@pec.it'),
+                    new OA\Property(property: 'settings', type: 'object', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Tenant settings updated successfully',
+                content: new OA\JsonContent(
+                    properties: [
+                        new OA\Property(property: 'success', type: 'boolean', example: true),
+                        new OA\Property(property: 'message', type: 'string', example: 'Tenant settings updated successfully'),
+                        new OA\Property(property: 'data', ref: '#/components/schemas/TenantResource'),
+                    ]
+                )
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')
+            ),
+        ]
+    )]
     public function updateTenant(Request $request): JsonResponse
     {
         /** @var Tenant $tenant */
@@ -51,6 +127,26 @@ class SettingsController extends Controller
         return $this->successResponse(data: $tenant, message: 'Tenant settings updated successfully');
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/branches',
+        operationId: 'getBranches',
+        description: 'Get operational warehouses and company branch locations.',
+        summary: 'List branches',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Branches retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function branches(): JsonResponse
     {
         $branches = DB::table('warehouses')
@@ -64,6 +160,26 @@ class SettingsController extends Controller
     /**
      * Synchronize currency exchange rates between EUR and CHF (ECB / SNB simulated / live rate).
      */
+    #[OA\Post(
+        path: '/api/v1/settings/exchange-rates/sync',
+        operationId: 'syncExchangeRates',
+        description: 'Synchronize daily currency exchange rates between EUR, CHF and USD.',
+        summary: 'Sync exchange rates',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings', 'Banking'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Exchange rates synchronized successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function syncExchangeRates(): JsonResponse
     {
         $today = now()->toDateString();
@@ -89,6 +205,26 @@ class SettingsController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/users',
+        operationId: 'getTenantUsers',
+        description: 'List members and users assigned to the active tenant.',
+        summary: 'List tenant users',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings', 'Users'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Tenant users retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function users(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -103,6 +239,26 @@ class SettingsController extends Controller
         return $this->successResponse(data: $users, message: 'Tenant users retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/roles',
+        operationId: 'getSystemRoles',
+        description: 'List system role definitions and privileges.',
+        summary: 'List system roles',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Roles retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function roles(): JsonResponse
     {
         $roles = [
@@ -116,6 +272,26 @@ class SettingsController extends Controller
         return $this->successResponse(data: $roles, message: 'System RBAC roles retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/audit-logs',
+        operationId: 'getAuditLogs',
+        description: 'Get paginated audit activity log trail for the active tenant.',
+        summary: 'List audit logs',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Audit logs retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function auditLogs(): JsonResponse
     {
         $logs = DB::table('audit_logs')

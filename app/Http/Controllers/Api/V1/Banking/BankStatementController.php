@@ -23,6 +23,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -37,6 +38,34 @@ class BankStatementController extends Controller
     /**
      * Import a statement file; the format is detected from its content. `?auto_reconcile=1` also reconciles it.
      */
+    #[OA\Post(
+        path: '/api/v1/banking/statements/import',
+        operationId: 'importBankStatement',
+        description: 'Import a statement file (CBI or ISO 20022 CAMT); format is detected automatically. Set auto_reconcile=1 to trigger immediate matching.',
+        summary: 'Import bank statement',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'auto_reconcile', in: 'query', required: false, description: 'Trigger automatic invoice reconciliation upon import', schema: new OA\Schema(type: 'boolean', default: false)),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['file'],
+                    properties: [
+                        new OA\Property(property: 'file', type: 'string', format: 'binary', description: 'Statement XML or CBI text file'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Statement imported successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid statement format', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function import(ImportBankStatementRequest $request, ImportBankStatement $import): JsonResponse
     {
         try {
@@ -57,6 +86,23 @@ class BankStatementController extends Controller
     /**
      * Statements, newest first; filter with `status`, `source_format` and `iban`.
      */
+    #[OA\Get(
+        path: '/api/v1/banking/statements',
+        operationId: 'getBankStatements',
+        description: 'List imported bank statements with line reconciliation counters.',
+        summary: 'List bank statements',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'partially_reconciled', 'reconciled'])),
+            new OA\Parameter(name: 'source_format', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['cbi', 'camt053', 'camt054'])),
+            new OA\Parameter(name: 'iban', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Statements listed successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
@@ -77,6 +123,22 @@ class BankStatementController extends Controller
         return $this->successResponse(BankStatementResource::collection($statements), __('banking.messages.listed'));
     }
 
+    #[OA\Get(
+        path: '/api/v1/banking/statements/{id}',
+        operationId: 'getBankStatementById',
+        description: 'Get bank statement and its constituent transaction lines.',
+        summary: 'Get bank statement details',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Statement UUID or ID', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Statement retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Statement not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $statement = BankStatement::with('lines')->findOrFail($id);
@@ -87,6 +149,22 @@ class BankStatementController extends Controller
     /**
      * Reconcile the incoming lines of a statement that are not reconciled yet.
      */
+    #[OA\Post(
+        path: '/api/v1/banking/statements/{id}/reconcile',
+        operationId: 'reconcileStatement',
+        description: 'Run automatic reconciliation algorithm on unreconciled statement lines.',
+        summary: 'Reconcile statement lines',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Statement UUID or ID', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Statement reconciled', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Statement not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function reconcile(string $id): JsonResponse
     {
         $statement = BankStatement::findOrFail($id);
@@ -98,6 +176,33 @@ class BankStatementController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/banking/statements/lines/{lineId}/manual-match',
+        operationId: 'manualMatchBankStatementLine',
+        description: 'Manually associate a bank statement line with a sales or supplier invoice.',
+        summary: 'Manual match statement line',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'lineId', in: 'path', required: true, description: 'Statement line UUID or ID', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['invoice_id'],
+                properties: [
+                    new OA\Property(property: 'invoice_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'difference_handling', type: 'string', enum: ['none', 'discount', 'write_off'], default: 'none'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Line matched successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Line not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Document direction mismatch or validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function manualMatch(ManualMatchRequest $request, string $lineId): JsonResponse
     {
         $line = BankStatementLine::findOrFail($lineId);
@@ -123,6 +228,34 @@ class BankStatementController extends Controller
     /**
      * Book a line that has no invoice (taxes, payroll, bank expenses, internal transfers, other expenses).
      */
+    #[OA\Post(
+        path: '/api/v1/banking/statements/lines/{lineId}/categorize',
+        operationId: 'categorizeBankStatementLine',
+        description: 'Categorize and book a non-invoice bank statement line (e.g., bank fee, tax payment, payroll transfer).',
+        summary: 'Categorize statement line',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'lineId', in: 'path', required: true, description: 'Statement line UUID or ID', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['category'],
+                properties: [
+                    new OA\Property(property: 'category', type: 'string', example: 'bank_fees'),
+                    new OA\Property(property: 'ledger_account_code', type: 'string', nullable: true, example: '6800'),
+                    new OA\Property(property: 'notes', type: 'string', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Line categorized', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Line not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function categorize(CategorizeLineRequest $request, string $lineId): JsonResponse
     {
         $line = BankStatementLine::findOrFail($lineId);
@@ -138,6 +271,22 @@ class BankStatementController extends Controller
         return $this->successResponse(new BankStatementLineResource($line), __('banking.messages.categorized'));
     }
 
+    #[OA\Post(
+        path: '/api/v1/banking/statements/lines/{lineId}/unmatch',
+        operationId: 'unmatchBankStatementLine',
+        description: 'Remove manual or automatic match from a statement line.',
+        summary: 'Unmatch statement line',
+        security: [['bearerAuth' => []]],
+        tags: ['Banking', 'Reconciliation'],
+        parameters: [
+            new OA\Parameter(name: 'lineId', in: 'path', required: true, description: 'Statement line UUID or ID', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Line unmatched', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Line not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function unmatch(string $lineId): JsonResponse
     {
         $line = $this->reconciliation->unmatch(BankStatementLine::findOrFail($lineId));

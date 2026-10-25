@@ -12,6 +12,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
@@ -25,6 +26,46 @@ class AuthController extends Controller
     /**
      * Authenticate user credentials and issue a Sanctum Bearer token.
      */
+    #[OA\Post(
+        path: '/api/v1/auth/login',
+        operationId: 'login',
+        description: 'Authenticate user credentials and issue a Sanctum Bearer token.',
+        summary: 'User login',
+        tags: ['Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['email', 'password'],
+                properties: [
+                    new OA\Property(property: 'email', type: 'string', format: 'email', example: 'user@example.com'),
+                    new OA\Property(property: 'password', type: 'string', format: 'password', example: 'secret123'),
+                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true, example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Authenticated successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid credentials',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Account disabled or invalid tenant access',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')
+            ),
+        ]
+    )]
     public function login(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -103,6 +144,26 @@ class AuthController extends Controller
     /**
      * Return profile of the authenticated user.
      */
+    #[OA\Get(
+        path: '/api/v1/auth/profile',
+        operationId: 'getProfile',
+        description: 'Return profile of the authenticated user.',
+        summary: 'Get user profile',
+        security: [['bearerAuth' => []]],
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Profile retrieved successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function profile(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -138,6 +199,45 @@ class AuthController extends Controller
     /**
      * Switch active tenant context for the user session.
      */
+    #[OA\Post(
+        path: '/api/v1/auth/switch-tenant',
+        operationId: 'switchTenant',
+        description: 'Switch active tenant context for the user session.',
+        summary: 'Switch tenant context',
+        security: [['bearerAuth' => []]],
+        tags: ['Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['tenant_id'],
+                properties: [
+                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Active organization switched successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden - not a member of the requested tenant',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Validation error',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')
+            ),
+        ]
+    )]
     public function switchTenant(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -172,6 +272,26 @@ class AuthController extends Controller
     /**
      * Revoke current access token.
      */
+    #[OA\Post(
+        path: '/api/v1/auth/logout',
+        operationId: 'logout',
+        description: 'Revoke current access token.',
+        summary: 'User logout',
+        security: [['bearerAuth' => []]],
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Successfully logged out',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function logout(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -186,6 +306,26 @@ class AuthController extends Controller
     /**
      * Refresh bearer token.
      */
+    #[OA\Post(
+        path: '/api/v1/auth/refresh',
+        operationId: 'refreshToken',
+        description: 'Refresh bearer token.',
+        summary: 'Refresh access token',
+        security: [['bearerAuth' => []]],
+        tags: ['Authentication'],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Token refreshed successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Unauthenticated',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+        ]
+    )]
     public function refresh(Request $request): JsonResponse
     {
         /** @var User $user */

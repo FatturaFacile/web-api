@@ -13,6 +13,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class TreasuryController extends Controller
@@ -23,6 +24,18 @@ class TreasuryController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/treasury/bank-accounts',
+        operationId: 'getBankAccounts',
+        description: 'List tenant active bank accounts and IBANs.',
+        summary: 'List bank accounts',
+        security: [['bearerAuth' => []]],
+        tags: ['Treasury', 'Banking'],
+        responses: [
+            new OA\Response(response: 200, description: 'Bank accounts retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function bankAccounts(): JsonResponse
     {
         $accounts = DB::table('bank_accounts')
@@ -33,6 +46,21 @@ class TreasuryController extends Controller
         return $this->successResponse(data: $accounts, message: 'Bank accounts retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/treasury/transactions',
+        operationId: 'getBankTransactions',
+        description: 'List paginated bank transactions.',
+        summary: 'List bank transactions',
+        security: [['bearerAuth' => []]],
+        tags: ['Treasury', 'Banking'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Transactions retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function transactions(Request $request): JsonResponse
     {
         $transactions = DB::table('bank_transactions')
@@ -46,6 +74,18 @@ class TreasuryController extends Controller
     /**
      * Automatic reconciliation: match bank transaction references against SCOR references or invoice numbers.
      */
+    #[OA\Post(
+        path: '/api/v1/treasury/reconciliation/auto-match',
+        operationId: 'reconcileTransactionsAutoMatch',
+        description: 'Automatic reconciliation: match bank transaction references against SCOR references or invoice numbers.',
+        summary: 'Auto-match bank transactions',
+        security: [['bearerAuth' => []]],
+        tags: ['Treasury', 'Banking'],
+        responses: [
+            new OA\Response(response: 200, description: 'Reconciliation completed', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function autoMatch(): JsonResponse
     {
         $unmatched = DB::table('bank_transactions')
@@ -103,6 +143,33 @@ class TreasuryController extends Controller
      *
      * @deprecated Legacy stub superseded by the matching payment import. Use POST /api/v1/sales/payment-imports instead.
      */
+    #[OA\Post(
+        path: '/api/v1/treasury/import-camt',
+        operationId: 'importCamtFile',
+        description: 'Import ISO 20022 camt.053 / camt.054 XML bank statement.',
+        summary: 'Import CAMT XML',
+        deprecated: true,
+        security: [['bearerAuth' => []]],
+        tags: ['Treasury', 'Banking'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['camt_file', 'bank_account_id'],
+                    properties: [
+                        new OA\Property(property: 'camt_file', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'bank_account_id', type: 'string', format: 'uuid'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'CAMT file parsed successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid CAMT file', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function importCamt(Request $request): JsonResponse
     {
         $request->validate([
@@ -166,6 +233,32 @@ class TreasuryController extends Controller
     /**
      * Import Italian CBI bank statement format.
      */
+    #[OA\Post(
+        path: '/api/v1/treasury/import-cbi',
+        operationId: 'importCbiFile',
+        description: 'Import Italian CBI bank statement format.',
+        summary: 'Import CBI file',
+        security: [['bearerAuth' => []]],
+        tags: ['Treasury', 'Banking'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['cbi_file', 'bank_account_id'],
+                    properties: [
+                        new OA\Property(property: 'cbi_file', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'bank_account_id', type: 'string', format: 'uuid'),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'CBI file parsed successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid CBI file', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function importCbi(Request $request): JsonResponse
     {
         $request->validate([

@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class AccountingController extends Controller
@@ -21,6 +22,18 @@ class AccountingController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/accounting/chart-of-accounts',
+        operationId: 'getChartOfAccounts',
+        description: 'Get chart of accounts ordered by account code.',
+        summary: 'Get chart of accounts',
+        security: [['bearerAuth' => []]],
+        tags: ['Accounting'],
+        responses: [
+            new OA\Response(response: 200, description: 'Chart of accounts retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function chartOfAccounts(): JsonResponse
     {
         $accounts = DB::table('chart_of_accounts')
@@ -32,6 +45,21 @@ class AccountingController extends Controller
         return $this->successResponse(data: $accounts, message: 'Chart of accounts retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/accounting/ledger-entries',
+        operationId: 'getLedgerEntries',
+        description: 'Get paginated general ledger entries.',
+        summary: 'List ledger entries',
+        security: [['bearerAuth' => []]],
+        tags: ['Accounting'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'General ledger entries retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function ledgerEntries(): JsonResponse
     {
         $entries = DB::table('general_ledger_entries')
@@ -43,6 +71,43 @@ class AccountingController extends Controller
         return $this->successResponse(data: $entries, message: 'General ledger entries retrieved');
     }
 
+    #[OA\Post(
+        path: '/api/v1/accounting/ledger-entries',
+        operationId: 'createLedgerEntry',
+        description: 'Post a new double-entry general ledger journal entry (must balance debit and credit).',
+        summary: 'Post ledger entry',
+        security: [['bearerAuth' => []]],
+        tags: ['Accounting'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['entry_number', 'date', 'description', 'lines'],
+                properties: [
+                    new OA\Property(property: 'entry_number', type: 'string', example: 'GL-2026-0001'),
+                    new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-10-25'),
+                    new OA\Property(property: 'description', type: 'string', example: 'Monthly payroll posting'),
+                    new OA\Property(
+                        property: 'lines',
+                        type: 'array',
+                        items: new OA\Items(
+                            required: ['account_id', 'debit', 'credit'],
+                            properties: [
+                                new OA\Property(property: 'account_id', type: 'string', format: 'uuid'),
+                                new OA\Property(property: 'debit', type: 'number', format: 'float', example: 500.00),
+                                new OA\Property(property: 'credit', type: 'number', format: 'float', example: 0.00),
+                                new OA\Property(property: 'description', type: 'string', nullable: true),
+                            ]
+                        )
+                    ),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'General ledger entry posted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Unbalanced ledger entry or validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function storeLedgerEntry(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -108,6 +173,18 @@ class AccountingController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/accounting/vat-settlements',
+        operationId: 'getVatSettlements',
+        description: 'Get VAT settlements and periodic liquidations.',
+        summary: 'Get VAT settlements',
+        security: [['bearerAuth' => []]],
+        tags: ['Accounting'],
+        responses: [
+            new OA\Response(response: 200, description: 'VAT settlements retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function vatSettlements(): JsonResponse
     {
         $settlements = DB::table('vat_settlements')

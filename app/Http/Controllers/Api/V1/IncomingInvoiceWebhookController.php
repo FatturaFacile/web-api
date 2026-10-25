@@ -14,6 +14,7 @@ use App\Services\ItalianSdi\FatturaPaParser;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use InvalidArgumentException;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class IncomingInvoiceWebhookController extends Controller
@@ -30,6 +31,55 @@ class IncomingInvoiceWebhookController extends Controller
      * Receive a supplier invoice pushed by the SDI gateway. The tenant is resolved from the recipient VAT number
      * inside the XML; delivery is idempotent through a fingerprint of the payload.
      */
+    #[OA\Post(
+        path: '/api/v1/webhooks/sdi/incoming-invoice',
+        operationId: 'incomingInvoiceWebhook',
+        description: 'Receive a supplier invoice pushed by the SDI gateway. The tenant is resolved from the recipient VAT number inside the XML; delivery is idempotent through a fingerprint of the payload.',
+        summary: 'Receive incoming supplier invoice via SDI',
+        tags: ['Webhooks', 'SDI'],
+        parameters: [
+            new OA\Parameter(
+                name: 'X-Webhook-Secret',
+                in: 'header',
+                required: true,
+                description: 'Shared webhook secret for provider authentication',
+                schema: new OA\Schema(type: 'string')
+            ),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['xml'],
+                properties: [
+                    new OA\Property(property: 'xml', type: 'string', description: 'Raw FatturaPA XML content', example: '<?xml version="1.0" encoding="UTF-8"?><p:FatturaElettronica ...>...</p:FatturaElettronica>'),
+                    new OA\Property(property: 'file_name', type: 'string', maxLength: 255, nullable: true, example: 'IT01234567890_11111.xml'),
+                    new OA\Property(property: 'provider', type: 'string', maxLength: 30, nullable: true, example: 'aruba'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(
+                response: 201,
+                description: 'Supplier invoice processed and created successfully',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 200,
+                description: 'Duplicate webhook detected, previously processed',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 401,
+                description: 'Invalid webhook secret',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
+            new OA\Response(
+                response: 422,
+                description: 'Invalid FatturaPA XML or unknown recipient tenant',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')
+            ),
+        ]
+    )]
     public function __invoke(ReceiveIncomingInvoiceRequest $request): JsonResponse
     {
         $xml = (string) $request->validated('xml');
