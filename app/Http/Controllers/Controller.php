@@ -10,7 +10,7 @@ use OpenApi\Attributes as OA;
     description: 'Official REST API documentation for FatturaFacile ERP. Publicly viewable; API requests require Bearer token authorization where indicated.',
     contact: new OA\Contact(
         name: 'FatturaFacile Technical Support',
-        email: 'admin@fatturafacile.eu',
+        email: 'info@fatturafacile.eu',
         url: 'https://fatturafacile.eu'
     ),
     license: new OA\License(
