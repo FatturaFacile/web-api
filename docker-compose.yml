@@ -39,7 +39,7 @@ services:
     volumes:
       - app_storage:/var/www/html/storage
     expose:
-      - "80"
+      - "9000"
     depends_on:
       postgres:
         condition: service_healthy
