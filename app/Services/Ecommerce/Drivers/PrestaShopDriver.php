@@ -221,7 +221,7 @@ class PrestaShopDriver extends AbstractEcommerceDriver
             'date' => substr((string) ($order['date_add'] ?? now()->toDateString()), 0, 10),
             'customer' => [
                 'remote_id' => isset($customer['id']) ? (string) $customer['id'] : null,
-                'email' => (string) ($customer['email'] ?? ''),
+                'email' => strtolower(trim((string) ($customer['email'] ?? ''))),
                 'first_name' => (string) ($customer['firstname'] ?? $address['firstname'] ?? ''),
                 'last_name' => (string) ($customer['lastname'] ?? $address['lastname'] ?? ''),
                 'company' => (string) ($address['company'] ?? $customer['company'] ?? ''),

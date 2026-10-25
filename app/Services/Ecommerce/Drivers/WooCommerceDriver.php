@@ -202,7 +202,7 @@ class WooCommerceDriver extends AbstractEcommerceDriver
             'date' => substr((string) ($order['date_created_gmt'] ?? $order['date_created'] ?? now()->toDateString()), 0, 10),
             'customer' => [
                 'remote_id' => ! empty($order['customer_id']) ? (string) $order['customer_id'] : null,
-                'email' => (string) ($billing['email'] ?? ''),
+                'email' => strtolower(trim((string) ($billing['email'] ?? ''))),
                 'first_name' => (string) ($billing['first_name'] ?? ''),
                 'last_name' => (string) ($billing['last_name'] ?? ''),
                 'company' => (string) ($billing['company'] ?? ''),

@@ -60,8 +60,9 @@ class TreasuryController extends Controller
 
             if (! empty($tx->reference)) {
                 // Check if reference matches Swiss SCOR
+                $cleanRef = strtoupper((string) preg_replace('/\s+/', '', (string) $tx->reference));
                 $qrMatch = DB::table('invoice_qr_bill_data')
-                    ->where('scor_reference', preg_replace('/\s+/', '', $tx->reference))
+                    ->whereRaw("replace(upper(scor_reference), ' ', '') = ?", [$cleanRef])
                     ->first();
 
                 if ($qrMatch) {

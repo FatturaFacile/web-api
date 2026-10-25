@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +31,16 @@ class InvoiceQrBillData extends Model
             'creditor_info' => 'array',
             'debtor_info' => 'array',
         ];
+    }
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function scorReference(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? trim($value) : null,
+        );
     }
 
     /**

@@ -215,7 +215,7 @@ class ShopifyDriver extends AbstractEcommerceDriver
             'date' => substr((string) ($order['created_at'] ?? now()->toDateString()), 0, 10),
             'customer' => [
                 'remote_id' => ! empty($customer['id']) ? (string) $customer['id'] : null,
-                'email' => (string) ($customer['email'] ?? $order['email'] ?? $order['contact_email'] ?? ''),
+                'email' => strtolower(trim((string) ($customer['email'] ?? $order['email'] ?? $order['contact_email'] ?? ''))),
                 'first_name' => (string) ($customer['first_name'] ?? $billing['first_name'] ?? ''),
                 'last_name' => (string) ($customer['last_name'] ?? $billing['last_name'] ?? ''),
                 'company' => (string) ($billing['company'] ?? ''),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -35,6 +36,16 @@ class Contact extends Model
         'price_list_id',
         'payment_term_id',
     ];
+
+    /**
+     * @return Attribute<string|null, string|null>
+     */
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => $value !== null ? strtolower(trim($value)) : null,
+        );
+    }
 
     /**
      * @return HasMany<ContactAddress, $this>
