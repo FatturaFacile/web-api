@@ -64,8 +64,19 @@ jobs:
           key: ${{ secrets.SERVER_SSH_KEY }}
           port: ${{ secrets.SERVER_PORT || 22 }}
           script: |
-            cd /opt/erp-app
-            docker compose pull
-            docker compose up -d --remove-orphans
+            set -e
+            cd ~/api.fatturafacile.eu
+
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+            docker compose pull app queue_worker scheduler
+
+            docker compose up -d --no-deps app queue_worker scheduler
+
             docker compose exec -T app php artisan migrate --force
+            docker compose exec -T app php artisan config:clear
+            docker compose exec -T app php artisan config:cache
+            docker compose exec -T app php artisan route:cache
+            docker compose exec -T app php artisan view:cache
+            docker compose exec -T app php artisan l5-swagger:generate
             docker image prune -af --filter "until=24h"
