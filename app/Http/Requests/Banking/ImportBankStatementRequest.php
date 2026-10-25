@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Banking;
 
+use App\Http\Requests\Concerns\ValidatesUploadContentLength;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -11,20 +12,13 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class ImportBankStatementRequest extends FormRequest
 {
+    use ValidatesUploadContentLength;
+
+    protected int $maxContentLengthBytes = 10 * 1024 * 1024;
+
     public function authorize(): bool
     {
         return true;
-    }
-
-    /**
-     * Guard against excessive request content lengths before processing.
-     */
-    protected function prepareForValidation(): void
-    {
-        $contentLength = (int) $this->header('Content-Length', 0);
-        if ($contentLength > 10 * 1024 * 1024) {
-            abort(413, 'Payload Too Large');
-        }
     }
 
     /**

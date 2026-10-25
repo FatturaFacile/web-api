@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\System;
 
+use App\Http\Requests\Concerns\ValidatesUploadContentLength;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -11,20 +12,13 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class RestoreUploadRequest extends FormRequest
 {
+    use ValidatesUploadContentLength;
+
+    protected int $maxContentLengthBytes = 25 * 1024 * 1024;
+
     public function authorize(): bool
     {
         return true;
-    }
-
-    /**
-     * Guard against excessive request content lengths before processing.
-     */
-    protected function prepareForValidation(): void
-    {
-        $contentLength = (int) $this->header('Content-Length', 0);
-        if ($contentLength > 20 * 1024 * 1024) {
-            abort(413, 'Payload Too Large');
-        }
     }
 
     /**
@@ -33,7 +27,7 @@ class RestoreUploadRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'file' => ['required', 'file', 'max:20480', 'extensions:zip'],
+            'file' => ['required', 'file', 'max:25600', 'extensions:zip'],
         ];
     }
 }
