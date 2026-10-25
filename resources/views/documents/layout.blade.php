@@ -29,7 +29,7 @@
         @if ($tenant?->iban) · {{ __('pdf.payment.iban') }} {{ $tenant->iban }} @endif
     </footer>
 
-    <table class="header">
+    <table class="header" role="presentation">
         <tr>
             <td style="width: 55%">
                 <strong style="font-size: 13px">{{ $tenant?->legal_name ?: $tenant?->name }}</strong><br>

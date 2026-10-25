@@ -7,7 +7,7 @@
     @endif
 
     <h2>{{ __('pdf.delivery.transport') }}</h2>
-    <table>
+    <table role="presentation">
         <tr><td style="width: 25%">{{ __('pdf.delivery.reason') }}</td><td style="width: 25%">{{ $transport['reason'] }}</td><td style="width: 25%">{{ __('pdf.delivery.appearance') }}</td><td>{{ $transport['goods_appearance'] }}</td></tr>
         <tr><td>{{ __('pdf.delivery.packages') }}</td><td>{{ $transport['packages_count'] }}</td><td>{{ __('pdf.delivery.weight') }}</td><td>{{ $transport['gross_weight_kg'] !== null ? number_format($transport['gross_weight_kg'], 2) : '' }}</td></tr>
         <tr><td>{{ __('pdf.delivery.carrier') }}</td><td>{{ $transport['carrier'] }}</td><td>{{ __('pdf.delivery.courier') }}</td><td>{{ $transport['courier'] }}</td></tr>

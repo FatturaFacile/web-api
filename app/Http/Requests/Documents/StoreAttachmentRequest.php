@@ -16,6 +16,17 @@ class StoreAttachmentRequest extends FormRequest
     }
 
     /**
+     * Guard against excessive request content lengths before processing.
+     */
+    protected function prepareForValidation(): void
+    {
+        $contentLength = (int) $this->header('Content-Length', 0);
+        if ($contentLength > 20 * 1024 * 1024) {
+            abort(413, 'Payload Too Large');
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array
@@ -23,7 +34,7 @@ class StoreAttachmentRequest extends FormRequest
         return [
             'attachable_type' => ['required', Rule::in(array_keys(Attachment::TARGET_TYPES))],
             'attachable_id' => ['required', 'uuid'],
-            'file' => ['required', 'file', 'max:10240', 'mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx,csv,txt,xml,zip'],
+            'file' => ['required', 'file', 'max:20480', 'mimes:pdf,jpg,jpeg,png,gif,doc,docx,xls,xlsx,csv,txt,xml,zip'],
         ];
     }
 

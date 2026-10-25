@@ -1,10 +1,10 @@
-<table style="width: 100%; border: 1px solid #e5e7eb; border-radius: 4px; padding: 10px; font-size: 8.5pt; color: #374151; background-color: #fafafa; page-break-inside: avoid;">
+<table role="presentation" style="width: 100%; border: 1px solid #e5e7eb; border-radius: 4px; padding: 10px; font-size: 8.5pt; color: #374151; background-color: #fafafa; page-break-inside: avoid;">
     <tr>
         <td style="width: 60%; vertical-align: top;">
             <strong style="color: #111827; text-transform: uppercase; font-size: 8pt; display: block; margin-bottom: 4px;">
                 {{ __('Payment Instructions') }}
             </strong>
-            <table style="width: 100%; border-collapse: collapse;">
+            <table role="presentation" style="width: 100%; border-collapse: collapse;">
                 @if(!empty($invoice->payment_terms ?? $invoice->paymentTerms?->name))
                     <tr>
                         <td style="width: 110px; padding: 2px 0; color: #6b7280;">{{ __('Payment Method') }}:</td>

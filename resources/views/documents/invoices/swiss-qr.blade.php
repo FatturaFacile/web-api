@@ -11,7 +11,7 @@
     @include('documents.partials.lines-table', ['items' => $invoice->lines])
 
     {{-- Riepilogo totali e imposte --}}
-    <table style="width: 100%; border-collapse: collapse; margin-top: 10px; page-break-inside: avoid;">
+    <table role="presentation" style="width: 100%; border-collapse: collapse; margin-top: 10px; page-break-inside: avoid;">
         <tr>
             <td style="width: 55%; vertical-align: top; padding-right: 20px;">
                 @if(!empty($invoice->notes))
@@ -20,7 +20,7 @@
                 @endif
             </td>
             <td style="width: 45%; vertical-align: top;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 9pt;">
+                <table role="presentation" style="width: 100%; border-collapse: collapse; font-size: 9pt;">
                     <tr>
                         <td style="padding: 4px 6px; text-align: left; color: #4b5563;">{{ __('Subtotal') }}:</td>
                         <td style="padding: 4px 6px; text-align: right;">{{ number_format($invoice->subtotal, 2, '.', "'") }} {{ $invoice->currency }}</td>

@@ -36,7 +36,7 @@
         </style>
 
         <div class="qr-slip">
-            <table>
+            <table role="presentation">
                 <tr>
                     {{-- Receipt --}}
                     <td class="qr-receipt">
@@ -61,7 +61,7 @@
                             <div class="qr-blank"></div>
                         @endif
 
-                        <table style="margin-top: 8mm">
+                        <table role="presentation" style="margin-top: 8mm">
                             <tr>
                                 <td style="width: 16mm"><div class="qr-label">{{ __('pdf.qr.currency') }}</div><div class="qr-value">{{ $qr['currency'] }}</div></td>
                                 <td><div class="qr-label">{{ __('pdf.qr.amount') }}</div><div class="qr-value">{{ $qr['amount'] }}</div></td>
@@ -73,12 +73,12 @@
 
                     {{-- Payment part --}}
                     <td class="qr-payment">
-                        <table>
+                        <table role="presentation">
                             <tr>
                                 <td style="width: 56mm">
                                     <div class="qr-title">{{ __('pdf.qr.payment_part') }}</div>
                                     <img class="qr-image" src="{{ $qr['image'] }}" alt="">
-                                    <table style="margin-top: 5mm">
+                                    <table role="presentation" style="margin-top: 5mm">
                                         <tr>
                                             <td style="width: 18mm"><div class="qr-label">{{ __('pdf.qr.currency') }}</div><div class="qr-value">{{ $qr['currency'] }}</div></td>
                                             <td><div class="qr-label">{{ __('pdf.qr.amount') }}</div><div class="qr-value">{{ $qr['amount'] }}</div></td>

@@ -17,6 +17,17 @@ class ImportBankStatementRequest extends FormRequest
     }
 
     /**
+     * Guard against excessive request content lengths before processing.
+     */
+    protected function prepareForValidation(): void
+    {
+        $contentLength = (int) $this->header('Content-Length', 0);
+        if ($contentLength > 10 * 1024 * 1024) {
+            abort(413, 'Payload Too Large');
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array

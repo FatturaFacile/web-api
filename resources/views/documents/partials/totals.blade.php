@@ -1,5 +1,5 @@
 @if ($totals)
-    <table class="totals">
+    <table class="totals" role="presentation">
         <tr><td>{{ __('pdf.totals.net') }}</td><td class="right">{{ number_format($totals['net'], 2) }} {{ $currency }}</td></tr>
         <tr><td>{{ __('pdf.totals.tax') }}</td><td class="right">{{ number_format($totals['tax'], 2) }} {{ $currency }}</td></tr>
         @if (($totals['stamp_duty'] ?? 0) > 0)

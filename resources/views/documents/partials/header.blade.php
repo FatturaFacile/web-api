@@ -1,4 +1,4 @@
-<table style="width: 100%; margin-bottom: 25px; border-bottom: 1px solid #e5e7eb; padding-bottom: 15px;">
+<table role="presentation" style="width: 100%; margin-bottom: 25px; border-bottom: 1px solid #e5e7eb; padding-bottom: 15px;">
     <tr>
         <td style="width: 50%; vertical-align: top;">
             @if(!empty($document->tenant->logo_url))
@@ -21,7 +21,7 @@
             <h1 style="margin: 0 0 6px 0; font-size: 18pt; text-transform: uppercase; color: #1f2937; letter-spacing: 0.5px;">
                 {{ $document->document_type_label ?? __('Invoice') }}
             </h1>
-            <table style="margin-left: auto; font-size: 9pt; color: #374151; border-collapse: collapse;">
+            <table role="presentation" style="margin-left: auto; font-size: 9pt; color: #374151; border-collapse: collapse;">
                 <tr>
                     <td style="padding: 2px 8px; font-weight: bold; text-align: right;">{{ __('Number') }}:</td>
                     <td style="padding: 2px 0 2px 8px; text-align: right;">{{ $document->number ?? $document->document_number }}</td>

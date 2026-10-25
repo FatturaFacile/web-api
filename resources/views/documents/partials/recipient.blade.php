@@ -1,4 +1,4 @@
-<table style="width: 100%; margin-bottom: 25px;">
+<table role="presentation" style="width: 100%; margin-bottom: 25px;">
     <tr>
         <td style="width: 50%; vertical-align: top;">
             {{-- Spazio sinistro opzionale per dettagli spedizione / magazzino se presenti --}}

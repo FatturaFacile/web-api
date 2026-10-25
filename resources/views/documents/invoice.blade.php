@@ -15,7 +15,7 @@
 
     @if ($payment['method'] || $payment['terms'] || $payment['iban'])
         <h2>{{ __('pdf.payment.title') }}</h2>
-        <table>
+        <table role="presentation">
             @if ($payment['method']) <tr><td style="width: 30%">{{ __('pdf.payment.method') }}</td><td>{{ $payment['method'] }}</td></tr> @endif
             @if ($payment['terms']) <tr><td>{{ __('pdf.payment.terms') }}</td><td>{{ $payment['terms'] }}</td></tr> @endif
             @if ($payment['bank_name']) <tr><td>{{ __('pdf.payment.bank') }}</td><td>{{ $payment['bank_name'] }}</td></tr> @endif
