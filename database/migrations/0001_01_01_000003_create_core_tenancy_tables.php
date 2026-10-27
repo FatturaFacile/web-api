@@ -33,7 +33,7 @@ return new class extends Migration
 
         Schema::create('tenant_user', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('role')->default('member'); // owner, admin, accountant, technician, member
             $table->json('permissions')->nullable();

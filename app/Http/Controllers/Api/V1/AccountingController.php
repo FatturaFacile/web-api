@@ -6,21 +6,17 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
-use App\Services\Tenancy\TenantContext;
+use App\Models\ChartOfAccount;
+use App\Models\GeneralLedgerEntry;
+use App\Models\VatSettlement;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class AccountingController extends Controller
 {
     use ApiResponse;
-
-    public function __construct(
-        private readonly TenantContext $tenantContext
-    ) {}
 
     #[OA\Get(
         path: '/api/v1/accounting/chart-of-accounts',
@@ -36,11 +32,7 @@ class AccountingController extends Controller
     )]
     public function chartOfAccounts(): JsonResponse
     {
-        $accounts = DB::table('chart_of_accounts')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->orderBy('code')
-            ->get();
+        $accounts = ChartOfAccount::orderBy('code')->get();
 
         return $this->successResponse(data: $accounts, message: 'Chart of accounts retrieved');
     }
@@ -62,11 +54,7 @@ class AccountingController extends Controller
     )]
     public function ledgerEntries(): JsonResponse
     {
-        $entries = DB::table('general_ledger_entries')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('date')
-            ->paginate(25);
+        $entries = GeneralLedgerEntry::latest('date')->paginate(25);
 
         return $this->successResponse(data: $entries, message: 'General ledger entries retrieved');
     }
@@ -138,36 +126,29 @@ class AccountingController extends Controller
             );
         }
 
-        $id = (string) Str::uuid();
-        DB::transaction(function () use ($id, $validated): void {
-            DB::table('general_ledger_entries')->insert([
-                'id' => $id,
-                'tenant_id' => $this->tenantContext->getTenantId(),
+        $entry = GeneralLedgerEntry::resolveConnection()->transaction(function () use ($validated): GeneralLedgerEntry {
+            $entry = GeneralLedgerEntry::create([
                 'entry_number' => $validated['entry_number'],
                 'date' => $validated['date'],
                 'description' => $validated['description'],
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             $lineNum = 1;
             foreach ($validated['lines'] as $line) {
-                DB::table('general_ledger_lines')->insert([
-                    'id' => (string) Str::uuid(),
-                    'general_ledger_entry_id' => $id,
+                $entry->lines()->create([
                     'account_id' => $line['account_id'],
                     'line_number' => $lineNum++,
                     'debit' => $line['debit'],
                     'credit' => $line['credit'],
                     'description' => $line['description'] ?? null,
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
+
+            return $entry;
         });
 
         return $this->successResponse(
-            data: ['id' => $id, 'balanced_amount' => $totalDebit],
+            data: ['id' => $entry->id, 'balanced_amount' => $totalDebit],
             message: 'General ledger entry posted successfully',
             statusCode: Response::HTTP_CREATED
         );
@@ -187,11 +168,7 @@ class AccountingController extends Controller
     )]
     public function vatSettlements(): JsonResponse
     {
-        $settlements = DB::table('vat_settlements')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('year')
-            ->get();
+        $settlements = VatSettlement::latest('year')->get();
 
         return $this->successResponse(data: $settlements, message: 'VAT settlements retrieved');
     }

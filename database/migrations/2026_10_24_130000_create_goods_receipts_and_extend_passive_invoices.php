@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('goods_receipts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('supplier_id')->constrained('contacts')->cascadeOnDelete();
             $table->foreignUuid('purchase_order_id')->nullable()->constrained('purchase_orders')->nullOnDelete();
             $table->string('receipt_number', 50);

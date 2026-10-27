@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('ecommerce_channels', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('name', 100);
             $table->string('driver', 30); // woocommerce, shopify, prestashop
             $table->string('api_url')->nullable(); // optional for Shopify (shop domain is stored in the credentials)
@@ -34,7 +34,7 @@ return new class extends Migration
 
         Schema::create('ecommerce_mappings', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('channel_id')->constrained('ecommerce_channels')->cascadeOnDelete();
             $table->string('entity_type', 20); // product, product_variant, order, contact
             $table->uuid('local_id'); // ERP records use UUID keys

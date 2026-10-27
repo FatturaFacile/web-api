@@ -6,9 +6,9 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\EmployeeProfile;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 
 class HrController extends Controller
 {
@@ -20,10 +20,7 @@ class HrController extends Controller
 
     public function employees(): JsonResponse
     {
-        $employees = DB::table('employee_profiles')
-            ->join('users', 'users.id', '=', 'employee_profiles.user_id')
-            ->where('employee_profiles.tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('employee_profiles.deleted_at')
+        $employees = EmployeeProfile::join('users', 'users.id', '=', 'employee_profiles.user_id')
             ->select('employee_profiles.*', 'users.name', 'users.email', 'users.phone')
             ->get();
 
@@ -32,11 +29,8 @@ class HrController extends Controller
 
     public function frontalieri(): JsonResponse
     {
-        $frontalieri = DB::table('employee_profiles')
-            ->join('users', 'users.id', '=', 'employee_profiles.user_id')
-            ->where('employee_profiles.tenant_id', $this->tenantContext->getTenantId())
+        $frontalieri = EmployeeProfile::join('users', 'users.id', '=', 'employee_profiles.user_id')
             ->where('employee_profiles.is_cross_border_commuter', true)
-            ->whereNull('employee_profiles.deleted_at')
             ->select('employee_profiles.*', 'users.name', 'users.email')
             ->get();
 

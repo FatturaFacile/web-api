@@ -209,9 +209,8 @@ class AuthController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['tenant_id'],
                 properties: [
-                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
+                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true, example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
                 ]
             )
         ),
@@ -241,11 +240,25 @@ class AuthController extends Controller
     public function switchTenant(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'tenant_id' => ['required', 'uuid', 'exists:tenants,id'],
+            'tenant_id' => ['nullable', 'uuid', 'exists:tenants,id'],
         ]);
 
         /** @var User $user */
         $user = $request->user();
+
+        if (empty($validated['tenant_id'])) {
+            $this->tenantContext->setTenant(null);
+
+            return $this->successResponse(
+                data: [
+                    'tenant_id' => null,
+                    'name' => null,
+                    'country' => null,
+                    'role' => null,
+                ],
+                message: 'Active organization cleared successfully'
+            );
+        }
 
         if (! $user->belongsToTenant($validated['tenant_id'])) {
             return $this->problemDetailsResponse(

@@ -13,7 +13,6 @@ use App\Http\Resources\CatalogResource;
 use App\Models\LoyaltyCard;
 use App\Services\Sales\DocumentNumberingService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class LoyaltyCardController extends Controller
@@ -41,7 +40,7 @@ class LoyaltyCardController extends Controller
         $initial = (float) ($data['initial_balance'] ?? 0);
         unset($data['initial_balance']);
 
-        $card = DB::transaction(function () use ($data, $initial): LoyaltyCard {
+        $card = LoyaltyCard::resolveConnection()->transaction(function () use ($data, $initial): LoyaltyCard {
             $data['card_number'] ??= $this->numbering->next('loyalty_card')['number'];
             $card = LoyaltyCard::create($data);
 

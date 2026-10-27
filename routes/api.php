@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\LookupController;
+use App\Http\Controllers\Api\TranslationController;
 use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
@@ -70,6 +72,9 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
 
+    Route::get('/translations/{locale}', [TranslationController::class, 'index'])->name('translations.index');
+    Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('lookups.getByCategory');
+
     // ----------------------------------------------------
     // SDI provider webhook (authenticated by shared secret)
     // ----------------------------------------------------
@@ -81,6 +86,9 @@ Route::prefix('v1')->group(function (): void {
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
     // ----------------------------------------------------
     Route::middleware(['auth:sanctum', 'tenant', 'locale'])->group(function (): void {
+
+        Route::post('/translations', [TranslationController::class, 'storeOrUpdate'])->name('translations.storeOrUpdate');
+        Route::post('/lookups/translations', [LookupController::class, 'saveTranslation'])->name('lookups.saveTranslation');
 
         // 1. Authentication & Context
         Route::prefix('auth')->name('auth.')->group(function (): void {
@@ -375,3 +383,6 @@ Route::prefix('v1')->group(function (): void {
         });
     });
 });
+
+Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('api.lookups.getByCategory');
+Route::post('/lookups/translations', [LookupController::class, 'saveTranslation'])->name('api.lookups.saveTranslation');

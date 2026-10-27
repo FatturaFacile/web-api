@@ -9,7 +9,6 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
 use App\Services\ItalianSdi\FatturaPaBuilderService;
 use App\Services\SwissQrBill\QrBillGeneratorService;
-use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -20,7 +19,6 @@ class CrmController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly TenantContext $tenantContext,
         private readonly FatturaPaBuilderService $fatturaPaBuilder,
         private readonly QrBillGeneratorService $qrBillGenerator
     ) {}
@@ -206,10 +204,7 @@ class CrmController extends Controller
         $addressData = $validated['address'] ?? null;
         unset($validated['address']);
 
-        $contact = new Contact;
-        $contact->tenant_id = $this->tenantContext->getTenantId();
-        $contact->fill($validated);
-        $contact->save();
+        $contact = Contact::create($validated);
 
         if ($addressData !== null) {
             $contact->addresses()->create([

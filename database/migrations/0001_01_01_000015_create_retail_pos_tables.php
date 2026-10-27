@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('pos_terminals', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('terminal_code', 50)->index();
             $table->string('name');
             $table->string('hardware_serial', 100)->nullable();
@@ -29,7 +29,7 @@ return new class extends Migration
 
         Schema::create('pos_sessions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('pos_terminal_id')->constrained('pos_terminals')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->timestamp('opened_at');
@@ -43,7 +43,7 @@ return new class extends Migration
 
         Schema::create('pos_sales', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('pos_session_id')->constrained('pos_sessions')->cascadeOnDelete();
             $table->string('receipt_number', 50)->index();
             $table->decimal('total_net', 15, 2);

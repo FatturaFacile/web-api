@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('employee_profiles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->boolean('is_cross_border_commuter')->default(false)->index(); // Frontaliere IT <-> CH
             $table->string('social_security_number', 50)->nullable()->index();     // Codice Fiscale or Swiss AHV/AVS (756.xxxx.xxxx.xx)

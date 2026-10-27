@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('construction_sites', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('code', 50)->index();
             $table->string('name');
@@ -33,7 +33,7 @@ return new class extends Migration
 
         Schema::create('progress_billings', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('construction_site_id')->constrained('construction_sites')->cascadeOnDelete();
             $table->string('sal_number', 50)->index(); // e.g. SAL-01, SAL-02
             $table->date('period_start');
@@ -50,7 +50,7 @@ return new class extends Migration
 
         Schema::create('conformity_certificates', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('construction_site_id')->constrained('construction_sites')->cascadeOnDelete();
             $table->enum('type', ['it_dico', 'it_diri', 'ch_niv_oibt'])->index(); // IT DiCo / DiRi or Swiss NIV / OIBT
             $table->string('certificate_number', 50)->nullable();

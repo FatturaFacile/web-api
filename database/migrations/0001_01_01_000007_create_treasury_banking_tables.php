@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('bank_accounts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('bank_name');
             $table->string('iban', 34)->index();
             $table->string('qr_iban', 34)->nullable()->index();
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('bank_transactions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('bank_account_id')->constrained('bank_accounts')->cascadeOnDelete();
             $table->date('booking_date')->index();
             $table->date('value_date')->index();
@@ -48,7 +48,7 @@ return new class extends Migration
 
         Schema::create('payment_batches', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->enum('format', ['sepa_pain_001_it', 'iso_pain_001_ch'])->default('sepa_pain_001_it');
             $table->string('status', 30)->default('draft')->index(); // draft, generated, transmitted, processed, rejected
             $table->string('file_path')->nullable();

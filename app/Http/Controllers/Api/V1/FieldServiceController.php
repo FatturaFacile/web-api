@@ -6,38 +6,26 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
-use App\Services\Tenancy\TenantContext;
+use App\Models\Ticket;
+use App\Models\WorkOrder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class FieldServiceController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(
-        private readonly TenantContext $tenantContext
-    ) {}
-
     public function tickets(): JsonResponse
     {
-        $tickets = DB::table('tickets')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest()
-            ->paginate(25);
+        $tickets = Ticket::latest()->paginate(25);
 
         return $this->successResponse(data: $tickets, message: 'Tickets retrieved');
     }
 
     public function workOrders(): JsonResponse
     {
-        $orders = DB::table('work_orders')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('date')
-            ->paginate(25);
+        $orders = WorkOrder::latest('date')->paginate(25);
 
         return $this->successResponse(data: $orders, message: 'Work orders (Rapportini) retrieved');
     }
@@ -54,24 +42,18 @@ class FieldServiceController extends Controller
             'signature_base64' => ['required', 'string'],
         ]);
 
-        $order = DB::table('work_orders')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->where('id', $id)
-            ->first();
+        $order = WorkOrder::find($id);
 
         if (! $order) {
             return $this->problemDetailsResponse('Not Found', 'Work order not found', Response::HTTP_NOT_FOUND);
         }
 
-        DB::table('work_orders')
-            ->where('id', $id)
-            ->update([
-                'client_signed_by' => $validated['client_signed_by'],
-                'client_signature_path' => 'signatures/wo-'.$id.'.png',
-                'signed_at' => now(),
-                'status' => 'signed',
-                'updated_at' => now(),
-            ]);
+        $order->update([
+            'client_signed_by' => $validated['client_signed_by'],
+            'client_signature_path' => 'signatures/wo-'.$id.'.png',
+            'signed_at' => now(),
+            'status' => 'signed',
+        ]);
 
         return $this->successResponse(
             data: ['id' => $id, 'status' => 'signed'],

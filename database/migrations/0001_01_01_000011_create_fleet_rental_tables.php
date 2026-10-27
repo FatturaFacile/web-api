@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('rental_vehicles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->string('category', 50)->default('economy'); // economy, compact, suv, van, luxury
             $table->decimal('daily_rate', 10, 2);
@@ -29,7 +29,7 @@ return new class extends Migration
 
         Schema::create('rental_bookings', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('rental_vehicle_id')->constrained('rental_vehicles')->cascadeOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->dateTime('start_date');
@@ -45,7 +45,7 @@ return new class extends Migration
 
         Schema::create('rental_contracts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('rental_booking_id')->constrained('rental_bookings')->cascadeOnDelete();
             $table->string('contract_number', 50)->index();
             $table->longText('agreement_terms')->nullable();
@@ -59,7 +59,7 @@ return new class extends Migration
 
         Schema::create('damage_inspections', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('rental_booking_id')->constrained('rental_bookings')->cascadeOnDelete();
             $table->enum('type', ['check_in', 'check_out'])->index();
             $table->unsignedInteger('mileage');

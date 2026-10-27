@@ -15,7 +15,6 @@ use App\Models\Product;
 use App\Services\Catalog\PriceResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class PriceListController extends Controller
@@ -77,7 +76,7 @@ class PriceListController extends Controller
      */
     private function persist(PriceList $list, array $data): PriceList
     {
-        return DB::transaction(function () use ($list, $data): PriceList {
+        return PriceList::resolveConnection()->transaction(function () use ($list, $data): PriceList {
             $items = $data['items'] ?? null;
             unset($data['items']);
 

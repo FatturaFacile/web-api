@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('chart_of_accounts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('code', 50)->index(); // Account code (e.g. 1000 Cash, 2000 AP)
             $table->string('name');
             $table->enum('type', ['asset', 'liability', 'equity', 'revenue', 'expense'])->index();
@@ -29,7 +29,7 @@ return new class extends Migration
 
         Schema::create('general_ledger_entries', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('entry_number', 50)->index();
             $table->date('date')->index();
             $table->text('description');
@@ -56,7 +56,7 @@ return new class extends Migration
 
         Schema::create('vat_settlements', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->enum('period_type', ['monthly', 'quarterly'])->default('monthly');
             $table->unsignedSmallInteger('year')->index();
             $table->unsignedTinyInteger('period')->index(); // Month 1-12 or Quarter 1-4

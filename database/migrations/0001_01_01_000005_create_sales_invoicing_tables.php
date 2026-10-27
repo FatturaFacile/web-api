@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('quotes', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('contact_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('quote_number', 50)->index();
             $table->date('date');
@@ -47,7 +47,7 @@ return new class extends Migration
 
         Schema::create('sales_orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('contact_id')->constrained('contacts')->cascadeOnDelete();
             $table->foreignUuid('quote_id')->nullable()->constrained('quotes')->nullOnDelete();
             $table->string('order_number', 50)->index();
@@ -80,7 +80,7 @@ return new class extends Migration
 
         Schema::create('invoices', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('contact_id')->constrained('contacts')->cascadeOnDelete();
             $table->enum('invoice_type', ['standard', 'sdi_electronic', 'ch_qr_bill', 'credit_note', 'proforma'])->default('standard');
             $table->string('invoice_number', 50)->index();

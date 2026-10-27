@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('document_sequences', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('document_type', 30); // invoice, credit_note, proforma, quote, sales_order, delivery_note
             $table->unsignedSmallInteger('fiscal_year');
             $table->string('prefix', 20)->default('');
@@ -28,7 +28,7 @@ return new class extends Migration
 
         Schema::create('payments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->decimal('amount', 15, 2);
             $table->date('paid_at');
@@ -42,7 +42,7 @@ return new class extends Migration
 
         Schema::create('document_events', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->uuidMorphs('eventable');
             $table->foreignUuid('user_id')->nullable()->index();
             $table->string('event', 50)->index();

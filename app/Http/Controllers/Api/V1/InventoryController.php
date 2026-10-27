@@ -8,20 +8,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Inventory\StoreProductRequest;
 use App\Http\Requests\Inventory\UpdateProductRequest;
 use App\Http\Responses\ApiResponse;
+use App\Models\DeliveryNote;
 use App\Models\Product;
-use App\Services\Tenancy\TenantContext;
+use App\Models\StockMovement;
+use App\Models\Warehouse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class InventoryController extends Controller
 {
     use ApiResponse;
-
-    public function __construct(
-        private readonly TenantContext $tenantContext
-    ) {}
 
     public function products(Request $request): JsonResponse
     {
@@ -51,31 +48,21 @@ class InventoryController extends Controller
 
     public function warehouses(): JsonResponse
     {
-        $warehouses = DB::table('warehouses')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->get();
+        $warehouses = Warehouse::all();
 
         return $this->successResponse(data: $warehouses, message: 'Warehouses retrieved');
     }
 
     public function movements(Request $request): JsonResponse
     {
-        $movements = DB::table('stock_movements')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->latest()
-            ->paginate(25);
+        $movements = StockMovement::latest()->paginate(25);
 
         return $this->successResponse(data: $movements, message: 'Stock movements retrieved');
     }
 
     public function deliveryNotes(Request $request): JsonResponse
     {
-        $ddts = DB::table('delivery_notes')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('date')
-            ->paginate(25);
+        $ddts = DeliveryNote::latest('date')->paginate(25);
 
         return $this->successResponse(data: $ddts, message: 'Delivery notes (DDT) retrieved');
     }

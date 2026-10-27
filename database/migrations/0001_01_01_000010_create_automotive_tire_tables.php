@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('vehicles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('license_plate', 20)->index(); // IT (e.g. GA123CD) or CH (e.g. TI 123456)
             $table->string('vin_chassis', 30)->nullable()->index();
@@ -32,7 +32,7 @@ return new class extends Migration
 
         Schema::create('tire_hotel_records', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->enum('season', ['summer', 'winter', 'all_season'])->default('winter')->index();
             $table->string('brand', 50); // Michelin, Pirelli, etc.
@@ -54,7 +54,7 @@ return new class extends Migration
 
         Schema::create('vehicle_inspections', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('vehicle_id')->constrained('vehicles')->cascadeOnDelete();
             $table->enum('type', ['it_revisione', 'ch_mfk'])->default('it_revisione')->index();
             $table->date('scheduled_date')->index();

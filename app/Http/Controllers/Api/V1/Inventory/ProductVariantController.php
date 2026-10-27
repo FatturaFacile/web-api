@@ -16,7 +16,6 @@ use App\Models\Product;
 use App\Services\Inventory\ProductReferences;
 use App\Services\Inventory\StockService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -136,7 +135,7 @@ class ProductVariantController extends Controller
             throw ValidationException::withMessages(['variant' => __('inventory.variant_has_references')]);
         }
 
-        DB::transaction(function () use ($variant): void {
+        $variant->getConnection()->transaction(function () use ($variant): void {
             EcommerceMapping::query()->where('local_id', $variant->id)->delete();
             $variant->forceDelete();
         });
