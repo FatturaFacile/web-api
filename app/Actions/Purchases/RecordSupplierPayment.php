@@ -24,7 +24,11 @@ class RecordSupplierPayment
     public function execute(PassiveInvoice $invoice, array $data): SupplierPayment
     {
         return DB::transaction(function () use ($invoice, $data): SupplierPayment {
-            $invoice = PassiveInvoice::lockForUpdate()->findOrFail($invoice->id);
+            $invoice = PassiveInvoice::withoutGlobalScopes()
+                ->where('id', $invoice->id)
+                ->when($invoice->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
+                ->lockForUpdate()
+                ->firstOrFail();
             $amount = round((float) $data['amount'], 2);
 
             if (($data['type'] ?? 'payment') !== 'bank_fee' && $amount > round((float) $invoice->total_amount - (float) $invoice->total_paid, 2)) {

@@ -23,10 +23,6 @@ class TenantScope implements Scope
                 $query->where($column, $tenantId)
                     ->orWhereNull($column);
             });
-
-            return;
         }
-
-        $builder->whereNull($model->qualifyColumn('tenant_id'));
     }
 }

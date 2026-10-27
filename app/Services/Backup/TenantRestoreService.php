@@ -43,15 +43,17 @@ use ZipArchive;
  */
 class TenantRestoreService
 {
-    private const INSERT_VARIABLE_LIMIT = 900;
+    private const int INSERT_VARIABLE_LIMIT = 900;
 
     public function __construct(
-        private readonly TenantBackupService $backups,
-        private readonly TenantContext $tenantContext,
-        private readonly RecordPayment $payments,
-        private readonly RecordSupplierPayment $supplierPayments,
+        private readonly TenantBackupService       $backups,
+        private readonly TenantContext             $tenantContext,
+        private readonly RecordPayment             $payments,
+        private readonly RecordSupplierPayment     $supplierPayments,
         private readonly BankReconciliationService $reconciliation,
-    ) {}
+    )
+    {
+    }
 
     /**
      * Restore a completed backup of the tenant.
@@ -65,11 +67,11 @@ class TenantRestoreService
         $disk = Storage::disk($backup->disk);
         $source = $disk->readStream($backup->storagePath());
 
-        if (! $backup->isCompleted() || ! is_resource($source)) {
+        if (!$backup->isCompleted() || !is_resource($source)) {
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::MISSING_ARCHIVE);
         }
 
-        $temporary = (string) tempnam(sys_get_temp_dir(), 'tenant-restore-');
+        $temporary = (string)tempnam(sys_get_temp_dir(), 'tenant-restore-');
 
         try {
             file_put_contents($temporary, $source);
@@ -92,7 +94,7 @@ class TenantRestoreService
     {
         $zip = new ZipArchive;
 
-        if (! is_file($path) || $zip->open($path, ZipArchive::RDONLY) !== true) {
+        if (!is_file($path) || $zip->open($path, ZipArchive::RDONLY) !== true) {
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::UNREADABLE_ARCHIVE);
         }
 
@@ -111,10 +113,10 @@ class TenantRestoreService
 
             Tenant::query()->whereKey($tenant->id)->update(['is_maintenance' => true]);
 
-            $staging = 'restore-staging/'.Str::uuid();
+            $staging = 'restore-staging/' . Str::uuid();
             $staged = $this->stageFiles($zip, $manifest['files'], $staging);
 
-            $summary = DB::transaction(fn (): array => $this->restoreData($zip, $tenant, $scopes));
+            $summary = DB::transaction(fn(): array => $this->restoreData($zip, $tenant, $scopes));
 
             $this->publishFiles($staged, $staging, $tenant);
             $summary['files'] = count($staged);
@@ -124,7 +126,7 @@ class TenantRestoreService
             return $summary;
         } catch (Throwable $e) {
             if ($staging !== null) {
-                Storage::disk((string) config('backup.files_disk'))->deleteDirectory($staging);
+                Storage::disk((string)config('backup.files_disk'))->deleteDirectory($staging);
             }
 
             throw $e;
@@ -147,13 +149,13 @@ class TenantRestoreService
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::MISSING_MANIFEST);
         }
 
-        $manifest = json_decode((string) $zip->getFromName('manifest.json'), true);
+        $manifest = json_decode((string)$zip->getFromName('manifest.json'), true);
 
-        if (! is_array($manifest)
-            || ! is_string($manifest['tenant_id'] ?? null)
-            || ! is_array($manifest['tables'] ?? null)
-            || ! is_array($manifest['files'] ?? null)
-            || ! is_string($manifest['data_sha256'] ?? null)
+        if (!is_array($manifest)
+            || !is_string($manifest['tenant_id'] ?? null)
+            || !is_array($manifest['tables'] ?? null)
+            || !is_array($manifest['files'] ?? null)
+            || !is_string($manifest['data_sha256'] ?? null)
             || preg_match('/^[a-f0-9]{64}$/', $manifest['data_sha256']) !== 1) {
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_MANIFEST);
         }
@@ -169,7 +171,7 @@ class TenantRestoreService
         $this->assertChecksum($zip, $manifest['data_sha256']);
 
         foreach ($manifest['files'] as $entry) {
-            if (! is_string($entry) || ! str_starts_with($entry, 'files/') || str_contains($entry, '..') || str_contains($entry, '\\') || str_contains($entry, "\0") || str_contains($entry, '//')) {
+            if (!is_string($entry) || !str_starts_with($entry, 'files/') || str_contains($entry, '..') || str_contains($entry, '\\') || str_contains($entry, "\0") || str_contains($entry, '//')) {
                 throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::UNSAFE_PATH, ['path' => is_string($entry) ? $entry : '?']);
             }
 
@@ -188,13 +190,13 @@ class TenantRestoreService
         $stream = $zip->getStream('data.json');
         $context = hash_init('sha256');
 
-        while (is_resource($stream) && ! feof($stream)) {
-            hash_update($context, (string) fread($stream, 65536));
+        while (is_resource($stream) && !feof($stream)) {
+            hash_update($context, (string)fread($stream, 65536));
         }
 
         is_resource($stream) && fclose($stream);
 
-        if (! hash_equals($expected, hash_final($context))) {
+        if (!hash_equals($expected, hash_final($context))) {
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::CHECKSUM_MISMATCH);
         }
     }
@@ -203,7 +205,7 @@ class TenantRestoreService
      * Read the whole data file once: it must belong to the tenant, name known tables, contain only rows of the tenant
      * and match the row counts of the manifest.
      *
-     * @param  array<string, mixed>  $expectedCounts
+     * @param array<string, mixed> $expectedCounts
      */
     private function assertData(ZipArchive $zip, Tenant $tenant, array $expectedCounts): void
     {
@@ -211,7 +213,7 @@ class TenantRestoreService
         $counts = [];
 
         foreach ($this->readData($zip, $tenant) as [$table, $row]) {
-            if (! in_array($table, $known, true)) {
+            if (!in_array($table, $known, true)) {
                 throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::UNKNOWN_TABLE, ['table' => $table]);
             }
 
@@ -246,14 +248,14 @@ class TenantRestoreService
     {
         $stream = $zip->getStream('data.json');
 
-        if (! is_resource($stream)) {
+        if (!is_resource($stream)) {
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::MISSING_DATA);
         }
 
         try {
-            $head = json_decode(rtrim((string) fgets($stream)).'}}', true);
+            $head = json_decode(rtrim((string)fgets($stream)) . '}}', true);
 
-            if (! is_array($head) || ($head['tenant_id'] ?? null) !== $tenant->id) {
+            if (!is_array($head) || ($head['tenant_id'] ?? null) !== $tenant->id) {
                 throw InvalidBackupArchiveException::because(is_array($head) && isset($head['tenant_id']) ? InvalidBackupArchiveException::TENANT_MISMATCH : InvalidBackupArchiveException::INVALID_DATA);
             }
 
@@ -288,14 +290,14 @@ class TenantRestoreService
 
                 $row = $current === null ? null : json_decode($line[0] === ',' ? substr($line, 1) : $line, true);
 
-                if (! is_array($row)) {
+                if (!is_array($row)) {
                     throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_DATA);
                 }
 
                 yield [$current, $row];
             }
 
-            if (! $closed) {
+            if (!$closed) {
                 throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_DATA);
             }
         } finally {
@@ -306,18 +308,18 @@ class TenantRestoreService
     /**
      * Copy the archived files to a staging area, so a failure cannot leave the tenant folder half written.
      *
-     * @param  array<int, string>  $entries
+     * @param array<int, string> $entries
      * @return array<int, string> staged relative paths (below `files/`)
      */
     private function stageFiles(ZipArchive $zip, array $entries, string $staging): array
     {
-        $disk = Storage::disk((string) config('backup.files_disk'));
+        $disk = Storage::disk((string)config('backup.files_disk'));
         $staged = [];
 
         foreach ($entries as $entry) {
             $stream = $zip->getStream($entry);
 
-            if (! is_resource($stream)) {
+            if (!is_resource($stream)) {
                 throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::MISSING_FILE, ['path' => $entry]);
             }
 
@@ -333,11 +335,11 @@ class TenantRestoreService
     /**
      * Replace the files of the tenant with the staged ones.
      *
-     * @param  array<int, string>  $staged
+     * @param array<int, string> $staged
      */
     private function publishFiles(array $staged, string $staging, Tenant $tenant): void
     {
-        $disk = Storage::disk((string) config('backup.files_disk'));
+        $disk = Storage::disk((string)config('backup.files_disk'));
 
         $disk->deleteDirectory("tenants/{$tenant->id}");
 
@@ -351,7 +353,7 @@ class TenantRestoreService
     /**
      * Delete the data of the tenant and load the archive, all inside the caller's transaction.
      *
-     * @param  array<string, \Closure(Builder): Builder>  $scopes
+     * @param array<string, \Closure(Builder): Builder> $scopes
      * @return array{tables: int, rows: int, skipped_rows: int}
      */
     private function restoreData(ZipArchive $zip, Tenant $tenant, array $scopes): array
@@ -438,7 +440,7 @@ class TenantRestoreService
     /**
      * The current values of the redacted columns, by table and row id.
      *
-     * @param  array<string, \Closure>  $scopes
+     * @param array<string, \Closure> $scopes
      * @return array<string, array<string, array<string, mixed>>>
      */
     private function snapshotSecrets(array $scopes): array
@@ -448,12 +450,12 @@ class TenantRestoreService
         foreach (array_keys($scopes) as $table) {
             $columns = array_values(array_intersect(TenantBackupService::REDACTED_COLUMNS, Schema::getColumnListing($table)));
 
-            if ($columns === [] || ! Schema::hasColumn($table, 'id')) {
+            if ($columns === [] || !Schema::hasColumn($table, 'id')) {
                 continue;
             }
 
             foreach ($scopes[$table](DB::table($table))->get(array_merge(['id'], $columns)) as $row) {
-                $secrets[$table][$row->id] = (array) $row;
+                $secrets[$table][$row->id] = (array)$row;
             }
         }
 
@@ -463,7 +465,7 @@ class TenantRestoreService
     /**
      * Columns, nullability, the self-referencing column and the foreign keys that point outside the restored tables.
      *
-     * @param  array<string, \Closure>  $scopes
+     * @param array<string, \Closure> $scopes
      * @return array{columns: array<int, string>, nullable: array<string, bool>, self: ?string, external: array<string, array{table: string, column: string}>}
      */
     private function tableSchema(string $table, array $scopes): array
@@ -478,7 +480,7 @@ class TenantRestoreService
 
             if ($foreignKey['foreign_table'] === $table) {
                 $schema['self'] = $foreignKey['columns'][0];
-            } elseif (! isset($scopes[$foreignKey['foreign_table']]) && $foreignKey['foreign_table'] !== 'tenants') {
+            } elseif (!isset($scopes[$foreignKey['foreign_table']]) && $foreignKey['foreign_table'] !== 'tenants') {
                 $schema['external'][$foreignKey['columns'][0]] = ['table' => $foreignKey['foreign_table'], 'column' => $foreignKey['foreign_columns'][0]];
             }
         }
@@ -487,9 +489,9 @@ class TenantRestoreService
     }
 
     /**
-     * @param  array<string, mixed>  $row
-     * @param  array{columns: array<int, string>, nullable: array<string, bool>, self: ?string, external: array<string, array{table: string, column: string}>}  $schema
-     * @param  array<string, array<string, mixed>>  $secrets
+     * @param array<string, mixed> $row
+     * @param array{columns: array<int, string>, nullable: array<string, bool>, self: ?string, external: array<string, array{table: string, column: string}>} $schema
+     * @param array<string, array<string, mixed>> $secrets
      * @return array<string, mixed>|null null when the row cannot be restored (it references a record that no longer exists)
      */
     private function prepareRow(string $table, array $row, array $schema, Tenant $tenant, array $secrets): ?array
@@ -503,8 +505,8 @@ class TenantRestoreService
         foreach ($schema['external'] as $column => $target) {
             $value = $row[$column] ?? null;
 
-            if ($value !== null && ! DB::table($target['table'])->where($target['column'], $value)->exists()) {
-                if (! $schema['nullable'][$column]) {
+            if ($value !== null && !DB::table($target['table'])->where($target['column'], $value)->exists()) {
+                if (!$schema['nullable'][$column]) {
                     return null;
                 }
 
@@ -513,7 +515,7 @@ class TenantRestoreService
         }
 
         foreach (TenantBackupService::REDACTED_COLUMNS as $column) {
-            if (! array_key_exists($column, $schema['nullable'])) {
+            if (!array_key_exists($column, $schema['nullable'])) {
                 continue;
             }
 
@@ -521,13 +523,13 @@ class TenantRestoreService
 
             if ($kept !== null && array_key_exists($column, $kept)) {
                 $row[$column] = $kept[$column];
-            } elseif (! $schema['nullable'][$column]) {
+            } elseif (!$schema['nullable'][$column]) {
                 $row[$column] = $column === 'credentials' ? Crypt::encryptString('[]') : '';
             }
         }
 
         // A channel restored without its credentials cannot synchronise: it stays off until they are entered again.
-        if ($table === 'ecommerce_channels' && ! isset($secrets[$row['id'] ?? ''])) {
+        if ($table === 'ecommerce_channels' && !isset($secrets[$row['id'] ?? ''])) {
             $row['is_active'] = false;
         }
 
@@ -537,7 +539,7 @@ class TenantRestoreService
     /**
      * Rows ordered so that a row follows the row it points to through the self-referencing column.
      *
-     * @param  array<int, array<string, mixed>>  $rows
+     * @param array<int, array<string, mixed>> $rows
      * @return array<int, array<string, mixed>>
      */
     private function parentsFirst(array $rows, string $column): array
@@ -552,7 +554,7 @@ class TenantRestoreService
             foreach ($rows as $index => $row) {
                 $parent = $row[$column] ?? null;
 
-                if ($parent === null || isset($placed[$parent]) || ! isset($ids[$parent])) {
+                if ($parent === null || isset($placed[$parent]) || !isset($ids[$parent])) {
                     $ordered[] = $row;
                     $placed[$row['id']] = true;
                     unset($rows[$index]);
@@ -573,12 +575,12 @@ class TenantRestoreService
      */
     private function recalculate(Tenant $tenant): int
     {
-        return (int) $this->tenantContext->runWithTenant($tenant, function () use ($tenant): int {
+        return (int)$this->tenantContext->runWithTenant($tenant, function () use ($tenant): int {
             $count = 0;
             $paid = DB::table('payments')->where('tenant_id', $tenant->id)->groupBy('invoice_id')->selectRaw('invoice_id, SUM(amount) as total')->pluck('total', 'invoice_id');
 
             foreach (Invoice::query()->whereIn('id', $paid->keys()->all())->get() as $invoice) {
-                if (abs((float) $invoice->total_paid - (float) $paid[$invoice->id]) > 0.001) {
+                if (abs((float)$invoice->total_paid - (float)$paid[$invoice->id]) > 0.001) {
                     $this->payments->recalculate($invoice);
                     $count++;
                 }
@@ -587,7 +589,7 @@ class TenantRestoreService
             $supplierPaid = DB::table('supplier_payments')->where('tenant_id', $tenant->id)->where('type', '!=', 'bank_fee')->groupBy('passive_invoice_id')->selectRaw('passive_invoice_id, SUM(amount) as total')->pluck('total', 'passive_invoice_id');
 
             foreach (PassiveInvoice::query()->whereIn('id', $supplierPaid->keys()->all())->get() as $invoice) {
-                if (abs((float) $invoice->total_paid - (float) $supplierPaid[$invoice->id]) > 0.001) {
+                if (abs((float)$invoice->total_paid - (float)$supplierPaid[$invoice->id]) > 0.001) {
                     $this->supplierPayments->recalculate($invoice);
                     $count++;
                 }

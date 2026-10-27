@@ -6,14 +6,13 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Tables requiring an index on tenant_id.
      *
      * @var list<string>
      */
-    private const TABLES = [
+    private const array TABLES = [
         'attachments',
         'billable_activities',
         'bills_of_materials',

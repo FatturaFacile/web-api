@@ -26,9 +26,11 @@ class ImportBankStatement
 
     public function __construct(
         private readonly BankStatementParserManager $parser,
-        private readonly BankReconciliationService $reconciliation,
-        private readonly TenantContext $tenantContext,
-    ) {}
+        private readonly BankReconciliationService  $reconciliation,
+        private readonly TenantContext              $tenantContext,
+    )
+    {
+    }
 
     /**
      * @return array{statement: BankStatement, reconciliation: array{reconciled: int, unmatched: int}|null}
@@ -40,7 +42,7 @@ class ImportBankStatement
     {
         $content = mb_check_encoding($content, 'UTF-8') ? $content : mb_convert_encoding($content, 'UTF-8', 'ISO-8859-1');
         $parsed = $this->parser->parse($content);
-        $tenantId = (string) $this->tenantContext->getTenantId();
+        $tenantId = (string)$this->tenantContext->getTenantId();
         $hash = hash('sha256', trim($content));
 
         if (BankStatement::query()->where('content_hash', $hash)->exists()) {
@@ -76,26 +78,11 @@ class ImportBankStatement
         $now = now();
 
         foreach (array_chunk($parsed->lines, self::INSERT_CHUNK, true) as $chunk) {
-            BankStatementLine::query()->insert(array_values(array_map(fn (ParsedStatementLine $line, int $index): array => [
-                'id' => (string) Str::uuid(),
-                'tenant_id' => $statement->tenant_id,
-                'bank_statement_id' => $statement->id,
-                'line_number' => $index + 1,
-                'booking_date' => $line->bookingDate->toDateString(),
-                'value_date' => $line->valueDate->toDateString(),
-                'amount' => $line->amount,
-                'fee_amount' => $line->feeAmount,
-                'direction' => $line->direction,
-                'abi_code' => $line->abiCode,
-                'reference' => $line->reference,
-                'qr_reference' => $line->qrReference,
-                'description' => $line->description,
-                'counterpart_name' => $line->counterpartName,
-                'counterpart_iban' => $line->counterpartIban,
-                'reconciled' => false,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ], $chunk, array_keys($chunk))));
+            $chunk
+                |> array_keys(...)
+                |> (fn($x) => array_map(fn(ParsedStatementLine $line, int $index): array => ['id' => (string)Str::uuid(), 'tenant_id' => $statement->tenant_id, 'bank_statement_id' => $statement->id, 'line_number' => $index + 1, 'booking_date' => $line->bookingDate->toDateString(), 'value_date' => $line->valueDate->toDateString(), 'amount' => $line->amount, 'fee_amount' => $line->feeAmount, 'direction' => $line->direction, 'abi_code' => $line->abiCode, 'reference' => $line->reference, 'qr_reference' => $line->qrReference, 'description' => $line->description, 'counterpart_name' => $line->counterpartName, 'counterpart_iban' => $line->counterpartIban, 'reconciled' => false, 'created_at' => $now, 'updated_at' => $now,], $chunk, $x))
+                |> array_values(...)
+                |> BankStatementLine::query()(...);
         }
     }
 }

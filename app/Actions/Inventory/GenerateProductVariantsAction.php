@@ -26,13 +26,15 @@ class GenerateProductVariantsAction
 
     private const BARCODE_ATTEMPTS = 20;
 
-    public function __construct(private readonly BarcodeService $barcodes) {}
+    public function __construct(private readonly BarcodeService $barcodes)
+    {
+    }
 
     /**
      * Generate every missing combination of the matrix.
      *
-     * @param  array<string, array<int, string>>  $matrix
-     * @param  array{price_modifier?: ?array{type: string, value: float|int|string}, auto_generate_sku?: bool, generate_barcode?: bool, barcode_type?: string, discontinue_on_zero_stock?: ?bool}  $options
+     * @param array<string, array<int, string>> $matrix
+     * @param array{price_modifier?: ?array{type: string, value: float|int|string}, auto_generate_sku?: bool, generate_barcode?: bool, barcode_type?: string, discontinue_on_zero_stock?: ?bool} $options
      * @return array{created: Collection<int, Product>, skipped: int}
      *
      * @throws ValidationException
@@ -43,7 +45,7 @@ class GenerateProductVariantsAction
         $combinations = $this->combinations($matrix);
 
         return DB::transaction(function () use ($parent, $combinations, $options): array {
-            $known = $parent->variants()->get()->mapWithKeys(fn (Product $variant): array => [$this->signature($variant->optionAttributes()) => true])->all();
+            $known = $parent->variants()->get()->mapWithKeys(fn(Product $variant): array => [$this->signature($variant->optionAttributes()) => true])->all();
             $created = new Collection;
             $skipped = 0;
             $sequence = $parent->variants()->count();
@@ -67,9 +69,9 @@ class GenerateProductVariantsAction
     /**
      * Create a single variant. `$overrides` may carry `sku`, `price`, `barcode` and `is_active`.
      *
-     * @param  array<string, string>  $attributes
-     * @param  array{price_modifier?: ?array{type: string, value: float|int|string}, auto_generate_sku?: bool, generate_barcode?: bool, barcode_type?: string, discontinue_on_zero_stock?: ?bool, min_stock?: float|int|string|null, sequence?: int}  $options
-     * @param  array{sku?: ?string, price?: float|int|string|null, barcode?: ?string, is_active?: bool, min_stock?: float|int|string|null}  $overrides
+     * @param array<string, string> $attributes
+     * @param array{price_modifier?: ?array{type: string, value: float|int|string}, auto_generate_sku?: bool, generate_barcode?: bool, barcode_type?: string, discontinue_on_zero_stock?: ?bool, min_stock?: float|int|string|null, sequence?: int} $options
+     * @param array{sku?: ?string, price?: float|int|string|null, barcode?: ?string, is_active?: bool, min_stock?: float|int|string|null} $overrides
      *
      * @throws ValidationException
      */
@@ -79,7 +81,7 @@ class GenerateProductVariantsAction
 
         $sku = ($overrides['sku'] ?? null) ?: (($options['auto_generate_sku'] ?? true)
             ? $this->skuFor($parent, $attributes)
-            : $this->sequentialSku($parent, (int) ($options['sequence'] ?? $parent->variants()->count() + 1)));
+            : $this->sequentialSku($parent, (int)($options['sequence'] ?? $parent->variants()->count() + 1)));
 
         $barcode = $overrides['barcode'] ?? null;
 
@@ -94,7 +96,7 @@ class GenerateProductVariantsAction
             'description' => $parent->description,
             'unit_measure' => $parent->unit_measure,
             'cost_price' => $parent->cost_price,
-            'sale_price' => isset($overrides['price']) ? round((float) $overrides['price'], 4) : $this->priceFor($parent, $options['price_modifier'] ?? null),
+            'sale_price' => isset($overrides['price']) ? round((float)$overrides['price'], 4) : $this->priceFor($parent, $options['price_modifier'] ?? null),
             'tax_rate' => $parent->tax_rate,
             'hs_code' => $parent->hs_code,
             'track_inventory' => $parent->track_inventory,
@@ -105,7 +107,7 @@ class GenerateProductVariantsAction
             'parent_id' => $parent->id,
             'is_variant' => true,
             'min_stock' => array_key_exists('min_stock', $overrides) ? $overrides['min_stock'] : ($options['min_stock'] ?? $parent->min_stock),
-            'attributes' => $attributes + [Product::DISCONTINUE_FLAG => (bool) ($options['discontinue_on_zero_stock'] ?? false)],
+            'attributes' => $attributes + [Product::DISCONTINUE_FLAG => (bool)($options['discontinue_on_zero_stock'] ?? false)],
         ]);
     }
 
@@ -113,22 +115,22 @@ class GenerateProductVariantsAction
      * Whether the parent already has a variant with exactly these attributes (names and values are compared
      * case-insensitively).
      *
-     * @param  array<string, string>  $attributes
+     * @param array<string, string> $attributes
      */
     public function combinationExists(Product $parent, array $attributes, ?string $exceptVariantId = null): bool
     {
         $signature = $this->signature($attributes);
 
         return $parent->variants()
-            ->when($exceptVariantId !== null, fn ($query) => $query->whereKeyNot($exceptVariantId))
+            ->when($exceptVariantId !== null, fn($query) => $query->whereKeyNot($exceptVariantId))
             ->get()
-            ->contains(fn (Product $variant): bool => $this->signature($variant->optionAttributes()) === $signature);
+            ->contains(fn(Product $variant): bool => $this->signature($variant->optionAttributes()) === $signature);
     }
 
     /**
      * Cartesian product of the attribute values, in the order the attributes and values were given.
      *
-     * @param  array<string, array<int, string>>  $matrix
+     * @param array<string, array<int, string>> $matrix
      * @return array<int, array<string, string>>
      *
      * @throws ValidationException
@@ -148,7 +150,7 @@ class GenerateProductVariantsAction
 
             foreach ($combinations as $combination) {
                 foreach ($values as $value) {
-                    $next[] = $combination + [(string) $name => (string) $value];
+                    $next[] = $combination + [(string)$name => (string)$value];
                 }
             }
 
@@ -161,39 +163,42 @@ class GenerateProductVariantsAction
     /**
      * Case-insensitive, order-independent identity of an attribute combination.
      *
-     * @param  array<string, string>  $attributes
+     * @param array<string, string> $attributes
      */
     public function signature(array $attributes): string
     {
         $normalized = [];
 
         foreach ($attributes as $name => $value) {
-            $normalized[mb_strtolower(trim((string) $name))] = mb_strtolower(trim((string) $value));
+            $normalized[mb_strtolower(trim((string)$name))] = mb_strtolower(trim((string)$value));
         }
 
         ksort($normalized);
 
-        return (string) json_encode($normalized);
+        return (string)json_encode($normalized);
     }
 
     /**
      * `{PARENT_SKU}-{VALUE}-{VALUE}` in upper case without special characters; a numeric suffix keeps it unique.
      *
-     * @param  array<string, string>  $attributes
+     * @param array<string, string> $attributes
      */
     public function skuFor(Product $parent, array $attributes): string
     {
         $parts = [strtoupper($parent->sku)];
 
         foreach ($attributes as $value) {
-            $part = preg_replace('/[^A-Z0-9]/', '', strtoupper(Str::ascii((string) $value))) ?? '';
-            $parts[] = $part !== '' ? $part : strtoupper(substr(md5((string) $value), 0, 4));
+            $part = preg_replace('/[^A-Z0-9]/', '', strtoupper(Str::ascii((string)$value))) ?? '';
+            $parts[] = $part !== '' ? $part : (string)$value
+                    |> md5(...)
+                    |> (fn($x) => substr($x, 0, 4))
+                    |> strtoupper(...);
         }
 
         $sku = implode('-', $parts);
 
         if (strlen($sku) > self::SKU_MAX_LENGTH) {
-            $sku = substr($sku, 0, self::SKU_MAX_LENGTH - 7).'-'.strtoupper(substr(md5($sku), 0, 6));
+            $sku = substr($sku, 0, self::SKU_MAX_LENGTH - 7) . '-' . strtoupper(substr(md5($sku), 0, 6));
         }
 
         return $this->uniqueSku($sku);
@@ -202,11 +207,11 @@ class GenerateProductVariantsAction
     /**
      * `{Parent name} (Size: M, Color: Red)`.
      *
-     * @param  array<string, string>  $attributes
+     * @param array<string, string> $attributes
      */
     public function nameFor(Product $parent, array $attributes): string
     {
-        $described = collect($attributes)->map(fn (string $value, string|int $name): string => "{$name}: {$value}")->implode(', ');
+        $described = collect($attributes)->map(fn(string $value, string|int $name): string => "{$name}: {$value}")->implode(', ');
 
         return __('inventory.variant_name', ['name' => $parent->name, 'attributes' => $described]);
     }
@@ -214,21 +219,21 @@ class GenerateProductVariantsAction
     /**
      * The parent price with the optional fixed or percentage modifier applied.
      *
-     * @param  array{type: string, value: float|int|string}|null  $modifier
+     * @param array{type: string, value: float|int|string}|null $modifier
      *
      * @throws ValidationException
      */
     public function priceFor(Product $parent, ?array $modifier): float
     {
-        $base = (float) $parent->sale_price;
+        $base = (float)$parent->sale_price;
 
         if ($modifier === null) {
             return round($base, 4);
         }
 
         $price = $modifier['type'] === 'percent'
-            ? $base * (1 + (float) $modifier['value'] / 100)
-            : $base + (float) $modifier['value'];
+            ? $base * (1 + (float)$modifier['value'] / 100)
+            : $base + (float)$modifier['value'];
 
         if ($price < 0) {
             throw ValidationException::withMessages(['price_modifier' => __('inventory.price_modifier_invalid')]);
@@ -247,7 +252,7 @@ class GenerateProductVariantsAction
     private function sequentialSku(Product $parent, int $sequence): string
     {
         do {
-            $sku = strtoupper($parent->sku).'-'.str_pad((string) $sequence++, 3, '0', STR_PAD_LEFT);
+            $sku = strtoupper($parent->sku) . '-' . str_pad((string)$sequence++, 3, '0', STR_PAD_LEFT);
         } while (Product::withTrashed()->where('sku', $sku)->exists());
 
         return $sku;
@@ -261,7 +266,7 @@ class GenerateProductVariantsAction
         while (Product::withTrashed()->where('sku', $sku)->exists()) {
             $suffix++;
             $tail = "-{$suffix}";
-            $sku = substr($base, 0, self::SKU_MAX_LENGTH - strlen($tail)).$tail;
+            $sku = substr($base, 0, self::SKU_MAX_LENGTH - strlen($tail)) . $tail;
         }
 
         return $sku;
@@ -278,13 +283,13 @@ class GenerateProductVariantsAction
         for ($attempt = 0; $attempt < self::BARCODE_ATTEMPTS; $attempt++) {
             try {
                 $candidate = $type === BarcodeType::Ean13
-                    ? $this->barcodes->normalize($type, '2'.str_pad((string) random_int(0, 99_999_999_999), 11, '0', STR_PAD_LEFT))
+                    ? $this->barcodes->normalize($type, '2' . str_pad((string)random_int(0, 99_999_999_999), 11, '0', STR_PAD_LEFT))
                     : $this->barcodes->normalize($type, $sku);
             } catch (BarcodeGenerationException $e) {
                 throw ValidationException::withMessages(['barcode' => $e->getMessage()]);
             }
 
-            if (! Product::withTrashed()->where('barcode', $candidate)->exists()) {
+            if (!Product::withTrashed()->where('barcode', $candidate)->exists()) {
                 return $candidate;
             }
 
