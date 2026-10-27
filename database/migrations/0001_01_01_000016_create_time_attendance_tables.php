@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('time_entries', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->dateTime('clock_in')->index();
             $table->dateTime('clock_out')->nullable()->index();
@@ -33,7 +33,7 @@ return new class extends Migration
 
         Schema::create('leave_requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->enum('type', ['vacation', 'rol', 'sick_inps', 'ktg_ch', 'military_ch_apg'])->index();
             $table->date('start_date');
@@ -48,7 +48,7 @@ return new class extends Migration
 
         Schema::create('leave_balances', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->unsignedSmallInteger('year')->index();
             $table->decimal('vacation_accrued', 6, 2)->default(0);

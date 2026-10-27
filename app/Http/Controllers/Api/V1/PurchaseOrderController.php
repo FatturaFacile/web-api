@@ -59,7 +59,8 @@ class PurchaseOrderController extends Controller
 
     public function receipts(Request $request): JsonResponse
     {
-        $receipts = GoodsReceipt::query()->latest('date')->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
+        $receipts = GoodsReceipt::query()->latest('date')->paginate($perPage);
 
         return $this->successResponse(
             data: CatalogResource::collection($receipts),

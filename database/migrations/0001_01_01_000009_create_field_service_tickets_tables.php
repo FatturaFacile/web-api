@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('tickets', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('subject');
             $table->text('description')->nullable();
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('work_orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('ticket_id')->nullable()->constrained('tickets')->nullOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->foreignUuid('technician_user_id')->constrained('users')->cascadeOnDelete();

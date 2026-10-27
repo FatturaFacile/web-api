@@ -7,12 +7,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
+use App\Models\PassiveInvoice;
+use App\Models\PaymentBatch;
+use App\Models\PurchaseOrder;
+use App\Models\PurchaseRequest;
 use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -27,33 +30,21 @@ class PurchasesController extends Controller
 
     public function requests(): JsonResponse
     {
-        $requests = DB::table('purchase_requests')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('requested_date')
-            ->paginate(25);
+        $requests = PurchaseRequest::latest('requested_date')->paginate(25);
 
         return $this->successResponse(data: $requests, message: 'Purchase requests retrieved');
     }
 
     public function orders(): JsonResponse
     {
-        $orders = DB::table('purchase_orders')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('date')
-            ->paginate(25);
+        $orders = PurchaseOrder::latest('date')->paginate(25);
 
         return $this->successResponse(data: $orders, message: 'Purchase orders retrieved');
     }
 
     public function passiveInvoices(): JsonResponse
     {
-        $invoices = DB::table('passive_invoices')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->latest('date')
-            ->paginate(25);
+        $invoices = PassiveInvoice::latest('date')->paginate(25);
 
         return $this->successResponse(data: $invoices, message: 'Passive invoices retrieved');
     }
@@ -107,7 +98,6 @@ class PurchasesController extends Controller
             $denominazioneNodes = $dom->getElementsByTagName('Denominazione');
             $supplierName = $denominazioneNodes->length > 0 ? $denominazioneNodes->item(0)->nodeValue : 'Fornitore Esterno';
             $supplier = Contact::create([
-                'tenant_id' => $this->tenantContext->getTenantId(),
                 'type' => 'supplier',
                 'country' => 'IT',
                 'company_name' => $supplierName,
@@ -115,10 +105,7 @@ class PurchasesController extends Controller
             ]);
         }
 
-        $id = (string) Str::uuid();
-        DB::table('passive_invoices')->insert([
-            'id' => $id,
-            'tenant_id' => $this->tenantContext->getTenantId(),
+        $passiveInvoice = PassiveInvoice::create([
             'supplier_id' => $supplier->id,
             'invoice_number' => $invoiceNumber,
             'date' => $invoiceDate,
@@ -127,13 +114,11 @@ class PurchasesController extends Controller
             'sdi_lot_id' => 'SDI-IMP-'.now()->timestamp,
             'is_reconciled' => false,
             'xml_payload' => $content,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return $this->successResponse(
             data: [
-                'id' => $id,
+                'id' => $passiveInvoice->id,
                 'invoice_number' => $invoiceNumber,
                 'date' => $invoiceDate,
                 'total_amount' => $totalAmount,
@@ -153,7 +138,9 @@ class PurchasesController extends Controller
             'qr_payload' => ['required', 'string'],
         ]);
 
-        $lines = explode("\r\n", trim(str_replace("\n", "\r\n", $validated['qr_payload'])));
+        $lines = str_replace("\n", "\r\n", $validated['qr_payload'])
+                |> trim(...)
+                |> (fn ($x) => explode("\r\n", $x));
         if (count($lines) < 20 || $lines[0] !== 'SPC') {
             return $this->problemDetailsResponse(
                 title: 'Invalid Swiss QR Code',
@@ -169,14 +156,11 @@ class PurchasesController extends Controller
         $scorRef = $lines[27] ?? '';
 
         $supplier = Contact::firstOrCreate(
-            ['tenant_id' => $this->tenantContext->getTenantId(), 'company_name' => $creditorName],
+            ['company_name' => $creditorName],
             ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
         );
 
-        $id = (string) Str::uuid();
-        DB::table('passive_invoices')->insert([
-            'id' => $id,
-            'tenant_id' => $this->tenantContext->getTenantId(),
+        $passiveInvoice = PassiveInvoice::create([
             'supplier_id' => $supplier->id,
             'invoice_number' => 'QR-'.$scorRef,
             'date' => now()->toDateString(),
@@ -184,13 +168,11 @@ class PurchasesController extends Controller
             'currency' => $currency,
             'is_reconciled' => false,
             'qr_raw_payload' => $validated['qr_payload'],
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return $this->successResponse(
             data: [
-                'id' => $id,
+                'id' => $passiveInvoice->id,
                 'creditor' => $creditorName,
                 'qr_iban' => $qrIban,
                 'scor_reference' => $scorRef,
@@ -247,23 +229,18 @@ class PurchasesController extends Controller
 </Document>
 XML;
 
-        $batchUuid = (string) Str::uuid();
-        DB::table('payment_batches')->insert([
-            'id' => $batchUuid,
-            'tenant_id' => $tenant->id,
+        $batch = PaymentBatch::create([
             'format' => $validated['format'],
             'status' => 'generated',
             'file_path' => "payments/{$batchId}.xml",
             'total_amount' => 1500.00,
             'currency' => $tenant->default_currency,
             'execution_date' => $execDate,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return $this->successResponse(
             data: [
-                'batch_id' => $batchUuid,
+                'batch_id' => $batch->id,
                 'message_id' => $msgId,
                 'format' => $validated['format'],
                 'xml_preview' => $xml,

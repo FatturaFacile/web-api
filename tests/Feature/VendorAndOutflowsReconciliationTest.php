@@ -85,7 +85,7 @@ function voInvoice(string $number, float $gross, array $overrides = []): Invoice
  */
 function voSupplierPayments(PassiveInvoice $invoice): array
 {
-    return SupplierPayment::withoutGlobalScopes()->where('passive_invoice_id', $invoice->id)->orderBy('created_at')->orderBy('amount', 'desc')->get()
+    return SupplierPayment::withoutGlobalScopes()->where('passive_invoice_id', $invoice->id)->orderByDesc('amount')->orderBy('created_at')->get()
         ->map(fn (SupplierPayment $payment): array => ['type' => $payment->type, 'amount' => (float) $payment->amount])->all();
 }
 

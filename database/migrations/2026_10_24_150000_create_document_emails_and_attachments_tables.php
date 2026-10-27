@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('document_emails', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->uuidMorphs('emailable');
             $table->foreignUuid('user_id')->nullable()->index();
             $table->string('recipient');
@@ -29,7 +29,7 @@ return new class extends Migration
 
         Schema::create('attachments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->uuidMorphs('attachable');
             $table->foreignUuid('uploaded_by')->nullable()->index();
             $table->string('original_name');

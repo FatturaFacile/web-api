@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('dashboard_layouts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('name', 100)->default('Default Dashboard');
             $table->boolean('is_default')->default(true);

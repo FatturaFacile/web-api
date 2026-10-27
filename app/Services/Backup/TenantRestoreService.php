@@ -43,7 +43,7 @@ use ZipArchive;
  */
 class TenantRestoreService
 {
-    private const INSERT_VARIABLE_LIMIT = 900;
+    private const int INSERT_VARIABLE_LIMIT = 900;
 
     public function __construct(
         private readonly TenantBackupService $backups,

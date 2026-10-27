@@ -17,6 +17,15 @@
       </LaravelCodeGeneration>
     </option>
     <option name="frameworkFound" value="true" />
+    <option name="inspections">
+      <LaravelIdeaInspections>
+        <option name="unguardedFieldExclusionList">
+          <list>
+            <option value="recipient" />
+          </list>
+        </option>
+      </LaravelIdeaInspections>
+    </option>
     <option name="translation">
       <LaravelTranslation>
         <option name="defaultPath" value="lang" />

@@ -89,7 +89,6 @@ class TimeAttendanceController extends Controller
         $validated = $request->validated();
 
         $entry = new TimeEntry;
-        $entry->tenant_id = $this->tenantContext->getTenantId();
         $entry->user_id = $user->id;
         $entry->clock_in = ! empty($validated['clock_in']) ? Carbon::parse($validated['clock_in']) : now();
         $entry->clock_in_lat = $validated['latitude'] ?? null;

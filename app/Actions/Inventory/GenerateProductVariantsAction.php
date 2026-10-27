@@ -187,7 +187,10 @@ class GenerateProductVariantsAction
 
         foreach ($attributes as $value) {
             $part = preg_replace('/[^A-Z0-9]/', '', strtoupper(Str::ascii((string) $value))) ?? '';
-            $parts[] = $part !== '' ? $part : strtoupper(substr(md5((string) $value), 0, 4));
+            $parts[] = $part !== '' ? $part : (string) $value
+                    |> md5(...)
+                    |> (fn ($x) => substr($x, 0, 4))
+                    |> strtoupper(...);
         }
 
         $sku = implode('-', $parts);

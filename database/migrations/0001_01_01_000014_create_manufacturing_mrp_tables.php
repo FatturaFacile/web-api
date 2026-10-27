@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('bills_of_materials', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('finished_product_id')->constrained('products')->cascadeOnDelete();
             $table->string('version', 20)->default('1.0');
             $table->string('name');
@@ -36,7 +36,7 @@ return new class extends Migration
 
         Schema::create('production_orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('bill_of_materials_id')->constrained('bills_of_materials')->cascadeOnDelete();
             $table->string('order_number', 50)->index();
             $table->decimal('target_quantity', 12, 4);

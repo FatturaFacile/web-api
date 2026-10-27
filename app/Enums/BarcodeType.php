@@ -20,7 +20,10 @@ enum BarcodeType: string
      */
     public static function fromInput(string $type): self
     {
-        return self::tryFrom(strtolower(trim($type))) ?? throw BarcodeGenerationException::because(BarcodeGenerationException::UNSUPPORTED_TYPE, $type);
+        return $type
+            |> trim(...)
+            |> strtolower(...)
+            |> self::tryFrom(...) ?? throw BarcodeGenerationException::because(BarcodeGenerationException::UNSUPPORTED_TYPE, $type);
     }
 
     /**

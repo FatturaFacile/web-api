@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('sdi_uuid_links', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->string('provider', 30);
             $table->string('sdi_uuid', 64);
@@ -28,7 +28,7 @@ return new class extends Migration
 
         Schema::create('ei_outbound_logs', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->string('provider', 30);
             $table->string('action', 30)->default('send'); // send

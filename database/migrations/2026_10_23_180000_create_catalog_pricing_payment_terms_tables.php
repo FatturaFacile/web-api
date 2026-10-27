@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('product_categories', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->uuid('parent_id')->nullable();
             $table->string('name', 100);
             $table->timestamps();
@@ -32,7 +32,7 @@ return new class extends Migration
 
         Schema::create('product_brands', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('name', 100);
             $table->timestamps();
 
@@ -41,7 +41,7 @@ return new class extends Migration
 
         Schema::create('units_of_measure', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('code', 10); // PZ, KG, M, L, H
             $table->string('name', 50);
             $table->timestamps();
@@ -51,7 +51,7 @@ return new class extends Migration
 
         Schema::create('price_lists', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('name', 100);
             $table->string('currency', 3)->default('EUR');
             $table->boolean('is_default')->default(false);
@@ -78,7 +78,7 @@ return new class extends Migration
 
         Schema::create('payment_terms', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('code', 20);
             $table->string('name', 100);
             $table->unsignedSmallInteger('days')->default(30);

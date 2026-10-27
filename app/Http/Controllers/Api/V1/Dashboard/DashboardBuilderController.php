@@ -9,7 +9,6 @@ use App\Http\Requests\Dashboard\UpdateDashboardLayoutRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\DashboardLayout;
 use App\Services\Dashboard\WidgetRegistry;
-use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,11 +22,10 @@ class DashboardBuilderController extends Controller
 {
     use ApiResponse;
 
-    private const DEFAULT_NAME = 'Default Dashboard';
+    private const string DEFAULT_NAME = 'Default Dashboard';
 
     public function __construct(
         private readonly WidgetRegistry $registry,
-        private readonly TenantContext $tenantContext,
     ) {}
 
     public function availableWidgets(): JsonResponse
@@ -57,7 +55,7 @@ class DashboardBuilderController extends Controller
         $saved = $this->savedLayout($request);
 
         $layout = DashboardLayout::updateOrCreate(
-            ['tenant_id' => $this->tenantContext->getTenantId(), 'user_id' => $request->user()->id, 'is_default' => true],
+            ['user_id' => $request->user()->id, 'is_default' => true],
             ['name' => $request->input('name', $saved?->name ?? self::DEFAULT_NAME), 'widgets_layout' => $request->layout()],
         );
 
@@ -82,7 +80,10 @@ class DashboardBuilderController extends Controller
         $layout = $this->present($this->savedLayout($request))['widgets_layout'];
         $settings = collect($layout)->pluck('settings', 'widget_id');
 
-        $requested = array_values(array_filter(array_map('trim', explode(',', (string) $request->query('widgets', '')))));
+        $requested = explode(',', (string) $request->query('widgets', ''))
+                |> (fn ($x) => array_map('trim', $x))
+                |> array_filter(...)
+                |> array_values(...);
 
         foreach ($requested as $id) {
             if (! $this->registry->has($id)) {

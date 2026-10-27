@@ -70,7 +70,9 @@ class ConvertToInvoice
         $alreadyRequested = (float) Invoice::where('sales_order_id', $order->id)->where('is_deposit', true)->sum('total_net');
         $lines = $order->items->groupBy(fn ($item): string => number_format((float) $item->tax_rate, 2, '.', ''))
             ->map(fn ($group, string $rate): InvoiceItem => new InvoiceItem([
-                'description' => __('sales.deposit_line', ['number' => $order->order_number, 'percentage' => rtrim(rtrim(number_format($percentage, 2, '.', ''), '0'), '.')]),
+                'description' => __('sales.deposit_line', ['number' => $order->order_number, 'percentage' => number_format($percentage, 2, '.', '')
+                        |> (fn ($x) => rtrim($x, '0'))
+                        |> (fn ($x) => rtrim($x, '.'))]),
                 'quantity' => 1,
                 'unit_price' => round((float) $group->sum('line_total') * $percentage / 100, 2),
                 'tax_rate' => (float) $rate,

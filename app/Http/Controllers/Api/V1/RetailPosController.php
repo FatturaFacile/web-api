@@ -6,27 +6,20 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
-use App\Services\Tenancy\TenantContext;
+use App\Models\PosSale;
+use App\Models\PosSession;
+use App\Models\RtFiscalReceipt;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class RetailPosController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(
-        private readonly TenantContext $tenantContext
-    ) {}
-
     public function sessions(): JsonResponse
     {
-        $sessions = DB::table('pos_sessions')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->latest('opened_at')
-            ->paginate(25);
+        $sessions = PosSession::latest('opened_at')->paginate(25);
 
         return $this->successResponse(data: $sessions, message: 'POS sessions retrieved');
     }
@@ -45,40 +38,35 @@ class RetailPosController extends Controller
             'items' => ['required', 'array', 'min:1'],
         ]);
 
-        $saleId = (string) Str::uuid();
-        $receiptNumber = 'REC-'.now()->format('Ymd').'-'.rand(1000, 9999);
+        $session = PosSession::findOrFail($validated['pos_session_id']);
 
-        DB::transaction(function () use ($saleId, $receiptNumber, $validated): void {
-            DB::table('pos_sales')->insert([
-                'id' => $saleId,
-                'tenant_id' => $this->tenantContext->getTenantId(),
-                'pos_session_id' => $validated['pos_session_id'],
+        $sale = PosSale::resolveConnection()->transaction(function () use ($session, $validated): PosSale {
+            $receiptNumber = 'REC-'.now()->format('Ymd').'-'.rand(1000, 9999);
+
+            $sale = PosSale::create([
+                'pos_session_id' => $session->id,
                 'receipt_number' => $receiptNumber,
                 'total_net' => $validated['total_net'],
                 'total_tax' => $validated['total_tax'],
                 'total_gross' => $validated['total_gross'],
                 'payment_method' => $validated['payment_method'],
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             foreach ($validated['items'] as $item) {
-                DB::table('pos_sale_items')->insert([
-                    'id' => (string) Str::uuid(),
-                    'pos_sale_id' => $saleId,
+                $sale->items()->create([
                     'description' => $item['description'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'tax_rate' => $item['tax_rate'],
                     'line_total' => $item['line_total'],
-                    'created_at' => now(),
-                    'updated_at' => now(),
                 ]);
             }
+
+            return $sale;
         });
 
         return $this->successResponse(
-            data: ['sale_id' => $saleId, 'receipt_number' => $receiptNumber],
+            data: ['sale_id' => $sale->id, 'receipt_number' => $sale->receipt_number],
             message: 'Checkout completed successfully',
             statusCode: Response::HTTP_CREATED
         );
@@ -93,21 +81,19 @@ class RetailPosController extends Controller
             'pos_sale_id' => ['required', 'uuid'],
         ]);
 
-        $id = (string) Str::uuid();
-        DB::table('rt_fiscal_receipts')->insert([
-            'id' => $id,
-            'pos_sale_id' => $validated['pos_sale_id'],
+        $sale = PosSale::findOrFail($validated['pos_sale_id']);
+
+        $receipt = RtFiscalReceipt::create([
+            'pos_sale_id' => $sale->id,
             'z_report_number' => 'Z-'.now()->format('Ymd'),
             'fiscal_document_number' => 'DOC-'.rand(10000, 99999),
             'xml_lot_id' => 'LOT-'.now()->timestamp,
             'rt_status' => 'transmitted',
             'transmitted_at' => now(),
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         return $this->successResponse(
-            data: ['rt_receipt_id' => $id, 'rt_status' => 'transmitted'],
+            data: ['rt_receipt_id' => $receipt->id, 'rt_status' => 'transmitted'],
             message: 'Fiscal receipt transmitted to RT service'
         );
     }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Actions\Banking;
 
 use App\DTOs\Banking\ParsedStatement;
-use App\DTOs\Banking\ParsedStatementLine;
 use App\Exceptions\BankStatementException;
 use App\Models\BankStatement;
 use App\Models\BankStatementLine;
@@ -76,26 +75,31 @@ class ImportBankStatement
         $now = now();
 
         foreach (array_chunk($parsed->lines, self::INSERT_CHUNK, true) as $chunk) {
-            BankStatementLine::query()->insert(array_values(array_map(fn (ParsedStatementLine $line, int $index): array => [
-                'id' => (string) Str::uuid(),
-                'tenant_id' => $statement->tenant_id,
-                'bank_statement_id' => $statement->id,
-                'line_number' => $index + 1,
-                'booking_date' => $line->bookingDate->toDateString(),
-                'value_date' => $line->valueDate->toDateString(),
-                'amount' => $line->amount,
-                'fee_amount' => $line->feeAmount,
-                'direction' => $line->direction,
-                'abi_code' => $line->abiCode,
-                'reference' => $line->reference,
-                'qr_reference' => $line->qrReference,
-                'description' => $line->description,
-                'counterpart_name' => $line->counterpartName,
-                'counterpart_iban' => $line->counterpartIban,
-                'reconciled' => false,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ], $chunk, array_keys($chunk))));
+            $rows = [];
+            foreach ($chunk as $index => $line) {
+                $rows[] = [
+                    'id' => (string) Str::uuid(),
+                    'tenant_id' => $statement->tenant_id,
+                    'bank_statement_id' => $statement->id,
+                    'line_number' => $index + 1,
+                    'booking_date' => $line->bookingDate->toDateString(),
+                    'value_date' => $line->valueDate->toDateString(),
+                    'amount' => $line->amount,
+                    'fee_amount' => $line->feeAmount,
+                    'direction' => $line->direction,
+                    'abi_code' => $line->abiCode,
+                    'reference' => $line->reference,
+                    'qr_reference' => $line->qrReference,
+                    'description' => $line->description,
+                    'counterpart_name' => $line->counterpartName,
+                    'counterpart_iban' => $line->counterpartIban,
+                    'reconciled' => false,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+
+            BankStatementLine::insert($rows);
         }
     }
 }

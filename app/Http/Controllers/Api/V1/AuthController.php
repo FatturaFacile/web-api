@@ -11,7 +11,9 @@ use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -107,6 +109,11 @@ class AuthController extends Controller
             }
         } else {
             $activeTenant = $tenants->first();
+        }
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
         }
 
         $tokenName = 'auth-token-'.now()->timestamp;
@@ -209,9 +216,8 @@ class AuthController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['tenant_id'],
                 properties: [
-                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
+                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true, example: '9b1deb4d-3b7d-4bad-9bdd-2b0d7b3dcb6d'),
                 ]
             )
         ),
@@ -241,11 +247,25 @@ class AuthController extends Controller
     public function switchTenant(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'tenant_id' => ['required', 'uuid', 'exists:tenants,id'],
+            'tenant_id' => ['nullable', 'uuid', 'exists:tenants,id'],
         ]);
 
         /** @var User $user */
         $user = $request->user();
+
+        if (empty($validated['tenant_id'])) {
+            $this->tenantContext->setTenant(null);
+
+            return $this->successResponse(
+                data: [
+                    'tenant_id' => null,
+                    'name' => null,
+                    'country' => null,
+                    'role' => null,
+                ],
+                message: 'Active organization cleared successfully'
+            );
+        }
 
         if (! $user->belongsToTenant($validated['tenant_id'])) {
             return $this->problemDetailsResponse(
@@ -294,9 +314,19 @@ class AuthController extends Controller
     )]
     public function logout(Request $request): JsonResponse
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = $request->user();
-        $user->currentAccessToken()?->delete();
+        $token = $user?->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return $this->successResponse(
             message: 'Successfully logged out'
@@ -330,7 +360,15 @@ class AuthController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $user->currentAccessToken()?->delete();
+        $token = $user->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         $tokenName = 'auth-token-'.now()->timestamp;
         $newToken = $user->createToken($tokenName, ['*'])->plainTextToken;

@@ -25,7 +25,7 @@ return new class extends Migration
 
         Schema::create('supplier_payments', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('passive_invoice_id')->constrained('passive_invoices')->cascadeOnDelete();
             $table->decimal('amount', 15, 2);
             $table->date('paid_at');

@@ -32,21 +32,21 @@ use Illuminate\Support\Facades\DB;
  */
 class GeneralLedgerExportService
 {
-    public const SOURCE_ALL = 'all';
+    public const string SOURCE_ALL = 'all';
 
-    public const SOURCE_INVOICES = 'invoices';
+    public const string SOURCE_INVOICES = 'invoices';
 
-    public const SOURCE_PAYMENTS = 'payments';
+    public const string SOURCE_PAYMENTS = 'payments';
 
-    public const SOURCE_BANKING = 'banking';
+    public const string SOURCE_BANKING = 'banking';
 
-    public const DATE_ISO = 'YYYY-MM-DD';
+    public const string DATE_ISO = 'YYYY-MM-DD';
 
-    public const DATE_EUROPEAN = 'DD/MM/YYYY';
+    public const string DATE_EUROPEAN = 'DD/MM/YYYY';
 
-    public const HEADER = ['entry_number', 'entry_date', 'document_type', 'document_number', 'document_date', 'counterpart_name', 'tax_id', 'ledger_account_code', 'ledger_account_name', 'description', 'debit', 'credit', 'currency', 'vat_code'];
+    public const array HEADER = ['entry_number', 'entry_date', 'document_type', 'document_number', 'document_date', 'counterpart_name', 'tax_id', 'ledger_account_code', 'ledger_account_name', 'description', 'debit', 'credit', 'currency', 'vat_code'];
 
-    private const SOURCE_RANK = [self::SOURCE_INVOICES => 1, self::SOURCE_PAYMENTS => 2, self::SOURCE_BANKING => 3];
+    private const array SOURCE_RANK = [self::SOURCE_INVOICES => 1, self::SOURCE_PAYMENTS => 2, self::SOURCE_BANKING => 3];
 
     public function __construct(private readonly TenantContext $tenantContext) {}
 

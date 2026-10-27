@@ -6,23 +6,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\BankAccount;
+use App\Models\BankTransaction;
 use App\Models\Invoice;
-use App\Services\Tenancy\TenantContext;
+use App\Models\InvoiceQrBillData;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class TreasuryController extends Controller
 {
     use ApiResponse;
-
-    public function __construct(
-        private readonly TenantContext $tenantContext
-    ) {}
 
     #[OA\Get(
         path: '/api/v1/treasury/bank-accounts',
@@ -38,10 +34,7 @@ class TreasuryController extends Controller
     )]
     public function bankAccounts(): JsonResponse
     {
-        $accounts = DB::table('bank_accounts')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->get();
+        $accounts = BankAccount::all();
 
         return $this->successResponse(data: $accounts, message: 'Bank accounts retrieved');
     }
@@ -63,10 +56,7 @@ class TreasuryController extends Controller
     )]
     public function transactions(Request $request): JsonResponse
     {
-        $transactions = DB::table('bank_transactions')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->latest('booking_date')
-            ->paginate(25);
+        $transactions = BankTransaction::latest('booking_date')->paginate(25);
 
         return $this->successResponse(data: $transactions, message: 'Transactions retrieved');
     }
@@ -88,10 +78,7 @@ class TreasuryController extends Controller
     )]
     public function autoMatch(): JsonResponse
     {
-        $unmatched = DB::table('bank_transactions')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->where('status', 'unmatched')
-            ->get();
+        $unmatched = BankTransaction::where('status', 'unmatched')->get();
 
         $matchedCount = 0;
 
@@ -101,8 +88,7 @@ class TreasuryController extends Controller
             if (! empty($tx->reference)) {
                 // Check if reference matches Swiss SCOR
                 $cleanRef = strtoupper((string) preg_replace('/\s+/', '', (string) $tx->reference));
-                $qrMatch = DB::table('invoice_qr_bill_data')
-                    ->whereRaw("replace(upper(scor_reference), ' ', '') = ?", [$cleanRef])
+                $qrMatch = InvoiceQrBillData::whereRaw("replace(upper(scor_reference), ' ', '') = ?", [$cleanRef])
                     ->first();
 
                 if ($qrMatch) {
@@ -111,16 +97,14 @@ class TreasuryController extends Controller
             }
 
             if (! $matchedInvoice && ! empty($tx->reference)) {
-                $matchedInvoice = Invoice::where('tenant_id', $this->tenantContext->getTenantId())
-                    ->where('invoice_number', 'like', "%{$tx->reference}%")
+                $matchedInvoice = Invoice::where('invoice_number', 'like', "%{$tx->reference}%")
                     ->first();
             }
 
             if ($matchedInvoice !== null) {
-                DB::table('bank_transactions')->where('id', $tx->id)->update([
+                $tx->update([
                     'matched_invoice_id' => $matchedInvoice->id,
                     'status' => 'matched',
-                    'updated_at' => now(),
                 ]);
 
                 $matchedInvoice->payment_status = 'paid';
@@ -206,9 +190,7 @@ class TreasuryController extends Controller
             $descNode = $ntry->getElementsByTagName('Ustrd')->item(0);
             $desc = $descNode ? $descNode->nodeValue : 'CAMT Entry';
 
-            DB::table('bank_transactions')->insert([
-                'id' => (string) Str::uuid(),
-                'tenant_id' => $this->tenantContext->getTenantId(),
+            BankTransaction::create([
                 'bank_account_id' => $request->input('bank_account_id'),
                 'booking_date' => $date,
                 'value_date' => $date,
@@ -217,8 +199,6 @@ class TreasuryController extends Controller
                 'description' => $desc,
                 'reference' => $reference,
                 'status' => 'unmatched',
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             $imported++;

@@ -106,8 +106,13 @@ class SendInvoiceToSdi
     private function fileName(Invoice $invoice): string
     {
         $progressive = $invoice->sequential_number !== null
-            ? str_pad(strtoupper(base_convert((string) $invoice->sequential_number, 10, 36)), 5, '0', STR_PAD_LEFT)
-            : strtoupper(substr(md5($invoice->id), 0, 5));
+            ? base_convert((string) $invoice->sequential_number, 10, 36)
+                |> strtoupper(...)
+                |> (fn ($x) => str_pad($x, 5, '0', STR_PAD_LEFT))
+            : $invoice->id
+                |> md5(...)
+                |> (fn ($x) => substr($x, 0, 5))
+                |> strtoupper(...);
 
         return sprintf('IT%s_%s.xml', preg_replace('/\D/', '', (string) $invoice->tenant?->vat_number) ?: '99999999999', substr($progressive, -5));
     }

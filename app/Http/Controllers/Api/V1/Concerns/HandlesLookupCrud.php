@@ -28,8 +28,8 @@ trait HandlesLookupCrud
 
     public function index(Request $request): JsonResponse
     {
-        $records = ($this->modelClass())::query()->latest()
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
+        $records = ($this->modelClass())::query()->latest()->paginate($perPage);
 
         return $this->successResponse(
             data: CatalogResource::collection($records),

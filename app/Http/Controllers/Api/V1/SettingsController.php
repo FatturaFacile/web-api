@@ -6,12 +6,13 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\AuditLog;
+use App\Models\ExchangeRate;
 use App\Models\Tenant;
+use App\Models\Warehouse;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 
 class SettingsController extends Controller
@@ -149,10 +150,7 @@ class SettingsController extends Controller
     )]
     public function branches(): JsonResponse
     {
-        $branches = DB::table('warehouses')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->whereNull('deleted_at')
-            ->get();
+        $branches = Warehouse::all();
 
         return $this->successResponse(data: $branches, message: 'Branches and operational locations');
     }
@@ -193,9 +191,9 @@ class SettingsController extends Controller
         ];
 
         foreach ($rates as $r) {
-            DB::table('exchange_rates')->updateOrInsert(
+            ExchangeRate::updateOrCreate(
                 ['source' => $r['source'], 'target' => $r['target'], 'effective_date' => $today],
-                ['id' => (string) Str::uuid(), 'rate' => $r['rate'], 'updated_at' => now(), 'created_at' => now()]
+                ['rate' => $r['rate']]
             );
         }
 
@@ -294,10 +292,7 @@ class SettingsController extends Controller
     )]
     public function auditLogs(): JsonResponse
     {
-        $logs = DB::table('audit_logs')
-            ->where('tenant_id', $this->tenantContext->getTenantId())
-            ->latest()
-            ->paginate(25);
+        $logs = AuditLog::latest()->paginate(25);
 
         return $this->successResponse(data: $logs, message: 'Audit logs retrieved');
     }

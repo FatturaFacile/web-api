@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('purchase_requests', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('request_number', 50)->index();
             $table->string('department')->nullable();
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('purchase_orders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('supplier_id')->constrained('contacts')->cascadeOnDelete();
             $table->foreignUuid('purchase_request_id')->nullable()->constrained('purchase_requests')->nullOnDelete();
             $table->string('order_number', 50)->index();
@@ -63,7 +63,7 @@ return new class extends Migration
 
         Schema::create('passive_invoices', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('supplier_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('invoice_number', 50)->index();
             $table->date('date');
@@ -83,7 +83,7 @@ return new class extends Migration
 
         Schema::create('expense_reports', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->string('title');
             $table->date('date');

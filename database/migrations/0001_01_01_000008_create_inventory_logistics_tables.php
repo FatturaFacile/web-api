@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('products', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('sku', 50)->index();
             $table->string('barcode', 50)->nullable()->index();
             $table->string('name');
@@ -35,7 +35,7 @@ return new class extends Migration
 
         Schema::create('warehouses', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->string('code', 50)->index();
             $table->string('name');
             $table->string('address')->nullable();
@@ -48,7 +48,7 @@ return new class extends Migration
 
         Schema::create('stock_movements', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('product_id')->constrained('products')->cascadeOnDelete();
             $table->foreignUuid('warehouse_id')->constrained('warehouses')->cascadeOnDelete();
             $table->enum('type', ['in', 'out', 'transfer', 'adjustment'])->index();
@@ -65,7 +65,7 @@ return new class extends Migration
 
         Schema::create('delivery_notes', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('contact_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('ddt_number', 50)->index();
             $table->date('date');
@@ -85,7 +85,7 @@ return new class extends Migration
 
         Schema::create('customs_declarations', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('ddt_id')->nullable()->constrained('delivery_notes')->nullOnDelete();
             $table->string('declaration_number', 50)->index();
             $table->string('mrn_number', 50)->nullable()->index(); // Movement Reference Number (NCTS Dogana)

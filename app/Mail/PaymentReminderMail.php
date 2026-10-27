@@ -32,7 +32,7 @@ class PaymentReminderMail extends Mailable
         $level = min(max($this->reminder->level, 1), 3);
 
         return new Envelope(subject: __("emails.payment_reminder.subject.level_{$level}", [
-            'number' => $this->reminder->invoice->invoice_number,
+            'number' => $this->reminder->invoice?->invoice_number,
         ]));
     }
 

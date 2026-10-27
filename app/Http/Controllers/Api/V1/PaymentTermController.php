@@ -13,7 +13,6 @@ use App\Models\PaymentTerm;
 use App\Services\Catalog\PaymentTermScheduler;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
 class PaymentTermController extends Controller
@@ -67,7 +66,7 @@ class PaymentTermController extends Controller
      */
     private function persist(PaymentTerm $term, array $data): PaymentTerm
     {
-        return DB::transaction(function () use ($term, $data): PaymentTerm {
+        return PaymentTerm::resolveConnection()->transaction(function () use ($term, $data): PaymentTerm {
             $installments = $data['installments'] ?? null;
             unset($data['installments']);
 

@@ -115,7 +115,9 @@ class BankStatementController extends Controller
             ->withCount(['lines as reconciled_lines_count' => fn ($query) => $query->where('reconciled', true)])
             ->when(isset($filters['status']), fn ($query) => $query->where('status', $filters['status']))
             ->when(isset($filters['source_format']), fn ($query) => $query->where('source_format', $filters['source_format']))
-            ->when(isset($filters['iban']), fn ($query) => $query->where('account_iban', strtoupper(str_replace(' ', '', $filters['iban']))))
+            ->when(isset($filters['iban']), fn ($query) => str_replace(' ', '', $filters['iban'])
+                    |> strtoupper(...)
+                    |> (fn ($x) => $query->where('account_iban', $x)))
             ->orderByDesc('statement_date')
             ->orderByDesc('created_at')
             ->get();

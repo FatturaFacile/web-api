@@ -41,7 +41,8 @@ class SalesOrderController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $orders = $query->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
+        $orders = $query->paginate($perPage);
 
         return $this->successResponse(
             data: SalesOrderResource::collection($orders),

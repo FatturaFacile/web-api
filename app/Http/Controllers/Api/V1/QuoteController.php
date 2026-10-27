@@ -42,7 +42,8 @@ class QuoteController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $quotes = $query->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
+        $quotes = $query->paginate($perPage);
 
         return $this->successResponse(
             data: QuoteResource::collection($quotes),

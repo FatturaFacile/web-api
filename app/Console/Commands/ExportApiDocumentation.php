@@ -37,14 +37,14 @@ class ExportApiDocumentation extends Command
      *
      * @var array<string, string>
      */
-    private const FOLDERS = ['auth' => 'auth', 'sales' => 'invoicing', 'purchases' => 'invoicing', 'banking' => 'banking', 'accounting' => 'accounting', 'system' => 'backups'];
+    private const array FOLDERS = ['auth' => 'auth', 'sales' => 'invoicing', 'purchases' => 'invoicing', 'banking' => 'banking', 'accounting' => 'accounting', 'system' => 'backups'];
 
     /**
      * Operations whose response carries a token or a tenant that the Postman session must remember.
      *
      * @var list<string>
      */
-    private const SESSION_PATHS = ['/v1/auth/login', '/v1/auth/refresh', '/v1/auth/switch-tenant'];
+    private const array SESSION_PATHS = ['/v1/auth/login', '/v1/auth/refresh', '/v1/auth/switch-tenant'];
 
     public function handle(): int
     {
@@ -75,7 +75,9 @@ class ExportApiDocumentation extends Command
 
         File::put("{$directory}/openapi.json", json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n");
         File::put("{$directory}/openapi.yaml", Yaml::dump($spec, 40, 2, Yaml::DUMP_OBJECT_AS_MAP | Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK | Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE));
-        File::put("{$directory}/postman_collection.json", json_encode($this->collection(json_decode((string) json_encode($spec), true)), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n");
+        File::put("{$directory}/postman_collection.json", json_decode((string) json_encode($spec), true)
+                |> $this(...)
+                |> (fn ($x) => json_encode($x, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR))."\n");
 
         $this->info(__('docs.export.done', ['paths' => count((array) $spec->paths), 'directory' => $this->option('path')]));
 
@@ -129,7 +131,7 @@ class ExportApiDocumentation extends Command
     }
 
     /**
-     * Every 	ype: array schema needs an items keyword: where the analysis found none, any item is accepted.
+     * Every    ype: array schema needs an items keyword: where the analysis found none, any item is accepted.
      */
     private function completeArrays(mixed $node): void
     {
@@ -197,10 +199,11 @@ class ExportApiDocumentation extends Command
                 ['key' => 'tenantId', 'value' => '', 'type' => 'string'],
                 ['key' => 'authToken', 'value' => '', 'type' => 'string'],
             ],
-            'item' => array_values(array_map(
-                fn (string $name): array => ['name' => $name, 'item' => $folders[$name]],
-                array_values(array_filter(array_merge($ordered, $others), fn (string $name): bool => isset($folders[$name]))),
-            )),
+            'item' => array_merge($ordered, $others)
+                    |> (fn ($x) => array_filter($x, fn (string $name): bool => isset($folders[$name])))
+                    |> array_values(...)
+                    |> (fn ($x) => array_map(fn (string $name): array => ['name' => $name, 'item' => $folders[$name]], $x))
+                    |> array_values(...),
         ];
     }
 
@@ -212,7 +215,9 @@ class ExportApiDocumentation extends Command
     private function request(string $path, string $method, array $operation, array $doc): array
     {
         $public = $this->isPublic($path);
-        $segments = array_map(fn (string $segment): string => preg_replace('/^\{(\w+)\}$/', ':$1', $segment), explode('/', trim($path, '/')));
+        $segments = trim($path, '/')
+                |> (fn ($x) => explode('/', $x))
+                |> (fn ($x) => array_map(fn (string $segment): string => preg_replace('/^\{(\w+)\}$/', ':$1', $segment), $x));
         $query = [];
         $variables = [];
 

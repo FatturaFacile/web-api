@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('alerts', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->nullableUuidMorphs('alertable'); // contact or document; null = global alert
             $table->foreignUuid('created_by')->nullable()->index();
             $table->string('title');
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('loyalty_cards', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('contact_id')->nullable()->constrained('contacts')->nullOnDelete();
             $table->string('card_number', 50);
             $table->string('type', 20)->default('loyalty'); // loyalty, voucher, prepaid
@@ -47,7 +47,7 @@ return new class extends Migration
 
         Schema::create('loyalty_transactions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('loyalty_card_id')->constrained('loyalty_cards')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->string('type', 20); // earn, redeem, topup, adjust
@@ -61,7 +61,7 @@ return new class extends Migration
 
         Schema::create('payment_reminders', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->constrained('invoices')->cascadeOnDelete();
             $table->unsignedTinyInteger('level'); // 1 = gentle, 2 = formal, 3 = final
             $table->string('channel', 20)->default('email');
@@ -77,7 +77,7 @@ return new class extends Migration
 
         Schema::create('payment_imports', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('user_id')->nullable()->index();
             $table->string('file_name');
             $table->string('format', 20)->default('camt'); // camt.053 / camt.054
@@ -89,7 +89,7 @@ return new class extends Migration
 
         Schema::create('payment_import_lines', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('payment_import_id')->constrained('payment_imports')->cascadeOnDelete();
             $table->foreignUuid('invoice_id')->nullable()->constrained('invoices')->nullOnDelete();
             $table->foreignUuid('payment_id')->nullable()->constrained('payments')->nullOnDelete();

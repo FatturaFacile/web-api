@@ -34,6 +34,7 @@ class EcommerceChannel extends Model
         'last_sync_at',
         'settings',
         'last_sync_summary',
+        'at',
     ];
 
     protected function casts(): array

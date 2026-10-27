@@ -15,7 +15,7 @@ return new class extends Migration
     {
         Schema::create('legal_cases', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('case_number', 50)->index();
             $table->string('title');
@@ -31,7 +31,7 @@ return new class extends Migration
 
         Schema::create('billable_activities', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('legal_case_id')->constrained('legal_cases')->cascadeOnDelete();
             $table->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
             $table->date('date');
@@ -45,7 +45,7 @@ return new class extends Migration
 
         Schema::create('fee_notes', function (Blueprint $table): void {
             $table->uuid('id')->primary();
-            $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
+            $table->foreignUuid('tenant_id')->nullable()->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('legal_case_id')->nullable()->constrained('legal_cases')->nullOnDelete();
             $table->foreignUuid('client_id')->constrained('contacts')->cascadeOnDelete();
             $table->string('note_number', 50)->index(); // Parcela number
