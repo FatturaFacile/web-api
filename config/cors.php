@@ -20,13 +20,16 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => env('CORS_ALLOWED_ORIGINS')
-        ? explode(',', (string) env('CORS_ALLOWED_ORIGINS'))
-        : array_values(array_unique(array_filter([
+        ? explode(',', (string)env('CORS_ALLOWED_ORIGINS'))
+        : [
             env('FRONTEND_URL', 'http://localhost:4200'),
             'http://localhost:4200',
             'http://127.0.0.1:4200',
             'http://localhost:3000',
-        ]))),
+        ]
+            |> array_filter(...)
+            |> array_unique(...)
+            |> array_values(...),
 
     'allowed_origins_patterns' => [],
 
