@@ -11,7 +11,9 @@ use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -107,6 +109,11 @@ class AuthController extends Controller
             }
         } else {
             $activeTenant = $tenants->first();
+        }
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->login($user);
+            $request->session()->regenerate();
         }
 
         $tokenName = 'auth-token-'.now()->timestamp;
@@ -307,9 +314,19 @@ class AuthController extends Controller
     )]
     public function logout(Request $request): JsonResponse
     {
-        /** @var User $user */
+        /** @var User|null $user */
         $user = $request->user();
-        $user->currentAccessToken()?->delete();
+        $token = $user?->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        if ($request->hasSession()) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+        }
 
         return $this->successResponse(
             message: 'Successfully logged out'
@@ -343,7 +360,15 @@ class AuthController extends Controller
     {
         /** @var User $user */
         $user = $request->user();
-        $user->currentAccessToken()?->delete();
+        $token = $user->currentAccessToken();
+
+        if ($token instanceof PersonalAccessToken) {
+            $token->delete();
+        }
+
+        if ($request->hasSession()) {
+            $request->session()->regenerate();
+        }
 
         $tokenName = 'auth-token-'.now()->timestamp;
         $newToken = $user->createToken($tokenName, ['*'])->plainTextToken;

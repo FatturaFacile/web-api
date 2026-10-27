@@ -23,7 +23,7 @@ enum BarcodeType: string
         return $type
             |> trim(...)
             |> strtolower(...)
-            |> self(...) ?? throw BarcodeGenerationException::because(BarcodeGenerationException::UNSUPPORTED_TYPE, $type);
+            |> self::tryFrom(...) ?? throw BarcodeGenerationException::because(BarcodeGenerationException::UNSUPPORTED_TYPE, $type);
     }
 
     /**

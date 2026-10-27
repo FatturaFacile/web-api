@@ -16,6 +16,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->statefulApi();
+
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
             'locale' => SetLocale::class,

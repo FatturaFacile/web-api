@@ -26,9 +26,8 @@ class PaymentImportController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $imports = max(5, (int) $request->query('per_page', 15))
-                |> (fn ($x) => min(100, $x))
-                |> PaymentImport::query()->latest()(...);
+        $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
+        $imports = PaymentImport::query()->latest()->paginate($perPage);
 
         return $this->successResponse(
             data: CatalogResource::collection($imports),

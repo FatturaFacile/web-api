@@ -57,6 +57,7 @@ use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
+use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
@@ -68,9 +69,10 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->group(function (): void {
 
     // ----------------------------------------------------
-    // Public Auth Route
+    // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
     Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)->name('system.bootstrap-support');
 
     Route::get('/translations/{locale}', [TranslationController::class, 'index'])->name('translations.index');
     Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('lookups.getByCategory');

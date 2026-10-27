@@ -48,9 +48,7 @@ class GeneralLedgerExportService
 
     private const array SOURCE_RANK = [self::SOURCE_INVOICES => 1, self::SOURCE_PAYMENTS => 2, self::SOURCE_BANKING => 3];
 
-    public function __construct(private readonly TenantContext $tenantContext)
-    {
-    }
+    public function __construct(private readonly TenantContext $tenantContext) {}
 
     /**
      * The numbered entries of the period, in date order. `$accountCode` keeps the entries that touch that account.
@@ -59,7 +57,7 @@ class GeneralLedgerExportService
      */
     public function entries(CarbonImmutable $from, CarbonImmutable $to, string $source = self::SOURCE_ALL, ?string $accountCode = null): array
     {
-        $accounts = LedgerAccounts::forTenant((string)$this->tenantContext->getTenantId());
+        $accounts = LedgerAccounts::forTenant((string) $this->tenantContext->getTenantId());
         $entries = [];
 
         if (in_array($source, [self::SOURCE_ALL, self::SOURCE_INVOICES], true)) {
@@ -74,14 +72,14 @@ class GeneralLedgerExportService
             array_push($entries, ...$this->bankLines($from, $to, $accounts));
         }
 
-        usort($entries, fn(LedgerEntry $a, LedgerEntry $b): int => [$a->date->toDateString(), self::SOURCE_RANK[$a->source], $a->sortKey] <=> [$b->date->toDateString(), self::SOURCE_RANK[$b->source], $b->sortKey]);
+        usort($entries, fn (LedgerEntry $a, LedgerEntry $b): int => [$a->date->toDateString(), self::SOURCE_RANK[$a->source], $a->sortKey] <=> [$b->date->toDateString(), self::SOURCE_RANK[$b->source], $b->sortKey]);
 
         foreach ($entries as $index => $entry) {
             $entry->number = sprintf('%06d', $index + 1);
         }
 
         if ($accountCode !== null && $accountCode !== '') {
-            $entries = array_values(array_filter($entries, fn(LedgerEntry $entry): bool => collect($entry->lines)->contains(fn(LedgerLine $line): bool => $line->accountCode === $accountCode)));
+            $entries = array_values(array_filter($entries, fn (LedgerEntry $entry): bool => collect($entry->lines)->contains(fn (LedgerLine $line): bool => $line->accountCode === $accountCode)));
         }
 
         return $entries;
@@ -90,21 +88,21 @@ class GeneralLedgerExportService
     /**
      * Totals of a set of entries, with the balance check of the whole period and of every entry.
      *
-     * @param array<int, LedgerEntry> $entries
+     * @param  array<int, LedgerEntry>  $entries
      * @return array{entries: int, lines: int, total_debit: float, total_credit: float, balanced: bool, unbalanced_entries: array<int, string>}
      */
     public function totals(array $entries): array
     {
-        $debit = array_sum(array_map(fn(LedgerEntry $entry): int => $entry->totalDebit(), $entries));
-        $credit = array_sum(array_map(fn(LedgerEntry $entry): int => $entry->totalCredit(), $entries));
+        $debit = array_sum(array_map(fn (LedgerEntry $entry): int => $entry->totalDebit(), $entries));
+        $credit = array_sum(array_map(fn (LedgerEntry $entry): int => $entry->totalCredit(), $entries));
 
         return [
             'entries' => count($entries),
-            'lines' => array_sum(array_map(fn(LedgerEntry $entry): int => count($entry->lines), $entries)),
+            'lines' => array_sum(array_map(fn (LedgerEntry $entry): int => count($entry->lines), $entries)),
             'total_debit' => $debit / 100,
             'total_credit' => $credit / 100,
             'balanced' => $debit === $credit,
-            'unbalanced_entries' => array_values(array_map(fn(LedgerEntry $entry): string => $entry->number, array_filter($entries, fn(LedgerEntry $entry): bool => !$entry->isBalanced()))),
+            'unbalanced_entries' => array_values(array_map(fn (LedgerEntry $entry): string => $entry->number, array_filter($entries, fn (LedgerEntry $entry): bool => ! $entry->isBalanced()))),
         ];
     }
 
@@ -126,7 +124,7 @@ class GeneralLedgerExportService
             'currency' => $entry->currency,
             'total_debit' => $entry->totalDebit() / 100,
             'total_credit' => $entry->totalCredit() / 100,
-            'lines' => array_map(fn(LedgerLine $line): array => [
+            'lines' => array_map(fn (LedgerLine $line): array => [
                 'ledger_account_code' => $line->accountCode,
                 'ledger_account_name' => $line->accountName,
                 'description' => $line->description,
@@ -141,31 +139,31 @@ class GeneralLedgerExportService
      * Write the CSV of the entries through `$write`: UTF-8 with a byte order mark (so Excel opens it correctly),
      * `;` as delimiter, `,` as decimal separator with two decimals, and the standard header.
      *
-     * @param array<int, LedgerEntry> $entries
-     * @param callable(string): void $write
+     * @param  array<int, LedgerEntry>  $entries
+     * @param  callable(string): void  $write
      */
     public function writeCsv(array $entries, string $dateFormat, callable $write): void
     {
-        $write("\xEF\xBB\xBF" . implode(';', self::HEADER) . "\r\n");
+        $write("\xEF\xBB\xBF".implode(';', self::HEADER)."\r\n");
 
         foreach ($entries as $entry) {
             foreach ($entry->lines as $line) {
                 $write(implode(';', [
-                        $this->text($entry->number),
-                        $this->formatDate($entry->date, $dateFormat),
-                        $this->text($entry->documentType),
-                        $this->text($entry->documentNumber),
-                        $entry->documentDate === null ? '' : $this->formatDate($entry->documentDate, $dateFormat),
-                        $this->text((string)$entry->counterpartName),
-                        $this->text((string)$entry->taxId),
-                        $this->text($line->accountCode),
-                        $this->text($line->accountName),
-                        $this->text($line->description),
-                        $this->amount($line->debit),
-                        $this->amount($line->credit),
-                        $this->text($entry->currency),
-                        $this->text((string)$line->vatCode),
-                    ]) . "\r\n");
+                    $this->text($entry->number),
+                    $this->formatDate($entry->date, $dateFormat),
+                    $this->text($entry->documentType),
+                    $this->text($entry->documentNumber),
+                    $entry->documentDate === null ? '' : $this->formatDate($entry->documentDate, $dateFormat),
+                    $this->text((string) $entry->counterpartName),
+                    $this->text((string) $entry->taxId),
+                    $this->text($line->accountCode),
+                    $this->text($line->accountName),
+                    $this->text($line->description),
+                    $this->amount($line->debit),
+                    $this->amount($line->credit),
+                    $this->text($entry->currency),
+                    $this->text((string) $line->vatCode),
+                ])."\r\n");
             }
         }
     }
@@ -187,10 +185,10 @@ class GeneralLedgerExportService
     private function text(string $value): string
     {
         if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
-            $value = "'" . $value;
+            $value = "'".$value;
         }
 
-        return preg_match('/[;"\r\n]/', $value) === 1 ? '"' . str_replace('"', '""', $value) . '"' : $value;
+        return preg_match('/[;"\r\n]/', $value) === 1 ? '"'.str_replace('"', '""', $value).'"' : $value;
     }
 
     /**
@@ -213,7 +211,7 @@ class GeneralLedgerExportService
             }
 
             $credit = $invoice->invoice_type === 'credit_note';
-            $number = (string)$invoice->invoice_number;
+            $number = (string) $invoice->invoice_number;
             $vat = $rates[$invoice->id] ?? null;
             $lines = [
                 $this->line($accounts, 'receivables', __('accounting.descriptions.receivable', ['number' => $number]), $gross, true),
@@ -226,7 +224,7 @@ class GeneralLedgerExportService
 
             $entries[] = $this->entry(
                 $invoice->date, self::SOURCE_INVOICES, "{$number}|{$invoice->id}", $credit ? 'credit_note' : 'invoice', $number, $invoice->date,
-                $this->contactName($invoice->contact), $this->taxId($invoice->contact), (string)$invoice->currency,
+                $this->contactName($invoice->contact), $this->taxId($invoice->contact), (string) $invoice->currency,
                 $this->balanced($accounts, $lines, $credit),
             );
         }
@@ -252,7 +250,7 @@ class GeneralLedgerExportService
             }
 
             $credit = $invoice->document_type === 'TD04';
-            $number = (string)$invoice->invoice_number;
+            $number = (string) $invoice->invoice_number;
             $lines = [
                 $this->line($accounts, 'cost', __('accounting.descriptions.cost', ['number' => $number]), $net, true),
             ];
@@ -265,7 +263,7 @@ class GeneralLedgerExportService
 
             $entries[] = $this->entry(
                 $invoice->date, self::SOURCE_INVOICES, "{$number}|{$invoice->id}", $credit ? 'supplier_credit_note' : 'supplier_invoice', $number, $invoice->date,
-                $this->contactName($invoice->supplier), $this->taxId($invoice->supplier), (string)$invoice->currency,
+                $this->contactName($invoice->supplier), $this->taxId($invoice->supplier), (string) $invoice->currency,
                 $this->balanced($accounts, $lines, $credit),
             );
         }
@@ -284,11 +282,11 @@ class GeneralLedgerExportService
         $ibans = $this->ibansByBankLine($payments->pluck('bank_statement_line_id')->filter()->unique()->all());
         $entries = [];
 
-        foreach ($payments->groupBy(fn(Payment $payment): string => $payment->bank_statement_line_id ?? 'payment-' . $payment->id) as $group) {
+        foreach ($payments->groupBy(fn (Payment $payment): string => $payment->bank_statement_line_id ?? 'payment-'.$payment->id) as $group) {
             /** @var Payment $first */
             $first = $group->first();
             $invoice = $first->invoice;
-            $number = (string)$invoice?->invoice_number;
+            $number = (string) $invoice?->invoice_number;
             $byType = $this->sumByType($group);
             $total = array_sum($byType);
 
@@ -315,7 +313,7 @@ class GeneralLedgerExportService
 
             $entries[] = $this->entry(
                 CarbonImmutable::parse($first->paid_at), self::SOURCE_PAYMENTS, "customer|{$number}|{$first->id}", 'payment', $number, $invoice?->date,
-                $this->contactName($invoice?->contact), $this->taxId($invoice?->contact), (string)($invoice?->currency ?? 'EUR'), $lines,
+                $this->contactName($invoice?->contact), $this->taxId($invoice?->contact), (string) ($invoice?->currency ?? 'EUR'), $lines,
             );
         }
 
@@ -334,11 +332,11 @@ class GeneralLedgerExportService
         $ibans = $this->ibansByBankLine($payments->pluck('bank_statement_line_id')->filter()->unique()->all());
         $entries = [];
 
-        foreach ($payments->groupBy(fn(SupplierPayment $payment): string => $payment->bank_statement_line_id ?? 'payment-' . $payment->id) as $group) {
+        foreach ($payments->groupBy(fn (SupplierPayment $payment): string => $payment->bank_statement_line_id ?? 'payment-'.$payment->id) as $group) {
             /** @var SupplierPayment $first */
             $first = $group->first();
             $invoice = $first->passiveInvoice;
-            $number = (string)$invoice?->invoice_number;
+            $number = (string) $invoice?->invoice_number;
             $byType = $this->sumByType($group);
 
             if (array_sum($byType) === 0) {
@@ -360,7 +358,7 @@ class GeneralLedgerExportService
 
             $entries[] = $this->entry(
                 CarbonImmutable::parse($first->paid_at), self::SOURCE_PAYMENTS, "supplier|{$number}|{$first->id}", 'supplier_payment', $number, $invoice?->date,
-                $this->contactName($invoice?->supplier), $this->taxId($invoice?->supplier), (string)($invoice?->currency ?? 'EUR'), $lines,
+                $this->contactName($invoice?->supplier), $this->taxId($invoice?->supplier), (string) ($invoice?->currency ?? 'EUR'), $lines,
             );
         }
 
@@ -383,9 +381,9 @@ class GeneralLedgerExportService
         foreach ($lines as $line) {
             $amount = $this->cents($line->amount);
             $fee = $this->cents($line->fee_amount);
-            $category = (string)$line->reconciliation_category;
+            $category = (string) $line->reconciliation_category;
             $label = __("accounting.categories.{$category}");
-            $description = trim($label . ': ' . (string)$line->description, ': ');
+            $description = trim($label.': '.(string) $line->description, ': ');
             $bank = $accounts->bankCode($line->statement?->account_iban);
             $counterAccount = $line->ledger_account_code ?: $accounts->code($this->defaultRole($category));
             $postings = [];
@@ -404,8 +402,8 @@ class GeneralLedgerExportService
             }
 
             $entries[] = $this->entry(
-                CarbonImmutable::parse($line->booking_date), self::SOURCE_BANKING, str_pad((string)$line->line_number, 8, '0', STR_PAD_LEFT) . "|{$line->id}", $category,
-                (string)($line->reference ?: $line->statement?->account_iban), null, $line->counterpart_name, null, (string)($line->statement?->currency ?? 'EUR'), $postings,
+                CarbonImmutable::parse($line->booking_date), self::SOURCE_BANKING, str_pad((string) $line->line_number, 8, '0', STR_PAD_LEFT)."|{$line->id}", $category,
+                (string) ($line->reference ?: $line->statement?->account_iban), null, $line->counterpart_name, null, (string) ($line->statement?->currency ?? 'EUR'), $postings,
             );
         }
 
@@ -424,7 +422,7 @@ class GeneralLedgerExportService
     /**
      * The IBAN of the bank account of each bank statement line (line id => IBAN).
      *
-     * @param array<int, string> $lineIds
+     * @param  array<int, string>  $lineIds
      * @return array<string, string>
      */
     private function ibansByBankLine(array $lineIds): array
@@ -455,7 +453,7 @@ class GeneralLedgerExportService
     }
 
     /**
-     * @param Collection<int, Payment|SupplierPayment> $payments
+     * @param  Collection<int, Payment|SupplierPayment>  $payments
      * @return array{payment: int, bank_fee: int, adjustment: int}
      */
     private function sumByType(Collection $payments): array
@@ -472,7 +470,7 @@ class GeneralLedgerExportService
     /**
      * The tax rates used by the lines of each document, as a vat code such as `22` or `22/10`.
      *
-     * @param array<int, string> $ids
+     * @param  array<int, string>  $ids
      * @return array<string, string>
      */
     private function vatCodes(string $table, string $column, array $ids): array
@@ -481,8 +479,8 @@ class GeneralLedgerExportService
 
         foreach (array_chunk($ids, 500) as $chunk) {
             foreach (DB::table($table)->whereIn($column, $chunk)->select([$column, 'tax_rate'])->distinct()->orderBy('tax_rate', 'desc')->get() as $row) {
-                $rate = rtrim(rtrim(number_format((float)$row->tax_rate, 2, '.', ''), '0'), '.');
-                $codes[$row->{$column}] = isset($codes[$row->{$column}]) ? $codes[$row->{$column}] . '/' . $rate : $rate;
+                $rate = rtrim(rtrim(number_format((float) $row->tax_rate, 2, '.', ''), '0'), '.');
+                $codes[$row->{$column}] = isset($codes[$row->{$column}]) ? $codes[$row->{$column}].'/'.$rate : $rate;
             }
         }
 
@@ -493,16 +491,16 @@ class GeneralLedgerExportService
      * Put the sides of the lines right for a credit note and post any difference to the rounding account, so the entry
      * balances.
      *
-     * @param array<int, LedgerLine> $lines
+     * @param  array<int, LedgerLine>  $lines
      * @return array<int, LedgerLine>
      */
     private function balanced(LedgerAccounts $accounts, array $lines, bool $reverse): array
     {
         if ($reverse) {
-            $lines = array_map(fn(LedgerLine $line): LedgerLine => new LedgerLine($line->accountCode, $line->accountName, $line->description, $line->credit, $line->debit, $line->vatCode), $lines);
+            $lines = array_map(fn (LedgerLine $line): LedgerLine => new LedgerLine($line->accountCode, $line->accountName, $line->description, $line->credit, $line->debit, $line->vatCode), $lines);
         }
 
-        $difference = array_sum(array_map(fn(LedgerLine $line): int => $line->debit - $line->credit, $lines));
+        $difference = array_sum(array_map(fn (LedgerLine $line): int => $line->debit - $line->credit, $lines));
 
         if ($difference !== 0) {
             $lines[] = $this->line($accounts, 'rounding', __('accounting.descriptions.rounding'), abs($difference), $difference < 0);
@@ -522,7 +520,7 @@ class GeneralLedgerExportService
     }
 
     /**
-     * @param array<int, LedgerLine> $lines
+     * @param  array<int, LedgerLine>  $lines
      */
     private function entry(CarbonImmutable|\DateTimeInterface $date, string $source, string $sortKey, string $documentType, string $documentNumber, CarbonImmutable|\DateTimeInterface|null $documentDate, ?string $counterpart, ?string $taxId, string $currency, array $lines): LedgerEntry
     {
@@ -542,7 +540,7 @@ class GeneralLedgerExportService
 
     private function cents(mixed $amount): int
     {
-        return (int)round(((float)$amount) * 100);
+        return (int) round(((float) $amount) * 100);
     }
 
     private function contactName(?Contact $contact): ?string
@@ -551,7 +549,7 @@ class GeneralLedgerExportService
             return null;
         }
 
-        return $contact->company_name ?: (trim($contact->first_name . ' ' . $contact->last_name) ?: null);
+        return $contact->company_name ?: (trim($contact->first_name.' '.$contact->last_name) ?: null);
     }
 
     private function taxId(?Contact $contact): ?string

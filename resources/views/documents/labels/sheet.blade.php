@@ -1,10 +1,6 @@
 @php
-    $mm = fn (float $value): string => number_format($value, 3, '.', '')
-            |> (fn($x) => rtrim($x, '0'))
-            |> (fn($x) => rtrim($x, '.')) .'mm';
-    $number = fn (float $value): string => number_format($value, 3, '.', '')
-            |> (fn($x) => rtrim($x, '0'))
-            |> (fn($x) => rtrim($x, '.'));
+    $mm = fn (float $value): string => rtrim(rtrim(number_format($value, 3, '.', ''), '0'), '.') . 'mm';
+    $number = fn (float $value): string => rtrim(rtrim(number_format($value, 3, '.', ''), '0'), '.');
 
     $cols = $config->cols;
     // Slightly shorter than the physical page, so rounding never pushes a full grid onto an extra blank page.
@@ -30,7 +26,7 @@
 
         .page.break { page-break-after: always; }
 
-        .grid { margin: {{ $mm($config->marginTopMm) }} 0 0{{ $mm($config->marginLeftMm) }}; width: {{ $mm($config->gridWidthMm() + 0.2) }}; }
+        .grid { margin: {{ $mm($config->marginTopMm) }} 0 0 {{ $mm($config->marginLeftMm) }}; width: {{ $mm($config->gridWidthMm() + 0.2) }}; }
 
         .label { float: left; width: {{ $mm($config->labelWidthMm) }}; height: {{ $mm($config->labelHeightMm) }}; overflow: hidden; page-break-inside: avoid; }
 

@@ -8,7 +8,7 @@ use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Schema;
 
 class ErpLookupsSeeder extends Seeder
 {
@@ -19,54 +19,58 @@ class ErpLookupsSeeder extends Seeder
     {
         $categoriesData = $this->getCategoriesData();
 
-        LookupCategory::resolveConnection()->transaction(function () use ($categoriesData): void {
-            foreach ($categoriesData as $categoryData) {
-                /** @var LookupCategory $category */
-                $category = LookupCategory::updateOrCreate(
-                    ['code' => $categoryData['code']],
-                    [
-                        'id' => (string) Str::uuid(),
-                        'name' => $categoryData['name'],
-                        'description' => $categoryData['description'] ?? null,
-                        'is_system' => true,
-                    ]
-                );
+        Schema::disableForeignKeyConstraints();
 
-                foreach ($categoryData['items'] as $sortOrder => $itemData) {
-                    /** @var LookupItem $item */
-                    $item = LookupItem::updateOrCreate(
+        try {
+            LookupCategory::resolveConnection()->transaction(function () use ($categoriesData): void {
+                foreach ($categoriesData as $categoryData) {
+                    /** @var LookupCategory $category */
+                    $category = LookupCategory::updateOrCreate(
+                        ['code' => $categoryData['code']],
                         [
-                            'tenant_id' => null,
-                            'category_id' => $category->id,
-                            'code' => $itemData['code'],
-                        ],
-                        [
-                            'id' => (string) Str::uuid(),
-                            'metadata' => $itemData['metadata'] ?? null,
-                            'sort_order' => $sortOrder + 1,
-                            'is_active' => true,
-                            'is_default' => $itemData['is_default'] ?? false,
+                            'name' => $categoryData['name'],
+                            'description' => $categoryData['description'] ?? null,
                             'is_system' => true,
                         ]
                     );
 
-                    foreach ($itemData['translations'] as $locale => $transData) {
-                        LookupItemTranslation::updateOrCreate(
+                    foreach ($categoryData['items'] as $sortOrder => $itemData) {
+                        /** @var LookupItem $item */
+                        $item = LookupItem::updateOrCreate(
                             [
                                 'tenant_id' => null,
-                                'lookup_item_id' => $item->id,
-                                'locale' => $locale,
+                                'category_id' => $category->id,
+                                'code' => $itemData['code'],
                             ],
                             [
-                                'label' => $transData['label'],
-                                'short_label' => $transData['short_label'] ?? null,
-                                'description' => $transData['description'] ?? null,
+                                'metadata' => $itemData['metadata'] ?? null,
+                                'sort_order' => $sortOrder + 1,
+                                'is_active' => true,
+                                'is_default' => $itemData['is_default'] ?? false,
+                                'is_system' => true,
                             ]
                         );
+
+                        foreach ($itemData['translations'] as $locale => $transData) {
+                            LookupItemTranslation::updateOrCreate(
+                                [
+                                    'tenant_id' => null,
+                                    'lookup_item_id' => $item->id,
+                                    'locale' => $locale,
+                                ],
+                                [
+                                    'label' => $transData['label'],
+                                    'short_label' => $transData['short_label'] ?? null,
+                                    'description' => $transData['description'] ?? null,
+                                ]
+                            );
+                        }
                     }
                 }
-            }
-        });
+            });
+        } finally {
+            Schema::enableForeignKeyConstraints();
+        }
     }
 
     /**
