@@ -26,13 +26,11 @@ class DashboardBuilderController extends Controller
 
     public function __construct(
         private readonly WidgetRegistry $registry,
-    )
-    {
-    }
+    ) {}
 
     public function availableWidgets(): JsonResponse
     {
-        $widgets = collect($this->registry->all())->map(fn($widget): array => [
+        $widgets = collect($this->registry->all())->map(fn ($widget): array => [
             'id' => $widget->getId(),
             'title' => $widget->getTitle(),
             'description' => __("dashboard.widgets.{$widget->getId()}.description"),
@@ -82,10 +80,13 @@ class DashboardBuilderController extends Controller
         $layout = $this->present($this->savedLayout($request))['widgets_layout'];
         $settings = collect($layout)->pluck('settings', 'widget_id');
 
-        $requested = array_values(array_filter(array_map('trim', explode(',', (string)$request->query('widgets', '')))));
+        $requested = explode(',', (string) $request->query('widgets', ''))
+                |> (fn ($x) => array_map('trim', $x))
+                |> array_filter(...)
+                |> array_values(...);
 
         foreach ($requested as $id) {
-            if (!$this->registry->has($id)) {
+            if (! $this->registry->has($id)) {
                 throw ValidationException::withMessages(['widgets' => __('dashboard.errors.unknown_widget', ['widget' => $id])]);
             }
         }
@@ -94,7 +95,7 @@ class DashboardBuilderController extends Controller
 
         $widgets = array_map(function (string $id) use ($settings): array {
             $widget = $this->registry->get($id);
-            $widgetSettings = (array)($settings[$id] ?? []);
+            $widgetSettings = (array) ($settings[$id] ?? []);
             $result = ['id' => $id, 'title' => $widget->getTitle(), 'type' => $widget->getType(), 'settings' => $widgetSettings];
 
             try {
@@ -136,7 +137,7 @@ class DashboardBuilderController extends Controller
             'is_default' => $layout->is_default,
             'is_customized' => true,
             // Widgets that are no longer registered are left out.
-            'widgets_layout' => array_values(array_filter($layout->widgets_layout, fn(array $entry): bool => $this->registry->has($entry['widget_id']))),
+            'widgets_layout' => array_values(array_filter($layout->widgets_layout, fn (array $entry): bool => $this->registry->has($entry['widget_id']))),
         ];
     }
 }

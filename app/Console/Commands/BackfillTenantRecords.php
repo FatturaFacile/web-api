@@ -112,16 +112,18 @@ class BackfillTenantRecords extends Command
         $pendingCount = (clone $query)->count();
 
         if ($pendingCount === 0) {
-            $this->line(sprintf('[%s] No orphaned records found.', class_basename($modelClass)));
+            $modelClass
+                |> class_basename(...)
+                |> (fn ($x) => sprintf('[%s] No orphaned records found.', $x))
+                |> $this(...);
 
             return 0;
         }
 
-        $this->warn(sprintf(
-            '[%s] Found %d records with NULL tenant_id.',
-            class_basename($modelClass),
-            $pendingCount
-        ));
+        $modelClass
+            |> class_basename(...)
+            |> (fn ($x) => sprintf('[%s] Found %d records with NULL tenant_id.', $x, $pendingCount))
+            |> $this(...);
 
         if ($isDryRun) {
             return $pendingCount;
@@ -140,7 +142,10 @@ class BackfillTenantRecords extends Command
             } while ($affected > 0);
         });
 
-        $this->info(sprintf('[%s] Successfully assigned %d records to Tenant ID "%s".', class_basename($modelClass), $updatedCount, $targetTenantId));
+        $modelClass
+            |> class_basename(...)
+            |> (fn ($x) => sprintf('[%s] Successfully assigned %d records to Tenant ID "%s".', $x, $updatedCount, $targetTenantId))
+            |> $this(...);
 
         return $updatedCount;
     }

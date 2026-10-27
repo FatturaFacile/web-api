@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Feature\Architecture\TenantSchemaTest" file="Tenant Schema (Tests\Feature\Architecture\TenantSchema)" tests="2" assertions="70" errors="0" failures="0" skipped="0" time="30.780345">
+    <testcase name="All tables mapped to belongs to tenant models have tenant id column" file="Tenant Schema (Tests\Feature\Architecture\TenantSchema)::All tables mapped to belongs to tenant models have tenant id column" class="Tests\Feature\Architecture\TenantSchemaTest" classname="Tests.Feature.Architecture.TenantSchemaTest" assertions="68" time="29.633612"/>
+    <testcase name="All tables mapped to belongs to tenant models have index on tenant id" file="Tenant Schema (Tests\Feature\Architecture\TenantSchema)::All tables mapped to belongs to tenant models have index on tenant id" class="Tests\Feature\Architecture\TenantSchemaTest" classname="Tests.Feature.Architecture.TenantSchemaTest" assertions="2" time="1.146733"/>
+  </testsuite>
+</testsuites>

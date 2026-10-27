@@ -27,7 +27,10 @@ class ReleaseCheck extends Command
 
         foreach ($this->checks($schedule) as [$status, $label]) {
             $counts[$status]++;
-            $this->line(sprintf('[%s] %s', __("release.status.{$status}"), $label));
+            "release.status.{$status}"
+                |> __(...)
+                |> (fn ($x) => sprintf('[%s] %s', $x, $label))
+                |> $this(...);
         }
 
         $this->newLine();

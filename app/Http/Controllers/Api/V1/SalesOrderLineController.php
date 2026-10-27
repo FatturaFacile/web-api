@@ -32,7 +32,9 @@ class SalesOrderLineController extends Controller
             ->when($request->boolean('open'), fn ($q) => $q->whereColumn('quantity_delivered', '<', 'quantity'))
             ->latest();
 
-        $lines = $query->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $lines = max(5, (int) $request->query('per_page', 15))
+                |> (fn ($x) => min(100, $x))
+                |> $query(...);
 
         return $this->successResponse(
             data: $lines->getCollection()->map(fn (SalesOrderItem $line): array => [

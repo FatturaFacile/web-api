@@ -138,7 +138,9 @@ class PurchasesController extends Controller
             'qr_payload' => ['required', 'string'],
         ]);
 
-        $lines = explode("\r\n", trim(str_replace("\n", "\r\n", $validated['qr_payload'])));
+        $lines = str_replace("\n", "\r\n", $validated['qr_payload'])
+                |> trim(...)
+                |> (fn ($x) => explode("\r\n", $x));
         if (count($lines) < 20 || $lines[0] !== 'SPC') {
             return $this->problemDetailsResponse(
                 title: 'Invalid Swiss QR Code',

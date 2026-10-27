@@ -22,8 +22,9 @@ class DeliveryNoteController extends Controller
 
     public function index(Request $request): JsonResponse
     {
-        $notes = DeliveryNote::with('contact')->latest('date')
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $notes = max(5, (int) $request->query('per_page', 15))
+                |> (fn ($x) => min(100, $x))
+                |> DeliveryNote::with('contact')->latest('date')(...);
 
         return $this->successResponse(
             data: DeliveryNoteResource::collection($notes),
