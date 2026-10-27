@@ -26,6 +26,7 @@ class DocumentNumberingService
         'pos_receipt' => 'REC-',
         'purchase_order' => 'PO-',
         'goods_receipt' => 'GR-',
+        'service_report' => 'SR-',
     ];
 
     public function __construct(private readonly TenantContext $tenantContext) {}

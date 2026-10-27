@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasTranslations;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PaymentTerm extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids;
+    use BelongsToTenant, HasFactory, HasTranslations, HasUuids;
 
     protected $fillable = [
         'tenant_id',
@@ -41,5 +42,23 @@ class PaymentTerm extends Model
     public function installments(): HasMany
     {
         return $this->hasMany(PaymentTermInstallment::class);
+    }
+
+    /**
+     * @return HasMany<PaymentTermTranslation, $this>
+     */
+    public function translations(): HasMany
+    {
+        return $this->hasMany(PaymentTermTranslation::class, 'payment_term_id');
+    }
+
+    protected function getTranslationModelClass(): string
+    {
+        return PaymentTermTranslation::class;
+    }
+
+    protected function getTranslationForeignKey(): string
+    {
+        return 'payment_term_id';
     }
 }

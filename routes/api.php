@@ -53,6 +53,7 @@ use App\Http\Controllers\Api\V1\RetailPosController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SalesOrderLineController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
+use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
@@ -262,6 +263,21 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/work-orders/{id}/complete', [WorkOrderController::class, 'complete'])->name('work-orders.complete');
             Route::post('/work-orders/{id}/signature', [WorkOrderController::class, 'signature'])->name('work-orders.signature');
             Route::post('/work-orders/{id}/invoice', [WorkOrderController::class, 'invoice'])->name('work-orders.invoice');
+        });
+
+        // Module 01: Service Reports (Rapportini di Intervento)
+        Route::prefix('service-reports')->name('service-reports.')->group(function (): void {
+            Route::post('/generate-consolidated-invoice', [ServiceReportController::class, 'generateConsolidatedInvoice'])->name('generate-consolidated-invoice');
+            Route::get('/', [ServiceReportController::class, 'index'])->name('index');
+            Route::post('/', [ServiceReportController::class, 'store'])->name('store');
+            Route::get('/{id}', [ServiceReportController::class, 'show'])->name('show');
+            Route::put('/{id}', [ServiceReportController::class, 'update'])->name('update');
+            Route::patch('/{id}', [ServiceReportController::class, 'update'])->name('patch');
+            Route::delete('/{id}', [ServiceReportController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/sign', [ServiceReportController::class, 'sign'])->name('sign');
+            Route::post('/{id}/generate-invoice', [ServiceReportController::class, 'generateInvoice'])->name('generate-invoice');
+            Route::post('/{id}/upload-photo', [ServiceReportController::class, 'uploadPhoto'])->name('upload-photo');
+            Route::get('/{id}/pdf', [ServiceReportController::class, 'pdf'])->name('pdf');
         });
 
         // 9. Automotive & Tire Center (Gommista)

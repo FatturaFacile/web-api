@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
             TranslationSeeder::class,
             ErpLookupsSeeder::class,
+            ComprehensiveLookupMasterSeeder::class,
             UnitOfMeasureSeeder::class,
 
             ProductCategorySeeder::class,

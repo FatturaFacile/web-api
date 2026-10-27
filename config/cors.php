@@ -20,7 +20,7 @@ return [
     'allowed_methods' => ['*'],
 
     'allowed_origins' => env('CORS_ALLOWED_ORIGINS')
-        ? explode(',', (string)env('CORS_ALLOWED_ORIGINS'))
+        ? explode(',', (string) env('CORS_ALLOWED_ORIGINS'))
         : [
             env('FRONTEND_URL', 'http://localhost:4200'),
             'http://localhost:4200',

@@ -28,6 +28,7 @@ class Attachment extends Model
         'work_order' => WorkOrder::class,
         'purchase_order' => PurchaseOrder::class,
         'supplier_invoice' => PassiveInvoice::class,
+        'service_report' => ServiceReport::class,
     ];
 
     /**
