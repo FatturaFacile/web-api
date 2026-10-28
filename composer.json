@@ -45,6 +45,8 @@
             "Enterprise\\MultiTenant\\": "packages/multi-tenant/src/",
             "Enterprise\\FeatureFlags\\": "packages/feature-flags/src/",
             "Enterprise\\OpenApi\\": "packages/openapi/src/",
+            "Modules\\Workflow\\": "modules/21_Workflow/src/",
+            "Modules\\Procurement\\": "modules/13_Procurement/src/",
             "Modules\\": "modules/"
         }
     },
