@@ -19,7 +19,18 @@ final class SupplierContractPolicy
         return (string) $user->tenant_id === (string) $contract->tenant_id;
     }
 
+    public function create(User $user): bool
+    {
+        return true;
+    }
+
     public function update(User $user, SupplierContract $contract): bool
+    {
+        return (string) $user->tenant_id === (string) $contract->tenant_id
+            && ! $contract->isLockedByWorkflow();
+    }
+
+    public function delete(User $user, SupplierContract $contract): bool
     {
         return (string) $user->tenant_id === (string) $contract->tenant_id
             && ! $contract->isLockedByWorkflow();

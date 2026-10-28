@@ -29,6 +29,16 @@ final readonly class GoodsReceivedEvent implements DomainEventInterface
         return $this->eventId !== '' ? $this->eventId : (string) Str::uuid7();
     }
 
+    public function getAggregateType(): string
+    {
+        return 'purchase_receipt';
+    }
+
+    public function getAggregateId(): string
+    {
+        return $this->receiptId;
+    }
+
     public function getEventName(): string
     {
         return 'procurement.goods_received';
@@ -39,9 +49,9 @@ final readonly class GoodsReceivedEvent implements DomainEventInterface
         return $this->tenantId;
     }
 
-    public function getCompanyId(): ?string
+    public function getCompanyId(): string
     {
-        return $this->companyId;
+        return (string) ($this->companyId ?? '');
     }
 
     public function getOccurredAt(): string

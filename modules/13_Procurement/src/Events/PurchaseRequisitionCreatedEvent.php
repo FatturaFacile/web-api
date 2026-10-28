@@ -25,6 +25,16 @@ final readonly class PurchaseRequisitionCreatedEvent implements DomainEventInter
         return $this->eventId !== '' ? $this->eventId : (string) Str::uuid7();
     }
 
+    public function getAggregateType(): string
+    {
+        return 'purchase_requisition';
+    }
+
+    public function getAggregateId(): string
+    {
+        return $this->requisitionId;
+    }
+
     public function getEventName(): string
     {
         return 'procurement.requisition.created';
@@ -35,9 +45,9 @@ final readonly class PurchaseRequisitionCreatedEvent implements DomainEventInter
         return $this->tenantId;
     }
 
-    public function getCompanyId(): ?string
+    public function getCompanyId(): string
     {
-        return $this->companyId;
+        return (string) ($this->companyId ?? '');
     }
 
     public function getOccurredAt(): string

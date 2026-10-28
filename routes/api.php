@@ -69,6 +69,8 @@ use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
+use Modules\Inventory\Http\Controllers\StockMovementController;
+use Modules\Inventory\Http\Controllers\WarehouseController;
 
 Route::prefix('v1')->group(function (): void {
 
@@ -260,8 +262,8 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
             Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
-            Route::get('/warehouses', [InventoryController::class, 'warehouses'])->name('warehouses');
-            Route::get('/movements', [InventoryController::class, 'movements'])->name('movements');
+            Route::get('/warehouses', [WarehouseController::class, 'index'])->name('warehouses');
+            Route::get('/movements', [StockMovementController::class, 'index'])->name('movements');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
             Route::post('/stock-adjustments', [StockController::class, 'adjust'])->name('stock-adjustments.store');

@@ -26,6 +26,16 @@ final readonly class PurchaseReturnCreatedEvent implements DomainEventInterface
         return $this->eventId !== '' ? $this->eventId : (string) Str::uuid7();
     }
 
+    public function getAggregateType(): string
+    {
+        return 'purchase_return';
+    }
+
+    public function getAggregateId(): string
+    {
+        return $this->returnId;
+    }
+
     public function getEventName(): string
     {
         return 'procurement.purchase_return.created';
@@ -36,9 +46,9 @@ final readonly class PurchaseReturnCreatedEvent implements DomainEventInterface
         return $this->tenantId;
     }
 
-    public function getCompanyId(): ?string
+    public function getCompanyId(): string
     {
-        return $this->companyId;
+        return (string) ($this->companyId ?? '');
     }
 
     public function getOccurredAt(): string

@@ -44,4 +44,23 @@ final class PurchaseRequisitionPolicy
             && $requisition->status === 'draft'
             && ! $requisition->isLockedByWorkflow();
     }
+
+    public function approve(User $user, PurchaseRequisition $requisition): bool
+    {
+        return (string) $user->tenant_id === (string) $requisition->tenant_id
+            && $requisition->status === 'pending_approval'
+            && (string) $requisition->created_by !== (string) $user->id; // Segregation of duties
+    }
+
+    public function reject(User $user, PurchaseRequisition $requisition): bool
+    {
+        return (string) $user->tenant_id === (string) $requisition->tenant_id
+            && $requisition->status === 'pending_approval';
+    }
+
+    public function cancel(User $user, PurchaseRequisition $requisition): bool
+    {
+        return (string) $user->tenant_id === (string) $requisition->tenant_id
+            && ! in_array($requisition->status, ['converted_to_po', 'cancelled'], true);
+    }
 }

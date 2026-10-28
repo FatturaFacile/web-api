@@ -15,7 +15,7 @@ final class TransactionalOutboxService
         return TransactionalOutbox::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $event->getTenantId(),
-            'company_id' => $event->getCompanyId(),
+            'company_id' => ! empty($event->getCompanyId()) ? $event->getCompanyId() : $event->getTenantId(),
             'event_type' => $event->getEventName(),
             'aggregate_type' => $event->getAggregateType(),
             'aggregate_id' => $event->getAggregateId(),

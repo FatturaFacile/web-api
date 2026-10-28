@@ -8,6 +8,7 @@ use Enterprise\FeatureFlags\Providers\FeatureFlagsServiceProvider;
 use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
+use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
 
@@ -22,4 +23,5 @@ return [
     OpenApiServiceProvider::class,
     WorkflowServiceProvider::class,
     ProcurementServiceProvider::class,
+    InventoryServiceProvider::class,
 ];

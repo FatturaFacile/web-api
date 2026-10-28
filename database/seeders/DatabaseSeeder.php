@@ -67,6 +67,9 @@ class DatabaseSeeder extends Seeder
             GoodsReceiptSeeder::class,
             GoodsReceiptItemSeeder::class,
 
+            ProcurementLookupSeeder::class,
+            ProcurementDemoDataSeeder::class,
+
             PaymentSeeder::class,
             SupplierPaymentSeeder::class,
             PaymentReminderSeeder::class,

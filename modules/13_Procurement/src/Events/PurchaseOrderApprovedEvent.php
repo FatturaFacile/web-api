@@ -25,6 +25,16 @@ final readonly class PurchaseOrderApprovedEvent implements DomainEventInterface
         return $this->eventId !== '' ? $this->eventId : (string) Str::uuid7();
     }
 
+    public function getAggregateType(): string
+    {
+        return 'purchase_order';
+    }
+
+    public function getAggregateId(): string
+    {
+        return $this->purchaseOrderId;
+    }
+
     public function getEventName(): string
     {
         return 'procurement.purchase_order.approved';
@@ -35,9 +45,9 @@ final readonly class PurchaseOrderApprovedEvent implements DomainEventInterface
         return $this->tenantId;
     }
 
-    public function getCompanyId(): ?string
+    public function getCompanyId(): string
     {
-        return $this->companyId;
+        return (string) ($this->companyId ?? '');
     }
 
     public function getOccurredAt(): string

@@ -65,11 +65,12 @@ final class SupplierEvaluationService implements SupplierEvaluationServiceInterf
     public function generateQuarterlyScorecard(Supplier $supplier, int $year, int $quarter): SupplierScorecard
     {
         return DB::transaction(function () use ($supplier, $year, $quarter): SupplierScorecard {
-            $start = Carbon::create($year)->quarter($quarter)->startOfQuarter();
-            $end = Carbon::create($year)->quarter($quarter)->endOfQuarter();
+            $month = max(1, min(12, ($quarter - 1) * 3 + 1));
+            $start = Carbon::create($year, $month, 1)->startOfQuarter();
+            $end = Carbon::create($year, $month, 1)->endOfQuarter();
 
             $orders = PurchaseOrder::where('supplier_id', $supplier->id)
-                ->whereBetween('order_date', [$start->toDateString(), $end->toDateString()])
+                ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
                 ->with('receipts')
                 ->get();
 

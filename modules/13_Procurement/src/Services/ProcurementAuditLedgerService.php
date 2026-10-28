@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Services;
 
-use Enterprise\AuditLedger\Services\AuditLedgerService;
+use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Database\Eloquent\Model;
 
 final class ProcurementAuditLedgerService
 {
     public function __construct(
-        private readonly ?AuditLedgerService $enterpriseAuditService = null
+        private readonly ?AuditLedgerInterface $enterpriseAuditService = null
     ) {}
 
     /**

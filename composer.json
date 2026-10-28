@@ -47,6 +47,7 @@
             "Enterprise\\OpenApi\\": "packages/openapi/src/",
             "Modules\\Workflow\\": "modules/21_Workflow/src/",
             "Modules\\Procurement\\": "modules/13_Procurement/src/",
+            "Modules\\Inventory\\": "modules/14_Inventory/src/",
             "Modules\\": "modules/"
         }
     },
