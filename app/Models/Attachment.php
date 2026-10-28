@@ -44,10 +44,19 @@ class Attachment extends Model
         'attachable_id',
         'uploaded_by',
         'original_name',
+        'disk',
         'path',
         'mime_type',
         'size',
     ];
+
+    /**
+     * Resolve the storage disk for this attachment, defaulting to the application private disk.
+     */
+    public function getStorageDisk(): string
+    {
+        return $this->disk ?? (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
+    }
 
     protected function casts(): array
     {

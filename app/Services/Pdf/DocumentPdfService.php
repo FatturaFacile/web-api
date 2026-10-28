@@ -184,8 +184,9 @@ class DocumentPdfService
 
         $signatureImage = null;
 
-        if ($workOrder->client_signature_path !== null && Storage::disk('local')->exists($workOrder->client_signature_path)) {
-            $signatureImage = $this->dataUri(Storage::disk('local')->get($workOrder->client_signature_path));
+        $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
+        if ($workOrder->client_signature_path !== null && Storage::disk($disk)->exists($workOrder->client_signature_path)) {
+            $signatureImage = $this->dataUri(Storage::disk($disk)->get($workOrder->client_signature_path));
         }
 
         return ['documents.work-order', array_merge($this->common($workOrder, $workOrder->client, 'work_order', $workOrder->work_order_number), [

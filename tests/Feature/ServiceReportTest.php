@@ -7,6 +7,7 @@ use App\Models\LookupItem;
 use App\Models\ServiceReport;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Database\Seeders\ComprehensiveLookupMasterSeeder;
 use Database\Seeders\ServiceReportLookupSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -38,6 +39,7 @@ beforeEach(function (): void {
         'locale' => 'en',
     ]);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
+    app(TenantContext::class)->setTenant($this->tenant);
     Sanctum::actingAs($this->user);
 
     $this->contact = Contact::create([
@@ -126,11 +128,13 @@ test('service report validation rejects cross-tenant contact and technician', fu
         'default_currency' => 'EUR',
     ]);
 
+    app(TenantContext::class)->setTenant($otherTenant);
     $foreignContact = Contact::create([
         'tenant_id' => $otherTenant->id,
         'company_name' => 'Foreign Customer',
         'country' => 'IT',
     ]);
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $payload = $this->payload;
     $payload['contact_id'] = $foreignContact->id;

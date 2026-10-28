@@ -12,13 +12,14 @@ use App\Http\Responses\ApiResponse;
 use App\Models\EiInboundLog;
 use App\Models\EiOutboundLog;
 use App\Models\Invoice;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceSdiController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, AuthorizesRequests;
 
     public function __construct(private readonly SendInvoiceToSdi $sendToSdi) {}
 
@@ -44,8 +45,11 @@ class InvoiceSdiController extends Controller
     )]
     public function send(string $id): JsonResponse
     {
+        $invoice = Invoice::findOrFail($id);
+        $this->authorize('sendSdi', $invoice);
+
         try {
-            $metadata = $this->sendToSdi->execute(Invoice::findOrFail($id));
+            $metadata = $this->sendToSdi->execute($invoice);
         } catch (SdiProviderException $e) {
             return $this->problemDetailsResponse(
                 title: __('sdi.send_failed_title'),
@@ -83,6 +87,7 @@ class InvoiceSdiController extends Controller
     public function logs(string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
+        $this->authorize('view', $invoice);
 
         return $this->successResponse([
             'outbound' => CatalogResource::collection(EiOutboundLog::where('invoice_id', $invoice->id)->latest()->get()),

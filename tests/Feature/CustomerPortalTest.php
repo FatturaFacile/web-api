@@ -12,6 +12,7 @@ use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
 use App\Services\Portal\PortalTokenService;
+use App\Services\Tenancy\TenantContext;
 use Database\Seeders\ComprehensiveLookupMasterSeeder;
 use Database\Seeders\ServiceReportLookupSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -39,6 +40,7 @@ beforeEach(function (): void {
         'locale' => 'en',
     ]);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $this->customer = Contact::create([
         'tenant_id' => $this->tenant->id,

@@ -30,6 +30,11 @@ class InvoicePolicy
             return false;
         }
 
+        // Invoices transmitted or currently sending to SDI cannot be mutated via API
+        if ($invoice->sdiMetadata && in_array($invoice->sdiMetadata->sdi_status, ['sending', 'delivered', 'accepted'], true)) {
+            return false;
+        }
+
         // Paid invoices cannot be modified
         return $invoice->payment_status !== 'paid';
     }
@@ -40,7 +45,12 @@ class InvoicePolicy
             return false;
         }
 
-        // Invoices with payments or transmitted to SDI cannot be deleted
+        // Invoices transmitted or currently sending to SDI cannot be deleted
+        if ($invoice->sdiMetadata && in_array($invoice->sdiMetadata->sdi_status, ['sending', 'delivered', 'accepted'], true)) {
+            return false;
+        }
+
+        // Invoices with payments cannot be deleted
         return $invoice->payment_status === 'unpaid' && (float) $invoice->total_paid <= 0;
     }
 

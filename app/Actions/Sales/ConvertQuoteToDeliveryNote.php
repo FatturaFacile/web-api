@@ -25,21 +25,23 @@ class ConvertQuoteToDeliveryNote
      */
     public function execute(Quote $quote): DeliveryNote
     {
-        if (in_array($quote->status, ['rejected', 'expired'], true)) {
-            throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
-        }
-
         return DB::transaction(function () use ($quote): DeliveryNote {
+            $lockedQuote = Quote::where('id', $quote->id)->lockForUpdate()->firstOrFail();
+
+            if (in_array($lockedQuote->status, ['rejected', 'expired'], true)) {
+                throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
+            }
+
             $note = DeliveryNote::create([
-                'tenant_id' => $quote->tenant_id,
-                'contact_id' => $quote->contact_id,
+                'tenant_id' => $lockedQuote->tenant_id,
+                'contact_id' => $lockedQuote->contact_id,
                 'ddt_number' => $this->numbering->next('delivery_note')['number'],
                 'date' => now()->toDateString(),
                 'status' => 'issued',
-                'notes' => $quote->notes,
+                'notes' => $lockedQuote->notes,
             ]);
 
-            foreach ($quote->items as $item) {
+            foreach ($lockedQuote->items as $item) {
                 $note->items()->create([
                     'product_id' => $item->product_id,
                     'description' => $item->description,
@@ -50,8 +52,8 @@ class ConvertQuoteToDeliveryNote
             }
 
             $this->stock->recordForLines('out', $note, $note->items()->get());
-            $quote->update(['status' => 'accepted']);
-            $this->events->record($quote, 'converted_to_delivery_note', ['delivery_note_id' => $note->id]);
+            $lockedQuote->update(['status' => 'accepted']);
+            $this->events->record($lockedQuote, 'converted_to_delivery_note', ['delivery_note_id' => $note->id]);
 
             return $note->load('items');
         });

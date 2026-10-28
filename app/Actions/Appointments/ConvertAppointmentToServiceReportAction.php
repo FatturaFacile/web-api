@@ -26,26 +26,28 @@ class ConvertAppointmentToServiceReportAction
      */
     public function execute(Appointment $appointment): ServiceReport
     {
-        if ($appointment->service_report_id !== null) {
-            throw ValidationException::withMessages([
-                'appointment' => "This appointment has already been converted to service report #{$appointment->service_report_id}.",
-            ]);
-        }
-
-        if ($appointment->isCancelled()) {
-            throw ValidationException::withMessages([
-                'appointment' => 'Cannot convert a cancelled appointment to a service report.',
-            ]);
-        }
-
         return DB::transaction(function () use ($appointment): ServiceReport {
+            $lockedAppointment = Appointment::where('id', $appointment->id)->lockForUpdate()->firstOrFail();
+
+            if ($lockedAppointment->service_report_id !== null) {
+                throw ValidationException::withMessages([
+                    'appointment' => "This appointment has already been converted to service report #{$lockedAppointment->service_report_id}.",
+                ]);
+            }
+
+            if ($lockedAppointment->isCancelled()) {
+                throw ValidationException::withMessages([
+                    'appointment' => 'Cannot convert a cancelled appointment to a service report.',
+                ]);
+            }
+
             // Determine lead technician
-            $leadAttendee = $appointment->attendees()
+            $leadAttendee = $lockedAppointment->attendees()
                 ->where('role', 'lead')
                 ->first()
-                ?? $appointment->attendees()->first();
+                ?? $lockedAppointment->attendees()->first();
 
-            $technicianId = $leadAttendee?->user_id ?? Auth::id() ?? $appointment->created_by;
+            $technicianId = $leadAttendee?->user_id ?? Auth::id() ?? $lockedAppointment->created_by;
 
             if (empty($technicianId)) {
                 throw ValidationException::withMessages([

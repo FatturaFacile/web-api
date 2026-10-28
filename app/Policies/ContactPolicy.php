@@ -35,8 +35,29 @@ class ContactPolicy
             return false;
         }
 
-        // Contacts with existing invoices, quotes or service reports cannot be deleted
-        return $contact->invoices()->count() === 0;
+        // To comply with statutory 10-year fiscal retention and audit requirements,
+        // contacts with any historical fiscal or operational records (including soft-deleted) cannot be deleted.
+        if ($contact->invoices()->withTrashed()->exists()) {
+            return false;
+        }
+
+        if ($contact->quotes()->withTrashed()->exists()) {
+            return false;
+        }
+
+        if ($contact->salesOrders()->withTrashed()->exists()) {
+            return false;
+        }
+
+        if ($contact->deliveryNotes()->withTrashed()->exists()) {
+            return false;
+        }
+
+        if ($contact->serviceReports()->withTrashed()->exists()) {
+            return false;
+        }
+
+        return true;
     }
 
     private function belongsToSameTenant(User $user, Contact $contact): bool

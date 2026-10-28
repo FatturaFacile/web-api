@@ -488,4 +488,24 @@ class InvoiceController extends Controller
             'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
         ]);
     }
+
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $invoice = Invoice::findOrFail($id);
+        $this->authorize('update', $invoice);
+
+        $invoice->update($request->only(['notes', 'due_date']));
+
+        return $this->successResponse(new InvoiceResource($invoice->fresh()), 'Invoice updated successfully');
+    }
+
+    public function destroy(string $id): JsonResponse
+    {
+        $invoice = Invoice::findOrFail($id);
+        $this->authorize('delete', $invoice);
+
+        $invoice->delete();
+
+        return $this->successResponse(null, 'Invoice deleted successfully');
+    }
 }

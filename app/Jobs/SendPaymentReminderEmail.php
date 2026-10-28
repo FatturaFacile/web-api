@@ -22,7 +22,10 @@ class SendPaymentReminderEmail implements ShouldQueue
      */
     public int $tries = 1;
 
-    public function __construct(public readonly string $reminderId) {}
+    public function __construct(public readonly string $reminderId)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(DocumentPdfService $pdfService): void
     {

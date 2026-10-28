@@ -21,7 +21,9 @@ class NotifyQuoteStatusChangedJob implements ShouldQueue
         public readonly string $newStatus,
         public readonly string $actorName,
         public readonly ?string $comments = null
-    ) {}
+    ) {
+        $this->afterCommit = true;
+    }
 
     public function handle(): void
     {

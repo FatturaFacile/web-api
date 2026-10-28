@@ -18,7 +18,10 @@ class GenerateServiceReportPdfJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public readonly ServiceReport $serviceReport) {}
+    public function __construct(public readonly ServiceReport $serviceReport)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(DocumentPdfService $pdfService): void
     {

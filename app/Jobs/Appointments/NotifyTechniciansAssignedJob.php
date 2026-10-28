@@ -16,7 +16,10 @@ class NotifyTechniciansAssignedJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public readonly Appointment $appointment) {}
+    public function __construct(public readonly Appointment $appointment)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(): void
     {

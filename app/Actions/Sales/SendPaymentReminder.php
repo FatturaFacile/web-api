@@ -70,7 +70,7 @@ class SendPaymentReminder
             return $reminder;
         });
 
-        SendPaymentReminderEmail::dispatch($reminder->id);
+        SendPaymentReminderEmail::dispatch($reminder->id)->afterCommit();
 
         return $reminder;
     }

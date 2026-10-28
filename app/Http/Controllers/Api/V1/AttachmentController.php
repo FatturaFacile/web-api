@@ -95,11 +95,12 @@ class AttachmentController extends Controller
         $class = Attachment::TARGET_TYPES[$request->validated('attachable_type')];
         $target = $class::findOrFail($request->validated('attachable_id'));
 
+        $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
         $file = $request->file('file');
         $path = $file->storeAs(
             "tenants/{$this->tenantContext->getTenantId()}/attachments",
             Str::uuid().'-'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension(),
-            'local'
+            $disk
         );
 
         $attachment = Attachment::create([
@@ -107,6 +108,7 @@ class AttachmentController extends Controller
             'attachable_id' => $target->getKey(),
             'uploaded_by' => Auth::id(),
             'original_name' => $file->getClientOriginalName(),
+            'disk' => $disk,
             'path' => $path,
             'mime_type' => (string) $file->getMimeType(),
             'size' => $file->getSize(),
@@ -135,7 +137,7 @@ class AttachmentController extends Controller
     {
         $attachment = Attachment::findOrFail($id);
 
-        return Storage::disk('local')->download($attachment->path, $attachment->original_name);
+        return Storage::disk($attachment->getStorageDisk())->download($attachment->path, $attachment->original_name);
     }
 
     #[OA\Delete(
@@ -157,7 +159,7 @@ class AttachmentController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $attachment = Attachment::findOrFail($id);
-        Storage::disk('local')->delete($attachment->path);
+        Storage::disk($attachment->getStorageDisk())->delete($attachment->path);
         $attachment->delete();
 
         return $this->successResponse(null, __('documents.messages.attachment_deleted'));

@@ -90,6 +90,11 @@ class ServiceReportPolicy
         return $this->view($user, $report);
     }
 
+    public function download(User $user, ServiceReport $report): bool
+    {
+        return $this->view($user, $report);
+    }
+
     /**
      * Determine whether the user can delete the service report.
      */

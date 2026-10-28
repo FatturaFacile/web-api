@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
@@ -30,6 +31,8 @@ beforeEach(function (): void {
 
     $this->user = User::create(['name' => 'Leonardo', 'email' => 'leo@fatturafacile.com', 'password' => bcrypt('secret123'), 'locale' => 'en']);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
+
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $this->supplier = Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'supplier', 'company_name' => 'Acme Supplies SRL', 'country' => 'IT', 'vat_number' => '01234567890']);
 });

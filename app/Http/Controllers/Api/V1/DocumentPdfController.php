@@ -7,12 +7,15 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\DocumentEmail;
 use App\Services\Pdf\DocumentPdfService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use OpenApi\Attributes as OA;
 
 class DocumentPdfController extends Controller
 {
+    use AuthorizesRequests;
+
     /**
      * Download (or display inline with `?inline=1`) the PDF of an invoice, quote, order, delivery note or work report.
      */
@@ -40,7 +43,10 @@ class DocumentPdfController extends Controller
 
         abort_if($class === null, 404, __('pdf.messages.unsupported_type'));
 
-        $rendered = $pdf->render($class::findOrFail($id));
+        $document = $class::findOrFail($id);
+        $this->authorize('download', $document);
+
+        $rendered = $pdf->render($document);
         $disposition = $request->boolean('inline') ? 'inline' : 'attachment';
 
         return response($rendered->content, 200, [

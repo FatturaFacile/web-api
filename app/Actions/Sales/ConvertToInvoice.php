@@ -32,25 +32,29 @@ class ConvertToInvoice
      */
     public function fromOrder(SalesOrder $order): Invoice
     {
-        if (Invoice::where('sales_order_id', $order->id)->where('is_deposit', false)->exists()) {
-            throw ValidationException::withMessages(['order' => __('sales.order_already_invoiced')]);
-        }
+        return DB::transaction(function () use ($order): Invoice {
+            $lockedOrder = SalesOrder::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-        // Final invoice: previously issued deposit invoices are deducted line by line, keeping each tax rate.
-        $deductions = Invoice::with('items')
-            ->where('sales_order_id', $order->id)
-            ->where('is_deposit', true)
-            ->orderBy('date')
-            ->get()
-            ->flatMap(fn (Invoice $deposit): array => $deposit->items->map(fn ($item): InvoiceItem => new InvoiceItem([
-                'description' => __('sales.deposit_deduction', ['number' => $deposit->invoice_number]),
-                'quantity' => 1,
-                'unit_price' => -1 * (float) $item->line_total,
-                'tax_rate' => $item->tax_rate,
-            ]))->all())
-            ->all();
+            if (Invoice::where('sales_order_id', $lockedOrder->id)->where('is_deposit', false)->exists()) {
+                throw ValidationException::withMessages(['order' => __('sales.order_already_invoiced')]);
+            }
 
-        return $this->build($order, array_merge($order->items->all(), $deductions), ['sales_order_id' => $order->id], 'invoiced_from_order');
+            // Final invoice: previously issued deposit invoices are deducted line by line, keeping each tax rate.
+            $deductions = Invoice::with('items')
+                ->where('sales_order_id', $lockedOrder->id)
+                ->where('is_deposit', true)
+                ->orderBy('date')
+                ->get()
+                ->flatMap(fn (Invoice $deposit): array => $deposit->items->map(fn ($item): InvoiceItem => new InvoiceItem([
+                    'description' => __('sales.deposit_deduction', ['number' => $deposit->invoice_number]),
+                    'quantity' => 1,
+                    'unit_price' => -1 * (float) $item->line_total,
+                    'tax_rate' => $item->tax_rate,
+                ]))->all())
+                ->all();
+
+            return $this->build($lockedOrder, array_merge($lockedOrder->items->all(), $deductions), ['sales_order_id' => $lockedOrder->id], 'invoiced_from_order');
+        });
     }
 
     /**
@@ -59,34 +63,38 @@ class ConvertToInvoice
      */
     public function depositFromOrder(SalesOrder $order, float $percentage): Invoice
     {
-        if ($order->status === 'cancelled') {
-            throw ValidationException::withMessages(['order' => __('sales.order_cancelled')]);
-        }
+        return DB::transaction(function () use ($order, $percentage): Invoice {
+            $lockedOrder = SalesOrder::where('id', $order->id)->lockForUpdate()->firstOrFail();
 
-        if (Invoice::where('sales_order_id', $order->id)->where('is_deposit', false)->exists()) {
-            throw ValidationException::withMessages(['order' => __('sales.order_already_invoiced')]);
-        }
+            if ($lockedOrder->status === 'cancelled') {
+                throw ValidationException::withMessages(['order' => __('sales.order_cancelled')]);
+            }
 
-        $alreadyRequested = (float) Invoice::where('sales_order_id', $order->id)->where('is_deposit', true)->sum('total_net');
-        $lines = $order->items->groupBy(fn ($item): string => number_format((float) $item->tax_rate, 2, '.', ''))
-            ->map(fn ($group, string $rate): InvoiceItem => new InvoiceItem([
-                'description' => __('sales.deposit_line', ['number' => $order->order_number, 'percentage' => number_format($percentage, 2, '.', '')
-                        |> (fn ($x) => rtrim($x, '0'))
-                        |> (fn ($x) => rtrim($x, '.'))]),
-                'quantity' => 1,
-                'unit_price' => round((float) $group->sum('line_total') * $percentage / 100, 2),
-                'tax_rate' => (float) $rate,
-            ]))
-            ->values()
-            ->all();
+            if (Invoice::where('sales_order_id', $lockedOrder->id)->where('is_deposit', false)->exists()) {
+                throw ValidationException::withMessages(['order' => __('sales.order_already_invoiced')]);
+            }
 
-        $requested = array_sum(array_map(fn (InvoiceItem $line): float => (float) $line->unit_price, $lines));
+            $alreadyRequested = (float) Invoice::where('sales_order_id', $lockedOrder->id)->where('is_deposit', true)->sum('total_net');
+            $lines = $lockedOrder->items->groupBy(fn ($item): string => number_format((float) $item->tax_rate, 2, '.', ''))
+                ->map(fn ($group, string $rate): InvoiceItem => new InvoiceItem([
+                    'description' => __('sales.deposit_line', ['number' => $lockedOrder->order_number, 'percentage' => number_format($percentage, 2, '.', '')
+                            |> (fn ($x) => rtrim($x, '0'))
+                            |> (fn ($x) => rtrim($x, '.'))]),
+                    'quantity' => 1,
+                    'unit_price' => round((float) $group->sum('line_total') * $percentage / 100, 2),
+                    'tax_rate' => (float) $rate,
+                ]))
+                ->values()
+                ->all();
 
-        if ($alreadyRequested + $requested > (float) $order->total_net + 0.01) {
-            throw ValidationException::withMessages(['percentage' => __('sales.deposit_exceeds_order')]);
-        }
+            $requested = array_sum(array_map(fn (InvoiceItem $line): float => (float) $line->unit_price, $lines));
 
-        return $this->build($order, $lines, ['sales_order_id' => $order->id], 'deposit_invoiced_from_order', ['is_deposit' => true]);
+            if ($alreadyRequested + $requested > (float) $lockedOrder->total_net + 0.01) {
+                throw ValidationException::withMessages(['percentage' => __('sales.deposit_exceeds_order')]);
+            }
+
+            return $this->build($lockedOrder, $lines, ['sales_order_id' => $lockedOrder->id], 'deposit_invoiced_from_order', ['is_deposit' => true]);
+        });
     }
 
     /**
@@ -94,34 +102,42 @@ class ConvertToInvoice
      */
     public function fromQuote(Quote $quote): Invoice
     {
-        if (in_array($quote->status, ['rejected', 'expired'], true)) {
-            throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
-        }
+        return DB::transaction(function () use ($quote): Invoice {
+            $lockedQuote = Quote::where('id', $quote->id)->lockForUpdate()->firstOrFail();
 
-        if (Invoice::where('quote_id', $quote->id)->exists()) {
-            throw ValidationException::withMessages(['quote' => __('sales.quote_already_invoiced')]);
-        }
+            if (in_array($lockedQuote->status, ['rejected', 'expired'], true)) {
+                throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
+            }
 
-        $invoice = $this->build($quote, $quote->items->all(), ['quote_id' => $quote->id], 'invoiced_from_quote');
-        $quote->update(['status' => 'accepted']);
+            if (Invoice::where('quote_id', $lockedQuote->id)->exists()) {
+                throw ValidationException::withMessages(['quote' => __('sales.quote_already_invoiced')]);
+            }
 
-        return $invoice;
+            $invoice = $this->build($lockedQuote, $lockedQuote->items->all(), ['quote_id' => $lockedQuote->id], 'invoiced_from_quote');
+            $lockedQuote->update(['status' => 'accepted']);
+
+            return $invoice;
+        });
     }
 
     public function fromDeliveryNote(DeliveryNote $note): Invoice
     {
-        if ($note->status === 'invoiced') {
-            throw ValidationException::withMessages(['delivery_note' => __('sales.delivery_note_already_invoiced')]);
-        }
+        return DB::transaction(function () use ($note): Invoice {
+            $lockedNote = DeliveryNote::where('id', $note->id)->lockForUpdate()->firstOrFail();
 
-        $invoice = $this->build($note, $note->items->all(), [
-            'sales_order_id' => $note->sales_order_id,
-            'delivery_note_id' => $note->id,
-        ], 'invoiced_from_delivery_note');
+            if ($lockedNote->status === 'invoiced') {
+                throw ValidationException::withMessages(['delivery_note' => __('sales.delivery_note_already_invoiced')]);
+            }
 
-        $note->update(['status' => 'invoiced']);
+            $invoice = $this->build($lockedNote, $lockedNote->items->all(), [
+                'sales_order_id' => $lockedNote->sales_order_id,
+                'delivery_note_id' => $lockedNote->id,
+            ], 'invoiced_from_delivery_note');
 
-        return $invoice;
+            $lockedNote->update(['status' => 'invoiced']);
+
+            return $invoice;
+        });
     }
 
     /**
@@ -143,19 +159,23 @@ class ConvertToInvoice
      */
     public function fromProforma(Invoice $proforma): Invoice
     {
-        if ($proforma->invoice_type !== 'proforma') {
-            throw ValidationException::withMessages(['invoice' => __('sales.proforma_only')]);
-        }
+        return DB::transaction(function () use ($proforma): Invoice {
+            $lockedProforma = Invoice::where('id', $proforma->id)->lockForUpdate()->firstOrFail();
 
-        if (Invoice::where('proforma_id', $proforma->id)->exists()) {
-            throw ValidationException::withMessages(['invoice' => __('sales.proforma_already_converted')]);
-        }
+            if ($lockedProforma->invoice_type !== 'proforma') {
+                throw ValidationException::withMessages(['invoice' => __('sales.proforma_only')]);
+            }
 
-        return $this->build($proforma, $proforma->items->all(), ['proforma_id' => $proforma->id], 'converted_from_proforma', [
-            'jurisdiction' => $proforma->jurisdiction,
-            'split_payment' => $proforma->split_payment,
-            'reverse_charge' => $proforma->reverse_charge,
-        ]);
+            if (Invoice::where('proforma_id', $lockedProforma->id)->exists()) {
+                throw ValidationException::withMessages(['invoice' => __('sales.proforma_already_converted')]);
+            }
+
+            return $this->build($lockedProforma, $lockedProforma->items->all(), ['proforma_id' => $lockedProforma->id], 'converted_from_proforma', [
+                'jurisdiction' => $lockedProforma->jurisdiction,
+                'split_payment' => $lockedProforma->split_payment,
+                'reverse_charge' => $lockedProforma->reverse_charge,
+            ]);
+        });
     }
 
     /**
@@ -201,17 +221,21 @@ class ConvertToInvoice
      */
     public function fromWorkOrder(WorkOrder $workOrder): Invoice
     {
-        if (! in_array($workOrder->status, ['completed', 'signed'], true)) {
-            throw ValidationException::withMessages(['work_order' => __('work_orders.not_invoiceable')]);
-        }
+        return DB::transaction(function () use ($workOrder): Invoice {
+            $lockedWorkOrder = WorkOrder::where('id', $workOrder->id)->lockForUpdate()->firstOrFail();
 
-        if ($workOrder->lines->isEmpty()) {
-            throw ValidationException::withMessages(['work_order' => __('work_orders.no_lines')]);
-        }
+            if (! in_array($lockedWorkOrder->status, ['completed', 'signed'], true)) {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.not_invoiceable')]);
+            }
 
-        $invoice = $this->build($workOrder, $workOrder->lines->all(), [], 'invoiced_from_work_order', ['notes' => $workOrder->work_order_number]);
-        $workOrder->update(['status' => 'invoiced', 'invoice_id' => $invoice->id]);
+            if ($lockedWorkOrder->lines->isEmpty()) {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.no_lines')]);
+            }
 
-        return $invoice;
+            $invoice = $this->build($lockedWorkOrder, $lockedWorkOrder->lines->all(), [], 'invoiced_from_work_order', ['notes' => $lockedWorkOrder->work_order_number]);
+            $lockedWorkOrder->update(['status' => 'invoiced', 'invoice_id' => $invoice->id]);
+
+            return $invoice;
+        });
     }
 }

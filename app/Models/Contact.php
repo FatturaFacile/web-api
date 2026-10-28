@@ -63,6 +63,38 @@ class Contact extends Model
     }
 
     /**
+     * @return HasMany<Quote, $this>
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
+
+    /**
+     * @return HasMany<DeliveryNote, $this>
+     */
+    public function deliveryNotes(): HasMany
+    {
+        return $this->hasMany(DeliveryNote::class);
+    }
+
+    /**
+     * @return HasMany<ServiceReport, $this>
+     */
+    public function serviceReports(): HasMany
+    {
+        return $this->hasMany(ServiceReport::class);
+    }
+
+    /**
      * @return HasMany<Appointment, $this>
      */
     public function appointments(): HasMany

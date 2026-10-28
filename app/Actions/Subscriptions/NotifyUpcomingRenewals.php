@@ -41,7 +41,7 @@ class NotifyUpcomingRenewals
                 $subscription->update(['renewal_notified_at' => now()]);
 
                 if ($subscription->contact?->email !== null) {
-                    SendSubscriptionRenewalNotice::dispatch($subscription->id);
+                    SendSubscriptionRenewalNotice::dispatch($subscription->id)->afterCommit();
                 }
                 $notified++;
             });

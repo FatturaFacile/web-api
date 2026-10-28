@@ -9,13 +9,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
 use App\Services\SwissQrBill\SwissQrBillService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceQrBillController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, AuthorizesRequests;
 
     /**
      * The Swiss QR-bill of an invoice: SPC payload, QR code images and the reference data of the payment slip.
@@ -62,6 +63,7 @@ class InvoiceQrBillController extends Controller
     public function show(SwissQrBillService $qrBills, string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
+        $this->authorize('generateQrBill', $invoice);
 
         try {
             $bill = $qrBills->generate($invoice);

@@ -75,7 +75,9 @@ Route::prefix('v1')->group(function (): void {
     // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
     Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
-    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)->name('system.bootstrap-support');
+    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
+        ->middleware('throttle:5,1')
+        ->name('system.bootstrap-support');
 
     Route::get('/translations/{locale}', [TranslationController::class, 'index'])->name('translations.index');
     Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('lookups.getByCategory');
