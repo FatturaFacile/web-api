@@ -37,7 +37,15 @@
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",
-            "Database\\Seeders\\": "database/seeders/"
+            "Database\\Seeders\\": "database/seeders/",
+            "Enterprise\\Foundation\\": "packages/enterprise-foundation/src/",
+            "Enterprise\\AuditLedger\\": "packages/audit-ledger/src/",
+            "Enterprise\\AiGateway\\": "packages/ai-gateway/src/",
+            "Enterprise\\EventBus\\": "packages/event-bus/src/",
+            "Enterprise\\MultiTenant\\": "packages/multi-tenant/src/",
+            "Enterprise\\FeatureFlags\\": "packages/feature-flags/src/",
+            "Enterprise\\OpenApi\\": "packages/openapi/src/",
+            "Modules\\": "modules/"
         }
     },
     "autoload-dev": {
