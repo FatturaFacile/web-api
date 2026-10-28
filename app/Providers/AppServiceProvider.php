@@ -8,6 +8,7 @@ use App\Contracts\SdiProvider;
 use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\DeliveryNote;
+use App\Models\Expense;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\Quote;
@@ -17,6 +18,7 @@ use App\Models\WorkOrder;
 use App\Policies\AppointmentPolicy;
 use App\Policies\ContactPolicy;
 use App\Policies\DeliveryNotePolicy;
+use App\Policies\ExpensePolicy;
 use App\Policies\InvoicePolicy;
 use App\Policies\PaymentPolicy;
 use App\Policies\QuotePolicy;
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Payment::class, PaymentPolicy::class);
         Gate::policy(Appointment::class, AppointmentPolicy::class);
         Gate::policy(ServiceReport::class, ServiceReportPolicy::class);
+        Gate::policy(Expense::class, ExpensePolicy::class);
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 

@@ -31,6 +31,7 @@ class Attachment extends Model
         'service_report' => ServiceReport::class,
         'ticket' => Ticket::class,
         'appointment' => Appointment::class,
+        'expense' => Expense::class,
     ];
 
     /**

@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\V1\DocumentEmailController;
 use App\Http\Controllers\Api\V1\DocumentPdfController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceChannelController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
+use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FieldServiceController;
 use App\Http\Controllers\Api\V1\FleetRentalController;
 use App\Http\Controllers\Api\V1\HrController;
@@ -390,6 +391,15 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/frontalieri', [HrController::class, 'frontalieri'])->name('frontalieri');
             Route::get('/withholding-taxes', [HrController::class, 'withholdingTaxes'])->name('withholding-taxes');
         });
+
+        // Module 12: Expense Tracking & Receipts
+        Route::prefix('expenses')->name('expenses.')->group(function (): void {
+            Route::get('/export', [ExpenseController::class, 'export'])->name('export');
+            Route::get('/reports/summary', [ExpenseController::class, 'summary'])->name('summary');
+            Route::post('/{id}/attachments', [ExpenseController::class, 'uploadAttachment'])->name('attachments.store');
+            Route::get('/{id}/attachments/{attachmentId}/download', [ExpenseController::class, 'downloadAttachment'])->name('attachments.download');
+        });
+        Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id']);
 
         // 17. Fiscal & Statutory Accounting
         Route::prefix('accounting')->name('accounting.')->group(function (): void {
