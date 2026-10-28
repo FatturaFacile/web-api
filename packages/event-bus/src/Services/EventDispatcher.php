@@ -6,9 +6,10 @@ namespace Enterprise\EventBus\Services;
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventBusInterface;
+use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Facades\Event;
 
-final class EventDispatcher implements EventBusInterface
+final class EventDispatcher implements EventBusInterface, EventDispatcherInterface
 {
     public function __construct(
         private readonly TransactionalOutboxService $outboxService

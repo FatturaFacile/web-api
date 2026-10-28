@@ -8,8 +8,12 @@ use Enterprise\FeatureFlags\Providers\FeatureFlagsServiceProvider;
 use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
+use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
+use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
+use Modules\Projects\Providers\ProjectsServiceProvider;
+use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
 
 return [
@@ -24,4 +28,8 @@ return [
     WorkflowServiceProvider::class,
     ProcurementServiceProvider::class,
     InventoryServiceProvider::class,
+    ProjectsServiceProvider::class,
+    GeneralLedgerServiceProvider::class,
+    TreasuryServiceProvider::class,
+    InvoicingServiceProvider::class,
 ];

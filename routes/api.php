@@ -248,9 +248,8 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/passive-invoices/receive-xml', [SupplierInvoiceController::class, 'receiveXml'])->name('passive-invoices.receive-xml');
         });
 
-        // 6. Treasury, Banking & Cash Management
+        // 6. Treasury, Banking & Cash Management (Enterprise module mounted in modules/24_Treasury)
         Route::prefix('treasury')->name('treasury.')->group(function (): void {
-            Route::get('/bank-accounts', [TreasuryController::class, 'bankAccounts'])->name('bank-accounts');
             Route::get('/transactions', [TreasuryController::class, 'transactions'])->name('transactions');
             Route::post('/reconciliation/auto-match', [TreasuryController::class, 'autoMatch'])->name('reconciliation.auto-match');
             Route::post('/import-camt', [TreasuryController::class, 'importCamt'])->middleware('deprecated:/api/v1/sales/payment-imports')->name('import-camt');

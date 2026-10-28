@@ -19,7 +19,6 @@ use Modules\Procurement\DTOs\CreateSupplierDTO;
 use Modules\Procurement\DTOs\ProcessGoodsReceiptDTO;
 use Modules\Procurement\DTOs\ProcessPurchaseReturnDTO;
 use Modules\Procurement\Events\GoodsReceivedEvent;
-use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
 use Modules\Procurement\Events\PurchaseOrderCreatedEvent;
 use Modules\Procurement\Events\PurchaseRequisitionCreatedEvent;

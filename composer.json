@@ -48,6 +48,10 @@
             "Modules\\Workflow\\": "modules/21_Workflow/src/",
             "Modules\\Procurement\\": "modules/13_Procurement/src/",
             "Modules\\Inventory\\": "modules/14_Inventory/src/",
+            "Modules\\Projects\\": "modules/15_Projects/src/",
+            "Modules\\GeneralLedger\\": "modules/22_GeneralLedger/src/",
+            "Modules\\Treasury\\": "modules/24_Treasury/src/",
+            "Modules\\Invoicing\\": "modules/05_Invoicing/src/",
             "Modules\\": "modules/"
         }
     },

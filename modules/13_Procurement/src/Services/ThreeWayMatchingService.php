@@ -12,7 +12,6 @@ use Modules\Procurement\Contracts\ThreeWayMatchingServiceInterface;
 use Modules\Procurement\DTOs\ExecuteThreeWayMatchDTO;
 use Modules\Procurement\Events\ThreeWayMatchDiscrepancyDetectedEvent;
 use Modules\Procurement\Events\ThreeWayMatchPassedEvent;
-use Modules\Procurement\Models\GoodsReceiptNote;
 use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Procurement\Models\PurchaseReceipt;
 use Modules\Procurement\Models\ThreeWayMatchLog;

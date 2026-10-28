@@ -113,6 +113,10 @@ class DatabaseSeeder extends Seeder
             SdiUuidLinkSeeder::class,
 
             TenantBackupSeeder::class,
+            ProjectDatabaseSeeder::class,
+            GeneralLedgerDatabaseSeeder::class,
+            TreasuryDatabaseSeeder::class,
+            InvoicingDatabaseSeeder::class,
         ]);
     }
 }
