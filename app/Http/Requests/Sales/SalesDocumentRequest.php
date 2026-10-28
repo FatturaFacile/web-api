@@ -32,7 +32,6 @@ abstract class SalesDocumentRequest extends FormRequest
         $presence = $this->presence();
 
         return [
-            'tenant_id' => ['nullable', 'uuid', 'exists:tenants,id'],
             'contact_id' => [$presence, 'uuid', Rule::exists('contacts', 'id')->where('tenant_id', $tenantId)],
             'date' => [$presence, 'date'],
             'currency' => [$presence, 'string', 'size:3'],

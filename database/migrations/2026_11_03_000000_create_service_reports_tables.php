@@ -44,6 +44,8 @@ return new class extends Migration
             $table->unique(['tenant_id', 'report_number']);
             $table->index(['tenant_id', 'contact_id']);
             $table->index(['tenant_id', 'technician_id']);
+            $table->index(['tenant_id', 'ticket_id']);
+            $table->index(['tenant_id', 'project_id']);
             $table->index(['tenant_id', 'report_date']);
             $table->index(['tenant_id', 'status_id']);
         });
@@ -73,6 +75,7 @@ return new class extends Migration
 
             $table->index(['tenant_id', 'service_report_id']);
             $table->index(['tenant_id', 'line_type_id']);
+            $table->index(['tenant_id', 'item_id']);
         });
 
         Schema::create('service_report_signatures', function (Blueprint $table): void {

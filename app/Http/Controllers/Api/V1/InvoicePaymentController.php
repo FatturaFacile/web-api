@@ -12,6 +12,7 @@ use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\PaymentResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -19,6 +20,7 @@ use Symfony\Component\HttpFoundation\Response;
 class InvoicePaymentController extends Controller
 {
     use ApiResponse;
+    use AuthorizesRequests;
 
     public function __construct(
         private readonly RecordPayment $recordPayment,
@@ -44,6 +46,7 @@ class InvoicePaymentController extends Controller
     public function index(string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
+        $this->authorize('view', $invoice);
 
         return $this->successResponse(
             PaymentResource::collection($invoice->payments()->orderBy('paid_at')->get()),
@@ -83,7 +86,10 @@ class InvoicePaymentController extends Controller
     )]
     public function store(StorePaymentRequest $request, string $id): JsonResponse
     {
-        $payment = $this->recordPayment->execute(Invoice::findOrFail($id), $request->validated());
+        $invoice = Invoice::findOrFail($id);
+        $this->authorize('recordPayment', $invoice);
+
+        $payment = $this->recordPayment->execute($invoice, $request->validated());
 
         return $this->successResponse(new PaymentResource($payment), __('sales.messages.payment_recorded'), Response::HTTP_CREATED);
     }
@@ -109,7 +115,10 @@ class InvoicePaymentController extends Controller
     )]
     public function convertProforma(string $id): JsonResponse
     {
-        $invoice = $this->toInvoice->fromProforma(Invoice::with('items')->findOrFail($id));
+        $invoice = Invoice::with('items')->findOrFail($id);
+        $this->authorize('update', $invoice);
+
+        $invoice = $this->toInvoice->fromProforma($invoice);
 
         return $this->successResponse(new InvoiceResource($invoice), __('sales.messages.proforma_converted'), Response::HTTP_CREATED);
     }

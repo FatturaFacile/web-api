@@ -20,6 +20,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Attachment;
 use App\Models\ServiceReport;
 use App\Services\Pdf\DocumentPdfService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -29,7 +30,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ServiceReportController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, AuthorizesRequests;
 
     public function __construct(
         private readonly SaveServiceReport $saveReport,
@@ -44,8 +45,14 @@ class ServiceReportController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = ServiceReport::with(['contact', 'technician', 'status', 'invoiceLink'])
-            ->latest('report_date');
+        $this->authorize('viewAny', ServiceReport::class);
+
+        $query = ServiceReport::with([
+            'contact',
+            'technician',
+            'status.translations',
+            'invoiceLink',
+        ])->latest('report_date');
 
         if ($request->filled('status')) {
             $query->whereHas('status', fn ($q) => $q->where('code', $request->query('status')));
@@ -95,6 +102,8 @@ class ServiceReportController extends Controller
      */
     public function store(StoreServiceReportRequest $request): JsonResponse
     {
+        $this->authorize('create', ServiceReport::class);
+
         $report = $this->saveReport->create($request->validated());
 
         return $this->successResponse(
@@ -110,16 +119,18 @@ class ServiceReportController extends Controller
     public function show(string $id): JsonResponse
     {
         $report = ServiceReport::with([
-            'lines.lineType',
+            'lines.lineType.translations',
             'lines.item',
             'lines.vatCode',
             'signatures',
             'contact',
             'technician',
-            'status',
+            'status.translations',
             'attachments',
             'invoiceLink',
         ])->findOrFail($id);
+
+        $this->authorize('view', $report);
 
         return $this->successResponse(
             data: new ServiceReportResource($report),
@@ -133,6 +144,9 @@ class ServiceReportController extends Controller
     public function update(UpdateServiceReportRequest $request, string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
+
+        $this->authorize('update', $report);
+
         $updated = $this->saveReport->update($report, $request->validated());
 
         return $this->successResponse(
@@ -147,6 +161,8 @@ class ServiceReportController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
+
+        $this->authorize('delete', $report);
 
         if ($report->signed_at !== null || $report->invoiced_at !== null) {
             return $this->problemDetailsResponse(
@@ -171,6 +187,8 @@ class ServiceReportController extends Controller
     {
         $report = ServiceReport::findOrFail($id);
 
+        $this->authorize('sign', $report);
+
         $payload = array_merge($request->validated(), [
             'ip_address' => $request->ip() ?? '127.0.0.1',
             'user_agent' => $request->userAgent(),
@@ -190,6 +208,9 @@ class ServiceReportController extends Controller
     public function generateInvoice(string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
+
+        $this->authorize('generateInvoice', $report);
+
         $invoice = $this->invoiceAction->execute($report);
 
         return $this->successResponse(
@@ -204,7 +225,14 @@ class ServiceReportController extends Controller
      */
     public function generateConsolidatedInvoice(GenerateConsolidatedInvoiceRequest $request): JsonResponse
     {
-        $invoice = $this->consolidatedInvoiceAction->execute($request->validated('report_ids'));
+        $reportIds = $request->validated('report_ids');
+
+        foreach ($reportIds as $reportId) {
+            $report = ServiceReport::findOrFail($reportId);
+            $this->authorize('generateInvoice', $report);
+        }
+
+        $invoice = $this->consolidatedInvoiceAction->execute($reportIds);
 
         return $this->successResponse(
             data: new InvoiceResource($invoice),
@@ -219,14 +247,17 @@ class ServiceReportController extends Controller
     public function uploadPhoto(UploadServiceReportPhotoRequest $request, string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
-        $file = $request->file('photo');
 
+        $this->authorize('uploadPhoto', $report);
+
+        $file = $request->file('photo');
         $stage = $request->input('stage', 'general');
         $extension = $file->getClientOriginalExtension();
         $filename = "photo_{$stage}_".time().'_'.bin2hex(random_bytes(4)).".{$extension}";
         $path = "tenants/{$report->tenant_id}/photos/service-reports/{$report->id}/{$filename}";
 
-        Storage::disk('local')->put($path, $file->getContent());
+        $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
+        Storage::disk($disk)->put($path, $file->getContent());
 
         $attachment = Attachment::create([
             'tenant_id' => $report->tenant_id,
@@ -258,6 +289,9 @@ class ServiceReportController extends Controller
     public function pdf(Request $request, string $id): HttpResponse
     {
         $report = ServiceReport::findOrFail($id);
+
+        $this->authorize('pdf', $report);
+
         $rendered = $this->pdfService->render($report);
         $disposition = $request->boolean('inline') ? 'inline' : 'attachment';
 

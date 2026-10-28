@@ -24,8 +24,9 @@ class GenerateServiceReportPdfJob implements ShouldQueue
     {
         $rendered = $pdfService->render($this->serviceReport);
 
+        $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
         $path = "tenants/{$this->serviceReport->tenant_id}/service-reports/{$this->serviceReport->id}.pdf";
-        Storage::disk('local')->put($path, $rendered->content);
+        Storage::disk($disk)->put($path, $rendered->content);
 
         Attachment::updateOrCreate(
             [

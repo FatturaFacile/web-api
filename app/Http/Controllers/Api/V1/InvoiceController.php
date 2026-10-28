@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Services\Invoicing\InvoiceService;
 use App\Services\ItalianSdi\FatturaPaBuilderService;
 use App\Services\SwissQrBill\QrBillGeneratorService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -20,7 +21,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InvoiceController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, AuthorizesRequests;
 
     public function __construct(
         private readonly InvoiceService $invoiceService,
@@ -101,6 +102,8 @@ class InvoiceController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Invoice::class);
+
         $query = Invoice::with(['contact', 'items', 'sdiMetadata', 'qrBillData'])
             ->latest('date');
 
@@ -209,6 +212,8 @@ class InvoiceController extends Controller
     )]
     public function store(StoreInvoiceRequest $request): JsonResponse
     {
+        $this->authorize('create', Invoice::class);
+
         $invoice = $this->invoiceService->createInvoice($request->validated());
 
         return $this->successResponse(
@@ -265,6 +270,8 @@ class InvoiceController extends Controller
     {
         $invoice = Invoice::with(['contact.addresses', 'items', 'sdiMetadata', 'qrBillData'])->findOrFail($id);
 
+        $this->authorize('view', $invoice);
+
         return $this->successResponse(
             data: new InvoiceResource($invoice),
             message: 'Invoice details retrieved successfully'
@@ -311,6 +318,7 @@ class InvoiceController extends Controller
     public function generateSdiXml(string $id): JsonResponse
     {
         $invoice = Invoice::with(['tenant', 'contact.addresses', 'items'])->findOrFail($id);
+        $this->authorize('sendSdi', $invoice);
 
         $xml = $this->fatturaPaBuilder->buildFatturaPaXml($invoice);
         $fileName = sprintf(
@@ -383,6 +391,7 @@ class InvoiceController extends Controller
     public function generateQrBill(string $id): JsonResponse
     {
         $invoice = Invoice::with(['tenant', 'contact.addresses'])->findOrFail($id);
+        $this->authorize('generateQrBill', $invoice);
 
         $qrData = $this->qrBillGenerator->generateForInvoice($invoice);
 
@@ -463,6 +472,7 @@ class InvoiceController extends Controller
     public function downloadQrBill(string $id): HttpResponse
     {
         $invoice = Invoice::with(['qrBillData', 'tenant', 'contact'])->findOrFail($id);
+        $this->authorize('download', $invoice);
 
         if (! $invoice->qrBillData || empty($invoice->qrBillData->qr_bill_svg)) {
             $qrData = $this->qrBillGenerator->generateForInvoice($invoice);

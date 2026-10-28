@@ -48,9 +48,10 @@ class SignServiceReportAction
                 ]);
             }
 
+            $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
             $signatureHash = hash('sha256', $binary);
             $path = "tenants/{$report->tenant_id}/signatures/service-reports/{$report->id}.png";
-            Storage::disk('local')->put($path, $binary);
+            Storage::disk($disk)->put($path, $binary);
 
             $signature = ServiceReportSignature::create([
                 'tenant_id' => $report->tenant_id,
@@ -79,7 +80,7 @@ class SignServiceReportAction
 
             event(new ServiceReportSigned($report, $signature));
 
-            GenerateServiceReportPdfJob::dispatch($report);
+            GenerateServiceReportPdfJob::dispatch($report)->afterCommit();
 
             return $report->load(['signatures', 'lines.lineType', 'contact', 'technician', 'status']);
         });

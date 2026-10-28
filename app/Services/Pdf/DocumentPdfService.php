@@ -218,15 +218,18 @@ class DocumentPdfService
 
         $signature = $report->signatures->firstWhere('signer_type', 'customer') ?? $report->signatures->first();
         $signatureImage = null;
+        $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
 
-        if ($signature && Storage::disk('local')->exists($signature->signature_path)) {
-            $signatureImage = $this->dataUri(Storage::disk('local')->get($signature->signature_path));
+        if ($signature && Storage::disk($disk)->exists($signature->signature_path)) {
+            $signatureImage = $this->dataUri(Storage::disk($disk)->get($signature->signature_path));
         }
+
+        $currency = $report->contact?->currency ?? $report->tenant?->default_currency ?? 'EUR';
 
         return ['documents.service-report', array_merge($this->common($report, $report->contact, 'service_report', $report->report_number), [
             'date' => $report->report_date?->toDateString(),
             'report_date' => $report->report_date?->toDateString(),
-            'currency' => 'EUR',
+            'currency' => $currency,
             'notes' => $report->customer_notes,
             'customer_notes' => $report->customer_notes,
             'lines' => $lines,

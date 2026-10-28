@@ -9,6 +9,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
 use App\Services\ItalianSdi\FatturaPaBuilderService;
 use App\Services\SwissQrBill\QrBillGeneratorService;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -17,6 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 class CrmController extends Controller
 {
     use ApiResponse;
+    use AuthorizesRequests;
 
     public function __construct(
         private readonly FatturaPaBuilderService $fatturaPaBuilder,
@@ -43,6 +45,8 @@ class CrmController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Contact::class);
+
         $query = Contact::with('addresses')->latest();
 
         if ($request->filled('type')) {
@@ -92,6 +96,8 @@ class CrmController extends Controller
     )]
     public function clients(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Contact::class);
+
         $clients = Contact::with('addresses')
             ->whereIn('type', ['client', 'customer', 'both'])
             ->latest()
@@ -117,6 +123,8 @@ class CrmController extends Controller
     )]
     public function suppliers(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Contact::class);
+
         $suppliers = Contact::with('addresses')
             ->whereIn('type', ['supplier', 'both'])
             ->latest()
@@ -176,6 +184,8 @@ class CrmController extends Controller
     )]
     public function store(Request $request): JsonResponse
     {
+        $this->authorize('create', Contact::class);
+
         $validated = $request->validate([
             'type' => ['required', 'string', 'in:client,customer,supplier,both,lead'],
             'country' => ['required', 'string', 'regex:/^[A-Z]{2}$/'], // ISO 3166-1 alpha-2 code
@@ -239,6 +249,7 @@ class CrmController extends Controller
     public function show(string $id): JsonResponse
     {
         $contact = Contact::with('addresses')->findOrFail($id);
+        $this->authorize('view', $contact);
 
         return $this->successResponse(data: $contact, message: 'Contact details retrieved');
     }
@@ -266,6 +277,8 @@ class CrmController extends Controller
     public function update(Request $request, string $id): JsonResponse
     {
         $contact = Contact::findOrFail($id);
+        $this->authorize('update', $contact);
+
         $contact->update($request->all());
 
         return $this->successResponse(data: $contact->load('addresses'), message: 'Contact updated successfully');
@@ -290,6 +303,8 @@ class CrmController extends Controller
     public function destroy(string $id): JsonResponse
     {
         $contact = Contact::findOrFail($id);
+        $this->authorize('delete', $contact);
+
         $contact->delete();
 
         return $this->successResponse(message: 'Contact deleted successfully');

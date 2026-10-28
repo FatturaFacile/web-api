@@ -18,6 +18,7 @@ use App\Http\Resources\QuoteResource;
 use App\Http\Resources\SalesOrderResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Quote;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -25,6 +26,7 @@ use Symfony\Component\HttpFoundation\Response;
 class QuoteController extends Controller
 {
     use ApiResponse;
+    use AuthorizesRequests;
 
     public function __construct(
         private readonly SaveSalesDocument $saveDocument,
@@ -36,6 +38,8 @@ class QuoteController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
+        $this->authorize('viewAny', Quote::class);
+
         $query = Quote::with('contact')->latest('date');
 
         if ($request->filled('status')) {
@@ -54,6 +58,8 @@ class QuoteController extends Controller
 
     public function store(StoreQuoteRequest $request): JsonResponse
     {
+        $this->authorize('create', Quote::class);
+
         $quote = $this->saveDocument->create(Quote::class, 'quote', 'quote_number', $request->validated());
 
         return $this->successResponse(new QuoteResource($quote), __('sales.messages.quote_created'), Response::HTTP_CREATED);
@@ -62,20 +68,27 @@ class QuoteController extends Controller
     public function show(string $id): JsonResponse
     {
         $quote = Quote::with(['contact', 'items'])->findOrFail($id);
+        $this->authorize('view', $quote);
 
         return $this->successResponse(new QuoteResource($quote), __('sales.messages.quote_retrieved'));
     }
 
     public function update(StoreQuoteRequest $request, string $id): JsonResponse
     {
-        $quote = $this->saveDocument->update(Quote::findOrFail($id), $request->validated());
+        $quote = Quote::findOrFail($id);
+        $this->authorize('update', $quote);
+
+        $quote = $this->saveDocument->update($quote, $request->validated());
 
         return $this->successResponse(new QuoteResource($quote), __('sales.messages.quote_updated'));
     }
 
     public function destroy(string $id): JsonResponse
     {
-        Quote::findOrFail($id)->delete();
+        $quote = Quote::findOrFail($id);
+        $this->authorize('delete', $quote);
+
+        $quote->delete();
 
         return $this->successResponse(null, __('sales.messages.quote_deleted'));
     }
@@ -85,7 +98,10 @@ class QuoteController extends Controller
      */
     public function convertToOrder(string $id): JsonResponse
     {
-        $order = $this->quoteToOrder->execute(Quote::with('items')->findOrFail($id));
+        $quote = Quote::with('items')->findOrFail($id);
+        $this->authorize('convert', $quote);
+
+        $order = $this->quoteToOrder->execute($quote);
 
         return $this->successResponse(new SalesOrderResource($order), __('sales.messages.quote_to_order'), Response::HTTP_CREATED);
     }
@@ -95,7 +111,10 @@ class QuoteController extends Controller
      */
     public function createInvoice(ConvertToInvoice $toInvoice, string $id): JsonResponse
     {
-        $invoice = $toInvoice->fromQuote(Quote::with('items')->findOrFail($id));
+        $quote = Quote::with('items')->findOrFail($id);
+        $this->authorize('convert', $quote);
+
+        $invoice = $toInvoice->fromQuote($quote);
 
         return $this->successResponse(new InvoiceResource($invoice), __('sales.messages.quote_invoiced'), Response::HTTP_CREATED);
     }
@@ -105,7 +124,10 @@ class QuoteController extends Controller
      */
     public function createDeliveryNote(ConvertQuoteToDeliveryNote $toDeliveryNote, string $id): JsonResponse
     {
-        $note = $toDeliveryNote->execute(Quote::with('items')->findOrFail($id));
+        $quote = Quote::with('items')->findOrFail($id);
+        $this->authorize('convert', $quote);
+
+        $note = $toDeliveryNote->execute($quote);
 
         return $this->successResponse(new DeliveryNoteResource($note), __('sales.messages.quote_delivery_note'), Response::HTTP_CREATED);
     }
@@ -115,7 +137,10 @@ class QuoteController extends Controller
      */
     public function sign(SignQuoteRequest $request, SignQuote $signQuote, string $id): JsonResponse
     {
-        $quote = $signQuote->execute(Quote::findOrFail($id), $request->validated('signed_by'), $request->validated('signature_base64'));
+        $quote = Quote::findOrFail($id);
+        $this->authorize('sign', $quote);
+
+        $quote = $signQuote->execute($quote, $request->validated('signed_by'), $request->validated('signature_base64'));
 
         return $this->successResponse(new QuoteResource($quote), __('sales.messages.quote_signed'));
     }

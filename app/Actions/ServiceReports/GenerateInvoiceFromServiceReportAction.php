@@ -28,7 +28,13 @@ class GenerateInvoiceFromServiceReportAction
     public function execute(ServiceReport $report): Invoice
     {
         return DB::transaction(function () use ($report): Invoice {
-            $report = ServiceReport::lockForUpdate()->with(['lines.item', 'contact'])->findOrFail($report->id);
+            $report = ServiceReport::lockForUpdate()->with(['lines.item', 'contact', 'status', 'tenant'])->findOrFail($report->id);
+
+            if ($report->status?->code === 'cancelled') {
+                throw ValidationException::withMessages([
+                    'service_report' => 'Cancelled service reports cannot be invoiced.',
+                ]);
+            }
 
             if ($report->signed_at === null) {
                 throw ValidationException::withMessages([
@@ -62,6 +68,7 @@ class GenerateInvoiceFromServiceReportAction
             $calculatedTotals = $this->totalsCalculator->calculate($lineItems);
             $year = (int) now()->format('Y');
             $numberData = $this->numbering->next('invoice', $year);
+            $currency = $report->contact?->currency ?? $report->tenant?->default_currency ?? 'EUR';
 
             /** @var Invoice $invoice */
             $invoice = Invoice::create([
@@ -73,7 +80,7 @@ class GenerateInvoiceFromServiceReportAction
                 'sequential_number' => $numberData['sequential_number'],
                 'date' => now()->toDateString(),
                 'due_date' => now()->addDays(30)->toDateString(),
-                'currency' => 'EUR',
+                'currency' => $currency,
                 'total_net' => $calculatedTotals['total_net'],
                 'total_tax' => $calculatedTotals['total_tax'],
                 'total_gross' => $calculatedTotals['total_gross'],

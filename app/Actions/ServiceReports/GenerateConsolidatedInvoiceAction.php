@@ -37,9 +37,11 @@ class GenerateConsolidatedInvoiceAction
                 ]);
             }
 
+            sort($reportIds);
+
             /** @var Collection<int, ServiceReport> $reports */
             $reports = ServiceReport::lockForUpdate()
-                ->with(['lines.item', 'contact'])
+                ->with(['lines.item', 'contact', 'status', 'tenant'])
                 ->whereIn('id', $reportIds)
                 ->get();
 
@@ -57,8 +59,14 @@ class GenerateConsolidatedInvoiceAction
                 ]);
             }
 
-            // Ensure all reports are signed and uninvoiced
+            // Ensure all reports are signed, uninvoiced, and not cancelled
             foreach ($reports as $report) {
+                if ($report->status?->code === 'cancelled') {
+                    throw ValidationException::withMessages([
+                        'report_ids' => "Service report {$report->report_number} is cancelled and cannot be invoiced.",
+                    ]);
+                }
+
                 if ($report->signed_at === null) {
                     throw ValidationException::withMessages([
                         'report_ids' => "Service report {$report->report_number} is not signed by the customer.",
@@ -96,6 +104,7 @@ class GenerateConsolidatedInvoiceAction
             $calculatedTotals = $this->totalsCalculator->calculate($lineItems);
             $year = (int) now()->format('Y');
             $numberData = $this->numbering->next('invoice', $year);
+            $currency = $firstReport->contact?->currency ?? $firstReport->tenant?->default_currency ?? 'EUR';
 
             $reportNumbers = $reports->pluck('report_number')->implode(', ');
 
@@ -109,7 +118,7 @@ class GenerateConsolidatedInvoiceAction
                 'sequential_number' => $numberData['sequential_number'],
                 'date' => now()->toDateString(),
                 'due_date' => now()->addDays(30)->toDateString(),
-                'currency' => 'EUR',
+                'currency' => $currency,
                 'total_net' => $calculatedTotals['total_net'],
                 'total_tax' => $calculatedTotals['total_tax'],
                 'total_gross' => $calculatedTotals['total_gross'],

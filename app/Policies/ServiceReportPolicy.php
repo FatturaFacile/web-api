@@ -22,7 +22,7 @@ class ServiceReportPolicy
      */
     public function view(User $user, ServiceReport $report): bool
     {
-        return $report->tenant_id === $user->tenant_id;
+        return $this->belongsToSameTenant($user, $report);
     }
 
     /**
@@ -38,7 +38,7 @@ class ServiceReportPolicy
      */
     public function update(User $user, ServiceReport $report): bool
     {
-        if ($report->tenant_id !== $user->tenant_id) {
+        if (! $this->belongsToSameTenant($user, $report)) {
             return false;
         }
 
@@ -47,9 +47,7 @@ class ServiceReportPolicy
             return false;
         }
 
-        return $user->role === 'admin'
-            || $user->role === 'manager'
-            || $report->technician_id === $user->id;
+        return true;
     }
 
     /**
@@ -57,7 +55,7 @@ class ServiceReportPolicy
      */
     public function sign(User $user, ServiceReport $report): bool
     {
-        if ($report->tenant_id !== $user->tenant_id) {
+        if (! $this->belongsToSameTenant($user, $report)) {
             return false;
         }
 
@@ -69,7 +67,7 @@ class ServiceReportPolicy
      */
     public function generateInvoice(User $user, ServiceReport $report): bool
     {
-        if ($report->tenant_id !== $user->tenant_id) {
+        if (! $this->belongsToSameTenant($user, $report)) {
             return false;
         }
 
@@ -77,15 +75,43 @@ class ServiceReportPolicy
     }
 
     /**
+     * Determine whether the user can upload work photos to the service report.
+     */
+    public function uploadPhoto(User $user, ServiceReport $report): bool
+    {
+        return $this->update($user, $report);
+    }
+
+    /**
+     * Determine whether the user can download or stream the PDF of the service report.
+     */
+    public function pdf(User $user, ServiceReport $report): bool
+    {
+        return $this->view($user, $report);
+    }
+
+    /**
      * Determine whether the user can delete the service report.
      */
     public function delete(User $user, ServiceReport $report): bool
     {
-        if ($report->tenant_id !== $user->tenant_id) {
+        if (! $this->belongsToSameTenant($user, $report)) {
             return false;
         }
 
         // Once signed or invoiced, reports cannot be deleted to preserve financial audit trail
         return $report->signed_at === null && $report->invoiced_at === null;
+    }
+
+    /**
+     * Check whether user belongs to the same tenant as the service report.
+     */
+    private function belongsToSameTenant(User $user, ServiceReport $report): bool
+    {
+        if (! empty($user->tenant_id) && $user->tenant_id === $report->tenant_id) {
+            return true;
+        }
+
+        return $user->tenants()->where('tenants.id', $report->tenant_id)->exists();
     }
 }

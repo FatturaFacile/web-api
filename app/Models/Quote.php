@@ -17,7 +17,6 @@ class Quote extends Model
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'contact_id',
         'quote_number',
         'date',

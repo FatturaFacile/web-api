@@ -16,11 +16,10 @@ trait BelongsToTenant
         static::addGlobalScope(new TenantScope);
 
         static::creating(function ($model): void {
-            if (empty($model->tenant_id)) {
-                $tenantContext = app(TenantContext::class);
-                if ($tenantContext->hasTenant()) {
-                    $model->tenant_id = $tenantContext->getTenantId();
-                }
+            $tenantContext = app(TenantContext::class);
+            if ($tenantContext->hasTenant()) {
+                // Enforce tenant_id strictly from active TenantContext to prevent parameter injection
+                $model->tenant_id = $tenantContext->getTenantId();
             }
         });
     }

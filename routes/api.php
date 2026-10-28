@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\AlertController;
+use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
@@ -65,6 +66,7 @@ use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
+use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
@@ -84,6 +86,25 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/webhooks/sdi', SdiWebhookController::class)->middleware('throttle:120,1')->name('webhooks.sdi');
     Route::post('/webhooks/sdi/incoming-invoice', IncomingInvoiceWebhookController::class)->middleware('throttle:120,1')->name('webhooks.sdi.incoming-invoice');
     Route::post('/webhooks/ecommerce/{channelUuid}', EcommerceWebhookController::class)->middleware('throttle:300,1')->name('webhooks.ecommerce');
+
+    // ----------------------------------------------------
+    // Module 09: Customer Portal Magic Link API (Public Token-Authenticated)
+    // ----------------------------------------------------
+    Route::prefix('portal')->name('portal.')->middleware('throttle:60,1')->group(function (): void {
+        Route::get('/access/{token}', [CustomerPortalController::class, 'access'])->name('access');
+        Route::get('/quotes/{token}', [CustomerPortalController::class, 'showQuote'])->name('quotes.show');
+        Route::post('/quotes/{token}/approve', [CustomerPortalController::class, 'approveQuote'])->name('quotes.approve');
+        Route::post('/quotes/{token}/reject', [CustomerPortalController::class, 'rejectQuote'])->name('quotes.reject');
+        Route::get('/quotes/{token}/pdf', [CustomerPortalController::class, 'downloadQuotePdf'])->name('quotes.pdf');
+        Route::get('/invoices/{token}', [CustomerPortalController::class, 'listInvoices'])->name('invoices.list');
+        Route::get('/invoices/{token}/{id}/pdf', [CustomerPortalController::class, 'downloadInvoicePdf'])->name('invoices.pdf');
+        Route::get('/service-reports/{token}', [CustomerPortalController::class, 'listServiceReports'])->name('service-reports.list');
+        Route::get('/service-reports/{token}/{id}/pdf', [CustomerPortalController::class, 'downloadServiceReportPdf'])->name('service-reports.pdf');
+        Route::get('/tickets/{token}', [CustomerPortalController::class, 'listTickets'])->name('tickets.list');
+        Route::post('/tickets/{token}/reply/{ticketId}', [CustomerPortalController::class, 'replyTicket'])->name('tickets.reply');
+        Route::get('/appointments/{token}', [CustomerPortalController::class, 'listAppointments'])->name('appointments.list');
+        Route::get('/attachments/{token}/{attachment}', [CustomerPortalController::class, 'downloadAttachment'])->name('attachments.download');
+    });
 
     // ----------------------------------------------------
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
@@ -278,6 +299,20 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/{id}/generate-invoice', [ServiceReportController::class, 'generateInvoice'])->name('generate-invoice');
             Route::post('/{id}/upload-photo', [ServiceReportController::class, 'uploadPhoto'])->name('upload-photo');
             Route::get('/{id}/pdf', [ServiceReportController::class, 'pdf'])->name('pdf');
+        });
+
+        // Module 10: Scheduling & Appointments
+        Route::prefix('appointments')->name('appointments.')->group(function (): void {
+            Route::get('/calendar', [AppointmentController::class, 'calendar'])->name('calendar');
+            Route::post('/check-conflicts', [AppointmentController::class, 'checkConflicts'])->name('check-conflicts');
+            Route::get('/', [AppointmentController::class, 'index'])->name('index');
+            Route::post('/', [AppointmentController::class, 'store'])->name('store');
+            Route::get('/{id}', [AppointmentController::class, 'show'])->name('show');
+            Route::put('/{id}', [AppointmentController::class, 'update'])->name('update');
+            Route::patch('/{id}', [AppointmentController::class, 'update'])->name('patch');
+            Route::delete('/{id}', [AppointmentController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/cancel', [AppointmentController::class, 'cancel'])->name('cancel');
+            Route::post('/{id}/convert-to-service-report', [AppointmentController::class, 'convertToServiceReport'])->name('convert-to-service-report');
         });
 
         // 9. Automotive & Tire Center (Gommista)

@@ -5,6 +5,16 @@ namespace App\Providers;
 use App\Contracts\FiscalPrinterGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
+use App\Models\Contact;
+use App\Models\DeliveryNote;
+use App\Models\Invoice;
+use App\Models\Payment;
+use App\Models\Quote;
+use App\Policies\ContactPolicy;
+use App\Policies\DeliveryNotePolicy;
+use App\Policies\InvoicePolicy;
+use App\Policies\PaymentPolicy;
+use App\Policies\QuotePolicy;
 use App\Services\Dashboard\WidgetRegistry;
 use App\Services\Ecommerce\EcommerceManager;
 use App\Services\ItalianSdi\LocalSdiProvider;
@@ -35,6 +45,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(Invoice::class, InvoicePolicy::class);
+        Gate::policy(Quote::class, QuotePolicy::class);
+        Gate::policy(DeliveryNote::class, DeliveryNotePolicy::class);
+        Gate::policy(Contact::class, ContactPolicy::class);
+        Gate::policy(Payment::class, PaymentPolicy::class);
+
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 
         Gate::define('viewApiDocs', function ($user) {

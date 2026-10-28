@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Contact;
 use App\Models\LookupItem;
+use App\Models\ServiceReport;
 use App\Models\Tenant;
 use App\Models\User;
 use Database\Seeders\ComprehensiveLookupMasterSeeder;
@@ -27,7 +28,7 @@ beforeEach(function (): void {
         'legal_name' => 'FatturaFacile Electricians Sagl',
         'vat_number' => 'CHE-123.456.789',
         'country' => 'CH',
-        'default_currency' => 'EUR',
+        'default_currency' => 'CHF',
     ]);
 
     $this->user = User::create([
@@ -117,6 +118,28 @@ test('a service report is created with numbering, computed line totals and statu
         ->assertJsonPath('data.contact.name', 'Hotel Bellavista');
 });
 
+test('service report validation rejects cross-tenant contact and technician', function (): void {
+    $otherTenant = Tenant::create([
+        'name' => 'Foreign Tenant SRL',
+        'legal_name' => 'Foreign Tenant SRL',
+        'country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $foreignContact = Contact::create([
+        'tenant_id' => $otherTenant->id,
+        'company_name' => 'Foreign Customer',
+        'country' => 'IT',
+    ]);
+
+    $payload = $this->payload;
+    $payload['contact_id'] = $foreignContact->id;
+
+    srApi()->postJson('/api/v1/service-reports', $payload)
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors(['contact_id']);
+});
+
 test('service report can be updated before it is signed', function (): void {
     $createRes = srApi()->postJson('/api/v1/service-reports', $this->payload)->assertCreated();
     $id = $createRes->json('data.id');
@@ -150,15 +173,15 @@ test('service report can be signed with touchscreen base64 PNG signature', funct
         ->and($signRes->json('data.signatures.0.signer_name'))->toBe('Franco Rossi');
 
     // Signed reports cannot be modified anymore
-    srApi()->putJson("/api/v1/service-reports/{$id}", ['travel_distance_km' => 50])->assertUnprocessable();
+    srApi()->putJson("/api/v1/service-reports/{$id}", ['travel_distance_km' => 50])->assertForbidden();
 });
 
-test('signed service report generates a direct 1-to-1 invoice', function (): void {
+test('signed service report generates a direct 1-to-1 invoice with tenant currency', function (): void {
     $createRes = srApi()->postJson('/api/v1/service-reports', $this->payload)->assertCreated();
     $id = $createRes->json('data.id');
 
-    // Attempting to invoice before signing fails
-    srApi()->postJson("/api/v1/service-reports/{$id}/generate-invoice")->assertUnprocessable();
+    // Attempting to invoice before signing fails authorization/validation
+    srApi()->postJson("/api/v1/service-reports/{$id}/generate-invoice")->assertForbidden();
 
     // Sign report
     srApi()->postJson("/api/v1/service-reports/{$id}/sign", [
@@ -170,6 +193,7 @@ test('signed service report generates a direct 1-to-1 invoice', function (): voi
     $invoiceRes = srApi()->postJson("/api/v1/service-reports/{$id}/generate-invoice")->assertCreated();
 
     expect($invoiceRes->json('data.invoice_number'))->toStartWith('INV-2026-')
+        ->and($invoiceRes->json('data.currency'))->toBe('CHF') // Respects tenant default currency
         ->and((float) $invoiceRes->json('data.total_net'))->toEqual(450.0)
         ->and($invoiceRes->json('data.items'))->toHaveCount(2);
 
@@ -179,11 +203,11 @@ test('signed service report generates a direct 1-to-1 invoice', function (): voi
         ->and($reportRes->json('data.status.code'))->toBe('invoiced')
         ->and($reportRes->json('data.invoice_id'))->toBe($invoiceRes->json('data.id'));
 
-    // Attempting to invoice a second time fails
-    srApi()->postJson("/api/v1/service-reports/{$id}/generate-invoice")->assertUnprocessable();
+    // Attempting to invoice a second time fails authorization
+    srApi()->postJson("/api/v1/service-reports/{$id}/generate-invoice")->assertForbidden();
 });
 
-test('multiple signed service reports generate a consolidated invoice', function (): void {
+test('multiple signed service reports generate a consolidated invoice with tenant currency', function (): void {
     // Report 1
     $rep1 = srApi()->postJson('/api/v1/service-reports', $this->payload)->assertCreated()->json('data.id');
     srApi()->postJson("/api/v1/service-reports/{$rep1}/sign", [
@@ -217,12 +241,34 @@ test('multiple signed service reports generate a consolidated invoice', function
     ])->assertCreated();
 
     expect($consolidatedRes->json('data.invoice_number'))->toStartWith('INV-2026-')
+        ->and($consolidatedRes->json('data.currency'))->toBe('CHF') // Respects tenant default currency
         ->and((float) $consolidatedRes->json('data.total_net'))->toEqual(550.0) // 450 + 100
         ->and($consolidatedRes->json('data.items'))->toHaveCount(3);
 
     // Both reports are now marked invoiced
     srApi()->getJson("/api/v1/service-reports/{$rep1}")->assertOk()->assertJsonPath('data.is_invoiced', true);
     srApi()->getJson("/api/v1/service-reports/{$rep2}")->assertOk()->assertJsonPath('data.is_invoiced', true);
+});
+
+test('cannot invoice a cancelled service report', function (): void {
+    $createRes = srApi()->postJson('/api/v1/service-reports', $this->payload)->assertCreated();
+    $id = $createRes->json('data.id');
+
+    // Sign report
+    srApi()->postJson("/api/v1/service-reports/{$id}/sign", [
+        'signature_base64' => TEST_PNG_SIG,
+        'signer_name' => 'Franco Rossi',
+    ])->assertOk();
+
+    // Set to cancelled status
+    $cancelledStatus = LookupItem::whereHas('category', fn ($q) => $q->where('code', 'service_report_status'))
+        ->where('code', 'cancelled')
+        ->firstOrFail();
+
+    ServiceReport::find($id)->update(['status_id' => $cancelledStatus->id]);
+
+    srApi()->postJson("/api/v1/service-reports/{$id}/generate-invoice")
+        ->assertUnprocessable();
 });
 
 test('cannot generate consolidated invoice if reports belong to different customers', function (): void {

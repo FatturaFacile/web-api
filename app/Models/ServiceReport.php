@@ -99,6 +99,14 @@ class ServiceReport extends Model
     }
 
     /**
+     * @return HasOne<Appointment, $this>
+     */
+    public function appointment(): HasOne
+    {
+        return $this->hasOne(Appointment::class, 'service_report_id');
+    }
+
+    /**
      * @return BelongsTo<User, $this>
      */
     public function technician(): BelongsTo

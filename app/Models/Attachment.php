@@ -29,6 +29,8 @@ class Attachment extends Model
         'purchase_order' => PurchaseOrder::class,
         'supplier_invoice' => PassiveInvoice::class,
         'service_report' => ServiceReport::class,
+        'ticket' => Ticket::class,
+        'appointment' => Appointment::class,
     ];
 
     /**
