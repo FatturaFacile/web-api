@@ -24,20 +24,18 @@ final readonly class CRMCustomerServiceListener
             return;
         }
 
-        $contractNumber = 'SC-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        $contractNumber = 'SC-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
         $contract = ServiceContract::create([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'contract_number' => $contractNumber,
-            'name' => 'Service Agreement - Deal ' . substr($event->opportunityId, 0, 8),
+            'title' => 'Service Agreement - Deal '.substr($event->opportunityId, 0, 8),
             'customer_id' => $event->accountId,
-            'contract_type' => 'sla',
             'status' => 'draft',
             'start_date' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
-            'billing_cycle' => 'monthly',
-            'contract_value' => $event->amount,
+            'annual_value' => $event->amount,
             'currency' => $event->currency,
             'auto_renew' => true,
         ]);
@@ -57,20 +55,18 @@ final readonly class CRMCustomerServiceListener
             return;
         }
 
-        $contractNumber = 'SC-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        $contractNumber = 'SC-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
         $contract = ServiceContract::create([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'contract_number' => $contractNumber,
-            'name' => 'Service Agreement - Quote ' . $event->quoteNumber,
+            'title' => 'Service Agreement - Quote '.$event->quoteNumber,
             'customer_id' => $event->customerId,
-            'contract_type' => 'maintenance',
             'status' => 'active',
             'start_date' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
-            'billing_cycle' => 'monthly',
-            'contract_value' => $event->totalAmount,
+            'annual_value' => $event->totalAmount,
             'currency' => 'EUR',
             'auto_renew' => true,
         ]);
@@ -95,7 +91,7 @@ final readonly class CRMCustomerServiceListener
             'id' => (string) Str::uuid7(),
             'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
             'message_id' => $messageId,
-            'event_type' => $event->getEventName() . ':' . $consumerName,
+            'event_type' => $event->getEventName().':'.$consumerName,
             'payload_json' => $event->toPayload(),
             'status' => 'completed',
             'received_at' => now(),

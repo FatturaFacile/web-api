@@ -7,6 +7,7 @@ namespace Modules\ServiceManagement\Actions;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Modules\ServiceManagement\DTOs\SubmitCSATDTO;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
 use Modules\ServiceManagement\Models\CSATSurvey;
@@ -21,12 +22,14 @@ final readonly class SubmitCSATAction
     public function execute(SubmitCSATDTO $dto, ?string $actorUserId = null): CSATSurvey
     {
         return DB::transaction(function () use ($dto) {
+            $customerId = $dto->customerId ?: (string) Str::uuid7();
+
             $survey = CSATSurvey::create([
                 'tenant_id' => $dto->tenantId,
                 'company_id' => $dto->companyId,
                 'ticket_id' => $dto->ticketId,
                 'work_order_id' => $dto->workOrderId,
-                'customer_id' => $dto->customerId,
+                'customer_id' => $customerId,
                 'respondent_email' => $dto->respondentEmail,
                 'score' => $dto->score,
                 'feedback' => $dto->feedback,

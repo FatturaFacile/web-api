@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -21,6 +22,14 @@ final class Problem extends BaseEnterpriseModel
             'linked_incident_ids' => 'array',
             'metadata' => 'array',
         ];
+    }
+
+    protected function rootCauseAnalysis(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['root_cause'] ?? $value ?? '',
+            set: fn ($value) => ['root_cause' => $value]
+        );
     }
 
     public function category(): BelongsTo

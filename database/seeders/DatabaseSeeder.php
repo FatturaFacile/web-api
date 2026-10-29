@@ -123,6 +123,8 @@ class DatabaseSeeder extends Seeder
             AssetDemoDataSeeder::class,
             HRReferenceSeeder::class,
             HRDemoDataSeeder::class,
+            ServiceReferenceSeeder::class,
+            ServiceDemoDataSeeder::class,
         ]);
     }
 }

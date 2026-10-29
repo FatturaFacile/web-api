@@ -4,10 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Models;
 
-use App\Models\Contact;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ServiceAppointment extends BaseEnterpriseModel
 {
@@ -18,9 +17,24 @@ final class ServiceAppointment extends BaseEnterpriseModel
         return [
             'start_time' => 'datetime',
             'end_time' => 'datetime',
-            'route_order' => 'integer',
             'metadata' => 'array',
         ];
+    }
+
+    protected function scheduledStart(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['start_time'] ?? $value,
+            set: fn ($value) => ['start_time' => $value]
+        );
+    }
+
+    protected function scheduledEnd(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['end_time'] ?? $value,
+            set: fn ($value) => ['end_time' => $value]
+        );
     }
 
     public function workOrder(): BelongsTo
@@ -31,15 +45,5 @@ final class ServiceAppointment extends BaseEnterpriseModel
     public function technician(): BelongsTo
     {
         return $this->belongsTo(ServiceTechnician::class, 'technician_id');
-    }
-
-    public function customer(): BelongsTo
-    {
-        return $this->belongsTo(Contact::class, 'customer_id');
-    }
-
-    public function visits(): HasMany
-    {
-        return $this->hasMany(ServiceVisit::class, 'appointment_id');
     }
 }

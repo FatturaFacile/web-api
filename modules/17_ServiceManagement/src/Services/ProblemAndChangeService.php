@@ -29,19 +29,19 @@ final readonly class ProblemAndChangeService implements ProblemAndChangeServiceI
     public function createProblem(CreateProblemDTO $dto, ?string $actorUserId = null): Problem
     {
         return DB::transaction(function () use ($dto) {
-            $problemNumber = 'PRB-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+            $problemNumber = 'PRB-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
             $problem = Problem::create([
                 'tenant_id' => $dto->tenantId,
                 'company_id' => $dto->companyId,
                 'problem_number' => $problemNumber,
                 'title' => $dto->title,
-                'description' => $dto->description,
-                'priority' => $dto->priority,
-                'status' => 'investigating',
-                'service_category_id' => $dto->serviceCategoryId,
-                'root_cause_analysis' => $dto->rootCauseAnalysis,
+                'description' => $dto->description ?? $dto->title,
+                'status' => 'under_investigation',
+                'category_id' => $dto->serviceCategoryId,
+                'root_cause' => $dto->rootCauseAnalysis,
                 'workaround' => $dto->workaround,
+                'is_known_error' => false,
             ]);
 
             $this->auditLedger->record(
@@ -56,7 +56,7 @@ final readonly class ProblemAndChangeService implements ProblemAndChangeServiceI
                 problemId: $problem->id,
                 problemNumber: $problem->problem_number,
                 title: $problem->title,
-                priority: $problem->priority,
+                priority: $dto->priority,
                 tenantId: $problem->tenant_id,
                 companyId: $problem->company_id
             ));
@@ -77,6 +77,7 @@ final readonly class ProblemAndChangeService implements ProblemAndChangeServiceI
                 'workaround' => $workaround ?? $problem->workaround,
                 'permanent_solution' => $permanentSolution ?? $problem->permanent_solution,
                 'is_known_error' => false,
+                'resolved_at' => now(),
             ]);
 
             $this->auditLedger->record(
@@ -103,24 +104,22 @@ final readonly class ProblemAndChangeService implements ProblemAndChangeServiceI
     public function createChangeRequest(CreateChangeRequestDTO $dto, ?string $actorUserId = null): ChangeRequest
     {
         return DB::transaction(function () use ($dto) {
-            $changeNumber = 'CR-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+            $changeNumber = 'CR-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
             $change = ChangeRequest::create([
                 'tenant_id' => $dto->tenantId,
                 'company_id' => $dto->companyId,
                 'change_number' => $changeNumber,
                 'title' => $dto->title,
-                'description' => $dto->description,
+                'description' => $dto->description ?? $dto->title,
                 'change_type' => $dto->changeType,
                 'risk_level' => $dto->riskLevel,
-                'priority' => $dto->priority,
                 'status' => 'submitted',
-                'service_category_id' => $dto->serviceCategoryId,
-                'rollout_plan' => $dto->rolloutPlan,
-                'rollback_plan' => $dto->rollbackPlan,
-                'test_plan' => $dto->testPlan,
-                'scheduled_start_time' => $dto->scheduledStartTime,
-                'scheduled_end_time' => $dto->scheduledEndTime,
+                'impact_assessment' => 'Low blast radius confined to microservice nodes.',
+                'implementation_plan' => $dto->rolloutPlan ?? 'Apply rolling canary deployment.',
+                'rollback_plan' => $dto->rollbackPlan ?? 'Rollback traffic to stable version.',
+                'scheduled_start_at' => $dto->scheduledStartTime,
+                'scheduled_end_at' => $dto->scheduledEndTime,
             ]);
 
             $this->auditLedger->record(
@@ -158,7 +157,8 @@ final readonly class ProblemAndChangeService implements ProblemAndChangeServiceI
 
             $change->update([
                 'status' => 'approved',
-                'cab_approved_at' => now(),
+                'cab_decision' => 'approved',
+                'cab_notes' => 'Approved by CAB lead '.$approvedBy,
             ]);
 
             $this->auditLedger->record(
@@ -192,8 +192,7 @@ final readonly class ProblemAndChangeService implements ProblemAndChangeServiceI
 
             $change->update([
                 'status' => 'implemented',
-                'actual_start_time' => now(),
-                'actual_end_time' => now(),
+                'implemented_at' => now(),
             ]);
 
             $this->auditLedger->record(

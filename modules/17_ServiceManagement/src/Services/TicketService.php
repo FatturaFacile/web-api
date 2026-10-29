@@ -15,12 +15,12 @@ use Modules\ServiceManagement\DTOs\AssignTicketDTO;
 use Modules\ServiceManagement\DTOs\CreateTicketDTO;
 use Modules\ServiceManagement\DTOs\EscalateTicketDTO;
 use Modules\ServiceManagement\DTOs\ResolveTicketDTO;
-use Modules\ServiceManagement\Events\ServiceLaborCostReadyEvent;
 use Modules\ServiceManagement\Events\TicketAssignedEvent;
 use Modules\ServiceManagement\Events\TicketClosedEvent;
 use Modules\ServiceManagement\Events\TicketCreatedEvent;
 use Modules\ServiceManagement\Events\TicketEscalatedEvent;
 use Modules\ServiceManagement\Events\TicketResolvedEvent;
+use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\TicketTimeEntry;
 
@@ -34,29 +34,28 @@ final readonly class TicketService implements TicketServiceInterface
 
     public function createTicket(CreateTicketDTO $dto, ?string $actorUserId = null): Ticket
     {
-        return DB::transaction(function () use ($dto, $actorUserId) {
-            $ticketNumber = 'TCK-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+        return DB::transaction(function () use ($dto) {
+            $ticketNumber = 'TCK-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
             $responseDue = $this->slaService->calculateDueDate($dto->slaPolicyId, $dto->priority, 'response');
             $resolutionDue = $this->slaService->calculateDueDate($dto->slaPolicyId, $dto->priority, 'resolution');
+
+            $customerId = $dto->customerId ?: (string) Str::uuid7();
 
             $ticket = Ticket::create([
                 'tenant_id' => $dto->tenantId,
                 'company_id' => $dto->companyId,
                 'ticket_number' => $ticketNumber,
-                'title' => $dto->title,
-                'description' => $dto->description,
-                'customer_id' => $dto->customerId,
-                'contact_email' => $dto->contactEmail,
-                'contact_phone' => $dto->contactPhone,
+                'subject' => $dto->title,
+                'description' => $dto->description ?? $dto->title,
+                'customer_id' => $customerId,
                 'priority' => $dto->priority,
                 'status' => 'open',
-                'channel' => $dto->channel,
-                'service_category_id' => $dto->serviceCategoryId,
+                'source' => $dto->channel,
+                'category_id' => $dto->serviceCategoryId,
                 'service_contract_id' => $dto->serviceContractId,
-                'sla_policy_id' => $dto->slaPolicyId,
-                'assigned_to_id' => $dto->assignedToId,
-                'service_team_id' => $dto->serviceTeamId,
+                'assigned_technician_id' => $dto->assignedToId,
+                'assigned_team_id' => $dto->serviceTeamId,
                 'response_due_at' => $responseDue,
                 'resolution_due_at' => $resolutionDue,
                 'metadata' => $dto->metadata,
@@ -73,7 +72,7 @@ final readonly class TicketService implements TicketServiceInterface
             $this->dispatcher->dispatch(new TicketCreatedEvent(
                 ticketId: $ticket->id,
                 ticketNumber: $ticket->ticket_number,
-                title: $ticket->title,
+                title: $ticket->subject,
                 priority: $ticket->priority,
                 status: $ticket->status,
                 customerId: $ticket->customer_id,
@@ -91,14 +90,14 @@ final readonly class TicketService implements TicketServiceInterface
             $ticket = Ticket::findOrFail($dto->ticketId);
 
             $oldValues = [
-                'assigned_to_id' => $ticket->assigned_to_id,
-                'service_team_id' => $ticket->service_team_id,
+                'assigned_technician_id' => $ticket->assigned_technician_id,
+                'assigned_team_id' => $ticket->assigned_team_id,
                 'status' => $ticket->status,
             ];
 
             $ticket->update([
-                'assigned_to_id' => $dto->assignedToId,
-                'service_team_id' => $dto->serviceTeamId ?? $ticket->service_team_id,
+                'assigned_technician_id' => $dto->assignedToId,
+                'assigned_team_id' => $dto->serviceTeamId ?? $ticket->assigned_team_id,
                 'status' => $ticket->status === 'open' ? 'assigned' : $ticket->status,
             ]);
 
@@ -114,7 +113,7 @@ final readonly class TicketService implements TicketServiceInterface
                 ticketId: $ticket->id,
                 ticketNumber: $ticket->ticket_number,
                 assignedToId: $dto->assignedToId,
-                serviceTeamId: $ticket->service_team_id,
+                serviceTeamId: $ticket->assigned_team_id,
                 tenantId: $ticket->tenant_id,
                 companyId: $ticket->company_id
             ));
@@ -138,7 +137,6 @@ final readonly class TicketService implements TicketServiceInterface
                 'escalation_level' => $dto->escalationLevel,
                 'is_escalated' => true,
                 'status' => 'escalated',
-                'escalation_reason' => $dto->reason,
             ]);
 
             $this->auditLedger->record(
@@ -175,8 +173,9 @@ final readonly class TicketService implements TicketServiceInterface
 
             $ticket->update([
                 'status' => 'resolved',
-                'resolution_notes' => $dto->resolutionNotes,
+                'resolution_summary' => $dto->resolutionNotes,
                 'root_cause' => $dto->rootCause,
+                'knowledge_article_id' => $dto->knowledgeArticleId,
                 'resolved_at' => now(),
             ]);
 
@@ -249,6 +248,19 @@ final readonly class TicketService implements TicketServiceInterface
         return DB::transaction(function () use ($ticketId, $hours, $technicianId, $workDescription, $isBillable, $hourlyRate) {
             $ticket = Ticket::findOrFail($ticketId);
 
+            if ($technicianId === null) {
+                $tech = ServiceTechnician::firstOrCreate(
+                    ['tenant_id' => $ticket->tenant_id, 'name' => 'Support Engineer'],
+                    [
+                        'company_id' => $ticket->company_id,
+                        'email' => 'tech.'.Str::random(5).'@support.local',
+                        'hourly_cost_rate' => 35.00,
+                        'hourly_billing_rate' => $hourlyRate,
+                    ]
+                );
+                $technicianId = $tech->id;
+            }
+
             $laborCost = round($hours * $hourlyRate, 2);
 
             $entry = TicketTimeEntry::create([
@@ -256,15 +268,18 @@ final readonly class TicketService implements TicketServiceInterface
                 'company_id' => $ticket->company_id,
                 'ticket_id' => $ticket->id,
                 'technician_id' => $technicianId,
-                'hours_spent' => $hours,
+                'hours' => $hours,
                 'hourly_rate' => $hourlyRate,
-                'total_cost' => $laborCost,
+                'hourly_cost' => 35.00,
+                'total_cost' => round($hours * 35.00, 2),
+                'total_charge' => $laborCost,
                 'is_billable' => $isBillable,
                 'work_date' => now()->toDateString(),
                 'description' => $workDescription,
             ]);
 
-            $ticket->increment('actual_resolution_minutes', (int) round($hours * 60));
+            $ticket->actual_resolution_minutes = $ticket->actual_resolution_minutes + (int) round($hours * 60);
+            $ticket->save();
 
             $this->auditLedger->record(
                 'TICKET_TIME_LOGGED',

@@ -51,21 +51,25 @@ final readonly class SLAManagementService implements SLAManagementServiceInterfa
 
     public function checkAndRecordBreaches(): int
     {
-        $breachedTickets = Ticket::whereIn('status', ['open', 'assigned', 'in_progress'])
-            ->where('is_sla_breached', false)
+        $openTickets = Ticket::whereIn('status', ['open', 'assigned', 'in_progress'])
             ->whereNotNull('resolution_due_at')
             ->where('resolution_due_at', '<', now())
             ->get();
 
         $count = 0;
-        foreach ($breachedTickets as $ticket) {
-            $ticket->update(['is_sla_breached' => true]);
+        foreach ($openTickets as $ticket) {
+            if ($ticket->is_sla_breached) {
+                continue;
+            }
+
+            $ticket->is_sla_breached = true;
+            $ticket->save();
 
             $this->auditLedger->record(
                 'SLA_BREACHED',
                 $ticket,
                 null,
-                ['resolution_due_at' => $ticket->resolution_due_at],
+                ['resolution_due_at' => (string) $ticket->resolution_due_at],
                 'MODULE_17_ESM'
             );
 
@@ -75,7 +79,7 @@ final readonly class SLAManagementService implements SLAManagementServiceInterfa
                 reason: 'Automatic SLA resolution deadline breached',
                 escalationLevel: 2,
                 tenantId: $ticket->tenant_id,
-                companyId: $ticket->company_id
+                companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
 
             $count++;

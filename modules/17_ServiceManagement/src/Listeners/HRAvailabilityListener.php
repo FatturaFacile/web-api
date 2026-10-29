@@ -25,16 +25,20 @@ final readonly class HRAvailabilityListener
             return;
         }
 
-        // Auto-provision technician record for field service readiness
+        $names = explode(' ', $event->fullName, 2);
+
         $tech = ServiceTechnician::firstOrCreate(
             ['tenant_id' => $event->tenantId, 'employee_id' => $event->employeeId],
             [
                 'company_id' => $event->companyId,
-                'name' => $event->fullName,
+                'technician_number' => 'TECH-EMP-'.substr($event->employeeNumber, -6),
+                'first_name' => $names[0] ?? 'Technician',
+                'last_name' => $names[1] ?? '',
+                'email' => strtolower($names[0] ?? 'tech').'.'.strtolower($names[1] ?? 'field').'@service.local',
                 'status' => 'available',
                 'hourly_cost_rate' => round($event->baseAnnualSalary / 2080.0, 2),
-                'hourly_billing_rate' => round(($event->baseAnnualSalary / 2080.0) * 2.5, 2),
-                'is_active' => true,
+                'hourly_billable_rate' => round(($event->baseAnnualSalary / 2080.0) * 2.5, 2),
+                'is_available' => true,
             ]
         );
 
@@ -59,8 +63,8 @@ final readonly class HRAvailabilityListener
 
         if ($tech !== null) {
             $tech->update([
-                'status' => 'off_duty',
-                'is_active' => false,
+                'current_status' => 'offline',
+                'is_available' => false,
             ]);
 
             $this->auditLedger->record(
@@ -84,7 +88,10 @@ final readonly class HRAvailabilityListener
             ->first();
 
         if ($tech !== null) {
-            $tech->update(['status' => 'on_leave']);
+            $tech->update([
+                'current_status' => 'on_leave',
+                'is_available' => false,
+            ]);
 
             $this->auditLedger->record(
                 'ESM_TECHNICIAN_STATUS_ON_LEAVE',
@@ -107,7 +114,7 @@ final readonly class HRAvailabilityListener
             'id' => (string) Str::uuid7(),
             'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
             'message_id' => $messageId,
-            'event_type' => $event->getEventName() . ':' . $consumerName,
+            'event_type' => $event->getEventName().':'.$consumerName,
             'payload_json' => $event->toPayload(),
             'status' => 'completed',
             'received_at' => now(),

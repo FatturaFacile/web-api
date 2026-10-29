@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
@@ -38,6 +39,29 @@ final class Incident extends BaseEnterpriseModel implements LockableByWorkflowIn
     public function isLockedByWorkflow(): bool
     {
         return (bool) $this->is_locked;
+    }
+
+    protected function description(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['summary'] ?? $value ?? '',
+            set: fn ($value) => ['summary' => $value]
+        );
+    }
+
+    protected function resolutionSummary(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => $attributes['post_mortem_summary'] ?? $value ?? '',
+            set: fn ($value) => ['post_mortem_summary' => $value]
+        );
+    }
+
+    protected function isMajorIncident(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => ($attributes['severity'] ?? '') === 'P1' || ($attributes['severity'] ?? '') === 'critical'
+        );
     }
 
     public function ticket(): BelongsTo

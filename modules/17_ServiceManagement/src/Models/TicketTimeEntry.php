@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 final class TicketTimeEntry extends BaseEnterpriseModel
@@ -23,6 +24,14 @@ final class TicketTimeEntry extends BaseEnterpriseModel
             'is_billable' => 'boolean',
             'metadata' => 'array',
         ];
+    }
+
+    protected function hoursSpent(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value, $attributes) => (float) ($attributes['hours'] ?? $value ?? 0.0),
+            set: fn ($value) => ['hours' => $value]
+        );
     }
 
     public function ticket(): BelongsTo

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Models;
 
-use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ServiceTeam extends BaseEnterpriseModel
@@ -22,9 +21,21 @@ final class ServiceTeam extends BaseEnterpriseModel
         ];
     }
 
-    public function teamLead(): BelongsTo
+    protected function teamType(): Attribute
     {
-        return $this->belongsTo(User::class, 'lead_user_id');
+        return Attribute::make(
+            get: function ($value, $attributes) {
+                $meta = json_decode($attributes['metadata'] ?? '{}', true) ?: [];
+
+                return $meta['team_type'] ?? 'support';
+            },
+            set: function ($value, $attributes) {
+                $meta = json_decode($attributes['metadata'] ?? '{}', true) ?: [];
+                $meta['team_type'] = (string) $value;
+
+                return ['metadata' => json_encode($meta)];
+            }
+        );
     }
 
     public function technicians(): HasMany

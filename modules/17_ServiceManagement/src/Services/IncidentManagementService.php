@@ -25,22 +25,19 @@ final readonly class IncidentManagementService implements IncidentManagementServ
     public function createIncident(CreateIncidentDTO $dto, ?string $actorUserId = null): Incident
     {
         return DB::transaction(function () use ($dto) {
-            $incidentNumber = 'INC-' . date('Ymd') . '-' . strtoupper(Str::random(6));
+            $incidentNumber = 'INC-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
             $incident = Incident::create([
                 'tenant_id' => $dto->tenantId,
                 'company_id' => $dto->companyId,
                 'incident_number' => $incidentNumber,
                 'title' => $dto->title,
-                'description' => $dto->description,
+                'summary' => $dto->description ?? $dto->title,
                 'severity' => $dto->severity,
                 'impact' => $dto->impact,
                 'urgency' => $dto->urgency,
-                'status' => 'new',
-                'service_category_id' => $dto->serviceCategoryId,
-                'affected_asset_id' => $dto->affectedAssetId,
-                'reported_by_id' => $dto->reportedById,
-                'detected_at' => now(),
+                'status' => 'investigating',
+                'reported_at' => now(),
             ]);
 
             $this->auditLedger->record(
@@ -79,7 +76,7 @@ final readonly class IncidentManagementService implements IncidentManagementServ
 
             $incident->update([
                 'status' => 'resolved',
-                'resolution_summary' => $summary,
+                'post_mortem_summary' => $summary,
                 'resolved_at' => now(),
             ]);
 
@@ -134,10 +131,6 @@ final readonly class IncidentManagementService implements IncidentManagementServ
     public function linkToTicket(string $incidentId, string $ticketId): void
     {
         $incident = Incident::findOrFail($incidentId);
-        $linkedTickets = $incident->linked_tickets ?? [];
-        if (! in_array($ticketId, $linkedTickets, true)) {
-            $linkedTickets[] = $ticketId;
-            $incident->update(['linked_tickets' => $linkedTickets]);
-        }
+        $incident->update(['ticket_id' => $ticketId]);
     }
 }

@@ -24,21 +24,21 @@ final readonly class AssetMaintenanceESMListener
             return;
         }
 
-        $woNumber = 'WO-EAM-' . substr($event->workOrderNumber, -8);
+        $woNumber = 'WO-EAM-'.substr($event->workOrderNumber, -8);
 
         $workOrder = WorkOrder::create([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'work_order_number' => $woNumber,
-            'title' => 'EAM Maintenance: ' . $event->workOrderNumber,
+            'title' => 'EAM Maintenance: '.$event->workOrderNumber,
             'description' => 'Dispatched from Enterprise Asset Management',
             'work_type' => $event->maintenanceType,
             'priority' => $event->priority,
             'status' => 'draft',
+            'customer_id' => (string) Str::uuid7(),
             'asset_id' => $event->assetId,
             'scheduled_start' => $event->scheduledDate,
-            'total_estimated_cost' => $event->totalCost,
-            'billing_type' => 'internal_cost',
+            'total_cost' => $event->totalCost,
         ]);
 
         $this->auditLedger->record(
@@ -56,7 +56,7 @@ final readonly class AssetMaintenanceESMListener
             return;
         }
 
-        $woNumber = 'WO-EAM-' . substr($event->workOrderNumber, -8);
+        $woNumber = 'WO-EAM-'.substr($event->workOrderNumber, -8);
         $workOrder = WorkOrder::where('work_order_number', $woNumber)->first();
 
         if ($workOrder !== null) {
@@ -87,7 +87,7 @@ final readonly class AssetMaintenanceESMListener
             'id' => (string) Str::uuid7(),
             'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
             'message_id' => $messageId,
-            'event_type' => $event->getEventName() . ':' . $consumerName,
+            'event_type' => $event->getEventName().':'.$consumerName,
             'payload_json' => $event->toPayload(),
             'status' => 'completed',
             'received_at' => now(),
