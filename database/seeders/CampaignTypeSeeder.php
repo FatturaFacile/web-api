@@ -19,30 +19,38 @@ final class CampaignTypeSeeder extends Seeder
         }
 
         $types = [
-            ['code' => 'email', 'name' => 'Email Marketing Sequence'],
-            ['code' => 'webinar', 'name' => 'Executive ERP Webinar'],
-            ['code' => 'conference', 'name' => 'Industry Expo & Summit'],
-            ['code' => 'ppc', 'name' => 'Pay-Per-Click Search Campaign'],
-            ['code' => 'social', 'name' => 'Paid Social Promotion'],
-            ['code' => 'print', 'name' => 'Direct Mail & Industry Journal'],
-            ['code' => 'partner', 'name' => 'Co-Marketing Partner Campaign'],
+            ['code' => 'email', 'name' => 'Email Marketing Campaign'],
+            ['code' => 'webinar', 'name' => 'Webinar / Online Demo'],
+            ['code' => 'trade_show', 'name' => 'Trade Show / Industry Expo'],
+            ['code' => 'paid_ads', 'name' => 'Digital Advertising (PPC/Display)'],
+            ['code' => 'content', 'name' => 'Content Marketing & Whitepapers'],
+            ['code' => 'partner_co_marketing', 'name' => 'Partner Co-Marketing Campaign'],
         ];
 
         foreach ($tenants as $tenant) {
             foreach ($types as $type) {
-                DB::table('crm_campaign_types')->updateOrInsert(
-                    [
+                $exists = DB::table('crm_campaign_types')
+                    ->where('tenant_id', $tenant->id)
+                    ->where('code', $type['code'])
+                    ->first();
+
+                if (! $exists) {
+                    DB::table('crm_campaign_types')->insert([
+                        'id' => (string) Str::uuid7(),
                         'tenant_id' => $tenant->id,
                         'code' => $type['code'],
-                    ],
-                    [
-                        'id' => (string) Str::uuid7(),
+                        'name' => $type['name'],
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    DB::table('crm_campaign_types')->where('id', $exists->id)->update([
                         'name' => $type['name'],
                         'is_active' => true,
                         'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
         }
     }

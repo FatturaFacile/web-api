@@ -71,11 +71,11 @@ final class TreasuryDemoDataSeeder extends Seeder
         $metricId = '019488b0-0003-7000-8000-000000000001';
         DB::table('working_capital_metrics')->updateOrInsert(
             [
-                'tenant_id' => $tenantId,
-                'metric_date' => now()->toDateString(),
+                'id' => $metricId,
             ],
             [
-                'id' => $metricId,
+                'tenant_id' => $tenantId,
+                'metric_date' => now()->toDateString(),
                 'company_id' => $tenantId,
                 'accounts_receivable_total' => 450000.00,
                 'accounts_payable_total' => 320000.00,
