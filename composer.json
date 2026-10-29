@@ -52,6 +52,9 @@
             "Modules\\GeneralLedger\\": "modules/22_GeneralLedger/src/",
             "Modules\\Treasury\\": "modules/24_Treasury/src/",
             "Modules\\Invoicing\\": "modules/05_Invoicing/src/",
+            "Modules\\CRM\\": "modules/02_CRM/src/",
+            "Modules\\AssetManagement\\": "modules/16_AssetManagement/src/",
+            "Modules\\HumanResources\\": "modules/18_HumanResources/src/",
             "Modules\\": "modules/"
         }
     },

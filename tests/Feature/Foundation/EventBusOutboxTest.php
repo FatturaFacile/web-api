@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Jobs\RelayOutboxEventsJob;
 use Enterprise\EventBus\Models\TransactionalInbox;
+use Enterprise\EventBus\Models\TransactionalOutbox;
 use Enterprise\EventBus\Services\TransactionalInboxService;
 use Enterprise\EventBus\Services\TransactionalOutboxService;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -12,6 +13,10 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
 
 uses(DatabaseTransactions::class);
+
+beforeEach(function (): void {
+    TransactionalOutbox::query()->delete();
+});
 
 test('event bus records domain events in outbox table and relays them to event dispatcher', function () {
     Event::fake(['invoice.created']);

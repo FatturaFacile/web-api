@@ -117,6 +117,12 @@ class DatabaseSeeder extends Seeder
             GeneralLedgerDatabaseSeeder::class,
             TreasuryDatabaseSeeder::class,
             InvoicingDatabaseSeeder::class,
+            CRMReferenceSeeder::class,
+            CRMDemoDataSeeder::class,
+            AssetReferenceSeeder::class,
+            AssetDemoDataSeeder::class,
+            HRReferenceSeeder::class,
+            HRDemoDataSeeder::class,
         ]);
     }
 }

@@ -8,7 +8,10 @@ use Enterprise\FeatureFlags\Providers\FeatureFlagsServiceProvider;
 use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
+use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
+use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
+use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
@@ -32,4 +35,7 @@ return [
     GeneralLedgerServiceProvider::class,
     TreasuryServiceProvider::class,
     InvoicingServiceProvider::class,
+    CRMServiceProvider::class,
+    AssetManagementServiceProvider::class,
+    HumanResourcesServiceProvider::class,
 ];
