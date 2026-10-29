@@ -16,7 +16,10 @@ final readonly class WorkflowInstanceCompletedEvent implements DomainEventInterf
         public string $instanceId,
         public string $status,
         public string $tenantId,
-        public string $companyId
+        public string $companyId,
+        public string $definitionCode = '',
+        public string $aggregateType = '',
+        public string $aggregateId = ''
     ) {}
 
     public function getEventName(): string

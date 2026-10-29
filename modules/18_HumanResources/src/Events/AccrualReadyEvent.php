@@ -33,7 +33,7 @@ final readonly class AccrualReadyEvent implements DomainEventInterface
 
     public function getAggregateId(): string
     {
-        return $this->periodCode;
+        return $this->tenantId !== '' ? $this->tenantId : (string) Str::uuid7();
     }
 
     public function getEventName(): string

@@ -106,27 +106,22 @@ final readonly class AssetAssignmentHRListener
 
     private function recordInboxIfNew(DomainEventInterface $event, string $consumerName): bool
     {
-        try {
-            $eventId = $event->getEventId();
-            if (TransactionalInbox::where('event_id', $eventId)->where('consumer_name', $consumerName)->exists()) {
-                return false;
-            }
-
-            TransactionalInbox::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
-                'event_id' => $eventId,
-                'event_name' => $event->getEventName(),
-                'consumer_name' => $consumerName,
-                'payload_json' => $event->toPayload(),
-                'status' => 'processed',
-                'received_at' => now(),
-                'processed_at' => now(),
-            ]);
-
-            return true;
-        } catch (\Throwable) {
-            return true;
+        $messageId = $event->getEventId();
+        if (TransactionalInbox::where('message_id', $messageId)->exists()) {
+            return false;
         }
+
+        TransactionalInbox::create([
+            'id' => (string) Str::uuid7(),
+            'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
+            'message_id' => $messageId,
+            'event_type' => $event->getEventName().':'.$consumerName,
+            'payload_json' => $event->toPayload(),
+            'status' => 'completed',
+            'received_at' => now(),
+            'processed_at' => now(),
+        ]);
+
+        return true;
     }
 }

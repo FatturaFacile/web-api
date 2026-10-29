@@ -16,6 +16,7 @@ use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
+use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
 
@@ -38,4 +39,5 @@ return [
     CRMServiceProvider::class,
     AssetManagementServiceProvider::class,
     HumanResourcesServiceProvider::class,
+    ServiceManagementServiceProvider::class,
 ];

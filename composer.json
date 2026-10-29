@@ -55,6 +55,7 @@
             "Modules\\CRM\\": "modules/02_CRM/src/",
             "Modules\\AssetManagement\\": "modules/16_AssetManagement/src/",
             "Modules\\HumanResources\\": "modules/18_HumanResources/src/",
+            "Modules\\ServiceManagement\\": "modules/17_ServiceManagement/src/",
             "Modules\\": "modules/"
         }
     },
