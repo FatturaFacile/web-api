@@ -129,6 +129,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'quote_number' => 'QT-DEMO-2026-001'],
             [
                 'contact_id' => $customer->id,
+                'date' => now()->toDateString(),
                 'status' => 'accepted',
                 'currency' => 'EUR',
                 'total_net' => 24500.00,
@@ -141,6 +142,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'order_number' => 'SO-DEMO-2026-001'],
             [
                 'contact_id' => $customer->id,
+                'order_date' => now()->toDateString(),
                 'status' => 'confirmed',
                 'currency' => 'EUR',
                 'total_net' => 24500.00,
@@ -167,12 +169,10 @@ class EnterpriseDemoMasterSeeder extends Seeder
         Payment::firstOrCreate(
             ['tenant_id' => $tenant->id, 'invoice_id' => $invoice->id],
             [
-                'contact_id' => $customer->id,
                 'amount' => 29890.00,
                 'paid_at' => now()->toDateString(),
                 'payment_method' => 'MP05',
-                'status' => 'completed',
-                'direction' => 'inbound',
+                'reference' => 'SEPA-CR-DEMO-2026-001',
             ]
         );
 
