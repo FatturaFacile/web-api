@@ -14,7 +14,6 @@ use App\Models\Tenant;
 use App\Models\Warehouse;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Str;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionExecutionServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
@@ -190,7 +189,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
                 'item_type' => 'raw_material',
                 'standard_cost' => 120.00,
                 'current_cost' => 120.00,
-                'unit_of_measure' => 'KG',
+                'uom' => 'KG',
                 'lead_time_days' => 5,
             ]
         );
@@ -202,7 +201,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
                 'item_type' => 'finished_good',
                 'standard_cost' => 1120.00,
                 'current_cost' => 1120.00,
-                'unit_of_measure' => 'NR',
+                'uom' => 'NR',
                 'lead_time_days' => 7,
             ]
         );
@@ -220,12 +219,12 @@ class EnterpriseDemoMasterSeeder extends Seeder
         }
 
         $workCenter = MfgWorkCenter::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'code' => 'WC-MILL-01'],
+            ['tenant_id' => $tenant->id, 'work_center_code' => 'WC-MILL-01'],
             [
                 'name' => 'Heavy Milling & Turning Station',
-                'direct_labor_rate' => 45.00,
-                'overhead_rate' => 25.00,
-                'efficiency_percentage' => 95.0,
+                'hourly_cost_rate' => 45.00,
+                'hourly_overhead_rate' => 25.00,
+                'efficiency_rate' => 95.0,
                 'capacity_hours_per_day' => 16.0,
             ]
         );
@@ -269,7 +268,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
 
         // Quality Inspection
         $plan = MfgQualityPlan::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'code' => 'QP-PUMP-FINAL'],
+            ['tenant_id' => $tenant->id, 'plan_code' => 'QP-PUMP-FINAL'],
             [
                 'mfg_item_id' => $finishedGood->id,
                 'name' => 'Pump Hydrostatic & Dimensional Verification',
@@ -278,16 +277,12 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ]
         );
 
-        $qmService->recordInspection(new RecordQualityInspectionDTO(
+        $qmService->executeInspection(new RecordQualityInspectionDTO(
             tenantId: $tenant->id,
-            mfgQualityPlanId: $plan->id,
+            qualityPlanId: $plan->id,
             productionOrderId: $prodOrder->id,
             sampleSize: 1,
-            inspectorId: (string) Str::uuid(),
-            overallResult: 'pass',
-            measuredValues: [
-                ['characteristic_id' => (string) Str::uuid(), 'measured_numeric' => 50.01, 'status' => 'pass'],
-            ],
+            defectCount: 0,
             notes: 'Demo Quality Inspection Hydrostatic Pressure 25 Bar Passed'
         ));
     }
