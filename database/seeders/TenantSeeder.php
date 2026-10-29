@@ -39,5 +39,25 @@ class TenantSeeder extends Seeder
                 'qr_iban' => 'CH4431999123000889012',
             ]
         );
+
+        Tenant::updateOrCreate(
+            ['name' => 'tenant_demo'],
+            [
+                'name' => 'tenant_demo',
+                'legal_name' => 'Demo Manufacturing & Services Group',
+                'fiscal_code' => 'IT99887766554',
+                'vat_number' => 'IT99887766554',
+                'country' => 'IT',
+                'default_currency' => 'EUR',
+                'sdi_code' => 'DEMO999',
+                'pec_email' => 'demo-group@pec.it',
+                'iban' => 'IT02L1234512345000000123456',
+                'settings' => [
+                    'industry' => 'Advanced Discrete Manufacturing & Field Services',
+                    'timezone' => 'Europe/Rome',
+                    'erp_edition' => 'Enterprise Community Edition',
+                ],
+            ]
+        );
     }
 }

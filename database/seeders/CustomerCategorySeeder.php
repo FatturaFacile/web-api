@@ -28,16 +28,28 @@ final class CustomerCategorySeeder extends Seeder
 
         foreach ($tenants as $tenant) {
             foreach ($tiers as $tier) {
-                DB::table('crm_lead_sources')->updateOrInsert(
-                    ['tenant_id' => $tenant->id, 'code' => 'cat_'.$tier['code']],
-                    [
+                $exists = DB::table('crm_lead_sources')
+                    ->where('tenant_id', $tenant->id)
+                    ->where('code', 'cat_'.$tier['code'])
+                    ->first();
+
+                if (! $exists) {
+                    DB::table('crm_lead_sources')->insert([
                         'id' => (string) Str::uuid7(),
+                        'tenant_id' => $tenant->id,
+                        'code' => 'cat_'.$tier['code'],
+                        'name' => $tier['name'],
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    DB::table('crm_lead_sources')->where('id', $exists->id)->update([
                         'name' => $tier['name'],
                         'is_active' => true,
                         'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
         }
     }

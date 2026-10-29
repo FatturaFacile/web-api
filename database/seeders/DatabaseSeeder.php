@@ -125,6 +125,12 @@ class DatabaseSeeder extends Seeder
             HRDemoDataSeeder::class,
             ServiceReferenceSeeder::class,
             ServiceDemoDataSeeder::class,
+            GlobalEnterpriseReferenceDataSeeder::class,
+            SubscriptionReferenceSeeder::class,
+            SubscriptionDemoDataSeeder::class,
+            ManufacturingReferenceSeeder::class,
+            ManufacturingDemoDataSeeder::class,
+            EnterpriseDemoMasterSeeder::class,
         ]);
     }
 }

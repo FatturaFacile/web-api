@@ -29,13 +29,28 @@ final class OpportunityStageSeeder extends Seeder
 
         foreach ($tenants as $tenant) {
             foreach ($stages as $stage) {
-                DB::table('crm_opportunity_stages')->updateOrInsert(
-                    [
+                $exists = DB::table('crm_opportunity_stages')
+                    ->where('tenant_id', $tenant->id)
+                    ->where('code', $stage['code'])
+                    ->first();
+
+                if (! $exists) {
+                    DB::table('crm_opportunity_stages')->insert([
+                        'id' => (string) Str::uuid7(),
                         'tenant_id' => $tenant->id,
                         'code' => $stage['code'],
-                    ],
-                    [
-                        'id' => (string) Str::uuid7(),
+                        'name' => $stage['name'],
+                        'sequence' => $stage['sequence'],
+                        'default_probability' => $stage['probability'],
+                        'is_won' => $stage['is_won'],
+                        'is_lost' => $stage['is_lost'],
+                        'stale_days' => $stage['stale_days'],
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    DB::table('crm_opportunity_stages')->where('id', $exists->id)->update([
                         'name' => $stage['name'],
                         'sequence' => $stage['sequence'],
                         'default_probability' => $stage['probability'],
@@ -44,9 +59,8 @@ final class OpportunityStageSeeder extends Seeder
                         'stale_days' => $stage['stale_days'],
                         'is_active' => true,
                         'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
         }
     }

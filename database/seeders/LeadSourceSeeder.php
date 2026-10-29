@@ -31,19 +31,28 @@ final class LeadSourceSeeder extends Seeder
 
         foreach ($tenants as $tenant) {
             foreach ($sources as $source) {
-                DB::table('crm_lead_sources')->updateOrInsert(
-                    [
+                $exists = DB::table('crm_lead_sources')
+                    ->where('tenant_id', $tenant->id)
+                    ->where('code', $source['code'])
+                    ->first();
+
+                if (! $exists) {
+                    DB::table('crm_lead_sources')->insert([
+                        'id' => (string) Str::uuid7(),
                         'tenant_id' => $tenant->id,
                         'code' => $source['code'],
-                    ],
-                    [
-                        'id' => (string) Str::uuid7(),
+                        'name' => $source['name'],
+                        'is_active' => true,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                } else {
+                    DB::table('crm_lead_sources')->where('id', $exists->id)->update([
                         'name' => $source['name'],
                         'is_active' => true,
                         'updated_at' => now(),
-                        'created_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
         }
     }
