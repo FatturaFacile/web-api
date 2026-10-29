@@ -12,22 +12,16 @@ final readonly class DispatchOutboxOnHREventListener
 {
     public function handle(DomainEventInterface $event): void
     {
-        $exists = TransactionalOutbox::where('event_id', $event->getEventId())->exists();
-        if ($exists) {
-            return;
-        }
-
         TransactionalOutbox::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $event->getTenantId(),
-            'event_id' => $event->getEventId(),
+            'company_id' => $event->getCompanyId(),
             'event_type' => $event->getEventName(),
             'aggregate_type' => $event->getAggregateType(),
             'aggregate_id' => $event->getAggregateId(),
-            'payload' => $event->toPayload(),
+            'payload_json' => $event->toPayload(),
             'status' => 'pending',
-            'attempts' => 0,
-            'available_at' => now(),
+            'retry_count' => 0,
             'occurred_at' => now(),
         ]);
     }

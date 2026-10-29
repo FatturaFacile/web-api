@@ -8,6 +8,7 @@ use App\Services\Tenancy\TenantContext;
 use Database\Seeders\HRDemoDataSeeder;
 use Database\Seeders\HRReferenceSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Employee;
@@ -16,6 +17,7 @@ uses(DatabaseTransactions::class);
 
 test('EmployeeFactory supports all 9 mandatory enterprise lifecycle states', function () {
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
 
     $candidate = Employee::factory()->candidate()->create(['tenant_id' => $tenant->id]);
     $onboarding = Employee::factory()->onboarding()->create(['tenant_id' => $tenant->id]);
@@ -40,6 +42,7 @@ test('EmployeeFactory supports all 9 mandatory enterprise lifecycle states', fun
 
 test('HRReferenceSeeder and HRDemoDataSeeder are idempotent and populate multilingual workforce data across 4 industries', function () {
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
 
     $this->seed(HRReferenceSeeder::class);
     $this->seed(HRDemoDataSeeder::class);
@@ -62,8 +65,10 @@ test('HRReferenceSeeder and HRDemoDataSeeder are idempotent and populate multili
 
 test('REST API /api/v1/hr endpoints authenticate via Sanctum and execute employee, org chart, and leave operations', function () {
     $tenant = Tenant::factory()->create();
-    $user = User::factory()->create(['tenant_id' => $tenant->id]);
     app(TenantContext::class)->setTenant($tenant);
+
+    $user = User::factory()->create();
+    $user->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     Sanctum::actingAs($user, ['*']);
 
     // 1. Create Department via API

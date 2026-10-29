@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
@@ -25,6 +26,8 @@ test('leave balance initialization, monthly accrual with SKIP LOCKED, leave requ
     ]);
 
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $employee = Employee::factory()->active()->create([
         'tenant_id' => $tenant->id,
         'hourly_cost_rate' => 35.00,
@@ -89,6 +92,8 @@ test('attendance recording and project timesheet approval calculate labor cost w
     ]);
 
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $employee = Employee::factory()->active()->create([
         'tenant_id' => $tenant->id,
         'hourly_cost_rate' => 40.00,

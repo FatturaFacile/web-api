@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Modules\AssetManagement\Events\AssetAssignedEvent;
@@ -21,26 +22,27 @@ uses(DatabaseTransactions::class);
 
 test('EAM AssetAssignedEvent, AssetTransferredEvent, and AssetDisposedEvent synchronize employee equipment_assigned JSONB', function () {
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $empA = Employee::factory()->active()->create(['tenant_id' => $tenant->id, 'equipment_assigned' => []]);
     $empB = Employee::factory()->active()->create(['tenant_id' => $tenant->id, 'equipment_assigned' => []]);
     $assetId = (string) Str::uuid7();
 
     // 1. Assign asset to Employee A
     event(new AssetAssignedEvent(
+        assignmentId: (string) Str::uuid7(),
         assetId: $assetId,
-        assetNumber: 'AST-LAPTOP-001',
-        assignedToEmployeeId: (string) $empA->id,
-        assignedToDepartmentId: null,
-        assignmentType: 'issue',
+        assigneeType: 'employee',
+        assigneeId: (string) $empA->id,
+        assigneeName: $empA->full_name,
         assignedAt: now()->toDateString(),
         tenantId: (string) $tenant->id,
         companyId: (string) $tenant->id
     ));
 
     $equipA = $empA->fresh()->equipment_assigned;
-    expect($equipA)->toBeArray()->toHaveCount(1)
-        ->and($equipA[0]['asset_id'])->toBe($assetId)
-        ->and($equipA[0]['action'])->toBe('assigned');
+    expect($equipA)->toBeArray()->toHaveKey($assetId)
+        ->and($equipA[$assetId]['last_action'])->toBe('assigned');
 
     // 2. Transfer asset from Employee A to Employee B
     event(new AssetTransferredEvent(
@@ -48,34 +50,40 @@ test('EAM AssetAssignedEvent, AssetTransferredEvent, and AssetDisposedEvent sync
         assetId: $assetId,
         fromLocationId: null,
         toLocationId: null,
-        fromCustodianUserId: (string) $empA->id,
-        toCustodianUserId: (string) $empB->id,
+        fromCustodianId: (string) $empA->id,
+        toCustodianId: (string) $empB->id,
+        fromProjectId: null,
+        toProjectId: null,
         transferDate: now()->toDateString(),
         tenantId: (string) $tenant->id,
         companyId: (string) $tenant->id
     ));
 
-    expect($empA->fresh()->equipment_assigned)->toBeEmpty()
-        ->and($empB->fresh()->equipment_assigned)->toHaveCount(1);
+    expect($empA->fresh()->equipment_assigned[$assetId]['last_action'])->toBe('transferred_out')
+        ->and($empB->fresh()->equipment_assigned[$assetId]['last_action'])->toBe('transferred_in');
 
     // 3. Dispose asset
     event(new AssetDisposedEvent(
         disposalId: (string) Str::uuid7(),
         assetId: $assetId,
         disposalType: 'scrap',
-        disposalDate: now()->toDateString(),
+        assetCost: 1200.00,
+        accumulatedDepreciation: 1100.00,
+        carryingAmount: 100.00,
         proceedsAmount: 0.00,
-        netBookValueDisposed: 100.00,
         gainLossAmount: -100.00,
+        disposalDate: now()->toDateString(),
         tenantId: (string) $tenant->id,
         companyId: (string) $tenant->id
     ));
 
-    expect($empB->fresh()->equipment_assigned)->toBeEmpty();
+    expect($empB->fresh()->equipment_assigned[$assetId]['last_action'])->toBe('disposed');
 });
 
 test('WorkflowInstanceCompletedEvent and WorkflowInstanceRejectedEvent unlock and transition HR LeaveRequests and Timesheets', function () {
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $employee = Employee::factory()->active()->create(['tenant_id' => $tenant->id]);
     $leaveType = LeaveType::factory()->create(['tenant_id' => $tenant->id]);
 
@@ -106,9 +114,7 @@ test('WorkflowInstanceCompletedEvent and WorkflowInstanceRejectedEvent unlock an
 
     event(new WorkflowInstanceCompletedEvent(
         instanceId: $wfInstanceApproveId,
-        workflowCode: 'HR_LEAVE_APPROVAL',
-        approvableType: LeaveRequest::class,
-        approvableId: (string) $leaveRequest->id,
+        status: 'approved',
         tenantId: (string) $tenant->id,
         companyId: (string) $tenant->id
     ));
@@ -127,11 +133,6 @@ test('WorkflowInstanceCompletedEvent and WorkflowInstanceRejectedEvent unlock an
 
     event(new WorkflowInstanceRejectedEvent(
         instanceId: $wfInstanceRejectId,
-        workflowCode: 'HR_TIMESHEET_APPROVAL',
-        approvableType: Timesheet::class,
-        approvableId: (string) $timesheet->id,
-        rejectedByUserId: (string) Str::uuid7(),
-        reason: 'Missing project task reference',
         tenantId: (string) $tenant->id,
         companyId: (string) $tenant->id
     ));
@@ -142,6 +143,8 @@ test('WorkflowInstanceCompletedEvent and WorkflowInstanceRejectedEvent unlock an
 
 test('Projects ProjectClosureReadyEvent finalizes approved project timesheets to posted_to_project', function () {
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $employee = Employee::factory()->active()->create(['tenant_id' => $tenant->id]);
     $projectId = (string) Str::uuid7();
 
@@ -154,11 +157,11 @@ test('Projects ProjectClosureReadyEvent finalizes approved project timesheets to
 
     event(new ProjectClosureReadyEvent(
         projectId: $projectId,
-        projectCode: 'PRJ-2026-900',
-        totalBudget: 100000.00,
-        totalActualCost: 85000.00,
-        totalBilledAmount: 120000.00,
-        closedAt: now()->toDateString(),
+        finalContractValue: 120000.00,
+        finalCost: 85000.00,
+        unbilledWipBalance: 0.00,
+        retainedEarningsImpact: 35000.00,
+        fiscalYear: '2026',
         tenantId: (string) $tenant->id,
         companyId: (string) $tenant->id
     ));

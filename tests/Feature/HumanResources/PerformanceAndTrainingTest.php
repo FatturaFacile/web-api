@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Modules\HumanResources\Contracts\PerformanceManagementServiceInterface;
@@ -25,6 +26,8 @@ test('performance review calculates weighted rating and dispatches PerformanceRe
     ]);
 
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $employee = Employee::factory()->active()->create(['tenant_id' => $tenant->id]);
 
     $service = app(PerformanceManagementServiceInterface::class);
@@ -61,6 +64,8 @@ test('training assignment, completion, certification issuance, and expiring cert
     ]);
 
     $tenant = Tenant::factory()->create();
+    app(TenantContext::class)->setTenant($tenant);
+
     $employee = Employee::factory()->active()->create(['tenant_id' => $tenant->id]);
     $course = TrainingCourse::factory()->create([
         'tenant_id' => $tenant->id,
