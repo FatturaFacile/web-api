@@ -58,7 +58,11 @@ php artisan key:generate
 # 4. Run database migrations
 php artisan migrate:fresh
 
-# 5. Execute automated test suite
+# 5. (Optional) Load a demo company with customers, products, quotes, invoices and payments
+#    Sign in as demo@fatturafacile.test / password. Skipped when APP_ENV=production.
+php artisan db:seed --class=DemoSeeder
+
+# 6. Execute automated test suite
 php artisan test --compact
 ```
 
