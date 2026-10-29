@@ -387,4 +387,3 @@ Route::prefix('v1')->group(function (): void {
 });
 
 Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('api.lookups.getByCategory');
-Route::post('/lookups/translations', [LookupController::class, 'saveTranslation'])->name('api.lookups.saveTranslation');
