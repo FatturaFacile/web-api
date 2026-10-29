@@ -131,7 +131,7 @@ class LookupTest extends TestCase
         ];
 
         $postResponse = $this->withHeader('X-Tenant-ID', $tenant->id)
-            ->postJson('/api/lookups/translations', $payload);
+            ->postJson('/api/v1/lookups/translations', $payload);
 
         $postResponse->assertOk();
         $this->assertDatabaseHas('lookup_item_translations', [
@@ -146,5 +146,17 @@ class LookupTest extends TestCase
             ->getJson('/api/lookups/payment_type?locale=it');
         $cashItem = collect($fetchResponse->json())->firstWhere('code', 'CASH');
         $this->assertSame('Contanti di Cassa', $cashItem['label']);
+    }
+
+    public function test_saving_translations_requires_authentication(): void
+    {
+        $category = LookupCategory::where('code', 'payment_type')->firstOrFail();
+        $item = LookupItem::where('category_id', $category->id)->where('code', 'CASH')->firstOrFail();
+        $payload = ['lookup_item_id' => $item->id, 'locale' => 'it', 'label' => 'Overwritten'];
+
+        $this->postJson('/api/v1/lookups/translations', $payload)->assertUnauthorized();
+        $this->postJson('/api/lookups/translations', $payload)->assertStatus(405);
+
+        $this->assertDatabaseMissing('lookup_item_translations', ['label' => 'Overwritten']);
     }
 }

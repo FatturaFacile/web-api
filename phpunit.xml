@@ -41,6 +41,9 @@
 </logging>
 
 <php>
+    <!-- Rendering PDFs (dompdf) in the Feature suite needs more than PHP's default 128M;
+         setup-php in CI runs with no limit, local PHP/Docker images do not. -->
+    <ini name="memory_limit" value="512M"/>
     <env name="APP_ENV" value="testing"/>
     <env name="APP_MAINTENANCE_DRIVER" value="file"/>
     <env name="BCRYPT_ROUNDS" value="4"/>
