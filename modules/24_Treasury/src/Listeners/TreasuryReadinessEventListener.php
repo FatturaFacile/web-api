@@ -101,7 +101,7 @@ final readonly class TreasuryReadinessEventListener
     {
         $this->collectionService->scheduleCollection([
             'tenant_id' => $event->tenantId,
-            'company_id' => $event->companyId,
+            'company_id' => ! empty($event->companyId) && Str::isUuid((string) $event->companyId) ? (string) $event->companyId : (string) $event->tenantId,
             'customer_id' => $event->customerId,
             'invoice_id' => null,
             'expected_amount' => $event->openAmount,

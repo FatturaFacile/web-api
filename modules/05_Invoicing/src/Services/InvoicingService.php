@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
@@ -29,8 +30,8 @@ final class InvoicingService implements InvoicingServiceInterface
     ) {}
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function createInvoice(array $data, array $items): SalesInvoice
     {
@@ -73,8 +74,10 @@ final class InvoicingService implements InvoicingServiceInterface
             'project_milestone_id' => $data['project_milestone_id'] ?? null,
             'customer_agreement_id' => $data['customer_agreement_id'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'created_by' => $data['created_by'] ?? null,
+            'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
         ]);
+
+        $actualInvoiceId = (string) $invoice->id;
 
         foreach ($items as $item) {
             $qty = (float) ($item['quantity'] ?? 1.0);
@@ -86,7 +89,7 @@ final class InvoicingService implements InvoicingServiceInterface
             SalesInvoiceItem::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $tenantId,
-                'invoice_id' => $invoiceId,
+                'invoice_id' => $actualInvoiceId,
                 'sales_order_item_id' => $item['sales_order_item_id'] ?? null,
                 'delivery_note_item_id' => $item['delivery_note_item_id'] ?? null,
                 'product_id' => $item['product_id'] ?? null,
@@ -103,8 +106,8 @@ final class InvoicingService implements InvoicingServiceInterface
             ]);
         }
 
-        $this->eventDispatcher->dispatch(new InvoiceDraftedEvent(
-            invoiceId: $invoiceId,
+        $this->dispatchDomainEvent(new InvoiceDraftedEvent(
+            invoiceId: $actualInvoiceId,
             invoiceNumber: $invoiceNumber,
             customerId: (string) $invoice->contact_id,
             totalGross: (float) $invoice->total_gross,
@@ -241,7 +244,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'status' => 'approved',
         ]);
 
-        $this->eventDispatcher->dispatch(new InvoiceApprovedEvent(
+        $this->dispatchDomainEvent(new InvoiceApprovedEvent(
             invoiceId: (string) $invoice->id,
             approvedBy: $userId,
             tenantId: (string) $invoice->tenant_id,
@@ -276,17 +279,19 @@ final class InvoicingService implements InvoicingServiceInterface
             ];
         }
 
+        $postedUserId = Str::isUuid($userId) ? $userId : (string) Str::uuid7();
+
         $invoice->update([
             'status' => 'posted',
             'posted_at' => now(),
-            'posted_by' => $userId,
+            'posted_by' => $postedUserId,
         ]);
 
         // 1. Record customer ledger entry
-        $this->ledgerService->recordInvoiceEntry($invoice, $userId);
+        $ledgerEntry = $this->ledgerService->recordInvoiceEntry($invoice, $postedUserId);
 
         // 2. Dispatch domain event
-        $this->eventDispatcher->dispatch(new InvoicePostedEvent(
+        $this->dispatchDomainEvent(new InvoicePostedEvent(
             invoiceId: (string) $invoice->id,
             invoiceNumber: (string) $invoice->invoice_number,
             customerId: (string) $invoice->contact_id,
@@ -305,12 +310,13 @@ final class InvoicingService implements InvoicingServiceInterface
         ));
 
         // 3. Emit ReceivableReadyEvent for Treasury integration
-        $this->eventDispatcher->dispatch(new ReceivableReadyEvent(
-            receivableId: (string) $invoice->id,
+        $this->dispatchDomainEvent(new ReceivableReadyEvent(
+            customerLedgerId: (string) $ledgerEntry->id,
             customerId: (string) $invoice->contact_id,
-            invoiceNumber: (string) $invoice->invoice_number,
-            totalAmount: (float) $invoice->total_gross,
+            openAmount: (float) $invoice->total_gross,
+            currency: (string) ($invoice->currency ?? 'EUR'),
             dueDate: (string) ($invoice->due_date ?? now()->toDateString()),
+            journalEntryId: (string) ($invoice->gl_journal_entry_id ?? Str::uuid7()),
             tenantId: $tenantId,
             companyId: $tenantId
         ));
@@ -319,8 +325,8 @@ final class InvoicingService implements InvoicingServiceInterface
     }
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function issueCreditNote(SalesInvoice $originalInvoice, array $data, array $items): SalesInvoice
     {
@@ -351,16 +357,18 @@ final class InvoicingService implements InvoicingServiceInterface
             'total_paid' => $totals['gross_total'],
             'payment_status' => 'paid',
             'posted_at' => now(),
-            'posted_by' => $data['created_by'] ?? null,
+            'posted_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : (string) Str::uuid7(),
             'notes' => $data['notes'] ?? 'Credit note for invoice '.$originalInvoice->invoice_number,
-            'created_by' => $data['created_by'] ?? null,
+            'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : (string) Str::uuid7(),
         ]);
+
+        $actualCreditNoteId = (string) $creditNote->id;
 
         foreach ($items as $item) {
             SalesInvoiceItem::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $tenantId,
-                'invoice_id' => $creditNoteId,
+                'invoice_id' => $actualCreditNoteId,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? 'Credit item',
                 'quantity' => (float) ($item['quantity'] ?? 1.0),
@@ -375,8 +383,8 @@ final class InvoicingService implements InvoicingServiceInterface
         $this->ledgerService->recordCreditNoteEntry($creditNote, (string) ($data['created_by'] ?? 'system'));
 
         // Emit CreditNoteIssuedEvent
-        $this->eventDispatcher->dispatch(new CreditNoteIssuedEvent(
-            creditNoteId: $creditNoteId,
+        $this->dispatchDomainEvent(new CreditNoteIssuedEvent(
+            creditNoteId: $actualCreditNoteId,
             creditNoteNumber: $creditNumber,
             originalInvoiceId: (string) $originalInvoice->id,
             customerId: (string) $originalInvoice->contact_id,
@@ -399,7 +407,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'applied_amount' => $amount,
             'application_date' => now()->toDateString(),
             'notes' => 'Credit application from '.$creditNote->invoice_number.' to '.$targetInvoice->invoice_number,
-            'applied_by' => $userId,
+            'applied_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
         ]);
 
         $newPaid = (float) $targetInvoice->total_paid + $amount;
@@ -411,5 +419,11 @@ final class InvoicingService implements InvoicingServiceInterface
         ]);
 
         return $application;
+    }
+
+    private function dispatchDomainEvent(DomainEventInterface $event): void
+    {
+        $this->eventDispatcher->publish($event);
+        $this->eventDispatcher->dispatch($event);
     }
 }

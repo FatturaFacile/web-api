@@ -44,7 +44,7 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
             'cleared_amount' => 0.0,
             'gl_journal_entry_id' => $invoice->gl_journal_entry_id,
             'notes' => 'Customer invoice posted: '.$invoice->invoice_number,
-            'created_by' => $userId,
+            'created_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
         ]);
     }
 
@@ -81,7 +81,7 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
             'cleared_at' => now(),
             'gl_journal_entry_id' => $creditNote->gl_journal_entry_id,
             'notes' => 'Credit note issued: '.$creditNote->invoice_number,
-            'created_by' => $userId,
+            'created_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
         ]);
     }
 

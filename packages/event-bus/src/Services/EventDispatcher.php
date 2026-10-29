@@ -17,8 +17,9 @@ final class EventDispatcher implements EventBusInterface, EventDispatcherInterfa
 
     public function dispatch(DomainEventInterface $event): void
     {
-        // Immediate local dispatch
+        // Immediate local dispatch for both string name and event class type
         Event::dispatch($event->getEventName(), [$event]);
+        Event::dispatch($event);
     }
 
     public function publish(DomainEventInterface $event): void

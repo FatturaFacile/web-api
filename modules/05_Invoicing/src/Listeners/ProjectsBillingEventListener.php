@@ -17,10 +17,10 @@ final readonly class ProjectsBillingEventListener
     {
         $this->invoicingService->createInvoiceFromMilestone(
             projectId: $event->projectId,
-            milestoneId: $event->milestoneId,
-            customerId: $event->customerId,
+            milestoneId: (string) ($event->milestoneId ?? $event->billingEventId),
+            customerId: $event->contactId,
             amount: $event->billingAmount,
-            description: $event->milestoneName,
+            description: 'Project Billing - '.$event->billingType,
             tenantId: $event->tenantId
         );
     }

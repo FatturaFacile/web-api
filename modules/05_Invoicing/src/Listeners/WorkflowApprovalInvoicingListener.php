@@ -23,38 +23,34 @@ final readonly class WorkflowApprovalInvoicingListener
 
     public function handleWorkflowApproved(WorkflowInstanceCompletedEvent $event): void
     {
-        $entityType = $event->entityType;
-        $entityId = $event->entityId;
+        $instanceId = $event->instanceId;
 
-        if ($entityType === 'sales_quote') {
-            $quote = SalesQuote::find($entityId);
-            if ($quote !== null && $quote->status !== 'approved') {
-                $this->quoteService->approveQuote($quote, 'workflow-engine');
-            }
-        } elseif ($entityType === 'sales_order') {
-            $order = SalesOrder::find($entityId);
-            if ($order !== null && $order->status !== 'approved') {
-                $this->orderService->approveOrder($order, 'workflow-engine');
-            }
-        } elseif ($entityType === 'sales_invoice') {
-            $invoice = SalesInvoice::find($entityId);
-            if ($invoice !== null && $invoice->status !== 'approved') {
-                $this->invoicingService->approveInvoice($invoice, 'workflow-engine');
-            }
+        $quote = SalesQuote::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->first();
+        if ($quote !== null && $quote->status !== 'approved') {
+            $this->quoteService->approveQuote($quote, 'workflow-engine');
+
+            return;
+        }
+
+        $order = SalesOrder::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->first();
+        if ($order !== null && $order->status !== 'approved') {
+            $this->orderService->approveOrder($order, 'workflow-engine');
+
+            return;
+        }
+
+        $invoice = SalesInvoice::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->first();
+        if ($invoice !== null && $invoice->status !== 'approved') {
+            $this->invoicingService->approveInvoice($invoice, 'workflow-engine');
         }
     }
 
     public function handleWorkflowRejected(WorkflowInstanceRejectedEvent $event): void
     {
-        $entityType = $event->entityType;
-        $entityId = $event->entityId;
+        $instanceId = $event->instanceId;
 
-        if ($entityType === 'sales_quote') {
-            SalesQuote::where('id', $entityId)->update(['status' => 'rejected']);
-        } elseif ($entityType === 'sales_order') {
-            SalesOrder::where('id', $entityId)->update(['status' => 'rejected']);
-        } elseif ($entityType === 'sales_invoice') {
-            SalesInvoice::where('id', $entityId)->update(['status' => 'rejected']);
-        }
+        SalesQuote::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->update(['status' => 'rejected']);
+        SalesOrder::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->update(['status' => 'rejected']);
+        SalesInvoice::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->update(['status' => 'rejected']);
     }
 }

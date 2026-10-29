@@ -369,7 +369,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                         dueDate: (string) $subItem->due_date,
                         journalEntryId: (string) $entry->id,
                         tenantId: (string) $entry->tenant_id,
-                        companyId: (string) ($entry->company_id ?? '')
+                        companyId: (string) (! empty($entry->company_id) ? $entry->company_id : $entry->tenant_id)
                     );
                     $this->dispatcher->publish($ev);
                     event($ev);
@@ -405,7 +405,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                         dueDate: (string) $subItem->due_date,
                         journalEntryId: (string) $entry->id,
                         tenantId: (string) $entry->tenant_id,
-                        companyId: (string) ($entry->company_id ?? '')
+                        companyId: (string) (! empty($entry->company_id) ? $entry->company_id : $entry->tenant_id)
                     );
                     $this->dispatcher->publish($ev);
                     event($ev);

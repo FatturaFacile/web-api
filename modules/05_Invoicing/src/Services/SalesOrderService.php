@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
@@ -25,8 +26,8 @@ final class SalesOrderService implements SalesOrderServiceInterface
     ) {}
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function createOrder(array $data, array $items): SalesOrder
     {
@@ -35,12 +36,13 @@ final class SalesOrderService implements SalesOrderServiceInterface
 
         $calculatedItems = [];
         foreach ($items as $item) {
-            $pricing = $this->pricingService->resolvePrice(
-                productId: (string) $item['product_id'],
+            $productId = isset($item['product_id']) ? (string) $item['product_id'] : null;
+            $pricing = $productId !== null ? $this->pricingService->resolvePrice(
+                productId: $productId,
                 quantity: (float) ($item['quantity'] ?? 1.0),
                 priceListId: $data['price_list_id'] ?? null,
                 discountPolicyId: $data['discount_policy_id'] ?? null
-            );
+            ) : ['unit_price' => (float) ($item['unit_price'] ?? 0.0), 'discount_percentage' => (float) ($item['discount_percentage'] ?? 0.0)];
 
             $unitPrice = isset($item['unit_price']) ? (float) $item['unit_price'] : $pricing['unit_price'];
             $discountPct = isset($item['discount_percentage']) ? (float) $item['discount_percentage'] : $pricing['discount_percentage'];
@@ -89,14 +91,16 @@ final class SalesOrderService implements SalesOrderServiceInterface
             'shipping_address' => $data['shipping_address'] ?? null,
             'billing_address' => $data['billing_address'] ?? null,
             'notes' => $data['notes'] ?? null,
-            'created_by' => $data['created_by'] ?? null,
+            'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
         ]);
+
+        $actualOrderId = (string) $order->id;
 
         foreach ($calculatedItems as $item) {
             SalesOrderItem::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $tenantId,
-                'sales_order_id' => $orderId,
+                'sales_order_id' => $actualOrderId,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? 'Product item',
                 'quantity' => (float) ($item['quantity'] ?? 1.0),
@@ -121,8 +125,8 @@ final class SalesOrderService implements SalesOrderServiceInterface
             }
         }
 
-        $this->eventDispatcher->dispatch(new SalesOrderCreatedEvent(
-            salesOrderId: $orderId,
+        $this->dispatchDomainEvent(new SalesOrderCreatedEvent(
+            salesOrderId: $actualOrderId,
             orderNumber: $orderNumber,
             customerId: (string) $order->contact_id,
             totalGross: (float) $order->total_gross,
@@ -160,15 +164,17 @@ final class SalesOrderService implements SalesOrderServiceInterface
 
     public function approveOrder(SalesOrder $order, string $userId): SalesOrder
     {
+        $quoteUserId = Str::isUuid($userId) ? $userId : (string) Str::uuid7();
+
         $order->update([
             'status' => 'approved',
-            'approved_by' => $userId,
+            'approved_by' => $quoteUserId,
             'approved_at' => now(),
         ]);
 
-        $this->eventDispatcher->dispatch(new SalesOrderApprovedEvent(
+        $this->dispatchDomainEvent(new SalesOrderApprovedEvent(
             salesOrderId: (string) $order->id,
-            approvedBy: $userId,
+            approvedBy: $quoteUserId,
             tenantId: (string) $order->tenant_id,
             companyId: (string) $order->tenant_id
         ));
@@ -198,7 +204,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
             'inventory_status' => 'reserved',
         ]);
 
-        $this->eventDispatcher->dispatch(new SalesOrderStockReservedEvent(
+        $this->dispatchDomainEvent(new SalesOrderStockReservedEvent(
             salesOrderId: (string) $order->id,
             reservedItems: $reservedItems,
             tenantId: (string) $order->tenant_id,
@@ -206,6 +212,12 @@ final class SalesOrderService implements SalesOrderServiceInterface
         ));
 
         return $order;
+    }
+
+    private function dispatchDomainEvent(DomainEventInterface $event): void
+    {
+        $this->eventDispatcher->publish($event);
+        $this->eventDispatcher->dispatch($event);
     }
 
     public function cancelOrder(SalesOrder $order, string $reason, string $userId): SalesOrder

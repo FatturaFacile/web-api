@@ -15,6 +15,7 @@ use Modules\GeneralLedger\Events\PeriodOpenedEvent;
 use Modules\GeneralLedger\Events\TrialBalanceGeneratedEvent;
 use Modules\GeneralLedger\Events\YearClosedEvent;
 use Modules\Treasury\Contracts\TreasuryPositionServiceInterface;
+use Modules\Treasury\Models\BankAccount;
 
 final readonly class GeneralLedgerTreasuryListener
 {

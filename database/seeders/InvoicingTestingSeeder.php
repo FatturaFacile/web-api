@@ -23,7 +23,7 @@ final class InvoicingTestingSeeder extends Seeder
             DB::table('tenants')->insert([
                 'id' => $tenantId,
                 'name' => 'Testing Tenant',
-                'slug' => 'test-tenant',
+                'legal_name' => 'Testing Tenant S.r.l.',
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

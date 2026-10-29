@@ -22,18 +22,19 @@ use Modules\Invoicing\Events\InvoiceApprovedEvent;
 use Modules\Invoicing\Events\InvoiceDraftedEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Events\SalesOrderApprovedEvent;
-use Modules\Invoicing\Events\SalesOrderCreditCheckedEvent;
 use Modules\Invoicing\Events\SalesOrderCreatedEvent;
+use Modules\Invoicing\Events\SalesOrderCreditCheckedEvent;
 use Modules\Invoicing\Events\SalesOrderHoldPlacedEvent;
 use Modules\Invoicing\Events\SalesOrderHoldReleasedEvent;
 use Modules\Invoicing\Events\SalesOrderStockReservedEvent;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\Invoicing\Events\SalesQuoteApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteCreatedEvent;
+use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
 use Modules\Invoicing\Listeners\DispatchOutboxOnInvoicingEventListener;
-use Modules\Invoicing\Listeners\InventoryFulfillmentEventListener;
 use Modules\Invoicing\Listeners\ProjectsBillingEventListener;
 use Modules\Invoicing\Listeners\TreasuryCollectionEventListener;
+use Modules\Invoicing\Listeners\TriggerWorkflowOnQuoteSubmissionListener;
 use Modules\Invoicing\Listeners\WorkflowApprovalInvoicingListener;
 use Modules\Invoicing\Models\CustomerCreditProfile;
 use Modules\Invoicing\Models\SalesDeliveryNote;
@@ -92,6 +93,7 @@ final class InvoicingServiceProvider extends ServiceProvider
         Event::listen(ProjectBillingReadyEvent::class, [ProjectsBillingEventListener::class, 'handle']);
 
         // 2. Module 21 Workflow Engine -> Order/Quote/Invoice Approvals
+        Event::listen(SalesQuoteSubmittedEvent::class, [TriggerWorkflowOnQuoteSubmissionListener::class, 'handle']);
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalInvoicingListener::class, 'handleWorkflowApproved']);
         Event::listen(WorkflowInstanceRejectedEvent::class, [WorkflowApprovalInvoicingListener::class, 'handleWorkflowRejected']);
 
@@ -100,6 +102,7 @@ final class InvoicingServiceProvider extends ServiceProvider
 
         // 4. Invoicing Domain Events -> Transactional Outbox
         Event::listen(SalesQuoteCreatedEvent::class, DispatchOutboxOnInvoicingEventListener::class);
+        Event::listen(SalesQuoteSubmittedEvent::class, DispatchOutboxOnInvoicingEventListener::class);
         Event::listen(SalesQuoteApprovedEvent::class, DispatchOutboxOnInvoicingEventListener::class);
         Event::listen(SalesQuoteAcceptedEvent::class, DispatchOutboxOnInvoicingEventListener::class);
         Event::listen(SalesOrderCreatedEvent::class, DispatchOutboxOnInvoicingEventListener::class);

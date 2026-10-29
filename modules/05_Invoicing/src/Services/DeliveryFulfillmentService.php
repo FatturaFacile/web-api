@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
@@ -21,8 +22,8 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
     ) {}
 
     /**
-     * @param array<string, mixed> $deliveryData
-     * @param array<int, array{sales_order_item_id: string, quantity: float, batch_number?: ?string, serial_number?: ?string}> $items
+     * @param  array<string, mixed>  $deliveryData
+     * @param  array<int, array{sales_order_item_id: string, quantity: float, batch_number?: ?string, serial_number?: ?string}>  $items
      */
     public function createDeliveryNote(SalesOrder $order, array $deliveryData, array $items): SalesDeliveryNote
     {
@@ -51,8 +52,10 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
             'status' => 'draft',
             'shipping_status' => 'draft',
             'notes' => $deliveryData['notes'] ?? null,
-            'created_by' => $deliveryData['created_by'] ?? null,
+            'created_by' => ! empty($deliveryData['created_by']) && Str::isUuid((string) $deliveryData['created_by']) ? (string) $deliveryData['created_by'] : null,
         ]);
+
+        $actualDeliveryId = (string) $deliveryNote->id;
 
         foreach ($items as $item) {
             $orderItem = SalesOrderItem::find($item['sales_order_item_id']);
@@ -61,7 +64,7 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
             SalesDeliveryNoteItem::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $tenantId,
-                'delivery_note_id' => $deliveryId,
+                'delivery_note_id' => $actualDeliveryId,
                 'sales_order_item_id' => $orderItem !== null ? (string) $orderItem->id : null,
                 'product_id' => $orderItem !== null ? (string) $orderItem->product_id : null,
                 'description' => $orderItem !== null ? (string) $orderItem->description : 'Delivered item',
@@ -125,7 +128,7 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
             'shipped_at' => now(),
         ]);
 
-        $this->eventDispatcher->dispatch(new GoodsDispatchedEvent(
+        $this->dispatchDomainEvent(new GoodsDispatchedEvent(
             deliveryNoteId: (string) $deliveryNote->id,
             salesOrderId: $deliveryNote->sales_order_id,
             warehouseId: (string) ($deliveryNote->warehouse_id ?? $tenantId),
@@ -135,7 +138,7 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
             companyId: $tenantId
         ));
 
-        $this->eventDispatcher->dispatch(new DeliveryNoteIssuedEvent(
+        $this->dispatchDomainEvent(new DeliveryNoteIssuedEvent(
             deliveryNoteId: (string) $deliveryNote->id,
             ddtNumber: (string) $deliveryNote->ddt_number,
             customerId: (string) $deliveryNote->contact_id,
@@ -155,5 +158,11 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
         ]);
 
         return $deliveryNote;
+    }
+
+    private function dispatchDomainEvent(DomainEventInterface $event): void
+    {
+        $this->eventDispatcher->publish($event);
+        $this->eventDispatcher->dispatch($event);
     }
 }

@@ -6,9 +6,8 @@ namespace Modules\Invoicing\Listeners;
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Services\TransactionalOutboxService;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
-final readonly class DispatchOutboxOnInvoicingEventListener implements ShouldQueue
+final readonly class DispatchOutboxOnInvoicingEventListener
 {
     public function __construct(
         private TransactionalOutboxService $outboxService

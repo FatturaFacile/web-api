@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
@@ -123,7 +124,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
                 'credit_hold_reason' => $reason,
             ]);
 
-            $this->eventDispatcher->dispatch(new SalesOrderCreditCheckedEvent(
+            $this->dispatchDomainEvent(new SalesOrderCreditCheckedEvent(
                 salesOrderId: (string) $order->id,
                 customerId: $customerId,
                 creditStatus: 'on_hold',
@@ -150,7 +151,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
                 'credit_hold_reason' => $reason,
             ]);
 
-            $this->eventDispatcher->dispatch(new SalesOrderCreditCheckedEvent(
+            $this->dispatchDomainEvent(new SalesOrderCreditCheckedEvent(
                 salesOrderId: (string) $order->id,
                 customerId: $customerId,
                 creditStatus: 'on_hold',
@@ -175,7 +176,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
             'credit_hold_reason' => null,
         ]);
 
-        $this->eventDispatcher->dispatch(new SalesOrderCreditCheckedEvent(
+        $this->dispatchDomainEvent(new SalesOrderCreditCheckedEvent(
             salesOrderId: (string) $order->id,
             customerId: $customerId,
             creditStatus: 'approved',
@@ -206,7 +207,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
             'hold_type' => $holdType,
             'status' => 'active',
             'hold_reason' => $reason,
-            'placed_by' => $userId,
+            'placed_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
             'placed_at' => now(),
         ]);
 
@@ -216,7 +217,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
             'credit_hold_reason' => $reason,
         ]);
 
-        $this->eventDispatcher->dispatch(new SalesOrderHoldPlacedEvent(
+        $this->dispatchDomainEvent(new SalesOrderHoldPlacedEvent(
             holdId: (string) $hold->id,
             salesOrderId: (string) $order->id,
             holdType: $holdType,
@@ -232,7 +233,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
     {
         $hold->update([
             'status' => 'released',
-            'released_by' => $userId,
+            'released_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
             'released_at' => now(),
             'release_notes' => $notes,
         ]);
@@ -252,7 +253,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
                 ]);
             }
 
-            $this->eventDispatcher->dispatch(new SalesOrderHoldReleasedEvent(
+            $this->dispatchDomainEvent(new SalesOrderHoldReleasedEvent(
                 holdId: (string) $hold->id,
                 salesOrderId: (string) $order->id,
                 releasedBy: $userId,
@@ -276,12 +277,12 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
         $profile->update([
             'credit_limit' => $newLimit,
             'last_evaluated_at' => now(),
-            'evaluated_by' => $userId,
+            'evaluated_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
         ]);
 
         $this->evaluateCredit($customerId, $tenantId);
 
-        $this->eventDispatcher->dispatch(new CustomerCreditLimitUpdatedEvent(
+        $this->dispatchDomainEvent(new CustomerCreditLimitUpdatedEvent(
             creditProfileId: (string) $profile->id,
             customerId: $customerId,
             oldLimit: $oldLimit,
@@ -292,5 +293,11 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
         ));
 
         return $profile;
+    }
+
+    private function dispatchDomainEvent(DomainEventInterface $event): void
+    {
+        $this->eventDispatcher->publish($event);
+        $this->eventDispatcher->dispatch($event);
     }
 }

@@ -26,8 +26,10 @@ use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\GeneralLedger\Events\TreasuryAllocationReadyEvent;
 use Modules\GeneralLedger\Events\TrialBalanceGeneratedEvent;
 use Modules\GeneralLedger\Events\YearClosedEvent;
+use Modules\GeneralLedger\Listeners\CreditNoteAccountingListener;
 use Modules\GeneralLedger\Listeners\DispatchOutboxOnGeneralLedgerEventListener;
 use Modules\GeneralLedger\Listeners\InventoryAccountingListener;
+use Modules\GeneralLedger\Listeners\InvoiceAccountingListener;
 use Modules\GeneralLedger\Listeners\ProcurementAccountingListener;
 use Modules\GeneralLedger\Listeners\ProjectsAccountingListener;
 use Modules\GeneralLedger\Listeners\WorkflowApprovalGeneralLedgerListener;
@@ -51,6 +53,8 @@ use Modules\Inventory\Events\InventoryCostingReadyEvent;
 use Modules\Inventory\Events\InventoryRevaluationEvent;
 use Modules\Inventory\Events\InventoryValuationReadyEvent;
 use Modules\Inventory\Events\InventoryWriteOffEvent;
+use Modules\Invoicing\Events\CreditNoteIssuedEvent;
+use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
@@ -143,6 +147,10 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         Event::listen(ProjectExpensePostingReadyEvent::class, [ProjectsAccountingListener::class, 'handleExpensePostingReady']);
         Event::listen(ProjectLabourCostReadyEvent::class, [ProjectsAccountingListener::class, 'handleLabourCostReady']);
         Event::listen(ProjectMaterialCostReadyEvent::class, [ProjectsAccountingListener::class, 'handleMaterialCostReady']);
+
+        // Upstream Invoicing Event Consumers
+        Event::listen(InvoicePostedEvent::class, [InvoiceAccountingListener::class, 'handle']);
+        Event::listen(CreditNoteIssuedEvent::class, [CreditNoteAccountingListener::class, 'handle']);
 
         // Workflow Engine V2 Approvals
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalGeneralLedgerListener::class, 'handleCompleted']);

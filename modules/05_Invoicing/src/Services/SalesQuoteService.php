@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
@@ -12,6 +13,7 @@ use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\Invoicing\Events\SalesQuoteApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteCreatedEvent;
+use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Invoicing\Models\SalesQuoteItem;
@@ -24,8 +26,8 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
     ) {}
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function createQuote(array $data, array $items): SalesQuote
     {
@@ -35,12 +37,13 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
         // Calculate item pricing & totals
         $calculatedItems = [];
         foreach ($items as $item) {
-            $pricing = $this->pricingService->resolvePrice(
-                productId: (string) $item['product_id'],
+            $productId = isset($item['product_id']) ? (string) $item['product_id'] : null;
+            $pricing = $productId !== null ? $this->pricingService->resolvePrice(
+                productId: $productId,
                 quantity: (float) ($item['quantity'] ?? 1.0),
                 priceListId: $data['price_list_id'] ?? null,
                 discountPolicyId: $data['discount_policy_id'] ?? null
-            );
+            ) : ['unit_price' => (float) ($item['unit_price'] ?? 0.0), 'discount_percentage' => (float) ($item['discount_percentage'] ?? 0.0)];
 
             $unitPrice = isset($item['unit_price']) ? (float) $item['unit_price'] : $pricing['unit_price'];
             $discountPct = isset($item['discount_percentage']) ? (float) $item['discount_percentage'] : $pricing['discount_percentage'];
@@ -81,14 +84,16 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
             'payment_terms' => $data['payment_terms'] ?? null,
             'shipping_terms' => $data['shipping_terms'] ?? null,
             'revision_number' => 1,
-            'created_by' => $data['created_by'] ?? null,
+            'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
         ]);
+
+        $actualQuoteId = (string) $quote->id;
 
         foreach ($calculatedItems as $item) {
             SalesQuoteItem::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $tenantId,
-                'quote_id' => $quoteId,
+                'quote_id' => $actualQuoteId,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? 'Product item',
                 'quantity' => (float) ($item['quantity'] ?? 1.0),
@@ -103,8 +108,8 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
             ]);
         }
 
-        $this->eventDispatcher->dispatch(new SalesQuoteCreatedEvent(
-            quoteId: $quoteId,
+        $this->dispatchDomainEvent(new SalesQuoteCreatedEvent(
+            quoteId: $actualQuoteId,
             quoteNumber: $quoteNumber,
             customerId: (string) $quote->contact_id,
             totalGross: (float) $quote->total_gross,
@@ -122,6 +127,17 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
             'status' => 'pending_approval',
         ]);
 
+        $this->dispatchDomainEvent(new SalesQuoteSubmittedEvent(
+            quoteId: (string) $quote->id,
+            quoteNumber: (string) $quote->quote_number,
+            customerId: (string) $quote->contact_id,
+            totalGross: (float) $quote->total_gross,
+            currency: (string) $quote->currency,
+            userId: $userId,
+            tenantId: (string) $quote->tenant_id,
+            companyId: (string) $quote->tenant_id
+        ));
+
         return $quote;
     }
 
@@ -129,11 +145,11 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
     {
         $quote->update([
             'status' => 'approved',
-            'approved_by' => $userId,
+            'approved_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
             'approved_at' => now(),
         ]);
 
-        $this->eventDispatcher->dispatch(new SalesQuoteApprovedEvent(
+        $this->dispatchDomainEvent(new SalesQuoteApprovedEvent(
             quoteId: (string) $quote->id,
             approvedBy: $userId,
             tenantId: (string) $quote->tenant_id,
@@ -150,7 +166,7 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
             'signed_at' => now(),
         ]);
 
-        $this->eventDispatcher->dispatch(new SalesQuoteAcceptedEvent(
+        $this->dispatchDomainEvent(new SalesQuoteAcceptedEvent(
             quoteId: (string) $quote->id,
             salesOrderId: null,
             tenantId: (string) $quote->tenant_id,
@@ -158,6 +174,12 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
         ));
 
         return $quote;
+    }
+
+    private function dispatchDomainEvent(DomainEventInterface $event): void
+    {
+        $this->eventDispatcher->publish($event);
+        $this->eventDispatcher->dispatch($event);
     }
 
     public function convertToOrder(SalesQuote $quote, string $userId): SalesOrder

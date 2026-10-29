@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use App\Models\Contact;
-use App\Models\Product;
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
@@ -24,32 +24,51 @@ final class InvoicingDemoDataSeeder extends Seeder
         }
 
         $tenantId = (string) $tenant->id;
+        app(TenantContext::class)->setTenant($tenant);
 
-        $customer = Contact::firstOrCreate(
-            ['tenant_id' => $tenantId, 'company_name' => 'Acme Corporation SpA'],
-            [
-                'id' => (string) Str::uuid7(),
-                'type' => 'company',
+        // Check if demo quote already seeded
+        $existingQuote = DB::table('quotes')->where('tenant_id', $tenantId)->where('quote_number', 'Q-DEMO-2027-001')->first();
+        if ($existingQuote) {
+            return;
+        }
+
+        $existingCustomer = DB::table('contacts')->where('tenant_id', $tenantId)->where('company_name', 'Acme Corporation SpA')->first();
+        $customerId = $existingCustomer ? $existingCustomer->id : (string) Str::uuid7();
+
+        if (! $existingCustomer) {
+            DB::table('contacts')->insert([
+                'id' => $customerId,
+                'tenant_id' => $tenantId,
+                'type' => 'client',
+                'company_name' => 'Acme Corporation SpA',
                 'email' => 'purchasing@acme-corp.example',
                 'vat_number' => 'IT01234567890',
                 'fiscal_code' => '01234567890',
                 'sdi_code' => 'M5UXCR1',
                 'pec' => 'acmecorp@pec.example',
                 'country' => 'IT',
-            ]
-        );
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
-        $product = Product::firstOrCreate(
-            ['tenant_id' => $tenantId, 'sku' => 'SKU-ERP-LIC-001'],
-            [
-                'id' => (string) Str::uuid7(),
+        $existingProduct = DB::table('products')->where('tenant_id', $tenantId)->where('sku', 'SKU-ERP-LIC-001')->first();
+        $productId = $existingProduct ? $existingProduct->id : (string) Str::uuid7();
+
+        if (! $existingProduct) {
+            DB::table('products')->insert([
+                'id' => $productId,
+                'tenant_id' => $tenantId,
+                'sku' => 'SKU-ERP-LIC-001',
                 'name' => 'ERP Cloud License Enterprise',
                 'sale_price' => 1500.00,
                 'cost_price' => 500.00,
                 'tax_rate' => 22.0,
                 'is_active' => true,
-            ]
-        );
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         $quoteService = app(SalesQuoteServiceInterface::class);
         $orderService = app(SalesOrderServiceInterface::class);
@@ -59,12 +78,12 @@ final class InvoicingDemoDataSeeder extends Seeder
         // 1. Create Sales Quote
         $quote = $quoteService->createQuote([
             'tenant_id' => $tenantId,
-            'contact_id' => (string) $customer->id,
+            'contact_id' => $customerId,
             'quote_number' => 'Q-DEMO-2027-001',
             'notes' => 'Demo Quote for Acme Corporation',
         ], [
             [
-                'product_id' => (string) $product->id,
+                'product_id' => $productId,
                 'description' => 'ERP Cloud License Enterprise (Annual)',
                 'quantity' => 10.0,
                 'unit_price' => 1500.00,
