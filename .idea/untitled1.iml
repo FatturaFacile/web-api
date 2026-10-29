@@ -12,6 +12,27 @@
       <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/database/factories" isTestSource="false" packagePrefix="Database\Factories\" />
       <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/database/seeders" isTestSource="false" packagePrefix="Database\Seeders\" />
       <sourceFolder url="file://$MODULE_DIR$/analisi/1/fatturino/tests" isTestSource="true" packagePrefix="Tests\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules" isTestSource="false" packagePrefix="Modules\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/02_CRM/src" isTestSource="false" packagePrefix="Modules\CRM\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/05_Invoicing/src" isTestSource="false" packagePrefix="Modules\Invoicing\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/13_Procurement/src" isTestSource="false" packagePrefix="Modules\Procurement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/14_Inventory/src" isTestSource="false" packagePrefix="Modules\Inventory\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/15_Projects/src" isTestSource="false" packagePrefix="Modules\Projects\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/16_AssetManagement/src" isTestSource="false" packagePrefix="Modules\AssetManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/17_ServiceManagement/src" isTestSource="false" packagePrefix="Modules\ServiceManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/18_HumanResources/src" isTestSource="false" packagePrefix="Modules\HumanResources\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/19_SubscriptionBilling/src" isTestSource="false" packagePrefix="Modules\SubscriptionBilling\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/21_Workflow/src" isTestSource="false" packagePrefix="Modules\Workflow\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/22_GeneralLedger/src" isTestSource="false" packagePrefix="Modules\GeneralLedger\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/24_Treasury/src" isTestSource="false" packagePrefix="Modules\Treasury\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/30_Manufacturing/src" isTestSource="false" packagePrefix="Modules\Manufacturing\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/ai-gateway/src" isTestSource="false" packagePrefix="Enterprise\AiGateway\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/audit-ledger/src" isTestSource="false" packagePrefix="Enterprise\AuditLedger\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/enterprise-foundation/src" isTestSource="false" packagePrefix="Enterprise\Foundation\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/event-bus/src" isTestSource="false" packagePrefix="Enterprise\EventBus\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/feature-flags/src" isTestSource="false" packagePrefix="Enterprise\FeatureFlags\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/multi-tenant/src" isTestSource="false" packagePrefix="Enterprise\MultiTenant\" />
+      <sourceFolder url="file://$MODULE_DIR$/packages/openapi/src" isTestSource="false" packagePrefix="Enterprise\OpenApi\" />
       <excludeFolder url="file://$MODULE_DIR$/bootstrap/cache" />
       <excludeFolder url="file://$MODULE_DIR$/storage/app" />
       <excludeFolder url="file://$MODULE_DIR$/storage/framework" />

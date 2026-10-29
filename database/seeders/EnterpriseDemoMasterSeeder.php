@@ -89,28 +89,26 @@ class EnterpriseDemoMasterSeeder extends Seeder
         );
 
         $customer = Contact::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Acme Industrial Solutions SpA'],
+            ['tenant_id' => $tenant->id, 'company_name' => 'Acme Industrial Solutions SpA'],
             [
-                'type' => 'customer',
+                'type' => 'client',
                 'vat_number' => 'IT01234987650',
                 'fiscal_code' => '01234987650',
                 'email' => 'procurement@acme-industrial.com',
                 'phone' => '+39 02 88776655',
-                'payment_terms' => 'NET_30',
-                'is_active' => true,
+                'payment_terms_days' => 30,
             ]
         );
 
         $supplier = Contact::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Alloy & Steel Metals Europe Ltd'],
+            ['tenant_id' => $tenant->id, 'company_name' => 'Alloy & Steel Metals Europe Ltd'],
             [
                 'type' => 'supplier',
                 'vat_number' => 'IT05432198760',
                 'fiscal_code' => '05432198760',
                 'email' => 'orders@alloy-steel.eu',
                 'phone' => '+39 011 55443322',
-                'payment_terms' => 'NET_60',
-                'is_active' => true,
+                'payment_terms_days' => 60,
             ]
         );
 
@@ -118,10 +116,10 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'sku' => 'FG-PUMP-HD500'],
             [
                 'name' => 'Heavy Duty Industrial Pump HD-500',
-                'price' => 2450.00,
-                'cost' => 1120.00,
-                'vat_rate' => 22.0,
-                'unit' => 'NR',
+                'sale_price' => 2450.00,
+                'cost_price' => 1120.00,
+                'tax_rate' => 22.0,
+                'unit_measure' => 'NR',
                 'is_active' => true,
             ]
         );
@@ -131,10 +129,11 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'quote_number' => 'QT-DEMO-2026-001'],
             [
                 'contact_id' => $customer->id,
-                'date' => now()->toDateString(),
                 'status' => 'accepted',
                 'currency' => 'EUR',
-                'total_amount' => 24500.00,
+                'total_net' => 24500.00,
+                'total_tax' => 5390.00,
+                'total_gross' => 29890.00,
             ]
         );
 
@@ -142,10 +141,11 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'order_number' => 'SO-DEMO-2026-001'],
             [
                 'contact_id' => $customer->id,
-                'order_date' => now()->toDateString(),
                 'status' => 'confirmed',
                 'currency' => 'EUR',
-                'total_amount' => 24500.00,
+                'total_net' => 24500.00,
+                'total_tax' => 5390.00,
+                'total_gross' => 29890.00,
             ]
         );
 
@@ -153,25 +153,26 @@ class EnterpriseDemoMasterSeeder extends Seeder
             ['tenant_id' => $tenant->id, 'invoice_number' => 'INV-DEMO-2026-001'],
             [
                 'contact_id' => $customer->id,
-                'issue_date' => now()->toDateString(),
-                'due_date' => now()->addDays(30)->toDateString(),
-                'status' => 'paid',
-                'type' => 'standard',
+                'invoice_date' => now()->toDateString(),
+                'payment_status' => 'paid',
+                'invoice_type' => 'standard',
                 'currency' => 'EUR',
-                'total_amount' => 29890.00,
-                'subtotal' => 24500.00,
-                'tax_amount' => 5390.00,
+                'total_net' => 24500.00,
+                'total_tax' => 5390.00,
+                'total_gross' => 29890.00,
+                'total_paid' => 29890.00,
             ]
         );
 
         Payment::firstOrCreate(
             ['tenant_id' => $tenant->id, 'invoice_id' => $invoice->id],
             [
+                'contact_id' => $customer->id,
                 'amount' => 29890.00,
-                'payment_date' => now()->toDateString(),
-                'payment_method' => 'BANK_TRANSFER',
+                'paid_at' => now()->toDateString(),
+                'payment_method' => 'MP05',
                 'status' => 'completed',
-                'reference' => 'SEPA-CR-DEMO-2026-001',
+                'direction' => 'inbound',
             ]
         );
 
