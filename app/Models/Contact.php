@@ -17,7 +17,6 @@ class Contact extends Model
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'type',
         'country',
         'company_name',
@@ -61,5 +60,45 @@ class Contact extends Model
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    /**
+     * @return HasMany<Quote, $this>
+     */
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class);
+    }
+
+    /**
+     * @return HasMany<SalesOrder, $this>
+     */
+    public function salesOrders(): HasMany
+    {
+        return $this->hasMany(SalesOrder::class);
+    }
+
+    /**
+     * @return HasMany<DeliveryNote, $this>
+     */
+    public function deliveryNotes(): HasMany
+    {
+        return $this->hasMany(DeliveryNote::class);
+    }
+
+    /**
+     * @return HasMany<ServiceReport, $this>
+     */
+    public function serviceReports(): HasMany
+    {
+        return $this->hasMany(ServiceReport::class);
+    }
+
+    /**
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class);
     }
 }

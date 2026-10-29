@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
             TranslationSeeder::class,
             ErpLookupsSeeder::class,
+            ComprehensiveLookupMasterSeeder::class,
             UnitOfMeasureSeeder::class,
 
             ProductCategorySeeder::class,
@@ -65,6 +66,9 @@ class DatabaseSeeder extends Seeder
 
             GoodsReceiptSeeder::class,
             GoodsReceiptItemSeeder::class,
+
+            ProcurementLookupSeeder::class,
+            ProcurementDemoDataSeeder::class,
 
             PaymentSeeder::class,
             SupplierPaymentSeeder::class,
@@ -109,6 +113,18 @@ class DatabaseSeeder extends Seeder
             SdiUuidLinkSeeder::class,
 
             TenantBackupSeeder::class,
+            ProjectDatabaseSeeder::class,
+            GeneralLedgerDatabaseSeeder::class,
+            TreasuryDatabaseSeeder::class,
+            InvoicingDatabaseSeeder::class,
+            CRMReferenceSeeder::class,
+            CRMDemoDataSeeder::class,
+            AssetReferenceSeeder::class,
+            AssetDemoDataSeeder::class,
+            HRReferenceSeeder::class,
+            HRDemoDataSeeder::class,
+            ServiceReferenceSeeder::class,
+            ServiceDemoDataSeeder::class,
         ]);
     }
 }

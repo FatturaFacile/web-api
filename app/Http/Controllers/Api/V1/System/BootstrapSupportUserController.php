@@ -49,6 +49,19 @@ class BootstrapSupportUserController extends Controller
     )]
     public function __invoke(): JsonResponse
     {
+        if (app()->isProduction()) {
+            $secret = config('services.bootstrap.secret', env('BOOTSTRAP_SUPPORT_SECRET'));
+            $header = request()->header('X-Bootstrap-Secret') ?? request()->query('secret');
+
+            if (empty($secret) || ! is_string($secret) || ! hash_equals($secret, (string) $header)) {
+                return $this->problemDetailsResponse(
+                    title: 'Forbidden',
+                    detail: 'Support bootstrap is restricted in production environments.',
+                    status: Response::HTTP_FORBIDDEN,
+                );
+            }
+        }
+
         try {
             $result = $this->bootstrapSupportUser->execute();
 

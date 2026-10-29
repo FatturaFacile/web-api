@@ -10,6 +10,7 @@ use App\Models\SdiUuidLink;
 use App\Models\Tenant;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 class ProcessSdiNotification
@@ -59,15 +60,19 @@ class ProcessSdiNotification
 
         $link = SdiUuidLink::withoutGlobalScopes()->where('provider', $data['provider'])->where('sdi_uuid', $data['uuid'])->first();
 
-        $log = EiInboundLog::create([
-            'tenant_id' => $link?->tenant_id,
-            'invoice_id' => $link?->invoice_id,
-            'provider' => $data['provider'],
-            'event_type' => $data['event_type'],
-            'sdi_uuid' => $data['uuid'],
-            'fingerprint' => $fingerprint,
-            'payload' => $data,
-        ]);
+        try {
+            $log = EiInboundLog::create([
+                'tenant_id' => $link?->tenant_id,
+                'invoice_id' => $link?->invoice_id,
+                'provider' => $data['provider'],
+                'event_type' => $data['event_type'],
+                'sdi_uuid' => $data['uuid'],
+                'fingerprint' => $fingerprint,
+                'payload' => $data,
+            ]);
+        } catch (UniqueConstraintViolationException) {
+            return EiInboundLog::where('fingerprint', $fingerprint)->firstOrFail();
+        }
 
         if ($link === null) {
             return $this->finish($log, 'ignored', __('sdi.unknown_uuid'));

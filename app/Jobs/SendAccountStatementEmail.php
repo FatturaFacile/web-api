@@ -22,7 +22,10 @@ class SendAccountStatementEmail implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct(public readonly string $documentEmailId, public readonly string $asOf) {}
+    public function __construct(public readonly string $documentEmailId, public readonly string $asOf)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(TenantContext $tenantContext, ContactInsights $insights): void
     {

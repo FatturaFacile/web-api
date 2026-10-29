@@ -4,25 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models\Scopes;
 
-use App\Services\Tenancy\TenantContext;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Scope;
+use Enterprise\MultiTenant\Scopes\TenantScope as BaseTenantScope;
 
-class TenantScope implements Scope
-{
-    public function apply(Builder $builder, Model $model): void
-    {
-        $tenantContext = app(TenantContext::class);
-
-        if ($tenantContext->hasTenant()) {
-            $tenantId = $tenantContext->getTenantId();
-            $column = $model->qualifyColumn('tenant_id');
-
-            $builder->where(function (Builder $query) use ($column, $tenantId): void {
-                $query->where($column, $tenantId)
-                    ->orWhereNull($column);
-            });
-        }
-    }
-}
+/**
+ * Backward compatibility alias pointing to the authoritative Enterprise TenantScope.
+ */
+class TenantScope extends BaseTenantScope {}

@@ -33,7 +33,7 @@ class QueueAccountStatement
             'status' => 'queued',
         ]);
 
-        SendAccountStatementEmail::dispatch($email->id, $asOf->toDateString());
+        SendAccountStatementEmail::dispatch($email->id, $asOf->toDateString())->afterCommit();
 
         return $email;
     }

@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\AlertController;
+use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Api\V1\DocumentEmailController;
 use App\Http\Controllers\Api\V1\DocumentPdfController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceChannelController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
+use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FieldServiceController;
 use App\Http\Controllers\Api\V1\FleetRentalController;
 use App\Http\Controllers\Api\V1\HrController;
@@ -53,6 +55,7 @@ use App\Http\Controllers\Api\V1\RetailPosController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SalesOrderLineController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
+use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
@@ -64,7 +67,10 @@ use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
+use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
+use Modules\Inventory\Http\Controllers\StockMovementController;
+use Modules\Inventory\Http\Controllers\WarehouseController;
 
 Route::prefix('v1')->group(function (): void {
 
@@ -72,7 +78,9 @@ Route::prefix('v1')->group(function (): void {
     // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
     Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
-    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)->name('system.bootstrap-support');
+    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
+        ->middleware('throttle:5,1')
+        ->name('system.bootstrap-support');
 
     Route::get('/translations/{locale}', [TranslationController::class, 'index'])->name('translations.index');
     Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('lookups.getByCategory');
@@ -83,6 +91,25 @@ Route::prefix('v1')->group(function (): void {
     Route::post('/webhooks/sdi', SdiWebhookController::class)->middleware('throttle:120,1')->name('webhooks.sdi');
     Route::post('/webhooks/sdi/incoming-invoice', IncomingInvoiceWebhookController::class)->middleware('throttle:120,1')->name('webhooks.sdi.incoming-invoice');
     Route::post('/webhooks/ecommerce/{channelUuid}', EcommerceWebhookController::class)->middleware('throttle:300,1')->name('webhooks.ecommerce');
+
+    // ----------------------------------------------------
+    // Module 09: Customer Portal Magic Link API (Public Token-Authenticated)
+    // ----------------------------------------------------
+    Route::prefix('portal')->name('portal.')->middleware('throttle:60,1')->group(function (): void {
+        Route::get('/access/{token}', [CustomerPortalController::class, 'access'])->name('access');
+        Route::get('/quotes/{token}', [CustomerPortalController::class, 'showQuote'])->name('quotes.show');
+        Route::post('/quotes/{token}/approve', [CustomerPortalController::class, 'approveQuote'])->name('quotes.approve');
+        Route::post('/quotes/{token}/reject', [CustomerPortalController::class, 'rejectQuote'])->name('quotes.reject');
+        Route::get('/quotes/{token}/pdf', [CustomerPortalController::class, 'downloadQuotePdf'])->name('quotes.pdf');
+        Route::get('/invoices/{token}', [CustomerPortalController::class, 'listInvoices'])->name('invoices.list');
+        Route::get('/invoices/{token}/{id}/pdf', [CustomerPortalController::class, 'downloadInvoicePdf'])->name('invoices.pdf');
+        Route::get('/service-reports/{token}', [CustomerPortalController::class, 'listServiceReports'])->name('service-reports.list');
+        Route::get('/service-reports/{token}/{id}/pdf', [CustomerPortalController::class, 'downloadServiceReportPdf'])->name('service-reports.pdf');
+        Route::get('/tickets/{token}', [CustomerPortalController::class, 'listTickets'])->name('tickets.list');
+        Route::post('/tickets/{token}/reply/{ticketId}', [CustomerPortalController::class, 'replyTicket'])->name('tickets.reply');
+        Route::get('/appointments/{token}', [CustomerPortalController::class, 'listAppointments'])->name('appointments.list');
+        Route::get('/attachments/{token}/{attachment}', [CustomerPortalController::class, 'downloadAttachment'])->name('attachments.download');
+    });
 
     // ----------------------------------------------------
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
@@ -221,9 +248,8 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/passive-invoices/receive-xml', [SupplierInvoiceController::class, 'receiveXml'])->name('passive-invoices.receive-xml');
         });
 
-        // 6. Treasury, Banking & Cash Management
+        // 6. Treasury, Banking & Cash Management (Enterprise module mounted in modules/24_Treasury)
         Route::prefix('treasury')->name('treasury.')->group(function (): void {
-            Route::get('/bank-accounts', [TreasuryController::class, 'bankAccounts'])->name('bank-accounts');
             Route::get('/transactions', [TreasuryController::class, 'transactions'])->name('transactions');
             Route::post('/reconciliation/auto-match', [TreasuryController::class, 'autoMatch'])->name('reconciliation.auto-match');
             Route::post('/import-camt', [TreasuryController::class, 'importCamt'])->middleware('deprecated:/api/v1/sales/payment-imports')->name('import-camt');
@@ -235,8 +261,8 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
             Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
-            Route::get('/warehouses', [InventoryController::class, 'warehouses'])->name('warehouses');
-            Route::get('/movements', [InventoryController::class, 'movements'])->name('movements');
+            Route::get('/warehouses', [WarehouseController::class, 'index'])->name('warehouses');
+            Route::get('/movements', [StockMovementController::class, 'index'])->name('movements');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
             Route::post('/stock-adjustments', [StockController::class, 'adjust'])->name('stock-adjustments.store');
@@ -262,6 +288,35 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/work-orders/{id}/complete', [WorkOrderController::class, 'complete'])->name('work-orders.complete');
             Route::post('/work-orders/{id}/signature', [WorkOrderController::class, 'signature'])->name('work-orders.signature');
             Route::post('/work-orders/{id}/invoice', [WorkOrderController::class, 'invoice'])->name('work-orders.invoice');
+        });
+
+        // Module 01: Service Reports (Rapportini di Intervento)
+        Route::prefix('service-reports')->name('service-reports.')->group(function (): void {
+            Route::post('/generate-consolidated-invoice', [ServiceReportController::class, 'generateConsolidatedInvoice'])->name('generate-consolidated-invoice');
+            Route::get('/', [ServiceReportController::class, 'index'])->name('index');
+            Route::post('/', [ServiceReportController::class, 'store'])->name('store');
+            Route::get('/{id}', [ServiceReportController::class, 'show'])->name('show');
+            Route::put('/{id}', [ServiceReportController::class, 'update'])->name('update');
+            Route::patch('/{id}', [ServiceReportController::class, 'update'])->name('patch');
+            Route::delete('/{id}', [ServiceReportController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/sign', [ServiceReportController::class, 'sign'])->name('sign');
+            Route::post('/{id}/generate-invoice', [ServiceReportController::class, 'generateInvoice'])->name('generate-invoice');
+            Route::post('/{id}/upload-photo', [ServiceReportController::class, 'uploadPhoto'])->name('upload-photo');
+            Route::get('/{id}/pdf', [ServiceReportController::class, 'pdf'])->name('pdf');
+        });
+
+        // Module 10: Scheduling & Appointments
+        Route::prefix('appointments')->name('appointments.')->group(function (): void {
+            Route::get('/calendar', [AppointmentController::class, 'calendar'])->name('calendar');
+            Route::post('/check-conflicts', [AppointmentController::class, 'checkConflicts'])->name('check-conflicts');
+            Route::get('/', [AppointmentController::class, 'index'])->name('index');
+            Route::post('/', [AppointmentController::class, 'store'])->name('store');
+            Route::get('/{id}', [AppointmentController::class, 'show'])->name('show');
+            Route::put('/{id}', [AppointmentController::class, 'update'])->name('update');
+            Route::patch('/{id}', [AppointmentController::class, 'update'])->name('patch');
+            Route::delete('/{id}', [AppointmentController::class, 'destroy'])->name('destroy');
+            Route::post('/{id}/cancel', [AppointmentController::class, 'cancel'])->name('cancel');
+            Route::post('/{id}/convert-to-service-report', [AppointmentController::class, 'convertToServiceReport'])->name('convert-to-service-report');
         });
 
         // 9. Automotive & Tire Center (Gommista)
@@ -337,6 +392,15 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/frontalieri', [HrController::class, 'frontalieri'])->name('frontalieri');
             Route::get('/withholding-taxes', [HrController::class, 'withholdingTaxes'])->name('withholding-taxes');
         });
+
+        // Module 12: Expense Tracking & Receipts
+        Route::prefix('expenses')->name('expenses.')->group(function (): void {
+            Route::get('/export', [ExpenseController::class, 'export'])->name('export');
+            Route::get('/reports/summary', [ExpenseController::class, 'summary'])->name('summary');
+            Route::post('/{id}/attachments', [ExpenseController::class, 'uploadAttachment'])->name('attachments.store');
+            Route::get('/{id}/attachments/{attachmentId}/download', [ExpenseController::class, 'downloadAttachment'])->name('attachments.download');
+        });
+        Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id']);
 
         // 17. Fiscal & Statutory Accounting
         Route::prefix('accounting')->name('accounting.')->group(function (): void {

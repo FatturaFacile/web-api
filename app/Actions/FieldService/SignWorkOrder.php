@@ -40,8 +40,9 @@ class SignWorkOrder
                 throw ValidationException::withMessages(['work_order' => __('work_orders.not_signable')]);
             }
 
+            $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
             $path = "tenants/{$workOrder->tenant_id}/signatures/work-orders/{$workOrder->id}.png";
-            Storage::disk('local')->put($path, (string) PngSignature::decode($signatureBase64));
+            Storage::disk($disk)->put($path, (string) PngSignature::decode($signatureBase64));
 
             $workOrder->update([
                 'client_signature_path' => $path,

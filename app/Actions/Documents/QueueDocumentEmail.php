@@ -52,7 +52,7 @@ class QueueDocumentEmail
             return $email;
         });
 
-        SendDocumentEmailJob::dispatch($email->id);
+        SendDocumentEmailJob::dispatch($email->id)->afterCommit();
 
         return $email;
     }

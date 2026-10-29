@@ -17,7 +17,6 @@ class DeliveryNote extends Model
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'contact_id',
         'sales_order_id',
         'ddt_number',

@@ -70,9 +70,10 @@ class InvoiceService
                 $roundingAmount = $this->qrBillGenerator->computeRoundingDifference($unroundedGross);
             }
 
+            unset($data['tenant_id']);
             $invoice = new Invoice;
-            $invoice->tenant_id = $this->tenantContext->getTenantId();
             $invoice->fill($data);
+            $invoice->tenant_id = $this->tenantContext->getTenantId();
             $invoice->total_net = $totalNet;
             $invoice->total_tax = $totalTax;
             $invoice->total_gross = $totalGross;

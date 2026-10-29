@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Ticket extends Model
@@ -58,5 +59,29 @@ class Ticket extends Model
     public function workOrders(): HasMany
     {
         return $this->hasMany(WorkOrder::class, 'ticket_id');
+    }
+
+    /**
+     * @return HasMany<TicketMessage, $this>
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id');
+    }
+
+    /**
+     * @return HasMany<Appointment, $this>
+     */
+    public function appointments(): HasMany
+    {
+        return $this->hasMany(Appointment::class, 'ticket_id');
+    }
+
+    /**
+     * @return MorphMany<Attachment, $this>
+     */
+    public function attachments(): MorphMany
+    {
+        return $this->morphMany(Attachment::class, 'attachable');
     }
 }

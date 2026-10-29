@@ -12,6 +12,7 @@ use App\Models\DeliveryNote;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\SalesOrder;
+use App\Models\ServiceReport;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Rules\PngSignature;
@@ -41,6 +42,7 @@ class DocumentPdfService
             $document instanceof SalesOrder => $this->salesOrder($document),
             $document instanceof DeliveryNote => $this->deliveryNote($document),
             $document instanceof WorkOrder => $this->workOrder($document),
+            $document instanceof ServiceReport => $this->serviceReport($document),
             default => throw new InvalidArgumentException('Unsupported document class: '.$document::class),
         };
 
@@ -182,8 +184,9 @@ class DocumentPdfService
 
         $signatureImage = null;
 
-        if ($workOrder->client_signature_path !== null && Storage::disk('local')->exists($workOrder->client_signature_path)) {
-            $signatureImage = $this->dataUri(Storage::disk('local')->get($workOrder->client_signature_path));
+        $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
+        if ($workOrder->client_signature_path !== null && Storage::disk($disk)->exists($workOrder->client_signature_path)) {
+            $signatureImage = $this->dataUri(Storage::disk($disk)->get($workOrder->client_signature_path));
         }
 
         return ['documents.work-order', array_merge($this->common($workOrder, $workOrder->client, 'work_order', $workOrder->work_order_number), [
@@ -204,6 +207,49 @@ class DocumentPdfService
                 'image' => $signatureImage,
             ],
         ]), 'work_order', $workOrder->work_order_number];
+    }
+
+    /**
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function serviceReport(ServiceReport $report): array
+    {
+        $report->loadMissing(['tenant', 'contact.addresses', 'lines.lineType', 'technician', 'signatures']);
+        $lines = $this->lines($report->lines);
+
+        $signature = $report->signatures->firstWhere('signer_type', 'customer') ?? $report->signatures->first();
+        $signatureImage = null;
+        $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
+
+        if ($signature && Storage::disk($disk)->exists($signature->signature_path)) {
+            $signatureImage = $this->dataUri(Storage::disk($disk)->get($signature->signature_path));
+        }
+
+        $currency = $report->contact?->currency ?? $report->tenant?->default_currency ?? 'EUR';
+
+        return ['documents.service-report', array_merge($this->common($report, $report->contact, 'service_report', $report->report_number), [
+            'date' => $report->report_date?->toDateString(),
+            'report_date' => $report->report_date?->toDateString(),
+            'currency' => $currency,
+            'notes' => $report->customer_notes,
+            'customer_notes' => $report->customer_notes,
+            'lines' => $lines,
+            'show_prices' => true,
+            'totals' => ['net' => (float) $report->total_net, 'tax' => (float) $report->total_tax, 'gross' => (float) $report->total_gross],
+            'technician' => $report->technician?->name,
+            'site_address' => $report->site_address,
+            'time_start' => $report->time_start,
+            'time_end' => $report->time_end,
+            'total_hours' => (float) $report->total_hours,
+            'travel_distance_km' => (float) $report->travel_distance_km,
+            'signature' => [
+                'signer_name' => $signature?->signer_name,
+                'signer_role' => $signature?->signer_role,
+                'signed_at' => $signature?->signed_at?->toDateTimeString(),
+                'signature_hash' => $signature?->signature_hash,
+                'image' => $signatureImage,
+            ],
+        ]), 'service_report', $report->report_number];
     }
 
     /**

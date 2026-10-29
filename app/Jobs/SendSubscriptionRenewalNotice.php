@@ -16,7 +16,10 @@ class SendSubscriptionRenewalNotice implements ShouldQueue
 
     public int $tries = 1;
 
-    public function __construct(public readonly string $subscriptionId) {}
+    public function __construct(public readonly string $subscriptionId)
+    {
+        $this->afterCommit = true;
+    }
 
     public function handle(): void
     {

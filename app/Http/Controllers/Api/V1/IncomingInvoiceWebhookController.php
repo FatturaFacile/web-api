@@ -12,7 +12,11 @@ use App\Models\EiInboundLog;
 use App\Models\Tenant;
 use App\Services\ItalianSdi\FatturaPaParser;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Contracts\Cache\LockTimeoutException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -86,6 +90,7 @@ class IncomingInvoiceWebhookController extends Controller
         $provider = (string) ($request->validated('provider') ?? 'local');
         $fingerprint = hash('sha256', $provider.'|incoming|'.$xml);
 
+        // Fast-path: duplicate check before locking or parsing
         $existing = EiInboundLog::where('fingerprint', $fingerprint)->first();
 
         if ($existing !== null) {
@@ -104,25 +109,69 @@ class IncomingInvoiceWebhookController extends Controller
             return $this->problemDetailsResponse(__('purchases.unknown_recipient_title'), __('purchases.unknown_recipient'), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $results = $this->tenantContext->runWithTenant($tenant, fn (): array => $this->receive->execute($xml, $request->validated('file_name')));
+        $lock = Cache::lock("webhook:sdi:incoming:{$fingerprint}", 20);
 
-        EiInboundLog::create([
-            'tenant_id' => $tenant->id,
-            'provider' => $provider,
-            'event_type' => 'INVOICE_RECEIVED',
-            'fingerprint' => $fingerprint,
-            'payload' => [
-                'file_name' => $request->validated('file_name'),
-                'passive_invoice_ids' => array_map(fn (array $result): string => $result['invoice']->id, $results),
-            ],
-            'status' => 'processed',
-            'processed_at' => now(),
-        ]);
+        try {
+            return $lock->block(10, function () use ($request, $xml, $provider, $fingerprint, $tenant): JsonResponse {
+                // Double-check idempotency under lock
+                $existing = EiInboundLog::where('fingerprint', $fingerprint)->first();
+                if ($existing !== null) {
+                    return $this->successResponse(
+                        ['status' => $existing->status, 'duplicate' => true],
+                        __('purchases.messages.webhook_received')
+                    );
+                }
 
-        return $this->successResponse(
-            ['status' => 'processed', 'duplicate' => false, 'documents' => count($results)],
-            __('purchases.messages.webhook_received'),
-            Response::HTTP_CREATED
-        );
+                try {
+                    return DB::transaction(function () use ($request, $xml, $provider, $fingerprint, $tenant): JsonResponse {
+                        $results = $this->tenantContext->runWithTenant(
+                            $tenant,
+                            fn (): array => $this->receive->execute($xml, $request->validated('file_name'))
+                        );
+
+                        EiInboundLog::create([
+                            'tenant_id' => $tenant->id,
+                            'provider' => $provider,
+                            'event_type' => 'INVOICE_RECEIVED',
+                            'fingerprint' => $fingerprint,
+                            'payload' => [
+                                'file_name' => $request->validated('file_name'),
+                                'passive_invoice_ids' => array_map(fn (array $result): string => $result['invoice']->id, $results),
+                            ],
+                            'status' => 'processed',
+                            'processed_at' => now(),
+                        ]);
+
+                        return $this->successResponse(
+                            ['status' => 'processed', 'duplicate' => false, 'documents' => count($results)],
+                            __('purchases.messages.webhook_received'),
+                            Response::HTTP_CREATED
+                        );
+                    }, 5);
+                } catch (UniqueConstraintViolationException) {
+                    // Safe recovery if concurrent request committed ahead in another worker
+                    $existing = EiInboundLog::where('fingerprint', $fingerprint)->first();
+
+                    return $this->successResponse(
+                        ['status' => $existing?->status ?? 'processed', 'duplicate' => true],
+                        __('purchases.messages.webhook_received')
+                    );
+                }
+            });
+        } catch (LockTimeoutException) {
+            $existing = EiInboundLog::where('fingerprint', $fingerprint)->first();
+            if ($existing !== null) {
+                return $this->successResponse(
+                    ['status' => $existing->status, 'duplicate' => true],
+                    __('purchases.messages.webhook_received')
+                );
+            }
+
+            return $this->problemDetailsResponse(
+                __('purchases.invalid_fatturapa_title'),
+                'Webhook processing is currently in progress by another worker.',
+                Response::HTTP_CONFLICT
+            );
+        }
     }
 }

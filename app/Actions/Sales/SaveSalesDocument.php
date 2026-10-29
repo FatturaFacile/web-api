@@ -7,6 +7,7 @@ namespace App\Actions\Sales;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
@@ -28,13 +29,14 @@ class SaveSalesDocument
     {
         return DB::transaction(function () use ($modelClass, $sequenceType, $numberColumn, $data): Model {
             $computed = $this->totals->calculate($data['items']);
-            unset($data['items']);
+            unset($data['items'], $data['tenant_id']);
 
             $number = $this->numbering->next($sequenceType, (int) date('Y', strtotime((string) $data['date'])));
 
             /** @var Model $document */
             $document = new $modelClass;
             $document->fill($data);
+            $document->tenant_id = app(TenantContext::class)->getTenantId();
             $document->{$numberColumn} = $data[$numberColumn] ?? $number['number'];
             $document->total_net = $computed['total_net'];
             $document->total_tax = $computed['total_tax'];
@@ -56,6 +58,7 @@ class SaveSalesDocument
     public function update(Model $document, array $data): Model
     {
         return DB::transaction(function () use ($document, $data): Model {
+            unset($data['tenant_id']);
             if (isset($data['items'])) {
                 $computed = $this->totals->calculate($data['items']);
                 $document->items()->delete();

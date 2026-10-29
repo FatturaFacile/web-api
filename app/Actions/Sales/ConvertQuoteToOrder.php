@@ -20,39 +20,41 @@ class ConvertQuoteToOrder
 
     public function execute(Quote $quote): SalesOrder
     {
-        if (in_array($quote->status, ['rejected', 'expired'], true)) {
-            throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
-        }
-
-        if (SalesOrder::where('quote_id', $quote->id)->exists()) {
-            throw ValidationException::withMessages(['quote' => __('sales.quote_already_converted')]);
-        }
-
         return DB::transaction(function () use ($quote): SalesOrder {
+            $lockedQuote = Quote::where('id', $quote->id)->lockForUpdate()->firstOrFail();
+
+            if (in_array($lockedQuote->status, ['rejected', 'expired'], true)) {
+                throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
+            }
+
+            if (SalesOrder::where('quote_id', $lockedQuote->id)->exists()) {
+                throw ValidationException::withMessages(['quote' => __('sales.quote_already_converted')]);
+            }
+
             $number = $this->numbering->next('sales_order');
 
             $order = SalesOrder::create([
-                'tenant_id' => $quote->tenant_id,
-                'contact_id' => $quote->contact_id,
-                'quote_id' => $quote->id,
+                'tenant_id' => $lockedQuote->tenant_id,
+                'contact_id' => $lockedQuote->contact_id,
+                'quote_id' => $lockedQuote->id,
                 'order_number' => $number['number'],
                 'date' => now()->toDateString(),
-                'currency' => $quote->currency,
-                'total_net' => $quote->total_net,
-                'total_tax' => $quote->total_tax,
-                'total_gross' => $quote->total_gross,
+                'currency' => $lockedQuote->currency,
+                'total_net' => $lockedQuote->total_net,
+                'total_tax' => $lockedQuote->total_tax,
+                'total_gross' => $lockedQuote->total_gross,
                 'status' => 'confirmed',
-                'notes' => $quote->notes,
+                'notes' => $lockedQuote->notes,
             ]);
 
-            foreach ($quote->items as $item) {
+            foreach ($lockedQuote->items as $item) {
                 $order->items()->create($item->only([
                     'product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage', 'line_total',
                 ]));
             }
 
-            $quote->update(['status' => 'accepted']);
-            $this->events->record($quote, 'converted_to_order', ['sales_order_id' => $order->id]);
+            $lockedQuote->update(['status' => 'accepted']);
+            $this->events->record($lockedQuote, 'converted_to_order', ['sales_order_id' => $order->id]);
 
             return $order->load('items');
         });

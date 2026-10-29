@@ -25,6 +25,7 @@ class DocumentEmail extends Model
         'sales_order' => SalesOrder::class,
         'delivery_note' => DeliveryNote::class,
         'work_order' => WorkOrder::class,
+        'service_report' => ServiceReport::class,
     ];
 
     protected $fillable = [

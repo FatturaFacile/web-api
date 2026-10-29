@@ -23,7 +23,6 @@ class StoreInvoiceRequest extends FormRequest
         $tenantId = app(TenantContext::class)->getTenantId();
 
         return [
-            'tenant_id' => ['nullable', 'uuid', 'exists:tenants,id'],
             'contact_id' => [
                 'required',
                 'uuid',

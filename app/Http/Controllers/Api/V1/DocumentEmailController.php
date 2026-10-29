@@ -11,13 +11,14 @@ use App\Http\Resources\CatalogResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\DocumentEmail;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class DocumentEmailController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, AuthorizesRequests;
 
     /**
      * Email a sales document (invoice, quote, order, delivery note, work report) to its contact or a given address.
@@ -51,6 +52,8 @@ class DocumentEmailController extends Controller
     public function store(SendDocumentEmailRequest $request, QueueDocumentEmail $queueEmail, string $type, string $id): JsonResponse
     {
         $document = $this->resolve($type, $id);
+        $this->authorize('update', $document);
+
         $email = $queueEmail->execute($document, $request->validated('to'), $request->validated('message'));
 
         return $this->successResponse(new CatalogResource($email), __('documents.messages.email_queued'), Response::HTTP_ACCEPTED);
@@ -76,6 +79,7 @@ class DocumentEmailController extends Controller
     public function index(string $type, string $id): JsonResponse
     {
         $document = $this->resolve($type, $id);
+        $this->authorize('view', $document);
 
         $emails = DocumentEmail::where('emailable_type', $document->getMorphClass())
             ->where('emailable_id', $document->getKey())
