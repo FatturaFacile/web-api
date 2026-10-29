@@ -56,6 +56,8 @@
             "Modules\\AssetManagement\\": "modules/16_AssetManagement/src/",
             "Modules\\HumanResources\\": "modules/18_HumanResources/src/",
             "Modules\\ServiceManagement\\": "modules/17_ServiceManagement/src/",
+            "Modules\\SubscriptionBilling\\": "modules/19_SubscriptionBilling/src/",
+            "Modules\\Manufacturing\\": "modules/30_Manufacturing/src/",
             "Modules\\": "modules/"
         }
     },
