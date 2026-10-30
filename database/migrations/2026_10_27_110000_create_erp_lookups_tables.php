@@ -6,8 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      */
@@ -44,7 +43,7 @@ return new class extends Migration
             $table->foreignUuid('lookup_item_id')->constrained('lookup_items')->cascadeOnDelete();
             $table->string('locale', 5);
             $table->string('label');
-            $table->string('short_label', 15)->nullable();
+            $table->string('short_label', 100)->nullable();
             $table->text('description')->nullable();
             $table->timestamps();
 

@@ -7,10 +7,29 @@ namespace Modules\CRM\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 final class Campaign extends BaseEnterpriseModel
 {
     protected $table = 'crm_campaigns';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    public function __construct(array $attributes = [])
+    {
+        if (! isset($attributes['id'])) {
+            $attributes['id'] = (string) Str::uuid7();
+        }
+
+        parent::__construct($attributes);
+    }
+
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
 
     protected function casts(): array
     {

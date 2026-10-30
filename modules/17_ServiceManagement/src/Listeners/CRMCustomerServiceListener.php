@@ -27,6 +27,7 @@ final readonly class CRMCustomerServiceListener
         $contractNumber = 'SC-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
         $contract = ServiceContract::create([
+            'id' => (string) Str::uuid7(),
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'contract_number' => $contractNumber,
@@ -63,6 +64,7 @@ final readonly class CRMCustomerServiceListener
         $quoteId = $event->salesQuoteId ?? $event->quoteId;
 
         $contract = ServiceContract::create([
+            'id' => (string) Str::uuid7(),
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'contract_number' => $contractNumber,

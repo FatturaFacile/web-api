@@ -8,12 +8,33 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
 final class ServiceContract extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'esm_service_contracts';
+
+    protected $keyType = 'string';
+
+    public $incrementing = false;
+
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        self::creating(function (self $model): void {
+            if (empty($model->{$model->getKeyName()})) {
+                $model->{$model->getKeyName()} = (string) Str::orderedUuid();
+            }
+        });
+    }
+
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
 
     protected function casts(): array
     {
@@ -63,13 +84,15 @@ final class ServiceContract extends BaseEnterpriseModel implements LockableByWor
     protected function contractType(): Attribute
     {
         return Attribute::make(
-            get: function ($value, $attributes) {
-                $terms = json_decode($attributes['terms'] ?? '{}', true) ?: [];
+            get: function ($value, $attributes): string {
+                /** @var array<string, mixed> $terms */
+                $terms = json_decode((string) ($attributes['terms'] ?? '{}'), true) ?: [];
 
-                return $terms['contract_type'] ?? 'sla';
+                return (string) ($terms['contract_type'] ?? 'sla');
             },
-            set: function ($value, $attributes) {
-                $terms = json_decode($attributes['terms'] ?? '{}', true) ?: [];
+            set: function ($value, $attributes): array {
+                /** @var array<string, mixed> $terms */
+                $terms = json_decode((string) ($attributes['terms'] ?? '{}'), true) ?: [];
                 $terms['contract_type'] = (string) $value;
 
                 return ['terms' => json_encode($terms)];
@@ -80,13 +103,15 @@ final class ServiceContract extends BaseEnterpriseModel implements LockableByWor
     protected function billingCycle(): Attribute
     {
         return Attribute::make(
-            get: function ($value, $attributes) {
-                $terms = json_decode($attributes['terms'] ?? '{}', true) ?: [];
+            get: function ($value, $attributes): string {
+                /** @var array<string, mixed> $terms */
+                $terms = json_decode((string) ($attributes['terms'] ?? '{}'), true) ?: [];
 
-                return $terms['billing_cycle'] ?? 'monthly';
+                return (string) ($terms['billing_cycle'] ?? 'monthly');
             },
-            set: function ($value, $attributes) {
-                $terms = json_decode($attributes['terms'] ?? '{}', true) ?: [];
+            set: function ($value, $attributes): array {
+                /** @var array<string, mixed> $terms */
+                $terms = json_decode((string) ($attributes['terms'] ?? '{}'), true) ?: [];
                 $terms['billing_cycle'] = (string) $value;
 
                 return ['terms' => json_encode($terms)];
