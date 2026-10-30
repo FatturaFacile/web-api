@@ -22,7 +22,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Step 2: Set up Docker Buildx for enhanced multi-layer and cache builds
+      # Step 2: Set up Docker Buildx for multi-layer build cache
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
@@ -34,7 +34,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 4: Generate container tags and OCI labels
+      # Step 4: Generate container tags and labels
       - name: Extract metadata (tags, labels)
         id: meta
         uses: docker/metadata-action@v5
@@ -45,7 +45,7 @@ jobs:
             type=semver,pattern={{version}}
             type=sha,prefix=sha-,enable=true,priority=100
 
-      # Step 5: Build and publish container image using GitHub Actions cache
+      # Step 5: Build and push image
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
@@ -64,7 +64,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      # Step 6: Connect to production VPS via SSH and perform sequential zero-OOM deployment
+      # Step 6: Connect to production VPS via SSH
       - name: Deploy to Ubuntu Server via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -76,29 +76,29 @@ jobs:
             set -e
             cd ~/api.fatturafacile.eu
 
-            # Authenticate Docker daemon against GitHub Container Registry on the remote host
+            # Authenticate with GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Pull newest application and worker container images
+            # Pull latest application images
             docker compose pull app queue_worker scheduler
 
-            # Immediately prune dangling layers to free disk space and reduce OS cache pressure
+            # Free disk space and stale cache layers before recreating containers
             docker image prune -f
 
-            # Gracefully stop all active services to reclaim RAM and prevent OOM killer invocations
+            # Gracefully stop all existing containers
             docker compose stop queue_worker scheduler app postgres || true
 
-            # Remove existing PostgreSQL container and its bound ephemeral state
+            # Remove PostgreSQL ephemeral state
             docker compose rm -f -v postgres
 
             # Launch standalone PostgreSQL container first
             docker compose up -d postgres
 
-            # Poll PostgreSQL availability before starting client containers
+            # Poll PostgreSQL availability
             echo "Waiting for PostgreSQL service to be ready..."
             RETRIES=30
             until docker compose exec -T postgres pg_isready -h localhost || [ $RETRIES -eq 0 ]; do
-              echo "Awaiting PostgreSQL connection readiness ($RETRIES retries remaining)..."
+              echo "Awaiting PostgreSQL connection ($RETRIES retries remaining)..."
               sleep 2
               RETRIES=$((RETRIES-1))
             done
@@ -108,29 +108,45 @@ jobs:
               exit 1
             fi
 
-            # Start web application container after database port is accepting traffic
+            # Launch web application container
             docker compose up -d app
 
-            # Provide PHP-FPM process brief stabilization interval
-            sleep 3
+            # Wait for app container to reach stable 'running' status (catch crash-loop early)
+            echo "Waiting for app container to reach stable running state..."
+            APP_RETRIES=20
+            until [ "$(docker compose ps --status running -q app)" != "" ] || [ $APP_RETRIES -eq 0 ]; do
+              STATUS=$(docker compose ps -a app --format "{{.Status}}")
+              echo "Current app status: $STATUS ($APP_RETRIES retries remaining)..."
+              if echo "$STATUS" | grep -qi "Restarting"; then
+                echo "App container entered crash loop! Dumping logs:"
+                docker compose logs --tail=50 app
+                exit 1
+              fi
+              sleep 2
+              APP_RETRIES=$((APP_RETRIES-1))
+            done
 
-            # Clear compiled Laravel configuration and application cache
+            if [ $APP_RETRIES -eq 0 ]; then
+              echo "Timeout waiting for app container to run. Dumping logs:"
+              docker compose logs --tail=50 app
+              exit 1
+            fi
+
+            # Run application maintenance commands
             docker compose exec -T app php -d memory_limit=256M artisan config:clear
             docker compose exec -T app php -d memory_limit=256M artisan cache:clear
 
-            # Drop database schema, re-run all migrations, and seed initial dataset
+            # Run fresh migrations and seeders
             docker compose exec -T app php -d memory_limit=512M artisan migrate:fresh --seed --force
 
-            # Optimize production execution by re-caching configuration, routes, and views
+            # Optimize production execution caches
             docker compose exec -T app php -d memory_limit=256M artisan config:cache
             docker compose exec -T app php -d memory_limit=256M artisan route:cache
             docker compose exec -T app php -d memory_limit=256M artisan view:cache
-
-            # Generate Swagger / OpenAPI documentation with increased memory ceiling
             docker compose exec -T app php -d memory_limit=512M artisan l5-swagger:generate
 
-            # Start asynchronous background task workers once migrations and caching finish
+            # Start worker daemons after migrations finish
             docker compose up -d queue_worker scheduler
 
-            # Clean up obsolete container images older than 24 hours
+            # Housekeeping
             docker image prune -af --filter "until=24h"

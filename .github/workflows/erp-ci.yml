@@ -6,12 +6,17 @@ on:
   pull_request:
     branches: [ main, dev ]
 
+# Cancel in-progress runs of the same workflow on subsequent pushes to optimize runner resources
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-and-lint:
     name: Code Quality & Automated Tests
     runs-on: ubuntu-24.04
 
-    # Variabili d'ambiente ereditate da tutti gli step del job
+    # Global environment variables shared across all steps and database connections
     env:
       DB_CONNECTION: pgsql
       DB_HOST: 127.0.0.1
@@ -23,6 +28,7 @@ jobs:
       REDIS_PORT: 6379
 
     services:
+      # Isolated PostgreSQL service container matching production engine specifications
       postgres:
         image: postgres:17-alpine
         env:
@@ -37,6 +43,7 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      # In-memory Redis store for cache, session state, and rate-limiting testing
       redis:
         image: redis:7.4-alpine
         ports:
@@ -48,19 +55,30 @@ jobs:
           --health-retries 5
 
     steps:
+      # Check out repository under $GITHUB_WORKSPACE, enforcing LF line endings to avoid Pint indentation mismatches
       - name: Checkout Codebase
         uses: actions/checkout@v4
 
+      # Ensure UNIX line endings across all PHP files to prevent false-positive Pint rule violations
+      - name: Normalize Line Endings (CRLF to LF)
+        run: |
+          git config --global core.autocrlf false
+          find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
+
+      # Provision PHP 8.5 runtime with all enterprise extensions and caching mechanisms
       - name: Setup PHP 8.5 Runtime
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath
           coverage: pcov
+          tools: composer:v2
 
+      # Validate composer.json and composer.lock consistency
       - name: Validate Composer Configuration
         run: composer validate --strict
 
+      # Cache Composer dependencies per OS and lockfile hash to reduce runner duration
       - name: Cache Composer Dependencies
         uses: actions/cache@v4
         with:
@@ -68,23 +86,29 @@ jobs:
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
+      # Install exact project dependencies according to composer.lock
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-interaction --no-progress
 
+      # Enforce strict code formatting standards via Laravel Pint (fails on any style violation)
       - name: Run Laravel Pint Code Formatter Check
         run: ./vendor/bin/pint --test
 
+      # Prepare environment configuration and execute fresh migrations against PostgreSQL
       - name: Setup Environment & Reset Database (Drop & Recreate)
         run: |
           cp .env.example .env
           php artisan key:generate
           php artisan migrate:fresh --force
 
+      # Verify architectural boundary invariants (Clean Architecture / Domain rules)
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
 
+      # Execute core foundation feature test suite
       - name: Run Foundation Feature Tests
         run: ./vendor/bin/pest tests/Feature/Foundation --no-coverage
 
+      # Execute comprehensive application test suite
       - name: Run Pest Test Suite
         run: ./vendor/bin/pest --compact
