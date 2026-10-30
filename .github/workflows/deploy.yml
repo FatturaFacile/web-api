@@ -64,7 +64,7 @@ jobs:
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
 
     steps:
-      # Step 6: Connect to production VPS via SSH
+      # Step 6: Connect to production VPS via SSH and deploy
       - name: Deploy to Ubuntu Server via SSH
         uses: appleboy/ssh-action@v1.2.0
         with:
@@ -82,23 +82,23 @@ jobs:
             # Pull latest application images
             docker compose pull app queue_worker scheduler
 
-            # Free disk space and stale cache layers before recreating containers
+            # Free dangling image layers before recreating containers
             docker image prune -f
 
-            # Gracefully stop all existing containers
+            # Gracefully stop background workers and application
             docker compose stop queue_worker scheduler app postgres || true
 
-            # Remove PostgreSQL ephemeral state
+            # Remove ephemeral state of Postgres container to enforce a fresh schema
             docker compose rm -f -v postgres
 
-            # Launch standalone PostgreSQL container first
+            # Launch PostgreSQL container first
             docker compose up -d postgres
 
-            # Poll PostgreSQL availability
+            # Poll PostgreSQL availability before starting client containers
             echo "Waiting for PostgreSQL service to be ready..."
             RETRIES=30
             until docker compose exec -T postgres pg_isready -h localhost || [ $RETRIES -eq 0 ]; do
-              echo "Awaiting PostgreSQL connection ($RETRIES retries remaining)..."
+              echo "Awaiting PostgreSQL connection readiness ($RETRIES retries remaining)..."
               sleep 2
               RETRIES=$((RETRIES-1))
             done
@@ -111,7 +111,7 @@ jobs:
             # Launch web application container
             docker compose up -d app
 
-            # Wait for app container to reach stable 'running' status (catch crash-loop early)
+            # Wait for app container to reach stable running state
             echo "Waiting for app container to reach stable running state..."
             APP_RETRIES=20
             until [ "$(docker compose ps --status running -q app)" != "" ] || [ $APP_RETRIES -eq 0 ]; do
@@ -132,21 +132,20 @@ jobs:
               exit 1
             fi
 
-            # Run application maintenance commands
-            docker compose exec -T app php -d memory_limit=256M artisan config:clear
-            docker compose exec -T app php -d memory_limit=256M artisan cache:clear
+            # Execute cache, migrations, and swagger generation in a single shell session
+            docker compose exec -T app sh -c "
+              set -e
+              php -d memory_limit=256M artisan config:clear
+              php -d memory_limit=256M artisan cache:clear
+              php -d memory_limit=512M artisan migrate:fresh --seed --force
+              php -d memory_limit=256M artisan config:cache
+              php -d memory_limit=256M artisan route:cache
+              php -d memory_limit=256M artisan view:cache
+              php -d memory_limit=512M artisan l5-swagger:generate
+            "
 
-            # Run fresh migrations and seeders
-            docker compose exec -T app php -d memory_limit=512M artisan migrate:fresh --seed --force
-
-            # Optimize production execution caches
-            docker compose exec -T app php -d memory_limit=256M artisan config:cache
-            docker compose exec -T app php -d memory_limit=256M artisan route:cache
-            docker compose exec -T app php -d memory_limit=256M artisan view:cache
-            docker compose exec -T app php -d memory_limit=512M artisan l5-swagger:generate
-
-            # Start worker daemons after migrations finish
+            # Start worker daemons after migrations and cache generation succeed
             docker compose up -d queue_worker scheduler
 
-            # Housekeeping
+            # Housekeeping: prune images older than 24h
             docker image prune -af --filter "until=24h"
