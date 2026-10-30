@@ -6,11 +6,12 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration {
+return new class extends Migration
+{
     public function up(): void
     {
         // 1. Fiscal Years
-        if (!Schema::hasTable('fiscal_years')) {
+        if (! Schema::hasTable('fiscal_years')) {
             Schema::create('fiscal_years', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -30,7 +31,7 @@ return new class extends Migration {
         }
 
         // 2. Fiscal Periods
-        if (!Schema::hasTable('fiscal_periods')) {
+        if (! Schema::hasTable('fiscal_periods')) {
             Schema::create('fiscal_periods', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -50,7 +51,7 @@ return new class extends Migration {
         }
 
         // 3. Period Locks (Subledger Level)
-        if (!Schema::hasTable('period_locks')) {
+        if (! Schema::hasTable('period_locks')) {
             Schema::create('period_locks', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -68,7 +69,7 @@ return new class extends Migration {
         }
 
         // 4. Chart of Accounts
-        if (!Schema::hasTable('chart_of_accounts')) {
+        if (! Schema::hasTable('chart_of_accounts')) {
             Schema::create('chart_of_accounts', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -93,44 +94,44 @@ return new class extends Migration {
             });
         } else {
             Schema::table('chart_of_accounts', function (Blueprint $table): void {
-                if (!Schema::hasColumn('chart_of_accounts', 'company_id')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'company_id')) {
                     $table->uuid('company_id')->nullable()->index();
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'parent_account_id')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'parent_account_id')) {
                     $table->uuid('parent_account_id')->nullable();
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'account_code')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'account_code')) {
                     $table->string('account_code', 50)->nullable()->index();
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'account_class')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'account_class')) {
                     $table->string('account_class', 30)->default('standard');
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'account_type')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'account_type')) {
                     $table->string('account_type', 40)->default('asset');
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'normal_balance')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'normal_balance')) {
                     $table->string('normal_balance', 10)->default('debit');
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'currency')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'currency')) {
                     $table->string('currency', 3)->default('EUR');
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'is_reconciliation_account')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'is_reconciliation_account')) {
                     $table->boolean('is_reconciliation_account')->default(false);
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'reconciliation_type')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'reconciliation_type')) {
                     $table->string('reconciliation_type', 20)->nullable();
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'allows_manual_posting')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'allows_manual_posting')) {
                     $table->boolean('allows_manual_posting')->default(true);
                 }
-                if (!Schema::hasColumn('chart_of_accounts', 'is_cost_center_mandatory')) {
+                if (! Schema::hasColumn('chart_of_accounts', 'is_cost_center_mandatory')) {
                     $table->boolean('is_cost_center_mandatory')->default(false);
                 }
             });
         }
 
         // 5. Cost Centers & Profit Centers
-        if (!Schema::hasTable('cost_centers')) {
+        if (! Schema::hasTable('cost_centers')) {
             Schema::create('cost_centers', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -146,7 +147,7 @@ return new class extends Migration {
             });
         }
 
-        if (!Schema::hasTable('profit_centers')) {
+        if (! Schema::hasTable('profit_centers')) {
             Schema::create('profit_centers', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -162,7 +163,7 @@ return new class extends Migration {
         }
 
         // 6. VAT / Tax Codes
-        if (!Schema::hasTable('vat_codes')) {
+        if (! Schema::hasTable('vat_codes')) {
             Schema::create('vat_codes', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -188,7 +189,7 @@ return new class extends Migration {
         }
 
         // 7. VAT Registers
-        if (!Schema::hasTable('vat_registers')) {
+        if (! Schema::hasTable('vat_registers')) {
             Schema::create('vat_registers', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -206,7 +207,7 @@ return new class extends Migration {
         }
 
         // 8. Journal Batches
-        if (!Schema::hasTable('journal_batches')) {
+        if (! Schema::hasTable('journal_batches')) {
             Schema::create('journal_batches', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -228,7 +229,7 @@ return new class extends Migration {
         }
 
         // 9. Journal Entries
-        if (!Schema::hasTable('journal_entries')) {
+        if (! Schema::hasTable('journal_entries')) {
             Schema::create('journal_entries', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -263,7 +264,7 @@ return new class extends Migration {
         }
 
         // 10. Journal Lines
-        if (!Schema::hasTable('journal_lines')) {
+        if (! Schema::hasTable('journal_lines')) {
             Schema::create('journal_lines', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -299,7 +300,7 @@ return new class extends Migration {
         }
 
         // 11. Customer Subledger (Accounts Receivable Open Items)
-        if (!Schema::hasTable('customer_ledger')) {
+        if (! Schema::hasTable('customer_ledger')) {
             Schema::create('customer_ledger', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -322,7 +323,7 @@ return new class extends Migration {
         }
 
         // 12. Supplier Subledger (Accounts Payable Open Items)
-        if (!Schema::hasTable('supplier_ledger')) {
+        if (! Schema::hasTable('supplier_ledger')) {
             Schema::create('supplier_ledger', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -343,7 +344,7 @@ return new class extends Migration {
         }
 
         // 13. Accrual & Prepayment Entries
-        if (!Schema::hasTable('accrual_entries')) {
+        if (! Schema::hasTable('accrual_entries')) {
             Schema::create('accrual_entries', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -367,7 +368,7 @@ return new class extends Migration {
         }
 
         // 14. Posting Templates
-        if (!Schema::hasTable('posting_templates')) {
+        if (! Schema::hasTable('posting_templates')) {
             Schema::create('posting_templates', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -386,7 +387,7 @@ return new class extends Migration {
         }
 
         // 15. Reconciliation Runs & Items
-        if (!Schema::hasTable('reconciliation_runs')) {
+        if (! Schema::hasTable('reconciliation_runs')) {
             Schema::create('reconciliation_runs', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -408,7 +409,7 @@ return new class extends Migration {
             });
         }
 
-        if (!Schema::hasTable('reconciliation_items')) {
+        if (! Schema::hasTable('reconciliation_items')) {
             Schema::create('reconciliation_items', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -428,7 +429,7 @@ return new class extends Migration {
         }
 
         // 16. Financial Closing Runs (Month-End & Year-End)
-        if (!Schema::hasTable('financial_closing_runs')) {
+        if (! Schema::hasTable('financial_closing_runs')) {
             Schema::create('financial_closing_runs', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -449,7 +450,7 @@ return new class extends Migration {
         }
 
         // 17. Accounting Anomalies (AI Copilot & Error Detection)
-        if (!Schema::hasTable('accounting_anomalies')) {
+        if (! Schema::hasTable('accounting_anomalies')) {
             Schema::create('accounting_anomalies', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -469,7 +470,7 @@ return new class extends Migration {
         }
 
         // 18. Carbon Ledger (ESG Financial Link)
-        if (!Schema::hasTable('carbon_ledger')) {
+        if (! Schema::hasTable('carbon_ledger')) {
             Schema::create('carbon_ledger', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -489,7 +490,7 @@ return new class extends Migration {
         }
 
         // 19. VAT Settlements (Liquidazione IVA)
-        if (!Schema::hasTable('vat_settlements')) {
+        if (! Schema::hasTable('vat_settlements')) {
             Schema::create('vat_settlements', function (Blueprint $table): void {
                 $table->uuid('id')->primary();
                 $table->uuid('tenant_id')->index();
@@ -511,37 +512,37 @@ return new class extends Migration {
             });
         } else {
             Schema::table('vat_settlements', function (Blueprint $table): void {
-                if (!Schema::hasColumn('vat_settlements', 'company_id')) {
+                if (! Schema::hasColumn('vat_settlements', 'company_id')) {
                     $table->uuid('company_id')->nullable()->index();
                 }
-                if (!Schema::hasColumn('vat_settlements', 'fiscal_period_id')) {
+                if (! Schema::hasColumn('vat_settlements', 'fiscal_period_id')) {
                     $table->uuid('fiscal_period_id')->nullable()->index();
                 }
-                if (!Schema::hasColumn('vat_settlements', 'settlement_period')) {
+                if (! Schema::hasColumn('vat_settlements', 'settlement_period')) {
                     $table->string('settlement_period', 20)->nullable();
                 }
-                if (!Schema::hasColumn('vat_settlements', 'output_vat_amount')) {
+                if (! Schema::hasColumn('vat_settlements', 'output_vat_amount')) {
                     $table->decimal('output_vat_amount', 15, 4)->default(0.0000);
                 }
-                if (!Schema::hasColumn('vat_settlements', 'input_vat_amount')) {
+                if (! Schema::hasColumn('vat_settlements', 'input_vat_amount')) {
                     $table->decimal('input_vat_amount', 15, 4)->default(0.0000);
                 }
-                if (!Schema::hasColumn('vat_settlements', 'prior_credit_used')) {
+                if (! Schema::hasColumn('vat_settlements', 'prior_credit_used')) {
                     $table->decimal('prior_credit_used', 15, 4)->default(0.0000);
                 }
-                if (!Schema::hasColumn('vat_settlements', 'net_vat_payable')) {
+                if (! Schema::hasColumn('vat_settlements', 'net_vat_payable')) {
                     $table->decimal('net_vat_payable', 15, 4)->default(0.0000);
                 }
-                if (!Schema::hasColumn('vat_settlements', 'net_vat_credit')) {
+                if (! Schema::hasColumn('vat_settlements', 'net_vat_credit')) {
                     $table->decimal('net_vat_credit', 15, 4)->default(0.0000);
                 }
-                if (!Schema::hasColumn('vat_settlements', 'status')) {
+                if (! Schema::hasColumn('vat_settlements', 'status')) {
                     $table->string('status', 30)->default('calculated');
                 }
-                if (!Schema::hasColumn('vat_settlements', 'settlement_journal_id')) {
+                if (! Schema::hasColumn('vat_settlements', 'settlement_journal_id')) {
                     $table->uuid('settlement_journal_id')->nullable();
                 }
-                if (!Schema::hasColumn('vat_settlements', 'calculated_by')) {
+                if (! Schema::hasColumn('vat_settlements', 'calculated_by')) {
                     $table->uuid('calculated_by')->nullable();
                 }
             });
