@@ -18,13 +18,13 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v4
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+        uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry
-        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567 # v3.3.0
+        uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -32,7 +32,7 @@ jobs:
 
       - name: Extract metadata (tags, labels)
         id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -41,7 +41,7 @@ jobs:
             type=sha,prefix=sha-,enable=true,priority=100
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
@@ -58,7 +58,7 @@ jobs:
 
     steps:
       - name: Deploy to Ubuntu Server via SSH
-        uses: appleboy/ssh-action@029f5b4aeeeb58fdfe1410a5d17f967dacf36262 # v1.0.3
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.SERVER_HOST }}
           username: ${{ secrets.SERVER_USER }}
@@ -69,28 +69,38 @@ jobs:
             cd ~/api.fatturafacile.eu
 
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-
             docker compose pull app queue_worker scheduler
+
+            docker compose stop queue_worker scheduler || true
 
             docker compose stop postgres
             docker compose rm -f -v postgres
 
-            # docker compose down postgres
-            # docker volume rm -f api_fatturafacile_eu_db_data || true
+            docker compose up -d postgres app
 
-            docker compose up -d postgres app queue_worker scheduler
-
-            echo "Waiting for database to be ready..."
-            until docker compose exec -T postgres pg_isready -U "${DB_USERNAME:-postgres}"; do
+            echo "Attesa che PostgreSQL sia pronto ad accettare connessioni..."
+            RETRIES=30
+            until docker compose exec -T postgres pg_isready -h localhost || [ $RETRIES -eq 0 ]; do
+              echo "In attesa di Postgres ($RETRIES tentativi rimasti)..."
               sleep 2
+              RETRIES=$((RETRIES-1))
             done
 
-            docker compose exec -T app php artisan migrate --seed --force
+            if [ $RETRIES -eq 0 ]; then
+              echo "Timeout: PostgreSQL non risponde."
+              exit 1
+            fi
 
             docker compose exec -T app php artisan config:clear
+            docker compose exec -T app php artisan cache:clear
+
+            docker compose exec -T app php -d memory_limit=512M artisan migrate:fresh --seed --force
+
             docker compose exec -T app php artisan config:cache
             docker compose exec -T app php artisan route:cache
             docker compose exec -T app php artisan view:cache
-            docker compose exec -T app php artisan l5-swagger:generate
+            docker compose exec -T app php -d memory_limit=512M artisan l5-swagger:generate
+
+            docker compose up -d queue_worker scheduler
 
             docker image prune -af --filter "until=24h"
