@@ -34,7 +34,7 @@ final class CRMDemoDataSeeder extends Seeder
         $this->call(CRMReferenceSeeder::class);
 
         foreach ($tenants as $tenant) {
-            $tId = (string)$tenant->id;
+            $tId = (string) $tenant->id;
             app(TenantContext::class)->setTenant($tenant);
 
             $srcWeb = LeadSource::where('tenant_id', $tId)->where('code', 'web')->first();
@@ -47,7 +47,7 @@ final class CRMDemoDataSeeder extends Seeder
             $cmpEnterprise = Campaign::updateOrCreate(
                 ['tenant_id' => $tId, 'code' => 'CMP-ENT-2027'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'campaign_type_id' => $cmpTypeWebinar?->id,
                     'name' => 'Enterprise ERP Digital Transformation Summit',
                     'status' => 'active',
@@ -64,7 +64,7 @@ final class CRMDemoDataSeeder extends Seeder
             $cmpSmb = Campaign::updateOrCreate(
                 ['tenant_id' => $tId, 'code' => 'CMP-SMB-2027'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'campaign_type_id' => $cmpTypeEmail?->id,
                     'name' => 'SMB Invoicing & Billing Automation Drive',
                     'status' => 'active',
@@ -92,7 +92,7 @@ final class CRMDemoDataSeeder extends Seeder
             $accEnt = Account::updateOrCreate(
                 ['tenant_id' => $tId, 'account_number' => 'ACC-ENT-001'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'name' => 'Global Manufacturing Dynamics SpA',
                     'industry' => 'Automotive & Heavy Industry',
                     'tier' => 'strategic',
@@ -109,7 +109,7 @@ final class CRMDemoDataSeeder extends Seeder
             $cntEnt = Contact::firstOrCreate(
                 ['tenant_id' => $tId, 'email' => 'a.ferrari@globaldynamics.it'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'company_name' => $accEnt->name,
                     'first_name' => 'Alessandro',
                     'last_name' => 'Ferrari',
@@ -123,7 +123,7 @@ final class CRMDemoDataSeeder extends Seeder
             ContactRole::updateOrCreate(
                 ['tenant_id' => $tId, 'account_id' => $accEnt->id, 'contact_id' => $cntEnt->id],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'role' => 'decision_maker',
                     'is_primary' => true,
                 ]
@@ -133,7 +133,7 @@ final class CRMDemoDataSeeder extends Seeder
             $oppEntWon = Opportunity::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_number' => 'OPP-ENT-WON-01'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'account_id' => $accEnt->id,
                     'contact_id' => $cntEnt->id,
                     'campaign_id' => $cmpEnterprise->id,
@@ -153,7 +153,7 @@ final class CRMDemoDataSeeder extends Seeder
             OpportunityLineItem::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_id' => $oppEntWon->id, 'description' => 'Core ERP License (500 seats)'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'quantity' => 1.0,
                     'unit_price' => 120000.00,
                     'total_price' => 120000.00,
@@ -162,7 +162,7 @@ final class CRMDemoDataSeeder extends Seeder
             OpportunityLineItem::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_id' => $oppEntWon->id, 'description' => 'System Integration & Deployment'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'quantity' => 1.0,
                     'unit_price' => 60000.00,
                     'total_price' => 60000.00,
@@ -173,7 +173,7 @@ final class CRMDemoDataSeeder extends Seeder
             Opportunity::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_number' => 'OPP-ENT-NEGO-02'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'account_id' => $accEnt->id,
                     'contact_id' => $cntEnt->id,
                     'stage_id' => $stgNego->id,
@@ -194,7 +194,7 @@ final class CRMDemoDataSeeder extends Seeder
             $accSmb = Account::updateOrCreate(
                 ['tenant_id' => $tId, 'account_number' => 'ACC-SMB-002'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'name' => 'Officina Meccanica Rossi Srl',
                     'industry' => 'Precision Engineering',
                     'tier' => 'smb',
@@ -211,7 +211,7 @@ final class CRMDemoDataSeeder extends Seeder
             $cntSmb = Contact::firstOrCreate(
                 ['tenant_id' => $tId, 'email' => 'luca.rossi@meccanicarossi.it'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'company_name' => $accSmb->name,
                     'first_name' => 'Luca',
                     'last_name' => 'Rossi',
@@ -224,7 +224,7 @@ final class CRMDemoDataSeeder extends Seeder
             Opportunity::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_number' => 'OPP-SMB-WON-01'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'account_id' => $accSmb->id,
                     'contact_id' => $cntSmb->id,
                     'campaign_id' => $cmpSmb->id,
@@ -247,7 +247,7 @@ final class CRMDemoDataSeeder extends Seeder
             $accCons = Account::updateOrCreate(
                 ['tenant_id' => $tId, 'account_number' => 'ACC-CONS-003'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'name' => 'Studio Legale & Tributario Visconti Associati',
                     'industry' => 'Legal & Fiscal Advisory',
                     'tier' => 'mid_market',
@@ -264,7 +264,7 @@ final class CRMDemoDataSeeder extends Seeder
             $cntCons = Contact::firstOrCreate(
                 ['tenant_id' => $tId, 'email' => 'm.visconti@studiovisconti.it'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'company_name' => $accCons->name,
                     'first_name' => 'Massimo',
                     'last_name' => 'Visconti',
@@ -277,7 +277,7 @@ final class CRMDemoDataSeeder extends Seeder
             Opportunity::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_number' => 'OPP-CONS-PROP-01'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'account_id' => $accCons->id,
                     'contact_id' => $cntCons->id,
                     'stage_id' => $stgProp->id,
@@ -298,7 +298,7 @@ final class CRMDemoDataSeeder extends Seeder
             $accLost = Account::updateOrCreate(
                 ['tenant_id' => $tId, 'account_number' => 'ACC-LOST-004'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'name' => 'Nordic Hardware Distribution AB',
                     'industry' => 'Wholesale & Retail Hardware',
                     'tier' => 'enterprise',
@@ -314,7 +314,7 @@ final class CRMDemoDataSeeder extends Seeder
             Opportunity::updateOrCreate(
                 ['tenant_id' => $tId, 'opportunity_number' => 'OPP-ERP-LOST-01'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'account_id' => $accLost->id,
                     'stage_id' => $stgLost->id,
                     'name' => 'International B2B Portal Implementation',
@@ -335,7 +335,7 @@ final class CRMDemoDataSeeder extends Seeder
             Lead::updateOrCreate(
                 ['tenant_id' => $tId, 'email' => 'clara.schmidt@bavariamachinery.de'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'lead_source_id' => $srcWeb?->id,
                     'first_name' => 'Clara',
                     'last_name' => 'Schmidt',
@@ -354,7 +354,7 @@ final class CRMDemoDataSeeder extends Seeder
             Lead::updateOrCreate(
                 ['tenant_id' => $tId, 'email' => 'jean.dupont@rhonealpeslogistique.fr'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'lead_source_id' => $srcReferral?->id,
                     'first_name' => 'Jean',
                     'last_name' => 'Dupont',
@@ -374,7 +374,7 @@ final class CRMDemoDataSeeder extends Seeder
             Activity::updateOrCreate(
                 ['tenant_id' => $tId, 'subject' => 'Phase 2 Architecture Review Meeting'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'type' => 'meeting',
                     'status' => 'completed',
                     'priority' => 'urgent',
@@ -391,7 +391,7 @@ final class CRMDemoDataSeeder extends Seeder
             Activity::updateOrCreate(
                 ['tenant_id' => $tId, 'subject' => 'Follow up on practice management proposal'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'type' => 'follow_up',
                     'status' => 'pending',
                     'priority' => 'high',
@@ -407,7 +407,7 @@ final class CRMDemoDataSeeder extends Seeder
             CustomerHealthProfile::updateOrCreate(
                 ['tenant_id' => $tId, 'account_id' => $accEnt->id],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'activity_score' => 98.00,
                     'engagement_score' => 95.00,
                     'revenue_score' => 100.00,
@@ -423,7 +423,7 @@ final class CRMDemoDataSeeder extends Seeder
             CustomerHealthProfile::updateOrCreate(
                 ['tenant_id' => $tId, 'account_id' => $accCons->id],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'activity_score' => 65.00,
                     'engagement_score' => 70.00,
                     'revenue_score' => 80.00,
@@ -440,7 +440,7 @@ final class CRMDemoDataSeeder extends Seeder
             Forecast::updateOrCreate(
                 ['tenant_id' => $tId, 'period' => '2027-Q1'],
                 [
-                    'id' => (string)Str::uuid7(),
+                    'id' => (string) Str::uuid7(),
                     'currency' => 'EUR',
                     'pipeline_amount' => 35000.00,
                     'best_case_amount' => 350000.00,
