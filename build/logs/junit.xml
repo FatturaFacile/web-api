@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="Tests\Feature\CriticalSecurityFixesTest" file="tests\Feature\CriticalSecurityFixesTest.php" tests="3" assertions="12" errors="0" failures="0" skipped="0" time="102.825545">
+    <testcase name="CRIT-02: tenant_id is stripped from fillable in operational models" file="tests\Feature\CriticalSecurityFixesTest.php::CRIT-02: tenant_id is stripped from fillable in operational models" class="Tests\Feature\CriticalSecurityFixesTest" classname="Tests.Feature.CriticalSecurityFixesTest" assertions="6" time="101.768978"/>
+    <testcase name="CRIT-02: POST sales/invoices ignores injected tenant_id and binds to authenticated tenant" file="tests\Feature\CriticalSecurityFixesTest.php::CRIT-02: POST sales/invoices ignores injected tenant_id and binds to authenticated tenant" class="Tests\Feature\CriticalSecurityFixesTest" classname="Tests.Feature.CriticalSecurityFixesTest" assertions="3" time="0.558238"/>
+    <testcase name="CRIT-02: POST sales/quotes ignores injected tenant_id and binds to authenticated tenant" file="tests\Feature\CriticalSecurityFixesTest.php::CRIT-02: POST sales/quotes ignores injected tenant_id and binds to authenticated tenant" class="Tests\Feature\CriticalSecurityFixesTest" classname="Tests.Feature.CriticalSecurityFixesTest" assertions="3" time="0.498329"/>
+  </testsuite>
+</testsuites>

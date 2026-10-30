@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Tenancy;
 
 use App\Models\Tenant;
+use App\Models\User;
 use Closure;
 
 class TenantContext
@@ -13,10 +14,20 @@ class TenantContext
 
     private bool $isExplicit = false;
 
+    private bool $explicitlyNull = false;
+
     public function setTenant(?Tenant $tenant): void
     {
         $this->tenant = $tenant;
         $this->isExplicit = $tenant !== null;
+        $this->explicitlyNull = $tenant === null;
+    }
+
+    public function clear(): void
+    {
+        $this->tenant = null;
+        $this->isExplicit = false;
+        $this->explicitlyNull = false;
     }
 
     public function isExplicit(): bool
@@ -30,9 +41,13 @@ class TenantContext
             return $this->tenant;
         }
 
+        if ($this->explicitlyNull) {
+            return null;
+        }
+
         if (auth()->check()) {
             $user = auth()->user();
-            if ($user instanceof \App\Models\User) {
+            if ($user instanceof User) {
                 return $user->tenants()->first();
             }
         }
@@ -58,15 +73,20 @@ class TenantContext
      * @param  Closure(): TReturn  $callback
      * @return TReturn
      */
-    public function runWithTenant(?Tenant $temporaryTenant, Closure $callback): mixed
+    public function runFor(Tenant $tenant, Closure $callback): mixed
     {
         $previousTenant = $this->tenant;
-        $this->tenant = $temporaryTenant;
+        $previousExplicit = $this->isExplicit;
+        $previousExplicitlyNull = $this->explicitlyNull;
+
+        $this->setTenant($tenant);
 
         try {
             return $callback();
         } finally {
             $this->tenant = $previousTenant;
+            $this->isExplicit = $previousExplicit;
+            $this->explicitlyNull = $previousExplicitlyNull;
         }
     }
 }

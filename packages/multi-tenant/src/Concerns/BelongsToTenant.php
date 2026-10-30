@@ -32,7 +32,7 @@ trait BelongsToTenant
      */
     public function fill(array $attributes): static
     {
-        if (isset($attributes['tenant_id']) && ! app(TenantContext::class)->hasTenant()) {
+        if (isset($attributes['tenant_id']) && ! app(TenantContext::class)->isExplicit()) {
             $this->tenant_id = $attributes['tenant_id'];
             unset($attributes['tenant_id']);
         }

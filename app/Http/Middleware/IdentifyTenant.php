@@ -76,12 +76,12 @@ class IdentifyTenant
         try {
             return $next($request);
         } finally {
-            $this->tenantContext->setTenant(null);
+            $this->tenantContext->clear();
         }
     }
 
     public function terminate(Request $request, Response $response): void
     {
-        $this->tenantContext->setTenant(null);
+        $this->tenantContext->clear();
     }
 }
