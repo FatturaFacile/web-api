@@ -15,7 +15,11 @@ final readonly class SalesQuoteAcceptedEvent implements DomainEventInterface
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
-        public string $occurredAt = ''
+        public string $occurredAt = '',
+        public ?string $quoteNumber = null,
+        public ?string $customerId = null,
+        public float $totalAmount = 0.0,
+        public ?string $salesQuoteId = null
     ) {}
 
     public function getEventId(): string

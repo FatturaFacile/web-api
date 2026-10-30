@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\AssetManagement\Services;
 
+use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
@@ -110,7 +111,7 @@ final readonly class DepreciationEngineService implements DepreciationEngineServ
                 throw new InvalidArgumentException("Depreciation run already executed for period [{$dto->periodCode}] and ledger [{$dto->ledgerType}].");
             }
 
-            $actorUuid = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : null;
+            $actorUuid = (! empty($actorUserId) && Str::isUuid($actorUserId) && User::where('id', $actorUserId)->exists()) ? $actorUserId : null;
 
             $run = DepreciationRun::create([
                 'id' => (string) Str::uuid7(),

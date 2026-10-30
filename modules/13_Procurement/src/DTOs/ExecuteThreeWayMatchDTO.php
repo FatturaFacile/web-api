@@ -6,13 +6,18 @@ namespace Modules\Procurement\DTOs;
 
 final readonly class ExecuteThreeWayMatchDTO
 {
+    public ?string $approvedByUserId;
+
     public function __construct(
         public string $purchaseOrderId,
         public string $purchaseReceiptId,
         public string $passiveInvoiceId,
         public float $invoiceTotalAmount,
-        public ?string $approvedByUserId = null,
+        ?string $approvedByUserId = null,
         public ?string $tenantId = null,
-        public ?string $companyId = null
-    ) {}
+        public ?string $companyId = null,
+        public ?string $evaluatedByUserId = null
+    ) {
+        $this->approvedByUserId = $approvedByUserId ?? $this->evaluatedByUserId;
+    }
 }

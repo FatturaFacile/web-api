@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasTranslations;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,11 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Currency extends Model
 {
-    use HasFactory, HasTranslations, HasUuids;
+    use BelongsToTenant, HasFactory, HasTranslations, HasUuids;
 
     protected $table = 'currencies';
 
     protected $fillable = [
+        'tenant_id',
         'code',
         'name',
         'symbol',

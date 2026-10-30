@@ -12,10 +12,12 @@ final readonly class PurchaseOrderApprovedEvent implements DomainEventInterface
     public function __construct(
         public string $purchaseOrderId,
         public string $poNumber,
-        public string $supplierId,
         public float $totalAmount,
         public string $tenantId,
         public string $companyId,
+        public string $supplierId = '',
+        public ?string $approvedByUserId = null,
+        public string $currency = 'EUR',
         public ?string $projectId = null,
         public string $eventId = '',
         public string $occurredAt = ''

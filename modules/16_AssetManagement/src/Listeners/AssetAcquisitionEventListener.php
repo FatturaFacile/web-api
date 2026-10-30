@@ -160,10 +160,8 @@ final readonly class AssetAcquisitionEventListener
     private function recordInboxIfNew(DomainEventInterface $event, string $consumerName): bool
     {
         try {
-            $eventId = $event->getEventId();
-            $exists = TransactionalInbox::where('event_id', $eventId)
-                ->where('consumer_name', $consumerName)
-                ->exists();
+            $messageId = $consumerName.':'.$event->getEventId();
+            $exists = TransactionalInbox::where('message_id', $messageId)->exists();
 
             if ($exists) {
                 return false;
@@ -172,11 +170,10 @@ final readonly class AssetAcquisitionEventListener
             TransactionalInbox::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
-                'event_id' => $eventId,
-                'event_name' => $event->getEventName(),
-                'consumer_name' => $consumerName,
+                'message_id' => $messageId,
+                'event_type' => $event->getEventName(),
                 'payload_json' => $event->toPayload(),
-                'status' => 'processed',
+                'status' => 'completed',
                 'received_at' => now(),
                 'processed_at' => now(),
             ]);

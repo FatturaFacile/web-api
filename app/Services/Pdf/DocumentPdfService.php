@@ -13,10 +13,12 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\ServiceReport;
+use App\Models\Tenant;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Rules\PngSignature;
 use App\Services\SwissQrBill\SwissQrBillService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -36,20 +38,32 @@ class DocumentPdfService
 
     public function render(Model $document): RenderedPdf
     {
-        [$view, $data, $type, $number] = match (true) {
-            $document instanceof Invoice => $this->invoice($document),
-            $document instanceof Quote => $this->quote($document),
-            $document instanceof SalesOrder => $this->salesOrder($document),
-            $document instanceof DeliveryNote => $this->deliveryNote($document),
-            $document instanceof WorkOrder => $this->workOrder($document),
-            $document instanceof ServiceReport => $this->serviceReport($document),
-            default => throw new InvalidArgumentException('Unsupported document class: '.$document::class),
+        $tenantContext = app(TenantContext::class);
+        $tenantId = $document->getAttribute('tenant_id');
+        $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
+
+        $renderCallback = function () use ($document): RenderedPdf {
+            [$view, $data, $type, $number] = match (true) {
+                $document instanceof Invoice => $this->invoice($document),
+                $document instanceof Quote => $this->quote($document),
+                $document instanceof SalesOrder => $this->salesOrder($document),
+                $document instanceof DeliveryNote => $this->deliveryNote($document),
+                $document instanceof WorkOrder => $this->workOrder($document),
+                $document instanceof ServiceReport => $this->serviceReport($document),
+                default => throw new InvalidArgumentException('Unsupported document class: '.$document::class),
+            };
+
+            return new RenderedPdf(
+                $this->generator->render($view, $data),
+                Str::studly($type).'-'.trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-').'.pdf'
+            );
         };
 
-        return new RenderedPdf(
-            $this->generator->render($view, $data),
-            Str::studly($type).'-'.trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-').'.pdf'
-        );
+        if ($tenant !== null && $tenantContext->getTenantId() !== $tenant->id) {
+            return $tenantContext->runWithTenant($tenant, $renderCallback);
+        }
+
+        return $renderCallback();
     }
 
     /**

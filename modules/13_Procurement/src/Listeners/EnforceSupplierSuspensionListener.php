@@ -29,7 +29,7 @@ final readonly class EnforceSupplierSuspensionListener implements ShouldQueue
             ]);
 
             $this->auditLedger?->record(
-                action: 'PURCHASE_ORDER_CANCELLED_DUE_TO_SUPPLIER_SUSPENSION',
+                action: 'PO_CANCELLED_DUE_TO_SUPPLIER_SUSPENSION',
                 model: $order,
                 payloadBefore: $beforeState,
                 payloadAfter: ['status' => 'cancelled', 'is_locked' => true, 'reason' => $event->reason],

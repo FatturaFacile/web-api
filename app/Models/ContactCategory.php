@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasTranslations;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,11 +13,12 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ContactCategory extends Model
 {
-    use HasFactory, HasTranslations, HasUuids;
+    use BelongsToTenant, HasFactory, HasTranslations, HasUuids;
 
     protected $table = 'contact_categories';
 
     protected $fillable = [
+        'tenant_id',
         'code',
         'is_active',
     ];

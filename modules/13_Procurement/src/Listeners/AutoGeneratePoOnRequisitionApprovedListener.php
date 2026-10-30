@@ -45,6 +45,8 @@ final readonly class AutoGeneratePoOnRequisitionApprovedListener implements Shou
             }
 
             $poNumber = 'PO-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
+            $estimatedTotal = (float) ($requisition->total_estimated_amount ?? $requisition->estimated_total ?? 0.0);
+
             $order = PurchaseOrder::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $requisition->tenant_id,
@@ -53,32 +55,34 @@ final readonly class AutoGeneratePoOnRequisitionApprovedListener implements Shou
                 'po_number' => $poNumber,
                 'order_number' => $poNumber,
                 'order_type' => 'standard',
-                'order_date' => now()->toDateString(),
+                'date' => now()->toDateString(),
                 'expected_delivery_date' => $requisition->required_date?->toDateString() ?? now()->addDays(14)->toDateString(),
                 'status' => 'draft',
                 'currency' => 'EUR',
                 'exchange_rate' => 1.0,
-                'net_amount' => $requisition->estimated_total ?? 0.0,
-                'tax_amount' => round(((float) $requisition->estimated_total) * 0.22, 2),
-                'total_amount' => round(((float) $requisition->estimated_total) * 1.22, 2),
+                'net_amount' => $estimatedTotal,
+                'tax_amount' => round($estimatedTotal * 0.22, 2),
+                'total_amount' => round($estimatedTotal * 1.22, 2),
                 'is_budget_encumbered' => true,
-                'budget_committed_amount' => $requisition->estimated_total ?? 0.0,
+                'budget_committed_amount' => $estimatedTotal,
                 'is_locked' => false,
-                'created_by' => $requisition->requester_id,
+                'created_by' => $requisition->created_by ?? $requisition->requestor_user_id ?? $event->approvedByUserId,
             ]);
 
             foreach ($requisition->lines as $reqLine) {
-                $net = ((float) $reqLine->quantity) * ((float) $reqLine->estimated_unit_price);
+                $qty = (float) ($reqLine->quantity_requested ?? $reqLine->quantity ?? 1.0);
+                $unitPrice = (float) ($reqLine->estimated_unit_price ?? 0.0);
+                $net = (float) ($reqLine->estimated_total_price ?? ($qty * $unitPrice));
                 PurchaseOrderLine::create([
                     'id' => (string) Str::uuid7(),
                     'tenant_id' => $requisition->tenant_id,
                     'purchase_order_id' => $order->id,
-                    'product_id' => $reqLine->product_id,
+                    'product_id' => $reqLine->product_id ?? null,
                     'description' => $reqLine->description ?? 'Item from Requisition '.$requisition->requisition_number,
-                    'quantity_ordered' => $reqLine->quantity,
+                    'quantity_ordered' => $qty,
                     'quantity_received' => 0.0,
                     'quantity_cancelled' => 0.0,
-                    'unit_price' => $reqLine->estimated_unit_price,
+                    'unit_price' => $unitPrice,
                     'subtotal' => $net,
                     'tax_rate' => 22.0,
                     'tax_amount' => round($net * 0.22, 2),

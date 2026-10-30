@@ -15,10 +15,33 @@ final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkf
 {
     protected $table = 'purchase_orders';
 
+    protected static function booted(): void
+    {
+        self::saving(function (PurchaseOrder $order): void {
+            if (isset($order->attributes['order_date'])) {
+                $order->attributes['date'] = $order->attributes['order_date'];
+                unset($order->attributes['order_date']);
+            }
+            if (empty($order->attributes['date'])) {
+                $order->attributes['date'] = now()->toDateString();
+            }
+        });
+    }
+
+    public function getOrderDateAttribute(): mixed
+    {
+        return $this->attributes['date'] ?? null;
+    }
+
+    public function setOrderDateAttribute(mixed $value): void
+    {
+        $this->attributes['date'] = $value;
+    }
+
     protected function casts(): array
     {
         return [
-            'order_date' => 'date',
+            'date' => 'date',
             'expected_delivery_date' => 'date',
             'exchange_rate' => 'decimal:6',
             'net_amount' => 'decimal:2',

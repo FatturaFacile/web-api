@@ -6,15 +6,21 @@ namespace Modules\Procurement\DTOs;
 
 final readonly class CreateSupplierDTO
 {
+    public string $supplierCode;
+
+    public ?string $categoryId;
+
+    public ?string $creatorUserId;
+
     /**
      * @param  array<string, mixed>  $metadata
      */
     public function __construct(
-        public string $supplierCode,
         public string $companyName,
+        ?string $supplierCode = null,
         public ?string $vatNumber = null,
         public ?string $fiscalCode = null,
-        public ?string $categoryId = null,
+        ?string $categoryId = null,
         public ?string $contactId = null,
         public string $currency = 'EUR',
         public ?string $paymentTermsCode = null,
@@ -25,6 +31,14 @@ final readonly class CreateSupplierDTO
         public array $metadata = [],
         public ?string $tenantId = null,
         public ?string $companyId = null,
-        public ?string $creatorUserId = null
-    ) {}
+        ?string $creatorUserId = null,
+        public ?string $supplierCategoryId = null,
+        public ?string $userId = null,
+        public ?string $notes = null,
+        public string $status = 'active'
+    ) {
+        $this->supplierCode = $supplierCode ?? ('SUP-'.strtoupper(bin2hex(random_bytes(4))));
+        $this->categoryId = $categoryId ?? $this->supplierCategoryId;
+        $this->creatorUserId = $creatorUserId ?? $this->userId;
+    }
 }

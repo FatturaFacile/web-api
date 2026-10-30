@@ -14,6 +14,7 @@ final readonly class SupplierApprovedEvent implements DomainEventInterface
         public string $supplierCode,
         public string $tenantId,
         public string $companyId,
+        public ?string $approvedByUserId = null,
         public string $eventId = '',
         public string $occurredAt = ''
     ) {}

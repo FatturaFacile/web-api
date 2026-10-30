@@ -48,6 +48,8 @@ final class RecordAuditAction
         $resourceId = (string) ($rawKey ?: Str::uuid7());
         $actorId = (string) (auth()->id() ?? 'SYSTEM');
 
+        $action = substr(strtoupper($action), 0, 50);
+
         $recordHash = self::computeRecordHash(
             previousHash: $previousHash,
             tenantId: $tenantId,
@@ -117,6 +119,8 @@ final class RecordAuditAction
         $resourceId = (string) ($data['model_id'] ?? Str::uuid7());
         $actorId = (string) ($data['actor_user_id'] ?? 'SYSTEM');
         $action = strtoupper((string) ($data['action'] ?? 'ACTION'));
+
+        $action = substr(strtoupper($action), 0, 50);
 
         $recordHash = self::computeRecordHash(
             previousHash: $previousHash,

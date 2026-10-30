@@ -18,6 +18,7 @@ class Invoice extends Model
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
+        'tenant_id',
         'contact_id',
         'invoice_type',
         'invoice_number',

@@ -18,6 +18,7 @@ class ExpenseAttachment extends Model
     protected $table = 'expense_attachments';
 
     protected $fillable = [
+        'tenant_id',
         'expense_id',
         'attachment_id',
         'disk',

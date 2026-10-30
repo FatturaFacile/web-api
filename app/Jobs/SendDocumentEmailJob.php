@@ -6,9 +6,11 @@ namespace App\Jobs;
 
 use App\Mail\DocumentMail;
 use App\Models\DocumentEmail;
+use App\Models\Tenant;
 use App\Models\WorkOrder;
 use App\Services\Documents\DocumentSummary;
 use App\Services\Pdf\DocumentPdfService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
@@ -34,6 +36,13 @@ class SendDocumentEmailJob implements ShouldQueue
 
         if ($email === null || $email->status === 'sent') {
             return;
+        }
+
+        if ($email->tenant_id) {
+            $tenant = Tenant::find($email->tenant_id);
+            if ($tenant !== null) {
+                app(TenantContext::class)->setTenant($tenant);
+            }
         }
 
         try {

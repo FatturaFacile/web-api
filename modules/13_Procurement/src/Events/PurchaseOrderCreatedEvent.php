@@ -16,6 +16,7 @@ final readonly class PurchaseOrderCreatedEvent implements DomainEventInterface
         public float $totalAmount,
         public string $tenantId,
         public string $companyId,
+        public string $currency = 'EUR',
         public string $eventId = '',
         public string $occurredAt = ''
     ) {}

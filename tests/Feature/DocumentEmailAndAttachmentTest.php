@@ -12,6 +12,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Documents\DocumentSummary;
 use App\Services\Pdf\DocumentPdfService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Mail;
@@ -35,6 +36,8 @@ beforeEach(function (): void {
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $this->user = User::create(['name' => 'Leonardo', 'email' => 'leo@fatturafacile.com', 'password' => bcrypt('secret123'), 'locale' => 'en']);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
@@ -159,7 +162,9 @@ test('files are stored privately, listed without their path, downloaded and dele
 
 test('attachments reject dangerous file types, unknown targets and records of other tenants', function (): void {
     $other = Tenant::create(['name' => 'Other SRL', 'legal_name' => 'Other SRL', 'country' => 'IT', 'default_currency' => 'EUR']);
+    app(TenantContext::class)->setTenant($other);
     $foreign = Contact::create(['tenant_id' => $other->id, 'company_name' => 'Foreign Customer', 'country' => 'IT']);
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $post = fn (array $override) => docApi()->postJson('/api/v1/attachments', array_merge([
         'attachable_type' => 'contact', 'attachable_id' => $this->contact->id,

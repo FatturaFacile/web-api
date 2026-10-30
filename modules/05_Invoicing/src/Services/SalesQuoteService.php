@@ -170,7 +170,11 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
             quoteId: (string) $quote->id,
             salesOrderId: null,
             tenantId: (string) $quote->tenant_id,
-            companyId: (string) $quote->tenant_id
+            companyId: (string) $quote->tenant_id,
+            quoteNumber: (string) ($quote->quote_number ?? $quote->number ?? ''),
+            customerId: (string) ($quote->contact_id ?? $quote->customer_id ?? ''),
+            totalAmount: (float) ($quote->total_amount ?? $quote->total_gross ?? 0.0),
+            salesQuoteId: (string) $quote->id
         ));
 
         return $quote;

@@ -57,16 +57,21 @@ final readonly class CRMCustomerServiceListener
 
         $contractNumber = 'SC-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
+        $quoteNumber = $event->quoteNumber ?? $event->quoteId;
+        $customerId = $event->customerId ?? (string) Str::uuid7();
+        $totalAmount = (float) ($event->totalAmount ?? 0.0);
+        $quoteId = $event->salesQuoteId ?? $event->quoteId;
+
         $contract = ServiceContract::create([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'contract_number' => $contractNumber,
-            'title' => 'Service Agreement - Quote '.$event->quoteNumber,
-            'customer_id' => $event->customerId,
+            'title' => 'Service Agreement - Quote '.$quoteNumber,
+            'customer_id' => $customerId,
             'status' => 'active',
             'start_date' => now()->toDateString(),
             'end_date' => now()->addYear()->toDateString(),
-            'annual_value' => $event->totalAmount,
+            'annual_value' => $totalAmount,
             'currency' => 'EUR',
             'auto_renew' => true,
         ]);
@@ -75,7 +80,7 @@ final readonly class CRMCustomerServiceListener
             'ESM_SERVICE_CONTRACT_CREATED_FROM_SALES_QUOTE',
             $contract,
             null,
-            ['quote_id' => $event->salesQuoteId, 'amount' => $event->totalAmount],
+            ['quote_id' => $quoteId, 'amount' => $totalAmount],
             'MODULE_17_ESM'
         );
     }

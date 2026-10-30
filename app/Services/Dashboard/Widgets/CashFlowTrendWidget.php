@@ -7,6 +7,7 @@ namespace App\Services\Dashboard\Widgets;
 use App\Models\PassiveInvoice;
 use App\Models\Payment;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Money in (customer payments by payment date) against money out (paid supplier invoices by due date, credit notes
@@ -44,7 +45,7 @@ class CashFlowTrendWidget extends AbstractDashboardWidget
             ->where('type', 'payment')
             ->whereBetween('paid_at', [$first->toDateString(), $last->toDateString()])
             ->selectRaw("{$this->monthBucket('paid_at')} as bucket, SUM(amount) as total")
-            ->groupBy('bucket')
+            ->groupBy(DB::raw($this->monthBucket('paid_at')))
             ->pluck('total', 'bucket');
 
         $outflow = PassiveInvoice::query()
@@ -52,7 +53,7 @@ class CashFlowTrendWidget extends AbstractDashboardWidget
             ->where('document_type', '!=', 'TD04')
             ->whereRaw('COALESCE(due_date, date) BETWEEN ? AND ?', [$first->toDateString(), $last->toDateString()])
             ->selectRaw("{$this->monthBucket('COALESCE(due_date, date)')} as bucket, SUM(total_amount) as total")
-            ->groupBy('bucket')
+            ->groupBy(DB::raw($this->monthBucket('COALESCE(due_date, date)')))
             ->pluck('total', 'bucket');
 
         $series = [];

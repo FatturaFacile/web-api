@@ -62,7 +62,7 @@ final class ProcurementService implements ProcurementServiceInterface
                 'currency' => $dto->currency,
                 'payment_terms_code' => $dto->paymentTermsCode,
                 'incoterms' => $dto->incoterms,
-                'status' => $dto->isApprovedVendor ? 'approved' : 'draft',
+                'status' => $dto->status ?? ($dto->isApprovedVendor ? 'approved' : 'active'),
                 'is_approved_vendor' => $dto->isApprovedVendor,
                 'credit_limit' => $dto->creditLimit,
                 'rating' => $dto->rating,
@@ -127,7 +127,7 @@ final class ProcurementService implements ProcurementServiceInterface
             $lineNum = 1;
 
             foreach ($dto->lines as $line) {
-                $qty = (float) $line['quantity_requested'];
+                $qty = (float) ($line['quantity_requested'] ?? $line['quantity'] ?? 1.0);
                 $price = (float) $line['estimated_unit_price'];
                 $lineTotal = round($qty * $price, 2);
                 $totalEstimated += $lineTotal;
@@ -140,7 +140,7 @@ final class ProcurementService implements ProcurementServiceInterface
                     'supplier_catalog_id' => $line['supplier_catalog_id'] ?? null,
                     'description' => $line['description'],
                     'quantity_requested' => $qty,
-                    'uom' => $line['uom'],
+                    'uom' => $line['uom'] ?? 'PCE',
                     'estimated_unit_price' => $price,
                     'estimated_total_price' => $lineTotal,
                     'suggested_supplier_id' => $line['suggested_supplier_id'] ?? null,
@@ -212,7 +212,6 @@ final class ProcurementService implements ProcurementServiceInterface
                 'order_number' => $poNumber,
                 'order_type' => $dto->orderType,
                 'status' => 'draft',
-                'order_date' => $dto->orderDate,
                 'date' => $dto->orderDate,
                 'expected_delivery_date' => $dto->expectedDeliveryDate,
                 'delivery_due_date' => $dto->expectedDeliveryDate,

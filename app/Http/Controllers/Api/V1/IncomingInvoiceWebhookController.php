@@ -4,19 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Actions\Purchases\ReceivePassiveInvoice;
+use App\Actions\Purchases\ProcessIncomingInvoiceWebhook;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Sdi\ReceiveIncomingInvoiceRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\EiInboundLog;
 use App\Models\Tenant;
 use App\Services\ItalianSdi\FatturaPaParser;
-use App\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -27,8 +25,7 @@ class IncomingInvoiceWebhookController extends Controller
 
     public function __construct(
         private readonly FatturaPaParser $parser,
-        private readonly ReceivePassiveInvoice $receive,
-        private readonly TenantContext $tenantContext,
+        private readonly ProcessIncomingInvoiceWebhook $processWebhook,
     ) {}
 
     /**
@@ -123,31 +120,19 @@ class IncomingInvoiceWebhookController extends Controller
                 }
 
                 try {
-                    return DB::transaction(function () use ($request, $xml, $provider, $fingerprint, $tenant): JsonResponse {
-                        $results = $this->tenantContext->runWithTenant(
-                            $tenant,
-                            fn (): array => $this->receive->execute($xml, $request->validated('file_name'))
-                        );
+                    $results = $this->processWebhook->execute(
+                        $tenant,
+                        $xml,
+                        $request->validated('file_name'),
+                        $provider,
+                        $fingerprint
+                    );
 
-                        EiInboundLog::create([
-                            'tenant_id' => $tenant->id,
-                            'provider' => $provider,
-                            'event_type' => 'INVOICE_RECEIVED',
-                            'fingerprint' => $fingerprint,
-                            'payload' => [
-                                'file_name' => $request->validated('file_name'),
-                                'passive_invoice_ids' => array_map(fn (array $result): string => $result['invoice']->id, $results),
-                            ],
-                            'status' => 'processed',
-                            'processed_at' => now(),
-                        ]);
-
-                        return $this->successResponse(
-                            ['status' => 'processed', 'duplicate' => false, 'documents' => count($results)],
-                            __('purchases.messages.webhook_received'),
-                            Response::HTTP_CREATED
-                        );
-                    }, 5);
+                    return $this->successResponse(
+                        ['status' => 'processed', 'duplicate' => false, 'documents' => count($results)],
+                        __('purchases.messages.webhook_received'),
+                        Response::HTTP_CREATED
+                    );
                 } catch (UniqueConstraintViolationException) {
                     // Safe recovery if concurrent request committed ahead in another worker
                     $existing = EiInboundLog::where('fingerprint', $fingerprint)->first();

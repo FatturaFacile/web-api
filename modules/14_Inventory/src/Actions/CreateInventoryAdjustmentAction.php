@@ -96,7 +96,8 @@ final readonly class CreateInventoryAdjustmentAction
                 netValuationChange: $totalValuationChange,
                 status: (string) $adjustment->status,
                 companyId: (string) ($adjustment->company_id ?? 'default'),
-                userId: $dto->userId
+                userId: $dto->userId,
+                tenantId: (string) ($adjustment->tenant_id ?? $tenantId)
             ));
 
             return $adjustment;

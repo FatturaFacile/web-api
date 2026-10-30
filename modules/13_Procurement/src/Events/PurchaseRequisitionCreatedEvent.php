@@ -9,16 +9,20 @@ use Illuminate\Support\Str;
 
 final readonly class PurchaseRequisitionCreatedEvent implements DomainEventInterface
 {
+    public float $totalEstimatedAmount;
+
     public function __construct(
         public string $requisitionId,
         public string $requisitionNumber,
-        public float $totalEstimatedAmount,
+        float|string $totalEstimatedAmount,
         public string $requestorUserId,
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
         public string $occurredAt = ''
-    ) {}
+    ) {
+        $this->totalEstimatedAmount = (float) $totalEstimatedAmount;
+    }
 
     public function getEventId(): string
     {
