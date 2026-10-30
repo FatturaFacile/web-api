@@ -72,10 +72,20 @@ jobs:
 
             docker compose pull app queue_worker scheduler
 
-            docker compose up -d --no-deps app queue_worker scheduler
+            docker compose stop postgres
+            docker compose rm -f -v postgres
 
-            docker compose exec -T app php artisan migrate --force
-            docker compose exec -T app php artisan db:seed --force
+            # docker compose down postgres
+            # docker volume rm -f api_fatturafacile_eu_db_data || true
+
+            docker compose up -d postgres app queue_worker scheduler
+
+            echo "Waiting for database to be ready..."
+            until docker compose exec -T postgres pg_isready -U "${DB_USERNAME:-postgres}"; do
+              sleep 2
+            done
+
+            docker compose exec -T app php artisan migrate --seed --force
 
             docker compose exec -T app php artisan config:clear
             docker compose exec -T app php artisan config:cache
