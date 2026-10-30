@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Jobs;
 
-use Carbon\Carbon;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -17,26 +16,23 @@ final class EvaluateSupplierOtifScoresJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
-        public readonly ?string $tenantId = null
-    ) {}
+        public readonly ?string $tenantId = null,
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(SupplierEvaluationServiceInterface $evaluationService): void
     {
-        $query = Supplier::query()->where('is_approved_vendor', true);
+        $query = Supplier::query()->where('status', 'active');
+
         if ($this->tenantId !== null) {
             $query->where('tenant_id', $this->tenantId);
         }
 
-        $now = Carbon::now();
-        $year = $now->year;
-        $quarter = $now->quarter;
-
-        $query->chunkById(100, function ($suppliers) use ($evaluationService, $year, $quarter) {
+        $query->chunkById(100, function ($suppliers) use ($evaluationService): void {
             foreach ($suppliers as $supplier) {
-                $evaluationService->generateQuarterlyScorecard($supplier, $year, $quarter);
+                $evaluationService->calculateOtifScore($supplier);
             }
         });
     }

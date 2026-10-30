@@ -16,15 +16,15 @@ final class ExecuteYearlyDepreciationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly string $tenantId,
         public readonly string $companyId,
         public readonly string $yearCode,
         public readonly string $ledgerType = 'statutory',
         public readonly ?string $actorUserId = null
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(DepreciationEngineServiceInterface $depreciationEngine): void
     {

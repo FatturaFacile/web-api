@@ -17,12 +17,12 @@ final class RecalculateInventoryValuationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly ?string $tenantId = null,
         public readonly string $valuationMethod = 'FIFO'
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(StockValuationServiceInterface $service): void
     {

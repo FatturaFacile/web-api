@@ -18,12 +18,12 @@ final class ProcessServiceContractRenewalsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly ?string $tenantId = null,
         public readonly int $advanceNoticeDays = 30
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(EventDispatcher $dispatcher, AuditLedgerInterface $auditLedger): void
     {
@@ -42,7 +42,10 @@ final class ProcessServiceContractRenewalsJob implements ShouldQueue
                 'SERVICE_CONTRACT_RENEWAL_WINDOW',
                 $contract,
                 null,
-                ['end_date' => $contract->end_date, 'contract_value' => $contract->contract_value],
+                [
+                    'end_date' => $contract->end_date,
+                    'contract_value' => $contract->contract_value,
+                ],
                 'MODULE_17_ESM'
             );
 

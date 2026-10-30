@@ -15,12 +15,12 @@ final class ProcessMonthlyLeaveAccrualsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly string $tenantId,
         public readonly int $fiscalYear
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(LeaveAndTimeServiceInterface $leaveService): void
     {

@@ -15,9 +15,10 @@ final class ExpireStaleReservationsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
-    public function __construct() {}
+    public function __construct()
+    {
+        $this->afterCommit();
+    }
 
     public function handle(StockReservationServiceInterface $service): void
     {

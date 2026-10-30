@@ -16,11 +16,11 @@ final class CheckExpiringSupplierContractsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly ?string $tenantId = null
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(): void
     {
@@ -34,7 +34,7 @@ final class CheckExpiringSupplierContractsJob implements ShouldQueue
             $query->where('tenant_id', $this->tenantId);
         }
 
-        $query->chunkById(100, function ($contracts) {
+        $query->chunkById(100, function ($contracts): void {
             foreach ($contracts as $contract) {
                 if (Carbon::now()->isAfter($contract->ends_at)) {
                     $contract->update(['status' => 'expired']);

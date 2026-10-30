@@ -15,12 +15,12 @@ final class ScanExpiringCertificationsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly string $tenantId,
         public readonly int $withinDays = 30
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(TrainingAndCertificationServiceInterface $trainingService): void
     {

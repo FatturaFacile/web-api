@@ -15,11 +15,11 @@ final class ScanSLABreachesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly ?string $tenantId = null
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(SLAManagementServiceInterface $slaService): void
     {

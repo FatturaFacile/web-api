@@ -16,16 +16,16 @@ final class ExecuteAutomatedThreeWayMatchJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly string $purchaseOrderId,
         public readonly string $purchaseReceiptId,
         public readonly string $passiveInvoiceId,
         public readonly float $invoiceTotalAmount,
         public readonly string $tenantId,
-        public readonly ?string $companyId = null
-    ) {}
+        public readonly ?string $companyId = null,
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(ThreeWayMatchingServiceInterface $matchingService): void
     {
@@ -35,7 +35,7 @@ final class ExecuteAutomatedThreeWayMatchJob implements ShouldQueue
             passiveInvoiceId: $this->passiveInvoiceId,
             invoiceTotalAmount: $this->invoiceTotalAmount,
             tenantId: $this->tenantId,
-            companyId: $this->companyId
+            companyId: $this->companyId,
         );
 
         $matchingService->executeMatch($dto);

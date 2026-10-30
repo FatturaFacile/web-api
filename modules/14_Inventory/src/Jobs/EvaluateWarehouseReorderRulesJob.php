@@ -16,11 +16,11 @@ final class EvaluateWarehouseReorderRulesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public bool $afterCommit = true;
-
     public function __construct(
         public readonly ?string $tenantId = null
-    ) {}
+    ) {
+        $this->afterCommit();
+    }
 
     public function handle(InventoryReplenishmentServiceInterface $service): void
     {
