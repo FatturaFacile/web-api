@@ -8,6 +8,16 @@ use Illuminate\Support\Str;
 
 trait HasUuidV7
 {
+    public function initializeHasUuidV7(): void
+    {
+        $this->keyType = 'string';
+        $this->incrementing = false;
+
+        if (empty($this->attributes[$this->getKeyName()])) {
+            $this->attributes[$this->getKeyName()] = (string) Str::uuid7();
+        }
+    }
+
     public static function bootHasUuidV7(): void
     {
         static::creating(function ($model): void {

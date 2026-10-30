@@ -18,7 +18,12 @@ final class InventoryDemoDataSeeder extends Seeder
         $companyId = Schema::hasTable('companies') ? DB::table('companies')->value('id') : null;
         $companyId = $companyId ?? '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6c';
 
+        $this->call(InventoryCategorySeeder::class);
+
         $mainWarehouse = DB::table('warehouses')->where('code', 'WH-MAIN')->first();
+        if (! $mainWarehouse) {
+            $mainWarehouse = DB::table('warehouses')->first();
+        }
         if (! $mainWarehouse) {
             return;
         }
@@ -99,7 +104,7 @@ final class InventoryDemoDataSeeder extends Seeder
                     'id' => $itemId,
                     'tenant_id' => $tenantId,
                     'company_id' => $companyId,
-                    'category_id' => $itemData['category_id'],
+                    'category_id' => $itemData['category_id'] ?? DB::table('stock_item_categories')->value('id'),
                     'name' => $itemData['name'],
                     'uom' => $itemData['uom'],
                     'barcode_ean13' => $itemData['barcode_ean13'],

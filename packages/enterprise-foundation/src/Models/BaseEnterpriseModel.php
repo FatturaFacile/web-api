@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 abstract class BaseEnterpriseModel extends Model
 {
@@ -33,6 +34,31 @@ abstract class BaseEnterpriseModel extends Model
     public $incrementing = false;
 
     protected $guarded = ['id', 'created_at', 'updated_at', 'deleted_at'];
+
+    public function __construct(array $attributes = [])
+    {
+        if (! isset($attributes['id'])) {
+            $attributes['id'] = (string) Str::uuid7();
+        }
+
+        parent::__construct($attributes);
+
+        $this->attributes['id'] = $attributes['id'];
+    }
+
+    public function setAttribute($key, $value)
+    {
+        if ($key === $this->getKeyName() && $this->exists && ! empty($this->getAttributeFromArray($key))) {
+            return $this;
+        }
+
+        return parent::setAttribute($key, $value);
+    }
+
+    public function getIncrementing(): bool
+    {
+        return false;
+    }
 
     /**
      * Create a new factory instance for the enterprise model.

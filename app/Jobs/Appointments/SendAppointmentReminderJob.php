@@ -18,7 +18,7 @@ class SendAppointmentReminderJob implements ShouldQueue
 
     public function __construct(public readonly Appointment $appointment)
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(): void

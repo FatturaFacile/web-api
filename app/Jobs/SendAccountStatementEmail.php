@@ -24,7 +24,7 @@ class SendAccountStatementEmail implements ShouldQueue
 
     public function __construct(public readonly string $documentEmailId, public readonly string $asOf)
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(TenantContext $tenantContext, ContactInsights $insights): void

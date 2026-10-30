@@ -21,7 +21,7 @@ final class ProcessAuditLogJob implements ShouldQueue
     public function __construct(
         public array $data
     ) {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(RecordAuditAction $action): void

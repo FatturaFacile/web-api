@@ -27,7 +27,7 @@ class SendDocumentEmailJob implements ShouldQueue
 
     public function __construct(public readonly string $documentEmailId)
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(DocumentSummary $summary, DocumentPdfService $pdfService): void

@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Models\Warehouse;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionExecutionServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
@@ -77,11 +78,14 @@ class EnterpriseDemoMasterSeeder extends Seeder
             DashboardLayoutSeeder::class,
         ]);
 
+        app(TenantContext::class)->setTenant($tenant);
+
         // 2. Ensure Integrated Customer, Products & Warehouse Master Data for tenant_demo
         $warehouse = Warehouse::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'Milano Plant Main Warehouse'],
+            ['tenant_id' => $tenant->id, 'code' => 'WH-MIL-01'],
             [
-                'code' => 'WH-MIL-01',
+                'id' => (string) Str::uuid7(),
+                'name' => 'Milano Plant Main Warehouse',
                 'is_active' => true,
                 'address' => 'Via dell\'Industria 45, Milano',
             ]
@@ -90,6 +94,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $customer = Contact::firstOrCreate(
             ['tenant_id' => $tenant->id, 'company_name' => 'Acme Industrial Solutions SpA'],
             [
+                'id' => (string) Str::uuid7(),
                 'type' => 'client',
                 'vat_number' => 'IT01234987650',
                 'fiscal_code' => '01234987650',
@@ -102,6 +107,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $supplier = Contact::firstOrCreate(
             ['tenant_id' => $tenant->id, 'company_name' => 'Alloy & Steel Metals Europe Ltd'],
             [
+                'id' => (string) Str::uuid7(),
                 'type' => 'supplier',
                 'vat_number' => 'IT05432198760',
                 'fiscal_code' => '05432198760',
@@ -114,6 +120,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $product = Product::firstOrCreate(
             ['tenant_id' => $tenant->id, 'sku' => 'FG-PUMP-HD500'],
             [
+                'id' => (string) Str::uuid7(),
                 'name' => 'Heavy Duty Industrial Pump HD-500',
                 'sale_price' => 2450.00,
                 'cost_price' => 1120.00,
@@ -127,6 +134,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $quote = Quote::firstOrCreate(
             ['tenant_id' => $tenant->id, 'quote_number' => 'QT-DEMO-2026-001'],
             [
+                'id' => (string) Str::uuid7(),
                 'contact_id' => $customer->id,
                 'date' => now()->toDateString(),
                 'status' => 'accepted',
@@ -140,8 +148,9 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $salesOrder = SalesOrder::firstOrCreate(
             ['tenant_id' => $tenant->id, 'order_number' => 'SO-DEMO-2026-001'],
             [
+                'id' => (string) Str::uuid7(),
                 'contact_id' => $customer->id,
-                'order_date' => now()->toDateString(),
+                'date' => now()->toDateString(),
                 'status' => 'confirmed',
                 'currency' => 'EUR',
                 'total_net' => 24500.00,
@@ -153,8 +162,9 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $invoice = Invoice::firstOrCreate(
             ['tenant_id' => $tenant->id, 'invoice_number' => 'INV-DEMO-2026-001'],
             [
+                'id' => (string) Str::uuid7(),
                 'contact_id' => $customer->id,
-                'invoice_date' => now()->toDateString(),
+                'date' => now()->toDateString(),
                 'payment_status' => 'paid',
                 'invoice_type' => 'standard',
                 'currency' => 'EUR',
@@ -168,6 +178,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         Payment::firstOrCreate(
             ['tenant_id' => $tenant->id, 'invoice_id' => $invoice->id],
             [
+                'id' => (string) Str::uuid7(),
                 'amount' => 29890.00,
                 'paid_at' => now()->toDateString(),
                 'payment_method' => 'MP05',
@@ -185,6 +196,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $rawMaterial = MfgItem::firstOrCreate(
             ['tenant_id' => $tenant->id, 'item_code' => 'RM-ST-CASTING'],
             [
+                'id' => (string) Str::uuid7(),
                 'name' => 'High Grade Stainless Casting 316L',
                 'item_type' => 'raw_material',
                 'standard_cost' => 120.00,
@@ -197,6 +209,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $finishedGood = MfgItem::firstOrCreate(
             ['tenant_id' => $tenant->id, 'item_code' => 'FG-PUMP-HD500'],
             [
+                'id' => (string) Str::uuid7(),
                 'name' => 'Heavy Duty Industrial Pump HD-500',
                 'item_type' => 'finished_good',
                 'standard_cost' => 1120.00,
@@ -221,6 +234,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $workCenter = MfgWorkCenter::firstOrCreate(
             ['tenant_id' => $tenant->id, 'work_center_code' => 'WC-MILL-01'],
             [
+                'id' => (string) Str::uuid7(),
                 'name' => 'Heavy Milling & Turning Station',
                 'hourly_cost_rate' => 45.00,
                 'hourly_overhead_rate' => 25.00,
@@ -270,6 +284,7 @@ class EnterpriseDemoMasterSeeder extends Seeder
         $plan = MfgQualityPlan::firstOrCreate(
             ['tenant_id' => $tenant->id, 'plan_code' => 'QP-PUMP-FINAL'],
             [
+                'id' => (string) Str::uuid7(),
                 'mfg_item_id' => $finishedGood->id,
                 'name' => 'Pump Hydrostatic & Dimensional Verification',
                 'inspection_type' => 'final',

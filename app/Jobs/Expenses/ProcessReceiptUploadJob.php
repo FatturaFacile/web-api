@@ -19,7 +19,7 @@ class ProcessReceiptUploadJob implements ShouldQueue
 
     public function __construct(public readonly ExpenseAttachment $expenseAttachment)
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     /**

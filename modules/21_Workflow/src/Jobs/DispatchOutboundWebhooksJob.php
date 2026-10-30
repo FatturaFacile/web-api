@@ -18,7 +18,7 @@ final class DispatchOutboundWebhooksJob implements ShouldQueue
 
     public function __construct()
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(WorkflowWebhookDispatcherService $dispatcher): void

@@ -20,7 +20,7 @@ class GenerateServiceReportPdfJob implements ShouldQueue
 
     public function __construct(public readonly ServiceReport $serviceReport)
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(DocumentPdfService $pdfService): void

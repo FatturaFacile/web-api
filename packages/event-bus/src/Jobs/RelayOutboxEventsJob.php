@@ -21,7 +21,7 @@ final class RelayOutboxEventsJob implements ShouldQueue
 
     public function __construct()
     {
-        $this->afterCommit = true;
+        $this->afterCommit();
     }
 
     public function handle(): void
