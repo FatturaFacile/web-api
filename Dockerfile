@@ -1,6 +1,5 @@
 FROM php:8.5-fpm-alpine AS base
 
-# Dipendenze di sistema e runtime PHP
 RUN apk add --no-cache \
     curl \
     libpng-dev \
@@ -20,25 +19,23 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Cache dipendenze Composer
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --no-interaction --prefer-dist --no-scripts --no-autoloader
 
-# Copia granulare delle directory per risolvere il security hotspot di Sonar (evita COPY . .)
 COPY --chown=www-data:www-data app/ app/
 COPY --chown=www-data:www-data bootstrap/ bootstrap/
 COPY --chown=www-data:www-data config/ config/
 COPY --chown=www-data:www-data database/ database/
 COPY --chown=www-data:www-data lang/ lang/
+COPY --chown=www-data:www-data modules/ modules/
+COPY --chown=www-data:www-data packages/ packages/
 COPY --chown=www-data:www-data public/ public/
 COPY --chown=www-data:www-data resources/ resources/
 COPY --chown=www-data:www-data routes/ routes/
 COPY --chown=www-data:www-data artisan ./
 
-# Generazione autoloader ottimizzato per produzione
 RUN composer dump-autoload --optimize --no-dev --no-interaction
 
-# Creazione cartelle di runtime con permessi per l'utente non-privileged
 RUN mkdir -p /var/www/html/storage/logs \
              /var/www/html/storage/framework/cache/data \
              /var/www/html/storage/framework/sessions \
