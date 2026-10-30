@@ -9,7 +9,7 @@ on:
 jobs:
   test-and-lint:
     name: Code Quality & Automated Tests
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     services:
       postgres:
@@ -30,7 +30,7 @@ jobs:
 
     steps:
       - name: Checkout Codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup PHP 8.5 Runtime
         uses: shivammathur/setup-php@v2
@@ -43,7 +43,7 @@ jobs:
         run: composer validate --strict
 
       - name: Cache Composer Dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
