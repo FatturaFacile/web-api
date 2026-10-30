@@ -21,7 +21,7 @@ final class StoreFiscalPeriodRequest extends FormRequest
         return [
             'fiscal_year_id' => ['required', 'uuid', 'exists:fiscal_years,id'],
             'period_number' => ['required', 'integer', 'between:1,13'],
-            'period_name' => ['required', 'string', 'max:50'],
+            'period_name' => ['required', 'string', 'max:100'],
             'start_date' => ['required', 'date'],
             'end_date' => ['required', 'date', 'after:start_date'],
         ];
