@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mail;
 
+use App\Models\Invoice;
 use App\Models\PaymentReminder;
 use App\Services\Pdf\RenderedPdf;
 use Illuminate\Mail\Mailable;
@@ -30,7 +31,7 @@ class PaymentReminderMail extends Mailable
     public function envelope(): Envelope
     {
         $level = min(max($this->reminder->level, 1), 3);
-        $invoice = $this->reminder->invoice ?? ($this->reminder->invoice_id ? \App\Models\Invoice::withoutGlobalScopes()->find($this->reminder->invoice_id) : null);
+        $invoice = $this->reminder->invoice ?? ($this->reminder->invoice_id ? Invoice::withoutGlobalScopes()->find($this->reminder->invoice_id) : null);
         $number = (string) ($invoice?->invoice_number ?? '');
 
         $subject = __("emails.payment_reminder.subject.level_{$level}", [

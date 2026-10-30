@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services\SwissQrBill;
 
 use App\Exceptions\QrBillGenerationException;
+use App\Models\Contact;
 use App\Models\ContactAddress;
 use App\Models\Invoice;
+use App\Models\Tenant;
 use Illuminate\Support\Str;
 use Sprain\SwissQrBill\DataGroup\Element\AdditionalInformation;
 use Sprain\SwissQrBill\DataGroup\Element\CreditorInformation;
@@ -49,11 +51,11 @@ class SwissQrBillService
         $invoice->loadMissing(['tenant', 'contact.addresses', 'qrBillData']);
 
         if ($invoice->tenant === null && $invoice->tenant_id) {
-            $invoice->setRelation('tenant', \App\Models\Tenant::find($invoice->tenant_id));
+            $invoice->setRelation('tenant', Tenant::find($invoice->tenant_id));
         }
 
         if ($invoice->contact === null && $invoice->contact_id) {
-            $invoice->setRelation('contact', \App\Models\Contact::withoutGlobalScopes()->with('addresses')->find($invoice->contact_id));
+            $invoice->setRelation('contact', Contact::withoutGlobalScopes()->with('addresses')->find($invoice->contact_id));
         }
 
         if ($invoice->tenant === null) {

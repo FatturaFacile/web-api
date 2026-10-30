@@ -41,7 +41,7 @@ final class WorkflowInstance extends BaseEnterpriseModel
 
     protected static function booted(): void
     {
-        static::saving(function (WorkflowInstance $instance): void {
+        self::saving(function (WorkflowInstance $instance): void {
             if (empty($instance->attributes['approvable_type']) && ! empty($instance->attributes['subject_type'])) {
                 $instance->attributes['approvable_type'] = $instance->attributes['subject_type'];
                 unset($instance->attributes['subject_type']);
