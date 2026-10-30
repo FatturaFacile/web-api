@@ -9,17 +9,41 @@ use Illuminate\Support\Str;
 
 final readonly class ThreeWayMatchPassedEvent implements DomainEventInterface
 {
+    public string $receiptId;
+
+    public string $passiveInvoiceId;
+
+    public float $invoiceTotal;
+
+    public string $tenantId;
+
+    public string $companyId;
+
     public function __construct(
         public string $matchLogId,
         public string $purchaseOrderId,
-        public string $receiptId,
-        public string $passiveInvoiceId,
-        public float $invoiceTotal,
-        public string $tenantId,
-        public string $companyId,
+        string $receiptId,
+        float|string $passiveInvoiceId,
+        float|string $invoiceTotal = 0.0,
+        string $tenantId = '',
+        string $companyId = '',
         public string $eventId = '',
         public string $occurredAt = ''
-    ) {}
+    ) {
+        if (is_numeric($passiveInvoiceId)) {
+            $this->receiptId = $receiptId;
+            $this->passiveInvoiceId = '';
+            $this->invoiceTotal = (float) $passiveInvoiceId;
+            $this->tenantId = (string) $invoiceTotal;
+            $this->companyId = $tenantId;
+        } else {
+            $this->receiptId = $receiptId;
+            $this->passiveInvoiceId = (string) $passiveInvoiceId;
+            $this->invoiceTotal = (float) $invoiceTotal;
+            $this->tenantId = $tenantId;
+            $this->companyId = $companyId;
+        }
+    }
 
     public function getEventId(): string
     {
@@ -56,6 +80,9 @@ final readonly class ThreeWayMatchPassedEvent implements DomainEventInterface
         return $this->occurredAt !== '' ? $this->occurredAt : now()->toIso8601String();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

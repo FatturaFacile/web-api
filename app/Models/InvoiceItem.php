@@ -24,6 +24,15 @@ class InvoiceItem extends Model
         'line_total',
     ];
 
+    protected static function booted(): void
+    {
+        static::creating(function (InvoiceItem $item): void {
+            if (empty($item->tenant_id) && ! empty($item->invoice_id)) {
+                $item->tenant_id = Invoice::withoutGlobalScopes()->where('id', $item->invoice_id)->value('tenant_id');
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

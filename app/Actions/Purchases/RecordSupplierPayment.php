@@ -57,7 +57,11 @@ class RecordSupplierPayment
     public function recalculate(PassiveInvoice $invoice): PassiveInvoice
     {
         return DB::transaction(function () use ($invoice): PassiveInvoice {
-            $invoice = PassiveInvoice::lockForUpdate()->findOrFail($invoice->id);
+            $invoice = PassiveInvoice::withoutGlobalScopes()
+                ->where('id', $invoice->id)
+                ->when($invoice->tenant_id, fn ($query, $tenantId) => $query->where('tenant_id', $tenantId))
+                ->lockForUpdate()
+                ->firstOrFail();
             $paid = round((float) $invoice->payments()->where('type', '!=', 'bank_fee')->sum('amount'), 2);
 
             $invoice->total_paid = $paid;

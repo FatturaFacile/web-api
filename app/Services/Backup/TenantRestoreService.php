@@ -359,67 +359,79 @@ class TenantRestoreService
         Tenant::query()->lockForUpdate()->findOrFail($tenant->id);
         $this->deferForeignKeyChecks();
 
-        $secrets = $this->snapshotSecrets($scopes);
+        try {
+            $secrets = $this->snapshotSecrets($scopes);
 
-        foreach (array_reverse(array_keys($scopes)) as $table) {
-            $scopes[$table](DB::table($table))->delete();
-        }
-
-        $rows = 0;
-        $skipped = 0;
-        $tables = 0;
-        $table = null;
-        $schema = [];
-        $pending = [];
-        $buffer = [];
-
-        $flush = function () use (&$pending, &$table, &$schema, &$buffer, &$rows): void {
-            if ($table === null) {
-                return;
+            // Delete child tables referencing invoices/orders/contacts first to prevent FK constraint violations
+            $priorityChildren = ['payments', 'invoice_items', 'payment_reminders', 'sdi_logs', 'delivery_notes', 'sales_orders'];
+            foreach ($priorityChildren as $child) {
+                if (isset($scopes[$child])) {
+                    $scopes[$child](DB::table($child))->delete();
+                }
             }
 
-            $pending = $schema['self'] === null ? $pending : $this->parentsFirst($pending, $schema['self']);
-            $perInsert = max(1, intdiv(self::INSERT_VARIABLE_LIMIT, max(1, count($schema['columns']))));
-
-            foreach (array_chunk($pending, $perInsert) as $chunk) {
-                DB::table($table)->insert($chunk);
+            foreach (array_reverse(array_keys($scopes)) as $table) {
+                $scopes[$table](DB::table($table))->delete();
             }
 
-            $rows += count($pending);
+            $rows = 0;
+            $skipped = 0;
+            $tables = 0;
+            $table = null;
+            $schema = [];
             $pending = [];
             $buffer = [];
-        };
 
-        foreach ($this->readData($zip, $tenant) as [$name, $row]) {
-            if ($name !== $table) {
-                $flush();
-                $table = $name;
-                $schema = $this->tableSchema($name, $scopes);
-                $tables++;
+            $flush = function () use (&$pending, &$table, &$schema, &$buffer, &$rows): void {
+                if ($table === null) {
+                    return;
+                }
+
+                $pending = $schema['self'] === null ? $pending : $this->parentsFirst($pending, $schema['self']);
+                $perInsert = max(1, intdiv(self::INSERT_VARIABLE_LIMIT, max(1, count($schema['columns']))));
+
+                foreach (array_chunk($pending, $perInsert) as $chunk) {
+                    DB::table($table)->insert($chunk);
+                }
+
+                $rows += count($pending);
+                $pending = [];
+                $buffer = [];
+            };
+
+            foreach ($this->readData($zip, $tenant) as [$name, $row]) {
+                if ($name !== $table) {
+                    $flush();
+                    $table = $name;
+                    $schema = $this->tableSchema($name, $scopes);
+                    $tables++;
+                }
+
+                if ($row === null) {
+                    continue;
+                }
+
+                $prepared = $this->prepareRow($name, $row, $schema, $tenant, $secrets[$name] ?? []);
+
+                if ($prepared === null) {
+                    $skipped++;
+
+                    continue;
+                }
+
+                $pending[] = $prepared;
+
+                if ($schema['self'] === null && count($pending) >= 200) {
+                    $flush();
+                }
             }
 
-            if ($row === null) {
-                continue;
-            }
+            $flush();
 
-            $prepared = $this->prepareRow($name, $row, $schema, $tenant, $secrets[$name] ?? []);
-
-            if ($prepared === null) {
-                $skipped++;
-
-                continue;
-            }
-
-            $pending[] = $prepared;
-
-            if ($schema['self'] === null && count($pending) >= 200) {
-                $flush();
-            }
+            return ['tables' => $tables, 'rows' => $rows, 'skipped_rows' => $skipped];
+        } finally {
+            $this->restoreForeignKeyChecks();
         }
-
-        $flush();
-
-        return ['tables' => $tables, 'rows' => $rows, 'skipped_rows' => $skipped];
     }
 
     /**
@@ -430,7 +442,16 @@ class TenantRestoreService
     {
         match (DB::connection()->getDriverName()) {
             'sqlite' => DB::statement('PRAGMA defer_foreign_keys = ON'),
-            'pgsql' => DB::statement('SET CONSTRAINTS ALL DEFERRED'),
+            'pgsql' => DB::statement("SET CONSTRAINTS ALL DEFERRED; SET session_replication_role = 'replica'"),
+            default => null,
+        };
+    }
+
+    private function restoreForeignKeyChecks(): void
+    {
+        match (DB::connection()->getDriverName()) {
+            'sqlite' => null,
+            'pgsql' => DB::statement("SET session_replication_role = 'origin'"),
             default => null,
         };
     }

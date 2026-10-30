@@ -97,7 +97,7 @@ class TenantBackupController extends Controller
     )]
     public function show(string $id): JsonResponse
     {
-        return $this->successResponse(new TenantBackupResource(TenantBackup::findOrFail($id)), __('backup.messages.retrieved'));
+        return $this->successResponse(new TenantBackupResource($this->findBackup($id)), __('backup.messages.retrieved'));
     }
 
     /**
@@ -122,7 +122,7 @@ class TenantBackupController extends Controller
     )]
     public function download(string $id): StreamedResponse|JsonResponse
     {
-        $backup = TenantBackup::findOrFail($id);
+        $backup = $this->findBackup($id);
 
         if (! $backup->isCompleted()) {
             return $this->problemDetailsResponse(__('backup.problem_titles.download'), __('backup.errors.not_ready'), Response::HTTP_CONFLICT);
@@ -157,7 +157,7 @@ class TenantBackupController extends Controller
     )]
     public function restore(string $id): JsonResponse
     {
-        $backup = TenantBackup::findOrFail($id);
+        $backup = $this->findBackup($id);
 
         if (! $backup->isCompleted()) {
             return $this->problemDetailsResponse(__('backup.problem_titles.restore'), __('backup.errors.not_restorable'), Response::HTTP_CONFLICT);
@@ -233,7 +233,7 @@ class TenantBackupController extends Controller
     )]
     public function destroy(string $id): JsonResponse
     {
-        $backup = TenantBackup::findOrFail($id);
+        $backup = $this->findBackup($id);
 
         if ($backup->status === TenantBackup::PROCESSING) {
             return $this->problemDetailsResponse(__('backup.problem_titles.delete'), __('backup.errors.in_progress'), Response::HTTP_CONFLICT);
@@ -242,5 +242,10 @@ class TenantBackupController extends Controller
         $this->backups->delete($backup);
 
         return $this->successResponse(null, __('backup.messages.deleted'));
+    }
+
+    private function findBackup(string $id): TenantBackup
+    {
+        return TenantBackup::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
     }
 }

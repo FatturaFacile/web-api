@@ -39,17 +39,26 @@ class PushStockToEcommerceJob implements ShouldQueue
             return;
         }
 
-        $tenantContext->runWithTenant($tenant, function () use ($manager, $stock): void {
+        $tenantContext->runWithTenant($tenant, function () use ($tenant, $manager, $stock): void {
             $channels = EcommerceChannel::query()
+                ->where('tenant_id', $tenant->id)
                 ->where('is_active', true)
                 ->where('sync_stock_enabled', true)
                 ->when($this->channelId !== null, fn ($query) => $query->whereKey($this->channelId))
                 ->get();
 
             foreach ($channels as $channel) {
+                if ($channel->tenant_id !== $tenant->id || ! $channel->is_active || ! $channel->sync_stock_enabled) {
+                    continue;
+                }
+
                 $driver = $manager->driver($channel);
 
                 foreach ($this->products($channel) as $product) {
+                    if ($product->tenant_id !== $tenant->id || ! $product->track_inventory) {
+                        continue;
+                    }
+
                     try {
                         $driver->pushStock($product, $stock->quantityOf($product->id));
                     } catch (EcommerceException $e) {
@@ -70,14 +79,26 @@ class PushStockToEcommerceJob implements ShouldQueue
     private function products(EcommerceChannel $channel): iterable
     {
         if ($this->productId !== null) {
-            return Product::query()->whereKey($this->productId)->get();
+            $isMapped = EcommerceMapping::withoutGlobalScopes()
+                ->where('channel_id', $channel->id)
+                ->where('tenant_id', $channel->tenant_id)
+                ->where('local_id', $this->productId)
+                ->whereIn('entity_type', ['product', 'product_variant'])
+                ->exists();
+
+            if (! $isMapped) {
+                return [];
+            }
+
+            return Product::query()->whereKey($this->productId)->where('tenant_id', $channel->tenant_id)->get();
         }
 
         $ids = EcommerceMapping::query()
             ->where('channel_id', $channel->id)
+            ->where('tenant_id', $channel->tenant_id)
             ->whereIn('entity_type', ['product', 'product_variant'])
             ->pluck('local_id');
 
-        return Product::query()->whereIn('id', $ids)->where('track_inventory', true)->get();
+        return Product::query()->whereIn('id', $ids)->where('tenant_id', $channel->tenant_id)->where('track_inventory', true)->get();
     }
 }

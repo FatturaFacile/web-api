@@ -17,7 +17,6 @@ class Contact extends Model
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'tenant_id',
         'type',
         'country',
         'company_name',

@@ -11,17 +11,38 @@ final readonly class PurchaseRequisitionCreatedEvent implements DomainEventInter
 {
     public float $totalEstimatedAmount;
 
+    public string $requestorUserId;
+
+    public string $tenantId;
+
+    public string $companyId;
+
+    public string $currency;
+
     public function __construct(
         public string $requisitionId,
         public string $requisitionNumber,
-        float|string $totalEstimatedAmount,
-        public string $requestorUserId,
-        public string $tenantId,
-        public string $companyId,
+        float|string $totalEstimatedAmount = 0.0,
+        string|float $requestorUserId = '',
+        string $tenantId = '',
+        string $companyId = '',
+        string $currency = 'EUR',
         public string $eventId = '',
         public string $occurredAt = ''
     ) {
-        $this->totalEstimatedAmount = (float) $totalEstimatedAmount;
+        if (is_numeric($requestorUserId) && ! is_numeric($totalEstimatedAmount)) {
+            $this->requestorUserId = (string) $totalEstimatedAmount;
+            $this->totalEstimatedAmount = (float) $requestorUserId;
+            $this->currency = $tenantId !== '' ? $tenantId : 'EUR';
+            $this->tenantId = $companyId;
+            $this->companyId = $currency;
+        } else {
+            $this->totalEstimatedAmount = (float) $totalEstimatedAmount;
+            $this->requestorUserId = (string) $requestorUserId;
+            $this->tenantId = $tenantId;
+            $this->companyId = $companyId;
+            $this->currency = $currency;
+        }
     }
 
     public function getEventId(): string
@@ -51,7 +72,7 @@ final readonly class PurchaseRequisitionCreatedEvent implements DomainEventInter
 
     public function getCompanyId(): string
     {
-        return (string) ($this->companyId ?? '');
+        return $this->companyId;
     }
 
     public function getOccurredAt(): string
@@ -59,6 +80,9 @@ final readonly class PurchaseRequisitionCreatedEvent implements DomainEventInter
         return $this->occurredAt !== '' ? $this->occurredAt : now()->toIso8601String();
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

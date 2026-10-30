@@ -48,6 +48,14 @@ class SwissQrBillService
     {
         $invoice->loadMissing(['tenant', 'contact.addresses', 'qrBillData']);
 
+        if ($invoice->tenant === null && $invoice->tenant_id) {
+            $invoice->setRelation('tenant', \App\Models\Tenant::find($invoice->tenant_id));
+        }
+
+        if ($invoice->contact === null && $invoice->contact_id) {
+            $invoice->setRelation('contact', \App\Models\Contact::withoutGlobalScopes()->with('addresses')->find($invoice->contact_id));
+        }
+
         if ($invoice->tenant === null) {
             throw QrBillGenerationException::because(QrBillGenerationException::MISSING_TENANT);
         }

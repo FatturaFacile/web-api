@@ -30,10 +30,18 @@ class PaymentReminderMail extends Mailable
     public function envelope(): Envelope
     {
         $level = min(max($this->reminder->level, 1), 3);
+        $invoice = $this->reminder->invoice ?? ($this->reminder->invoice_id ? \App\Models\Invoice::withoutGlobalScopes()->find($this->reminder->invoice_id) : null);
+        $number = (string) ($invoice?->invoice_number ?? '');
 
-        return new Envelope(subject: __("emails.payment_reminder.subject.level_{$level}", [
-            'number' => $this->reminder->invoice?->invoice_number,
-        ]));
+        $subject = __("emails.payment_reminder.subject.level_{$level}", [
+            'number' => $number,
+        ]);
+
+        if ($number !== '' && ! str_contains($subject, $number)) {
+            $subject = rtrim($subject)." {$number}";
+        }
+
+        return new Envelope(subject: $subject);
     }
 
     public function content(): Content

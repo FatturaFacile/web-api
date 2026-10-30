@@ -11,24 +11,43 @@ class TenantContext
 {
     private ?Tenant $tenant = null;
 
+    private bool $isExplicit = false;
+
     public function setTenant(?Tenant $tenant): void
     {
         $this->tenant = $tenant;
+        $this->isExplicit = $tenant !== null;
+    }
+
+    public function isExplicit(): bool
+    {
+        return $this->isExplicit;
     }
 
     public function getTenant(): ?Tenant
     {
-        return $this->tenant;
+        if ($this->tenant !== null) {
+            return $this->tenant;
+        }
+
+        if (auth()->check()) {
+            $user = auth()->user();
+            if ($user instanceof \App\Models\User) {
+                return $user->tenants()->first();
+            }
+        }
+
+        return null;
     }
 
     public function getTenantId(): ?string
     {
-        return $this->tenant?->id;
+        return $this->getTenant()?->id;
     }
 
     public function hasTenant(): bool
     {
-        return $this->tenant !== null;
+        return $this->getTenant() !== null;
     }
 
     /**

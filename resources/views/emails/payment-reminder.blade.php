@@ -1,6 +1,6 @@
 @php
-    $invoice = $reminder->invoice;
-    $contact = $invoice?->contact;
+    $invoice = $reminder->invoice ?? ($reminder->invoice_id ? \App\Models\Invoice::withoutGlobalScopes()->find($reminder->invoice_id) : null);
+    $contact = $invoice?->contact ?? ($invoice?->contact_id ? \App\Models\Contact::withoutGlobalScopes()->find($invoice->contact_id) : null);
     $level = min(max($reminder->level, 1), 3);
 @endphp
 <p>{{ __('emails.greeting', ['name' => $contact?->company_name ?: trim(($contact?->first_name ?? '').' '.($contact?->last_name ?? ''))]) }}</p>

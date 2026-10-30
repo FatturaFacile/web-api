@@ -261,40 +261,90 @@ ailed when the snapshot could not be built.
     }
 
     /**
+     * @var array{tables: list<string>, directTables: list<string>, foreignKeyMap: array<string, list<array{column: string, foreign_table: string, foreign_column: string}>>, dependencyOrder: list<string>}|null
+     */
+    private static ?array $cachedTableMetadata = null;
+
+    /**
+     * @return array{tables: list<string>, directTables: list<string>, foreignKeyMap: array<string, list<array{column: string, foreign_table: string, foreign_column: string}>>, dependencyOrder: list<string>}
+     */
+    private function getTableMetadata(): array
+    {
+        if (self::$cachedTableMetadata !== null) {
+            return self::$cachedTableMetadata;
+        }
+
+        $tables = array_values(array_filter(
+            Schema::getTableListing(schemaQualified: false),
+            fn (string $table): bool => ! in_array($table, self::EXCLUDED_TABLES, true) && ! str_starts_with($table, 'telescope_'),
+        ));
+
+        $directTables = [];
+        $foreignKeyMap = [];
+
+        foreach ($tables as $table) {
+            if (Schema::hasColumn($table, 'tenant_id')) {
+                $directTables[] = $table;
+            }
+
+            $foreignKeyMap[$table] = [];
+            foreach (Schema::getForeignKeys($table) as $foreignKey) {
+                if (count($foreignKey['columns']) === 1 && in_array($foreignKey['foreign_table'], $tables, true)) {
+                    $foreignKeyMap[$table][] = [
+                        'column' => $foreignKey['columns'][0],
+                        'foreign_table' => $foreignKey['foreign_table'],
+                        'foreign_column' => $foreignKey['foreign_columns'][0],
+                    ];
+                }
+            }
+        }
+
+        $dependencyOrder = $this->dependencyOrder($tables, $foreignKeyMap);
+
+        return self::$cachedTableMetadata = [
+            'tables' => $tables,
+            'directTables' => $directTables,
+            'foreignKeyMap' => $foreignKeyMap,
+            'dependencyOrder' => $dependencyOrder,
+        ];
+    }
+
+    /**
      * The tables to export, each with the closure that restricts a query on it to the rows of the tenant.
      *
      * @return array<string, Closure(Builder): Builder>
      */
     public function tableScopes(string $tenantId): array
     {
-        $tables = array_values(array_filter(
-            Schema::getTableListing(schemaQualified: false),
-            fn (string $table): bool => ! in_array($table, self::EXCLUDED_TABLES, true) && ! str_starts_with($table, 'telescope_'),
-        ));
-
+        $meta = $this->getTableMetadata();
         $scopes = [];
 
-        foreach ($tables as $table) {
-            if (Schema::hasColumn($table, 'tenant_id')) {
+        foreach ($meta['directTables'] as $table) {
+            if ($table === 'invoice_items') {
+                $scopes[$table] = fn (Builder $query): Builder => $query->where(function (Builder $sub) use ($tenantId): void {
+                    $sub->where('invoice_items.tenant_id', $tenantId)
+                        ->orWhereIn('invoice_items.invoice_id', DB::table('invoices')->where('tenant_id', $tenantId)->select('id'));
+                });
+            } else {
                 $scopes[$table] = fn (Builder $query): Builder => $query->where("{$table}.tenant_id", $tenantId);
             }
         }
 
-        // Child tables without a tenant column (invoice items, ...) follow their parents through foreign keys.
+        // Child tables without a tenant column follow their parents through foreign keys.
         do {
             $resolved = false;
 
-            foreach ($tables as $table) {
+            foreach ($meta['tables'] as $table) {
                 if (isset($scopes[$table])) {
                     continue;
                 }
 
-                foreach (Schema::getForeignKeys($table) as $foreignKey) {
+                foreach ($meta['foreignKeyMap'][$table] ?? [] as $foreignKey) {
                     $parent = $foreignKey['foreign_table'];
 
-                    if (count($foreignKey['columns']) === 1 && isset($scopes[$parent])) {
-                        $column = $foreignKey['columns'][0];
-                        $parentColumn = $foreignKey['foreign_columns'][0];
+                    if (isset($scopes[$parent])) {
+                        $column = $foreignKey['column'];
+                        $parentColumn = $foreignKey['foreign_column'];
                         $parentScope = $scopes[$parent];
                         $scopes[$table] = fn (Builder $query): Builder => $query->whereIn("{$table}.{$column}", $parentScope(DB::table($parent))->select("{$parent}.{$parentColumn}"));
                         $resolved = true;
@@ -305,7 +355,14 @@ ailed when the snapshot could not be built.
             }
         } while ($resolved);
 
-        return collect($this->dependencyOrder(array_keys($scopes)))->mapWithKeys(fn (string $table): array => [$table => $scopes[$table]])->all();
+        $orderedScopes = [];
+        foreach ($meta['dependencyOrder'] as $table) {
+            if (isset($scopes[$table])) {
+                $orderedScopes[$table] = $scopes[$table];
+            }
+        }
+
+        return $orderedScopes;
     }
 
     /**
@@ -313,9 +370,10 @@ ailed when the snapshot could not be built.
      * the order to insert rows; deleting uses the reverse. Ties are broken alphabetically.
      *
      * @param  array<int, string>  $tables
+     * @param  array<string, list<array{column: string, foreign_table: string, foreign_column: string}>>|null  $foreignKeyMap
      * @return array<int, string>
      */
-    public function dependencyOrder(array $tables): array
+    public function dependencyOrder(array $tables, ?array $foreignKeyMap = null): array
     {
         sort($tables);
         $dependencies = [];
@@ -323,9 +381,17 @@ ailed when the snapshot could not be built.
         foreach ($tables as $table) {
             $dependencies[$table] = [];
 
-            foreach (Schema::getForeignKeys($table) as $foreignKey) {
-                if ($foreignKey['foreign_table'] !== $table && in_array($foreignKey['foreign_table'], $tables, true)) {
-                    $dependencies[$table][$foreignKey['foreign_table']] = true;
+            if ($foreignKeyMap !== null && isset($foreignKeyMap[$table])) {
+                foreach ($foreignKeyMap[$table] as $fk) {
+                    if ($fk['foreign_table'] !== $table && in_array($fk['foreign_table'], $tables, true)) {
+                        $dependencies[$table][$fk['foreign_table']] = true;
+                    }
+                }
+            } else {
+                foreach (Schema::getForeignKeys($table) as $foreignKey) {
+                    if ($foreignKey['foreign_table'] !== $table && in_array($foreignKey['foreign_table'], $tables, true)) {
+                        $dependencies[$table][$foreignKey['foreign_table']] = true;
+                    }
                 }
             }
         }

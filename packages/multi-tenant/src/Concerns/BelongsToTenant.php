@@ -17,11 +17,27 @@ trait BelongsToTenant
 
         static::creating(function ($model): void {
             $tenantContext = app(TenantContext::class);
-            if ($tenantContext->hasTenant()) {
-                // Enforce tenant_id strictly from active TenantContext to prevent parameter injection
+            if ($tenantContext->isExplicit()) {
+                // Enforce tenant_id strictly from active explicit TenantContext (e.g. HTTP request)
+                $model->tenant_id = $tenantContext->getTenantId();
+            } elseif (empty($model->tenant_id) && $tenantContext->hasTenant()) {
                 $model->tenant_id = $tenantContext->getTenantId();
             }
         });
+    }
+
+    /**
+     * @param  array<string, mixed>  $attributes
+     * @return $this
+     */
+    public function fill(array $attributes): static
+    {
+        if (isset($attributes['tenant_id']) && ! app(TenantContext::class)->hasTenant()) {
+            $this->tenant_id = $attributes['tenant_id'];
+            unset($attributes['tenant_id']);
+        }
+
+        return parent::fill($attributes);
     }
 
     /**

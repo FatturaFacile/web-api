@@ -15,7 +15,6 @@ class Payment extends Model
     use BelongsToTenant, HasFactory, HasUuids;
 
     protected $fillable = [
-        'tenant_id',
         'invoice_id',
         'amount',
         'paid_at',

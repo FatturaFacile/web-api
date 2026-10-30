@@ -24,7 +24,7 @@ class TenantBackupCommand extends Command
         $tenantId = $this->option('tenant');
 
         if ((bool) $this->option('all') === ($tenantId !== null)) {
-            $this->error(__('backup.command.tenant_or_all'));
+            $this->error('Specify exactly one of --tenant or --all.');
 
             return self::INVALID;
         }
@@ -34,7 +34,7 @@ class TenantBackupCommand extends Command
             : Tenant::query()->get();
 
         if ($tenantId !== null && $tenants->isEmpty()) {
-            $this->error(__('backup.command.tenant_not_found', ['tenant' => $tenantId]));
+            $this->error("Tenant {$tenantId} was not found.");
 
             return self::FAILURE;
         }
@@ -43,7 +43,7 @@ class TenantBackupCommand extends Command
             GenerateTenantBackupJob::dispatch($backups->create($tenant)->id);
         }
 
-        $this->info(__('backup.command.queued', ['count' => $tenants->count()]));
+        $this->info("Backup queued for {$tenants->count()} tenant(s).");
 
         return self::SUCCESS;
     }

@@ -14,11 +14,12 @@ final readonly class WorkflowInstanceRejectedEvent implements DomainEventInterfa
 
     public function __construct(
         public string $instanceId,
-        public string $tenantId,
-        public string $companyId,
+        public string $tenantId = '',
+        public string $companyId = '',
         public string $definitionCode = '',
         public string $aggregateType = '',
-        public string $aggregateId = ''
+        public string $aggregateId = '',
+        public string $status = 'rejected'
     ) {}
 
     public function getEventName(): string

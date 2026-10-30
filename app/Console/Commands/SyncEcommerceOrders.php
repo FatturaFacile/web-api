@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace App\Console\Commands;
 
 use App\Actions\Ecommerce\PullEcommerceOrdersAction;
-use App\Exceptions\EcommerceException;
 use App\Models\EcommerceChannel;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Command;
+use Throwable;
 
 class SyncEcommerceOrders extends Command
 {
@@ -31,7 +31,7 @@ class SyncEcommerceOrders extends Command
                         foreach ($pull->execute($channel) as $key => $count) {
                             $totals[$key] += $count;
                         }
-                    } catch (EcommerceException $e) {
+                    } catch (Throwable $e) {
                         $channelFailures++;
                         $this->warn("{$channel->name}: {$e->getMessage()}");
                     }

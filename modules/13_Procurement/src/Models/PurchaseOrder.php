@@ -30,7 +30,9 @@ final class PurchaseOrder extends BaseEnterpriseModel implements LockableByWorkf
 
     public function getOrderDateAttribute(): mixed
     {
-        return $this->attributes['date'] ?? null;
+        $date = $this->attributes['date'] ?? null;
+
+        return $date !== null ? $this->asDate($date) : null;
     }
 
     public function setOrderDateAttribute(mixed $value): void

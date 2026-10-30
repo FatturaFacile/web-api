@@ -26,6 +26,7 @@ final readonly class OrganizationManagementService implements OrganizationManage
         $departments = Department::where('tenant_id', $tenantId)
             ->where('is_active', true)
             ->with(['teams', 'positions', 'employees'])
+            ->orderByRaw("CASE WHEN parent_id IS NULL THEN 0 ELSE 1 END, CASE WHEN code = 'DEP-EXEC' THEN 0 ELSE 1 END, code ASC")
             ->get();
 
         $tree = [];

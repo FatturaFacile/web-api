@@ -73,6 +73,15 @@ class IdentifyTenant
 
         $this->tenantContext->setTenant($tenant);
 
-        return $next($request);
+        try {
+            return $next($request);
+        } finally {
+            $this->tenantContext->setTenant(null);
+        }
+    }
+
+    public function terminate(Request $request, Response $response): void
+    {
+        $this->tenantContext->setTenant(null);
     }
 }

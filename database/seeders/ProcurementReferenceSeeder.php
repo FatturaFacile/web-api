@@ -4,9 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
+use App\Models\LookupCategory;
+use App\Models\LookupItem;
+use App\Models\LookupItemTranslation;
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 final class ProcurementReferenceSeeder extends Seeder
 {
@@ -55,20 +56,39 @@ final class ProcurementReferenceSeeder extends Seeder
             ],
         ];
 
+        $category = LookupCategory::updateOrCreate(
+            ['code' => 'supplier_evaluation_criterion'],
+            [
+                'name' => 'Supplier Evaluation Criteria',
+                'description' => 'Standard criteria for evaluating vendor performance',
+                'is_system' => true,
+            ]
+        );
+
+        $sort = 10;
         foreach ($criteria as $crit) {
+            $item = LookupItem::updateOrCreate(
+                [
+                    'category_id' => $category->id,
+                    'code' => $crit['code'],
+                ],
+                [
+                    'sort_order' => $sort,
+                    'is_active' => true,
+                    'is_default' => false,
+                ]
+            );
+            $sort += 10;
+
             foreach (['en', 'it', 'de', 'fr'] as $lang) {
-                DB::table('system_lookups')->updateOrInsert(
+                LookupItemTranslation::updateOrCreate(
                     [
-                        'type' => 'supplier_evaluation_criterion',
-                        'code' => $crit['code'].'_'.$lang,
+                        'lookup_item_id' => $item->id,
+                        'locale' => $lang,
                     ],
                     [
-                        'id' => (string) Str::uuid7(),
-                        'name' => $crit['names'][$lang],
+                        'label' => $crit['names'][$lang] ?? $crit['names']['en'],
                         'description' => "Weight: {$crit['weight']}% - Locale: {$lang}",
-                        'is_active' => true,
-                        'created_at' => now(),
-                        'updated_at' => now(),
                     ]
                 );
             }

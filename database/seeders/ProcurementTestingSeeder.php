@@ -7,13 +7,14 @@ namespace Database\Seeders;
 use App\Models\Contact;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 final class ProcurementTestingSeeder extends Seeder
 {
     public function run(): void
     {
         $tenantId = DB::table('tenants')->value('id') ?? '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b';
-        $companyId = DB::table('companies')->value('id');
+        $companyId = Schema::hasTable('companies') ? DB::table('companies')->value('id') : null;
 
         $supplierId = '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a99';
         $contact = Contact::firstOrCreate(
