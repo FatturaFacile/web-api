@@ -12,7 +12,6 @@ use Modules\ServiceManagement\Contracts\IncidentManagementServiceInterface;
 use Modules\ServiceManagement\Contracts\ProblemAndChangeServiceInterface;
 use Modules\ServiceManagement\DTOs\CreateChangeRequestDTO;
 use Modules\ServiceManagement\DTOs\CreateIncidentDTO;
-use Modules\ServiceManagement\DTOs\CreateProblemDTO;
 use Modules\ServiceManagement\Http\Requests\StoreChangeRequestRequest;
 use Modules\ServiceManagement\Http\Requests\StoreIncidentRequest;
 use Modules\ServiceManagement\Http\Resources\ChangeRequestResource;

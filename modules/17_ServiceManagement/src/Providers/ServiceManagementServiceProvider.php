@@ -80,7 +80,7 @@ final class ServiceManagementServiceProvider extends ServiceProvider
     public function boot(): void
     {
         $this->app->booted(function (): void {
-            $this->loadRoutesFrom(__DIR__ . '/../../routes/api.php');
+            $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         });
 
         Gate::policy(Ticket::class, TicketPolicy::class);

@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 final readonly class SalesOrderStockReservedEvent implements DomainEventInterface
 {
     /**
-     * @param array<int, array<string, mixed>> $reservedItems
+     * @param  array<int, array<string, mixed>>  $reservedItems
      */
     public function __construct(
         public string $salesOrderId,

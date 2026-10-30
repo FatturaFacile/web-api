@@ -15,7 +15,7 @@ final class CreateInvoiceFromOrderAction
     ) {}
 
     /**
-     * @param array<string, mixed> $overrides
+     * @param  array<string, mixed>  $overrides
      */
     public function execute(SalesOrder $order, array $overrides = []): SalesInvoice
     {

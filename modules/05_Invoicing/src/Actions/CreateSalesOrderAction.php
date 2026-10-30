@@ -14,8 +14,8 @@ final class CreateSalesOrderAction
     ) {}
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function execute(array $data, array $items, bool $autoSubmit = true, ?string $userId = null): SalesOrder
     {

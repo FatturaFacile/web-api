@@ -13,7 +13,6 @@ use Modules\Invoicing\Actions\ReleaseSalesOrderHoldAction;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Http\Requests\UpdateCreditLimitRequest;
 use Modules\Invoicing\Http\Resources\CustomerCreditProfileResource;
-use Modules\Invoicing\Models\CustomerCreditProfile;
 use Modules\Invoicing\Models\SalesOrderHold;
 
 final class CustomerCreditController extends Controller

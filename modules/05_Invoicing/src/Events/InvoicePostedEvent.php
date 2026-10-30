@@ -10,8 +10,8 @@ use Illuminate\Support\Str;
 final readonly class InvoicePostedEvent implements DomainEventInterface
 {
     /**
-     * @param array<int, array<string, mixed>> $revenueLines
-     * @param array<int, array<string, mixed>> $taxLines
+     * @param  array<int, array<string, mixed>>  $revenueLines
+     * @param  array<int, array<string, mixed>>  $taxLines
      */
     public function __construct(
         public string $invoiceId,

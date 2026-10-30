@@ -18,7 +18,7 @@ interface PricingAndDiscountServiceInterface
     ): array;
 
     /**
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<int, array<string, mixed>>  $items
      * @return array{subtotal: float, discount_total: float, net_total: float, tax_total: float, gross_total: float}
      */
     public function calculateOrderTotals(array $items, ?string $discountPolicyId = null): array;

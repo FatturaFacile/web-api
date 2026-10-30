@@ -61,7 +61,7 @@ final readonly class ProjectESMListener
             'id' => (string) Str::uuid7(),
             'tenant_id' => $event->getTenantId() ?: $event->getCompanyId(),
             'message_id' => $messageId,
-            'event_type' => $event->getEventName() . ':' . $consumerName,
+            'event_type' => $event->getEventName().':'.$consumerName,
             'payload_json' => $event->toPayload(),
             'status' => 'completed',
             'received_at' => now(),

@@ -14,8 +14,8 @@ final class IssueCreditNoteAction
     ) {}
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function execute(SalesInvoice $originalInvoice, array $data, array $items): SalesInvoice
     {

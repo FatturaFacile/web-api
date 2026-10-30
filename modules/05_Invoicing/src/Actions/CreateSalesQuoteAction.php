@@ -14,8 +14,8 @@ final class CreateSalesQuoteAction
     ) {}
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function execute(array $data, array $items): SalesQuote
     {

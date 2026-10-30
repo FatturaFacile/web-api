@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 final readonly class GoodsDispatchedEvent implements DomainEventInterface
 {
     /**
-     * @param array<int, array<string, mixed>> $dispatchedItems
+     * @param  array<int, array<string, mixed>>  $dispatchedItems
      */
     public function __construct(
         public string $deliveryNoteId,

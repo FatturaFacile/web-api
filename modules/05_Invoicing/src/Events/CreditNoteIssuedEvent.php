@@ -10,7 +10,7 @@ use Illuminate\Support\Str;
 final readonly class CreditNoteIssuedEvent implements DomainEventInterface
 {
     /**
-     * @param array<int, array<string, mixed>> $adjustmentLines
+     * @param  array<int, array<string, mixed>>  $adjustmentLines
      */
     public function __construct(
         public string $creditNoteId,

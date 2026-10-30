@@ -9,8 +9,8 @@ final readonly class RecordVisitDTO
     public function __construct(
         public string $workOrderId,
         public ?string $serviceAppointmentId = null,
-        public string $technicianId = "",
-        public string $checkInAt = "",
+        public string $technicianId = '',
+        public string $checkInAt = '',
         public ?string $checkOutAt = null,
         public ?string $workSummary = null,
         public ?string $customerFeedback = null

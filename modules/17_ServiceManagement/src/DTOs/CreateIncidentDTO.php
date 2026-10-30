@@ -11,9 +11,9 @@ final readonly class CreateIncidentDTO
         public string $companyId,
         public string $title,
         public ?string $description = null,
-        public string $severity = "medium",
-        public string $impact = "moderate",
-        public string $urgency = "medium",
+        public string $severity = 'medium',
+        public string $impact = 'moderate',
+        public string $urgency = 'medium',
         public ?string $serviceCategoryId = null,
         public ?string $affectedAssetId = null,
         public ?string $reportedById = null

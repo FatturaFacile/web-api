@@ -4,13 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Contracts;
 
+use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesQuote;
 
 interface SalesQuoteServiceInterface
 {
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function createQuote(array $data, array $items): SalesQuote;
 
@@ -20,5 +21,5 @@ interface SalesQuoteServiceInterface
 
     public function acceptQuote(SalesQuote $quote): SalesQuote;
 
-    public function convertToOrder(SalesQuote $quote, string $userId): \Modules\Invoicing\Models\SalesOrder;
+    public function convertToOrder(SalesQuote $quote, string $userId): SalesOrder;
 }

@@ -11,7 +11,6 @@ use Illuminate\Http\Request;
 use Modules\ServiceManagement\Contracts\TicketServiceInterface;
 use Modules\ServiceManagement\DTOs\AssignTicketDTO;
 use Modules\ServiceManagement\DTOs\CreateTicketDTO;
-use Modules\ServiceManagement\DTOs\EscalateTicketDTO;
 use Modules\ServiceManagement\DTOs\ResolveTicketDTO;
 use Modules\ServiceManagement\Http\Requests\AssignTicketRequest;
 use Modules\ServiceManagement\Http\Requests\ResolveTicketRequest;

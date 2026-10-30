@@ -8,9 +8,6 @@ use Modules\Invoicing\Models\SalesOrder;
 
 final readonly class InventoryFulfillmentEventListener
 {
-    /**
-     * @param object $event
-     */
     public function handleInventoryReserved(object $event): void
     {
         if (isset($event->referenceId) && ($event->referenceType ?? null) === 'sales_order') {

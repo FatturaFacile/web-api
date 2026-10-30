@@ -11,8 +11,8 @@ final readonly class CreateWorkOrderDTO
         public string $companyId,
         public string $title,
         public ?string $description = null,
-        public string $workType = "corrective",
-        public string $priority = "medium",
+        public string $workType = 'corrective',
+        public string $priority = 'medium',
         public ?string $serviceCategoryId = null,
         public ?string $customerId = null,
         public ?string $serviceContractId = null,
@@ -24,7 +24,7 @@ final readonly class CreateWorkOrderDTO
         public ?string $scheduledStart = null,
         public ?string $scheduledEnd = null,
         public ?string $locationAddress = null,
-        public string $billingType = "contract_included",
+        public string $billingType = 'contract_included',
         public array $items = []
     ) {}
 

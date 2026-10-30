@@ -9,8 +9,8 @@ use Modules\Invoicing\Models\SalesOrder;
 interface SalesOrderServiceInterface
 {
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function createOrder(array $data, array $items): SalesOrder;
 

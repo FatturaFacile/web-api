@@ -12,6 +12,7 @@ use Enterprise\EventBus\Models\TransactionalOutbox;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;
 use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
+use Modules\Invoicing\Listeners\WorkflowApprovalInvoicingListener;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Models\WorkflowDefinition;
@@ -141,7 +142,7 @@ test('approves quote when workflow completes and rejects when workflow rejects',
         'workflow_instance_id' => $workflowId,
     ]);
 
-    $approvalListener = app(\Modules\Invoicing\Listeners\WorkflowApprovalInvoicingListener::class);
+    $approvalListener = app(WorkflowApprovalInvoicingListener::class);
 
     // Complete workflow
     $approvalListener->handleWorkflowApproved(new WorkflowInstanceCompletedEvent(

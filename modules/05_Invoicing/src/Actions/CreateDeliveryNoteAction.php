@@ -15,8 +15,8 @@ final class CreateDeliveryNoteAction
     ) {}
 
     /**
-     * @param array<string, mixed> $deliveryData
-     * @param array<int, array{sales_order_item_id: string, quantity: float, batch_number?: ?string, serial_number?: ?string}> $items
+     * @param  array<string, mixed>  $deliveryData
+     * @param  array<int, array{sales_order_item_id: string, quantity: float, batch_number?: ?string, serial_number?: ?string}>  $items
      */
     public function execute(SalesOrder $order, array $deliveryData, array $items): SalesDeliveryNote
     {

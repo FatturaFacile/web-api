@@ -11,6 +11,17 @@ jobs:
     name: Code Quality & Automated Tests
     runs-on: ubuntu-24.04
 
+    # Variabili d'ambiente ereditate da tutti gli step del job
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: fatturafacile_test
+      DB_USERNAME: ff_admin
+      DB_PASSWORD: secret_password
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
     services:
       postgres:
         image: postgres:17-alpine
@@ -20,17 +31,25 @@ jobs:
           POSTGRES_PASSWORD: secret_password
         ports:
           - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
       redis:
         image: redis:7.4-alpine
         ports:
           - 6379:6379
-        options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Codebase
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Setup PHP 8.5 Runtime
         uses: shivammathur/setup-php@v2
@@ -43,7 +62,7 @@ jobs:
         run: composer validate --strict
 
       - name: Cache Composer Dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v4
         with:
           path: vendor
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
@@ -55,41 +74,17 @@ jobs:
       - name: Run Laravel Pint Code Formatter Check
         run: ./vendor/bin/pint --test
 
-      - name: Setup Test Environment & Migrations
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: fatturafacile_test
-          DB_USERNAME: ff_admin
-          DB_PASSWORD: secret_password
-          REDIS_HOST: 127.0.0.1
+      - name: Setup Environment & Reset Database (Drop & Recreate)
         run: |
           cp .env.example .env
           php artisan key:generate
-          php artisan migrate --force
+          php artisan migrate:fresh --force
 
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
 
       - name: Run Foundation Feature Tests
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: fatturafacile_test
-          DB_USERNAME: ff_admin
-          DB_PASSWORD: secret_password
-          REDIS_HOST: 127.0.0.1
         run: ./vendor/bin/pest tests/Feature/Foundation --no-coverage
 
       - name: Run Pest Test Suite
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: fatturafacile_test
-          DB_USERNAME: ff_admin
-          DB_PASSWORD: secret_password
-          REDIS_HOST: 127.0.0.1
         run: ./vendor/bin/pest --compact

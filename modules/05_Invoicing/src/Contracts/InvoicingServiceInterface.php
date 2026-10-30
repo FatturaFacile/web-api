@@ -12,8 +12,8 @@ use Modules\Invoicing\Models\SalesOrder;
 interface InvoicingServiceInterface
 {
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function createInvoice(array $data, array $items): SalesInvoice;
 
@@ -35,8 +35,8 @@ interface InvoicingServiceInterface
     public function postInvoice(SalesInvoice $invoice, string $userId): SalesInvoice;
 
     /**
-     * @param array<string, mixed> $data
-     * @param array<int, array<string, mixed>> $items
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function issueCreditNote(SalesInvoice $originalInvoice, array $data, array $items): SalesInvoice;
 

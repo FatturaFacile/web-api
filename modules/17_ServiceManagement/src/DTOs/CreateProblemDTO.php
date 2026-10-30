@@ -11,7 +11,7 @@ final readonly class CreateProblemDTO
         public string $companyId,
         public string $title,
         public ?string $description = null,
-        public string $priority = "medium",
+        public string $priority = 'medium',
         public ?string $serviceCategoryId = null,
         public ?string $rootCauseAnalysis = null,
         public ?string $workaround = null
