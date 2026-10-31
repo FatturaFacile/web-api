@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DoNotAskProjectManager">
+    <option name="idToDisplayName">
+      <map>
+        <entry key="qodana.cloud.show.new.report.notification" value="New Qodana Cloud report is available" />
+      </map>
+    </option>
+  </component>
+</project>
