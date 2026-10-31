@@ -1,0 +1,11 @@
+#!/bin/sh
+
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=d | grep '\.php$')
+
+if [ -n "$STAGED_FILES" ]; then
+    echo "🎨 Running Laravel Pint on staged files..."
+    ./vendor/bin/pint $STAGED_FILES
+    git add $STAGED_FILES
+fi
+
+exit 0
