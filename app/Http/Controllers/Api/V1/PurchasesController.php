@@ -16,7 +16,6 @@ use App\Services\Tenancy\TenantContext;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -104,7 +103,6 @@ class PurchasesController extends Controller
     #[OA\Post(
         path: '/api/v1/purchases/passive-invoices/import-sdi',
         operationId: 'importSdiPassiveInvoice',
-        deprecated: true,
         description: 'Legacy import endpoint for Italian FatturaPA XML files into passive invoices.',
         summary: 'Import SDI XML (deprecated)',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
@@ -114,7 +112,8 @@ class PurchasesController extends Controller
             new OA\Response(response: 400, description: 'Invalid XML file', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
+        ],
+        deprecated: true
     )]
     public function importSdi(Request $request): JsonResponse
     {
@@ -200,16 +199,16 @@ class PurchasesController extends Controller
         description: 'Scan and decode raw Swiss QR-Bill text payload adhering to Swiss Payments Code (SPC) specification into a recorded passive invoice.',
         summary: 'Scan Swiss QR-Bill',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
-        tags: ['Purchasing'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['qr_payload'],
                 properties: [
-                    new OA\Property(property: 'qr_payload', type: 'string', description: 'Raw multi-line SPC QR-code text payload'),
+                    new OA\Property(property: 'qr_payload', description: 'Raw multi-line SPC QR-code text payload', type: 'string'),
                 ]
             )
         ),
+        tags: ['Purchasing'],
         responses: [
             new OA\Response(response: 201, description: 'Swiss QR-Bill scanned and recorded', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -239,22 +238,20 @@ class PurchasesController extends Controller
         $currency = $lines[19] ?? 'CHF';
         $scorRef = $lines[27] ?? '';
 
-        $passiveInvoice = DB::transaction(function () use ($creditorName, $qrIban, $scorRef, $amount, $currency, $validated): PassiveInvoice {
-            $supplier = Contact::firstOrCreate(
-                ['company_name' => $creditorName],
-                ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
-            );
+        $supplier = Contact::firstOrCreate(
+            ['company_name' => $creditorName],
+            ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
+        );
 
-            return PassiveInvoice::create([
-                'supplier_id' => $supplier->id,
-                'invoice_number' => 'QR-'.$scorRef,
-                'date' => now()->toDateString(),
-                'total_amount' => $amount,
-                'currency' => $currency,
-                'is_reconciled' => false,
-                'qr_raw_payload' => $validated['qr_payload'],
-            ]);
-        });
+        $passiveInvoice = PassiveInvoice::create([
+            'supplier_id' => $supplier->id,
+            'invoice_number' => 'QR-'.$scorRef,
+            'date' => now()->toDateString(),
+            'total_amount' => $amount,
+            'currency' => $currency,
+            'is_reconciled' => false,
+            'qr_raw_payload' => $validated['qr_payload'],
+        ]);
 
         return $this->successResponse(
             data: [
@@ -279,7 +276,6 @@ class PurchasesController extends Controller
         description: 'Export selected supplier invoices into an ISO 20022 pain.001.001.03 XML payment initiation file.',
         summary: 'Export pain.001 XML',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
-        tags: ['Purchasing'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
@@ -291,6 +287,7 @@ class PurchasesController extends Controller
                 ]
             )
         ),
+        tags: ['Purchasing'],
         responses: [
             new OA\Response(response: 200, description: 'ISO 20022 pain.001 XML generated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),

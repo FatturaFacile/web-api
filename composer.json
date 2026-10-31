@@ -20,7 +20,8 @@
         "picqer/php-barcode-generator": "^3.3",
         "spatie/laravel-permission": "^8.3",
         "spatie/laravel-query-builder": "^7.3",
-        "sprain/swiss-qr-bill": "^5.3"
+        "sprain/swiss-qr-bill": "^5.3",
+        "ext-dom": "*"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
