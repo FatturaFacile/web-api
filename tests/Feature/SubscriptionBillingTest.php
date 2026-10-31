@@ -54,7 +54,7 @@ function subscriptionPayload(array $overrides = []): array
 
 function subscriptionsApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('subscription is created active with number and first billing date', function (): void {

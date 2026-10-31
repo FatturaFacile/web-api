@@ -93,7 +93,7 @@ class LookupTest extends TestCase
         $this->assertSame('Numero', $globalNr['label']);
 
         // Tenant query via header should return "Pezzi Custom"
-        $tenantResponse = $this->withHeader('X-Tenant-ID', $tenant->id)
+        $tenantResponse = $this->withHeader('X-Tenant-Id', $tenant->id)
             ->getJson('/api/lookups/unit_of_measure?locale=it');
         $tenantNr = collect($tenantResponse->json())->firstWhere('code', 'NR');
         $this->assertSame('Pezzi Custom', $tenantNr['label']);
@@ -130,7 +130,7 @@ class LookupTest extends TestCase
             'tenant_id' => $tenant->id,
         ];
 
-        $postResponse = $this->withHeader('X-Tenant-ID', $tenant->id)
+        $postResponse = $this->withHeader('X-Tenant-Id', $tenant->id)
             ->postJson('/api/v1/lookups/translations', $payload);
 
         $postResponse->assertOk();
@@ -142,7 +142,7 @@ class LookupTest extends TestCase
         ]);
 
         // Subsequent query should serve updated translation
-        $fetchResponse = $this->withHeader('X-Tenant-ID', $tenant->id)
+        $fetchResponse = $this->withHeader('X-Tenant-Id', $tenant->id)
             ->getJson('/api/lookups/payment_type?locale=it');
         $cashItem = collect($fetchResponse->json())->firstWhere('code', 'CASH');
         $this->assertSame('Contanti di Cassa', $cashItem['label']);

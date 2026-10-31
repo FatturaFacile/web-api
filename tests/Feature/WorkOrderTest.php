@@ -48,7 +48,7 @@ beforeEach(function (): void {
 
 function woApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('a work report is created with numbering, technician default and computed totals', function (): void {

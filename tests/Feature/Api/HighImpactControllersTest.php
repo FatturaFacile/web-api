@@ -43,7 +43,7 @@ beforeEach(function (): void {
 
 function apiRequest()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 // ------------------------------------------------------------------------------------------------

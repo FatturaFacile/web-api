@@ -19,7 +19,7 @@ beforeEach(function (): void {
 
 function legacyApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('legacy endpoints answer with the X-Deprecated header and a link to their successor', function (string $method, string $uri, string $successor): void {

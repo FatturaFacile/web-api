@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
@@ -33,6 +35,13 @@ use OpenApi\Attributes as OA;
     scheme: 'bearer',
     bearerFormat: 'JWT',
     description: 'Enter your Bearer authentication token (Laravel Sanctum)'
+)]
+#[OA\SecurityScheme(
+    securityScheme: 'tenantHeader',
+    type: 'apiKey',
+    in: 'header',
+    name: 'X-Tenant-Id',
+    description: 'Enter your active Tenant UUID'
 )]
 abstract class Controller
 {

@@ -3,13 +3,13 @@
 The API is described by an OpenAPI 3.1 specification generated from the real routes (`docs/api/openapi.yaml` and
 `docs/api/openapi.json`). Client SDKs are generated from it, so they never drift from the API.
 
-| Artifact | Purpose |
-|----------|---------|
-| `docs/api/openapi.yaml` / `openapi.json` | OpenAPI 3.1 specification (all endpoints, bearer + tenant security) |
-| `docs/api/postman_collection.json` | Postman collection v2.1 (folders Auth, Invoicing, Banking, Accounting, Backups, ...) |
-| `scripts/generate-clients.sh` | Generates the Angular and Flutter SDKs |
-| `docs/clients/AUTHENTICATION_GUIDE.md` | Interceptors that add the token and tenant header and refresh the token |
-| `GET /api/documentation` | Interactive documentation (Scalar) of the specification |
+| Artifact                                 | Purpose                                                                              |
+|------------------------------------------|--------------------------------------------------------------------------------------|
+| `docs/api/openapi.yaml` / `openapi.json` | OpenAPI 3.1 specification (all endpoints, bearer + tenant security)                  |
+| `docs/api/postman_collection.json`       | Postman collection v2.1 (folders Auth, Invoicing, Banking, Accounting, Backups, ...) |
+| `scripts/generate-clients.sh`            | Generates the Angular and Flutter SDKs                                               |
+| `docs/clients/AUTHENTICATION_GUIDE.md`   | Interceptors that add the token and tenant header and refresh the token              |
+| `GET /api/documentation`                 | Interactive documentation (Scalar) of the specification                              |
 
 ## Regenerating the documentation
 
@@ -66,5 +66,5 @@ The generated folders (`clients/`) are build output: they are listed in `.gitign
   `/v1/sales/invoices`, payments under `/v1/sales/invoices/{id}/payments`, supplier invoices under
   `/v1/purchases/supplier-invoices`).
 * Security: every operation except `POST /v1/auth/login`, the incoming webhooks and the documentation requires
-  `BearerAuth` (the Sanctum token, documented as a bearer token) **and** `TenantHeader` (`X-Tenant-ID`).
+  `BearerAuth` (the Sanctum token, documented as a bearer token) **and** `TenantHeader` (`X-Tenant-Id`).
 * Errors are `application/problem+json`; validation errors are returned with status 422.

@@ -30,7 +30,16 @@ class ExportApiDocumentation extends Command
      *
      * @var list<string>
      */
-    private const PUBLIC_PATHS = ['/v1/auth/login', '/v1/webhooks/', '/documentation'];
+    private const PUBLIC_PATHS = [
+        '/v1/auth/login',
+        '/v1/system/bootstrap-support',
+        '/v1/translations/',
+        '/v1/lookups/',
+        '/lookups/',
+        '/v1/webhooks/',
+        '/v1/portal/',
+        '/documentation',
+    ];
 
     /**
      * Postman folder of each API module; the other modules get a folder named after them.
@@ -102,7 +111,7 @@ class ExportApiDocumentation extends Command
         $spec->components ??= (object) [];
         $spec->components->securitySchemes = (object) [
             'BearerAuth' => (object) ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'JWT', 'description' => __('docs.security.bearer')],
-            'TenantHeader' => (object) ['type' => 'apiKey', 'in' => 'header', 'name' => 'X-Tenant-ID', 'description' => __('docs.security.tenant')],
+            'TenantHeader' => (object) ['type' => 'apiKey', 'in' => 'header', 'name' => 'X-Tenant-Id', 'description' => __('docs.security.tenant')],
         ];
         $spec->security = [(object) ['BearerAuth' => [], 'TenantHeader' => []]];
 
@@ -240,7 +249,7 @@ class ExportApiDocumentation extends Command
             'method' => strtoupper($method),
             'header' => array_values(array_filter([
                 ['key' => 'Accept', 'value' => 'application/json'],
-                ! $public ? ['key' => 'X-Tenant-ID', 'value' => '{{tenantId}}'] : null,
+                ! $public ? ['key' => 'X-Tenant-Id', 'value' => '{{tenantId}}'] : null,
             ])),
             'url' => ['raw' => $raw, 'host' => ['{{baseUrl}}'], 'path' => ['api', ...$segments], 'query' => $query, 'variable' => $variables],
             'description' => (string) ($operation['description'] ?? $operation['summary'] ?? ''),

@@ -49,7 +49,7 @@ beforeEach(function (): void {
 
 function api()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('quote is created with computed totals and gapless numbering', function (): void {

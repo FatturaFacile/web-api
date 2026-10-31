@@ -27,7 +27,7 @@ class IdentifyTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $tenantId = $request->header('X-Tenant-ID');
+        $tenantId = $request->header('X-Tenant-Id');
 
         /** @var User|null $user */
         $user = $request->user();
@@ -39,7 +39,7 @@ class IdentifyTenant
         if (empty($tenantId)) {
             return $this->problemDetailsResponse(
                 title: 'Missing Tenant Context',
-                detail: 'The X-Tenant-ID header is required to identify the active enterprise organization.',
+                detail: 'The X-Tenant-Id header is required to identify the active enterprise organization.',
                 status: Response::HTTP_BAD_REQUEST,
             );
         }

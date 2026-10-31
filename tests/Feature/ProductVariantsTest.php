@@ -40,7 +40,7 @@ beforeEach(function (): void {
 
 function pvApi(?string $tenantId = null)
 {
-    return test()->withHeader('X-Tenant-ID', $tenantId ?? test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', $tenantId ?? test()->tenant->id);
 }
 
 /**

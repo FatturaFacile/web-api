@@ -339,13 +339,13 @@ test('the real engine produces a PDF with the embedded QR code', function (): vo
 
 function pdfBytes(Invoice $invoice): string
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id)->get("/api/v1/documents/invoice/{$invoice->id}/pdf")->assertOk()->getContent();
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id)->get("/api/v1/documents/invoice/{$invoice->id}/pdf")->assertOk()->getContent();
 }
 
 // ------------------------------------------------------------ API
 
 test('the QR-bill endpoint returns the payload and images, or a problem document listing the failure', function (): void {
-    $api = $this->withHeader('X-Tenant-ID', $this->tenant->id);
+    $api = $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     $ok = $api->getJson("/api/v1/sales/invoices/{$this->invoice->id}/qr-bill")->assertOk();
     expect($ok->json('data.payload'))->toStartWith("SPC\n0200")
@@ -362,7 +362,7 @@ test('the QR-bill endpoint returns the payload and images, or a problem document
 });
 
 test('the issuer address is stored through the company preferences and validated', function (): void {
-    $api = $this->withHeader('X-Tenant-ID', $this->tenant->id);
+    $api = $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     $api->putJson('/api/v1/settings/preferences/company', ['street' => 'Via Nassa', 'house_number' => '10', 'postal_code' => '6900', 'city' => 'Lugano', 'country' => 'CH'])
         ->assertOk()->assertJsonPath('data.city', 'Lugano');

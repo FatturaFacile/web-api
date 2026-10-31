@@ -1,7 +1,8 @@
 # Changelog
 
 All notable changes to the FatturaFacile ERP API are documented in this file. The format follows
-[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project
+uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
@@ -12,7 +13,7 @@ additive only, so every phase can be applied to an existing installation.
 
 ### Core
 
-- **Multi-tenancy** (phases 1-2): UUID keys everywhere, tenant scoping on every model, `X-Tenant-ID` identification with
+- **Multi-tenancy** (phases 1-2): UUID keys everywhere, tenant scoping on every model, `X-Tenant-Id` identification with
   membership checks, per-tenant preferences, document numbering and locale handling.
 - **Contacts and CRM**: customers and suppliers with addresses, countries (ISO 2 letters, foreign suppliers included),
   insights and payment terms.
@@ -20,8 +21,8 @@ additive only, so every phase can be applied to an existing installation.
   with partial settlement, reminders, price lists, attachments and e-mail delivery of documents.
 - **Italian e-invoicing (SDI)**: FatturaPA generation, outbound/inbound webhooks, notifications, passive invoice
   reception and duplicate detection.
-- **Swiss QR-bill** (phase 9): SIX-compliant Swiss QR code with QR-IBAN (27 digit QR reference) and standard IBAN
-  (ISO 11649 or no reference), embedded in the invoice PDF.
+- **Swiss QR-bill** (phase 9): SIX-compliant Swiss QR code with QR-IBAN (27 digit QR reference) and standard IBAN (ISO
+  11649 or no reference), embedded in the invoice PDF.
 - **PDF generation** (phase 8): dompdf behind a `PdfGenerator` contract for invoices, quotes, work orders and
   delivery notes; PDFs attached to e-mails.
 - **Purchasing**: purchase orders, goods receipts, supplier invoices.
@@ -47,8 +48,8 @@ additive only, so every phase can be applied to an existing installation.
   payments on supplier invoices; bank fees, cent tolerances, partial payments, manual match, unmatch; automatic
   categorisation of F24 tax payments, payroll and bank charges with ledger accounts.
 - **Accounting** (phase 17): general ledger (prima nota) in balanced double entry for invoices, supplier invoices,
-  receipts, supplier payments and categorised bank lines, with preview and CSV export for accountants
-  (`;` delimiter, decimal comma, UTF-8 BOM).
+  receipts, supplier payments and categorised bank lines, with preview and CSV export for accountants (`;` delimiter,
+  decimal comma, UTF-8 BOM).
 
 ### Enterprise
 

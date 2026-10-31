@@ -2,13 +2,13 @@
 
 Every request to the API except `POST /api/v1/auth/login` (and the incoming webhooks) needs two headers:
 
-| Header | Value |
-|--------|-------|
-| `Authorization` | `Bearer <token>`, the token returned by `POST /api/v1/auth/login` (`data.token`) |
-| `X-Tenant-ID` | UUID of the organization the user works on (`data.active_tenant.id`, or one of `data.available_tenants`) |
+| Header          | Value                                                                                                    |
+|-----------------|----------------------------------------------------------------------------------------------------------|
+| `Authorization` | `Bearer <token>`, the token returned by `POST /api/v1/auth/login` (`data.token`)                         |
+| `X-Tenant-Id`   | UUID of the organization the user works on (`data.active_tenant.id`, or one of `data.available_tenants`) |
 
 A user can belong to several organizations: switch with `POST /api/v1/auth/switch-tenant` or simply send another
-`X-Tenant-ID`. Writes to an organization that is being restored from a backup are answered with `503` and a
+`X-Tenant-Id`. Writes to an organization that is being restored from a backup are answered with `503` and a
 `Retry-After` header: retry later.
 
 Login response (abridged):
@@ -43,7 +43,7 @@ const refreshed$ = new BehaviorSubject<string | null>(null);
 function withAuth(request: HttpRequest<unknown>, token: string | null, tenantId: string | null): HttpRequest<unknown> {
   let headers = request.headers;
   if (token) headers = headers.set('Authorization', `Bearer ${token}`);
-  if (tenantId) headers = headers.set('X-Tenant-ID', tenantId);
+  if (tenantId) headers = headers.set('X-Tenant-Id', tenantId);
   return request.clone({ headers });
 }
 
@@ -105,7 +105,7 @@ export class AuthService {
 
   refresh() {
     return this.http.post<{ data: { token: string } }>('/api/v1/auth/refresh', {}, {
-      headers: { Authorization: `Bearer ${this.token()}`, 'X-Tenant-ID': this.tenantId() ?? '' },
+      headers: { Authorization: `Bearer ${this.token()}`, 'X-Tenant-Id': this.tenantId() ?? '' },
     }).pipe(map(({ data }) => { this.store(data.token, this.tenantId()); return data.token; }));
   }
 
@@ -148,7 +148,7 @@ class AuthInterceptor extends QueuedInterceptor {
       final token = await _storage.read(key: 'erp_token');
       final tenantId = await _storage.read(key: 'erp_tenant_id');
       if (token != null) options.headers['Authorization'] = 'Bearer $token';
-      if (tenantId != null) options.headers['X-Tenant-ID'] = tenantId;
+      if (tenantId != null) options.headers['X-Tenant-Id'] = tenantId;
     }
     handler.next(options);
   }
@@ -168,7 +168,7 @@ class AuthInterceptor extends QueuedInterceptor {
       final tenantId = await _storage.read(key: 'erp_tenant_id');
       final refreshed = await Dio(BaseOptions(baseUrl: _dio.options.baseUrl)).post<Map<String, dynamic>>(
         '/v1/auth/refresh',
-        options: Options(headers: {'Authorization': 'Bearer $token', 'X-Tenant-ID': tenantId}),
+        options: Options(headers: {'Authorization': 'Bearer $token', 'X-Tenant-Id': tenantId}),
       );
       final newToken = refreshed.data!['data']['token'] as String;
       await _storage.write(key: 'erp_token', value: newToken);
@@ -198,5 +198,5 @@ shared preferences or in logs.
 
 Import `docs/api/postman_collection.json`, set the `baseUrl` collection variable and run **Auth → login**: its
 post-response script stores `authToken` and `tenantId` in the collection session, and every other request uses them
-(`Authorization: Bearer {{authToken}}`, `X-Tenant-ID: {{tenantId}}`). `refresh` and `switch-tenant` update the same
+(`Authorization: Bearer {{authToken}}`, `X-Tenant-Id: {{tenantId}}`). `refresh` and `switch-tenant` update the same
 variables; `logout` clears the token.

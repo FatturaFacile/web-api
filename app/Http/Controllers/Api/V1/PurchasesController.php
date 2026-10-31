@@ -16,7 +16,9 @@ use App\Services\Tenancy\TenantContext;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class PurchasesController extends Controller
@@ -28,23 +30,68 @@ class PurchasesController extends Controller
         private readonly QrBillGeneratorService $qrBillGenerator
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/purchases/requests',
+        operationId: 'getPurchaseRequests',
+        description: 'List paginated internal purchase requests.',
+        summary: 'List purchase requests',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Purchasing'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Purchase requests retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function requests(): JsonResponse
     {
-        $requests = PurchaseRequest::latest('requested_date')->paginate(25);
+        $requests = PurchaseRequest::with('user')->latest('requested_date')->paginate(25);
 
         return $this->successResponse(data: $requests, message: 'Purchase requests retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/purchases/orders',
+        operationId: 'getPurchaseOrdersLegacy',
+        description: 'List paginated purchase orders with suppliers and line items.',
+        summary: 'List purchase orders',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Purchasing'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Purchase orders retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function orders(): JsonResponse
     {
-        $orders = PurchaseOrder::latest('date')->paginate(25);
+        $orders = PurchaseOrder::with(['supplier', 'items'])->latest('date')->paginate(25);
 
         return $this->successResponse(data: $orders, message: 'Purchase orders retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/purchases/passive-invoices',
+        operationId: 'getPassiveInvoices',
+        description: 'List paginated accounts payable vendor invoices.',
+        summary: 'List passive invoices',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Purchasing'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Passive invoices retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function passiveInvoices(): JsonResponse
     {
-        $invoices = PassiveInvoice::latest('date')->paginate(25);
+        $invoices = PassiveInvoice::with('supplier')->latest('date')->paginate(25);
 
         return $this->successResponse(data: $invoices, message: 'Passive invoices retrieved');
     }
@@ -54,6 +101,21 @@ class PurchasesController extends Controller
      *
      * @deprecated Legacy stub that inserts without parsing. Use POST /api/v1/purchases/passive-invoices/receive-xml instead.
      */
+    #[OA\Post(
+        path: '/api/v1/purchases/passive-invoices/import-sdi',
+        operationId: 'importSdiPassiveInvoice',
+        deprecated: true,
+        description: 'Legacy import endpoint for Italian FatturaPA XML files into passive invoices.',
+        summary: 'Import SDI XML (deprecated)',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Purchasing'],
+        responses: [
+            new OA\Response(response: 201, description: 'Passive invoice imported successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 400, description: 'Invalid XML file', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function importSdi(Request $request): JsonResponse
     {
         $request->validate([
@@ -132,6 +194,28 @@ class PurchasesController extends Controller
     /**
      * Scan & decode raw Swiss QR-Bill text payload into a passive invoice.
      */
+    #[OA\Post(
+        path: '/api/v1/purchases/passive-invoices/scan-qr-bill',
+        operationId: 'scanQrBillPassiveInvoice',
+        description: 'Scan and decode raw Swiss QR-Bill text payload adhering to Swiss Payments Code (SPC) specification into a recorded passive invoice.',
+        summary: 'Scan Swiss QR-Bill',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Purchasing'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['qr_payload'],
+                properties: [
+                    new OA\Property(property: 'qr_payload', type: 'string', description: 'Raw multi-line SPC QR-code text payload'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Swiss QR-Bill scanned and recorded', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid Swiss QR Code or Validation Error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function scanQrBill(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -155,20 +239,22 @@ class PurchasesController extends Controller
         $currency = $lines[19] ?? 'CHF';
         $scorRef = $lines[27] ?? '';
 
-        $supplier = Contact::firstOrCreate(
-            ['company_name' => $creditorName],
-            ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
-        );
+        $passiveInvoice = DB::transaction(function () use ($creditorName, $qrIban, $scorRef, $amount, $currency, $validated): PassiveInvoice {
+            $supplier = Contact::firstOrCreate(
+                ['company_name' => $creditorName],
+                ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
+            );
 
-        $passiveInvoice = PassiveInvoice::create([
-            'supplier_id' => $supplier->id,
-            'invoice_number' => 'QR-'.$scorRef,
-            'date' => now()->toDateString(),
-            'total_amount' => $amount,
-            'currency' => $currency,
-            'is_reconciled' => false,
-            'qr_raw_payload' => $validated['qr_payload'],
-        ]);
+            return PassiveInvoice::create([
+                'supplier_id' => $supplier->id,
+                'invoice_number' => 'QR-'.$scorRef,
+                'date' => now()->toDateString(),
+                'total_amount' => $amount,
+                'currency' => $currency,
+                'is_reconciled' => false,
+                'qr_raw_payload' => $validated['qr_payload'],
+            ]);
+        });
 
         return $this->successResponse(
             data: [
@@ -187,6 +273,30 @@ class PurchasesController extends Controller
     /**
      * Export payment orders to ISO 20022 pain.001.001.03 (SEPA/Swiss Credit Transfer).
      */
+    #[OA\Post(
+        path: '/api/v1/purchases/export-pain001',
+        operationId: 'exportPain001PaymentOrders',
+        description: 'Export selected supplier invoices into an ISO 20022 pain.001.001.03 XML payment initiation file.',
+        summary: 'Export pain.001 XML',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Purchasing'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['invoice_ids', 'format'],
+                properties: [
+                    new OA\Property(property: 'invoice_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+                    new OA\Property(property: 'format', type: 'string', enum: ['sepa_pain_001_it', 'iso_pain_001_ch']),
+                    new OA\Property(property: 'execution_date', type: 'string', format: 'date', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'ISO 20022 pain.001 XML generated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function exportPain001(Request $request): JsonResponse
     {
         $validated = $request->validate([

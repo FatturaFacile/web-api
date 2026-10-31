@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Actions\Crm\SaveContactAction;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Crm\StoreContactRequest;
+use App\Http\Requests\Crm\UpdateContactRequest;
+use App\Http\Resources\ContactResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
-use App\Services\ItalianSdi\FatturaPaBuilderService;
-use App\Services\SwissQrBill\QrBillGeneratorService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -21,8 +23,7 @@ class CrmController extends Controller
     use AuthorizesRequests;
 
     public function __construct(
-        private readonly FatturaPaBuilderService $fatturaPaBuilder,
-        private readonly QrBillGeneratorService $qrBillGenerator
+        private readonly SaveContactAction $saveContact
     ) {}
 
     #[OA\Get(
@@ -182,49 +183,12 @@ class CrmController extends Controller
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function store(Request $request): JsonResponse
+    public function store(StoreContactRequest $request): JsonResponse
     {
-        $this->authorize('create', Contact::class);
-
-        $validated = $request->validate([
-            'type' => ['required', 'string', 'in:client,customer,supplier,both,lead'],
-            'country' => ['required', 'string', 'regex:/^[A-Z]{2}$/'], // ISO 3166-1 alpha-2 code
-            'company_name' => ['nullable', 'string', 'max:255'],
-            'first_name' => ['nullable', 'string', 'max:100'],
-            'last_name' => ['nullable', 'string', 'max:100'],
-            'email' => ['nullable', 'email'],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'vat_number' => ['nullable', 'string', 'max:30'],
-            'fiscal_code' => ['nullable', 'string', 'max:16'],
-            'uid_number' => ['nullable', 'string', 'max:20'],
-            'sdi_code' => ['nullable', 'string', 'size:7'],
-            'pec' => ['nullable', 'email'],
-            'iban' => ['nullable', 'string', 'max:34'],
-            'qr_iban' => ['nullable', 'string', 'max:34'],
-            'payment_terms_days' => ['nullable', 'integer', 'min:0'],
-            'address' => ['nullable', 'array'],
-            'address.street' => ['required_with:address', 'string'],
-            'address.house_number' => ['nullable', 'string'],
-            'address.postal_code' => ['required_with:address', 'string'],
-            'address.city' => ['required_with:address', 'string'],
-            'address.state_canton' => ['nullable', 'string'],
-            'address.country' => ['required_with:address', 'string', 'size:2'],
-        ]);
-
-        $addressData = $validated['address'] ?? null;
-        unset($validated['address']);
-
-        $contact = Contact::create($validated);
-
-        if ($addressData !== null) {
-            $contact->addresses()->create([
-                'type' => 'billing',
-                ...$addressData,
-            ]);
-        }
+        $contact = $this->saveContact->create($request->validated());
 
         return $this->successResponse(
-            data: $contact->load('addresses'),
+            data: new ContactResource($contact),
             message: 'Contact created successfully',
             statusCode: Response::HTTP_CREATED
         );
@@ -251,7 +215,7 @@ class CrmController extends Controller
         $contact = Contact::with('addresses')->findOrFail($id);
         $this->authorize('view', $contact);
 
-        return $this->successResponse(data: $contact, message: 'Contact details retrieved');
+        return $this->successResponse(data: new ContactResource($contact), message: 'Contact details retrieved');
     }
 
     #[OA\Put(
@@ -266,22 +230,54 @@ class CrmController extends Controller
         ],
         requestBody: new OA\RequestBody(
             required: true,
-            content: new OA\JsonContent
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'type', type: 'string', enum: ['client', 'customer', 'supplier', 'both', 'lead']),
+                    new OA\Property(property: 'country', type: 'string', maxLength: 2),
+                    new OA\Property(property: 'company_name', type: 'string', maxLength: 255, nullable: true),
+                    new OA\Property(property: 'first_name', type: 'string', maxLength: 100, nullable: true),
+                    new OA\Property(property: 'last_name', type: 'string', maxLength: 100, nullable: true),
+                    new OA\Property(property: 'email', type: 'string', format: 'email', nullable: true),
+                    new OA\Property(property: 'phone', type: 'string', maxLength: 50, nullable: true),
+                    new OA\Property(property: 'vat_number', type: 'string', maxLength: 30, nullable: true),
+                    new OA\Property(property: 'fiscal_code', type: 'string', maxLength: 16, nullable: true),
+                    new OA\Property(property: 'uid_number', type: 'string', maxLength: 20, nullable: true),
+                    new OA\Property(property: 'sdi_code', type: 'string', maxLength: 7, nullable: true),
+                    new OA\Property(property: 'pec', type: 'string', format: 'email', nullable: true),
+                    new OA\Property(property: 'iban', type: 'string', maxLength: 34, nullable: true),
+                    new OA\Property(property: 'qr_iban', type: 'string', maxLength: 34, nullable: true),
+                    new OA\Property(property: 'payment_terms_days', type: 'integer', nullable: true),
+                    new OA\Property(
+                        property: 'address',
+                        type: 'object',
+                        nullable: true,
+                        properties: [
+                            new OA\Property(property: 'street', type: 'string'),
+                            new OA\Property(property: 'house_number', type: 'string', nullable: true),
+                            new OA\Property(property: 'postal_code', type: 'string'),
+                            new OA\Property(property: 'city', type: 'string'),
+                            new OA\Property(property: 'state_canton', type: 'string', nullable: true),
+                            new OA\Property(property: 'country', type: 'string', maxLength: 2),
+                        ]
+                    ),
+                ]
+            )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Contact updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Contact not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateContactRequest $request, string $id): JsonResponse
     {
         $contact = Contact::findOrFail($id);
         $this->authorize('update', $contact);
 
-        $contact->update($request->all());
+        $updated = $this->saveContact->update($contact, $request->validated());
 
-        return $this->successResponse(data: $contact->load('addresses'), message: 'Contact updated successfully');
+        return $this->successResponse(data: new ContactResource($updated), message: 'Contact updated successfully');
     }
 
     #[OA\Delete(

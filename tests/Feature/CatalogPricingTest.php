@@ -46,7 +46,7 @@ beforeEach(function (): void {
 
 function catalogApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('categories, brands and units support CRUD with per-tenant uniqueness', function (string $resource, array $payload, string $uniqueField): void {

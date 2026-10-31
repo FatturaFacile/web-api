@@ -7,7 +7,7 @@ use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Database\Seeders\ProcurementDemoDataSeeder;
 use Database\Seeders\ProcurementLookupSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -29,7 +29,7 @@ use Modules\Procurement\Models\SupplierPriceList;
 use Modules\Procurement\Models\SupplierScorecard;
 use Modules\Procurement\Models\ThreeWayMatchLog;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Gate::before(fn () => true);
@@ -173,14 +173,14 @@ test('all 17 procurement factories instantiate and persist with relationships an
 
 test('supplier REST API supports full CRUD lifecycle with pagination and sorting', function (): void {
     // 1. Index
-    $response = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->getJson('/api/v1/procurement/suppliers?page=1&per_page=10&sort=company_name');
     $response->assertOk();
     $response->assertJsonStructure(['data', 'meta']);
 
     // 2. Store
     $uniqueCode = 'SUP-TST-'.uniqid();
-    $storeResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $storeResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/procurement/suppliers', [
             'supplier_code' => $uniqueCode,
             'company_name' => 'Test Supplier Enterprise LLC',
@@ -193,13 +193,13 @@ test('supplier REST API supports full CRUD lifecycle with pagination and sorting
     $supplierId = $storeResponse->json('id');
 
     // 3. Show
-    $showResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $showResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->getJson("/api/v1/procurement/suppliers/{$supplierId}");
     $showResponse->assertOk();
     expect($showResponse->json('supplier_code'))->toBe($uniqueCode);
 
     // 4. Update
-    $updateResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $updateResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->putJson("/api/v1/procurement/suppliers/{$supplierId}", [
             'credit_limit' => 125000.00,
             'rating' => 'A',
@@ -208,7 +208,7 @@ test('supplier REST API supports full CRUD lifecycle with pagination and sorting
     expect((float) $updateResponse->json('credit_limit'))->toBe(125000.00);
 
     // 5. Delete
-    $deleteResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $deleteResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->deleteJson("/api/v1/procurement/suppliers/{$supplierId}");
     $deleteResponse->assertOk();
     expect(Supplier::find($supplierId))->toBeNull();
@@ -218,7 +218,7 @@ test('purchase order lifecycle endpoints operate seamlessly', function (): void 
     $supplier = Supplier::factory()->approved()->create(['tenant_id' => $this->tenant->id]);
 
     // Create PO
-    $poResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $poResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/procurement/purchase-orders', [
             'supplier_id' => $supplier->id,
             'order_date' => now()->toDateString(),
@@ -236,24 +236,24 @@ test('purchase order lifecycle endpoints operate seamlessly', function (): void 
     $poId = $poResponse->json('id');
 
     // Submit for approval
-    $submitResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $submitResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/purchase-orders/{$poId}/submit-approval");
     $submitResponse->assertOk();
 
     // Approve
-    $approveResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $approveResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/purchase-orders/{$poId}/approve");
     $approveResponse->assertOk();
     expect($approveResponse->json('status'))->toBe('approved');
 
     // Close
-    $closeResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $closeResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/purchase-orders/{$poId}/close");
     $closeResponse->assertOk();
     expect($closeResponse->json('status'))->toBe('closed');
 
     // Reopen
-    $reopenResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $reopenResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/purchase-orders/{$poId}/reopen");
     $reopenResponse->assertOk();
     expect($reopenResponse->json('status'))->toBe('approved');
@@ -261,7 +261,7 @@ test('purchase order lifecycle endpoints operate seamlessly', function (): void 
 
 test('purchase requisition lifecycle endpoints operate seamlessly', function (): void {
     // 1. Create draft PR
-    $prResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $prResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/procurement/requisitions', [
             'title' => 'Server Room Cooling Units',
             'required_by_date' => now()->addDays(20)->toDateString(),
@@ -279,13 +279,13 @@ test('purchase requisition lifecycle endpoints operate seamlessly', function ():
     $prId = $prResponse->json('id');
 
     // 2. Submit for approval
-    $submitResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $submitResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/requisitions/{$prId}/submit-approval");
     $submitResponse->assertOk();
     expect($submitResponse->json('status'))->toBe('pending_approval');
 
     // 3. Approve
-    $approveResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $approveResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/requisitions/{$prId}/approve");
     $approveResponse->assertOk();
     expect($approveResponse->json('status'))->toBe('approved');
@@ -321,7 +321,7 @@ test('three-way matching and evaluations endpoints operate cleanly', function ()
     ]);
 
     // Three-way match execute
-    $matchResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $matchResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/procurement/three-way-match/execute', [
             'purchase_order_id' => $po->id,
             'purchase_receipt_id' => $receipt->id,
@@ -332,7 +332,7 @@ test('three-way matching and evaluations endpoints operate cleanly', function ()
     expect($matchResponse->json('match_status'))->toBe('matched');
 
     // Supplier evaluation submission
-    $evalResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $evalResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/suppliers/{$supplier->id}/evaluations", [
             'evaluation_period_start' => '2026-01-01',
             'evaluation_period_end' => '2026-03-31',
@@ -346,7 +346,7 @@ test('three-way matching and evaluations endpoints operate cleanly', function ()
     $evalResponse->assertCreated();
 
     // Supplier scorecard retrieval
-    $scorecardResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $scorecardResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->getJson("/api/v1/procurement/suppliers/{$supplier->id}/scorecard?year=2026&quarter=1");
     $scorecardResponse->assertOk();
     expect($scorecardResponse->json('supplier_id'))->toBe($supplier->id);

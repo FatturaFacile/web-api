@@ -46,7 +46,7 @@ beforeEach(function (): void {
 
 function lblApi(?string $tenantId = null)
 {
-    return test()->withHeader('X-Tenant-ID', $tenantId ?? test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', $tenantId ?? test()->tenant->id);
 }
 
 function barcodes(): BarcodeService
@@ -529,5 +529,5 @@ test('products that cannot be encoded as the chosen barcode are reported by SKU'
 test('label printing requires authentication', function (): void {
     $this->app['auth']->forgetGuards();
 
-    $this->withHeader('X-Tenant-ID', $this->tenant->id)->getJson('/api/v1/inventory/labels/presets')->assertUnauthorized();
+    $this->withHeader('X-Tenant-Id', $this->tenant->id)->getJson('/api/v1/inventory/labels/presets')->assertUnauthorized();
 });

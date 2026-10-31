@@ -12,7 +12,7 @@ use Database\Seeders\InventoryDemoDataSeeder;
 use Database\Seeders\InventoryLookupSeeder;
 use Database\Seeders\InventoryStatusSeeder;
 use Database\Seeders\WarehouseSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -33,7 +33,7 @@ use Modules\Inventory\Models\WarehouseBin;
 use Modules\Inventory\Models\WarehouseRack;
 use Modules\Inventory\Models\WarehouseZone;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Gate::before(fn () => true);
@@ -65,7 +65,7 @@ beforeEach(function (): void {
             'updated_at' => now(),
         ]
     );
-    $this->withHeader('X-Tenant-ID', $this->tenant->id);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     Sanctum::actingAs($this->user);
 });

@@ -5,7 +5,7 @@ info:
   description: |-
     REST API of the FatturaFacile ERP.
 
-    Every request except login and the incoming webhooks must carry a bearer token (`Authorization: Bearer <token>`) and the organization it works on (`X-Tenant-ID: <uuid>`). Errors follow RFC 9457 (`application/problem+json`).
+    Every request except login and the incoming webhooks must carry a bearer token (`Authorization: Bearer <token>`) and the organization it works on (`X-Tenant-Id: <uuid>`). Errors follow RFC 9457 (`application/problem+json`).
   version: 1.0.0
   contact:
     name: 'FatturaFacile API support'
@@ -13,8 +13,7 @@ info:
     name: Proprietary
     identifier: LicenseRef-Proprietary
 servers:
-  -
-    url: 'http://localhost:8000/api'
+  - url: 'http://localhost:8000/api'
     description: 'API base URL'
 paths:
   /v1/accounting/chart-of-accounts:
@@ -196,13 +195,11 @@ paths:
       tags:
         - Alert
       parameters:
-        -
-          name: alertable_type
+        - name: alertable_type
           in: query
           schema:
             type: string
-        -
-          name: alertable_id
+        - name: alertable_id
           in: query
           schema:
             type: string
@@ -317,8 +314,7 @@ paths:
       tags:
         - Alert
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -351,8 +347,7 @@ paths:
       tags:
         - Alert
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -393,8 +388,7 @@ paths:
       tags:
         - Alert
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -434,7 +428,7 @@ paths:
             application/json:
               schema:
                 type: object
-      security: []
+      security: [ ]
   /documentation/openapi.json:
     get:
       operationId: documentation.spec
@@ -449,7 +443,7 @@ paths:
                 type: string
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
-      security: []
+      security: [ ]
   /v1/attachments:
     get:
       operationId: attachments.index
@@ -457,8 +451,7 @@ paths:
       tags:
         - Attachment
       parameters:
-        -
-          name: attachable_type
+        - name: attachable_type
           in: query
           required: true
           schema:
@@ -472,8 +465,7 @@ paths:
               - work_order
               - purchase_order
               - supplier_invoice
-        -
-          name: attachable_id
+        - name: attachable_id
           in: query
           required: true
           schema:
@@ -550,8 +542,7 @@ paths:
       tags:
         - Attachment
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -579,8 +570,7 @@ paths:
       tags:
         - Attachment
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -737,8 +727,7 @@ paths:
             application/problem+json:
               schema:
                 anyOf:
-                  -
-                    type: object
+                  - type: object
                     properties:
                       type:
                         type: 'null'
@@ -762,8 +751,7 @@ paths:
                       - detail
                       - instance
                       - invalid_params
-                  -
-                    type: object
+                  - type: object
                     properties:
                       type:
                         type: 'null'
@@ -818,7 +806,7 @@ paths:
                   - invalid_params
         '422':
           $ref: '#/components/responses/ValidationException'
-      security: []
+      security: [ ]
   /v1/auth/logout:
     post:
       operationId: auth.logout
@@ -1195,8 +1183,7 @@ paths:
       tags:
         - Automotive
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -1293,8 +1280,7 @@ paths:
       tags:
         - Automotive
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -1355,8 +1341,7 @@ paths:
       tags:
         - BankStatement
       parameters:
-        -
-          name: status
+        - name: status
           in: query
           schema:
             type: string
@@ -1364,8 +1349,7 @@ paths:
               - draft
               - partially_reconciled
               - reconciled
-        -
-          name: source_format
+        - name: source_format
           in: query
           schema:
             type: string
@@ -1373,8 +1357,7 @@ paths:
               - cbi
               - camt053
               - camt054
-        -
-          name: iban
+        - name: iban
           in: query
           schema:
             type: string
@@ -1437,10 +1420,8 @@ paths:
                     properties:
                       statement:
                         allOf:
-                          -
-                            $ref: '#/components/schemas/BankStatementResource'
-                          -
-                            type: object
+                          - $ref: '#/components/schemas/BankStatementResource'
+                          - type: object
                             required:
                               - lines
                       reconciliation:
@@ -1477,8 +1458,7 @@ paths:
       tags:
         - BankStatement
       parameters:
-        -
-          name: lineId
+        - name: lineId
           in: path
           required: true
           schema:
@@ -1522,8 +1502,7 @@ paths:
       tags:
         - BankStatement
       parameters:
-        -
-          name: lineId
+        - name: lineId
           in: path
           required: true
           schema:
@@ -1566,8 +1545,7 @@ paths:
       tags:
         - BankStatement
       parameters:
-        -
-          name: lineId
+        - name: lineId
           in: path
           required: true
           schema:
@@ -1604,8 +1582,7 @@ paths:
       tags:
         - BankStatement
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -1643,8 +1620,7 @@ paths:
       tags:
         - BankStatement
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -1667,10 +1643,8 @@ paths:
                     properties:
                       statement:
                         allOf:
-                          -
-                            $ref: '#/components/schemas/BankStatementResource'
-                          -
-                            type: object
+                          - $ref: '#/components/schemas/BankStatementResource'
+                          - type: object
                             required:
                               - lines
                       reconciliation:
@@ -1869,8 +1843,7 @@ paths:
       tags:
         - ContactInsights
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -1900,7 +1873,7 @@ paths:
                         type: number
                       paid_total:
                         type: number
-                      outstanding_total: {}
+                      outstanding_total: { }
                       overdue_total:
                         type: number
                       average_invoice_value:
@@ -1986,22 +1959,19 @@ paths:
       tags:
         - ContactInsights
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
             type: string
-        -
-          name: as_of
+        - name: as_of
           in: query
           schema:
             type:
               - string
               - 'null'
             format: date-time
-        -
-          name: to
+        - name: to
           in: query
           schema:
             type:
@@ -2070,7 +2040,7 @@ paths:
                         type: number
                       ageing:
                         type: array
-                        items: {}
+                        items: { }
                     required:
                       - contact_id
                       - as_of
@@ -2095,8 +2065,7 @@ paths:
       tags:
         - ContactInsights
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -2362,8 +2331,7 @@ paths:
       tags:
         - Crm
       parameters:
-        -
-          name: type
+        - name: type
           in: query
           schema:
             type: string
@@ -2617,8 +2585,7 @@ paths:
       tags:
         - Crm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -2654,8 +2621,7 @@ paths:
       tags:
         - Crm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -2689,8 +2655,7 @@ paths:
       tags:
         - Crm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -2873,11 +2838,9 @@ paths:
                         type: string
                       deadlines:
                         anyOf:
-                          -
-                            type: array
+                          - type: array
                             prefixItems:
-                              -
-                                type: object
+                              - type: object
                                 properties:
                                   title:
                                     type: string
@@ -2895,8 +2858,7 @@ paths:
                                   - due_date
                                   - authority
                                   - status
-                              -
-                                type: object
+                              - type: object
                                 properties:
                                   title:
                                     type: string
@@ -2914,8 +2876,7 @@ paths:
                                   - due_date
                                   - authority
                                   - status
-                              -
-                                type: object
+                              - type: object
                                 properties:
                                   title:
                                     type: string
@@ -2935,12 +2896,10 @@ paths:
                                   - status
                             minItems: 3
                             maxItems: 3
-                            items: {}
-                          -
-                            type: array
+                            items: { }
+                          - type: array
                             prefixItems:
-                              -
-                                type: object
+                              - type: object
                                 properties:
                                   title:
                                     type: string
@@ -2958,8 +2917,7 @@ paths:
                                   - due_date
                                   - authority
                                   - status
-                              -
-                                type: object
+                              - type: object
                                 properties:
                                   title:
                                     type: string
@@ -2977,8 +2935,7 @@ paths:
                                   - due_date
                                   - authority
                                   - status
-                              -
-                                type: object
+                              - type: object
                                 properties:
                                   title:
                                     type: string
@@ -2998,7 +2955,7 @@ paths:
                                   - status
                             minItems: 3
                             maxItems: 3
-                            items: {}
+                            items: { }
                     required:
                       - jurisdiction
                       - deadlines
@@ -3083,8 +3040,7 @@ paths:
                     const: 'Dashboard layout retrieved successfully'
                   data:
                     anyOf:
-                      -
-                        type: object
+                      - type: object
                         properties:
                           id:
                             type: string
@@ -3097,15 +3053,14 @@ paths:
                           widgets_layout:
                             type: array
                             description: 'Widgets that are no longer registered are left out.'
-                            items: {}
+                            items: { }
                         required:
                           - id
                           - name
                           - is_default
                           - is_customized
                           - widgets_layout
-                      -
-                        type: object
+                      - type: object
                         properties:
                           id:
                             type: 'null'
@@ -3120,8 +3075,7 @@ paths:
                             type: array
                             items:
                               anyOf:
-                                -
-                                  type: object
+                                - type: object
                                   properties:
                                     widget_id:
                                       type: string
@@ -3146,15 +3100,14 @@ paths:
                                     - w
                                     - h
                                     - settings
-                                -
-                                  type: object
+                                - type: object
                                   properties:
                                     widget_id:
                                       type: string
                                     x:
                                       type: integer
                                       const: 0
-                                    'y': {}
+                                    'y': { }
                                     w:
                                       type: integer
                                     h:
@@ -3212,8 +3165,7 @@ paths:
                     const: 'Dashboard layout saved successfully'
                   data:
                     anyOf:
-                      -
-                        type: object
+                      - type: object
                         properties:
                           id:
                             type: string
@@ -3226,15 +3178,14 @@ paths:
                           widgets_layout:
                             type: array
                             description: 'Widgets that are no longer registered are left out.'
-                            items: {}
+                            items: { }
                         required:
                           - id
                           - name
                           - is_default
                           - is_customized
                           - widgets_layout
-                      -
-                        type: object
+                      - type: object
                         properties:
                           id:
                             type: 'null'
@@ -3249,8 +3200,7 @@ paths:
                             type: array
                             items:
                               anyOf:
-                                -
-                                  type: object
+                                - type: object
                                   properties:
                                     widget_id:
                                       type: string
@@ -3275,15 +3225,14 @@ paths:
                                     - w
                                     - h
                                     - settings
-                                -
-                                  type: object
+                                - type: object
                                   properties:
                                     widget_id:
                                       type: string
                                     x:
                                       type: integer
                                       const: 0
-                                    'y': {}
+                                    'y': { }
                                     w:
                                       type: integer
                                     h:
@@ -3339,8 +3288,7 @@ paths:
                     const: 'Dashboard layout restored to the factory defaults'
                   data:
                     anyOf:
-                      -
-                        type: object
+                      - type: object
                         properties:
                           id:
                             type: string
@@ -3353,15 +3301,14 @@ paths:
                           widgets_layout:
                             type: array
                             description: 'Widgets that are no longer registered are left out.'
-                            items: {}
+                            items: { }
                         required:
                           - id
                           - name
                           - is_default
                           - is_customized
                           - widgets_layout
-                      -
-                        type: object
+                      - type: object
                         properties:
                           id:
                             type: 'null'
@@ -3376,8 +3323,7 @@ paths:
                             type: array
                             items:
                               anyOf:
-                                -
-                                  type: object
+                                - type: object
                                   properties:
                                     widget_id:
                                       type: string
@@ -3402,15 +3348,14 @@ paths:
                                     - w
                                     - h
                                     - settings
-                                -
-                                  type: object
+                                - type: object
                                   properties:
                                     widget_id:
                                       type: string
                                     x:
                                       type: integer
                                       const: 0
-                                    'y': {}
+                                    'y': { }
                                     w:
                                       type: integer
                                     h:
@@ -3467,7 +3412,7 @@ paths:
                     properties:
                       widgets:
                         type: array
-                        items: {}
+                        items: { }
                       generated_at:
                         type: string
                     required:
@@ -3533,8 +3478,7 @@ paths:
       tags:
         - DeliveryNote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3570,8 +3514,7 @@ paths:
       tags:
         - DeliveryNote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3607,8 +3550,7 @@ paths:
       tags:
         - DeliveryNote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3628,10 +3570,8 @@ paths:
                     const: 'Invoice created from delivery note'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - items
                   meta:
@@ -3652,14 +3592,12 @@ paths:
       tags:
         - DocumentEmail
       parameters:
-        -
-          name: type
+        - name: type
           in: path
           required: true
           schema:
             type: string
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3701,14 +3639,12 @@ paths:
       tags:
         - DocumentEmail
       parameters:
-        -
-          name: type
+        - name: type
           in: path
           required: true
           schema:
             type: string
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3746,14 +3682,12 @@ paths:
       tags:
         - DocumentPdf
       parameters:
-        -
-          name: type
+        - name: type
           in: path
           required: true
           schema:
             type: string
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3783,8 +3717,7 @@ paths:
       tags:
         - EcommerceChannel
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3832,8 +3765,7 @@ paths:
       tags:
         - EcommerceChannel
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -3876,8 +3808,7 @@ paths:
                           - skipped
                       orders:
                         anyOf:
-                          -
-                            type: object
+                          - type: object
                             properties:
                               imported:
                                 type: integer
@@ -3896,8 +3827,7 @@ paths:
                               - updated
                               - duplicates
                               - failed
-                          -
-                            type: string
+                          - type: string
                             enum:
                               - disabled
                       stock:
@@ -4022,8 +3952,7 @@ paths:
       tags:
         - EcommerceChannel
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -4058,8 +3987,7 @@ paths:
       tags:
         - EcommerceChannel
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -4101,8 +4029,7 @@ paths:
       tags:
         - EcommerceChannel
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -4140,8 +4067,7 @@ paths:
       tags:
         - EcommerceWebhook
       parameters:
-        -
-          name: channelUuid
+        - name: channelUuid
           in: path
           required: true
           schema:
@@ -4268,7 +4194,7 @@ paths:
                   - detail
                   - instance
                   - invalid_params
-      security: []
+      security: [ ]
   /v1/field-service/tickets:
     get:
       operationId: field-service.tickets
@@ -4372,8 +4298,7 @@ paths:
       tags:
         - FieldService
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -4664,30 +4589,26 @@ paths:
       tags:
         - GeneralLedger
       parameters:
-        -
-          name: from_date
+        - name: from_date
           in: query
           required: true
           schema:
             type: string
             format: date
-        -
-          name: to_date
+        - name: to_date
           in: query
           required: true
           schema:
             type: string
             format: date
-        -
-          name: account_code
+        - name: account_code
           in: query
           schema:
             type:
               - string
               - 'null'
             pattern: '^[A-Za-z0-9.\-]{1,20}$'
-        -
-          name: source
+        - name: source
           in: query
           schema:
             type: string
@@ -4696,30 +4617,26 @@ paths:
               - invoices
               - payments
               - banking
-        -
-          name: date_format
+        - name: date_format
           in: query
           schema:
             type: string
             enum:
               - YYYY-MM-DD
               - DD/MM/YYYY
-        -
-          name: format
+        - name: format
           in: query
           schema:
             type: string
             enum:
               - csv
               - json
-        -
-          name: page
+        - name: page
           in: query
           schema:
             type: integer
             minimum: 1
-        -
-          name: per_page
+        - name: per_page
           in: query
           schema:
             type: integer
@@ -4743,7 +4660,7 @@ paths:
                     properties:
                       entries:
                         type: array
-                        items: {}
+                        items: { }
                       totals:
                         type: object
                         properties:
@@ -4759,7 +4676,7 @@ paths:
                             type: boolean
                           unbalanced_entries:
                             type: array
-                            items: {}
+                            items: { }
                         required:
                           - entries
                           - lines
@@ -4776,7 +4693,7 @@ paths:
                             type: integer
                           total_entries:
                             type: integer
-                          last_page: {}
+                          last_page: { }
                         required:
                           - page
                           - per_page
@@ -4804,30 +4721,26 @@ paths:
       tags:
         - GeneralLedger
       parameters:
-        -
-          name: from_date
+        - name: from_date
           in: query
           required: true
           schema:
             type: string
             format: date
-        -
-          name: to_date
+        - name: to_date
           in: query
           required: true
           schema:
             type: string
             format: date
-        -
-          name: account_code
+        - name: account_code
           in: query
           schema:
             type:
               - string
               - 'null'
             pattern: '^[A-Za-z0-9.\-]{1,20}$'
-        -
-          name: source
+        - name: source
           in: query
           schema:
             type: string
@@ -4836,30 +4749,26 @@ paths:
               - invoices
               - payments
               - banking
-        -
-          name: date_format
+        - name: date_format
           in: query
           schema:
             type: string
             enum:
               - YYYY-MM-DD
               - DD/MM/YYYY
-        -
-          name: format
+        - name: format
           in: query
           schema:
             type: string
             enum:
               - csv
               - json
-        -
-          name: page
+        - name: page
           in: query
           schema:
             type: integer
             minimum: 1
-        -
-          name: per_page
+        - name: per_page
           in: query
           schema:
             type: integer
@@ -4887,7 +4796,7 @@ paths:
                     properties:
                       entries:
                         type: array
-                        items: {}
+                        items: { }
                       totals:
                         type: object
                         properties:
@@ -4903,7 +4812,7 @@ paths:
                             type: boolean
                           unbalanced_entries:
                             type: array
-                            items: {}
+                            items: { }
                         required:
                           - entries
                           - lines
@@ -5013,8 +4922,7 @@ paths:
                     const: 'Withholding tax rates and cross-border parameters'
                   data:
                     anyOf:
-                      -
-                        type: object
+                      - type: object
                         properties:
                           canton:
                             type: string
@@ -5033,8 +4941,7 @@ paths:
                           - agreement
                           - swiss_withholding_limit
                           - italian_tax_credit
-                      -
-                        type: object
+                      - type: object
                         properties:
                           country:
                             type: string
@@ -5139,7 +5046,7 @@ paths:
                   - meta
         '403':
           $ref: '#/components/responses/AuthorizationException'
-      security: []
+      security: [ ]
   /v1/inventory/products:
     get:
       operationId: inventory.products
@@ -5177,7 +5084,7 @@ paths:
                         type: string
                       links:
                         type: object
-                        additionalProperties: {}
+                        additionalProperties: { }
                       next_page_url:
                         type: string
                       path:
@@ -5261,8 +5168,7 @@ paths:
       tags:
         - Inventory
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5394,8 +5300,7 @@ paths:
       tags:
         - Invoice
       parameters:
-        -
-          name: payment_status
+        - name: payment_status
           in: query
           schema:
             type: string
@@ -5465,10 +5370,8 @@ paths:
                     const: 'Invoice created successfully'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - contact
                           - items
@@ -5490,8 +5393,7 @@ paths:
       tags:
         - Invoice
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5529,8 +5431,7 @@ paths:
       tags:
         - Invoice
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5584,8 +5485,7 @@ paths:
       tags:
         - Invoice
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5654,8 +5554,7 @@ paths:
       tags:
         - Invoice
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5683,8 +5582,7 @@ paths:
       tags:
         - InvoicePayment
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5720,8 +5618,7 @@ paths:
       tags:
         - InvoicePayment
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5765,8 +5662,7 @@ paths:
       tags:
         - InvoicePayment
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5786,10 +5682,8 @@ paths:
                     const: 'Proforma converted to invoice'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - items
                   meta:
@@ -5810,8 +5704,7 @@ paths:
       tags:
         - InvoiceQrBill
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5885,7 +5778,7 @@ paths:
                     type: 'null'
                   invalid_params:
                     type: array
-                    items: {}
+                    items: { }
                 required:
                   - type
                   - title
@@ -5902,8 +5795,7 @@ paths:
       tags:
         - InvoiceSdi
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -5923,7 +5815,7 @@ paths:
                     const: 'Invoice sent to SDI'
                   data:
                     type: object
-                    additionalProperties: {}
+                    additionalProperties: { }
                   meta:
                     type: string
                 required:
@@ -5970,8 +5862,7 @@ paths:
       tags:
         - InvoiceSdi
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6018,8 +5909,7 @@ paths:
       tags:
         - LoyaltyCard
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6055,8 +5945,7 @@ paths:
       tags:
         - LoyaltyCard
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6179,8 +6068,7 @@ paths:
       tags:
         - LoyaltyCard
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6213,8 +6101,7 @@ paths:
       tags:
         - LoyaltyCard
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6255,8 +6142,7 @@ paths:
       tags:
         - LoyaltyCard
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6348,8 +6234,7 @@ paths:
       tags:
         - Manufacturing
       parameters:
-        -
-          name: stageId
+        - name: stageId
           in: path
           required: true
           schema:
@@ -6487,8 +6372,7 @@ paths:
       tags:
         - PaymentImport
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6525,14 +6409,12 @@ paths:
       tags:
         - PaymentImport
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
             type: string
-        -
-          name: lineId
+        - name: lineId
           in: path
           required: true
           schema:
@@ -6575,8 +6457,7 @@ paths:
       tags:
         - PaymentReminder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6613,8 +6494,7 @@ paths:
       tags:
         - PaymentReminder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6652,20 +6532,17 @@ paths:
       tags:
         - PaymentTerm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
             type: string
-        -
-          name: amount
+        - name: amount
           in: query
           required: true
           schema:
             type: number
-        -
-          name: date
+        - name: date
           in: query
           schema:
             type:
@@ -6816,8 +6693,7 @@ paths:
       tags:
         - PaymentTerm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6850,8 +6726,7 @@ paths:
       tags:
         - PaymentTerm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6893,8 +6768,7 @@ paths:
       tags:
         - PaymentTerm
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -6948,7 +6822,7 @@ paths:
                     const: 'Sale registered successfully'
                   data:
                     type: array
-                    items: {}
+                    items: { }
                   meta:
                     type: string
                 required:
@@ -6966,8 +6840,7 @@ paths:
       tags:
         - PosSale
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7004,8 +6877,7 @@ paths:
       tags:
         - PosSale
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7040,8 +6912,7 @@ paths:
       tags:
         - PosSale
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7141,8 +7012,7 @@ paths:
       tags:
         - PosSession
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7185,8 +7055,7 @@ paths:
       tags:
         - PosSession
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7362,30 +7231,26 @@ paths:
       tags:
         - PriceList
       parameters:
-        -
-          name: product_id
+        - name: product_id
           in: query
           required: true
           schema:
             type: string
             format: uuid
-        -
-          name: contact_id
+        - name: contact_id
           in: query
           schema:
             type:
               - string
               - 'null'
             format: uuid
-        -
-          name: quantity
+        - name: quantity
           in: query
           schema:
             type:
               - number
               - 'null'
-        -
-          name: date
+        - name: date
           in: query
           schema:
             type:
@@ -7407,8 +7272,7 @@ paths:
                     const: 'Price resolved successfully'
                   data:
                     anyOf:
-                      -
-                        type: object
+                      - type: object
                         properties:
                           price:
                             type: number
@@ -7421,8 +7285,7 @@ paths:
                           - price
                           - source
                           - price_list_id
-                      -
-                        type: object
+                      - type: object
                         properties:
                           price:
                             type: number
@@ -7532,8 +7395,7 @@ paths:
       tags:
         - PriceList
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7569,8 +7431,7 @@ paths:
       tags:
         - PriceList
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7612,8 +7473,7 @@ paths:
       tags:
         - PriceList
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7651,14 +7511,12 @@ paths:
       tags:
         - ProductBarcode
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
             type: string
-        -
-          name: format
+        - name: format
           in: query
           schema:
             type:
@@ -7668,17 +7526,13 @@ paths:
               - svg
               - png
               - null
-        -
-          name: type
+        - name: type
           in: query
           schema:
             anyOf:
-              -
-                $ref: '#/components/schemas/BarcodeType'
-              -
-                type: 'null'
-        -
-          name: scale
+              - $ref: '#/components/schemas/BarcodeType'
+              - type: 'null'
+        - name: scale
           in: query
           schema:
             type:
@@ -7686,8 +7540,7 @@ paths:
               - 'null'
             minimum: 1
             maximum: 10
-        -
-          name: height
+        - name: height
           in: query
           schema:
             type:
@@ -7798,8 +7651,7 @@ paths:
       tags:
         - ProductBrand
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7832,8 +7684,7 @@ paths:
       tags:
         - ProductBrand
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7874,8 +7725,7 @@ paths:
       tags:
         - ProductBrand
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -7988,8 +7838,7 @@ paths:
       tags:
         - ProductCategory
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8022,8 +7871,7 @@ paths:
       tags:
         - ProductCategory
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8064,8 +7912,7 @@ paths:
       tags:
         - ProductCategory
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8219,8 +8066,7 @@ paths:
       tags:
         - ProductVariant
       parameters:
-        -
-          name: variantId
+        - name: variantId
           in: path
           required: true
           schema:
@@ -8255,8 +8101,7 @@ paths:
       tags:
         - ProductVariant
       parameters:
-        -
-          name: variantId
+        - name: variantId
           in: path
           required: true
           schema:
@@ -8298,8 +8143,7 @@ paths:
       tags:
         - ProductVariant
       parameters:
-        -
-          name: variantId
+        - name: variantId
           in: path
           required: true
           schema:
@@ -8335,8 +8179,7 @@ paths:
       tags:
         - ProductVariant
       parameters:
-        -
-          name: parentId
+        - name: parentId
           in: path
           required: true
           schema:
@@ -8373,8 +8216,7 @@ paths:
       tags:
         - ProductVariant
       parameters:
-        -
-          name: parentId
+        - name: parentId
           in: path
           required: true
           schema:
@@ -8418,8 +8260,7 @@ paths:
       tags:
         - ProductVariant
       parameters:
-        -
-          name: parentId
+        - name: parentId
           in: path
           required: true
           schema:
@@ -8792,8 +8633,7 @@ paths:
       tags:
         - PurchaseOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8829,8 +8669,7 @@ paths:
       tags:
         - PurchaseOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8873,8 +8712,7 @@ paths:
       tags:
         - PurchaseOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8910,8 +8748,7 @@ paths:
       tags:
         - PurchaseOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -8998,8 +8835,7 @@ paths:
       tags:
         - PurchaseOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9190,12 +9026,12 @@ paths:
                     properties:
                       id:
                         type: string
-                      creditor: {}
-                      qr_iban: {}
-                      scor_reference: {}
+                      creditor: { }
+                      qr_iban: { }
+                      scor_reference: { }
                       amount:
                         type: number
-                      currency: {}
+                      currency: { }
                     required:
                       - id
                       - creditor
@@ -9292,8 +9128,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: status
+        - name: status
           in: query
           schema:
             type: string
@@ -9379,8 +9214,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9416,8 +9250,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9459,8 +9292,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9496,8 +9328,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9535,8 +9366,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9556,10 +9386,8 @@ paths:
                     const: 'Invoice created from quote'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - items
                   meta:
@@ -9580,8 +9408,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9619,8 +9446,7 @@ paths:
       tags:
         - Quote
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9796,8 +9622,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: status
+        - name: status
           in: query
           schema:
             type: string
@@ -9883,8 +9708,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9920,8 +9744,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -9963,8 +9786,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10000,8 +9822,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10044,8 +9865,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10065,10 +9885,8 @@ paths:
                     const: 'Invoice created from order'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - items
                   meta:
@@ -10089,8 +9907,7 @@ paths:
       tags:
         - SalesOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10116,10 +9933,8 @@ paths:
                     const: 'Deposit invoice created'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - items
                   meta:
@@ -10142,18 +9957,15 @@ paths:
       tags:
         - SalesOrderLine
       parameters:
-        -
-          name: contact_id
+        - name: contact_id
           in: query
           schema:
             type: string
-        -
-          name: product_id
+        - name: product_id
           in: query
           schema:
             type: string
-        -
-          name: open
+        - name: open
           in: query
           schema:
             type: boolean
@@ -10283,7 +10095,7 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '403':
           $ref: '#/components/responses/AuthorizationException'
-      security: []
+      security: [ ]
   /v1/settings/tenant:
     get:
       operationId: settings.tenant
@@ -10304,10 +10116,8 @@ paths:
                     const: 'Tenant settings retrieved'
                   data:
                     anyOf:
-                      -
-                        $ref: '#/components/schemas/Tenant'
-                      -
-                        type: 'null'
+                      - $ref: '#/components/schemas/Tenant'
+                      - type: 'null'
                   meta:
                     type: string
                 required:
@@ -10400,10 +10210,8 @@ paths:
                     const: 'Tenant settings updated successfully'
                   data:
                     anyOf:
-                      -
-                        $ref: '#/components/schemas/Tenant'
-                      -
-                        type: 'null'
+                      - $ref: '#/components/schemas/Tenant'
+                      - type: 'null'
                   meta:
                     type: string
                 required:
@@ -10553,8 +10361,7 @@ paths:
                   data:
                     type: array
                     prefixItems:
-                      -
-                        type: object
+                      - type: object
                         properties:
                           key:
                             type: string
@@ -10569,8 +10376,7 @@ paths:
                           - key
                           - name
                           - description
-                      -
-                        type: object
+                      - type: object
                         properties:
                           key:
                             type: string
@@ -10585,8 +10391,7 @@ paths:
                           - key
                           - name
                           - description
-                      -
-                        type: object
+                      - type: object
                         properties:
                           key:
                             type: string
@@ -10601,8 +10406,7 @@ paths:
                           - key
                           - name
                           - description
-                      -
-                        type: object
+                      - type: object
                         properties:
                           key:
                             type: string
@@ -10617,8 +10421,7 @@ paths:
                           - key
                           - name
                           - description
-                      -
-                        type: object
+                      - type: object
                         properties:
                           key:
                             type: string
@@ -10635,7 +10438,7 @@ paths:
                           - description
                     minItems: 5
                     maxItems: 5
-                    items: {}
+                    items: { }
                   meta:
                     type: string
                 required:
@@ -10681,8 +10484,7 @@ paths:
       tags:
         - Stock
       parameters:
-        -
-          name: warehouse_id
+        - name: warehouse_id
           in: query
           schema:
             type: string
@@ -10774,8 +10576,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10809,8 +10610,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10844,8 +10644,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10880,8 +10679,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10905,7 +10703,7 @@ paths:
                         type: integer
                       invoice_ids:
                         type: array
-                        items: {}
+                        items: { }
                     required:
                       - invoices_created
                       - invoice_ids
@@ -10924,8 +10722,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -10967,8 +10764,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: status
+        - name: status
           in: query
           schema:
             type: string
@@ -11054,8 +10850,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11091,8 +10886,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11134,8 +10928,7 @@ paths:
       tags:
         - Subscription
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11171,18 +10964,15 @@ paths:
       tags:
         - SupplierInvoice
       parameters:
-        -
-          name: supplier_id
+        - name: supplier_id
           in: query
           schema:
             type: string
-        -
-          name: document_type
+        - name: document_type
           in: query
           schema:
             type: string
-        -
-          name: payment_status
+        - name: payment_status
           in: query
           schema:
             type: string
@@ -11232,8 +11022,7 @@ paths:
       tags:
         - SupplierInvoice
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11268,8 +11057,7 @@ paths:
       tags:
         - SupplierInvoice
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11325,7 +11113,7 @@ paths:
                     const: 'Supplier invoices received'
                   data:
                     type: array
-                    items: {}
+                    items: { }
                   meta:
                     type: string
                 required:
@@ -11464,8 +11252,7 @@ paths:
       tags:
         - TenantBackup
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11500,8 +11287,7 @@ paths:
       tags:
         - TenantBackup
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11566,8 +11352,7 @@ paths:
       tags:
         - TenantBackup
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11683,8 +11468,7 @@ paths:
       tags:
         - TenantBackup
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -11801,8 +11585,7 @@ paths:
       tags:
         - TenantPreferences
       parameters:
-        -
-          name: group
+        - name: group
           in: path
           required: true
           schema:
@@ -11842,13 +11625,11 @@ paths:
       tags:
         - TimeAttendance
       parameters:
-        -
-          name: from_date
+        - name: from_date
           in: query
           schema:
             type: string
-        -
-          name: to_date
+        - name: to_date
           in: query
           schema:
             type: string
@@ -11915,10 +11696,8 @@ paths:
                     const: 'Clock-in recorded successfully'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/TimeEntryResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/TimeEntryResource'
+                      - type: object
                         required:
                           - user
                   meta:
@@ -11986,10 +11765,8 @@ paths:
                     const: 'Clock-out recorded successfully'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/TimeEntryResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/TimeEntryResource'
+                      - type: object
                         required:
                           - user
                   meta:
@@ -12010,13 +11787,11 @@ paths:
       tags:
         - TimeAttendance
       parameters:
-        -
-          name: start_date
+        - name: start_date
           in: query
           schema:
             type: string
-        -
-          name: end_date
+        - name: end_date
           in: query
           schema:
             type: string
@@ -12050,8 +11825,7 @@ paths:
                           - end
                       audit:
                         anyOf:
-                          -
-                            type: object
+                          - type: object
                             properties:
                               compliant:
                                 type: string
@@ -12059,8 +11833,7 @@ paths:
                                 type: array
                                 items:
                                   anyOf:
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12076,8 +11849,7 @@ paths:
                                         - message
                                         - entry_id
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12090,8 +11862,7 @@ paths:
                                         - rule
                                         - message
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12104,8 +11875,7 @@ paths:
                                         - rule
                                         - message
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12118,8 +11888,7 @@ paths:
                                         - rule
                                         - message
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12141,13 +11910,11 @@ paths:
                                     type: number
                                   max_weekly_limit:
                                     anyOf:
-                                      -
-                                        type: number
+                                      - type: number
                                         const: 45
-                                      -
-                                        type: number
+                                      - type: number
                                         const: 50
-                                  days_evaluated: {}
+                                  days_evaluated: { }
                                 required:
                                   - total_hours
                                   - weekly_average_hours
@@ -12157,8 +11924,7 @@ paths:
                               - compliant
                               - violations
                               - stats
-                          -
-                            type: object
+                          - type: object
                             properties:
                               compliant:
                                 type: string
@@ -12166,8 +11932,7 @@ paths:
                                 type: array
                                 items:
                                   anyOf:
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12183,8 +11948,7 @@ paths:
                                         - message
                                         - entry_id
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12235,8 +11999,7 @@ paths:
       tags:
         - TimeAttendance
       parameters:
-        -
-          name: year
+        - name: year
           in: query
           schema:
             type:
@@ -12244,8 +12007,7 @@ paths:
               - 'null'
             minimum: 2000
             maximum: 2100
-        -
-          name: month
+        - name: month
           in: query
           schema:
             type:
@@ -12253,16 +12015,14 @@ paths:
               - 'null'
             minimum: 1
             maximum: 12
-        -
-          name: user_id
+        - name: user_id
           in: query
           schema:
             type:
               - string
               - 'null'
             format: uuid
-        -
-          name: jurisdiction
+        - name: jurisdiction
           in: query
           schema:
             type:
@@ -12336,8 +12096,7 @@ paths:
                           - net_hours_worked
                       compliance:
                         anyOf:
-                          -
-                            type: object
+                          - type: object
                             properties:
                               compliant:
                                 type: string
@@ -12345,8 +12104,7 @@ paths:
                                 type: array
                                 items:
                                   anyOf:
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12362,8 +12120,7 @@ paths:
                                         - message
                                         - entry_id
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12376,8 +12133,7 @@ paths:
                                         - rule
                                         - message
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12390,8 +12146,7 @@ paths:
                                         - rule
                                         - message
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12404,8 +12159,7 @@ paths:
                                         - rule
                                         - message
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12427,13 +12181,11 @@ paths:
                                     type: number
                                   max_weekly_limit:
                                     anyOf:
-                                      -
-                                        type: number
+                                      - type: number
                                         const: 45
-                                      -
-                                        type: number
+                                      - type: number
                                         const: 50
-                                  days_evaluated: {}
+                                  days_evaluated: { }
                                 required:
                                   - total_hours
                                   - weekly_average_hours
@@ -12443,8 +12195,7 @@ paths:
                               - compliant
                               - violations
                               - stats
-                          -
-                            type: object
+                          - type: object
                             properties:
                               compliant:
                                 type: string
@@ -12452,8 +12203,7 @@ paths:
                                 type: array
                                 items:
                                   anyOf:
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12469,8 +12219,7 @@ paths:
                                         - message
                                         - entry_id
                                         - date
-                                    -
-                                      type: object
+                                    - type: object
                                       properties:
                                         rule:
                                           type: string
@@ -12823,8 +12572,7 @@ paths:
       tags:
         - UnitOfMeasure
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -12857,8 +12605,7 @@ paths:
       tags:
         - UnitOfMeasure
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -12899,8 +12646,7 @@ paths:
       tags:
         - UnitOfMeasure
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -12934,14 +12680,12 @@ paths:
       tags:
         - VendorAging
       parameters:
-        -
-          name: as_of_date
+        - name: as_of_date
           in: query
           schema:
             type: string
             format: date
-        -
-          name: supplier_id
+        - name: supplier_id
           in: query
           schema:
             type: string
@@ -12966,10 +12710,10 @@ paths:
                         type: string
                       suppliers:
                         type: array
-                        items: {}
+                        items: { }
                       summary:
                         type: array
-                        items: {}
+                        items: { }
                     required:
                       - as_of_date
                       - suppliers
@@ -12991,8 +12735,7 @@ paths:
       tags:
         - WorkOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -13028,8 +12771,7 @@ paths:
       tags:
         - WorkOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -13072,8 +12814,7 @@ paths:
       tags:
         - WorkOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -13109,8 +12850,7 @@ paths:
       tags:
         - WorkOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -13153,8 +12893,7 @@ paths:
       tags:
         - WorkOrder
       parameters:
-        -
-          name: id
+        - name: id
           in: path
           required: true
           schema:
@@ -13174,10 +12913,8 @@ paths:
                     const: 'Invoice created from work report'
                   data:
                     allOf:
-                      -
-                        $ref: '#/components/schemas/InvoiceResource'
-                      -
-                        type: object
+                      - $ref: '#/components/schemas/InvoiceResource'
+                      - type: object
                         required:
                           - items
                   meta:
@@ -13315,7 +13052,7 @@ components:
       title: BarcodeType
     CatalogResource:
       type: array
-      items: {}
+      items: { }
       title: CatalogResource
     CategorizeLineRequest:
       type: object
@@ -13595,7 +13332,7 @@ components:
       title: CreateProductVariantRequest
     DeliveryNoteResource:
       type: array
-      items: {}
+      items: { }
       title: DeliveryNoteResource
     DepositInvoiceRequest:
       type: object
@@ -13608,7 +13345,7 @@ components:
       title: DepositInvoiceRequest
     EcommerceChannelResource:
       type: array
-      items: {}
+      items: { }
       title: EcommerceChannelResource
     GenerateVariantsMatrixRequest:
       type: object
@@ -13846,10 +13583,10 @@ components:
               type: string
             creditor_info:
               type: array
-              items: {}
+              items: { }
             debtor_info:
               type: array
-              items: {}
+              items: { }
           required:
             - qr_iban
             - scor_reference
@@ -13909,7 +13646,7 @@ components:
           type: string
         links:
           type: object
-          additionalProperties: {}
+          additionalProperties: { }
         next_page_url:
           type: string
         path:
@@ -13987,7 +13724,7 @@ components:
       title: OpenPosSessionRequest
     PaymentResource:
       type: array
-      items: {}
+      items: { }
       title: PaymentResource
     PrintLabelsRequest:
       type: object
@@ -14252,7 +13989,7 @@ components:
       title: ProductVariantResource
     QuoteResource:
       type: array
-      items: {}
+      items: { }
       title: QuoteResource
     ReceiveGoodsRequest:
       type: object
@@ -14308,7 +14045,7 @@ components:
       title: RestoreUploadRequest
     SalesOrderResource:
       type: array
-      items: {}
+      items: { }
       title: SalesOrderResource
     SdiNotificationRequest:
       type: object
@@ -15439,7 +15176,7 @@ components:
       title: SubscriptionInterval
     SubscriptionResource:
       type: array
-      items: {}
+      items: { }
       title: SubscriptionResource
     SyncEcommerceChannelRequest:
       type: object
@@ -15501,7 +15238,7 @@ components:
           type:
             - array
             - 'null'
-          items: {}
+          items: { }
         created_at:
           type:
             - string
@@ -15776,7 +15513,7 @@ components:
       title: UploadPassiveInvoiceRequest
     WorkOrderResource:
       type: array
-      items: {}
+      items: { }
       title: WorkOrderResource
   responses:
     ModelNotFoundException:
@@ -15844,190 +15581,129 @@ components:
     TenantHeader:
       type: apiKey
       in: header
-      name: X-Tenant-ID
+      name: X-Tenant-Id
       description: 'UUID of the organization (tenant) the request works on. The user must be a member of it.'
 security:
-  -
-    BearerAuth: []
-    TenantHeader: []
+  - BearerAuth: [ ]
+    TenantHeader: [ ]
 tags:
-  -
-    name: Accounting
+  - name: Accounting
     description: 'Operations of the Accounting module.'
-  -
-    name: Alert
+  - name: Alert
     description: 'Operations of the Alert module.'
-  -
-    name: ApiDocumentation
+  - name: ApiDocumentation
     description: 'Operations of the ApiDocumentation module.'
-  -
-    name: Attachment
+  - name: Attachment
     description: 'Operations of the Attachment module.'
-  -
-    name: Auth
+  - name: Auth
     description: 'Operations of the Auth module.'
-  -
-    name: Automotive
+  - name: Automotive
     description: 'Operations of the Automotive module.'
-  -
-    name: BankStatement
+  - name: BankStatement
     description: 'Operations of the BankStatement module.'
-  -
-    name: Construction
+  - name: Construction
     description: 'Operations of the Construction module.'
-  -
-    name: ContactInsights
+  - name: ContactInsights
     description: 'Operations of the ContactInsights module.'
-  -
-    name: Crm
+  - name: Crm
     description: 'Operations of the Crm module.'
-  -
-    name: Dashboard
+  - name: Dashboard
     description: 'Operations of the Dashboard module.'
-  -
-    name: DashboardBuilder
+  - name: DashboardBuilder
     description: 'Operations of the DashboardBuilder module.'
-  -
-    name: DeliveryNote
+  - name: DeliveryNote
     description: 'Operations of the DeliveryNote module.'
-  -
-    name: DocumentEmail
+  - name: DocumentEmail
     description: 'Operations of the DocumentEmail module.'
-  -
-    name: DocumentPdf
+  - name: DocumentPdf
     description: 'Operations of the DocumentPdf module.'
-  -
-    name: EcommerceChannel
+  - name: EcommerceChannel
     description: 'Operations of the EcommerceChannel module.'
-  -
-    name: EcommerceWebhook
+  - name: EcommerceWebhook
     description: 'Operations of the EcommerceWebhook module.'
-  -
-    name: FieldService
+  - name: FieldService
     description: 'Operations of the FieldService module.'
-  -
-    name: FleetRental
+  - name: FleetRental
     description: 'Operations of the FleetRental module.'
-  -
-    name: GeneralLedger
+  - name: GeneralLedger
     description: 'Operations of the GeneralLedger module.'
-  -
-    name: Hr
+  - name: Hr
     description: 'Operations of the Hr module.'
-  -
-    name: IncomingInvoiceWebhook
+  - name: IncomingInvoiceWebhook
     description: 'Operations of the IncomingInvoiceWebhook module.'
-  -
-    name: Inventory
+  - name: Inventory
     description: 'Operations of the Inventory module.'
-  -
-    name: Invoice
+  - name: Invoice
     description: 'Operations of the Invoice module.'
-  -
-    name: InvoicePayment
+  - name: InvoicePayment
     description: 'Operations of the InvoicePayment module.'
-  -
-    name: InvoiceQrBill
+  - name: InvoiceQrBill
     description: 'Operations of the InvoiceQrBill module.'
-  -
-    name: InvoiceSdi
+  - name: InvoiceSdi
     description: 'Operations of the InvoiceSdi module.'
-  -
-    name: LoyaltyCard
+  - name: LoyaltyCard
     description: 'Operations of the LoyaltyCard module.'
-  -
-    name: Manufacturing
+  - name: Manufacturing
     description: 'Operations of the Manufacturing module.'
-  -
-    name: PaymentImport
+  - name: PaymentImport
     description: 'Operations of the PaymentImport module.'
-  -
-    name: PaymentReminder
+  - name: PaymentReminder
     description: 'Operations of the PaymentReminder module.'
-  -
-    name: PaymentTerm
+  - name: PaymentTerm
     description: 'Operations of the PaymentTerm module.'
-  -
-    name: PosSale
+  - name: PosSale
     description: 'Operations of the PosSale module.'
-  -
-    name: PosSession
+  - name: PosSession
     description: 'Operations of the PosSession module.'
-  -
-    name: PosTerminal
+  - name: PosTerminal
     description: 'Operations of the PosTerminal module.'
-  -
-    name: PriceList
+  - name: PriceList
     description: 'Operations of the PriceList module.'
-  -
-    name: ProductBarcode
+  - name: ProductBarcode
     description: 'Operations of the ProductBarcode module.'
-  -
-    name: ProductBrand
+  - name: ProductBrand
     description: 'Operations of the ProductBrand module.'
-  -
-    name: ProductCategory
+  - name: ProductCategory
     description: 'Operations of the ProductCategory module.'
-  -
-    name: ProductLabel
+  - name: ProductLabel
     description: 'Operations of the ProductLabel module.'
-  -
-    name: ProductVariant
+  - name: ProductVariant
     description: 'Operations of the ProductVariant module.'
-  -
-    name: Professionals
+  - name: Professionals
     description: 'Operations of the Professionals module.'
-  -
-    name: PurchaseOrder
+  - name: PurchaseOrder
     description: 'Operations of the PurchaseOrder module.'
-  -
-    name: Purchases
+  - name: Purchases
     description: 'Operations of the Purchases module.'
-  -
-    name: Quote
+  - name: Quote
     description: 'Operations of the Quote module.'
-  -
-    name: RetailPos
+  - name: RetailPos
     description: 'Operations of the RetailPos module.'
-  -
-    name: SalesOrder
+  - name: SalesOrder
     description: 'Operations of the SalesOrder module.'
-  -
-    name: SalesOrderLine
+  - name: SalesOrderLine
     description: 'Operations of the SalesOrderLine module.'
-  -
-    name: SdiWebhook
+  - name: SdiWebhook
     description: 'Operations of the SdiWebhook module.'
-  -
-    name: Settings
+  - name: Settings
     description: 'Operations of the Settings module.'
-  -
-    name: Stock
+  - name: Stock
     description: 'Operations of the Stock module.'
-  -
-    name: Subscription
+  - name: Subscription
     description: 'Operations of the Subscription module.'
-  -
-    name: SupplierInvoice
+  - name: SupplierInvoice
     description: 'Operations of the SupplierInvoice module.'
-  -
-    name: TenantBackup
+  - name: TenantBackup
     description: 'Operations of the TenantBackup module.'
-  -
-    name: TenantPreferences
+  - name: TenantPreferences
     description: 'Operations of the TenantPreferences module.'
-  -
-    name: TimeAttendance
+  - name: TimeAttendance
     description: 'Operations of the TimeAttendance module.'
-  -
-    name: Treasury
+  - name: Treasury
     description: 'Operations of the Treasury module.'
-  -
-    name: UnitOfMeasure
+  - name: UnitOfMeasure
     description: 'Operations of the UnitOfMeasure module.'
-  -
-    name: VendorAging
+  - name: VendorAging
     description: 'Operations of the VendorAging module.'
-  -
-    name: WorkOrder
+  - name: WorkOrder
     description: 'Operations of the WorkOrder module.'

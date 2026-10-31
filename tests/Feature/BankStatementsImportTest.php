@@ -182,7 +182,7 @@ function bsCamt053(array $entries, string $currency = 'EUR', string $account = '
 
 function bsApi(?string $tenantId = null)
 {
-    return test()->withHeader('X-Tenant-ID', $tenantId ?? test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', $tenantId ?? test()->tenant->id);
 }
 
 function bsImport(string $content, string $name = 'statement.xml', string $query = '', ?string $tenantId = null)

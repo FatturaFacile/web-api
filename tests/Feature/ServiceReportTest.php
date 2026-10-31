@@ -98,7 +98,7 @@ beforeEach(function (): void {
 
 function srApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('a service report is created with numbering, computed line totals and status', function (): void {

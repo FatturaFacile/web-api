@@ -63,7 +63,7 @@ XML;
 }
 
 test('bank charges and the payment channel are read from camt entries', function (): void {
-    $import = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $import = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/sales/payment-imports', ['file' => UploadedFile::fake()->createWithContent('camt054.xml', feeXml())])
         ->assertCreated();
 
@@ -81,7 +81,7 @@ test('bank charges and the payment channel are read from camt entries', function
 
 test('re-importing the same file does not double count the fees', function (): void {
     $upload = fn () => ['file' => UploadedFile::fake()->createWithContent('camt054.xml', feeXml())];
-    $api = $this->withHeader('X-Tenant-ID', $this->tenant->id);
+    $api = $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     $api->postJson('/api/v1/sales/payment-imports', $upload())->assertCreated();
     $again = $api->postJson('/api/v1/sales/payment-imports', $upload())->assertCreated();
@@ -90,7 +90,7 @@ test('re-importing the same file does not double count the fees', function (): v
 });
 
 test('invalid bank files return the translated error message', function (): void {
-    $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/sales/payment-imports', ['file' => UploadedFile::fake()->createWithContent('bad.xml', '<foo/>')])
         ->assertUnprocessable()
         ->assertJsonFragment(['detail' => 'The file is not a valid camt.053/camt.054 document.']);

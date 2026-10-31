@@ -61,7 +61,7 @@ test('external client logs in with bearer token, accesses protected route and lo
 
     // Access profile using Bearer token
     $profileResponse = $this->withHeader('Authorization', "Bearer {$token}")
-        ->withHeader('X-Tenant-ID', $this->tenant->id)
+        ->withHeader('X-Tenant-Id', $this->tenant->id)
         ->getJson('/api/v1/auth/profile');
 
     $profileResponse->assertStatus(200)
@@ -110,7 +110,7 @@ test('angular spa performs stateful session login, accesses profile and logs out
     $loginResponse->assertStatus(200);
 
     // 3. Access protected route using session cookies without Bearer header
-    $profileResponse = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $profileResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->withHeaders([
             'Origin' => $origin,
             'Referer' => "{$origin}/",

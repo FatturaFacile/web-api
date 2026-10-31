@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Lookups\SaveLookupTranslationRequest;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class LookupController extends Controller
@@ -18,6 +20,39 @@ class LookupController extends Controller
     /**
      * Retrieve lookup items by category code with multi-tenant and multilingual merging.
      */
+    #[OA\Get(
+        path: '/api/v1/lookups/{category_code}',
+        operationId: 'getLookupByCategory',
+        description: 'Retrieve lookup items for a category code with tenant overrides and multilingual fallback (IT/DE/FR/EN).',
+        summary: 'Get lookup items by category',
+        tags: ['Lookups'],
+        parameters: [
+            new OA\Parameter(name: 'category_code', in: 'path', required: true, description: 'Lookup category code (e.g. unit_of_measure, vat_rate)', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'locale', in: 'query', required: false, description: 'Target language code (it, de, fr, en)', schema: new OA\Schema(type: 'string', enum: ['it', 'de', 'fr', 'en'], default: 'it')),
+            new OA\Parameter(name: 'tenant_id', in: 'query', required: false, description: 'Tenant UUID for tenant-specific overrides', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'X-Tenant-Id', in: 'header', required: false, description: 'Tenant UUID header', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(
+                response: 200,
+                description: 'Lookup items retrieved successfully',
+                content: new OA\JsonContent(
+                    type: 'array',
+                    items: new OA\Items(
+                        properties: [
+                            new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+                            new OA\Property(property: 'code', type: 'string'),
+                            new OA\Property(property: 'label', type: 'string'),
+                            new OA\Property(property: 'short_label', type: 'string', nullable: true),
+                            new OA\Property(property: 'metadata', type: 'object'),
+                            new OA\Property(property: 'is_default', type: 'boolean'),
+                        ]
+                    )
+                )
+            ),
+            new OA\Response(response: 404, description: 'Lookup category not found'),
+        ]
+    )]
     public function getByCategory(Request $request, string $category_code): JsonResponse
     {
         $category = LookupCategory::where('code', $category_code)->first();
@@ -29,7 +64,7 @@ class LookupController extends Controller
         }
 
         $locale = (string) $request->query('locale', 'it');
-        $tenantId = $request->query('tenant_id') ?? $request->header('X-Tenant-ID');
+        $tenantId = $request->query('tenant_id') ?? $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
 
         if (in_array($tenantId, ['null', 'undefined', 'default', ''], true)) {
             $tenantId = null;
@@ -113,21 +148,41 @@ class LookupController extends Controller
     /**
      * Store or update a lookup item translation.
      */
-    public function saveTranslation(Request $request): JsonResponse
+    #[OA\Post(
+        path: '/api/v1/lookups/translations',
+        operationId: 'saveLookupTranslation',
+        description: 'Creates or updates a custom translation for a lookup item, optionally scoped to a tenant.',
+        summary: 'Store or update lookup item translation',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Lookups'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['lookup_item_id', 'locale', 'label'],
+                properties: [
+                    new OA\Property(property: 'lookup_item_id', type: 'string', format: 'uuid', example: '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5a6b'),
+                    new OA\Property(property: 'locale', type: 'string', maxLength: 5, example: 'en'),
+                    new OA\Property(property: 'label', type: 'string', maxLength: 255, example: 'Piece'),
+                    new OA\Property(property: 'short_label', type: 'string', maxLength: 15, nullable: true, example: 'pc'),
+                    new OA\Property(property: 'description', type: 'string', nullable: true),
+                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Lookup translation saved successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 422, description: 'Validation error'),
+        ]
+    )]
+    public function saveTranslation(SaveLookupTranslationRequest $request): JsonResponse
     {
-        $tenantId = $request->input('tenant_id') ?? $request->header('X-Tenant-ID');
+        $tenantId = $request->input('tenant_id') ?? $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
         if (in_array($tenantId, ['null', 'undefined', 'default', ''], true)) {
             $tenantId = null;
         }
 
-        $validated = $request->validate([
-            'lookup_item_id' => ['required', 'uuid', 'exists:lookup_items,id'],
-            'locale' => ['required', 'string', 'max:5'],
-            'label' => ['required', 'string', 'max:255'],
-            'short_label' => ['nullable', 'string', 'max:15'],
-            'description' => ['nullable', 'string'],
-            'tenant_id' => ['nullable', 'uuid', 'exists:tenants,id'],
-        ]);
+        $validated = $request->validated();
 
         if (array_key_exists('tenant_id', $validated) && ! empty($validated['tenant_id'])) {
             $tenantId = $validated['tenant_id'];

@@ -48,7 +48,7 @@ beforeEach(function (): void {
 
 function p18Api(?string $tenantId = null)
 {
-    return test()->withHeader('X-Tenant-ID', $tenantId ?? test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', $tenantId ?? test()->tenant->id);
 }
 
 /**

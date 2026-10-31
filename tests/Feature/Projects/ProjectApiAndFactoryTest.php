@@ -9,7 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Database\Seeders\ProjectDatabaseSeeder;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -21,7 +21,7 @@ use Modules\Projects\Models\ProjectCostEntry;
 use Modules\Projects\Models\ProjectTask;
 use Modules\Projects\Models\ProjectTimesheet;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Gate::before(fn () => true);
@@ -64,7 +64,7 @@ beforeEach(function (): void {
         'vat_number' => 'IT11223344556',
     ]);
 
-    $this->withHeader('X-Tenant-ID', $this->tenant->id);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     Sanctum::actingAs($this->user);
 });

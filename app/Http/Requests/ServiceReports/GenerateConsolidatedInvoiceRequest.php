@@ -22,7 +22,7 @@ class GenerateConsolidatedInvoiceRequest extends FormRequest
     {
         $tenantId = app(TenantContext::class)->getTenantId()
             ?? $this->user()?->tenant_id
-            ?? $this->header('X-Tenant-ID');
+            ?? $this->header('X-Tenant-Id');
 
         return [
             'report_ids' => ['required', 'array', 'min:2'],

@@ -43,7 +43,7 @@ beforeEach(function (): void {
 
 function extrasApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('a quote can be invoiced directly, once, and not when rejected', function (): void {

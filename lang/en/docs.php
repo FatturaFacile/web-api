@@ -22,7 +22,7 @@ return [
     'info' => [
         'title' => 'FatturaFacile ERP API',
         'summary' => 'Multi-tenant ERP API for invoicing, purchasing, inventory, banking, accounting and operations.',
-        'description' => "REST API of the FatturaFacile ERP.\n\nEvery request except login and the incoming webhooks must carry a bearer token (`Authorization: Bearer <token>`) and the organization it works on (`X-Tenant-ID: <uuid>`). Errors follow RFC 9457 (`application/problem+json`).",
+        'description' => "REST API of the FatturaFacile ERP.\n\nEvery request except login and the incoming webhooks must carry a bearer token (`Authorization: Bearer <token>`) and the organization it works on (`X-Tenant-Id: <uuid>`). Errors follow RFC 9457 (`application/problem+json`).",
         'contact' => 'FatturaFacile API support',
     ],
 

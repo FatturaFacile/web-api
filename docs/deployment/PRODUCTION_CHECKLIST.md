@@ -32,7 +32,8 @@ php artisan up
 php artisan release:check
 ```
 
-> `route:cache` and `config:cache` must run after the environment file is final. Clear them (`php artisan optimize:clear`)
+> `route:cache` and `config:cache` must run after the environment file is final. Clear them
+> (`php artisan optimize:clear`)
 > before running tests on the same machine.
 
 ## 3. Queue workers (Supervisor)
@@ -72,12 +73,12 @@ One system cron entry runs every scheduled task of the application:
 
 Scheduled tasks (`php artisan schedule:list`):
 
-| Task | When |
-|------|------|
-| `tenants:backup --all` | daily 02:00 (retention: the 7 latest completed backups per tenant) |
-| `subscriptions:process` | daily 02:00 |
-| `invoices:send-reminders` | daily 08:00 |
-| `ecommerce:sync-orders` | every 15 minutes |
+| Task                      | When                                                               |
+|---------------------------|--------------------------------------------------------------------|
+| `tenants:backup --all`    | daily 02:00 (retention: the 7 latest completed backups per tenant) |
+| `subscriptions:process`   | daily 02:00                                                        |
+| `invoices:send-reminders` | daily 08:00                                                        |
+| `ecommerce:sync-orders`   | every 15 minutes                                                   |
 
 ## 5. Storage and backups
 
@@ -90,7 +91,7 @@ Scheduled tasks (`php artisan schedule:list`):
 ## 6. Smoke test after deploy
 
 - [ ] `POST /api/v1/auth/login` returns a token and the active tenant
-- [ ] `GET /api/v1/dashboard/layout` with the token and `X-Tenant-ID` answers 200
+- [ ] `GET /api/v1/dashboard/layout` with the token and `X-Tenant-Id` answers 200
 - [ ] `GET /api/documentation` shows the documentation (or answers 404 when `DOCS_ENABLED=false`)
 - [ ] `php artisan schedule:list` shows `tenants:backup --all`
 - [ ] A test job reaches the worker: `php artisan queue:work --once` or watch `/var/log/supervisor/erp-worker.log`

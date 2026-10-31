@@ -49,7 +49,7 @@ final class ProjectController extends Controller
     public function store(StoreProjectRequest $request, CreateProjectAction $action, TenantContext $tenantContext): JsonResponse
     {
         $tenant = $tenantContext->getTenant();
-        $tenantId = (string) ($tenant ? $tenant->id : $request->header('X-Tenant-ID'));
+        $tenantId = (string) ($tenant ? $tenant->id : $request->header('X-Tenant-Id'));
 
         $dto = new CreateProjectDTO(
             contactId: $request->validated('contact_id'),

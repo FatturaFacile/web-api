@@ -186,7 +186,7 @@ test('HIGH-03: attachments use configurable private storage disk and record disk
 
     $file = UploadedFile::fake()->create('contract.pdf', 500, 'application/pdf');
 
-    $response = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/attachments', [
             'attachable_type' => 'contact',
             'attachable_id' => $contact->id,
@@ -205,13 +205,13 @@ test('HIGH-03: attachments use configurable private storage disk and record disk
     Storage::disk('custom_private')->assertExists($attachment->path);
 
     // Download uses resolved storage disk
-    $download = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $download = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->get("/api/v1/attachments/{$attachmentId}/download");
 
     $download->assertOk();
 
     // Destroy uses resolved storage disk and removes file
-    $destroy = $this->withHeader('X-Tenant-ID', $this->tenant->id)
+    $destroy = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->deleteJson("/api/v1/attachments/{$attachmentId}");
 
     $destroy->assertOk();

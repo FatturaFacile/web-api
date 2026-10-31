@@ -52,7 +52,7 @@ beforeEach(function (): void {
 
 function docApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 // ------------------------------------------------------------ Document emails

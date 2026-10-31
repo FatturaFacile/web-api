@@ -56,7 +56,7 @@ function sdiApi()
 {
     Sanctum::actingAs(test()->user);
 
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 function sdiInvoice(array $attributes = []): Invoice

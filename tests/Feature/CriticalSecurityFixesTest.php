@@ -222,7 +222,7 @@ test('CRIT-02: POST sales/invoices ignores injected tenant_id and binds to authe
         ],
     ];
 
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantA->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantA->id)
         ->postJson('/api/v1/sales/invoices', $payload);
 
     $response->assertCreated();
@@ -261,7 +261,7 @@ test('CRIT-02: POST sales/quotes ignores injected tenant_id and binds to authent
         ],
     ];
 
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantA->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantA->id)
         ->postJson('/api/v1/sales/quotes', $payload);
 
     $response->assertCreated();
@@ -312,7 +312,7 @@ test('CRIT-03: cross-tenant access to invoices is strictly forbidden by policy a
         ->and($policy->generateQrBill($this->userA, $invoiceB))->toBeFalse();
 
     // API request from User A targeting Tenant B's invoice must fail (404 via TenantScope or 403 via Policy)
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantA->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantA->id)
         ->getJson("/api/v1/sales/invoices/{$invoiceB->id}");
 
     expect($response->status())->toBeIn([403, 404]);
@@ -446,7 +446,7 @@ test('CRIT-04: contact with invoices cannot be deleted', function (): void {
     expect($contactPolicy->delete($this->userA, $contact))->toBeFalse();
 
     // Attempting to delete via API must be rejected with 403 Forbidden
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantA->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantA->id)
         ->deleteJson("/api/v1/crm/contacts/{$contact->id}");
 
     $response->assertForbidden();

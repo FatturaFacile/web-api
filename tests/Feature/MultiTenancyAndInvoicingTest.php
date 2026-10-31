@@ -96,7 +96,7 @@ test('it enforces multi-tenant data isolation on invoice listing', function (): 
     ]);
 
     // Requesting as Tenant IT should ONLY show IT-2026-0001
-    $responseIt = $this->withHeader('X-Tenant-ID', $this->tenantIt->id)
+    $responseIt = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->getJson('/api/v1/sales/invoices');
 
     $responseIt->assertOk()
@@ -104,7 +104,7 @@ test('it enforces multi-tenant data isolation on invoice listing', function (): 
         ->assertJsonCount(1, 'data');
 
     // Requesting as Tenant CH should ONLY show CH-2026-0001
-    $responseCh = $this->withHeader('X-Tenant-ID', $this->tenantCh->id)
+    $responseCh = $this->withHeader('X-Tenant-Id', $this->tenantCh->id)
         ->getJson('/api/v1/sales/invoices');
 
     $responseCh->assertOk()
@@ -138,7 +138,7 @@ test('it creates a swiss invoice and automatically applies 0.05 chf rounding', f
         ],
     ];
 
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantCh->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantCh->id)
         ->postJson('/api/v1/sales/invoices', $payload);
 
     $response->assertCreated()
@@ -189,7 +189,7 @@ test('it generates sdi xml for italian invoice', function (): void {
         'line_total' => 500.00,
     ]);
 
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantIt->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->postJson("/api/v1/sales/invoices/{$invoice->id}/generate-sdi-xml");
 
     $response->assertOk()
@@ -233,7 +233,7 @@ test('it generates swiss qr-bill svg and scor reference', function (): void {
         'jurisdiction' => 'CH',
     ]);
 
-    $response = $this->withHeader('X-Tenant-ID', $this->tenantCh->id)
+    $response = $this->withHeader('X-Tenant-Id', $this->tenantCh->id)
         ->postJson("/api/v1/sales/invoices/{$invoice->id}/generate-qr-bill");
 
     $response->assertOk()
@@ -245,7 +245,7 @@ test('it generates swiss qr-bill svg and scor reference', function (): void {
     expect(strlen($scor))->toBe(27);
 
     // Download SVG
-    $download = $this->withHeader('X-Tenant-ID', $this->tenantCh->id)
+    $download = $this->withHeader('X-Tenant-Id', $this->tenantCh->id)
         ->get("/api/v1/sales/invoices/{$invoice->id}/download-qr-bill");
 
     $download->assertOk()
@@ -253,7 +253,7 @@ test('it generates swiss qr-bill svg and scor reference', function (): void {
 });
 
 test('it handles time attendance clock in and clock out lifecycle', function (): void {
-    $clockInResponse = $this->withHeader('X-Tenant-ID', $this->tenantIt->id)
+    $clockInResponse = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->postJson('/api/v1/time-attendance/clock-in', [
             'latitude' => 45.4642,
             'longitude' => 9.1900,
@@ -265,14 +265,14 @@ test('it handles time attendance clock in and clock out lifecycle', function ():
         ->assertJsonPath('data.user_id', $this->user->id);
 
     // Clocking in again while active should trigger 409 Conflict Problem Details
-    $conflictResponse = $this->withHeader('X-Tenant-ID', $this->tenantIt->id)
+    $conflictResponse = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->postJson('/api/v1/time-attendance/clock-in');
 
     $conflictResponse->assertStatus(409)
         ->assertJsonPath('title', 'Already Clocked In');
 
     // Clock out
-    $clockOutResponse = $this->withHeader('X-Tenant-ID', $this->tenantIt->id)
+    $clockOutResponse = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->postJson('/api/v1/time-attendance/clock-out', [
             'break_minutes' => 45,
             'notes' => 'Shift ended smoothly',

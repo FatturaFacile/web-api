@@ -22,7 +22,7 @@ class StoreAppointmentRequest extends FormRequest
     {
         $tenantId = app(TenantContext::class)->getTenantId()
             ?? $this->user()?->tenant_id
-            ?? $this->header('X-Tenant-ID');
+            ?? $this->header('X-Tenant-Id');
 
         return [
             'contact_id' => [

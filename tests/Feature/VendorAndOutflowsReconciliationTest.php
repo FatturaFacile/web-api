@@ -41,7 +41,7 @@ beforeEach(function (): void {
 
 function voApi(?string $tenantId = null)
 {
-    return test()->withHeader('X-Tenant-ID', $tenantId ?? test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', $tenantId ?? test()->tenant->id);
 }
 
 function voImport(string $content, string $name = 'statement.xml', string $query = '', ?string $tenantId = null)

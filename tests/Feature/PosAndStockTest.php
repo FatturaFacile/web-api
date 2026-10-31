@@ -45,7 +45,7 @@ beforeEach(function (): void {
 
 function posApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 function openSession(float $float = 100.0): string

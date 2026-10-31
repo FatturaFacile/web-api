@@ -48,7 +48,9 @@ beforeEach(function (): void {
 
         if ($paid > 0) {
             Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $invoice->id, 'amount' => $paid, 'paid_at' => match ($number) {
-                'INV-A' => '2026-02-01', 'INV-OLD' => '2025-06-11', default => '2026-02-20',
+                'INV-A' => '2026-02-01',
+                'INV-OLD' => '2025-06-11',
+                default => '2026-02-20',
             }]);
         }
 
@@ -65,7 +67,7 @@ beforeEach(function (): void {
 
 function insightsApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('statistics summarise invoiced, paid, outstanding, overdue and payment behaviour', function (): void {

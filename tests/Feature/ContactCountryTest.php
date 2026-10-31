@@ -19,7 +19,7 @@ beforeEach(function (): void {
 
 function contactApi()
 {
-    return test()->withHeader('X-Tenant-ID', test()->tenant->id);
+    return test()->withHeader('X-Tenant-Id', test()->tenant->id);
 }
 
 test('contacts accept any ISO alpha-2 country code', function (): void {
