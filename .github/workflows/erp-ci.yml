@@ -29,6 +29,7 @@ jobs:
 
     services:
       # Isolated PostgreSQL service container matching production engine specifications
+      # tmpfs mounts /var/lib/postgresql/data into RAM to eliminate disk I/O fsync overhead during tests
       postgres:
         image: postgres:17-alpine
         env:
@@ -38,6 +39,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
+          --tmpfs /var/lib/postgresql/data:rw
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
@@ -65,30 +67,35 @@ jobs:
           git config --global core.autocrlf false
           find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
 
-      # Provision PHP 8.5 runtime with all enterprise extensions and caching mechanisms
+      # Provision PHP 8.5 runtime with all enterprise extensions; coverage is disabled for fast CI runs
       - name: Setup PHP 8.5 Runtime
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath
-          coverage: pcov
+          coverage: none
           tools: composer:v2
 
       # Validate composer.json and composer.lock consistency
       - name: Validate Composer Configuration
         run: composer validate --strict
 
-      # Cache Composer dependencies per OS and lockfile hash to reduce runner duration
+      # Determine Composer cache directory for strict immutable caching
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      # Cache Composer dependencies based on composer.lock hash
       - name: Cache Composer Dependencies
         uses: actions/cache@v4
         with:
-          path: vendor
+          path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
-      # Install exact project dependencies according to composer.lock
+      # Install exact project dependencies according to composer.lock with optimized autoloader
       - name: Install Composer Dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
       # Enforce strict code formatting standards via Laravel Pint (fails on any style violation)
       - name: Run Laravel Pint Code Formatter Check
@@ -105,10 +112,6 @@ jobs:
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
 
-      # Execute core foundation feature test suite
-      - name: Run Foundation Feature Tests
-        run: ./vendor/bin/pest tests/Feature/Foundation --no-coverage
-
-      # Execute comprehensive application test suite
-      - name: Run Pest Test Suite
-        run: ./vendor/bin/pest --compact
+      # Execute comprehensive application test suite in parallel (4 processes)
+      - name: Run Pest Test Suite (Parallel)
+        run: ./vendor/bin/pest --parallel --processes=4 --compact --no-coverage

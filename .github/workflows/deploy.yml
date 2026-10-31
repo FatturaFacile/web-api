@@ -9,6 +9,10 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
   build-and-push:
     name: Build & Push Docker Image

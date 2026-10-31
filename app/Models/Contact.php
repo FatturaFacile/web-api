@@ -16,6 +16,11 @@ class Contact extends Model
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
+    protected $attributes = [
+        'type' => 'customer',
+        'country' => 'IT',
+    ];
+
     protected $fillable = [
         'type',
         'country',

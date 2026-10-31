@@ -524,6 +524,10 @@ class TenantRestoreService
             $row['tenant_id'] = $tenant->id;
         }
 
+        if ($table === 'contacts' && (! array_key_exists('type', $row) || $row['type'] === '')) {
+            $row['type'] = 'customer';
+        }
+
         foreach ($schema['external'] as $column => $target) {
             $value = $row[$column] ?? null;
 

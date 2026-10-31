@@ -2,31 +2,51 @@ name: CI & SonarCloud Quality Gate
 
 on:
   push:
-    branches: [ main, develop ]
-  pull_request:
-    types: [ opened, synchronize, reopened ]
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *' # Nightly automated coverage & quality gate scan at 02:00 UTC
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sonarcloud:
     name: Test, Coverage & SonarCloud
     runs-on: ubuntu-24.04
 
+    # Global environment variables shared across steps
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: fatturafacile_test
+      DB_USERNAME: ff_admin
+      DB_PASSWORD: secret_password
+
     services:
+      # Isolated PostgreSQL service container with tmpfs for zero disk I/O latency
       postgres:
-        image: postgres:16-alpine
+        image: postgres:17-alpine
         env:
           POSTGRES_DB: fatturafacile_test
-          POSTGRES_USER: test_user
+          POSTGRES_USER: ff_admin
           POSTGRES_PASSWORD: secret_password
         ports:
           - 5432:5432
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        options: >-
+          --tmpfs /var/lib/postgresql/data:rw
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Obbligatorio per Sonar: serve la cronologia git per il blame e il New Code
+          fetch-depth: 0 # Required for SonarCloud blame and new code analysis
 
       - name: Setup PHP and PCOV
         uses: shivammathur/setup-php@v2
@@ -34,69 +54,48 @@ jobs:
           php-version: '8.5'
           extensions: mbstring, pdo, pdo_pgsql, zip, gd, intl, bcmath
           coverage: pcov
+          tools: composer:v2
 
       - name: Get Composer Cache Directory
         id: composer-cache
         run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
 
       - name: Cache Composer Dependencies
-        uses: actions/cache@v6
+        uses: actions/cache@v4
         with:
           path: ${{ steps.composer-cache.outputs.dir }}
           key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
           restore-keys: ${{ runner.os }}-composer-
 
       - name: Install Dependencies
-        run: composer install --prefer-dist --no-interaction --no-progress
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
       - name: Prepare Laravel Environment
         run: |
           cp .env.example .env.testing
           php artisan key:generate --env=testing
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: fatturafacile_test
-          DB_USERNAME: test_user
-          DB_PASSWORD: secret_password
 
       - name: Run Migrations
         run: php artisan migrate --env=testing --force
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: fatturafacile_test
-          DB_USERNAME: test_user
-          DB_PASSWORD: secret_password
 
       - name: Create Log Directory
         run: mkdir -p build/logs
 
-      - name: Execute Tests with Coverage & JUnit Reports
+      # Execute Pest tests with PCOV coverage and JUnit reports in parallel (4 processes)
+      - name: Execute Tests with Coverage & JUnit Reports (Parallel)
         run: |
           ./vendor/bin/pest \
+            --parallel \
+            --processes=4 \
             --log-junit build/logs/junit.xml \
             --coverage-clover build/logs/clover.xml
-        env:
-          DB_CONNECTION: pgsql
-          DB_HOST: 127.0.0.1
-          DB_PORT: 5432
-          DB_DATABASE: fatturafacile_test
-          DB_USERNAME: test_user
-          DB_PASSWORD: secret_password
 
       - name: SonarCloud Scan
-        # Pull requests from forks get no repository secrets: skip what needs them
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: SonarSource/sonarqube-scan-action@v4
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
       - name: SonarQube Quality Gate Check
-        # Pull requests from forks get no repository secrets: skip what needs them
-        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
         uses: SonarSource/sonarqube-quality-gate-action@v1
         timeout-minutes: 5
         env:
