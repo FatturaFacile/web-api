@@ -45,9 +45,13 @@ test('all 9 FixedAssetFactory states generate valid domain models', function ():
 });
 
 test('idempotent multilingual seeders execute repeatedly without duplication', function (): void {
+    app(TenantContext::class)->setTenant($this->tenant);
+
     $this->seed(AssetReferenceSeeder::class);
     $this->seed(AssetTestingSeeder::class);
     $this->seed(AssetDemoDataSeeder::class);
+
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $countAfterFirst = FixedAsset::where('tenant_id', $this->tenant->id)->count();
     expect($countAfterFirst)->toBeGreaterThanOrEqual(6);
@@ -56,6 +60,8 @@ test('idempotent multilingual seeders execute repeatedly without duplication', f
     $this->seed(AssetReferenceSeeder::class);
     $this->seed(AssetTestingSeeder::class);
     $this->seed(AssetDemoDataSeeder::class);
+
+    app(TenantContext::class)->setTenant($this->tenant);
 
     $countAfterSecond = FixedAsset::where('tenant_id', $this->tenant->id)->count();
     expect($countAfterSecond)->toBe($countAfterFirst);

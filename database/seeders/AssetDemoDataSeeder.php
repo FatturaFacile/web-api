@@ -15,14 +15,21 @@ final class AssetDemoDataSeeder extends Seeder
     public function run(): void
     {
         $tenants = Tenant::all();
+        if (app(TenantContext::class)->hasTenant() && ! $tenants->contains('id', app(TenantContext::class)->getTenantId())) {
+            $tenants->push(app(TenantContext::class)->getTenant());
+        }
+
         if ($tenants->isEmpty()) {
             return;
         }
 
         $this->call(AssetReferenceSeeder::class);
 
-        foreach ($tenants as $tenant) {
-            app(TenantContext::class)->setTenant($tenant);
+        $previousTenant = app(TenantContext::class)->hasTenant() ? app(TenantContext::class)->getTenant() : null;
+
+        try {
+            foreach ($tenants as $tenant) {
+                app(TenantContext::class)->setTenant($tenant);
 
             $categories = DB::table('eam_asset_categories')
                 ->where('tenant_id', $tenant->id)
@@ -179,6 +186,13 @@ final class AssetDemoDataSeeder extends Seeder
                         'created_at' => now(),
                     ]
                 );
+            }
+        }
+    } finally {
+        if ($previousTenant !== null) {
+                app(TenantContext::class)->setTenant($previousTenant);
+            } else {
+                app(TenantContext::class)->reset();
             }
         }
     }

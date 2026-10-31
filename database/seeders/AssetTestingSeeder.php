@@ -14,10 +14,12 @@ final class AssetTestingSeeder extends Seeder
 {
     public function run(): void
     {
-        $tenant = Tenant::first() ?: Tenant::factory()->create([
-            'name' => 'EAM Testing Enterprise S.p.A.',
-            'legal_name' => 'EAM Testing Enterprise S.p.A.',
-        ]);
+        $tenant = app(TenantContext::class)->hasTenant()
+            ? app(TenantContext::class)->getTenant()
+            : (Tenant::first() ?: Tenant::factory()->create([
+                'name' => 'EAM Testing Enterprise S.p.A.',
+                'legal_name' => 'EAM Testing Enterprise S.p.A.',
+            ]));
 
         app(TenantContext::class)->setTenant($tenant);
 

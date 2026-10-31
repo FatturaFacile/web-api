@@ -13,6 +13,7 @@ use App\Models\TenantBackup;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Backup\TenantBackupService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
@@ -286,15 +287,15 @@ test('retention ignores failed and pending backups and the rolling window follow
         tbBackup();
     }
 
-    expect(TenantBackup::where('status', 'completed')->count())->toBe(7)
-        ->and(TenantBackup::find($pending->id))->not->toBeNull()
-        ->and(TenantBackup::find($failed->id))->not->toBeNull();
+    expect(TenantBackup::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('status', 'completed')->count())->toBe(7)
+        ->and(TenantBackup::withoutGlobalScopes()->find($pending->id))->not->toBeNull()
+        ->and(TenantBackup::withoutGlobalScopes()->find($failed->id))->not->toBeNull();
 
     $this->travelTo(now()->addMinutes(5));
     tbBackup();
 
-    expect(TenantBackup::where('status', 'completed')->count())->toBe(7)
-        ->and(TenantBackup::count())->toBe(9);
+    expect(TenantBackup::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('status', 'completed')->count())->toBe(7)
+        ->and(TenantBackup::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count())->toBe(9);
 });
 
 // ---------------------------------------------------------------------------------------------------------------

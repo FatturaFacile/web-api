@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,6 +15,10 @@ final class AssetLocationSeeder extends Seeder
     public function run(): void
     {
         $tenants = Tenant::all();
+        if (app(TenantContext::class)->hasTenant() && ! $tenants->contains('id', app(TenantContext::class)->getTenantId())) {
+            $tenants->push(app(TenantContext::class)->getTenant());
+        }
+
         if ($tenants->isEmpty()) {
             return;
         }
