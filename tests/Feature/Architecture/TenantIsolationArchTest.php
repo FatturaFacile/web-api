@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+namespace Tests\Feature\Architecture;
+
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\ContactAddress;
 use App\Models\DeliveryNoteItem;
@@ -29,6 +31,7 @@ use App\Models\Translation;
 use App\Models\User;
 use App\Models\WorkOrderLine;
 use Illuminate\Database\Eloquent\Model;
+use ReflectionClass;
 use Symfony\Component\Finder\Finder;
 
 arch('api controllers do not use raw DB facade or DatabaseManager')
@@ -38,7 +41,7 @@ arch('api controllers do not use raw DB facade or DatabaseManager')
         'Illuminate\Database\DatabaseManager',
     ]);
 
-test('api controllers never call DB table directly', function (): void {
+test('api controllers never call DB facade directly', function (): void {
     $apiControllersPath = app_path('Http/Controllers/Api');
 
     if (!is_dir($apiControllersPath)) {
@@ -50,13 +53,19 @@ test('api controllers never call DB table directly', function (): void {
         ->files()
         ->name('*.php');
 
+    $violations = [];
+
     foreach ($finder as $file) {
         $content = $file->getContents();
-        expect($content)->not->toMatch(
-            '/DB::table\s*\(/',
-            "Controller {$file->getRelativePathname()} contains a direct DB::table call."
-        );
+
+        if (preg_match('/\bDB::|\buse\s+Illuminate\\\\Support\\\\Facades\\\\DB\b/', $content)) {
+            $violations[] = $file->getRelativePathname();
+        }
     }
+
+    expect($violations)->toBeEmpty(
+        'Direct DB facade usage detected in API controllers: ' . implode(', ', $violations)
+    );
 });
 
 test('concrete domain models use BelongsToTenant trait', function (): void {
@@ -104,8 +113,9 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
     $nonCompliant = [];
 
     foreach ($finder as $file) {
-        // Skip subdirectories (e.g. Scopes, Concerns)
-        if (str_contains($file->getRelativePathname(), DIRECTORY_SEPARATOR)) {
+        // Skip subdirectories (e.g. Scopes, Concerns, Enums)
+        $relativePath = str_replace('\\', '/', $file->getRelativePathname());
+        if (str_contains($relativePath, '/')) {
             continue;
         }
 
