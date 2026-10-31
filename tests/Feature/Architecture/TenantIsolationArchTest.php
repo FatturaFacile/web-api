@@ -28,33 +28,46 @@ use App\Models\Tenant;
 use App\Models\Translation;
 use App\Models\User;
 use App\Models\WorkOrderLine;
-use Illuminate\Database\DatabaseManager;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Facades\DB;
 use Symfony\Component\Finder\Finder;
 
 arch('api controllers do not use raw DB facade or DatabaseManager')
     ->expect('App\Http\Controllers\Api')
     ->not->toUse([
-        DB::class,
-        DatabaseManager::class,
+        'Illuminate\Support\Facades\DB',
+        'Illuminate\Database\DatabaseManager',
     ]);
 
 test('api controllers never call DB table directly', function (): void {
+    $apiControllersPath = app_path('Http/Controllers/Api');
+
+    if (!is_dir($apiControllersPath)) {
+        return;
+    }
+
     $finder = (new Finder)
-        ->in(app_path('Http/Controllers/Api'))
+        ->in($apiControllersPath)
         ->files()
         ->name('*.php');
 
     foreach ($finder as $file) {
         $content = $file->getContents();
-        expect($content)->not->toMatch('/DB::table\s*\(/', "Controller {$file->getRelativePathname()} contains a direct DB::table call.");
+        expect($content)->not->toMatch(
+            '/DB::table\s*\(/',
+            "Controller {$file->getRelativePathname()} contains a direct DB::table call."
+        );
     }
 });
 
 test('concrete domain models use BelongsToTenant trait', function (): void {
+    $modelsPath = app_path('Models');
+
+    if (!is_dir($modelsPath)) {
+        return;
+    }
+
     $finder = (new Finder)
-        ->in(app_path('Models'))
+        ->in($modelsPath)
         ->files()
         ->name('*.php');
 
@@ -96,13 +109,13 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
             continue;
         }
 
-        $className = 'App\\Models\\'.$file->getFilenameWithoutExtension();
-        if (! class_exists($className)) {
+        $className = 'App\\Models\\' . $file->getFilenameWithoutExtension();
+        if (!class_exists($className)) {
             continue;
         }
 
         $reflection = new ReflectionClass($className);
-        if ($reflection->isAbstract() || ! $reflection->isSubclassOf(Model::class)) {
+        if ($reflection->isAbstract() || !$reflection->isSubclassOf(Model::class)) {
             continue;
         }
 
@@ -111,12 +124,12 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
         }
 
         $traits = class_uses_recursive($className);
-        if (! in_array(BelongsToTenant::class, $traits, true)) {
+        if (!in_array(BelongsToTenant::class, $traits, true)) {
             $nonCompliant[] = $className;
         }
     }
 
     expect($nonCompliant)->toBeEmpty(
-        'The following concrete models are missing BelongsToTenant: '.implode(', ', $nonCompliant)
+        'The following concrete models are missing BelongsToTenant: ' . implode(', ', $nonCompliant)
     );
 });
