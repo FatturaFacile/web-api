@@ -127,6 +127,7 @@ test('a restore brings back records, relations and private files exactly as they
     Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->delete();
     Product::withoutGlobalScopes()->where('id', $own['parent']->id)->update(['name' => 'Renamed']);
     Product::withoutGlobalScopes()->whereKey($own['variant']->id)->forceDelete();
+    Payment::withoutGlobalScopes()->where('invoice_id', $own['invoice']->id)->delete();
     DB::table('invoice_items')->where('invoice_id', $own['invoice']->id)->delete();
     Invoice::withoutGlobalScopes()->whereKey($own['invoice']->id)->forceDelete();
     Contact::create(['tenant_id' => $this->tenant->id, 'company_name' => 'Added after the backup', 'email' => 'late@example.com', 'type' => 'customer', 'country' => 'IT']);

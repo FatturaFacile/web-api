@@ -6,7 +6,6 @@ namespace App\Services\Tenancy;
 
 use App\Models\Tenant;
 use App\Models\User;
-use Closure;
 
 class TenantContext
 {
@@ -70,10 +69,10 @@ class TenantContext
      *
      * @template TReturn
      *
-     * @param  Closure(): TReturn  $callback
+     * @param  callable(): TReturn  $callback
      * @return TReturn
      */
-    public function runFor(Tenant $tenant, Closure $callback): mixed
+    public function runWithTenant(Tenant $tenant, callable $callback): mixed
     {
         $previousTenant = $this->tenant;
         $previousExplicit = $this->isExplicit;
@@ -88,5 +87,18 @@ class TenantContext
             $this->isExplicit = $previousExplicit;
             $this->explicitlyNull = $previousExplicitlyNull;
         }
+    }
+
+    /**
+     * Temporarily execute callback in the context of another tenant.
+     *
+     * @template TReturn
+     *
+     * @param  callable(): TReturn  $callback
+     * @return TReturn
+     */
+    public function runFor(Tenant $tenant, callable $callback): mixed
+    {
+        return $this->runWithTenant($tenant, $callback);
     }
 }

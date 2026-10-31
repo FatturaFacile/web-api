@@ -9,6 +9,8 @@ use Illuminate\Support\Str;
 
 final readonly class PurchaseOrderCommittedEvent implements DomainEventInterface
 {
+    public string $purchaseOrderNumber;
+
     public function __construct(
         public string $purchaseOrderId,
         public string $poNumber,
@@ -18,8 +20,11 @@ final readonly class PurchaseOrderCommittedEvent implements DomainEventInterface
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
-        public string $occurredAt = ''
-    ) {}
+        public string $occurredAt = '',
+        ?string $purchaseOrderNumber = null
+    ) {
+        $this->purchaseOrderNumber = $purchaseOrderNumber ?? $poNumber;
+    }
 
     public function getEventId(): string
     {
@@ -61,6 +66,7 @@ final readonly class PurchaseOrderCommittedEvent implements DomainEventInterface
         return [
             'purchase_order_id' => $this->purchaseOrderId,
             'po_number' => $this->poNumber,
+            'purchase_order_number' => $this->purchaseOrderNumber,
             'supplier_id' => $this->supplierId,
             'committed_amount' => $this->committedAmount,
             'currency' => $this->currency,

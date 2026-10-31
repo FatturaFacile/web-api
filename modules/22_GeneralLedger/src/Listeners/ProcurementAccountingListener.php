@@ -29,15 +29,17 @@ final class ProcurementAccountingListener
         $encumbranceExpAcc = $this->resolveAccount($event->tenantId, '6990', 'Encumbrance Expense', 'expense', 'debit');
         $encumbranceResAcc = $this->resolveAccount($event->tenantId, '3990', 'Reserve for Encumbrances', 'equity', 'credit');
 
+        $poNumber = $event->purchaseOrderNumber ?? $event->poNumber;
+
         $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
-            'entry_number' => 'ENC-'.$event->purchaseOrderNumber,
+            'entry_number' => 'ENC-'.$poNumber,
             'source_document_type' => 'purchase_order',
             'source_document_id' => $event->purchaseOrderId,
             'journal_type' => 'standard',
-            'description' => "PO Encumbrance Commitment for {$event->purchaseOrderNumber}",
+            'description' => "PO Encumbrance Commitment for {$poNumber}",
             'lines' => [
                 [
                     'account_id' => $encumbranceExpAcc->id,

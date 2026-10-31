@@ -13,54 +13,58 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
-class TestUploadRequest extends FormRequest
-{
-    use ValidatesUploadContentLength;
-
-    public int $maxContentLengthBytes = 5 * 1024 * 1024; // 5 MB
-
-    public function triggerValidation(): void
+$createUploadRequest = function (): FormRequest {
+    return new class extends FormRequest
     {
-        $this->prepareForValidation();
-    }
-}
+        use ValidatesUploadContentLength;
 
-class TestDefaultUploadRequest extends FormRequest
-{
-    use ValidatesUploadContentLength;
+        public int $maxContentLengthBytes = 5 * 1024 * 1024; // 5 MB
 
-    public function triggerValidation(): void
+        public function triggerValidation(): void
+        {
+            $this->prepareForValidation();
+        }
+    };
+};
+
+$createDefaultUploadRequest = function (): FormRequest {
+    return new class extends FormRequest
     {
-        $this->prepareForValidation();
-    }
-}
+        use ValidatesUploadContentLength;
 
-test('validates upload content length aborts with 413 when CONTENT_LENGTH server param exceeds limit', function (): void {
-    $request = new TestUploadRequest;
+        public function triggerValidation(): void
+        {
+            $this->prepareForValidation();
+        }
+    };
+};
+
+test('validates upload content length aborts with 413 when CONTENT_LENGTH server param exceeds limit', function () use ($createUploadRequest): void {
+    $request = $createUploadRequest();
     $request->server->set('CONTENT_LENGTH', (string) (6 * 1024 * 1024));
 
     expect(fn () => $request->triggerValidation())
         ->toThrow(HttpException::class, 'Uploaded payload exceeds the maximum allowed content length.');
 });
 
-test('validates upload content length aborts with 413 when Content-Length header exceeds limit', function (): void {
-    $request = new TestUploadRequest;
+test('validates upload content length aborts with 413 when Content-Length header exceeds limit', function () use ($createUploadRequest): void {
+    $request = $createUploadRequest();
     $request->headers->set('Content-Length', (string) (6 * 1024 * 1024));
 
     expect(fn () => $request->triggerValidation())
         ->toThrow(HttpException::class, 'Uploaded payload exceeds the maximum allowed content length.');
 });
 
-test('validates upload content length passes when payload size is within limits', function (): void {
-    $request = new TestUploadRequest;
+test('validates upload content length passes when payload size is within limits', function () use ($createUploadRequest): void {
+    $request = $createUploadRequest();
     $request->server->set('CONTENT_LENGTH', (string) (2 * 1024 * 1024));
 
     $request->triggerValidation();
     expect(true)->toBeTrue();
 });
 
-test('validates upload content length defaults to 20MB when property is not overridden', function (): void {
-    $request = new TestDefaultUploadRequest;
+test('validates upload content length defaults to 20MB when property is not overridden', function () use ($createDefaultUploadRequest): void {
+    $request = $createDefaultUploadRequest();
 
     $request->server->set('CONTENT_LENGTH', (string) (15 * 1024 * 1024));
     $request->triggerValidation();

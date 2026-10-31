@@ -52,9 +52,9 @@ final class WorkflowInstance extends BaseEnterpriseModel
             }
 
             if (! empty($instance->workflow_definition_id)) {
-                DB::table('workflow_definitions')->updateOrInsert(
-                    ['id' => $instance->workflow_definition_id],
-                    [
+                if (! DB::table('workflow_definitions')->where('id', $instance->workflow_definition_id)->exists()) {
+                    DB::table('workflow_definitions')->insert([
+                        'id' => $instance->workflow_definition_id,
                         'tenant_id' => $instance->tenant_id ?? (string) Str::uuid(),
                         'code' => $instance->workflow_code ?? 'PURCHASE_ORDER_APPROVAL',
                         'name' => 'Auto-generated Definition',
@@ -65,8 +65,8 @@ final class WorkflowInstance extends BaseEnterpriseModel
                         'configuration' => '{}',
                         'created_at' => now(),
                         'updated_at' => now(),
-                    ]
-                );
+                    ]);
+                }
             }
         });
     }

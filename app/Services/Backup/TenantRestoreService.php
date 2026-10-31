@@ -442,7 +442,10 @@ class TenantRestoreService
     {
         match (DB::connection()->getDriverName()) {
             'sqlite' => DB::statement('PRAGMA defer_foreign_keys = ON'),
-            'pgsql' => DB::statement("SET CONSTRAINTS ALL DEFERRED; SET session_replication_role = 'replica'"),
+            'pgsql' => (function (): void {
+                DB::statement('SET CONSTRAINTS ALL DEFERRED');
+                DB::statement("SET session_replication_role = 'replica'");
+            })(),
             default => null,
         };
     }
