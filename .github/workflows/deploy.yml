@@ -22,10 +22,12 @@ concurrency:
 jobs:
   build-and-push:
     name: Build & Push Docker Image
+    # Workflow-run deploys must come from a successful main run in this repository.
     if: >-
       (github.event_name == 'workflow_run' &&
        github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main') ||
+       github.event.workflow_run.head_branch == 'main' &&
+       github.event.workflow_run.head_repository.full_name == github.repository) ||
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'workflow_call'
 
@@ -37,6 +39,7 @@ jobs:
 
     steps:
       # Step 1: Check out source code repository
+      # workflow_run starts on the latest main: check out the exact commit that passed the chain
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
@@ -68,10 +71,12 @@ jobs:
         uses: docker/metadata-action@v6
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # type=sha would tag the latest main seen by workflow_run, not the commit that passed the chain
           tags: |
             type=raw,value=latest
             type=raw,value=sha-${{ steps.vars.outputs.short_sha }}
             type=raw,value=sha-${{ steps.vars.outputs.head_sha }}
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha }},priority=100
 
       # Step 6: Build and push image
       - name: Build and push Docker image
