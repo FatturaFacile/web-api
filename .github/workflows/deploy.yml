@@ -1,112 +1,102 @@
-name: Build, Publish and Deploy
+name: Release & Deploy Production
 
+# main is the release branch: pushes to main only run CI (erp-ci.yml -> sonar.yml).
+# A version tag vX.Y.Z runs the full CI, builds one image, publishes it to GHCR and Docker Hub,
+# creates the GitHub release and deploys to production after approval (GitHub Environment "prod").
 on:
-  workflow_run:
-    workflows:
-      - CI & SonarCloud Quality Gate
-    types:
-      - completed
-    branches:
-      - main
-  workflow_dispatch:
-  workflow_call:
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  push:
+    tags:
+      - 'v*.*.*'
 
 concurrency:
   group: production-deploy
   cancel-in-progress: false
 
+permissions: { }
+
 jobs:
-  build-and-push:
+  ci:
+    uses: ./.github/workflows/erp-ci.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
+  build:
     name: Build & Push Docker Image
-    # Workflow-run deploys must come from a successful main run in this repository.
-    if: >-
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       github.event.workflow_run.head_branch == 'main' &&
-       github.event.workflow_run.head_repository.full_name == github.repository) ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_call'
-
+    needs: ci
     runs-on: ubuntu-24.04
-
     permissions:
       contents: read
       packages: write
-
     steps:
-      # Step 1: Check out source code repository
-      # workflow_run starts on the latest main: check out the exact commit that passed the chain
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      # Step 2: Determine commit SHA values for container tagging
-      - name: Resolve Commit SHA
+      # Registry names must be lowercase (the org is FatturaFacile); Docker Hub repo is fatturafacile/api
+      - name: Image names and version
         id: vars
         run: |
-          SHA="${{ github.event.workflow_run.head_sha || github.sha }}"
-          echo "head_sha=$SHA" >> $GITHUB_OUTPUT
-          echo "short_sha=${SHA:0:7}" >> $GITHUB_OUTPUT
+          {
+            echo "ghcr=ghcr.io/${GITHUB_REPOSITORY,,}"
+            echo "hub=docker.io/fatturafacile/api"
+            echo "version=${GITHUB_REF_NAME#v}"
+          } >> "$GITHUB_OUTPUT"
 
-      # Step 3: Set up Docker Buildx for multi-layer build cache
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 
-      # Step 4: Authenticate with GitHub Container Registry (GHCR)
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Log in to GHCR
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Step 5: Generate container tags and labels
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v6
+      - name: Log in to Docker Hub
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
         with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          # type=sha would tag the latest main seen by workflow_run, not the commit that passed the chain
-          tags: |
-            type=raw,value=latest
-            type=raw,value=sha-${{ steps.vars.outputs.short_sha }}
-            type=raw,value=sha-${{ steps.vars.outputs.head_sha }}
-            type=raw,value=sha-${{ github.event.workflow_run.head_sha }},priority=100
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      # Step 6: Build and push image
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v6
+      # The production compose file on the VPS pulls ghcr.io/fatturafacile/web-api:latest
+      - name: Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
         with:
           context: .
-          file: ./Dockerfile
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: |
+            ${{ steps.vars.outputs.ghcr }}:${{ steps.vars.outputs.version }}
+            ${{ steps.vars.outputs.ghcr }}:latest
+            ${{ steps.vars.outputs.hub }}:${{ steps.vars.outputs.version }}
+            ${{ steps.vars.outputs.hub }}:latest
           cache-from: type=gha
-          # A failed cache write (e.g. "failed to reserve cache") must not block the deploy
+          # A failed cache write (e.g. "failed to reserve cache") must not block the release
           cache-to: type=gha,mode=max,ignore-error=true
+
+  release:
+    name: GitHub Release
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Create release with generated notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --verify-tag --generate-notes
 
   deploy:
     name: Remote VPS Deployment
-    needs: build-and-push
+    needs: release
     runs-on: ubuntu-24.04
-    if: >-
-      (github.event_name == 'workflow_run' && github.event.workflow_run.head_branch == 'main') ||
-      github.event_name == 'workflow_dispatch' ||
-      github.event_name == 'workflow_call' ||
-      github.ref == 'refs/heads/main'
-
+    # Required reviewers are configured on the "prod" environment
+    environment:
+      name: prod
+      url: https://api.fatturafacile.eu
     permissions:
       contents: read
       packages: read
-
     steps:
-      # Step 7: Connect to production VPS via SSH and deploy
       - name: Deploy to Ubuntu Server via SSH
         uses: appleboy/ssh-action@v1.2.5
         with:
@@ -127,13 +117,10 @@ jobs:
             # Free dangling image layers before recreating containers
             docker image prune -f
 
-            # Gracefully stop background workers and application
-            docker compose stop queue_worker scheduler app postgres || true
+            # Gracefully stop background workers and application (PostgreSQL keeps running: data is preserved)
+            docker compose stop queue_worker scheduler app || true
 
-            # Remove ephemeral state of Postgres container to enforce a fresh schema
-            docker compose rm -f -v postgres
-
-            # Launch PostgreSQL container first
+            # Make sure PostgreSQL is up
             docker compose up -d postgres
 
             # Poll PostgreSQL availability before starting client containers
@@ -174,12 +161,12 @@ jobs:
               exit 1
             fi
 
-            # Execute cache, migrations, and swagger generation in a single shell session
+            # Execute cache, migrations (non-destructive) and swagger generation in a single shell session
             docker compose exec -T app sh -c "
               set -e
               php -d memory_limit=256M artisan config:clear
               php -d memory_limit=256M artisan cache:clear
-              php -d memory_limit=512M artisan migrate:fresh --seed --force
+              php -d memory_limit=512M artisan migrate --force
               php -d memory_limit=256M artisan config:cache
               php -d memory_limit=256M artisan route:cache
               php -d memory_limit=256M artisan view:cache
