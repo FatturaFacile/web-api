@@ -123,4 +123,17 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Demo Reset
+    |--------------------------------------------------------------------------
+    |
+    | Only on the public demo: `demo:reset` rebuilds the database from scratch
+    | every 30 minutes, so data typed in by visitors does not persist. It
+    | wipes everything, so it stays off unless DEMO_RESET_ENABLED=true.
+    |
+    */
+
+    'demo_reset' => (bool) env('DEMO_RESET_ENABLED', false),
+
 ];
