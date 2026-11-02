@@ -57,13 +57,11 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
-          # Tags from the checked-out commit, not from the workflow_run context
-          context: git
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          # type=sha would tag the latest main seen by workflow_run, not the commit that passed the chain
           tags: |
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=semver,pattern={{version}}
-            type=sha,prefix=sha-,enable=true,priority=100
+            type=raw,value=latest
+            type=raw,value=sha-${{ github.event.workflow_run.head_sha }},priority=100
 
       # Step 5: Build and push image
       - name: Build and push Docker image
