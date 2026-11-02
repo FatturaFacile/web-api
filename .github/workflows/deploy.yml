@@ -16,17 +16,15 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  # Step 0: Run the full CI suite; nothing is built or deployed unless it passes
-  ci:
-    name: CI
-    uses: ./.github/workflows/erp-ci.yml
-
   build-and-push:
     name: Build & Push Docker Image
-    needs: ci
 
+    # Deploy only a green chain started by a push to main of this repo: CI and SonarCloud
+    # also run for pull requests, and those must never reach production
     if: >
-      github.event.workflow_run.conclusion == 'success'
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
 
     runs-on: ubuntu-24.04
 
@@ -36,8 +34,11 @@ jobs:
 
     steps:
       # Step 1: Check out source code repository
+      # workflow_run starts on the latest main: check out the exact commit that passed the chain
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       # Step 2: Set up Docker Buildx for multi-layer build cache
       - name: Set up Docker Buildx
@@ -56,6 +57,8 @@ jobs:
         id: meta
         uses: docker/metadata-action@v6
         with:
+          # Tags from the checked-out commit, not from the workflow_run context
+          context: git
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=raw,value=latest,enable={{is_default_branch}}

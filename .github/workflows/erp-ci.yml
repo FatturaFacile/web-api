@@ -1,15 +1,11 @@
 name: Enterprise ERP CI Pipeline
 
 on:
-  # main is tested by deploy.yml, which calls this workflow and deploys only if it passes
+  # First link of the main chain: CI -> SonarCloud (sonar.yml) -> Qodana + deploy (workflow_run)
   push:
-    branches: [ dev ]
+    branches: [ main, dev ]
   pull_request:
     branches: [ main, dev ]
-  workflow_call:
-    branches:
-      - main
-      - dev
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
