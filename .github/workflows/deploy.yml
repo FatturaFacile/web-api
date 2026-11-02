@@ -1,9 +1,11 @@
 name: Build, Publish and Deploy
 
 on:
-  push:
-    branches: [ "main" ]
-    tags: [ "v*" ]
+  workflow_run:
+    workflows:
+      - CI & SonarCloud Quality Gate
+    types:
+      - completed
 
 env:
   REGISTRY: ghcr.io
@@ -16,7 +18,12 @@ concurrency:
 jobs:
   build-and-push:
     name: Build & Push Docker Image
+
+    if: >
+      github.event.workflow_run.conclusion == 'success'
+
     runs-on: ubuntu-24.04
+
     permissions:
       contents: read
       packages: write
