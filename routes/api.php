@@ -382,8 +382,11 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/entries', [TimeAttendanceController::class, 'index'])->name('entries');
             Route::post('/clock-in', [TimeAttendanceController::class, 'clockIn'])->name('clock-in');
             Route::post('/clock-out', [TimeAttendanceController::class, 'clockOut'])->name('clock-out');
+            Route::post('/break-start', [TimeAttendanceController::class, 'breakStart'])->name('break-start');
+            Route::post('/break-end', [TimeAttendanceController::class, 'breakEnd'])->name('break-end');
             Route::get('/compliance-check', [TimeAttendanceController::class, 'complianceCheck'])->name('compliance-check');
             Route::get('/monthly-report', [TimeAttendanceController::class, 'monthlyReport'])->name('monthly-report');
+            Route::get('/annual-report', [TimeAttendanceController::class, 'annualReport'])->name('annual-report');
         });
 
         // 16. Cross-Border HR & Payroll

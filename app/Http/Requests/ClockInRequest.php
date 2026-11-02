@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class ClockInRequest extends FormRequest
+class ClockInRequest extends AttendanceMutationRequest
 {
     public function authorize(): bool
     {
@@ -19,6 +17,7 @@ class ClockInRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...parent::rules(),
             'clock_in' => ['nullable', 'date'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],

@@ -4,9 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
-
-class ClockOutRequest extends FormRequest
+class ClockOutRequest extends AttendanceMutationRequest
 {
     public function authorize(): bool
     {
@@ -19,6 +17,7 @@ class ClockOutRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...parent::rules(),
             'clock_out' => ['nullable', 'date'],
             'break_minutes' => ['nullable', 'integer', 'min:0', 'max:720'],
             'notes' => ['nullable', 'string', 'max:500'],

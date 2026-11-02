@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TimeEntry extends Model
@@ -54,5 +55,11 @@ class TimeEntry extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    /** @return HasMany<TimeEntryEvent, $this> */
+    public function events(): HasMany
+    {
+        return $this->hasMany(TimeEntryEvent::class)->orderBy('sequence');
     }
 }

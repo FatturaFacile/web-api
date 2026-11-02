@@ -154,10 +154,173 @@
 | Method | Endpoint                                   | Description                                                   |
 |--------|--------------------------------------------|---------------------------------------------------------------|
 | `GET`  | `/api/v1/time-attendance/entries`          | List time attendance entries.                                 |
-| `POST` | `/api/v1/time-attendance/clock-in`         | Clock in with optional GPS geofencing coordinates.            |
+| `POST` | `/api/v1/time-attendance/clock-in`         | Clock in with optional coordinates (no geofence enforcement). |
 | `POST` | `/api/v1/time-attendance/clock-out`        | Clock out and record rest breaks.                             |
+| `POST` | `/api/v1/time-attendance/break-start`      | Append a break-start event to the current user's open shift.   |
+| `POST` | `/api/v1/time-attendance/break-end`        | Append a break-end event and recalculate completed breaks.     |
 | `GET`  | `/api/v1/time-attendance/compliance-check` | Audit compliance against IT D.Lgs. 66/2003 or Swiss ArG.      |
 | `GET`  | `/api/v1/time-attendance/monthly-report`   | Comprehensive monthly attendance and labor compliance report. |
+| `GET`  | `/api/v1/time-attendance/annual-report`    | Annual attendance totals and twelve monthly summaries.        |
+
+#### Break Events
+
+Both endpoints require authentication and tenant membership. They always operate
+on the authenticated user's open shift in the active tenant; clients cannot
+select a different employee or shift through the request body.
+
+```http
+POST /api/v1/time-attendance/break-start
+Content-Type: application/json
+X-Tenant-Id: <tenant UUID>
+
+{"occurred_at":"2026-11-02T12:00:00Z"}
+```
+
+```http
+POST /api/v1/time-attendance/break-end
+Content-Type: application/json
+X-Tenant-Id: <tenant UUID>
+
+{"occurred_at":"2026-11-02T12:30:00Z"}
+```
+
+- `occurred_at` is optional and defaults to server time. Explicit timestamps are
+	accepted, including backdated or future values, subject to chronological checks;
+	these endpoints do not implement an approved correction workflow.
+- Successful requests return `201` with the updated `TimeEntryResource` in the
+	standard envelope. Entry/exit responses, entry listings and monthly reports
+	now include `is_on_break` and an ordered `events` array.
+- Events contain `id`, progressive `sequence`, `type` (`break_start` / `break_end`),
+	`occurred_at`, server-side `recorded_at` and `recorded_by`. They are stored in
+	`time_entry_events`; this release provides no event update/delete endpoint.
+- Valid flow: clock in, start/end one or more breaks, then clock out. Starting an
+	already open break, ending without a start or clocking out during a break
+	returns `409`. No open shift returns `422`.
+- Break timestamps cannot precede clock-in or the previous event. Clock-out
+	cannot precede the last event. Invalid dates or ordering return `422`.
+- Completed break durations are summed in seconds and converted to whole minutes
+	by rounding down the combined total. The original event timestamps are retained.
+	An ongoing break is visible but is not yet included in `break_minutes`.
+- When break events exist, `clock-out` must omit non-null `break_minutes`: events
+	are authoritative, and manual overrides return `422`. Shifts without events
+	retain the legacy manual-minute behavior. Existing shifts are not backfilled.
+- Entry/exit/break writes use database transactions and serialize by locking the
+	user row; event sequence numbers are also unique per shift. Recognized retries
+	replay their original response before state transitions are evaluated.
+- These events currently cover pauses only. Entry/exit remain fields on the shift;
+	immutable audit, approved corrections, retention policies and HR synchronization
+	are separate work items, not guarantees of this release.
+
+#### Idempotent Attendance Requests
+
+All four mutation endpoints (`clock-in`, `clock-out`, `break-start`, `break-end`)
+accept an optional `Idempotency-Key` header or `idempotency_key` JSON field. The
+header takes precedence. Keys must contain 1-128 ASCII letters, digits or the
+characters `.`, `_`, `:` and `-`; a UUID is suitable.
+
+```http
+POST /api/v1/time-attendance/break-start
+Idempotency-Key: 8eef0614-e5ab-41e1-9af0-245d8c99e77b
+Content-Type: application/json
+X-Tenant-Id: <tenant UUID>
+
+{}
+```
+
+- Generate one key per logical action, and reuse that same key and payload for
+	every retry, including network retries. Generate a new key for the next action.
+- Keys are scoped to tenant and authenticated user, across all four actions.
+	Reusing a key with a different action or meaningful payload returns `409`
+	Problem Details (`Idempotency Conflict`); it never changes the original record.
+- A recognized retry returns the original HTTP status and JSON body, including
+	server-generated timestamps, with `Idempotency-Replayed: true`. This header is
+	exposed through CORS. No shift, event, pause minutes or notes are written again.
+- The replay is a historical response, not the current shift state. Refresh
+	`/entries` before using it as current UI state. Late retries cannot reopen a
+	completed shift, restart an old pause or close a subsequently opened shift.
+- Without a client key, an explicit `clock_in`, `clock_out` or `occurred_at`
+	provides automatic identity by action and normalized UTC timestamp. Identical
+	retries replay; changed payload at that same identity returns `409`.
+	Equivalent timezone offsets and numeric representations are normalized.
+- Without both a key and an explicit timestamp, no reliable request identity is
+	available: existing state checks remain, but there is no replay guarantee.
+	No fuzzy time window is used to silently discard potentially legitimate work.
+- The receipt and mutation commit atomically under a user-row lock. A database
+	unique constraint on `(tenant_id, user_id, key_hash)` reinforces uniqueness.
+	Failed operations roll back without consuming their request identifier.
+- `attendance_requests` stores hashed identifiers, normalized-payload hashes,
+	action, original response and creation time. No automatic expiry is configured;
+	deleting receipts removes their replay guarantee and needs a retention policy.
+- Only requests recorded after this migration are covered; historic events are
+	not backfilled. Different explicit client keys identify different requests.
+
+#### Annual Attendance Report
+
+`GET /api/v1/time-attendance/annual-report?year=2026`
+
+- Requires authentication and the active tenant context (`X-Tenant-Id`).
+- `year`: optional integer from 2000 to 2100; defaults to the current year.
+- `user_id`: optional user UUID; defaults to the authenticated user. Another
+	user's report requires `view-all-attendance`. The selected user must be an
+	active (not soft-deleted) member of the current tenant.
+- Success uses the standard `success` / `message` / `data` envelope.
+	`data` contains `user`, `period`, `summary` and `months`.
+- `period` contains `year`, `start_date` and `end_date`. `months` always contains
+	twelve objects, ordered January to December, each with `month` and `summary`.
+- Each summary contains `total_shifts`, `closed_shifts`, `open_shifts`,
+	`gross_hours`, `break_hours` and `net_hours_worked`. Hours are rounded to two
+	decimal places. Open shifts are counted but do not contribute hours or breaks.
+- Shifts belong entirely to the month/year of `clock_in`, using the application's
+	configured timezone, matching the monthly report. A shift starting on December
+	31 and ending on January 1 is counted entirely in December. Hours and aggregate
+	break minutes are not split at calendar boundaries.
+- Annual reports contain no individual entries or annual compliance verdict;
+	use the monthly report for entry details and the existing compliance endpoints
+	for their limited checks. Contractual overtime, leave balances and payroll
+	exports are not calculated by this endpoint.
+- Invalid parameters or users outside the tenant return `422`; requesting another
+	user's report without the required permission returns `403`.
+
+Monthly reports retain their existing fields and now also expose `closed_shifts`
+and `open_shifts` in `summary`. Monthly and annual totals share the same duration
+calculation; individual entry `duration_hours` uses a forward time difference.
+
+#### Attendance Class Map
+
+| Component | Responsibility |
+|-----------|----------------|
+| `app/Http/Controllers/Api/V1/TimeAttendanceController.php` | Eight API actions; delegates mutations and summaries, formats responses. |
+| `app/Services/Attendance/AttendanceTrackingService.php` | Transactional clock-in/out, break transitions, locking, chronology and derived pause minutes. |
+| `app/Services/Attendance/AttendanceIdempotencyService.php` | Tenant/user-scoped request identity, payload normalization, transactional receipts and original-response replay. |
+| `app/Services/Attendance/AttendanceReportService.php` | Shared totals and twelve-month annual aggregation. |
+| `app/Services/Attendance/AttendanceComplianceService.php` | Existing partial Italian/Swiss rest, pause and weekly-hours checks; not legal certification. |
+| `app/Models/TimeEntry.php` | Tenant/user shift, timestamps, cached pause minutes, notes and ordered event relationship. |
+| `app/Models/TimeEntryEvent.php` | Tenant-scoped event with sequence, declared/server time and recorder. |
+| `app/Models/AttendanceRequest.php` | Persistent tenant-scoped receipt of a successful attendance mutation. |
+| `app/Enums/TimeEntryEventType.php` | Supported break-start and break-end values. |
+| `app/Exceptions/AttendanceStateException.php` | Invalid state with title/status, translated to Problem Details by the controller. |
+| `app/Http/Requests/ClockInRequest.php` | Entry timestamp, optional coordinates, simplified-record flag and notes validation. |
+| `app/Http/Requests/AttendanceMutationRequest.php` | Shared validation of client idempotency keys and header precedence for all attendance mutations. |
+| `app/Http/Requests/ClockOutRequest.php` | Exit timestamp, legacy pause minutes and notes validation. |
+| `app/Http/Requests/BreakEventRequest.php` | Break timestamp validation and authenticated tenant-context requirement. |
+| `app/Http/Requests/AttendanceReportRequest.php` | Report period, jurisdiction and tenant-scoped target-user validation/authorization. |
+| `app/Http/Resources/TimeEntryResource.php` | Shift JSON, net duration, pause state and events. |
+| `app/Http/Resources/TimeEntryEventResource.php` | Event JSON without exposing the underlying model directly. |
+
+Routes are registered in `routes/api.php`. The original attendance migration
+creates `time_entries`, `leave_requests` and `leave_balances`; the separate
+`2026_11_02_145205_create_time_entry_events_table.php` migration adds break events.
+`tests/Feature/Api/HighImpactControllersTest.php` covers HTTP flows and report
+authorization; `tests/Feature/AttendanceComplianceTest.php` covers existing
+jurisdiction checks. `database/seeders/TimeEntrySeeder.php` is an empty scaffold.
+
+The HR context is separate: `Modules\HumanResources\Models\AttendanceRecord`
+stores employee/day attendance, while `Modules\HumanResources\Services\LeaveAndTimeService`
+manages leave, attendance and project timesheets. Its `recordAttendance()` currently
+uses fixed 08:30-17:30 times and a 60-minute break; it does not consume these API
+events. `AttendanceRecordFactory` supports HR tests, not the operational event stream.
+Shared `TenantContext`, `IdentifyTenant`, `BelongsToTenant`, `User` and `ApiResponse`
+provide platform tenancy, authentication relationships and response conventions.
 
 ### 2.16 Cross-Border HR & Payroll (`/api/v1/hr`)
 
