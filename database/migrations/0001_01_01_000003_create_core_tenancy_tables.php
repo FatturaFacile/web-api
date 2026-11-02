@@ -26,6 +26,7 @@ return new class extends Migration
             $table->string('qr_iban', 34)->nullable();
             $table->string('sdi_code', 7)->nullable(); // IT SDI recipient code (7 chars)
             $table->string('pec_email')->nullable();
+            $table->string('status', 30)->default('active')->index();
             $table->json('settings')->nullable();
             $table->timestamps();
             $table->softDeletes();

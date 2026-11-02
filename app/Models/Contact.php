@@ -42,6 +42,16 @@ class Contact extends Model
     ];
 
     /**
+     * @return Attribute<string, string>
+     */
+    protected function type(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value) => empty($value) ? 'customer' : $value,
+        );
+    }
+
+    /**
      * @return Attribute<string|null, string|null>
      */
     protected function email(): Attribute

@@ -17,6 +17,12 @@ class Tenant extends Model
     /** @use HasFactory<TenantFactory> */
     use HasFactory, HasUuids, SoftDeletes;
 
+    protected $attributes = [
+        'status' => 'active',
+        'country' => 'IT',
+        'default_currency' => 'EUR',
+    ];
+
     protected $fillable = [
         'name',
         'legal_name',

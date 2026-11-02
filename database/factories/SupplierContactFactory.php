@@ -28,6 +28,7 @@ class SupplierContactFactory extends Factory
             'legal_name' => fake()->company(),
             'country' => 'IT',
             'default_currency' => 'EUR',
+            'status' => 'active',
         ])->id;
 
         $supplier = Supplier::first() ?? Supplier::factory()->create(['tenant_id' => $tenantId]);

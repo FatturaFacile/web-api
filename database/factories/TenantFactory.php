@@ -23,6 +23,14 @@ final class TenantFactory extends Factory
             'legal_name' => fake()->company().' S.p.A.',
             'country' => 'IT',
             'default_currency' => 'EUR',
+            'status' => 'active',
         ];
+    }
+
+    public function inactive(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'inactive',
+        ]);
     }
 }

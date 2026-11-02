@@ -88,7 +88,7 @@ test('external client logs in with bearer token, accesses protected route and lo
 
 test('angular spa performs stateful session login, accesses profile and logs out cleanly', function (): void {
     // Angular development origin
-    $origin = 'http://localhost:4200';
+    $origin = 'https://localhost:4200';
 
     // 1. Fetch CSRF cookie
     $csrfResponse = $this->get('/sanctum/csrf-cookie', [
@@ -151,5 +151,5 @@ test('cors configuration supports credentials and allows angular frontend origin
 
     $allowedOrigins = config('cors.allowed_origins');
     expect($allowedOrigins)->toBeArray()
-        ->and($allowedOrigins)->toContain('http://localhost:4200');
+        ->and($allowedOrigins)->toContain('https://localhost:4200');
 });

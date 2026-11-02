@@ -26,8 +26,9 @@ class ContactFactory extends Factory
                 'legal_name' => fake()->company(),
                 'country' => 'IT',
                 'default_currency' => 'EUR',
+                'status' => 'active',
             ])->id,
-            'type' => 'client',
+            'type' => 'customer',
             'country' => 'IT',
             'company_name' => fake()->company(),
             'first_name' => fake()->firstName(),
@@ -42,6 +43,20 @@ class ContactFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'customer',
+        ]);
+    }
+
+    public function client(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => 'client',
+        ]);
+    }
+
+    public function lead(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => 'lead',
         ]);
     }
 
