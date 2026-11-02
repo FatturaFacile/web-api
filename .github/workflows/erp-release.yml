@@ -4,6 +4,16 @@ on:
   push:
     tags:
       - 'v*.*.*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release Tag (e.g. v1.0.0)'
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
   release:
@@ -23,12 +33,26 @@ jobs:
       - name: Install Production Dependencies
         run: composer install --no-dev --prefer-dist --optimize-autoloader --no-progress
 
-      - name: Build Docker Production Image
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Determine Release Tag
+        id: vars
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:${{ github.ref_name }} .
-          docker tag ghcr.io/${{ github.repository }}:${{ github.ref_name }} ghcr.io/${{ github.repository }}:latest
+          RELEASE_TAG="${{ inputs.tag || github.ref_name }}"
+          echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Build and Push Docker Release Image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }} .
+          docker push ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }}
 
       - name: Publish Release Notes
         uses: softprops/action-gh-release@v3
         with:
+          tag_name: ${{ steps.vars.outputs.tag }}
           generate_release_notes: true

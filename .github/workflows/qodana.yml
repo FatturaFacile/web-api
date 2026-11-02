@@ -3,13 +3,21 @@ name: Qodana
 on:
   workflow_run:
     workflows:
-      - CI & SonarCloud Quality Gate
+      - Enterprise ERP CI Pipeline
     types:
       - completed
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   qodana:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success')
 
     runs-on: ubuntu-24.04
 
@@ -21,8 +29,9 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
           fetch-depth: 0
 
       - name: Run Qodana Scan

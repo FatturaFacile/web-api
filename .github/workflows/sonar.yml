@@ -6,15 +6,24 @@ on:
       - Enterprise ERP CI Pipeline
     types:
       - completed
-
+    branches:
+      - main
+      - dev
   workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   sonarcloud:
-    if: github.event.workflow_run.conclusion == 'success'
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
 
     name: Test, Coverage & SonarCloud
     runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
 
     # Global environment variables shared across steps
     env:
@@ -46,6 +55,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.workflow_run.head_sha || github.ref }}
           fetch-depth: 0 # Required for SonarCloud blame and new code analysis
 
       - name: Setup PHP and PCOV
