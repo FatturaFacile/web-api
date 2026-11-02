@@ -16,5 +16,5 @@ Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverla
 // Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore
 Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverlapping();
 
-// Demo pubblica: database ricostruito da zero ogni 30 minuti (solo con DEMO_RESET_ENABLED=true)
+// Demo pubblica: database ricostruito da zero e storage svuotato ogni 30 minuti (solo con DEMO_RESET_ENABLED=true)
 Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->when(fn (): bool => (bool) config('app.demo_reset'));

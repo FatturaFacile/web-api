@@ -128,8 +128,8 @@ return [
     | Demo Reset
     |--------------------------------------------------------------------------
     |
-    | Only on the public demo: `demo:reset` rebuilds the database from scratch
-    | every 30 minutes, so data typed in by visitors does not persist. It
+    | Only on the public demo: `demo:reset` rebuilds the database and empties
+    | the storage every 30 minutes, so nothing visitors enter persists. It
     | wipes everything, so it stays off unless DEMO_RESET_ENABLED=true.
     |
     */
