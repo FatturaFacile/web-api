@@ -1,0 +1,90 @@
+# Dev environment (dev.fatturafacile.eu + dev-api.fatturafacile.eu), deployed from the dev branch.
+# Lives in ~/fatturafacile-dev on the VPS, fully separate from production (own network, volumes and .env).
+# The production reverse proxy (erp_nginx) terminates TLS and forwards both hostnames to the `web` container.
+name: ffdev
+
+services:
+  web:
+    image: nginx:1.29-alpine
+    container_name: ffdev_web
+    restart: always
+    volumes:
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./fe:/srv/fe:ro
+    depends_on:
+      - app
+    networks:
+      - ffdev
+      - edge
+
+  app:
+    image: ghcr.io/fatturafacile/web-api:${API_TAG:-dev}
+    container_name: ffdev_app
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - ffdev
+
+  queue_worker:
+    image: ghcr.io/fatturafacile/web-api:${API_TAG:-dev}
+    container_name: ffdev_queue_worker
+    restart: always
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - ffdev
+
+  scheduler:
+    image: ghcr.io/fatturafacile/web-api:${API_TAG:-dev}
+    container_name: ffdev_scheduler
+    restart: always
+    command: sh -c "while true; do php artisan schedule:run --no-interaction & sleep 60; done"
+    env_file:
+      - .env
+    volumes:
+      - app_storage:/var/www/html/storage
+    depends_on:
+      - app
+    networks:
+      - ffdev
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: ffdev_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_DATABASE:?}
+      POSTGRES_USER: ${DB_USERNAME:?}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ffdev
+
+
+networks:
+  ffdev:
+  # Network of the production stack, shared only by ffdev_web so erp_nginx can reach it
+  edge:
+    external: true
+    name: apifatturafacileeu_erp_network
+
+volumes:
+  app_storage:
+  pg_data:

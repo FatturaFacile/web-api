@@ -1,0 +1,96 @@
+name: Deploy dev
+
+# Every push to dev: full CI, then image ghcr.io/<repo>:dev and deploy to dev.fatturafacile.eu / dev-api.fatturafacile.eu.
+# Stack definition and deploy script: deploy/dev/. Secrets live in the GitHub Environment "dev".
+on:
+  push:
+    branches:
+      - dev
+  workflow_dispatch:
+
+concurrency:
+  group: dev-deploy
+  cancel-in-progress: false
+
+permissions: { }
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  ci:
+    uses: ./.github/workflows/erp-ci.yml
+    permissions:
+      contents: read
+    secrets: inherit
+
+  build:
+    needs: ci
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.vars.outputs.tag }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Image tag
+        id: vars
+        run: echo "tag=sha-${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to GHCR
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:dev
+            ${{ env.IMAGE }}:${{ steps.vars.outputs.tag }}
+          cache-from: type=gha,scope=dev
+          cache-to: type=gha,mode=max,scope=dev,ignore-error=true
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: dev
+      url: https://dev.fatturafacile.eu
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: SSH setup
+        env:
+          SSH_KEY: ${{ secrets.DEV_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEV_SSH_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519
+
+      - name: Deploy
+        env:
+          TARGET: ${{ secrets.DEV_SSH_USER }}@${{ secrets.DEV_SSH_HOST }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          API_TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          ssh "$TARGET" 'mkdir -p ~/fatturafacile-dev'
+          scp deploy/dev/compose.yml deploy/dev/nginx.conf deploy/dev/deploy.sh "$TARGET":fatturafacile-dev/
+          echo "$GHCR_TOKEN" | ssh "$TARGET" "docker login ghcr.io -u '${{ github.actor }}' --password-stdin"
+          ssh "$TARGET" "API_TAG='$API_TAG' ~/fatturafacile-dev/deploy.sh"
