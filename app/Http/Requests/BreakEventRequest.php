@@ -14,15 +14,4 @@ class BreakEventRequest extends AttendanceMutationRequest
         return $this->user() instanceof User
             && app(TenantContext::class)->getTenantId() !== null;
     }
-
-    /**
-     * @return array<string, mixed>
-     */
-    public function rules(): array
-    {
-        return [
-            ...parent::rules(),
-            'occurred_at' => ['nullable', 'date'],
-        ];
-    }
 }

@@ -18,7 +18,6 @@ class ClockInRequest extends AttendanceMutationRequest
     {
         return [
             ...parent::rules(),
-            'clock_in' => ['nullable', 'date'],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'is_simplified_record' => ['nullable', 'boolean'],

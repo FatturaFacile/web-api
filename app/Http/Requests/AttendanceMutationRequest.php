@@ -22,6 +22,11 @@ abstract class AttendanceMutationRequest extends FormRequest
     {
         return [
             'idempotency_key' => ['nullable', 'string', 'min:1', 'max:128', 'regex:/\A[A-Za-z0-9._:-]+\z/'],
+            'clock_in' => ['missing'],
+            'clock_out' => ['missing'],
+            'occurred_at' => ['missing'],
+            'break_minutes' => ['missing'],
+            'is_correction' => ['missing'],
         ];
     }
 }

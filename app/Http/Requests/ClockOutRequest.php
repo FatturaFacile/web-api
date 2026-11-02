@@ -18,8 +18,6 @@ class ClockOutRequest extends AttendanceMutationRequest
     {
         return [
             ...parent::rules(),
-            'clock_out' => ['nullable', 'date'],
-            'break_minutes' => ['nullable', 'integer', 'min:0', 'max:720'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];
     }

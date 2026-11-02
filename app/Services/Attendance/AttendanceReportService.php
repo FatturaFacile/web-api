@@ -24,12 +24,11 @@ class AttendanceReportService
         $startOfNextYear = $startOfYear->copy()->addYear();
 
         $entries = TimeEntry::where('user_id', $user->id)
-            ->where('clock_in', '>=', $startOfYear)
-            ->where('clock_in', '<', $startOfNextYear)
-            ->orderBy('clock_in')
-            ->get(['clock_in', 'clock_out', 'break_minutes']);
+            ->effectivePeriod($startOfYear, $startOfNextYear)
+            ->orderByRaw('COALESCE(corrected_clock_in, clock_in) ASC')
+            ->get();
 
-        $entriesByMonth = $entries->groupBy(static fn (TimeEntry $entry): int => $entry->clock_in->month);
+        $entriesByMonth = $entries->groupBy(static fn (TimeEntry $entry): int => $entry->effectiveClockIn()->month);
         $months = [];
 
         for ($month = 1; $month <= 12; $month++) {
@@ -62,14 +61,15 @@ class AttendanceReportService
         $openShifts = 0;
 
         foreach ($entries as $entry) {
-            if ($entry->clock_out === null) {
+            $clockOut = $entry->effectiveClockOut();
+            if ($clockOut === null) {
                 $openShifts++;
 
                 continue;
             }
 
-            $grossMinutes = max(0.0, $entry->clock_in->diffInMinutes($entry->clock_out));
-            $breakMinutes = max(0, (int) $entry->break_minutes);
+            $grossMinutes = max(0.0, $entry->effectiveClockIn()->diffInMinutes($clockOut));
+            $breakMinutes = max(0, $entry->effectiveBreakMinutes());
 
             $totalGrossMinutes += $grossMinutes;
             $totalBreakMinutes += $breakMinutes;

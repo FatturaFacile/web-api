@@ -155,12 +155,102 @@
 |--------|--------------------------------------------|---------------------------------------------------------------|
 | `GET`  | `/api/v1/time-attendance/entries`          | List time attendance entries.                                 |
 | `POST` | `/api/v1/time-attendance/clock-in`         | Clock in with optional coordinates (no geofence enforcement). |
-| `POST` | `/api/v1/time-attendance/clock-out`        | Clock out and record rest breaks.                             |
+| `POST` | `/api/v1/time-attendance/clock-out`        | Clock out at server time using event-derived break minutes.    |
 | `POST` | `/api/v1/time-attendance/break-start`      | Append a break-start event to the current user's open shift.   |
 | `POST` | `/api/v1/time-attendance/break-end`        | Append a break-end event and recalculate completed breaks.     |
 | `GET`  | `/api/v1/time-attendance/compliance-check` | Audit compliance against IT D.Lgs. 66/2003 or Swiss ArG.      |
 | `GET`  | `/api/v1/time-attendance/monthly-report`   | Comprehensive monthly attendance and labor compliance report. |
 | `GET`  | `/api/v1/time-attendance/annual-report`    | Annual attendance totals and twelve monthly summaries.        |
+| `GET`  | `/api/v1/time-attendance/entries/{entry}/corrections` | List correction history for an entry. |
+| `POST` | `/api/v1/time-attendance/entries/{entry}/corrections` | Submit a motivated correction proposal. |
+| `POST` | `/api/v1/time-attendance/corrections/{correction}/approve` | Approve a pending correction. |
+| `POST` | `/api/v1/time-attendance/corrections/{correction}/reject` | Reject a pending correction with a reason. |
+
+#### Ordinary Attendance Versus Corrections
+
+The four mutation endpoints are ordinary, live clock actions only. The server
+assigns clock-in, clock-out and break event times; clients cannot choose them.
+
+**Breaking change:** clients must omit `clock_in`, `clock_out`, `occurred_at`,
+`break_minutes` and `is_correction` from all four mutation payloads. These fields
+return `422` whenever present, including null values. Original historic fields
+are neither rewritten nor removed; approved corrections have separate effective
+values used by listings, reports and the existing compliance checks.
+
+An ordinary clock-in may still include the existing coordinates, notes and
+simplified-record flag; clock-out may include notes. Pause requests need no event
+payload. Use `Idempotency-Key` to identify retries without sending a timestamp.
+
+Corrections use the separate workflow below, with proposed changes, a reason,
+requester and independent approval. There is no privileged bypass on ordinary
+clock actions. Correction decisions are recorded in the existing audit ledger;
+this does not certify the legal adequacy or retention of the attendance system.
+
+#### Attendance Corrections
+
+All correction routes require authentication and membership in the active tenant.
+`entry` and `correction` are UUIDs; resources outside that tenant return `404`.
+
+```http
+POST /api/v1/time-attendance/entries/<entry UUID>/corrections
+Content-Type: application/json
+X-Tenant-Id: <tenant UUID>
+
+{
+	"clock_in": "2026-10-15T08:00:00Z",
+	"clock_out": "2026-10-15T17:00:00Z",
+	"break_minutes": 60,
+	"reason": "The exit and break duration were recorded incorrectly."
+}
+```
+
+- The three proposed values and a reason of 5-1000 characters are required.
+	The interval must have a positive duration, cannot be in the future, and its
+	break minutes must be nonnegative and not exceed its duration. No-op proposals
+	are rejected. A full proposed interval is required even if only one value changes.
+- The employee may submit a proposal for their own entry. An authorized reviewer
+	may submit for another employee of the same tenant. The server assigns actor,
+	status and review metadata; these cannot be supplied by the client.
+- Creation returns `201` with a `pending` request, containing `original_values`,
+	`proposed_values`, `reason`, `requested_by` and review metadata. Pending requests
+	do not change totals. Only one pending proposal per entry is permitted (`409`).
+- `GET /entries/{entry}/corrections` returns its history. Access is permitted to
+	the owner or users with `view-all-attendance` or correction-review permission.
+- Approval and rejection require the dedicated `approve-attendance-corrections`
+	permission through Laravel Gate/Spatie. Assign it explicitly to eligible reviewers;
+	tenant pivot role labels alone do not automatically grant it. Reviewers must be
+	different from both requester and employee, even with a global Gate override.
+- Approve with `POST /corrections/{correction}/approve` and an empty body or optional
+	`reason` (5-1000 characters). Reject with `POST /corrections/{correction}/reject`
+	and `{"reason":"The original timestamps have been verified."}`. Rejection needs
+	a reason and does not change effective values. Final decisions cannot be repeated
+	or reversed through these endpoints (`409`); submit a new proposal if necessary.
+- Reviewers cannot change the proposal during approval. Approval rechecks its
+	snapshot, chronological validity and overlaps with other shifts. Changes to the
+	source shift/events after submission make approval stale (`409`); reject the
+	stale request and submit another one. Newly overlapping shifts return `422`.
+- An open pause blocks correction. The proposed interval must contain the original
+	break event timestamps. This workflow corrects shift totals, not individual pause
+	events; the original pause sequence remains unchanged even if its approved total
+	differs from the original total.
+- Approval updates only `corrected_clock_in`, `corrected_clock_out`,
+	`corrected_break_minutes` and `applied_correction_id`. Original `clock_in`,
+	`clock_out`, `break_minutes` and pause events are retained. The API's ordinary
+	`clock_in`, `clock_out` and `break_minutes` fields now expose effective values;
+	an added `original` object exposes original values alongside `applied_correction_id`.
+- Monthly/annual totals, period filters and the existing Italian/Swiss checks use
+	effective values. Moving an effective entry across a month/year boundary moves
+	its totals accordingly without rewriting its original timestamps.
+- A forgotten exit may be completed by approval while the original `clock_out`
+	remains null. That entry no longer blocks a subsequent ordinary clock-in.
+	Creating wholly missing entries, reopening shifts, correction withdrawal,
+	monthly locks and HR synchronization are not implemented here.
+- Writes lock the employee and entry, and request creation/decision are recorded
+	in the existing enterprise audit ledger with before/after data. If audit recording
+	fails, the transaction rolls back without applying the correction.
+- Ordinary mutation `Idempotency-Key` replay is unchanged; correction creation
+	and decisions do not participate in that replay protocol. Old replay responses
+	remain historical snapshots; refresh `/entries` to obtain approved effective values.
 
 #### Break Events
 
@@ -172,21 +262,21 @@ select a different employee or shift through the request body.
 POST /api/v1/time-attendance/break-start
 Content-Type: application/json
 X-Tenant-Id: <tenant UUID>
+Idempotency-Key: pause-20261102-start-001
 
-{"occurred_at":"2026-11-02T12:00:00Z"}
+{}
 ```
 
 ```http
 POST /api/v1/time-attendance/break-end
 Content-Type: application/json
 X-Tenant-Id: <tenant UUID>
+Idempotency-Key: pause-20261102-end-001
 
-{"occurred_at":"2026-11-02T12:30:00Z"}
+{}
 ```
 
-- `occurred_at` is optional and defaults to server time. Explicit timestamps are
-	accepted, including backdated or future values, subject to chronological checks;
-	these endpoints do not implement an approved correction workflow.
+- `occurred_at` is always assigned by the server, not accepted from the client.
 - Successful requests return `201` with the updated `TimeEntryResource` in the
 	standard envelope. Entry/exit responses, entry listings and monthly reports
 	now include `is_on_break` and an ordered `events` array.
@@ -196,20 +286,22 @@ X-Tenant-Id: <tenant UUID>
 - Valid flow: clock in, start/end one or more breaks, then clock out. Starting an
 	already open break, ending without a start or clocking out during a break
 	returns `409`. No open shift returns `422`.
-- Break timestamps cannot precede clock-in or the previous event. Clock-out
-	cannot precede the last event. Invalid dates or ordering return `422`.
+- Server event times cannot precede clock-in or the previous event. Clock-out
+	cannot precede the last event; inconsistent ordering returns `422` rather than
+	creating a negative duration, for example if the server clock moves backwards.
 - Completed break durations are summed in seconds and converted to whole minutes
 	by rounding down the combined total. The original event timestamps are retained.
 	An ongoing break is visible but is not yet included in `break_minutes`.
-- When break events exist, `clock-out` must omit non-null `break_minutes`: events
-	are authoritative, and manual overrides return `422`. Shifts without events
-	retain the legacy manual-minute behavior. Existing shifts are not backfilled.
+- `clock-out` must always omit `break_minutes`: pause events are authoritative
+	for ordinary recording. A new shift without pause events has zero pause minutes.
+	Existing shifts and their stored totals are not backfilled or overwritten.
 - Entry/exit/break writes use database transactions and serialize by locking the
 	user row; event sequence numbers are also unique per shift. Recognized retries
 	replay their original response before state transitions are evaluated.
 - These events currently cover pauses only. Entry/exit remain fields on the shift;
-	immutable audit, approved corrections, retention policies and HR synchronization
-	are separate work items, not guarantees of this release.
+	approved corrections preserve them through separate effective fields. Full
+	attendance-event immutability, retention policies and HR synchronization remain
+	separate work items.
 
 #### Idempotent Attendance Requests
 
@@ -238,12 +330,9 @@ X-Tenant-Id: <tenant UUID>
 - The replay is a historical response, not the current shift state. Refresh
 	`/entries` before using it as current UI state. Late retries cannot reopen a
 	completed shift, restart an old pause or close a subsequently opened shift.
-- Without a client key, an explicit `clock_in`, `clock_out` or `occurred_at`
-	provides automatic identity by action and normalized UTC timestamp. Identical
-	retries replay; changed payload at that same identity returns `409`.
-	Equivalent timezone offsets and numeric representations are normalized.
-- Without both a key and an explicit timestamp, no reliable request identity is
-	available: existing state checks remain, but there is no replay guarantee.
+- Without a client key, no reliable request identity is available: existing
+	state checks remain, but there is no replay guarantee. Timestamp-based fallback
+	is no longer available because ordinary endpoints reject client timestamps.
 	No fuzzy time window is used to silently discard potentially legitimate work.
 - The receipt and mutation commit atomically under a user-row lock. A database
 	unique constraint on `(tenant_id, user_id, key_hash)` reinforces uniqueness.
@@ -270,7 +359,7 @@ X-Tenant-Id: <tenant UUID>
 - Each summary contains `total_shifts`, `closed_shifts`, `open_shifts`,
 	`gross_hours`, `break_hours` and `net_hours_worked`. Hours are rounded to two
 	decimal places. Open shifts are counted but do not contribute hours or breaks.
-- Shifts belong entirely to the month/year of `clock_in`, using the application's
+- Shifts belong entirely to the month/year of effective `clock_in`, using the application's
 	configured timezone, matching the monthly report. A shift starting on December
 	31 and ending on January 1 is counted entirely in December. Hours and aggregate
 	break minutes are not split at calendar boundaries.
@@ -290,19 +379,27 @@ calculation; individual entry `duration_hours` uses a forward time difference.
 | Component | Responsibility |
 |-----------|----------------|
 | `app/Http/Controllers/Api/V1/TimeAttendanceController.php` | Eight API actions; delegates mutations and summaries, formats responses. |
+| `app/Http/Controllers/Api/V1/TimeEntryCorrectionController.php` | Correction history, submission and independent review endpoints. |
+| `app/Services/Attendance/AttendanceCorrectionService.php` | Transactional proposals, original snapshots, validation, approved projections and audit. |
+| `app/Policies/TimeEntryCorrectionPolicy.php` | Owner/reviewer access, tenant membership and independent approval. |
 | `app/Services/Attendance/AttendanceTrackingService.php` | Transactional clock-in/out, break transitions, locking, chronology and derived pause minutes. |
 | `app/Services/Attendance/AttendanceIdempotencyService.php` | Tenant/user-scoped request identity, payload normalization, transactional receipts and original-response replay. |
 | `app/Services/Attendance/AttendanceReportService.php` | Shared totals and twelve-month annual aggregation. |
 | `app/Services/Attendance/AttendanceComplianceService.php` | Existing partial Italian/Swiss rest, pause and weekly-hours checks; not legal certification. |
 | `app/Models/TimeEntry.php` | Tenant/user shift, timestamps, cached pause minutes, notes and ordered event relationship. |
-| `app/Models/TimeEntryEvent.php` | Tenant-scoped event with sequence, declared/server time and recorder. |
+| `app/Models/TimeEntryCorrection.php` | Tenant-scoped proposal, source snapshot, reason and review decision. |
+| `app/Enums/TimeEntryCorrectionStatus.php` | Pending, approved and rejected decision states. |
+| `app/Http/Requests/StoreTimeEntryCorrectionRequest.php` | Complete proposed interval, pause total and mandatory justification. |
+| `app/Http/Requests/ReviewTimeEntryCorrectionRequest.php` | Independent review authorization and rejection reason validation. |
+| `app/Http/Resources/TimeEntryCorrectionResource.php` | Proposal, source values and review history JSON. |
+| `app/Models/TimeEntryEvent.php` | Tenant-scoped event with sequence, server-assigned event/recording times and recorder. |
 | `app/Models/AttendanceRequest.php` | Persistent tenant-scoped receipt of a successful attendance mutation. |
 | `app/Enums/TimeEntryEventType.php` | Supported break-start and break-end values. |
 | `app/Exceptions/AttendanceStateException.php` | Invalid state with title/status, translated to Problem Details by the controller. |
-| `app/Http/Requests/ClockInRequest.php` | Entry timestamp, optional coordinates, simplified-record flag and notes validation. |
-| `app/Http/Requests/AttendanceMutationRequest.php` | Shared validation of client idempotency keys and header precedence for all attendance mutations. |
-| `app/Http/Requests/ClockOutRequest.php` | Exit timestamp, legacy pause minutes and notes validation. |
-| `app/Http/Requests/BreakEventRequest.php` | Break timestamp validation and authenticated tenant-context requirement. |
+| `app/Http/Requests/ClockInRequest.php` | Optional coordinates, simplified-record flag and notes validation for live clock-in. |
+| `app/Http/Requests/AttendanceMutationRequest.php` | Shared idempotency-key validation and rejection of manual timestamps, pause totals and correction flags. |
+| `app/Http/Requests/ClockOutRequest.php` | Notes validation for live clock-out; timestamps and manual pause totals are forbidden. |
+| `app/Http/Requests/BreakEventRequest.php` | Ordinary mutation validation and authenticated tenant-context requirement. |
 | `app/Http/Requests/AttendanceReportRequest.php` | Report period, jurisdiction and tenant-scoped target-user validation/authorization. |
 | `app/Http/Resources/TimeEntryResource.php` | Shift JSON, net duration, pause state and events. |
 | `app/Http/Resources/TimeEntryEventResource.php` | Event JSON without exposing the underlying model directly. |

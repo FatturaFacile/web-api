@@ -8,21 +8,20 @@ use App\Enums\TimeEntryEventType;
 use App\Exceptions\AttendanceStateException;
 use App\Models\TimeEntry;
 use App\Models\User;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceTrackingService
 {
     /**
-     * @param  array{clock_in?: string|null, latitude?: float|int|string|null, longitude?: float|int|string|null, is_simplified_record?: bool|int|string|null, notes?: string|null}  $data
+     * @param  array{latitude?: float|int|string|null, longitude?: float|int|string|null, is_simplified_record?: bool|int|string|null, notes?: string|null}  $data
      */
     public function clockIn(User $user, array $data): TimeEntry
     {
         return DB::transaction(function () use ($user, $data): TimeEntry {
             $this->lockUser($user);
 
-            $activeEntry = TimeEntry::where('user_id', $user->id)->whereNull('clock_out')->first();
+            $activeEntry = TimeEntry::where('user_id', $user->id)->openAttendance()->first();
 
             if ($activeEntry !== null) {
                 throw new AttendanceStateException(
@@ -33,7 +32,7 @@ class AttendanceTrackingService
 
             return TimeEntry::create([
                 'user_id' => $user->id,
-                'clock_in' => $this->timestamp($data['clock_in'] ?? null),
+                'clock_in' => now(),
                 'clock_in_lat' => $data['latitude'] ?? null,
                 'clock_in_lng' => $data['longitude'] ?? null,
                 'is_simplified_record' => (bool) ($data['is_simplified_record'] ?? false),
@@ -42,7 +41,7 @@ class AttendanceTrackingService
         });
     }
 
-    /** @param array{clock_out?: string|null, break_minutes?: int|null, notes?: string|null} $data */
+    /** @param array{notes?: string|null} $data */
     public function clockOut(User $user, array $data): TimeEntry
     {
         return DB::transaction(function () use ($user, $data): TimeEntry {
@@ -54,7 +53,7 @@ class AttendanceTrackingService
                 throw new AttendanceStateException('Break Still Open', 'End the active break before clocking out.');
             }
 
-            $clockOut = $this->timestamp($data['clock_out'] ?? null);
+            $clockOut = now();
 
             if ($clockOut->isBefore($entry->clock_in)) {
                 throw new AttendanceStateException('Invalid Clock-Out Timestamp', 'Clock-out time cannot be earlier than clock-in time.', 422);
@@ -64,14 +63,7 @@ class AttendanceTrackingService
                 throw ValidationException::withMessages(['clock_out' => 'Clock-out time cannot precede the last break event.']);
             }
 
-            if ($lastEvent !== null && isset($data['break_minutes'])) {
-                throw ValidationException::withMessages(['break_minutes' => 'Break minutes are calculated from the recorded break events.']);
-            }
-
             $entry->clock_out = $clockOut;
-            if ($lastEvent === null) {
-                $entry->break_minutes = (int) ($data['break_minutes'] ?? 0);
-            }
             if (! empty($data['notes'])) {
                 $entry->notes = ($entry->notes ? $entry->notes."\n" : '').$data['notes'];
             }
@@ -81,10 +73,9 @@ class AttendanceTrackingService
         });
     }
 
-    /** @param array{occurred_at?: string|null} $data */
-    public function recordBreak(User $user, TimeEntryEventType $type, array $data): TimeEntry
+    public function recordBreak(User $user, TimeEntryEventType $type): TimeEntry
     {
-        return DB::transaction(function () use ($user, $type, $data): TimeEntry {
+        return DB::transaction(function () use ($user, $type): TimeEntry {
             $this->lockUser($user);
             $entry = $this->activeEntry($user);
             $lastEvent = $entry->events()->reorder('sequence', 'desc')->first();
@@ -98,7 +89,7 @@ class AttendanceTrackingService
                 throw new AttendanceStateException('No Active Break', 'Start a break before ending it.');
             }
 
-            $occurredAt = $this->timestamp($data['occurred_at'] ?? null);
+            $occurredAt = now();
             $earliestTime = $lastEvent?->occurred_at ?? $entry->clock_in;
 
             if ($occurredAt->isBefore($earliestTime)) {
@@ -142,7 +133,7 @@ class AttendanceTrackingService
     private function activeEntry(User $user): TimeEntry
     {
         $entry = TimeEntry::where('user_id', $user->id)
-            ->whereNull('clock_out')
+            ->openAttendance()
             ->latest('clock_in')
             ->lockForUpdate()
             ->first();
@@ -152,11 +143,5 @@ class AttendanceTrackingService
         }
 
         return $entry;
-    }
-
-    private function timestamp(?string $value): Carbon
-    {
-        return ($value === null ? now() : Carbon::parse($value))
-            ->setTimezone((string) config('app.timezone', 'UTC'));
     }
 }

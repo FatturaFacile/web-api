@@ -48,7 +48,7 @@ class TimeAttendanceController extends Controller
         $user = $request->user();
 
         $query = TimeEntry::with(['user', 'approver', 'events'])
-            ->latest('clock_in');
+            ->orderByRaw('COALESCE(corrected_clock_in, clock_in) DESC');
 
         // Non-admin users can only view their own time entries
         if (! $request->filled('all_users') || ! $user->can('view-all-attendance')) {
@@ -56,11 +56,11 @@ class TimeAttendanceController extends Controller
         }
 
         if ($request->filled('from_date')) {
-            $query->where('clock_in', '>=', Carbon::parse($request->query('from_date'))->startOfDay());
+            $query->whereRaw('COALESCE(corrected_clock_in, clock_in) >= ?', [Carbon::parse($request->query('from_date'))->startOfDay()]);
         }
 
         if ($request->filled('to_date')) {
-            $query->where('clock_in', '<=', Carbon::parse($request->query('to_date'))->endOfDay());
+            $query->whereRaw('COALESCE(corrected_clock_in, clock_in) <= ?', [Carbon::parse($request->query('to_date'))->endOfDay()]);
         }
 
         $entries = $query->paginate(25);
@@ -117,7 +117,7 @@ class TimeAttendanceController extends Controller
         return $this->attendanceResponse(
             $request,
             'break-start',
-            fn (): TimeEntry => $this->trackingService->recordBreak($user, TimeEntryEventType::BreakStarted, $request->validated()),
+            fn (): TimeEntry => $this->trackingService->recordBreak($user, TimeEntryEventType::BreakStarted),
             'Break start recorded successfully',
             Response::HTTP_CREATED
         );
@@ -131,7 +131,7 @@ class TimeAttendanceController extends Controller
         return $this->attendanceResponse(
             $request,
             'break-end',
-            fn (): TimeEntry => $this->trackingService->recordBreak($user, TimeEntryEventType::BreakEnded, $request->validated()),
+            fn (): TimeEntry => $this->trackingService->recordBreak($user, TimeEntryEventType::BreakEnded),
             'Break end recorded successfully',
             Response::HTTP_CREATED
         );
@@ -182,8 +182,8 @@ class TimeAttendanceController extends Controller
         $endOfMonth = $startOfMonth->copy()->endOfMonth();
 
         $entries = TimeEntry::with('events')->where('user_id', $targetUser->id)
-            ->whereBetween('clock_in', [$startOfMonth, $endOfMonth])
-            ->orderBy('clock_in', 'asc')
+            ->effectivePeriod($startOfMonth, $startOfMonth->copy()->addMonth())
+            ->orderByRaw('COALESCE(corrected_clock_in, clock_in) ASC')
             ->get();
 
         // Determine jurisdiction: request param or tenant country

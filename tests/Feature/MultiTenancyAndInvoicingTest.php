@@ -271,10 +271,16 @@ test('it handles time attendance clock in and clock out lifecycle', function ():
     $conflictResponse->assertStatus(409)
         ->assertJsonPath('title', 'Already Clocked In');
 
+    $this->travel(4)->hours();
+    $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
+        ->postJson('/api/v1/time-attendance/break-start')->assertCreated();
+    $this->travel(45)->minutes();
+    $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
+        ->postJson('/api/v1/time-attendance/break-end')->assertCreated();
+
     // Clock out
     $clockOutResponse = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->postJson('/api/v1/time-attendance/clock-out', [
-            'break_minutes' => 45,
             'notes' => 'Shift ended smoothly',
         ]);
 

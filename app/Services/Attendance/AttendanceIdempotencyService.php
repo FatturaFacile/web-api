@@ -7,7 +7,6 @@ namespace App\Services\Attendance;
 use App\Exceptions\AttendanceStateException;
 use App\Models\AttendanceRequest;
 use App\Models\User;
-use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -23,13 +22,11 @@ class AttendanceIdempotencyService
         $normalized = $this->normalize($action, $data);
         $key = $data['idempotency_key'] ?? null;
 
-        if ($key === null && $normalized['timestamp'] === null) {
+        if ($key === null) {
             return $operation();
         }
 
-        $keyHash = hash('sha256', $key !== null
-            ? 'client:'.$key
-            : 'timestamp:'.$action.':'.$normalized['timestamp']);
+        $keyHash = hash('sha256', 'client:'.$key);
         $requestHash = hash('sha256', json_encode([
             'action' => $action,
             'data' => $normalized,
@@ -74,16 +71,8 @@ class AttendanceIdempotencyService
      */
     private function normalize(string $action, array $data): array
     {
-        $timestampField = match ($action) {
-            'clock-in' => 'clock_in',
-            'clock-out' => 'clock_out',
-            default => 'occurred_at',
-        };
-
         $normalized = [
-            'timestamp' => isset($data[$timestampField])
-                ? Carbon::parse($data[$timestampField])->utc()->format('Y-m-d\TH:i:s.u\Z')
-                : null,
+            'timestamp' => null,
         ];
 
         if ($action === 'clock-in') {
@@ -95,7 +84,7 @@ class AttendanceIdempotencyService
             ];
         } elseif ($action === 'clock-out') {
             $normalized += [
-                'break_minutes' => isset($data['break_minutes']) ? (int) $data['break_minutes'] : null,
+                'break_minutes' => null,
                 'notes' => $data['notes'] ?? null,
             ];
         }

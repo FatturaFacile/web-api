@@ -64,6 +64,7 @@ use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
+use App\Http\Controllers\Api\V1\TimeEntryCorrectionController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
@@ -387,6 +388,10 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/compliance-check', [TimeAttendanceController::class, 'complianceCheck'])->name('compliance-check');
             Route::get('/monthly-report', [TimeAttendanceController::class, 'monthlyReport'])->name('monthly-report');
             Route::get('/annual-report', [TimeAttendanceController::class, 'annualReport'])->name('annual-report');
+            Route::get('/entries/{entry}/corrections', [TimeEntryCorrectionController::class, 'index'])->whereUuid('entry')->name('corrections.index');
+            Route::post('/entries/{entry}/corrections', [TimeEntryCorrectionController::class, 'store'])->whereUuid('entry')->name('corrections.store');
+            Route::post('/corrections/{correction}/approve', [TimeEntryCorrectionController::class, 'approve'])->whereUuid('correction')->name('corrections.approve');
+            Route::post('/corrections/{correction}/reject', [TimeEntryCorrectionController::class, 'reject'])->whereUuid('correction')->name('corrections.reject');
         });
 
         // 16. Cross-Border HR & Payroll

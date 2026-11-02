@@ -25,8 +25,8 @@ class AttendanceComplianceService
     public function checkItalianCompliance(User $user, Carbon $startDate, Carbon $endDate): array
     {
         $entries = TimeEntry::where('user_id', $user->id)
-            ->whereBetween('clock_in', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
-            ->orderBy('clock_in', 'asc')
+            ->effectivePeriod($startDate->copy()->startOfDay(), $endDate->copy()->addDay()->startOfDay())
+            ->orderByRaw('COALESCE(corrected_clock_in, clock_in) ASC')
             ->get();
 
         $violations = [];
@@ -34,11 +34,11 @@ class AttendanceComplianceService
         $previousClockOut = null;
 
         foreach ($entries as $entry) {
-            $clockIn = Carbon::parse($entry->clock_in);
-            $clockOut = $entry->clock_out ? Carbon::parse($entry->clock_out) : null;
+            $clockIn = $entry->effectiveClockIn();
+            $clockOut = $entry->effectiveClockOut();
 
             if ($clockOut !== null) {
-                $durationHours = max(0, (abs($clockOut->diffInMinutes($clockIn)) - ($entry->break_minutes ?? 0)) / 60.0);
+                $durationHours = max(0, (abs($clockOut->diffInMinutes($clockIn)) - $entry->effectiveBreakMinutes()) / 60.0);
                 $totalHoursWorked += $durationHours;
             }
 
@@ -115,8 +115,8 @@ class AttendanceComplianceService
         $maxWeeklyLimit = $isIndustrialOrOffice ? 45.0 : 50.0;
 
         $entries = TimeEntry::where('user_id', $user->id)
-            ->whereBetween('clock_in', [$startDate->copy()->startOfDay(), $endDate->copy()->endOfDay()])
-            ->orderBy('clock_in', 'asc')
+            ->effectivePeriod($startDate->copy()->startOfDay(), $endDate->copy()->addDay()->startOfDay())
+            ->orderByRaw('COALESCE(corrected_clock_in, clock_in) ASC')
             ->get();
 
         $violations = [];
@@ -124,7 +124,7 @@ class AttendanceComplianceService
         $previousClockOut = null;
 
         /** @var Collection<string, Collection<int, TimeEntry>> $entriesByDay */
-        $entriesByDay = $entries->groupBy(fn (TimeEntry $entry): string => Carbon::parse($entry->clock_in)->toDateString());
+        $entriesByDay = $entries->groupBy(fn (TimeEntry $entry): string => $entry->effectiveClockIn()->toDateString());
 
         // Daily checks
         foreach ($entriesByDay as $dateStr => $dayEntries) {
@@ -132,12 +132,12 @@ class AttendanceComplianceService
             $dailyBreakMinutes = 0;
 
             foreach ($dayEntries as $entry) {
-                $clockIn = Carbon::parse($entry->clock_in);
-                $clockOut = $entry->clock_out ? Carbon::parse($entry->clock_out) : null;
+                $clockIn = $entry->effectiveClockIn();
+                $clockOut = $entry->effectiveClockOut();
 
                 if ($clockOut !== null) {
                     $dailyGrossMinutes += abs($clockOut->diffInMinutes($clockIn));
-                    $dailyBreakMinutes += (int) ($entry->break_minutes ?? 0);
+                    $dailyBreakMinutes += $entry->effectiveBreakMinutes();
                 }
 
                 // Check 11 consecutive hours rest between shifts (ArG Art. 15a)
