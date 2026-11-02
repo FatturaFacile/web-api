@@ -2,19 +2,56 @@
 
 declare(strict_types=1);
 
-use App\Models\Contact;
 use App\Models\User;
 use Database\Seeders\DemoSeeder;
+use Illuminate\Console\Command;
 use Illuminate\Console\Scheduling\Event;
 use Illuminate\Console\Scheduling\Schedule;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 
-// No RefreshDatabase (migrate:fresh cannot run inside its transaction) nor DatabaseMigrations (its rollback fails on
-// SQLite): each test starts from a fresh schema of its own.
-beforeEach(function (): void {
-    $this->artisan('migrate:fresh');
-});
+uses(RefreshDatabase::class);
 
-function demoResetEvent(): Event
+/**
+ * Replaces the commands that demo:reset chains with stand-ins that only record their arguments: the real ones would
+ * drop the whole test database (shared with the other parallel test processes). The application is rebuilt for every
+ * test, so the stand-ins never outlive the test that registers them.
+ *
+ * @param  array<string, int>  $exitCodes
+ * @return ArrayObject<int, array{0: string, 1: array<string, mixed>}>
+ */
+function fakeDemoResetSteps(array $exitCodes = []): ArrayObject
+{
+    $calls = new ArrayObject;
+    $signatures = [
+        'migrate:fresh' => 'migrate:fresh {--force}',
+        'erp:bootstrap' => 'erp:bootstrap {--without-demo} {--force}',
+        'db:seed' => 'db:seed {--class=} {--force}',
+    ];
+
+    foreach ($signatures as $name => $signature) {
+        app(Kernel::class)->registerCommand(new class($signature, $name, $calls, $exitCodes[$name] ?? 0) extends Command
+        {
+            /** @param ArrayObject<int, array{0: string, 1: array<string, mixed>}> $calls */
+            public function __construct(string $signature, private readonly string $stepName, private readonly ArrayObject $calls, private readonly int $exitCode)
+            {
+                $this->signature = $signature;
+                parent::__construct();
+            }
+
+            public function handle(): int
+            {
+                $this->calls[] = [$this->stepName, array_filter($this->options(), fn (mixed $value): bool => $value !== null && $value !== false)];
+
+                return $this->exitCode;
+            }
+        });
+    }
+
+    return $calls;
+}
+
+function demoResetEvent(): ?Event
 {
     return collect(app(Schedule::class)->events())
         ->first(fn (Event $event): bool => str_contains($event->command ?? '', 'demo:reset'));
@@ -22,22 +59,35 @@ function demoResetEvent(): Event
 
 it('refuses to run unless the demo reset is enabled', function (): void {
     config(['app.demo_reset' => false]);
+    $calls = fakeDemoResetSteps();
     $user = User::factory()->create();
 
     $this->artisan('demo:reset')->assertFailed();
 
-    expect(User::find($user->id))->not->toBeNull();
+    expect($calls)->toHaveCount(0)
+        ->and(User::find($user->id))->not->toBeNull();
 });
 
-it('rebuilds the database with only the demo data', function (): void {
+it('rebuilds the schema, then seeds reference data and the demo company', function (): void {
     config(['app.demo_reset' => true]);
-    $visitor = User::factory()->create(['email' => 'visitor@example.com']);
+    $calls = fakeDemoResetSteps();
 
     $this->artisan('demo:reset')->assertSuccessful();
 
-    expect(User::where('email', $visitor->email)->exists())->toBeFalse()
-        ->and(User::where('email', DemoSeeder::EMAIL)->exists())->toBeTrue()
-        ->and(Contact::withoutGlobalScopes()->count())->toBeGreaterThan(0);
+    expect($calls->getArrayCopy())->toBe([
+        ['migrate:fresh', ['force' => true]],
+        ['erp:bootstrap', ['without-demo' => true, 'force' => true]],
+        ['db:seed', ['class' => DemoSeeder::class, 'force' => true]],
+    ]);
+});
+
+it('stops at the first step that fails', function (): void {
+    config(['app.demo_reset' => true]);
+    $calls = fakeDemoResetSteps(['erp:bootstrap' => 1]);
+
+    $this->artisan('demo:reset')->assertFailed();
+
+    expect(array_column($calls->getArrayCopy(), 0))->toBe(['migrate:fresh', 'erp:bootstrap']);
 });
 
 it('is scheduled every 30 minutes only when enabled', function (): void {
