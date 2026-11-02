@@ -16,8 +16,14 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # Step 0: Run the full CI suite; nothing is built or deployed unless it passes
+  ci:
+    name: CI
+    uses: ./.github/workflows/erp-ci.yml
+
   build-and-push:
     name: Build & Push Docker Image
+    needs: ci
 
     if: >
       github.event.workflow_run.conclusion == 'success'
