@@ -138,12 +138,49 @@ test('angular spa performs stateful session login, accesses profile and logs out
         ]);
 });
 
-test('sanctum stateful domains configuration includes angular localhost 4200', function (): void {
+test('angular dev-server proxy with forwarded headers performs stateful session login and profile lookup', function (): void {
+    $proxyHeaders = [
+        'Host' => 'dev-api.fatturafacile.eu',
+        'X-Forwarded-Host' => 'localhost:4200',
+        'X-Forwarded-Proto' => 'https',
+        'Origin' => 'https://localhost:4200',
+        'Referer' => 'https://localhost:4200/login',
+    ];
+
+    $loginResponse = $this->withHeaders($proxyHeaders)->postJson('/api/v1/auth/login', [
+        'email' => 'mario.rossi@example.com',
+        'password' => 'Password123!',
+        'tenant_id' => $this->tenant->id,
+    ]);
+
+    $loginResponse->assertStatus(200);
+
+    $profileResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
+        ->withHeaders($proxyHeaders)
+        ->getJson('/api/v1/auth/profile');
+
+    $profileResponse->assertStatus(200)
+        ->assertJson([
+            'success' => true,
+            'data' => [
+                'email' => 'mario.rossi@example.com',
+            ],
+        ]);
+});
+
+test('sanctum stateful domains configuration includes angular localhost 4200 and dev-api', function (): void {
     $statefulDomains = config('sanctum.stateful');
 
     expect($statefulDomains)->toBeArray()
         ->and($statefulDomains)->toContain('localhost:4200')
-        ->and($statefulDomains)->toContain('127.0.0.1:4200');
+        ->and($statefulDomains)->toContain('127.0.0.1:4200')
+        ->and($statefulDomains)->toContain('localhost')
+        ->and($statefulDomains)->toContain('127.0.0.1')
+        ->and($statefulDomains)->toContain('dev-api.fatturafacile.eu');
+});
+
+test('session domain is null for proxy and localhost cookie compatibility', function (): void {
+    expect(config('session.domain'))->toBeNull();
 });
 
 test('cors configuration supports credentials and allows angular frontend origins', function (): void {

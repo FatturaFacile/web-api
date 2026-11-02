@@ -18,11 +18,11 @@ return [
     |
     */
 
-    'stateful' => explode(',', env('SANCTUM_STATEFUL_DOMAINS', sprintf(
+    'stateful' => array_values(array_filter(array_map('trim', explode(',', (string) env('SANCTUM_STATEFUL_DOMAINS', sprintf(
         '%s%s',
         'localhost',
         env('APP_URL') ? ','.parse_url((string) env('APP_URL'), PHP_URL_HOST) : ''
-    ))),
+    )))))),
 
     /*
     |--------------------------------------------------------------------------
