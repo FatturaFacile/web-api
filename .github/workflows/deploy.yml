@@ -88,7 +88,8 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # A failed cache write (e.g. "failed to reserve cache") must not block the deploy
+          cache-to: type=gha,mode=max,ignore-error=true
 
   deploy:
     name: Remote VPS Deployment
