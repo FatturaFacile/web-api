@@ -18,6 +18,7 @@ class TenantScope implements Scope
      * @var list<string>
      */
     protected array $sharedLookupTables = [
+        'translations',
         'lookup_items',
         'lookup_categories',
         'lookup_item_translations',
@@ -69,22 +70,22 @@ class TenantScope implements Scope
             return;
         }
 
-        if ($tenantContext->hasTenant()) {
-            $tenantId = $tenantContext->getTenantId();
+        if ($isShared) {
+            $tenantId = $tenantContext->hasTenant() ? $tenantContext->getTenantId() : null;
 
-            if ($isShared) {
-                $builder->where(function (Builder $query) use ($column, $tenantId): void {
+            $builder->where(function (Builder $query) use ($column, $tenantId): void {
+                if (! empty($tenantId)) {
                     $query->where($column, $tenantId)
                         ->orWhereNull($column);
-                });
-            } else {
-                $builder->where($column, $tenantId);
-            }
+                } else {
+                    $query->whereNull($column);
+                }
+            });
         } else {
-            // Fail-closed behavior: operational records must never be returned without a tenant context
-            if ($isShared) {
-                $builder->whereNull($column);
+            if ($tenantContext->hasTenant()) {
+                $builder->where($column, $tenantContext->getTenantId());
             } else {
+                // Fail-closed behavior: operational records must never be returned without a tenant context
                 $builder->whereRaw('1 = 0');
             }
         }

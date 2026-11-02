@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\MarkDeprecated;
+use App\Http\Middleware\NormalizeTenantInput;
 use App\Http\Middleware\SetLocale;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -16,12 +17,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(NormalizeTenantInput::class);
+
         $middleware->statefulApi();
 
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
             'locale' => SetLocale::class,
             'deprecated' => MarkDeprecated::class,
+            'normalize.tenant' => NormalizeTenantInput::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

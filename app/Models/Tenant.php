@@ -30,6 +30,8 @@ class Tenant extends Model
         'sdi_code',
         'pec_email',
         'settings',
+        'id',
+        'status',
     ];
 
     protected function casts(): array
