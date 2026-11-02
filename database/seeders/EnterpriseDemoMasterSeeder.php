@@ -250,7 +250,8 @@ class EnterpriseDemoMasterSeeder extends Seeder
                 name: 'Standard Machining & Assembly Route',
                 operations: [
                     [
-                        'operation_number' => 10,
+                        'sequence' => 10,
+                        'operation_code' => 'OP10',
                         'name' => 'Rough and Finish Milling',
                         'work_center_id' => $workCenter->id,
                         'setup_time_minutes' => 30.0,

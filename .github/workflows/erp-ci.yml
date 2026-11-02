@@ -7,8 +7,10 @@ on:
   pull_request:
     branches: [ main, dev ]
   workflow_call:
+    branches:
+      - main
+      - dev
 
-# Cancel in-progress runs of the same workflow on subsequent pushes to optimize runner resources
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true

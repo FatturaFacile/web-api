@@ -7,6 +7,7 @@ namespace Enterprise\MultiTenant\Concerns;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 trait BelongsToTenant
@@ -38,6 +39,26 @@ trait BelongsToTenant
         }
 
         return parent::fill($attributes);
+    }
+
+    /**
+     * Scope query to a specific tenant ID with fallback to global (null) records.
+     *
+     * @param  Builder  $query
+     * @return Builder
+     */
+    public function scopeForTenant($query, ?string $tenantId = null)
+    {
+        $column = $this->qualifyColumn('tenant_id');
+
+        return $query->where(function ($q) use ($tenantId, $column): void {
+            if (! empty($tenantId)) {
+                $q->where($column, $tenantId)
+                    ->orWhereNull($column);
+            } else {
+                $q->whereNull($column);
+            }
+        });
     }
 
     /**

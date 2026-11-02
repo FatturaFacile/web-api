@@ -9,6 +9,7 @@ use App\Http\Requests\Translations\StoreTranslationRequest;
 use App\Models\Translation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Cache;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -45,34 +46,64 @@ class TranslationController extends Controller
     )]
     public function index(Request $request, string $locale): JsonResponse
     {
-        $tenantId = $request->query('tenant_id') ?? $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
+        if ($request->has('tenant_id')) {
+            $tenantId = $request->input('tenant_id');
+        } else {
+            $tenantId = $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
+        }
 
-        if (in_array($tenantId, ['null', 'undefined', 'default', ''], true)) {
+        if (is_string($tenantId) && in_array(strtolower(trim($tenantId)), ['null', 'undefined', 'default', ''], true)) {
             $tenantId = null;
         }
 
         $cacheKey = $tenantId ? "translations_{$tenantId}_{$locale}" : "translations_global_{$locale}";
 
-        $translations = Cache::rememberForever($cacheKey, function () use ($locale, $tenantId) {
-            $global = Translation::whereNull('tenant_id')
+        $rawTranslations = Cache::rememberForever($cacheKey, function () use ($locale, $tenantId): array {
+            $records = Translation::forTenant($tenantId)
                 ->where('locale', $locale)
-                ->pluck('value', 'key');
+                ->orderByRaw('CASE WHEN tenant_id IS NULL THEN 0 ELSE 1 END ASC')
+                ->get();
 
-            if (! $tenantId) {
-                return $global;
+            $merged = [];
+            foreach ($records as $record) {
+                $merged[$record->key] = (string) $record->value;
             }
 
-            $tenantCustom = Translation::where('tenant_id', $tenantId)
-                ->where('locale', $locale)
-                ->pluck('value', 'key');
-
-            return $global->merge($tenantCustom);
+            return $merged;
         });
+
+        if ($rawTranslations instanceof Collection) {
+            $rawTranslations = $rawTranslations->toArray();
+        } elseif (is_string($rawTranslations)) {
+            $decoded = json_decode($rawTranslations, true);
+            $rawTranslations = is_array($decoded) ? $decoded : [];
+        } elseif (! is_array($rawTranslations)) {
+            Cache::forget($cacheKey);
+
+            $records = Translation::forTenant($tenantId)
+                ->where('locale', $locale)
+                ->orderByRaw('CASE WHEN tenant_id IS NULL THEN 0 ELSE 1 END ASC')
+                ->get();
+
+            $rawTranslations = [];
+            foreach ($records as $record) {
+                $rawTranslations[$record->key] = (string) $record->value;
+            }
+
+            Cache::forever($cacheKey, $rawTranslations);
+        }
+
+        $translations = [];
+        foreach ($rawTranslations as $key => $value) {
+            if (is_string($key) && is_scalar($value)) {
+                $translations[$key] = (string) $value;
+            }
+        }
 
         return response()->json([
             'locale' => $locale,
             'tenant_id' => $tenantId,
-            'translations' => $translations,
+            'translations' => (object) $translations,
         ]);
     }
 
@@ -106,15 +137,27 @@ class TranslationController extends Controller
     )]
     public function storeOrUpdate(StoreTranslationRequest $request): JsonResponse
     {
-        $tenantId = $request->input('tenant_id') ?? $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
-        if (in_array($tenantId, ['null', 'undefined', 'default', ''], true)) {
+        if ($request->has('tenant_id')) {
+            $tenantId = $request->input('tenant_id');
+        } else {
+            $tenantId = $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
+        }
+
+        if (is_string($tenantId) && in_array(strtolower(trim($tenantId)), ['null', 'undefined', 'default', ''], true)) {
             $tenantId = null;
         }
 
         $validated = $request->validated();
 
-        if (array_key_exists('tenant_id', $validated) && ! empty($validated['tenant_id'])) {
-            $tenantId = $validated['tenant_id'];
+        if (array_key_exists('tenant_id', $validated)) {
+            $tenantVal = $validated['tenant_id'];
+            if (is_string($tenantVal) && in_array(strtolower(trim($tenantVal)), ['null', 'undefined', 'default', ''], true)) {
+                $tenantId = null;
+            } elseif ($tenantVal === null) {
+                $tenantId = null;
+            } elseif (! empty($tenantVal)) {
+                $tenantId = $tenantVal;
+            }
         }
 
         $translation = Translation::updateOrCreate(
