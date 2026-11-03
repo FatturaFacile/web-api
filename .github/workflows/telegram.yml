@@ -13,24 +13,11 @@ on:
       - closed
       - reopened
 
+permissions: {}
+
 jobs:
   notify:
-    # Fork and Dependabot pull requests get no repository secrets: skip what needs them
-    if: >-
-      github.actor != 'dependabot[bot]' &&
-      (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-
-    steps:
-      - name: Send Telegram Message
-        uses: appleboy/telegram-action@214f06cfa3d3a588c1472116889437e7c6fd29b1 # v1.1.1
-        with:
-          to: ${{ secrets.TELEGRAM_CHAT_ID }}
-          token: ${{ secrets.TELEGRAM_TOKEN }}
-          message: |
-            🚀 Repository: ${{ github.repository }}
-            👤 User: ${{ github.actor }}
-            📌 Event: ${{ github.event_name }}
-            🔗 https://github.com/${{ github.repository }}
+    # Dependabot runs get no repository secrets
+    if: github.actor != 'dependabot[bot]'
+    uses: FatturaFacile/FatturaFacile/.github/workflows/reusable-telegram.yml@main
+    secrets: inherit
