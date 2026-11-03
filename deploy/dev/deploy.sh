@@ -1,6 +1,7 @@
 #!/bin/sh
 # Deploys the dev stack. Run on the VPS from ~/fatturafacile-dev by .github/workflows/deploy-dev.yml.
-# API_TAG selects the image (default: dev). The dev DB is kept across deploys: only migrations run.
+# API_TAG selects the image (default: dev). Every deploy rebuilds the dev DB from scratch (demo:reset, needs
+# DEMO_RESET_ENABLED=true in .env), which also runs every 30 minutes from the scheduler: no real data stays on dev.
 set -eu
 cd "$(dirname "$0")"
 
@@ -13,17 +14,11 @@ docker compose up -d --remove-orphans app web
 
 docker compose exec -T app sh -c '
   set -e
-  php -d memory_limit=512M artisan migrate --force
   php artisan config:cache
   php artisan route:cache
+  php -d memory_limit=512M artisan demo:reset
   php -d memory_limit=512M artisan l5-swagger:generate
 '
-
-# Demo data only once, on the first deploy of an empty DB
-if [ ! -f .seeded ]; then
-  docker compose exec -T app php -d memory_limit=512M artisan db:seed --force
-  touch .seeded
-fi
 
 docker compose up -d queue_worker scheduler
 
