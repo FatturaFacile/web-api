@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Translation;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class TranslationSeeder extends Seeder
@@ -46,6 +47,11 @@ class TranslationSeeder extends Seeder
                 }
             }
         });
+
+        // The API caches each global dictionary forever: drop them so the new values are served
+        foreach (array_keys($locales) as $locale) {
+            Cache::forget("translations_global_{$locale}");
+        }
     }
 
     private function getItalianTranslations(): array
