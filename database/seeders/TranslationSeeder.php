@@ -95,6 +95,13 @@ class TranslationSeeder extends Seeder
             'NAV.SETTINGS' => 'Impostazioni & Tenant',
             'NAV.ALERTS' => 'Centro Avvisi',
             'NAV.SYSTEM' => 'Sistema & Backup',
+            'NAV.SECTION_ADMINISTRATION' => 'Amministrazione',
+            'NAV.SECTION_COMMERCIAL' => 'Commerciale',
+            'NAV.SECTION_INDUSTRY' => 'Moduli di settore',
+            'NAV.SECTION_OPERATIONS' => 'Operatività',
+            'NAV.SECTION_SYSTEM' => 'Sistema',
+            'NAV.COMPANY_SETTINGS' => 'Azienda & Utenti',
+            'NAV.PEOPLE' => 'Persone',
 
             // HEADER
             'HEADER.TOGGLE_SIDEBAR_EXPAND' => 'Espandi menu',
@@ -867,6 +874,13 @@ class TranslationSeeder extends Seeder
             'NAV.SETTINGS' => 'Settings & Tenants',
             'NAV.ALERTS' => 'Alert Center',
             'NAV.SYSTEM' => 'System & Backups',
+            'NAV.SECTION_ADMINISTRATION' => 'Administration',
+            'NAV.SECTION_COMMERCIAL' => 'Sales',
+            'NAV.SECTION_INDUSTRY' => 'Industry modules',
+            'NAV.SECTION_OPERATIONS' => 'Operations',
+            'NAV.SECTION_SYSTEM' => 'System',
+            'NAV.COMPANY_SETTINGS' => 'Company & Users',
+            'NAV.PEOPLE' => 'People',
 
             // HEADER
             'HEADER.TOGGLE_SIDEBAR_EXPAND' => 'Expand menu',
@@ -1639,6 +1653,13 @@ class TranslationSeeder extends Seeder
             'NAV.SETTINGS' => 'Einstellungen & Mandanten',
             'NAV.ALERTS' => 'Warnzentrum',
             'NAV.SYSTEM' => 'System & Sicherungen',
+            'NAV.SECTION_ADMINISTRATION' => 'Verwaltung',
+            'NAV.SECTION_COMMERCIAL' => 'Vertrieb',
+            'NAV.SECTION_INDUSTRY' => 'Branchenmodule',
+            'NAV.SECTION_OPERATIONS' => 'Betrieb',
+            'NAV.SECTION_SYSTEM' => 'System',
+            'NAV.COMPANY_SETTINGS' => 'Unternehmen & Benutzer',
+            'NAV.PEOPLE' => 'Personal',
 
             // HEADER
             'HEADER.TOGGLE_SIDEBAR_EXPAND' => 'Menü erweitern',
@@ -2411,6 +2432,13 @@ class TranslationSeeder extends Seeder
             'NAV.SETTINGS' => 'Paramètres & Mandants',
             'NAV.ALERTS' => 'Centre d\'alertes',
             'NAV.SYSTEM' => 'Système & Sauvegardes',
+            'NAV.SECTION_ADMINISTRATION' => 'Administration',
+            'NAV.SECTION_COMMERCIAL' => 'Commercial',
+            'NAV.SECTION_INDUSTRY' => 'Modules sectoriels',
+            'NAV.SECTION_OPERATIONS' => 'Opérations',
+            'NAV.SECTION_SYSTEM' => 'Système',
+            'NAV.COMPANY_SETTINGS' => 'Entreprise & Utilisateurs',
+            'NAV.PEOPLE' => 'Personnel',
 
             // HEADER
             'HEADER.TOGGLE_SIDEBAR_EXPAND' => 'Développer le menu',
