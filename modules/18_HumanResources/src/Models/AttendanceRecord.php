@@ -18,6 +18,7 @@ final class AttendanceRecord extends BaseEnterpriseModel
             'clock_in_at' => 'datetime',
             'clock_out_at' => 'datetime',
             'break_minutes' => 'integer',
+            'recorded_hours' => 'decimal:2',
             'regular_hours' => 'decimal:2',
             'overtime_hours' => 'decimal:2',
             'night_hours' => 'decimal:2',

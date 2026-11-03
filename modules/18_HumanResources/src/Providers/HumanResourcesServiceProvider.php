@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Providers;
 
+use App\Events\AttendanceShiftChanged;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -35,6 +36,7 @@ use Modules\HumanResources\Events\TrainingCostReadyEvent;
 use Modules\HumanResources\Listeners\AssetAssignmentHRListener;
 use Modules\HumanResources\Listeners\DispatchOutboxOnHREventListener;
 use Modules\HumanResources\Listeners\ProjectHRListener;
+use Modules\HumanResources\Listeners\SyncAttendanceRecordFromTimeEntryListener;
 use Modules\HumanResources\Listeners\WorkflowApprovalHRListener;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Employee;
@@ -103,6 +105,7 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         }
 
         // Cross-Module Listeners
+        Event::listen(AttendanceShiftChanged::class, SyncAttendanceRecordFromTimeEntryListener::class);
         Event::listen(AssetAssignedEvent::class, [AssetAssignmentHRListener::class, 'handleAssetAssigned']);
         Event::listen(AssetTransferredEvent::class, [AssetAssignmentHRListener::class, 'handleAssetTransferred']);
         Event::listen(AssetDisposedEvent::class, [AssetAssignmentHRListener::class, 'handleAssetDisposed']);

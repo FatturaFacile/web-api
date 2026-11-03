@@ -1,87 +1,127 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="CLI Arguments" tests="56" assertions="400" errors="0" failures="0" skipped="0" time="32.638326">
-    <testsuite name="Tests\Feature\Api\HighImpactControllersTest" file="tests\Feature\Api\HighImpactControllersTest.php" tests="50" assertions="366" errors="0" failures="0" skipped="0" time="30.517252">
-      <testcase name="time attendance controller manages clock-in, clock-out lifecycle and reports" file="tests\Feature\Api\HighImpactControllersTest.php::time attendance controller manages clock-in, clock-out lifecycle and reports" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="16" time="17.542184"/>
-      <testsuite name="attendance report permits an explicitly selected personal report" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.390123">
-        <testcase name="attendance report permits an explicitly selected personal report with data set &quot;('monthly')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report permits an explicitly selected personal report with data set &quot;('monthly')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="2" time="0.132035"/>
-        <testcase name="attendance report permits an explicitly selected personal report with data set &quot;('annual')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report permits an explicitly selected personal report with data set &quot;('annual')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="2" time="0.258088"/>
-      </testsuite>
-      <testsuite name="attendance report forbids another tenant member without permission" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.267470">
-        <testcase name="attendance report forbids another tenant member without permission with data set &quot;('monthly')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report forbids another tenant member without permission with data set &quot;('monthly')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="1" time="0.149188"/>
-        <testcase name="attendance report forbids another tenant member without permission with data set &quot;('annual')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report forbids another tenant member without permission with data set &quot;('annual')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="1" time="0.118282"/>
-      </testsuite>
-      <testsuite name="attendance report permits another tenant member with permission" tests="2" assertions="4" errors="0" failures="0" skipped="0" time="0.274694">
-        <testcase name="attendance report permits another tenant member with permission with data set &quot;('monthly')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report permits another tenant member with permission with data set &quot;('monthly')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="2" time="0.137117"/>
-        <testcase name="attendance report permits another tenant member with permission with data set &quot;('annual')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report permits another tenant member with permission with data set &quot;('annual')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="2" time="0.137577"/>
-      </testsuite>
-      <testsuite name="attendance report rejects a member of another tenant even with permission" tests="2" assertions="6" errors="0" failures="0" skipped="0" time="0.275453">
-        <testcase name="attendance report rejects a member of another tenant even with permission with data set &quot;('monthly')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report rejects a member of another tenant even with permission with data set &quot;('monthly')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.133352"/>
-        <testcase name="attendance report rejects a member of another tenant even with permission with data set &quot;('annual')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report rejects a member of another tenant even with permission with data set &quot;('annual')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.142101"/>
-      </testsuite>
-      <testsuite name="attendance report rejects a deleted tenant member" tests="2" assertions="6" errors="0" failures="0" skipped="0" time="0.404344">
-        <testcase name="attendance report rejects a deleted tenant member with data set &quot;('monthly')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report rejects a deleted tenant member with data set &quot;('monthly')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.261618"/>
-        <testcase name="attendance report rejects a deleted tenant member with data set &quot;('annual')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance report rejects a deleted tenant member with data set &quot;('annual')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.142726"/>
-      </testsuite>
-      <testcase name="attendance annual report aggregates twelve months and excludes other users tenants and years" file="tests\Feature\Api\HighImpactControllersTest.php::attendance annual report aggregates twelve months and excludes other users tenants and years" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="22" time="0.174926"/>
-      <testcase name="attendance annual report defaults to the current year with twelve empty months" file="tests\Feature\Api\HighImpactControllersTest.php::attendance annual report defaults to the current year with twelve empty months" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="5" time="0.137138"/>
-      <testsuite name="attendance annual report rejects an invalid year" tests="3" assertions="9" errors="0" failures="0" skipped="0" time="0.402812">
-        <testcase name="attendance annual report rejects an invalid year with data set &quot;('1999')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance annual report rejects an invalid year with data set &quot;('1999')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.123323"/>
-        <testcase name="attendance annual report rejects an invalid year with data set &quot;('2101')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance annual report rejects an invalid year with data set &quot;('2101')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.148339"/>
-        <testcase name="attendance annual report rejects an invalid year with data set &quot;('invalid')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance annual report rejects an invalid year with data set &quot;('invalid')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.131151"/>
-      </testsuite>
-      <testsuite name="attendance ordinary mutations reject client timestamps even when marked as corrections" tests="4" assertions="48" errors="0" failures="0" skipped="0" time="0.641220">
-        <testcase name="attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('clock-in', 'clock_in')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('clock-in', 'clock_in')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="12" time="0.145266"/>
-        <testcase name="attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('clock-out', 'clock_out')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('clock-out', 'clock_out')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="12" time="0.141041"/>
-        <testcase name="attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('break-start', 'occurred_at')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('break-start', 'occurred_at')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="12" time="0.176384"/>
-        <testcase name="attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('break-end', 'occurred_at')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance ordinary mutations reject client timestamps even when marked as corrections with data set &quot;('break-end', 'occurred_at')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="12" time="0.178530"/>
-      </testsuite>
-      <testcase name="attendance records multiple break events and derives minutes for reports" file="tests\Feature\Api\HighImpactControllersTest.php::attendance records multiple break events and derives minutes for reports" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="24" time="0.247621"/>
-      <testcase name="attendance break events enforce shift state and chronological order" file="tests\Feature\Api\HighImpactControllersTest.php::attendance break events enforce shift state and chronological order" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="29" time="0.265858"/>
-      <testsuite name="attendance break events require an active shift" tests="2" assertions="2" errors="0" failures="0" skipped="0" time="0.284223">
-        <testcase name="attendance break events require an active shift with data set &quot;('break-start')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance break events require an active shift with data set &quot;('break-start')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="1" time="0.136232"/>
-        <testcase name="attendance break events require an active shift with data set &quot;('break-end')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance break events require an active shift with data set &quot;('break-end')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="1" time="0.147991"/>
-      </testsuite>
-      <testcase name="attendance break events default to server time" file="tests\Feature\Api\HighImpactControllersTest.php::attendance break events default to server time" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="9" time="0.170251"/>
-      <testcase name="attendance break events cannot act on another user or tenant shift" file="tests\Feature\Api\HighImpactControllersTest.php::attendance break events cannot act on another user or tenant shift" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="4" time="0.177604"/>
-      <testcase name="attendance keyed retries replay every operation without changing a later shift" file="tests\Feature\Api\HighImpactControllersTest.php::attendance keyed retries replay every operation without changing a later shift" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="26" time="0.319171"/>
-      <testcase name="attendance rejects an idempotency key reused for different data or action" file="tests\Feature\Api\HighImpactControllersTest.php::attendance rejects an idempotency key reused for different data or action" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="6" time="0.189153"/>
-      <testcase name="attendance rejects timestamp identities and replays keyed ordinary requests after shift closure" file="tests\Feature\Api\HighImpactControllersTest.php::attendance rejects timestamp identities and replays keyed ordinary requests after shift closure" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="26" time="0.275545"/>
-      <testcase name="attendance ordinary timestamps are rejected regardless of timezone representation" file="tests\Feature\Api\HighImpactControllersTest.php::attendance ordinary timestamps are rejected regardless of timezone representation" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="7" time="0.143922"/>
-      <testcase name="attendance idempotency keys are isolated by user and tenant" file="tests\Feature\Api\HighImpactControllersTest.php::attendance idempotency keys are isolated by user and tenant" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="7" time="0.206989"/>
-      <testcase name="attendance failed operations do not consume an idempotency key" file="tests\Feature\Api\HighImpactControllersTest.php::attendance failed operations do not consume an idempotency key" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="5" time="0.194872"/>
-      <testsuite name="attendance validates idempotency keys on every mutation" tests="4" assertions="12" errors="0" failures="0" skipped="0" time="1.170510">
-        <testcase name="attendance validates idempotency keys on every mutation with data set &quot;('clock-in')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance validates idempotency keys on every mutation with data set &quot;('clock-in')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.303968"/>
-        <testcase name="attendance validates idempotency keys on every mutation with data set &quot;('clock-out')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance validates idempotency keys on every mutation with data set &quot;('clock-out')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.265486"/>
-        <testcase name="attendance validates idempotency keys on every mutation with data set &quot;('break-start')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance validates idempotency keys on every mutation with data set &quot;('break-start')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.309641"/>
-        <testcase name="attendance validates idempotency keys on every mutation with data set &quot;('break-end')&quot;" file="tests\Feature\Api\HighImpactControllersTest.php::attendance validates idempotency keys on every mutation with data set &quot;('break-end')&quot;" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.291414"/>
-      </testsuite>
-      <testcase name="attendance correction approval changes effective hours while preserving original timestamps" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction approval changes effective hours while preserving original timestamps" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="18" time="0.610003"/>
-      <testcase name="attendance correction rejection requires a reason and does not change the shift" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction rejection requires a reason and does not change the shift" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="6" time="0.470563"/>
-      <testcase name="attendance correction cannot be self approved or reviewed without permission" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction cannot be self approved or reviewed without permission" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="5" time="0.465716"/>
-      <testcase name="attendance correction cannot be self approved through a global gate override" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction cannot be self approved through a global gate override" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.390195"/>
-      <testcase name="attendance correction endpoints hide entries and requests from other tenants" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction endpoints hide entries and requests from other tenants" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.583659"/>
-      <testcase name="attendance correction uses the selected tenant for users with multiple memberships" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction uses the selected tenant for users with multiple memberships" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="3" time="0.377647"/>
-      <testcase name="attendance correction refuses duplicate pending requests and stale approvals" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction refuses duplicate pending requests and stale approvals" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="4" time="0.403854"/>
-      <testcase name="attendance correction validates proposed duration and rejects overlapping shifts" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction validates proposed duration and rejects overlapping shifts" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="5" time="0.488063"/>
-      <testcase name="attendance correction can close a forgotten exit without overwriting its original null value" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction can close a forgotten exit without overwriting its original null value" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="4" time="0.373195"/>
-      <testcase name="attendance correction moves the effective report period without moving the original timestamps" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction moves the effective report period without moving the original timestamps" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="11" time="0.585905"/>
-      <testcase name="attendance correction history preserves prior approvals and audit actors" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction history preserves prior approvals and audit actors" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="10" time="0.529301"/>
-      <testcase name="attendance correction preserves break events and refuses to exclude their original times" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction preserves break events and refuses to exclude their original times" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="6" time="0.394396"/>
-      <testcase name="attendance correction rechecks overlaps when a new shift appears before approval" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction rechecks overlaps when a new shift appears before approval" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="4" time="0.309895"/>
-      <testcase name="attendance correction approval rolls back when audit recording fails" file="tests\Feature\Api\HighImpactControllersTest.php::attendance correction approval rolls back when audit recording fails" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="5" time="0.378778"/>
-    </testsuite>
-    <testsuite name="Tests\Feature\AttendanceComplianceTest" file="tests\Feature\AttendanceComplianceTest.php" tests="3" assertions="7" errors="0" failures="0" skipped="0" time="0.714483">
-      <testcase name="it flags italian 11 consecutive hours daily rest violation" file="tests\Feature\AttendanceComplianceTest.php::it flags italian 11 consecutive hours daily rest violation" class="Tests\Feature\AttendanceComplianceTest" classname="Tests.Feature.AttendanceComplianceTest" assertions="3" time="0.237980"/>
-      <testcase name="it passes when daily rest conforms to italian 11 hours minimum" file="tests\Feature\AttendanceComplianceTest.php::it passes when daily rest conforms to italian 11 hours minimum" class="Tests\Feature\AttendanceComplianceTest" classname="Tests.Feature.AttendanceComplianceTest" assertions="2" time="0.227207"/>
-      <testcase name="it flags swiss arg mandatory break violations" file="tests\Feature\AttendanceComplianceTest.php::it flags swiss arg mandatory break violations" class="Tests\Feature\AttendanceComplianceTest" classname="Tests.Feature.AttendanceComplianceTest" assertions="2" time="0.249296"/>
-    </testsuite>
-    <testsuite name="Tests\Feature\MultiTenancyAndInvoicingTest" file="tests\Feature\MultiTenancyAndInvoicingTest.php" tests="2" assertions="21" errors="0" failures="0" skipped="0" time="0.925468">
-      <testcase name="it generates sdi xml for italian invoice" file="tests\Feature\MultiTenancyAndInvoicingTest.php::it generates sdi xml for italian invoice" class="Tests\Feature\MultiTenancyAndInvoicingTest" classname="Tests.Feature.MultiTenancyAndInvoicingTest" assertions="11" time="0.460119"/>
-      <testcase name="it handles time attendance clock in and clock out lifecycle" file="tests\Feature\MultiTenancyAndInvoicingTest.php::it handles time attendance clock in and clock out lifecycle" class="Tests\Feature\MultiTenancyAndInvoicingTest" classname="Tests.Feature.MultiTenancyAndInvoicingTest" assertions="10" time="0.465348"/>
-    </testsuite>
-    <testsuite name="Tests\Feature\HumanResources\LeaveAndTimeManagementTest" file="tests\Feature\HumanResources\LeaveAndTimeManagementTest.php" tests="1" assertions="6" errors="0" failures="0" skipped="0" time="0.481123">
-      <testcase name="attendance recording and project timesheet approval calculate labor cost with overtime multiplier and emit LaborCostReadyEvent" file="tests\Feature\HumanResources\LeaveAndTimeManagementTest.php::attendance recording and project timesheet approval calculate labor cost with overtime multiplier and emit LaborCostReadyEvent" class="Tests\Feature\HumanResources\LeaveAndTimeManagementTest" classname="Tests.Feature.HumanResources.LeaveAndTimeManagementTest" assertions="6" time="0.481123"/>
+  <testsuite name="CLI Arguments" tests="1" assertions="0" errors="1" failures="0" skipped="0" time="0.000000">
+    <testsuite name="Tests\Feature\Api\HighImpactControllersTest" file="tests\Feature\Api\HighImpactControllersTest.php" tests="1" assertions="0" errors="1" failures="0" skipped="0" time="0.000000">
+      <testcase name="closed time-entry shifts synchronize daily totals to the linked HR employee" file="tests\Feature\Api\HighImpactControllersTest.php::closed time-entry shifts synchronize daily totals to the linked HR employee" class="Tests\Feature\Api\HighImpactControllersTest" classname="Tests.Feature.Api.HighImpactControllersTest" assertions="0" time="0.000000">
+        <error type="Illuminate\Database\QueryException">closed time-entry shifts synchronize daily totals to the linked HR employeeIlluminate\Database\QueryException: SQLSTATE[08006] [7] connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "fattura_facile_test" (Connection: pgsql, Host: 127.0.0.1, Port: 5432, Database: fatturafacile_presenze_automated_test, SQL: select exists (select 1 from pg_class c, pg_namespace n where n.nspname = current_schema() and c.relname = 'migrations' and c.relkind in ('r', 'p') and n.oid = c.relnamespace))&#13;
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php:67
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php:44
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\PostgresConnector.php:35
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\ConnectionFactory.php:220
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:1333
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:1371
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:549
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:442
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:853
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:820
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:433
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:378
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:395
+at vendor\laravel\framework\src\Illuminate\Database\Schema\Builder.php:176
+at vendor\laravel\framework\src\Illuminate\Database\Migrations\DatabaseMigrationRepository.php:185
+at vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:811
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:166
+at vendor\laravel\framework\src\Illuminate\Support\helpers.php:328
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:166
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:142
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:112
+at vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:686
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:111
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:90
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:36
+at vendor\laravel\framework\src\Illuminate\Container\Util.php:43
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:96
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:35
+at vendor\laravel\framework\src\Illuminate\Container\Container.php:803
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:292
+at vendor\symfony\console\Command\Command.php:285
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:261
+at vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php:68
+at vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php:29
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\FreshCommand.php:96
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:36
+at vendor\laravel\framework\src\Illuminate\Container\Util.php:43
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:96
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:35
+at vendor\laravel\framework\src\Illuminate\Container\Container.php:803
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:292
+at vendor\symfony\console\Command\Command.php:285
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:261
+at vendor\symfony\console\Application.php:1131
+at vendor\symfony\console\Application.php:380
+at vendor\symfony\console\Application.php:219
+at vendor\laravel\framework\src\Illuminate\Console\Application.php:165
+at vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php:450
+at vendor\laravel\framework\src\Illuminate\Testing\PendingCommand.php:452
+at vendor\laravel\framework\src\Illuminate\Testing\PendingCommand.php:676
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithConsole.php:85
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\RefreshDatabase.php:121
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\RefreshDatabase.php:85
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\RefreshDatabase.php:25
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithTestCaseLifecycle.php:237
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithTestCaseLifecycle.php:107
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\TestCase.php:75
+Caused by
+PDOException: SQLSTATE[08006] [7] connection to server at "127.0.0.1", port 5432 failed: FATAL:  password authentication failed for user "fattura_facile_test"
+
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php:67
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\Connector.php:44
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\PostgresConnector.php:35
+at vendor\laravel\framework\src\Illuminate\Database\Connectors\ConnectionFactory.php:220
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:1333
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:1371
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:549
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:442
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:853
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:820
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:433
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:378
+at vendor\laravel\framework\src\Illuminate\Database\Connection.php:395
+at vendor\laravel\framework\src\Illuminate\Database\Schema\Builder.php:176
+at vendor\laravel\framework\src\Illuminate\Database\Migrations\DatabaseMigrationRepository.php:185
+at vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:811
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:166
+at vendor\laravel\framework\src\Illuminate\Support\helpers.php:328
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:166
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:142
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:112
+at vendor\laravel\framework\src\Illuminate\Database\Migrations\Migrator.php:686
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:111
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\MigrateCommand.php:90
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:36
+at vendor\laravel\framework\src\Illuminate\Container\Util.php:43
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:96
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:35
+at vendor\laravel\framework\src\Illuminate\Container\Container.php:803
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:292
+at vendor\symfony\console\Command\Command.php:285
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:261
+at vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php:68
+at vendor\laravel\framework\src\Illuminate\Console\Concerns\CallsCommands.php:29
+at vendor\laravel\framework\src\Illuminate\Database\Console\Migrations\FreshCommand.php:96
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:36
+at vendor\laravel\framework\src\Illuminate\Container\Util.php:43
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:96
+at vendor\laravel\framework\src\Illuminate\Container\BoundMethod.php:35
+at vendor\laravel\framework\src\Illuminate\Container\Container.php:803
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:292
+at vendor\symfony\console\Command\Command.php:285
+at vendor\laravel\framework\src\Illuminate\Console\Command.php:261
+at vendor\symfony\console\Application.php:1131
+at vendor\symfony\console\Application.php:380
+at vendor\symfony\console\Application.php:219
+at vendor\laravel\framework\src\Illuminate\Console\Application.php:165
+at vendor\laravel\framework\src\Illuminate\Foundation\Console\Kernel.php:450
+at vendor\laravel\framework\src\Illuminate\Testing\PendingCommand.php:452
+at vendor\laravel\framework\src\Illuminate\Testing\PendingCommand.php:676
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithConsole.php:85
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\RefreshDatabase.php:121
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\RefreshDatabase.php:85
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\RefreshDatabase.php:25
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithTestCaseLifecycle.php:237
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\Concerns\InteractsWithTestCaseLifecycle.php:107
+at vendor\laravel\framework\src\Illuminate\Foundation\Testing\TestCase.php:75</error>
+      </testcase>
     </testsuite>
   </testsuite>
 </testsuites>

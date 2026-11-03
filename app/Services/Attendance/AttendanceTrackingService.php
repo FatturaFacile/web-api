@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Services\Attendance;
 
 use App\Enums\TimeEntryEventType;
+use App\Events\AttendanceShiftChanged;
 use App\Exceptions\AttendanceStateException;
 use App\Models\TimeEntry;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Validation\ValidationException;
 
 class AttendanceTrackingService
@@ -68,6 +70,12 @@ class AttendanceTrackingService
                 $entry->notes = ($entry->notes ? $entry->notes."\n" : '').$data['notes'];
             }
             $entry->save();
+
+            Event::dispatch(new AttendanceShiftChanged(
+                tenantId: (string) $entry->tenant_id,
+                userId: (string) $entry->user_id,
+                workDates: [$entry->effectiveClockIn()->toDateString()]
+            ));
 
             return $entry->load(['user', 'events']);
         });

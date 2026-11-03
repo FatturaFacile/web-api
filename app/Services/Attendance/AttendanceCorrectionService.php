@@ -6,6 +6,7 @@ namespace App\Services\Attendance;
 
 use App\Enums\TimeEntryCorrectionStatus;
 use App\Enums\TimeEntryEventType;
+use App\Events\AttendanceShiftChanged;
 use App\Exceptions\AttendanceStateException;
 use App\Models\TimeEntry;
 use App\Models\TimeEntryCorrection;
@@ -16,6 +17,7 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
@@ -82,6 +84,7 @@ class AttendanceCorrectionService
                     throw new AttendanceStateException('Attendance Has Changed', 'The original attendance changed after this request. Reject it and submit a new proposal.');
                 }
 
+                $previousWorkDate = $entry->effectiveClockIn()->toDateString();
                 $this->validateProposal($entry, $locked->proposed_values);
                 $entry->corrected_clock_in = Carbon::parse($locked->proposed_values['clock_in']);
                 $entry->corrected_clock_out = Carbon::parse($locked->proposed_values['clock_out']);
@@ -102,6 +105,14 @@ class AttendanceCorrectionService
                 payloadAfter: $locked->toArray(),
                 moduleCode: 'TIME_ATTENDANCE'
             );
+
+            if ($approve) {
+                Event::dispatch(new AttendanceShiftChanged(
+                    tenantId: (string) $entry->tenant_id,
+                    userId: (string) $entry->user_id,
+                    workDates: [$previousWorkDate, Carbon::parse($locked->proposed_values['clock_in'])->toDateString()]
+                ));
+            }
 
             return $locked;
         });

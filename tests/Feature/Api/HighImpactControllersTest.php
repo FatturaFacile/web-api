@@ -22,6 +22,8 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\HumanResources\Models\AttendanceRecord;
+use Modules\HumanResources\Models\Employee;
 
 uses(RefreshDatabase::class);
 
@@ -270,6 +272,95 @@ test('time attendance controller manages clock-in, clock-out lifecycle and repor
     apiRequest()->getJson('/api/v1/time-attendance/monthly-report?month='.now()->month.'&year='.now()->year)
         ->assertOk()
         ->assertJsonStructure(['data' => ['summary', 'compliance', 'entries']]);
+});
+
+test('closed time-entry shifts synchronize daily totals to the linked HR employee', function (): void {
+    $employee = Employee::factory()->active()->create([
+        'tenant_id' => $this->tenant->id,
+        'user_id' => $this->user->id,
+        'company_id' => $this->tenant->id,
+    ]);
+    $this->travelTo(now()->setDate(2026, 10, 15)->setTime(8, 0));
+
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(4)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/break-start')->assertCreated();
+    $this->travel(30)->minutes();
+    apiRequest()->postJson('/api/v1/time-attendance/break-end')->assertCreated();
+    $this->travel(30)->minutes();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $attendance = AttendanceRecord::where('tenant_id', $this->tenant->id)
+        ->where('employee_id', $employee->id)
+        ->where('work_date', '2026-10-15')
+        ->sole();
+    expect($attendance->source)->toBe('time_attendance_api')
+        ->and($attendance->clock_in_at->toDateTimeString())->toBe('2026-10-15 08:00:00')
+        ->and($attendance->clock_out_at->toDateTimeString())->toBe('2026-10-15 13:00:00')
+        ->and($attendance->break_minutes)->toBe(30)
+        ->and((float) $attendance->recorded_hours)->toBe(4.5)
+        ->and((float) $attendance->regular_hours)->toBe(0.0)
+        ->and((float) $attendance->overtime_hours)->toBe(0.0);
+});
+
+test('closed shifts recalculate an HR daily record and preserve contract hours classification', function (): void {
+    $employee = Employee::factory()->active()->create([
+        'tenant_id' => $this->tenant->id,
+        'user_id' => $this->user->id,
+        'company_id' => $this->tenant->id,
+    ]);
+
+    $this->travelTo(now()->setDate(2026, 10, 15)->setTime(8, 0));
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(4)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $this->travelTo(now()->setTime(13, 0));
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(4)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $attendance = AttendanceRecord::where('tenant_id', $this->tenant->id)
+        ->where('employee_id', $employee->id)
+        ->where('work_date', '2026-10-15')
+        ->sole();
+    expect($attendance->clock_in_at->toDateTimeString())->toBe('2026-10-15 08:00:00')
+        ->and($attendance->clock_out_at->toDateTimeString())->toBe('2026-10-15 17:00:00')
+        ->and((float) $attendance->recorded_hours)->toBe(8.0)
+        ->and((float) $attendance->regular_hours)->toBe(0.0)
+        ->and((float) $attendance->overtime_hours)->toBe(0.0);
+});
+
+test('time attendance does not overwrite an HR daily record from another source', function (): void {
+    $employee = Employee::factory()->active()->create([
+        'tenant_id' => $this->tenant->id,
+        'user_id' => $this->user->id,
+        'company_id' => $this->tenant->id,
+    ]);
+    AttendanceRecord::create([
+        'tenant_id' => $this->tenant->id,
+        'company_id' => $this->tenant->id,
+        'employee_id' => $employee->id,
+        'work_date' => '2026-10-15',
+        'clock_in_at' => '2026-10-15 09:00:00',
+        'clock_out_at' => '2026-10-15 17:00:00',
+        'break_minutes' => 60,
+        'recorded_hours' => 7,
+        'regular_hours' => 7,
+        'overtime_hours' => 0,
+        'status' => 'present',
+        'source' => 'web_portal',
+    ]);
+
+    $this->travelTo(now()->setDate(2026, 10, 15)->setTime(8, 0));
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(8)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $attendance = AttendanceRecord::where('employee_id', $employee->id)->sole();
+    expect($attendance->source)->toBe('web_portal')
+        ->and($attendance->clock_in_at->toDateTimeString())->toBe('2026-10-15 09:00:00')
+        ->and((float) $attendance->recorded_hours)->toBe(7.0);
 });
 
 test('attendance report permits an explicitly selected personal report', function (string $period): void {
@@ -712,6 +803,91 @@ test('attendance validates idempotency keys on every mutation', function (string
     apiRequest()->postJson('/api/v1/time-attendance/'.$action, [], ['Idempotency-Key' => str_repeat('a', 129)])
         ->assertUnprocessable()->assertJsonValidationErrors('idempotency_key');
 })->with(['clock-in', 'clock-out', 'break-start', 'break-end']);
+
+test('closing a time-entry shift syncs its daily totals to the linked HR employee', function (): void {
+    $employee = Employee::factory()->active()->create([
+        'tenant_id' => $this->tenant->id,
+        'company_id' => $this->tenant->id,
+        'user_id' => $this->user->id,
+    ]);
+    $this->travelTo(now()->setDate(2026, 10, 15)->setTime(8, 0));
+
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(4)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/break-start')->assertCreated();
+    $this->travel(30)->minutes();
+    apiRequest()->postJson('/api/v1/time-attendance/break-end')->assertCreated();
+    $this->travel(30)->minutes();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $attendance = AttendanceRecord::where('tenant_id', $this->tenant->id)
+        ->where('employee_id', $employee->id)->where('work_date', '2026-10-15')->sole();
+    expect($attendance->source)->toBe('time_attendance_api')
+        ->and($attendance->clock_in_at->toDateTimeString())->toBe('2026-10-15 08:00:00')
+        ->and($attendance->clock_out_at->toDateTimeString())->toBe('2026-10-15 13:00:00')
+        ->and($attendance->break_minutes)->toBe(30)
+        ->and((float) $attendance->recorded_hours)->toBe(4.5)
+        ->and((float) $attendance->regular_hours)->toBe(0.0)
+        ->and((float) $attendance->overtime_hours)->toBe(0.0);
+});
+
+test('multiple daily shifts aggregate to one HR attendance record without guessing overtime', function (): void {
+    $employee = Employee::factory()->active()->create([
+        'tenant_id' => $this->tenant->id,
+        'company_id' => $this->tenant->id,
+        'user_id' => $this->user->id,
+    ]);
+    $this->travelTo(now()->setDate(2026, 10, 15)->setTime(8, 0));
+
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(4)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+    $this->travelTo(now()->setTime(13, 0));
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(4)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $attendance = AttendanceRecord::where('tenant_id', $this->tenant->id)
+        ->where('employee_id', $employee->id)->where('work_date', '2026-10-15')->sole();
+    expect($attendance->clock_in_at->toDateTimeString())->toBe('2026-10-15 08:00:00')
+        ->and($attendance->clock_out_at->toDateTimeString())->toBe('2026-10-15 17:00:00')
+        ->and((float) $attendance->recorded_hours)->toBe(8.0)
+        ->and((float) $attendance->regular_hours)->toBe(0.0)
+        ->and((float) $attendance->overtime_hours)->toBe(0.0)
+        ->and(AttendanceRecord::where('employee_id', $employee->id)->count())->toBe(1);
+});
+
+test('time-entry synchronization preserves an HR attendance record from another source', function (): void {
+    $employee = Employee::factory()->active()->create([
+        'tenant_id' => $this->tenant->id,
+        'company_id' => $this->tenant->id,
+        'user_id' => $this->user->id,
+    ]);
+    AttendanceRecord::create([
+        'tenant_id' => $this->tenant->id,
+        'company_id' => $this->tenant->id,
+        'employee_id' => $employee->id,
+        'work_date' => '2026-10-15',
+        'clock_in_at' => '2026-10-15 09:00:00',
+        'clock_out_at' => '2026-10-15 17:00:00',
+        'break_minutes' => 60,
+        'recorded_hours' => 7,
+        'regular_hours' => 7,
+        'overtime_hours' => 0,
+        'status' => 'present',
+        'source' => 'web_portal',
+    ]);
+    $this->travelTo(now()->setDate(2026, 10, 15)->setTime(8, 0));
+
+    apiRequest()->postJson('/api/v1/time-attendance/clock-in')->assertCreated();
+    $this->travel(8)->hours();
+    apiRequest()->postJson('/api/v1/time-attendance/clock-out')->assertOk();
+
+    $attendance = AttendanceRecord::where('employee_id', $employee->id)->sole();
+    expect($attendance->source)->toBe('web_portal')
+        ->and($attendance->clock_in_at->toDateTimeString())->toBe('2026-10-15 09:00:00')
+        ->and((float) $attendance->recorded_hours)->toBe(7.0);
+});
 
 test('attendance correction approval changes effective hours while preserving original timestamps', function (): void {
     $entry = attendanceCorrectionShift();

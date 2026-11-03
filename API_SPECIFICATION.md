@@ -414,8 +414,21 @@ jurisdiction checks. `database/seeders/TimeEntrySeeder.php` is an empty scaffold
 The HR context is separate: `Modules\HumanResources\Models\AttendanceRecord`
 stores employee/day attendance, while `Modules\HumanResources\Services\LeaveAndTimeService`
 manages leave, attendance and project timesheets. Its `recordAttendance()` currently
-uses fixed 08:30-17:30 times and a 60-minute break; it does not consume these API
-events. `AttendanceRecordFactory` supports HR tests, not the operational event stream.
+uses fixed 08:30-17:30 times and a 60-minute break; it remains a separate manual
+workflow. When an `App\Models\TimeEntry` closes, the API dispatches
+`App\Events\AttendanceShiftChanged`; `Modules\HumanResources\Listeners\SyncAttendanceRecordFromTimeEntryListener`
+resolves the employee through the same tenant's `hr_employees.user_id` and syncs
+that work date. Approval of a correction dispatches the same event for both the
+old and corrected work dates. The HR projection aggregates all completed effective
+shifts for the day into `clock_in_at`, `clock_out_at`, `break_minutes` and
+`recorded_hours`. It does not infer overtime: `regular_hours` and `overtime_hours`
+remain zero until contract rules classify them. Only rows with source
+`time_attendance_api` are recalculated or retired; manual HR rows are left intact.
+If the employee has no linked user in that tenant, the HR listener does nothing.
+`AttendanceRecordFactory` remains useful for HR tests. The attendance API feature
+tests cover the live projection; rerun them and the migration after database access
+is restored. Migration `2027_01_30_000003_add_recorded_hours_to_hr_attendance_records.php`
+adds the nullable actual-hours field without changing existing contract-hour data.
 Shared `TenantContext`, `IdentifyTenant`, `BelongsToTenant`, `User` and `ApiResponse`
 provide platform tenancy, authentication relationships and response conventions.
 
