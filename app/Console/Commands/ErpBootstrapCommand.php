@@ -18,6 +18,7 @@ use Database\Seeders\RoleSeeder;
 use Database\Seeders\ServiceReferenceSeeder;
 use Database\Seeders\SubscriptionReferenceSeeder;
 use Database\Seeders\TenantSeeder;
+use Database\Seeders\TranslationSeeder;
 use Database\Seeders\TreasuryReferenceSeeder;
 use Database\Seeders\UserSeeder;
 use Database\Seeders\WorkflowApprovalStatusSeeder;
@@ -67,6 +68,7 @@ class ErpBootstrapCommand extends Command
         $this->info('3/8 Seeding Global Multilingual Reference Data (IT, EN, DE, FR)...');
         $this->call('db:seed', ['--class' => ComprehensiveLookupMasterSeeder::class, '--force' => true]);
         $this->call('db:seed', ['--class' => GlobalEnterpriseReferenceDataSeeder::class, '--force' => true]);
+        $this->call('db:seed', ['--class' => TranslationSeeder::class, '--force' => true]);
 
         // 4. Module-Specific Reference Seeders
         $this->info('4/8 Registering Domain Reference Catalogs across all Modules...');
