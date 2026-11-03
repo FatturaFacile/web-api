@@ -10,6 +10,8 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - certbot_www:/var/www/certbot:ro
       - certbot_conf:/etc/letsencrypt:ro
+    # certbot renews the certificates but cannot signal nginx: reload every 6h so renewed certificates are served
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & exec nginx -g \"daemon off;\"'"
     depends_on:
       - app
     networks:
@@ -53,7 +55,8 @@ services:
     container_name: erp_queue_worker
     restart: always
     working_dir: /var/www/html
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    # Uses QUEUE_CONNECTION from .env (the image has no Redis client: neither phpredis nor predis)
+    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
     env_file:
       - .env
     volumes:
