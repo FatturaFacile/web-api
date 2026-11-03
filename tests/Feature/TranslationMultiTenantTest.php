@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Tenant;
 use App\Models\Translation;
 use App\Models\User;
+use Database\Seeders\TranslationSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
@@ -241,6 +242,27 @@ test('translations endpoint returns empty json object when no translations exist
 
     // Ensure raw json string contains "translations":{}
     expect($response->getContent())->toContain('"translations":{}');
+});
+
+test('an empty dictionary is not cached, so translations seeded later are served', function (): void {
+    Cache::flush();
+
+    $this->getJson('/api/v1/translations/de?tenant_id=default')->assertOk();
+    expect(Cache::has('translations_global_de'))->toBeFalse();
+
+    Translation::create(['tenant_id' => null, 'locale' => 'de', 'key' => 'buttons.save', 'value' => 'Speichern']);
+
+    $this->getJson('/api/v1/translations/de?tenant_id=default')
+        ->assertOk()
+        ->assertJsonPath('translations', ['buttons.save' => 'Speichern']);
+});
+
+test('TranslationSeeder drops the cached global dictionaries', function (): void {
+    Cache::forever('translations_global_en', ['buttons.save' => 'stale']);
+
+    $this->seed(TranslationSeeder::class);
+
+    expect(Cache::has('translations_global_en'))->toBeFalse();
 });
 
 test('various tenant_id alias formats are normalized to null', function (string $alias): void {

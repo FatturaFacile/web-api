@@ -93,6 +93,12 @@ class TranslationController extends Controller
             Cache::forever($cacheKey, $rawTranslations);
         }
 
+        // Never keep an empty dictionary: a request served before the seeder ran (e.g. during demo:reset) would
+        // otherwise pin it in the cache forever
+        if ($rawTranslations === []) {
+            Cache::forget($cacheKey);
+        }
+
         $translations = [];
         foreach ($rawTranslations as $key => $value) {
             if (is_string($key) && is_scalar($value)) {
