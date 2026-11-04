@@ -13,7 +13,7 @@ use Modules\Treasury\Http\Controllers\PaymentBatchController;
 use Modules\Treasury\Http\Controllers\ReceivableCollectionController;
 
 Route::prefix('api/v1/treasury')
-    ->middleware(['api'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         // Bank Accounts Management
         Route::apiResource('bank-accounts', BankAccountController::class);

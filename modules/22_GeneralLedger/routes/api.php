@@ -13,7 +13,7 @@ use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
 
 Route::prefix('api/v1/general-ledger')
-    ->middleware(['api'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         // Chart of Accounts
         Route::get('accounts-tree', [ChartOfAccountController::class, 'hierarchy']);

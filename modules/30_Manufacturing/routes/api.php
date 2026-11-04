@@ -9,7 +9,7 @@ use Modules\Manufacturing\Http\Controllers\ProductionOrderController;
 use Modules\Manufacturing\Http\Controllers\QualityController;
 use Modules\Manufacturing\Http\Controllers\ShopFloorController;
 
-Route::middleware(['api', 'auth:sanctum'])->prefix('api/v1/manufacturing')->group(function (): void {
+Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
     // BOMs
     Route::get('/boms', [BomController::class, 'index'])->name('mfg.boms.index');
     Route::post('/boms', [BomController::class, 'store'])->name('mfg.boms.store');
@@ -47,7 +47,7 @@ Route::middleware(['api', 'auth:sanctum'])->prefix('api/v1/manufacturing')->grou
 });
 
 // Alias for /api/v1/mfg
-Route::middleware(['api', 'auth:sanctum'])->prefix('api/v1/mfg')->group(function (): void {
+Route::prefix('api/v1/mfg')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
     Route::get('/boms', [BomController::class, 'index']);
     Route::post('/boms', [BomController::class, 'store']);
     Route::get('/boms/{id}/explode', [BomController::class, 'explode']);

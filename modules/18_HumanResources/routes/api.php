@@ -9,7 +9,7 @@ use Modules\HumanResources\Http\Controllers\OrganizationController;
 use Modules\HumanResources\Http\Controllers\TalentAndTrainingController;
 
 Route::prefix('api/v1/hr')
-    ->middleware(['api', 'auth:sanctum'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         // Employee Lifecycle Routes
         Route::get('/employees', [EmployeeController::class, 'index'])->name('api.v1.hr.employees.index');

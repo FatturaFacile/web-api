@@ -9,7 +9,7 @@ use Modules\AssetManagement\Http\Controllers\FixedAssetController;
 use Modules\AssetManagement\Http\Controllers\MaintenanceController;
 
 Route::prefix('api/v1/eam')
-    ->middleware(['api', 'auth:sanctum'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         // Catalogs & Master Data
         Route::get('/categories', [AssetCatalogController::class, 'categories'])->name('eam.categories.index');

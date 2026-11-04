@@ -9,7 +9,7 @@ use Modules\SubscriptionBilling\Http\Controllers\SubscriptionController;
 use Modules\SubscriptionBilling\Http\Controllers\UsageBillingController;
 
 Route::prefix('api/v1/subscriptions')
-    ->middleware(['api', 'auth:sanctum'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         // Plans Catalog
         Route::get('plans', [PlanController::class, 'index'])->name('subscriptions.plans.index');
@@ -35,7 +35,7 @@ Route::prefix('api/v1/subscriptions')
     });
 
 Route::prefix('api/v1/sub')
-    ->middleware(['api', 'auth:sanctum'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         Route::get('contracts', [SubscriptionController::class, 'index'])->name('sub.contracts.index');
         Route::post('contracts', [SubscriptionController::class, 'store'])->name('sub.contracts.store');

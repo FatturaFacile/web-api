@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Workflow\Models;
 
+use App\Services\Tenancy\TenantContext;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 final class WorkflowInstance extends BaseEnterpriseModel
 {
@@ -55,7 +55,7 @@ final class WorkflowInstance extends BaseEnterpriseModel
                 if (! DB::table('workflow_definitions')->where('id', $instance->workflow_definition_id)->exists()) {
                     DB::table('workflow_definitions')->insert([
                         'id' => $instance->workflow_definition_id,
-                        'tenant_id' => $instance->tenant_id ?? (string) Str::uuid(),
+                        'tenant_id' => $instance->tenant_id ?? app(TenantContext::class)->getTenantId(),
                         'code' => $instance->workflow_code ?? 'PURCHASE_ORDER_APPROVAL',
                         'name' => 'Auto-generated Definition',
                         'target_entity_type' => $instance->approvable_type ?? 'purchase_order',

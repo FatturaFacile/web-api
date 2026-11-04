@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\AccountingReconciliationServiceInterface;
 use Modules\GeneralLedger\Http\Requests\RunReconciliationRequest;
 use Modules\GeneralLedger\Http\Resources\ReconciliationRunResource;
@@ -16,12 +16,16 @@ use Modules\GeneralLedger\Models\ReconciliationRun;
 final class ReconciliationController extends Controller
 {
     public function __construct(
-        private readonly AccountingReconciliationServiceInterface $reconciliationService
+        private readonly AccountingReconciliationServiceInterface $reconciliationService,
+        private readonly TenantContext $tenantContext
     ) {}
 
     public function index(Request $request): JsonResponse
     {
-        $tenantId = $request->user()?->tenant_id ?? (string) Str::uuid7();
+        $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
+        if (! $tenantId) {
+            abort(403, 'Missing or unresolvable tenant context');
+        }
 
         $runs = ReconciliationRun::where('tenant_id', $tenantId)
             ->with('items')
@@ -35,8 +39,19 @@ final class ReconciliationController extends Controller
 
     public function store(RunReconciliationRequest $request): JsonResponse
     {
-        $tenantId = $request->user()?->tenant_id ?? (string) Str::uuid7();
-        $actorId = (string) ($request->user()?->id ?? Str::uuid7());
+        $this->authorize('create', ReconciliationRun::class);
+
+        $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
+        if (! $tenantId) {
+            abort(403, 'Missing or unresolvable tenant context');
+        }
+
+        $user = $request->user();
+        if (! $user) {
+            abort(401, 'Unauthenticated');
+        }
+
+        $actorId = (string) $user->id;
 
         $type = $request->validated('reconciliation_type');
         $periodId = $request->validated('fiscal_period_id');
@@ -56,6 +71,7 @@ final class ReconciliationController extends Controller
     public function show(string $id): JsonResponse
     {
         $run = ReconciliationRun::with('items')->findOrFail($id);
+        $this->authorize('view', $run);
 
         return response()->json([
             'data' => new ReconciliationRunResource($run),

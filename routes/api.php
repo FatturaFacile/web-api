@@ -449,5 +449,3 @@ Route::prefix('v1')->group(function (): void {
         });
     });
 });
-
-Route::get('/lookups/{category_code}', [LookupController::class, 'getByCategory'])->name('api.lookups.getByCategory');

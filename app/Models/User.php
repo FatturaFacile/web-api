@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Tenancy\TenantContext;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -71,5 +72,24 @@ class User extends Authenticatable
         $pivot = $this->tenants()->where('tenants.id', $tenantId)->first()?->pivot;
 
         return $pivot?->role;
+    }
+
+    public function currentTenant(): ?Tenant
+    {
+        return app(TenantContext::class)->getTenant() ?? $this->tenants()->first();
+    }
+
+    public function getTenantIdAttribute(): ?string
+    {
+        if (isset($this->attributes['tenant_id']) && $this->attributes['tenant_id'] !== null) {
+            return (string) $this->attributes['tenant_id'];
+        }
+
+        return app(TenantContext::class)->getTenantId() ?? $this->tenants()->first()?->id;
+    }
+
+    public function getCurrentTenantIdAttribute(): ?string
+    {
+        return $this->tenant_id;
     }
 }

@@ -11,7 +11,7 @@ use Modules\Invoicing\Http\Controllers\InvoiceController;
 use Modules\Invoicing\Http\Controllers\SalesOrderController;
 use Modules\Invoicing\Http\Controllers\SalesQuoteController;
 
-Route::prefix('api/v1/invoicing')->middleware(['api'])->group(function (): void {
+Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
     // Quotes (Order-To-Cash)
     Route::get('quotes', [SalesQuoteController::class, 'index'])->name('invoicing.quotes.index');
     Route::post('quotes', [SalesQuoteController::class, 'store'])->name('invoicing.quotes.store');

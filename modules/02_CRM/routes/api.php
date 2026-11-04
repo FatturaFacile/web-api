@@ -10,7 +10,7 @@ use Modules\CRM\Http\Controllers\ForecastController;
 use Modules\CRM\Http\Controllers\LeadController;
 use Modules\CRM\Http\Controllers\OpportunityController;
 
-Route::prefix('api/v1/crm')->middleware(['api'])->group(function (): void {
+Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
     // 1. Leads
     Route::get('leads/duplicates', [LeadController::class, 'detectDuplicates'])->name('crm.leads.duplicates');
     Route::post('leads/{id}/qualify', [LeadController::class, 'qualify'])->name('crm.leads.qualify');

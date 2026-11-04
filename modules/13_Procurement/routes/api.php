@@ -13,7 +13,7 @@ use Modules\Procurement\Http\Controllers\SupplierEvaluationController;
 use Modules\Procurement\Http\Controllers\ThreeWayMatchController;
 
 Route::prefix('api/v1/procurement')
-    ->middleware(['api', 'auth:sanctum'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
     ->group(function (): void {
         // 1. Suppliers & Vendor Master (Full REST API Resource + Custom Lifecycle)
         Route::apiResource('suppliers', SupplierController::class)->names('procurement.suppliers');
