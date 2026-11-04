@@ -9,6 +9,9 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
+use Illuminate\Auth\Events\Logout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -80,6 +83,8 @@ class AuthController extends Controller
         $user = User::with('tenants')->where('email', $validated['email'])->first();
 
         if ($user === null || ! Hash::check($validated['password'], $user->password)) {
+            event(new Failed('sanctum', $user, ['email' => $validated['email']]));
+
             return $this->problemDetailsResponse(
                 title: 'Invalid Credentials',
                 detail: 'The provided email or password does not match our records.',
@@ -118,6 +123,8 @@ class AuthController extends Controller
 
         $tokenName = 'auth-token-'.now()->timestamp;
         $token = $user->createToken($tokenName, ['*'])->plainTextToken;
+
+        event(new Login('sanctum', $user, false));
 
         return $this->successResponse(
             data: [
@@ -326,6 +333,10 @@ class AuthController extends Controller
             Auth::guard('web')->logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
+        }
+
+        if ($user) {
+            event(new Logout('sanctum', $user));
         }
 
         return $this->successResponse(

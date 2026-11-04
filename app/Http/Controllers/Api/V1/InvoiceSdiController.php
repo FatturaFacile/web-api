@@ -12,6 +12,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\EiInboundLog;
 use App\Models\EiOutboundLog;
 use App\Models\Invoice;
+use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
@@ -57,6 +58,14 @@ class InvoiceSdiController extends Controller
                 status: Response::HTTP_BAD_GATEWAY
             );
         }
+
+        app(AuditLedgerInterface::class)->record(
+            action: 'SDI_SENT',
+            model: $invoice,
+            payloadBefore: ['status' => $invoice->getOriginal('status')],
+            payloadAfter: collect($metadata->attributesToArray())->except(['xml_content'])->all(),
+            moduleCode: 'INVOICING'
+        );
 
         return $this->successResponse(
             collect($metadata->attributesToArray())->except(['xml_content'])->all(),

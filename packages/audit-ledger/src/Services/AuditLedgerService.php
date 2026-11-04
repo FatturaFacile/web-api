@@ -40,4 +40,13 @@ final class AuditLedgerService implements AuditLedgerInterface
             $this->recordAction->execute($action, $model, $payloadBefore, $payloadAfter, $moduleCode);
         }
     }
+
+    public function recordPayload(array $data): void
+    {
+        if (config('erp_foundation.audit.async', false)) {
+            ProcessAuditLogJob::dispatch($data);
+        } else {
+            $this->recordAction->executeFromPayload($data);
+        }
+    }
 }

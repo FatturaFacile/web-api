@@ -7,12 +7,15 @@ namespace App\Listeners\ServiceReports;
 use App\Events\ServiceReports\ServiceReportCreated;
 use App\Events\ServiceReports\ServiceReportInvoiced;
 use App\Events\ServiceReports\ServiceReportSigned;
-use App\Models\AuditLog;
 use App\Models\ServiceReport;
-use Illuminate\Support\Facades\Auth;
+use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 
 class LogServiceReportActivity
 {
+    public function __construct(
+        private readonly AuditLedgerInterface $auditLedger
+    ) {}
+
     public function handleServiceReportCreated(ServiceReportCreated $event): void
     {
         $this->recordAudit($event->serviceReport, 'created', [
@@ -46,15 +49,12 @@ class LogServiceReportActivity
      */
     private function recordAudit(ServiceReport $report, string $event, array $newValues): void
     {
-        AuditLog::create([
-            'tenant_id' => $report->tenant_id,
-            'user_id' => Auth::id(),
-            'event' => "service_report.{$event}",
-            'auditable_type' => ServiceReport::class,
-            'auditable_id' => $report->id,
-            'new_values' => $newValues,
-            'ip_address' => request()->ip() ?? '127.0.0.1',
-            'user_agent' => request()->userAgent(),
-        ]);
+        $this->auditLedger->record(
+            action: strtoupper("service_report_{$event}"),
+            model: $report,
+            payloadBefore: null,
+            payloadAfter: $newValues,
+            moduleCode: 'SERVICE'
+        );
     }
 }

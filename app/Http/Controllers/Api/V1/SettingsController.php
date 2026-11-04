@@ -7,14 +7,16 @@ namespace App\Http\Controllers\Api\V1;
 use App\Contracts\ExchangeRateProviderInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
-use App\Models\AuditLog;
 use App\Models\ExchangeRate;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Tenancy\TenantContext;
+use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\Response;
 
 class SettingsController extends Controller
 {
@@ -267,10 +269,16 @@ class SettingsController extends Controller
     #[OA\Get(
         path: '/api/v1/settings/audit-logs',
         operationId: 'getAuditLogs',
-        description: 'Get paginated audit activity log trail for the active tenant.',
+        description: 'Get paginated audit activity log trail for the active tenant, guarded by admin or compliance roles.',
         summary: 'List audit logs',
-        security: [['bearerAuth' => []]],
-        tags: ['Settings'],
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Settings', 'Audit'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'module', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'action', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
@@ -282,12 +290,57 @@ class SettingsController extends Controller
                 description: 'Unauthenticated',
                 content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
             ),
+            new OA\Response(
+                response: 403,
+                description: 'Forbidden: strict admin or compliance role required',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
+            ),
         ]
     )]
-    public function auditLogs(): JsonResponse
+    public function auditLogs(Request $request): JsonResponse
     {
-        $logs = AuditLog::latest()->paginate(25);
+        /** @var User|null $user */
+        $user = $request->user();
+        $tenant = $this->tenantContext->getTenant();
 
-        return $this->successResponse(data: $logs, message: 'Audit logs retrieved');
+        if (! $user || ! $tenant) {
+            return $this->problemDetailsResponse(
+                title: 'Unauthorized',
+                detail: 'Authenticated tenant context is required.',
+                status: Response::HTTP_UNAUTHORIZED
+            );
+        }
+
+        $role = $user->getRoleInTenant($tenant->id);
+        $isAuthorized = in_array($role, ['admin', 'owner', 'compliance'], true);
+
+        if (! $isAuthorized) {
+            return $this->problemDetailsResponse(
+                title: 'Forbidden',
+                detail: 'Strict admin or compliance role required to access the audit trail.',
+                status: Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $query = AuditLedgerEntry::with('user')
+            ->where('tenant_id', $tenant->id)
+            ->orderBy('event_timestamp', 'desc')
+            ->orderBy('id', 'desc');
+
+        if ($request->filled('module')) {
+            $query->where('module_code', $request->query('module'));
+        }
+
+        if ($request->filled('action')) {
+            $query->where('action', strtoupper((string) $request->query('action')));
+        }
+
+        $perPage = min(100, max(5, (int) $request->query('per_page', 25)));
+        $logs = $query->paginate($perPage);
+
+        return $this->successResponse(
+            data: $logs,
+            message: 'Unified audit ledger retrieved successfully'
+        );
     }
 }

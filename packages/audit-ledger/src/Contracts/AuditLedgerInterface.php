@@ -19,4 +19,9 @@ interface AuditLedgerInterface
         ?array $payloadAfter = null,
         ?string $moduleCode = null
     ): void;
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    public function recordPayload(array $data): void;
 }
