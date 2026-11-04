@@ -20,6 +20,13 @@ class PosSessionController extends Controller
 {
     use ApiResponse;
 
+    public function index(): JsonResponse
+    {
+        $sessions = PosSession::latest('opened_at')->paginate(25);
+
+        return $this->successResponse(data: $sessions, message: 'POS sessions retrieved');
+    }
+
     public function store(OpenPosSessionRequest $request, OpenPosSession $openSession): JsonResponse
     {
         $session = $openSession->execute($request->validated('pos_terminal_id'), (float) $request->validated('opening_float', 0));

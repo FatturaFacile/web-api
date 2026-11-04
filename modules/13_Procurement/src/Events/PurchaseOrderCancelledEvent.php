@@ -15,9 +15,15 @@ final readonly class PurchaseOrderCancelledEvent implements DomainEventInterface
         public string $reason,
         public string $tenantId,
         public string $companyId,
+        public float $cancelledAmount = 0.0,
         public string $eventId = '',
         public string $occurredAt = ''
     ) {}
+
+    public function getCancellationReason(): string
+    {
+        return $this->reason;
+    }
 
     public function getEventId(): string
     {

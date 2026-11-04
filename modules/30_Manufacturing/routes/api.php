@@ -45,15 +45,3 @@ Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenan
     Route::post('/quality/inspections', [QualityController::class, 'recordInspection'])->name('mfg.quality.record_inspection');
     Route::get('/quality/non-conformances', [QualityController::class, 'nonConformances'])->name('mfg.quality.non_conformances');
 });
-
-// Alias for /api/v1/mfg
-Route::prefix('api/v1/mfg')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
-    Route::get('/boms', [BomController::class, 'index']);
-    Route::post('/boms', [BomController::class, 'store']);
-    Route::get('/boms/{id}/explode', [BomController::class, 'explode']);
-    Route::get('/production-orders', [ProductionOrderController::class, 'index']);
-    Route::post('/production-orders', [ProductionOrderController::class, 'store']);
-    Route::post('/production-orders/{id}/release', [ProductionOrderController::class, 'release']);
-    Route::post('/production-orders/{id}/complete', [ProductionOrderController::class, 'complete']);
-    Route::post('/mrp/runs', [MrpController::class, 'run']);
-});

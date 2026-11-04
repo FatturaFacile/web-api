@@ -18,15 +18,6 @@ class HrController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
-    public function employees(): JsonResponse
-    {
-        $employees = EmployeeProfile::join('users', 'users.id', '=', 'employee_profiles.user_id')
-            ->select('employee_profiles.*', 'users.name', 'users.email', 'users.phone')
-            ->get();
-
-        return $this->successResponse(data: $employees, message: 'Employee profiles retrieved');
-    }
-
     public function frontalieri(): JsonResponse
     {
         $frontalieri = EmployeeProfile::join('users', 'users.id', '=', 'employee_profiles.user_id')

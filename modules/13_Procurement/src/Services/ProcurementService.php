@@ -497,12 +497,14 @@ final class ProcurementService implements ProcurementServiceInterface
                 payloadAfter: ['status' => 'cancelled', 'reason' => $reason]
             );
 
+            $cancelledAmount = (float) ($locked->total_gross > 0 ? $locked->total_gross : ($locked->total_net ?? 0.0));
             $this->dispatchDomainEvent(new PurchaseOrderCancelledEvent(
                 purchaseOrderId: $locked->id,
                 poNumber: (string) ($locked->po_number ?? $locked->order_number),
                 reason: $reason,
                 tenantId: $locked->tenant_id,
-                companyId: (string) ($locked->company_id ?? $locked->tenant_id)
+                companyId: (string) ($locked->company_id ?? $locked->tenant_id),
+                cancelledAmount: $cancelledAmount
             ));
         });
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
@@ -67,6 +68,25 @@ final class ProcurementAccountingListener
         $encumbranceExpAcc = $this->resolveAccount($event->tenantId, '6990', 'Encumbrance Expense', 'expense', 'debit');
         $encumbranceResAcc = $this->resolveAccount($event->tenantId, '3990', 'Reserve for Encumbrances', 'equity', 'credit');
 
+        $reason = $event->reason ?? ($event->cancellationReason ?? 'Cancelled');
+
+        $amount = (float) ($event->cancelledAmount ?? 0.0);
+        if ($amount <= 0.0) {
+            $po = DB::table('procurement_purchase_orders')
+                ->where('id', $event->purchaseOrderId)
+                ->first();
+            $amount = (float) ($po->total_gross ?? $po->total_net ?? 0.0);
+        }
+        if ($amount <= 0.0) {
+            $encEntry = DB::table('gl_journal_entries')
+                ->join('gl_journal_lines', 'gl_journal_entries.id', '=', 'gl_journal_lines.journal_entry_id')
+                ->where('gl_journal_entries.source_document_id', $event->purchaseOrderId)
+                ->where('gl_journal_entries.entry_number', 'LIKE', 'ENC-%')
+                ->where('gl_journal_lines.debit_amount', '>', 0)
+                ->first();
+            $amount = (float) ($encEntry->debit_amount ?? 0.0);
+        }
+
         $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
@@ -75,18 +95,18 @@ final class ProcurementAccountingListener
             'source_document_type' => 'purchase_order',
             'source_document_id' => $event->purchaseOrderId,
             'journal_type' => 'reversing',
-            'description' => "PO Encumbrance Reversal: {$event->cancellationReason}",
+            'description' => "PO Encumbrance Reversal: {$reason}",
             'lines' => [
                 [
                     'account_id' => $encumbranceResAcc->id,
-                    'debit_amount' => 100.0, // reversal placeholder if no amount
+                    'debit_amount' => $amount,
                     'credit_amount' => 0.0,
                     'description' => 'Reverse Encumbrance Reserve',
                 ],
                 [
                     'account_id' => $encumbranceExpAcc->id,
                     'debit_amount' => 0.0,
-                    'credit_amount' => 100.0,
+                    'credit_amount' => $amount,
                     'description' => 'Reverse Encumbrance Expense',
                 ],
             ],
@@ -193,14 +213,15 @@ final class ProcurementAccountingListener
 
     private function resolveFiscalPeriod(string $tenantId): ?FiscalPeriod
     {
-        return FiscalPeriod::where('tenant_id', $tenantId)
+        return FiscalPeriod::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
             ->where('status', 'open')
             ->first();
     }
 
     private function resolveAccount(string $tenantId, string $code, string $name, string $type, string $normalBalance): ChartOfAccount
     {
-        return ChartOfAccount::firstOrCreate(
+        return ChartOfAccount::withoutGlobalScopes()->firstOrCreate(
             ['tenant_id' => $tenantId, 'account_code' => $code],
             [
                 'id' => (string) Str::uuid7(),

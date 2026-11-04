@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Contracts\ExchangeRateProviderInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\AuditLog;
@@ -178,17 +179,10 @@ class SettingsController extends Controller
             ),
         ]
     )]
-    public function syncExchangeRates(): JsonResponse
+    public function syncExchangeRates(ExchangeRateProviderInterface $rateProvider): JsonResponse
     {
         $today = now()->toDateString();
-
-        // Sample ECB/SNB rates: 1 EUR = 0.9425 CHF; 1 CHF = 1.0610 EUR
-        $rates = [
-            ['source' => 'EUR', 'target' => 'CHF', 'rate' => 0.942500],
-            ['source' => 'CHF', 'target' => 'EUR', 'rate' => 1.061008],
-            ['source' => 'USD', 'target' => 'EUR', 'rate' => 0.921500],
-            ['source' => 'USD', 'target' => 'CHF', 'rate' => 0.868500],
-        ];
+        $rates = $rateProvider->getRates();
 
         foreach ($rates as $r) {
             ExchangeRate::updateOrCreate(

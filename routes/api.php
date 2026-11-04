@@ -37,7 +37,6 @@ use App\Http\Controllers\Api\V1\InvoicePaymentController;
 use App\Http\Controllers\Api\V1\InvoiceQrBillController;
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
 use App\Http\Controllers\Api\V1\LoyaltyCardController;
-use App\Http\Controllers\Api\V1\ManufacturingController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
 use App\Http\Controllers\Api\V1\PaymentReminderController;
 use App\Http\Controllers\Api\V1\PaymentTermController;
@@ -51,7 +50,6 @@ use App\Http\Controllers\Api\V1\ProfessionalsController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchasesController;
 use App\Http\Controllers\Api\V1\QuoteController;
-use App\Http\Controllers\Api\V1\RetailPosController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SalesOrderLineController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
@@ -69,8 +67,6 @@ use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
-use Modules\Inventory\Http\Controllers\StockMovementController;
-use Modules\Inventory\Http\Controllers\WarehouseController;
 
 Route::prefix('v1')->group(function (): void {
 
@@ -261,8 +257,6 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
             Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
-            Route::get('/warehouses', [WarehouseController::class, 'index'])->name('warehouses');
-            Route::get('/movements', [StockMovementController::class, 'index'])->name('movements');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
             Route::post('/stock-adjustments', [StockController::class, 'adjust'])->name('stock-adjustments.store');
@@ -354,18 +348,9 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/fee-notes', [ProfessionalsController::class, 'storeFeeNote'])->name('fee-notes.store');
         });
 
-        // 13. Manufacturing (MRP)
-        Route::prefix('manufacturing')->name('manufacturing.')->group(function (): void {
-            Route::get('/bom', [ManufacturingController::class, 'bom'])->name('bom');
-            Route::get('/production-orders', [ManufacturingController::class, 'productionOrders'])->name('production-orders');
-            Route::post('/stages/{stageId}/track', [ManufacturingController::class, 'trackStage'])->name('stages.track');
-        });
-
         // 14. Retail & POS
         Route::prefix('retail')->name('retail.')->group(function (): void {
-            Route::get('/pos/sessions', [RetailPosController::class, 'sessions'])->name('pos.sessions');
-            Route::post('/pos/checkout', [RetailPosController::class, 'checkout'])->middleware('deprecated:/api/v1/retail/pos/sales')->name('pos.checkout');
-            Route::post('/pos/rt-sync', [RetailPosController::class, 'rtSync'])->middleware('deprecated:/api/v1/retail/pos/sales/{id}/rt-transmit')->name('pos.rt-sync');
+            Route::get('/pos/sessions', [PosSessionController::class, 'index'])->name('pos.sessions');
             Route::get('/pos/terminals', [PosTerminalController::class, 'index'])->name('pos.terminals.index');
             Route::post('/pos/terminals', [PosTerminalController::class, 'store'])->name('pos.terminals.store');
             Route::post('/pos/sessions', [PosSessionController::class, 'store'])->name('pos.sessions.store');
@@ -388,7 +373,6 @@ Route::prefix('v1')->group(function (): void {
 
         // 16. Cross-Border HR & Payroll
         Route::prefix('hr')->name('hr.')->group(function (): void {
-            Route::get('/employees', [HrController::class, 'employees'])->name('employees');
             Route::get('/frontalieri', [HrController::class, 'frontalieri'])->name('frontalieri');
             Route::get('/withholding-taxes', [HrController::class, 'withholdingTaxes'])->name('withholding-taxes');
         });
