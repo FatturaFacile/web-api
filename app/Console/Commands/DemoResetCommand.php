@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\Storage;
  * every table, runs the migrations, then runs the full `erp:bootstrap` (reference data, users and the integrated
  * cross-module demo of `tenant_demo`). Scheduled every 30 minutes so that nothing visitors enter persists.
  *
+ * While the tables are being rebuilt the application is in maintenance mode: API requests get a 503 with Retry-After
+ * and the queue worker pauses instead of polling a `jobs` table that does not exist for a few seconds. Maintenance
+ * mode is lifted at the end, even when a step fails, unless it was already active before the reset.
+ *
  * It destroys all data, so it only runs where `DEMO_RESET_ENABLED=true` (config `app.demo_reset`).
  */
 class DemoResetCommand extends Command
@@ -19,6 +23,9 @@ class DemoResetCommand extends Command
     protected $signature = 'demo:reset';
 
     protected $description = 'Rebuild the demo database and empty its storage (only where DEMO_RESET_ENABLED=true)';
+
+    /** Seconds suggested to API clients (Retry-After header) while the demo is being rebuilt. */
+    private const RETRY_AFTER_SECONDS = 60;
 
     public function handle(): int
     {
@@ -28,6 +35,24 @@ class DemoResetCommand extends Command
             return self::FAILURE;
         }
 
+        $maintenance = $this->laravel->maintenanceMode();
+        $wasDown = $maintenance->active();
+
+        if (! $wasDown) {
+            $maintenance->activate(['retry' => self::RETRY_AFTER_SECONDS, 'status' => 503]);
+        }
+
+        try {
+            return $this->rebuild();
+        } finally {
+            if (! $wasDown) {
+                $maintenance->deactivate();
+            }
+        }
+    }
+
+    private function rebuild(): int
+    {
         // Files first: the bootstrap below may write new ones
         foreach ($this->storageDisks() as $disk) {
             $this->emptyDisk($disk);
