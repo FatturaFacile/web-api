@@ -142,12 +142,12 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/contacts/{id}/statistics', [ContactInsightsController::class, 'statistics'])->name('contacts.statistics');
             Route::get('/contacts/{id}/statement', [ContactInsightsController::class, 'statement'])->name('contacts.statement');
             Route::post('/contacts/{id}/statement/email', [ContactInsightsController::class, 'emailStatement'])->name('contacts.statement.email');
-            Route::apiResource('contacts', CrmController::class);
+            Route::apiResource('contacts', CrmController::class)->parameters(['contacts' => 'id']);
         });
 
         // 4. Sales, Invoicing & Cross-Border Billing
         Route::prefix('sales')->name('sales.')->group(function (): void {
-            Route::apiResource('invoices', InvoiceController::class);
+            Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id']);
             Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->name('invoices.generate-sdi-xml');
             Route::post('/invoices/{id}/generate-qr-bill', [InvoiceController::class, 'generateQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.generate-qr-bill');
             Route::get('/invoices/{id}/download-qr-bill', [InvoiceController::class, 'downloadQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.download-qr-bill');
@@ -166,7 +166,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/payment-imports/{id}', [PaymentImportController::class, 'show'])->name('payment-imports.show');
             Route::post('/payment-imports/{id}/lines/{lineId}/match', [PaymentImportController::class, 'matchLine'])->name('payment-imports.lines.match');
 
-            Route::apiResource('quotes', QuoteController::class);
+            Route::apiResource('quotes', QuoteController::class)->parameters(['quotes' => 'id']);
             Route::post('/quotes/{id}/convert-to-order', [QuoteController::class, 'convertToOrder'])->name('quotes.convert-to-order');
             Route::post('/quotes/{id}/invoice', [QuoteController::class, 'createInvoice'])->name('quotes.invoice');
             Route::post('/quotes/{id}/delivery-note', [QuoteController::class, 'createDeliveryNote'])->name('quotes.delivery-note');

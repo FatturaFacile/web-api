@@ -14,6 +14,7 @@ use App\Services\Inventory\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class StockController extends Controller
@@ -25,6 +26,21 @@ class StockController extends Controller
     /**
      * Current stock per product, optionally restricted to one warehouse.
      */
+    #[OA\Get(
+        path: '/api/v1/inventory/stock-levels',
+        operationId: 'getStockLevels',
+        description: 'Get current stock balance on hand per product, optionally filtered by warehouse.',
+        summary: 'Get stock levels',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Inventory', 'Stock'],
+        parameters: [
+            new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Stock levels retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function levels(Request $request): JsonResponse
     {
         return $this->successResponse(
@@ -36,6 +52,31 @@ class StockController extends Controller
     /**
      * Manual signed stock correction (inventory count result).
      */
+    #[OA\Post(
+        path: '/api/v1/inventory/stock-adjustments',
+        operationId: 'recordStockAdjustment',
+        description: 'Record manual signed inventory quantity adjustment and valuation write-off/in.',
+        summary: 'Record stock adjustment',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Inventory', 'Stock'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['product_id', 'quantity'],
+                properties: [
+                    new OA\Property(property: 'product_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'quantity', type: 'number', format: 'float', example: -5),
+                    new OA\Property(property: 'notes', type: 'string', nullable: true, example: 'Cycle count discrepancy'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Stock adjusted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function adjust(StockAdjustmentRequest $request): JsonResponse
     {
         $data = $request->validated();

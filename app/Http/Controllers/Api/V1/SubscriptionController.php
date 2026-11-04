@@ -15,8 +15,10 @@ use App\Services\Sales\DocumentEventRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Tag(name: 'Subscriptions', description: 'Recurring billing subscriptions, billing cycles, pause/resume, and invoices')]
 class SubscriptionController extends Controller
 {
     use ApiResponse;
@@ -30,6 +32,22 @@ class SubscriptionController extends Controller
     /**
      * List paginated subscriptions with optional status filter.
      */
+    #[OA\Get(
+        path: '/api/v1/subscriptions',
+        summary: 'List subscriptions',
+        description: 'Get paginated list of subscriptions with optional status filter',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Subscriptions retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $query = Subscription::with('contact')->latest('start_date');
@@ -47,6 +65,30 @@ class SubscriptionController extends Controller
         );
     }
 
+    #[OA\Post(
+        path: '/api/v1/subscriptions',
+        summary: 'Create subscription',
+        description: 'Create a new recurring subscription plan',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['contact_id', 'frequency', 'start_date'],
+                properties: [
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'frequency', type: 'string'),
+                    new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Subscription created successfully'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function store(StoreSubscriptionRequest $request): JsonResponse
     {
         return $this->successResponse(
@@ -56,6 +98,21 @@ class SubscriptionController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/subscriptions/{id}',
+        summary: 'Get subscription',
+        description: 'Retrieve details, items, and billing runs for a subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Subscription details retrieved'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $subscription = Subscription::with(['contact', 'items', 'runs'])->findOrFail($id);
@@ -63,6 +120,33 @@ class SubscriptionController extends Controller
         return $this->successResponse(new SubscriptionResource($subscription), __('subscriptions.messages.retrieved'));
     }
 
+    #[OA\Put(
+        path: '/api/v1/subscriptions/{id}',
+        summary: 'Update subscription',
+        description: 'Update subscription terms, items, or parameters',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'frequency', type: 'string'),
+                    new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Subscription updated successfully'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function update(StoreSubscriptionRequest $request, string $id): JsonResponse
     {
         $subscription = $this->save->update(Subscription::findOrFail($id), $request->validated());
@@ -70,6 +154,21 @@ class SubscriptionController extends Controller
         return $this->successResponse(new SubscriptionResource($subscription), __('subscriptions.messages.updated'));
     }
 
+    #[OA\Delete(
+        path: '/api/v1/subscriptions/{id}',
+        summary: 'Delete subscription',
+        description: 'Delete a subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Subscription deleted successfully'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         Subscription::findOrFail($id)->delete();
@@ -77,16 +176,64 @@ class SubscriptionController extends Controller
         return $this->successResponse(null, __('subscriptions.messages.deleted'));
     }
 
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/pause',
+        summary: 'Pause subscription',
+        description: 'Pause an active subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Subscription paused'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 422, description: 'Invalid state transition'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function pause(string $id): JsonResponse
     {
         return $this->transition($id, ['active'], 'paused', 'paused');
     }
 
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/resume',
+        summary: 'Resume subscription',
+        description: 'Resume a paused subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Subscription resumed'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 422, description: 'Invalid state transition'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function resume(string $id): JsonResponse
     {
         return $this->transition($id, ['paused'], 'active', 'resumed');
     }
 
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/cancel',
+        summary: 'Cancel subscription',
+        description: 'Cancel an active or paused subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Subscription cancelled'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 422, description: 'Invalid state transition'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function cancel(string $id): JsonResponse
     {
         return $this->transition($id, ['active', 'paused'], 'cancelled', 'cancelled');
@@ -95,6 +242,21 @@ class SubscriptionController extends Controller
     /**
      * Manually bill every period currently due for this subscription.
      */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/bill',
+        summary: 'Bill subscription',
+        description: 'Manually generate invoices for all due periods of this subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Billing executed successfully'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function bill(string $id): JsonResponse
     {
         $subscription = Subscription::findOrFail($id);
@@ -106,6 +268,21 @@ class SubscriptionController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/subscriptions/{id}/runs',
+        summary: 'List subscription billing runs',
+        description: 'Get historical billing executions for a subscription',
+        tags: ['Subscriptions'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Billing runs retrieved'),
+            new OA\Response(response: 404, description: 'Subscription not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function runs(string $id): JsonResponse
     {
         $runs = Subscription::findOrFail($id)->runs()->orderByDesc('period_start')->get();

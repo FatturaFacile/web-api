@@ -24,7 +24,9 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use OpenApi\Attributes as OA;
 
+#[OA\Tag(name: 'Appointments', description: 'Technician scheduling, calendar view, conflict checking, and service report conversion')]
 class AppointmentController extends Controller
 {
     use AuthorizesRequests;
@@ -37,6 +39,26 @@ class AppointmentController extends Controller
     /**
      * List appointments with optional filters and pagination.
      */
+    #[OA\Get(
+        path: '/api/v1/appointments',
+        summary: 'List appointments',
+        description: 'Get paginated list of appointments with filters',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'technician_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'contact_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'ticket_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'status_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'date', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Appointments list'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Appointment::class);
@@ -74,6 +96,26 @@ class AppointmentController extends Controller
     /**
      * Calendar view: retrieve all events in an interval for day/week/month/agenda views.
      */
+    #[OA\Get(
+        path: '/api/v1/appointments/calendar',
+        summary: 'Calendar view',
+        description: 'Retrieve all events in an interval for day/week/month views',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'start', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date-time')),
+            new OA\Parameter(name: 'end', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date-time')),
+            new OA\Parameter(name: 'technician_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'contact_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'status_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Calendar events list'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function calendar(CalendarQueryRequest $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', Appointment::class);
@@ -95,6 +137,31 @@ class AppointmentController extends Controller
     /**
      * Real-time pre-flight conflict check for dispatch UI.
      */
+    #[OA\Post(
+        path: '/api/v1/appointments/check-conflicts',
+        summary: 'Check appointment conflicts',
+        description: 'Real-time pre-flight conflict check for scheduling',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['starts_at', 'ends_at', 'user_ids'],
+                properties: [
+                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'user_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+                    new OA\Property(property: 'ignore_appointment_id', type: 'string', format: 'uuid'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Conflict check result'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function checkConflicts(ConflictCheckRequest $request): JsonResponse
     {
         $this->authorize('viewAny', Appointment::class);
@@ -112,6 +179,33 @@ class AppointmentController extends Controller
     /**
      * Schedule a new appointment.
      */
+    #[OA\Post(
+        path: '/api/v1/appointments',
+        summary: 'Schedule appointment',
+        description: 'Schedule a new appointment',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['starts_at', 'ends_at'],
+                properties: [
+                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'ticket_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'title', type: 'string'),
+                    new OA\Property(property: 'description', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Appointment created successfully'),
+            new OA\Response(response: 422, description: 'Validation error or conflict'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function store(StoreAppointmentRequest $request, ScheduleAppointmentAction $action): JsonResponse
     {
         $this->authorize('create', Appointment::class);
@@ -126,6 +220,22 @@ class AppointmentController extends Controller
     /**
      * Show appointment details.
      */
+    #[OA\Get(
+        path: '/api/v1/appointments/{id}',
+        summary: 'Get appointment details',
+        description: 'Retrieve details for a single appointment',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Appointment details'),
+            new OA\Response(response: 404, description: 'Appointment not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function show(string $id): AppointmentResource
     {
         /** @var Appointment $appointment */
@@ -140,6 +250,34 @@ class AppointmentController extends Controller
     /**
      * Update an appointment.
      */
+    #[OA\Put(
+        path: '/api/v1/appointments/{id}',
+        summary: 'Update appointment',
+        description: 'Update appointment details or rescheduling',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'ends_at', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'title', type: 'string'),
+                    new OA\Property(property: 'description', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Appointment updated successfully'),
+            new OA\Response(response: 404, description: 'Appointment not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function update(UpdateAppointmentRequest $request, string $id, UpdateAppointmentAction $action): AppointmentResource
     {
         /** @var Appointment $appointment */
@@ -155,6 +293,22 @@ class AppointmentController extends Controller
     /**
      * Soft delete an appointment.
      */
+    #[OA\Delete(
+        path: '/api/v1/appointments/{id}',
+        summary: 'Delete appointment',
+        description: 'Delete an appointment',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Appointment deleted successfully'),
+            new OA\Response(response: 404, description: 'Appointment not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         /** @var Appointment $appointment */
@@ -170,6 +324,32 @@ class AppointmentController extends Controller
     /**
      * Cancel an appointment.
      */
+    #[OA\Post(
+        path: '/api/v1/appointments/{id}/cancel',
+        summary: 'Cancel appointment',
+        description: 'Cancel an appointment with a given reason',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['reason'],
+                properties: [
+                    new OA\Property(property: 'reason', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Appointment cancelled successfully'),
+            new OA\Response(response: 404, description: 'Appointment not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function cancel(CancelAppointmentRequest $request, string $id, CancelAppointmentAction $action): AppointmentResource
     {
         /** @var Appointment $appointment */
@@ -185,6 +365,23 @@ class AppointmentController extends Controller
     /**
      * Convert completed appointment into an official Service Report.
      */
+    #[OA\Post(
+        path: '/api/v1/appointments/{id}/convert-to-service-report',
+        summary: 'Convert appointment to service report',
+        description: 'Convert a completed appointment into a service report',
+        tags: ['Appointments'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Service report created from appointment'),
+            new OA\Response(response: 404, description: 'Appointment not found'),
+            new OA\Response(response: 422, description: 'Unprocessable appointment'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function convertToServiceReport(string $id, ConvertAppointmentToServiceReportAction $action): ServiceReportResource
     {
         /** @var Appointment $appointment */

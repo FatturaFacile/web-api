@@ -13,8 +13,10 @@ use App\Models\DeliveryNote;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Tag(name: 'Delivery Notes', description: 'Transport and delivery notes (DDT) management and invoicing')]
 class DeliveryNoteController extends Controller
 {
     use ApiResponse;
@@ -22,6 +24,22 @@ class DeliveryNoteController extends Controller
 
     public function __construct(private readonly ConvertToInvoice $toInvoice) {}
 
+    #[OA\Get(
+        path: '/api/v1/sales/delivery-notes',
+        summary: 'List delivery notes',
+        description: 'Get paginated list of delivery notes (DDT)',
+        tags: ['Delivery Notes'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Delivery notes list retrieved'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', DeliveryNote::class);
@@ -36,6 +54,22 @@ class DeliveryNoteController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/sales/delivery-notes/{id}',
+        summary: 'Get delivery note',
+        description: 'Retrieve details and lines of a delivery note',
+        tags: ['Delivery Notes'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Delivery note details retrieved'),
+            new OA\Response(response: 404, description: 'Delivery note not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $note = DeliveryNote::with(['contact', 'items'])->findOrFail($id);
@@ -44,6 +78,22 @@ class DeliveryNoteController extends Controller
         return $this->successResponse(new DeliveryNoteResource($note), __('sales.messages.delivery_note_retrieved'));
     }
 
+    #[OA\Delete(
+        path: '/api/v1/sales/delivery-notes/{id}',
+        summary: 'Delete delivery note',
+        description: 'Delete a delivery note',
+        tags: ['Delivery Notes'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Delivery note deleted successfully'),
+            new OA\Response(response: 404, description: 'Delivery note not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $note = DeliveryNote::findOrFail($id);
@@ -57,6 +107,22 @@ class DeliveryNoteController extends Controller
     /**
      * Invoice the delivered lines of a delivery note.
      */
+    #[OA\Post(
+        path: '/api/v1/sales/delivery-notes/{id}/invoice',
+        summary: 'Create invoice from delivery note',
+        description: 'Generate an invoice from delivered lines of a delivery note',
+        tags: ['Delivery Notes'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 201, description: 'Invoice created successfully'),
+            new OA\Response(response: 404, description: 'Delivery note not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function createInvoice(string $id): JsonResponse
     {
         $note = DeliveryNote::with('items')->findOrFail($id);

@@ -17,6 +17,7 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class TimeAttendanceController extends Controller
@@ -31,6 +32,24 @@ class TimeAttendanceController extends Controller
     /**
      * List paginated time entries for the authenticated user or tenant.
      */
+    #[OA\Get(
+        path: '/api/v1/time-attendance/entries',
+        operationId: 'getTimeAttendanceEntries',
+        description: 'List paginated time entries for the authenticated user or tenant.',
+        summary: 'List time attendance entries',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Time & Attendance'],
+        parameters: [
+            new OA\Parameter(name: 'all_users', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Time entries retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         /** @var User $user */
@@ -68,6 +87,32 @@ class TimeAttendanceController extends Controller
     /**
      * Clock in: register a new work shift start with optional GPS geofencing coords.
      */
+    #[OA\Post(
+        path: '/api/v1/time-attendance/clock-in',
+        operationId: 'clockIn',
+        description: 'Register shift start with optional GPS geofencing coordinates.',
+        summary: 'Record clock-in',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Time & Attendance'],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'clock_in', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'latitude', type: 'number', format: 'float', example: 45.4642),
+                    new OA\Property(property: 'longitude', type: 'number', format: 'float', example: 9.1900),
+                    new OA\Property(property: 'is_simplified_record', type: 'boolean', default: false),
+                    new OA\Property(property: 'notes', type: 'string', example: 'Morning shift'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Clock-in recorded successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'Already clocked in', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function clockIn(ClockInRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -107,6 +152,29 @@ class TimeAttendanceController extends Controller
     /**
      * Clock out: close the currently active shift and log breaks.
      */
+    #[OA\Post(
+        path: '/api/v1/time-attendance/clock-out',
+        operationId: 'clockOut',
+        description: 'Close active shift and log breaks worked.',
+        summary: 'Record clock-out',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Time & Attendance'],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'clock_out', type: 'string', format: 'date-time'),
+                    new OA\Property(property: 'break_minutes', type: 'integer', default: 0),
+                    new OA\Property(property: 'notes', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Clock-out recorded successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'No active shift or invalid timestamp', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function clockOut(ClockOutRequest $request): JsonResponse
     {
         /** @var User $user */
@@ -152,6 +220,24 @@ class TimeAttendanceController extends Controller
     /**
      * Monthly Report: returns summarized hours, breaks, and compliance audit for a user.
      */
+    #[OA\Get(
+        path: '/api/v1/time-attendance/monthly-report',
+        operationId: 'getMonthlyAttendanceReport',
+        description: 'Returns summarized hours, breaks, and statutory compliance audit for a user.',
+        summary: 'Monthly attendance report',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Time & Attendance'],
+        parameters: [
+            new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'year', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'month', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'jurisdiction', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['IT', 'CH'])),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Monthly report generated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function monthlyReport(AttendanceReportRequest $request): JsonResponse
     {
         /** @var User $currentUser */
@@ -223,6 +309,23 @@ class TimeAttendanceController extends Controller
     /**
      * On-demand labour compliance audit check.
      */
+    #[OA\Get(
+        path: '/api/v1/time-attendance/compliance-check',
+        operationId: 'getAttendanceComplianceCheck',
+        description: 'Verify employee statutory working time limits under Italian or Swiss labour law.',
+        summary: 'Labour compliance check',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Time & Attendance'],
+        parameters: [
+            new OA\Parameter(name: 'start_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'end_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'jurisdiction', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['IT', 'CH'])),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Compliance verification completed', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function complianceCheck(Request $request): JsonResponse
     {
         /** @var User $user */

@@ -12,6 +12,7 @@ use App\Models\Product;
 use App\Services\Inventory\BarcodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
 
 class ProductBarcodeController extends Controller
@@ -23,6 +24,25 @@ class ProductBarcodeController extends Controller
      * `?type=` selects ean13, ean8, code128 (default) or qrcode. The final encoded value, with the EAN check digit
      * added when it was missing, is returned in the `X-Barcode-Value` header.
      */
+    #[OA\Get(
+        path: '/api/v1/inventory/products/{id}/barcode',
+        operationId: 'getProductBarcodeImage',
+        description: 'Generate product barcode image stream in SVG or PNG format (supports EAN-13, EAN-8, Code 128, and QR).',
+        summary: 'Get product barcode image',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Inventory', 'Barcodes'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['ean13', 'ean8', 'code128', 'qrcode'])),
+            new OA\Parameter(name: 'format', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['svg', 'png'])),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Barcode image stream', content: new OA\MediaType(mediaType: 'image/svg+xml')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Product not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Barcode generation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(ProductBarcodeRequest $request, BarcodeService $barcodes, string $id): Response|JsonResponse
     {
         $product = Product::findOrFail($id);

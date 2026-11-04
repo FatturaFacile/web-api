@@ -26,8 +26,10 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Tag(name: 'Service Reports', description: 'Field service reports, signatures, PDF export, and invoicing')]
 class ServiceReportController extends Controller
 {
     use ApiResponse, AuthorizesRequests;
@@ -43,6 +45,29 @@ class ServiceReportController extends Controller
     /**
      * List paginated service reports with optional filtering.
      */
+    #[OA\Get(
+        path: '/api/v1/service-reports',
+        summary: 'List service reports',
+        description: 'Get paginated list of service reports with optional filtering',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'contact_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'technician_id', in: 'query', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'from_date', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to_date', in: 'query', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'uninvoiced', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'portal_visible', in: 'query', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Service reports retrieved successfully'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $this->authorize('viewAny', ServiceReport::class);
@@ -100,6 +125,32 @@ class ServiceReportController extends Controller
     /**
      * Store a newly created service report with lines.
      */
+    #[OA\Post(
+        path: '/api/v1/service-reports',
+        summary: 'Create service report',
+        description: 'Store a newly created service report with line items',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['contact_id', 'report_date'],
+                properties: [
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'technician_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'report_date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'notes', type: 'string'),
+                    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Service report created successfully'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function store(StoreServiceReportRequest $request): JsonResponse
     {
         $this->authorize('create', ServiceReport::class);
@@ -116,6 +167,22 @@ class ServiceReportController extends Controller
     /**
      * Retrieve a specific service report with lines, signatures, and attachments.
      */
+    #[OA\Get(
+        path: '/api/v1/service-reports/{id}',
+        summary: 'Get service report details',
+        description: 'Retrieve a specific service report with lines, signatures, and attachments',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Service report retrieved successfully'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $report = ServiceReport::with([
@@ -141,6 +208,33 @@ class ServiceReportController extends Controller
     /**
      * Update an existing service report and its lines.
      */
+    #[OA\Put(
+        path: '/api/v1/service-reports/{id}',
+        summary: 'Update service report',
+        description: 'Update an existing service report and its line items',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'report_date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'notes', type: 'string'),
+                    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Service report updated successfully'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function update(UpdateServiceReportRequest $request, string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
@@ -158,6 +252,23 @@ class ServiceReportController extends Controller
     /**
      * Soft delete a service report (only if unsigned and uninvoiced).
      */
+    #[OA\Delete(
+        path: '/api/v1/service-reports/{id}',
+        summary: 'Delete service report',
+        description: 'Soft delete an unsigned, uninvoiced service report',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Service report deleted successfully'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 422, description: 'Signed or invoiced report cannot be deleted'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
@@ -183,6 +294,33 @@ class ServiceReportController extends Controller
     /**
      * Sign service report with touchscreen digital signature.
      */
+    #[OA\Post(
+        path: '/api/v1/service-reports/{id}/sign',
+        summary: 'Sign service report',
+        description: 'Customer digital signature on service report',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['signer_name', 'signature_data'],
+                properties: [
+                    new OA\Property(property: 'signer_name', type: 'string'),
+                    new OA\Property(property: 'signature_data', type: 'string'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Service report signed successfully'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function sign(SignServiceReportRequest $request, string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
@@ -205,6 +343,23 @@ class ServiceReportController extends Controller
     /**
      * Generate a direct 1-to-1 invoice from a signed service report.
      */
+    #[OA\Post(
+        path: '/api/v1/service-reports/{id}/generate-invoice',
+        summary: 'Generate invoice from service report',
+        description: 'Create an invoice directly from a signed service report',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 201, description: 'Invoice generated successfully'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 422, description: 'Unprocessable report'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function generateInvoice(string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
@@ -223,6 +378,28 @@ class ServiceReportController extends Controller
     /**
      * Generate a consolidated invoice from multiple signed service reports for the same customer.
      */
+    #[OA\Post(
+        path: '/api/v1/service-reports/generate-consolidated-invoice',
+        summary: 'Generate consolidated invoice',
+        description: 'Create a consolidated invoice from multiple signed service reports',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['report_ids'],
+                properties: [
+                    new OA\Property(property: 'report_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Consolidated invoice generated successfully'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function generateConsolidatedInvoice(GenerateConsolidatedInvoiceRequest $request): JsonResponse
     {
         $reportIds = $request->validated('report_ids');
@@ -244,6 +421,36 @@ class ServiceReportController extends Controller
     /**
      * Upload before/after photo or work document to the service report.
      */
+    #[OA\Post(
+        path: '/api/v1/service-reports/{id}/upload-photo',
+        summary: 'Upload photo to service report',
+        description: 'Upload before/after work photo or attachment',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\MediaType(
+                mediaType: 'multipart/form-data',
+                schema: new OA\Schema(
+                    required: ['photo'],
+                    properties: [
+                        new OA\Property(property: 'photo', type: 'string', format: 'binary'),
+                        new OA\Property(property: 'stage', type: 'string', enum: ['before', 'after', 'general']),
+                    ]
+                )
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Photo uploaded successfully'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function uploadPhoto(UploadServiceReportPhotoRequest $request, string $id): JsonResponse
     {
         $report = ServiceReport::findOrFail($id);
@@ -286,6 +493,23 @@ class ServiceReportController extends Controller
     /**
      * Download or stream the generated service report PDF.
      */
+    #[OA\Get(
+        path: '/api/v1/service-reports/{id}/pdf',
+        summary: 'Download service report PDF',
+        description: 'Download or stream rendered service report PDF',
+        tags: ['Service Reports'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'inline', in: 'query', schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'PDF file stream'),
+            new OA\Response(response: 404, description: 'Service report not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Forbidden'),
+        ]
+    )]
     public function pdf(Request $request, string $id): HttpResponse
     {
         $report = ServiceReport::findOrFail($id);

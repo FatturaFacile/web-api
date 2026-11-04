@@ -9,6 +9,7 @@ use App\Http\Requests\Accounting\GeneralLedgerRequest;
 use App\Http\Responses\ApiResponse;
 use App\Services\Accounting\GeneralLedgerExportService;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
@@ -24,6 +25,27 @@ class GeneralLedgerController extends Controller
     /**
      * Preview of the entries of a period; the totals and the balance check cover the whole period, not just the page.
      */
+    #[OA\Get(
+        path: '/api/v1/accounting/general-ledger',
+        operationId: 'getGeneralLedgerPreview',
+        description: 'Preview general ledger (prima nota) journal entries with balanced debit/credit verification.',
+        summary: 'General ledger preview',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Accounting', 'General Ledger'],
+        parameters: [
+            new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'source', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'account_code', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 50)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Ledger retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function index(GeneralLedgerRequest $request): JsonResponse
     {
         $entries = $this->ledger->entries($request->from(), $request->to(), $request->source(), $request->input('account_code'));
@@ -40,6 +62,23 @@ class GeneralLedgerController extends Controller
     /**
      * Download the ledger: `?format=csv` (default) or `?format=json`.
      */
+    #[OA\Get(
+        path: '/api/v1/accounting/general-ledger/export',
+        operationId: 'exportGeneralLedger',
+        description: 'Export general ledger records for external audit and accountant software in CSV or JSON format.',
+        summary: 'Export general ledger',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Accounting', 'General Ledger'],
+        parameters: [
+            new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'format', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['csv', 'json'], default: 'csv')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'General ledger file stream or payload', content: new OA\MediaType(mediaType: 'text/csv')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function export(GeneralLedgerRequest $request): StreamedResponse|JsonResponse
     {
         $entries = $this->ledger->entries($request->from(), $request->to(), $request->source(), $request->input('account_code'));
@@ -60,7 +99,7 @@ class GeneralLedgerController extends Controller
                 });
             },
             $filename,
-            ['Content-Type' => 'text/csv; charset=UTF-8'],
+            ['Content-Type' => 'text/csv; charset=UTF-8']
         );
     }
 }

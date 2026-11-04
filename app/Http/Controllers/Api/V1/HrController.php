@@ -9,6 +9,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\EmployeeProfile;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
+use OpenApi\Attributes as OA;
 
 class HrController extends Controller
 {
@@ -18,6 +19,18 @@ class HrController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/hr/frontalieri',
+        operationId: 'getCrossBorderFrontalieri',
+        description: 'Retrieve registered cross-border commuter employees (Frontalieri IT-CH).',
+        summary: 'List cross-border employees',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['HR', 'Cross-Border'],
+        responses: [
+            new OA\Response(response: 200, description: 'Cross-border commuters retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function frontalieri(): JsonResponse
     {
         $frontalieri = EmployeeProfile::join('users', 'users.id', '=', 'employee_profiles.user_id')
@@ -28,6 +41,18 @@ class HrController extends Controller
         return $this->successResponse(data: $frontalieri, message: 'Cross-border commuters (Frontalieri IT-CH) retrieved');
     }
 
+    #[OA\Get(
+        path: '/api/v1/hr/withholding-taxes',
+        operationId: 'getWithholdingTaxes',
+        description: 'Get applicable cross-border withholding tax parameters based on tenant fiscal jurisdiction.',
+        summary: 'Get withholding tax parameters',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['HR', 'Cross-Border'],
+        responses: [
+            new OA\Response(response: 200, description: 'Withholding tax rates retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function withholdingTaxes(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();

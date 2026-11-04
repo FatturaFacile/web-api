@@ -17,8 +17,10 @@ use App\Services\Inventory\ProductReferences;
 use App\Services\Inventory\StockService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Validation\ValidationException;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+#[OA\Tag(name: 'Product Variants', description: 'Product variant management and matrix generation')]
 class ProductVariantController extends Controller
 {
     use ApiResponse;
@@ -31,6 +33,21 @@ class ProductVariantController extends Controller
     /**
      * The variants of a parent product with their calculated stock.
      */
+    #[OA\Get(
+        path: '/api/v1/inventory/products/{parentId}/variants',
+        summary: 'List variants of a product',
+        description: 'Get all product variants for a parent product with stock levels',
+        tags: ['Product Variants'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'parentId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Variants listed successfully'),
+            new OA\Response(response: 404, description: 'Parent product not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function index(string $parentId): JsonResponse
     {
         $parent = $this->parent($parentId);
@@ -46,6 +63,34 @@ class ProductVariantController extends Controller
     /**
      * Create one variant by hand.
      */
+    #[OA\Post(
+        path: '/api/v1/inventory/products/{parentId}/variants',
+        summary: 'Create product variant',
+        description: 'Create a single product variant manually under a parent product',
+        tags: ['Product Variants'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'parentId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['sku', 'attributes'],
+                properties: [
+                    new OA\Property(property: 'sku', type: 'string'),
+                    new OA\Property(property: 'price', type: 'number'),
+                    new OA\Property(property: 'barcode', type: 'string'),
+                    new OA\Property(property: 'attributes', type: 'object'),
+                    new OA\Property(property: 'is_active', type: 'boolean'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Variant created successfully'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function store(CreateProductVariantRequest $request, string $parentId): JsonResponse
     {
         $parent = $this->parent($parentId);
@@ -68,6 +113,31 @@ class ProductVariantController extends Controller
     /**
      * Generate every missing combination of an attribute matrix; combinations that already exist are skipped.
      */
+    #[OA\Post(
+        path: '/api/v1/inventory/products/{parentId}/variants/generate',
+        summary: 'Generate variant matrix',
+        description: 'Generate product variants in bulk based on an attribute matrix',
+        tags: ['Product Variants'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'parentId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['matrix'],
+                properties: [
+                    new OA\Property(property: 'matrix', type: 'object'),
+                    new OA\Property(property: 'options', type: 'object'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Variants generated successfully'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function generate(GenerateVariantsMatrixRequest $request, string $parentId): JsonResponse
     {
         $result = $this->generator->execute($this->parent($parentId), $request->matrix(), $request->options());
@@ -83,6 +153,21 @@ class ProductVariantController extends Controller
         );
     }
 
+    #[OA\Get(
+        path: '/api/v1/inventory/products/variants/{variantId}',
+        summary: 'Get variant details',
+        description: 'Retrieve details for a single product variant',
+        tags: ['Product Variants'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'variantId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Variant details retrieved'),
+            new OA\Response(response: 404, description: 'Variant not found'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function show(string $variantId): JsonResponse
     {
         $variant = $this->variant($variantId);
@@ -93,6 +178,34 @@ class ProductVariantController extends Controller
     /**
      * Update a variant. Sending `is_active: true` reactivates a variant switched off at the end of its series.
      */
+    #[OA\Put(
+        path: '/api/v1/inventory/products/variants/{variantId}',
+        summary: 'Update variant',
+        description: 'Update attributes or details of a product variant',
+        tags: ['Product Variants'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'variantId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'sku', type: 'string'),
+                    new OA\Property(property: 'price', type: 'number'),
+                    new OA\Property(property: 'barcode', type: 'string'),
+                    new OA\Property(property: 'attributes', type: 'object'),
+                    new OA\Property(property: 'is_active', type: 'boolean'),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Variant updated successfully'),
+            new OA\Response(response: 404, description: 'Variant not found'),
+            new OA\Response(response: 422, description: 'Validation error'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function update(UpdateProductVariantRequest $request, string $variantId): JsonResponse
     {
         $variant = $this->variant($variantId);
@@ -127,6 +240,22 @@ class ProductVariantController extends Controller
     /**
      * Delete a variant that nothing refers to: stock movements and document lines block the deletion.
      */
+    #[OA\Delete(
+        path: '/api/v1/inventory/products/variants/{variantId}',
+        summary: 'Delete variant',
+        description: 'Delete an unreferenced product variant',
+        tags: ['Product Variants'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'variantId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Variant deleted successfully'),
+            new OA\Response(response: 404, description: 'Variant not found'),
+            new OA\Response(response: 422, description: 'Cannot delete variant with existing references'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+        ]
+    )]
     public function destroy(ProductReferences $references, string $variantId): JsonResponse
     {
         $variant = $this->variant($variantId);

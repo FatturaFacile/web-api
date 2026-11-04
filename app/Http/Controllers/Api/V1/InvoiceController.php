@@ -489,6 +489,31 @@ class InvoiceController extends Controller
         ]);
     }
 
+    #[OA\Put(
+        path: '/api/v1/sales/invoices/{id}',
+        operationId: 'updateInvoice',
+        description: 'Update notes or due date for an existing invoice.',
+        summary: 'Update invoice',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Invoices', 'Sales'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'notes', type: 'string', nullable: true),
+                    new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Invoice updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Invoice not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
@@ -499,6 +524,22 @@ class InvoiceController extends Controller
         return $this->successResponse(new InvoiceResource($invoice->fresh()), 'Invoice updated successfully');
     }
 
+    #[OA\Delete(
+        path: '/api/v1/sales/invoices/{id}',
+        operationId: 'deleteInvoice',
+        description: 'Soft-delete or cancel an invoice.',
+        summary: 'Delete invoice',
+        security: [['bearerAuth' => []], ['tenantHeader' => []]],
+        tags: ['Invoices', 'Sales'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Invoice deleted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Invoice not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
