@@ -39,6 +39,9 @@ class PermissionSeeder extends Seeder
             ['code' => 'service.tickets.dispatch', 'label_it' => 'Assegnazione Ticket Assistenza', 'label_en' => 'Dispatch Service Tickets'],
             ['code' => 'assets.depreciation.run', 'label_it' => 'Esecuzione Ammortamenti Cespiti', 'label_en' => 'Run Asset Depreciation'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
+            ['code' => 'attendance.view_all', 'label_it' => 'Consultazione Timbrature di Tutti', 'label_en' => 'View Attendance for All Team Members'],
+            ['code' => 'attendance.approve_corrections', 'label_it' => 'Approva Correzioni Timbrature', 'label_en' => 'Approve Attendance Corrections'],
+            ['code' => 'attendance.clock_self', 'label_it' => 'Gestione Propria Timbratura', 'label_en' => 'Manage Own Attendance'],
         ];
 
         foreach ($permissions as $idx => $perm) {

@@ -14,6 +14,7 @@ use App\Models\Payment;
 use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\ServiceReport;
+use App\Models\User;
 use App\Models\WorkOrder;
 use App\Policies\AppointmentPolicy;
 use App\Policies\ContactPolicy;
@@ -65,6 +66,14 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Appointment::class, AppointmentPolicy::class);
         Gate::policy(ServiceReport::class, ServiceReportPolicy::class);
         Gate::policy(Expense::class, ExpensePolicy::class);
+
+        Gate::define('view-all-attendance', function (?User $user): bool {
+            return $user !== null && $user->hasAttendancePermission('view-all-attendance');
+        });
+
+        Gate::define('approve-attendance-corrections', function (?User $user): bool {
+            return $user !== null && $user->hasAttendancePermission('approve-attendance-corrections');
+        });
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 

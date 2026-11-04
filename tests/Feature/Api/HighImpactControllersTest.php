@@ -369,6 +369,27 @@ test('attendance report permits an explicitly selected personal report', functio
         ->assertJsonPath('data.user.id', $this->user->id);
 })->with(['monthly', 'annual']);
 
+test('attendance role permissions map tenant roles to attendance gates', function (): void {
+    $manager = User::factory()->create();
+    $manager->tenants()->attach($this->tenant->id, [
+        'id' => (string) Str::uuid(),
+        'role' => 'manager',
+        'permissions' => json_encode(['view-all-attendance', 'approve-attendance-corrections']),
+    ]);
+
+    $employee = User::factory()->create();
+    $employee->tenants()->attach($this->tenant->id, [
+        'id' => (string) Str::uuid(),
+        'role' => 'employee',
+        'permissions' => json_encode([]),
+    ]);
+
+    expect($manager->can('view-all-attendance'))->toBeTrue()
+        ->and($manager->can('approve-attendance-corrections'))->toBeTrue()
+        ->and($employee->can('view-all-attendance'))->toBeFalse()
+        ->and($employee->can('approve-attendance-corrections'))->toBeFalse();
+});
+
 test('attendance report forbids another tenant member without permission', function (string $period): void {
     $colleague = User::factory()->create();
     $colleague->tenants()->attach($this->tenant->id, [

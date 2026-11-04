@@ -36,6 +36,24 @@ class RoleSeeder extends Seeder
                 ],
             ],
             [
+                'code' => 'employee',
+                'translations' => [
+                    'it' => ['label' => 'Dipendente', 'short_label' => 'Emp', 'description' => 'Gestisce la propria timbratura e può richiedere correzioni personali'],
+                    'en' => ['label' => 'Employee', 'short_label' => 'Emp', 'description' => 'Manages own attendance and can request personal corrections'],
+                    'de' => ['label' => 'Mitarbeiter', 'short_label' => 'MA', 'description' => 'Verwaltet die eigene Zeiterfassung und kann eigene Korrekturen anfragen'],
+                    'fr' => ['label' => 'Employé', 'short_label' => 'Emp', 'description' => 'Gère sa propre présence et peut demander des corrections personnelles'],
+                ],
+            ],
+            [
+                'code' => 'manager',
+                'translations' => [
+                    'it' => ['label' => 'Manager / Responsabile', 'short_label' => 'Mgr', 'description' => 'Consulta le timbrature del team e approva le correzioni'],
+                    'en' => ['label' => 'Manager', 'short_label' => 'Mgr', 'description' => 'Views team attendance and approves correction requests'],
+                    'de' => ['label' => 'Manager', 'short_label' => 'Mgr', 'description' => 'Zeigt die Anwesenheit des Teams an und genehmigt Korrekturen'],
+                    'fr' => ['label' => 'Manager', 'short_label' => 'Mgr', 'description' => 'Consulte la présence de l’équipe et approuve les corrections'],
+                ],
+            ],
+            [
                 'code' => 'finance_director',
                 'translations' => [
                     'it' => ['label' => 'Direttore Finanziario (CFO)', 'short_label' => 'CFO', 'description' => 'Controllo contabilità generale, tesoreria e bilancio'],
