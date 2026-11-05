@@ -9,6 +9,7 @@ use Database\Seeders\ServiceDemoDataSeeder;
 use Database\Seeders\ServiceReferenceSeeder;
 use Database\Seeders\ServiceTestingSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\ServiceManagement\Models\BusinessHoursCalendar;
 use Modules\ServiceManagement\Models\ChangeRequest;
@@ -36,6 +37,7 @@ beforeEach(function () {
     $this->tenant = Tenant::factory()->create();
     app(TenantContext::class)->setTenant($this->tenant);
     $this->user = User::factory()->create();
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     Sanctum::actingAs($this->user);
 });
 

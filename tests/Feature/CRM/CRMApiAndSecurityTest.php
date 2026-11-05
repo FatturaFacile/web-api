@@ -24,7 +24,9 @@ beforeEach(function (): void {
         ['id' => (string) Str::uuid7(), 'name' => 'CRM API User', 'password' => bcrypt('secret')]
     );
 
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     $this->actingAs($this->user);
+    $this->withHeader('X-Tenant-Id', (string) $this->tenant->id);
 });
 
 test('lists and creates leads via API', function (): void {
@@ -130,6 +132,9 @@ test('enforces soft deletes and multi-tenant isolation', function (): void {
 
     $delResponse = $this->deleteJson("/api/v1/crm/leads/{$lead->id}");
     $delResponse->assertStatus(204);
+
+    // The tenant middleware clears the context at the end of the request.
+    app(TenantContext::class)->setTenant($this->tenant);
 
     expect(Lead::where('id', $lead->id)->count())->toBe(0);
     expect(Lead::withTrashed()->where('id', $lead->id)->count())->toBe(1);
