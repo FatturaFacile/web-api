@@ -6,7 +6,7 @@ set -eu
 cd "$(dirname "$0")"
 
 [ -f .env ] || { echo ".env missing in $(pwd)"; exit 1; }
-mkdir -p fe inglorious website
+mkdir -p fe inglorious
 
 docker compose pull app queue_worker scheduler
 docker compose up -d postgres
