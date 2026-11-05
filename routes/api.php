@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\TranslationController;
 use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
+use App\Http\Controllers\Api\V1\Admin\TenantAccessRequestController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
@@ -50,6 +51,7 @@ use App\Http\Controllers\Api\V1\ProfessionalsController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchasesController;
 use App\Http\Controllers\Api\V1\QuoteController;
+use App\Http\Controllers\Api\V1\RegistrationController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SalesOrderLineController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
@@ -73,7 +75,21 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
-    Route::post('/auth/login', [AuthController::class, 'login'])->name('auth.login');
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('locale')->name('auth.login');
+    Route::middleware('locale')->prefix('auth')->name('auth.')->group(function (): void {
+        Route::post('/register', [RegistrationController::class, 'register'])->middleware('throttle:registration')->name('register');
+        Route::get('/verify-email', [RegistrationController::class, 'verify'])->middleware('throttle:email-verification')->name('verify-email');
+        Route::post('/resend-verification-email', [RegistrationController::class, 'resend'])->middleware('throttle:verification-resend')->name('resend-verification-email');
+    });
+
+    // Platform administrators work across tenants, so these routes have no tenant context.
+    Route::middleware(['auth:sanctum', 'platform.admin', 'locale'])->prefix('admin')->name('admin.')->group(function (): void {
+        Route::get('/tenant-access-requests', [TenantAccessRequestController::class, 'index'])->name('tenant-access-requests.index');
+        Route::post('/tenant-access-requests/{id}/approve', [TenantAccessRequestController::class, 'approve'])->name('tenant-access-requests.approve');
+        Route::post('/tenant-access-requests/{id}/move', [TenantAccessRequestController::class, 'move'])->name('tenant-access-requests.move');
+        Route::post('/tenant-access-requests/{id}/reject', [TenantAccessRequestController::class, 'reject'])->name('tenant-access-requests.reject');
+    });
+
     Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
         ->middleware('throttle:5,1')
         ->name('system.bootstrap-support');

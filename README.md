@@ -104,45 +104,96 @@ graph TD
 
 ### Prerequisites
 
-- **PHP**: `^8.2` (Extensions: `pdo`, `pdo_pgsql`, `pdo_sqlite`, `bcmath`, `mbstring`, `openssl`, `xml`, `curl`)
+- **PHP**: `^8.5` (Extensions: `pdo`, `pdo_pgsql`, `bcmath`, `mbstring`, `openssl`, `xml`, `curl`)
 - **Composer**: `^2.6`
-- **PostgreSQL**: `^16.0` (or SQLite `^3.35` for local quick testing)
-- **Node.js**: `^20.0` (optional for front-end asset pipelines)
-
-### Docker Compose (One-Liner)
-
-```bash
-git clone https://github.com/FatturaFacile/web-api.git fattura-facile
-cd fattura-facile
-docker compose up -d
-docker compose exec app php artisan erp:bootstrap
-```
+- **Docker**: for PostgreSQL and Mailpit
+- **Node.js**: `^22.0` with Corepack, for [web-frontend](https://github.com/FatturaFacile/web-frontend)
 
 ### Local Development Setup
 
+The API runs on your machine; PostgreSQL and [Mailpit](https://mailpit.axllent.org/), which catches every email, run
+in Docker through `docker-compose.local.yml`.
+
+> `docker compose up` without `-f` starts `compose.yaml`, the Laravel Sail stack with MySQL: it is not this setup.
+
+#### First run
+
 ```bash
-# 1. Install Composer dependencies
-composer install --prefer-dist --optimize-autoloader
-
-# 2. Configure Environment
+# 1. Install the dependencies and create the environment file
+composer install
 cp .env.example .env
+```
+
+```dotenv
+# 2. Set these values in .env
+DB_CONNECTION=pgsql
+DB_HOST=127.0.0.1
+DB_PORT=5432
+DB_DATABASE=fatturafacile
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+
+QUEUE_CONNECTION=database
+# QUEUE_CONNECTION=sync # For immediate testing
+
+MAIL_MAILER=smtp
+MAIL_HOST=127.0.0.1
+MAIL_PORT=1025
+```
+
+```bash
+# 3. Start PostgreSQL and Mailpit
+docker compose -f docker-compose.local.yml up -d --wait
+
+# 4. Prepare the application and the database
 php artisan key:generate
-
-# 3. Configure Database connection in .env
-# DB_CONNECTION=pgsql
-# DB_HOST=127.0.0.1
-# DB_PORT=5432
-# DB_DATABASE=fatturafacile
-# DB_USERNAME=postgres
-# DB_PASSWORD=your_secure_password
-
-# 4. Bootstrap the Platform with Single Command
+php artisan migrate
 php artisan erp:bootstrap
 ```
 
+#### Every day
+
+```bash
+docker compose -f docker-compose.local.yml up -d --wait
+
+php artisan serve        # terminal 1: API on http://localhost:8000
+php artisan queue:work   # terminal 2: without it, queued emails are not sent
+```
+
+Then start the frontend in `web-frontend` with `corepack pnpm install` (first time only) and
+`corepack pnpm run start:local`.
+
+| Service | Address |
+|---|---|
+| Application | https://localhost:4200 (`admin@demo-group.com` / `Password123!`) |
+| API | http://localhost:8000 |
+| Mailpit inbox | http://localhost:8025 |
+
+#### Managing the local services
+
+```bash
+docker compose -f docker-compose.local.yml stop      # stop them, keeping the data
+docker compose -f docker-compose.local.yml down      # remove the containers, keeping the data
+docker compose -f docker-compose.local.yml down -v   # remove the containers and the database
+
+php artisan migrate:fresh && php artisan erp:bootstrap   # rebuild the database from scratch
+```
+
+#### Approving a registration
+
+A new account needs a confirmed email address and the approval of a platform administrator, through the API:
+
+```bash
+php artisan auth:grant-platform-admin admin@demo-group.com
+```
+
+Sign in as that user, list the requests with `GET /api/v1/admin/tenant-access-requests`, then call
+`POST /api/v1/admin/tenant-access-requests/{id}/approve`, `/move` or `/reject`.
+
 ### The Platform Bootstrap Command
 
-The `php artisan erp:bootstrap` command brings the entire platform from zero to fully operational in seconds:
+The `php artisan erp:bootstrap` command fills a migrated database with reference data, users and demo records. It does
+not create the tables: run `php artisan migrate` first.
 
 ```bash
 # Full bootstrap with Demo Environment:
@@ -150,22 +201,18 @@ php artisan erp:bootstrap
 
 # Production bootstrap (reference and system catalog only, zero demo records):
 php artisan erp:bootstrap --without-demo
-
-# Clean bootstrap dropping all tables first:
-php artisan erp:bootstrap --fresh
 ```
 
 #### Bootstrap Execution Phases:
 
-1. **Environment Verification**: Validates PHP runtime version, required extensions, and DB connectivity.
-2. **Database Migration**: Executes schema migrations with foreign keys, checks, and GIN indexes.
-3. **Global Reference Data Seeding**: Populates 370+ lookup records across 12 domains in 4 languages (`it`, `en`, `de`,
-   `fr`) with `tenant_id = null`.
-4. **System Security Provisioning**: Seeds foundational tenants, roles, and granular RBAC permissions.
-5. **Dashboard Layout Generation**: Configures role-specific executive and operational dashboard workspaces.
-6. **Demo Environment Population**: Creates realistic cross-module operational records for `tenant_demo`.
-7. **Cache Optimization**: Warms configuration, routing, and event caches.
-8. **Health Check Verification**: Asserts database integrity, tenant existence, and lookup accessibility.
+1. **Roles & Permissions**: Seeds the global roles and system permissions.
+2. **Workflow Engine**: Seeds the approval statuses and states.
+3. **Global Reference Data**: Populates the lookups and translations in 4 languages (`it`, `en`, `de`, `fr`).
+4. **Domain Catalogs**: Registers the reference catalogs of each module.
+5. **Tenants**: Provisions the base and demo tenants.
+6. **Users**: Creates the administrative and departmental users.
+7. **Dashboards**: Generates the role-specific dashboard layouts.
+8. **Demo Environment**: Creates the cross-module demo records (skipped with `--without-demo`).
 
 ---
 
@@ -268,6 +315,20 @@ cross-module transactional flows.
 
 The platform is fortified by a comprehensive Pest PHP feature and integration test suite covering end-to-end business
 lifecycles:
+
+The tests use a dedicated PostgreSQL kept in memory, from `docker-compose.test.yml` and `.env.testing`. It takes port
+5432 like the local database, so run one at a time:
+
+```bash
+docker compose -f docker-compose.local.yml stop           # free port 5432, keeping the local data
+docker compose -f docker-compose.test.yml up -d --wait    # start the test database
+php artisan migrate:fresh --env=testing --force           # create its tables
+
+# ... run the tests below ...
+
+docker compose -f docker-compose.test.yml down            # remove the test database
+docker compose -f docker-compose.local.yml up -d --wait   # back to local development
+```
 
 ```bash
 # Run all enterprise integration tests:

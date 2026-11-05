@@ -26,6 +26,7 @@ beforeEach(function (): void {
         'password' => Hash::make('Password123!'),
         'locale' => 'it',
         'is_active' => true,
+        'email_verified_at' => now(),
     ]);
 
     $this->user->tenants()->attach($this->tenant->id, [

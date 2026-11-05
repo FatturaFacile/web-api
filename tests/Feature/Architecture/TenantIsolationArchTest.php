@@ -25,6 +25,7 @@ use App\Models\RtFiscalReceipt;
 use App\Models\SalesOrderItem;
 use App\Models\SubscriptionItem;
 use App\Models\Tenant;
+use App\Models\TenantAccessRequest;
 use App\Models\Translation;
 use App\Models\User;
 use App\Models\WorkOrderLine;
@@ -80,6 +81,7 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
     $excludedModels = [
         // Central models
         Tenant::class,
+        TenantAccessRequest::class,
         User::class,
         Translation::class,
         ExchangeRate::class,

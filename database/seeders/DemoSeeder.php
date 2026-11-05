@@ -82,6 +82,7 @@ class DemoSeeder extends Seeder
             'password' => 'password',
             'locale' => 'it',
             'is_active' => true,
+            'email_verified_at' => now(),
         ]);
         $user->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'owner']);
 

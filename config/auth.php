@@ -114,4 +114,27 @@ return [
 
     'password_timeout' => env('AUTH_PASSWORD_TIMEOUT', 10800),
 
+    /*
+    |--------------------------------------------------------------------------
+    | Self-registration
+    |--------------------------------------------------------------------------
+    */
+
+    'registration' => [
+        'verification_expires_minutes' => (int) env('AUTH_VERIFICATION_EXPIRES_MINUTES', 1440),
+        'prune_unverified_after_days' => (int) env('AUTH_PRUNE_UNVERIFIED_AFTER_DAYS', 7),
+        'password' => [
+            'min_length' => (int) env('AUTH_PASSWORD_MIN_LENGTH', 10),
+            'mixed_case' => (bool) env('AUTH_PASSWORD_MIXED_CASE', true),
+            'numbers' => (bool) env('AUTH_PASSWORD_NUMBERS', true),
+            'symbols' => (bool) env('AUTH_PASSWORD_SYMBOLS', true),
+        ],
+        'rate_limits' => [
+            'register_per_minute' => (int) env('AUTH_REGISTER_PER_MINUTE', 5),
+            'verify_per_minute' => (int) env('AUTH_VERIFY_PER_MINUTE', 20),
+            'resend_per_minute' => (int) env('AUTH_RESEND_PER_MINUTE', 3),
+            'resend_per_hour' => (int) env('AUTH_RESEND_PER_HOUR', 5),
+        ],
+    ],
+
 ];

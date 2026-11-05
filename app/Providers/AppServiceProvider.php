@@ -34,8 +34,12 @@ use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
 use App\Services\Tenancy\TenantContext;
 use Dedoc\Scramble\Scramble;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -68,6 +72,31 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Appointment::class, AppointmentPolicy::class);
         Gate::policy(ServiceReport::class, ServiceReportPolicy::class);
         Gate::policy(Expense::class, ExpensePolicy::class);
+
+        Password::defaults(function (): Password {
+            $rule = Password::min((int) config('auth.registration.password.min_length'));
+
+            if (config('auth.registration.password.mixed_case')) {
+                $rule = $rule->mixedCase();
+            }
+
+            if (config('auth.registration.password.numbers')) {
+                $rule = $rule->numbers();
+            }
+
+            if (config('auth.registration.password.symbols')) {
+                $rule = $rule->symbols();
+            }
+
+            return $rule;
+        });
+
+        RateLimiter::for('registration', fn (Request $request): Limit => Limit::perMinute((int) config('auth.registration.rate_limits.register_per_minute'))->by($request->ip()));
+        RateLimiter::for('email-verification', fn (Request $request): Limit => Limit::perMinute((int) config('auth.registration.rate_limits.verify_per_minute'))->by($request->ip()));
+        RateLimiter::for('verification-resend', fn (Request $request): array => [
+            Limit::perMinute((int) config('auth.registration.rate_limits.resend_per_minute'))->by('ip:'.$request->ip()),
+            Limit::perHour((int) config('auth.registration.rate_limits.resend_per_hour'))->by('email:'.mb_strtolower((string) $request->input('email'))),
+        ]);
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 
