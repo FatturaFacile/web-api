@@ -14,6 +14,7 @@ use App\Models\Tenant;
 use App\Models\TenantBackup;
 use App\Services\Banking\BankReconciliationService;
 use App\Services\Tenancy\TenantContext;
+use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Generator;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\Auth;
@@ -40,6 +41,9 @@ use ZipArchive;
  *
  * Secrets are not part of backups: the credentials of e-commerce channels survive only for channels that still exist,
  * and restored channels without credentials are deactivated. Users and memberships are never touched.
+ *
+ * The audit ledger is immutable, so it is never replaced: the entries of the archive go to
+ * `enterprise_audit_ledger_archive`, grouped by restore, and the active ledger records the restore itself.
  */
 class TenantRestoreService
 {
@@ -51,6 +55,7 @@ class TenantRestoreService
         private readonly RecordPayment $payments,
         private readonly RecordSupplierPayment $supplierPayments,
         private readonly BankReconciliationService $reconciliation,
+        private readonly AuditLedgerInterface $auditLedger,
     ) {}
 
     /**
@@ -352,85 +357,151 @@ class TenantRestoreService
      * Delete the data of the tenant and load the archive, all inside the caller's transaction.
      *
      * @param  array<string, \Closure(Builder): Builder>  $scopes
-     * @return array{tables: int, rows: int, skipped_rows: int}
+     * @return array{tables: int, rows: int, skipped_rows: int, restore_id: string, archived_audit_entries: int}
      */
     private function restoreData(ZipArchive $zip, Tenant $tenant, array $scopes): array
     {
         Tenant::query()->lockForUpdate()->findOrFail($tenant->id);
         $this->deferForeignKeyChecks();
 
-        try {
-            $secrets = $this->snapshotSecrets($scopes);
+        $secrets = $this->snapshotSecrets($scopes);
 
-            // Delete child tables referencing invoices/orders/contacts first to prevent FK constraint violations
-            $priorityChildren = ['payments', 'invoice_items', 'payment_reminders', 'sdi_logs', 'delivery_notes', 'sales_orders'];
-            foreach ($priorityChildren as $child) {
-                if (isset($scopes[$child])) {
-                    $scopes[$child](DB::table($child))->delete();
-                }
+        // Delete child tables referencing invoices/orders/contacts first to prevent FK constraint violations
+        $priorityChildren = ['payments', 'invoice_items', 'payment_reminders', 'sdi_logs', 'delivery_notes', 'sales_orders'];
+        foreach ($priorityChildren as $child) {
+            if (isset($scopes[$child])) {
+                $scopes[$child](DB::table($child))->delete();
             }
+        }
 
-            foreach (array_reverse(array_keys($scopes)) as $table) {
+        foreach (array_reverse(array_keys($scopes)) as $table) {
+            if ($table !== TenantBackupService::AUDIT_LEDGER_TABLE) {
                 $scopes[$table](DB::table($table))->delete();
             }
+        }
 
-            $rows = 0;
-            $skipped = 0;
-            $tables = 0;
-            $table = null;
-            $schema = [];
-            $pending = [];
-            $buffer = [];
+        $restoreId = (string) Str::uuid7();
+        $archived = 0;
+        $archive = [];
 
-            $flush = function () use (&$pending, &$table, &$schema, &$buffer, &$rows): void {
-                if ($table === null) {
-                    return;
-                }
+        $rows = 0;
+        $skipped = 0;
+        $tables = 0;
+        $table = null;
+        $schema = [];
+        $pending = [];
+        $buffer = [];
 
-                $pending = $schema['self'] === null ? $pending : $this->parentsFirst($pending, $schema['self']);
-                $perInsert = max(1, intdiv(self::INSERT_VARIABLE_LIMIT, max(1, count($schema['columns']))));
-
-                foreach (array_chunk($pending, $perInsert) as $chunk) {
-                    DB::table($table)->insert($chunk);
-                }
-
-                $rows += count($pending);
-                $pending = [];
-                $buffer = [];
-            };
-
-            foreach ($this->readData($zip, $tenant) as [$name, $row]) {
-                if ($name !== $table) {
-                    $flush();
-                    $table = $name;
-                    $schema = $this->tableSchema($name, $scopes);
-                    $tables++;
-                }
-
-                if ($row === null) {
-                    continue;
-                }
-
-                $prepared = $this->prepareRow($name, $row, $schema, $tenant, $secrets[$name] ?? []);
-
-                if ($prepared === null) {
-                    $skipped++;
-
-                    continue;
-                }
-
-                $pending[] = $prepared;
-
-                if ($schema['self'] === null && count($pending) >= 200) {
-                    $flush();
-                }
+        $flush = function () use (&$pending, &$table, &$schema, &$buffer, &$rows): void {
+            if ($table === null) {
+                return;
             }
 
-            $flush();
+            $pending = $schema['self'] === null ? $pending : $this->parentsFirst($pending, $schema['self']);
+            $perInsert = max(1, intdiv(self::INSERT_VARIABLE_LIMIT, max(1, count($schema['columns']))));
 
-            return ['tables' => $tables, 'rows' => $rows, 'skipped_rows' => $skipped];
-        } finally {
-            $this->restoreForeignKeyChecks();
+            foreach (array_chunk($pending, $perInsert) as $chunk) {
+                DB::table($table)->insert($chunk);
+            }
+
+            $rows += count($pending);
+            $pending = [];
+            $buffer = [];
+        };
+
+        foreach ($this->readData($zip, $tenant) as [$name, $row]) {
+            if ($name === TenantBackupService::AUDIT_LEDGER_TABLE) {
+                if ($row !== null) {
+                    $archive[] = $row;
+                    $archived++;
+                }
+
+                if (count($archive) >= 200) {
+                    $this->archiveLedgerEntries($archive, $restoreId);
+                    $archive = [];
+                }
+
+                continue;
+            }
+
+            if ($name !== $table) {
+                $flush();
+                $table = $name;
+                $schema = $this->tableSchema($name, $scopes);
+                $tables++;
+            }
+
+            if ($row === null) {
+                continue;
+            }
+
+            $prepared = $this->prepareRow($name, $row, $schema, $tenant, $secrets[$name] ?? []);
+
+            if ($prepared === null) {
+                $skipped++;
+
+                continue;
+            }
+
+            $pending[] = $prepared;
+
+            if ($schema['self'] === null && count($pending) >= 200) {
+                $flush();
+            }
+        }
+
+        $flush();
+        $this->archiveLedgerEntries($archive, $restoreId);
+
+        // Not in a `finally`: a failure aborts the transaction, whose rollback already reverts these settings.
+        $this->restoreForeignKeyChecks();
+
+        $this->auditLedger->recordPayload([
+            'tenant_id' => $tenant->id,
+            'company_id' => $tenant->id,
+            'module_code' => 'SYSTEM',
+            'action' => 'TENANT_RESTORED',
+            'model_class' => Tenant::class,
+            'model_id' => $tenant->id,
+            'actor_user_id' => Auth::id(),
+            'payload_after' => ['restore_id' => $restoreId, 'archived_audit_entries' => $archived, 'rows' => $rows],
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
+        ]);
+
+        return ['tables' => $tables, 'rows' => $rows, 'skipped_rows' => $skipped, 'restore_id' => $restoreId, 'archived_audit_entries' => $archived];
+    }
+
+    /**
+     * Keep the audit entries of the archive exactly as they were, so their hash chain can still be verified.
+     *
+     * @param  array<int, array<string, mixed>>  $entries
+     */
+    private function archiveLedgerEntries(array $entries, string $restoreId): void
+    {
+        if ($entries === []) {
+            return;
+        }
+
+        $columns = array_flip(Schema::getColumnListing(TenantBackupService::AUDIT_LEDGER_TABLE));
+        $archivedAt = now();
+
+        $rows = array_map(function (array $entry) use ($columns, $restoreId, $archivedAt): array {
+            $values = array_map(
+                fn (mixed $value): mixed => is_array($value) ? json_encode($value, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) : $value,
+                array_intersect_key($entry, $columns),
+            );
+
+            return $values + [
+                'archive_id' => (string) Str::uuid7(),
+                'restore_id' => $restoreId,
+                'archived_by' => Auth::id(),
+                'archived_at' => $archivedAt,
+            ];
+        }, $entries);
+
+        foreach (array_chunk($rows, 30) as $chunk) {
+            DB::table('enterprise_audit_ledger_archive')->insert($chunk);
         }
     }
 

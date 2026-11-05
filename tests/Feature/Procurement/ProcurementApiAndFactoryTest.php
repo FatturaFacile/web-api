@@ -49,6 +49,10 @@ beforeEach(function (): void {
         'password' => bcrypt('password123'),
     ]);
 
+    if (! $this->user->belongsToTenant($this->tenant->id)) {
+        $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
+    }
+
     Sanctum::actingAs($this->user);
 });
 

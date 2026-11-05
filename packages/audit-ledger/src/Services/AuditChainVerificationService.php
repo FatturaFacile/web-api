@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Enterprise\AuditLedger\Services;
 
 use Enterprise\AuditLedger\Actions\RecordAuditAction;
+use Enterprise\AuditLedger\Models\AuditLedgerArchiveEntry;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Support\Collection;
 
@@ -28,6 +29,42 @@ final class AuditChainVerificationService
             ->orderBy('id', 'asc')
             ->get();
 
+        return $this->verifyChain($entries);
+    }
+
+    /**
+     * Verifies the chain of the audit entries archived by one restore.
+     *
+     * @return array{
+     *     valid: bool,
+     *     total_verified: int,
+     *     tampered_record_id: ?string,
+     *     error_message: ?string
+     * }
+     */
+    public function verifyArchivedChain(string $tenantId, string $restoreId): array
+    {
+        /** @var Collection<int, AuditLedgerArchiveEntry> $entries */
+        $entries = AuditLedgerArchiveEntry::where('tenant_id', $tenantId)
+            ->where('restore_id', $restoreId)
+            ->orderBy('event_timestamp', 'asc')
+            ->orderBy('id', 'asc')
+            ->get();
+
+        return $this->verifyChain($entries);
+    }
+
+    /**
+     * @param  Collection<int, AuditLedgerEntry|AuditLedgerArchiveEntry>  $entries
+     * @return array{
+     *     valid: bool,
+     *     total_verified: int,
+     *     tampered_record_id: ?string,
+     *     error_message: ?string
+     * }
+     */
+    private function verifyChain(Collection $entries): array
+    {
         if ($entries->isEmpty()) {
             return [
                 'valid' => true,

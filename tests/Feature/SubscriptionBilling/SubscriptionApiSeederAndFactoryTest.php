@@ -38,6 +38,7 @@ beforeEach(function () {
     $this->tenant = Tenant::factory()->create();
     app(TenantContext::class)->setTenant($this->tenant);
     $this->user = User::factory()->create();
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     $this->actingAs($this->user);
 
     $this->plan = SubscriptionPlan::factory()->create([

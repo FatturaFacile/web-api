@@ -27,7 +27,7 @@ class LookupTest extends TestCase
 
     public function test_it_returns_lookups_in_default_italian(): void
     {
-        $response = $this->getJson('/api/lookups/unit_of_measure');
+        $response = $this->getJson('/api/v1/lookups/unit_of_measure');
 
         $response->assertOk();
         $items = $response->json();
@@ -43,19 +43,19 @@ class LookupTest extends TestCase
     public function test_it_returns_lookups_in_english_german_and_french(): void
     {
         // English
-        $responseEn = $this->getJson('/api/lookups/unit_of_measure?locale=en');
+        $responseEn = $this->getJson('/api/v1/lookups/unit_of_measure?locale=en');
         $responseEn->assertOk();
         $nrEn = collect($responseEn->json())->firstWhere('code', 'NR');
         $this->assertSame('Number', $nrEn['label']);
 
         // German
-        $responseDe = $this->getJson('/api/lookups/unit_of_measure?locale=de');
+        $responseDe = $this->getJson('/api/v1/lookups/unit_of_measure?locale=de');
         $responseDe->assertOk();
         $nrDe = collect($responseDe->json())->firstWhere('code', 'NR');
         $this->assertSame('Anzahl', $nrDe['label']);
 
         // French
-        $responseFr = $this->getJson('/api/lookups/unit_of_measure?locale=fr');
+        $responseFr = $this->getJson('/api/v1/lookups/unit_of_measure?locale=fr');
         $responseFr->assertOk();
         $nrFr = collect($responseFr->json())->firstWhere('code', 'NR');
         $this->assertSame('Numéro', $nrFr['label']);
@@ -63,7 +63,7 @@ class LookupTest extends TestCase
 
     public function test_it_returns_404_for_unknown_category(): void
     {
-        $response = $this->getJson('/api/lookups/non_existing_category');
+        $response = $this->getJson('/api/v1/lookups/non_existing_category');
         $response->assertNotFound();
     }
 
@@ -88,13 +88,13 @@ class LookupTest extends TestCase
         ]);
 
         // Global query should still return "Numero"
-        $globalResponse = $this->getJson('/api/lookups/unit_of_measure?locale=it');
+        $globalResponse = $this->getJson('/api/v1/lookups/unit_of_measure?locale=it');
         $globalNr = collect($globalResponse->json())->firstWhere('code', 'NR');
         $this->assertSame('Numero', $globalNr['label']);
 
         // Tenant query via header should return "Pezzi Custom"
         $tenantResponse = $this->withHeader('X-Tenant-Id', $tenant->id)
-            ->getJson('/api/lookups/unit_of_measure?locale=it');
+            ->getJson('/api/v1/lookups/unit_of_measure?locale=it');
         $tenantNr = collect($tenantResponse->json())->firstWhere('code', 'NR');
         $this->assertSame('Pezzi Custom', $tenantNr['label']);
         $this->assertSame('pz', $tenantNr['short_label']);
@@ -119,7 +119,7 @@ class LookupTest extends TestCase
         $item = LookupItem::where('category_id', $category->id)->where('code', 'CASH')->firstOrFail();
 
         // Warm cache
-        $this->getJson('/api/lookups/payment_type?locale=it');
+        $this->getJson('/api/v1/lookups/payment_type?locale=it');
 
         // Post custom translation
         $payload = [
@@ -143,7 +143,7 @@ class LookupTest extends TestCase
 
         // Subsequent query should serve updated translation
         $fetchResponse = $this->withHeader('X-Tenant-Id', $tenant->id)
-            ->getJson('/api/lookups/payment_type?locale=it');
+            ->getJson('/api/v1/lookups/payment_type?locale=it');
         $cashItem = collect($fetchResponse->json())->firstWhere('code', 'CASH');
         $this->assertSame('Contanti di Cassa', $cashItem['label']);
     }
@@ -155,7 +155,6 @@ class LookupTest extends TestCase
         $payload = ['lookup_item_id' => $item->id, 'locale' => 'it', 'label' => 'Overwritten'];
 
         $this->postJson('/api/v1/lookups/translations', $payload)->assertUnauthorized();
-        $this->postJson('/api/lookups/translations', $payload)->assertStatus(405);
 
         $this->assertDatabaseMissing('lookup_item_translations', ['label' => 'Overwritten']);
     }

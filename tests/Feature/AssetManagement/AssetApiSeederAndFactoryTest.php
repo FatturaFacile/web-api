@@ -26,6 +26,7 @@ beforeEach(function (): void {
         ['email' => 'eam.api@example.com'],
         ['id' => (string) Str::uuid7(), 'name' => 'EAM API Operator', 'password' => bcrypt('secret'), 'current_tenant_id' => $this->tenant->id]
     );
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
 });
 
 test('all 9 FixedAssetFactory states generate valid domain models', function (): void {
@@ -73,6 +74,7 @@ test('enforces authentication and executes full asset lifecycle via REST API', f
     $unauthResponse->assertStatus(401);
 
     $this->actingAs($this->user);
+    $this->withHeader('X-Tenant-Id', (string) $this->tenant->id);
 
     // 1. Create Category via API
     $catResponse = $this->postJson('/api/v1/eam/categories', [

@@ -11,6 +11,7 @@ use Database\Seeders\ManufacturingDemoDataSeeder;
 use Database\Seeders\ManufacturingReferenceSeeder;
 use Database\Seeders\ManufacturingTestingSeeder;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Modules\Manufacturing\Models\MfgBom;
 use Modules\Manufacturing\Models\MfgBomComponent;
 use Modules\Manufacturing\Models\MfgEngineeringChangeOrder;
@@ -44,6 +45,7 @@ beforeEach(function () {
     app(TenantContext::class)->setTenant($this->tenant);
 
     $this->user = User::factory()->create();
+    $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     $this->actingAs($this->user);
 
     $this->item = MfgItem::factory()->create(['tenant_id' => $this->tenant->id]);

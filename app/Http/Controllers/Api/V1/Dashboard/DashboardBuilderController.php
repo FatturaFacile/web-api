@@ -209,12 +209,25 @@ class DashboardBuilderController extends Controller
      */
     private function present(?DashboardLayout $layout): array
     {
+        if ($layout === null) {
+            return [
+                'id' => null,
+                'name' => self::DEFAULT_NAME,
+                'is_default' => true,
+                'is_customized' => false,
+                'widgets_layout' => $this->registry->getDefaultLayout(),
+                'updated_at' => null,
+            ];
+        }
+
         return [
-            'id' => $layout?->id,
-            'name' => $layout?->name ?? self::DEFAULT_NAME,
-            'is_default' => $layout?->is_default ?? true,
-            'widgets_layout' => $layout?->widgets_layout ?? $this->registry->defaultLayout(),
-            'updated_at' => $layout?->updated_at?->toIso8601String(),
+            'id' => $layout->id,
+            'name' => $layout->name,
+            'is_default' => $layout->is_default,
+            'is_customized' => true,
+            // Widgets that are no longer registered are left out.
+            'widgets_layout' => array_values(array_filter($layout->widgets_layout, fn (array $entry): bool => $this->registry->has((string) ($entry['widget_id'] ?? '')))),
+            'updated_at' => $layout->updated_at?->toIso8601String(),
         ];
     }
 }

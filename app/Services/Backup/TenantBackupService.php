@@ -40,6 +40,12 @@ class TenantBackupService
      */
     public const SAFETY_PREFIX = 'pre-restore-safety-';
 
+    /**
+     * Exported once through this table: its partitions and its archive (same prefix) stay out of the backups, and a
+     * restore moves its rows to the archive instead of replacing the active ledger.
+     */
+    public const AUDIT_LEDGER_TABLE = 'enterprise_audit_ledger';
+
     public const EXCLUDED_TABLES = [
         'migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens',
         'personal_access_tokens', 'tenants', 'users', 'tenant_user', 'tenant_backups',
@@ -276,7 +282,7 @@ ailed when the snapshot could not be built.
 
         $tables = array_values(array_filter(
             Schema::getTableListing(schemaQualified: false),
-            fn (string $table): bool => ! in_array($table, self::EXCLUDED_TABLES, true) && ! str_starts_with($table, 'telescope_'),
+            fn (string $table): bool => ! in_array($table, self::EXCLUDED_TABLES, true) && ! str_starts_with($table, self::AUDIT_LEDGER_TABLE.'_') && ! str_starts_with($table, 'telescope_'),
         ));
 
         $directTables = [];

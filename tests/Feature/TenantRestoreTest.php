@@ -16,6 +16,9 @@ use App\Models\TenantBackup;
 use App\Models\User;
 use App\Services\Backup\TenantBackupService;
 use App\Services\Backup\TenantRestoreService;
+use Enterprise\AuditLedger\Models\AuditLedgerArchiveEntry;
+use Enterprise\AuditLedger\Models\AuditLedgerEntry;
+use Enterprise\AuditLedger\Services\AuditChainVerificationService;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -211,6 +214,38 @@ test('secrets survive for existing channels and restored channels without creden
         ->and($restored->is_active)->toBeFalse();
 
     expect($backup->refresh()->status)->toBe('completed');
+});
+
+test('a restore keeps the active audit ledger and archives the entries of the backup', function (): void {
+    trSeed($this->tenant, 'Alpha');
+    $backup = trBackup($this->tenant);
+
+    $verifier = app(AuditChainVerificationService::class);
+    $backupEntries = AuditLedgerEntry::where('tenant_id', $this->tenant->id)->count();
+    expect($backupEntries)->toBeGreaterThan(0);
+
+    Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->first()->update(['company_name' => 'Changed after backup']);
+    $entriesBeforeRestore = AuditLedgerEntry::where('tenant_id', $this->tenant->id)->pluck('id')->all();
+
+    $summary = app(TenantRestoreService::class)->restoreBackup($backup, $this->tenant);
+
+    $archive = AuditLedgerArchiveEntry::where('tenant_id', $this->tenant->id)->where('restore_id', $summary['restore_id']);
+
+    expect($summary['archived_audit_entries'])->toBe($backupEntries)
+        ->and($archive->count())->toBe($backupEntries)
+        ->and(AuditLedgerEntry::where('tenant_id', $this->tenant->id)->whereIn('id', $entriesBeforeRestore)->count())->toBe(count($entriesBeforeRestore))
+        ->and(AuditLedgerEntry::where('tenant_id', $this->tenant->id)->where('action', 'TENANT_RESTORED')->count())->toBe(1)
+        ->and($verifier->verifyTenantChain($this->tenant->id)['valid'])->toBeTrue()
+        ->and($verifier->verifyArchivedChain($this->tenant->id, $summary['restore_id'])['valid'])->toBeTrue();
+
+    expect(fn () => $archive->first()->update(['action' => 'TAMPERED']))->toThrow(LogicException::class);
+});
+
+test('backups export the audit ledger once and never its partitions or its archive', function (): void {
+    $tables = array_keys(app(TenantBackupService::class)->tableScopes($this->tenant->id));
+
+    expect($tables)->toContain('enterprise_audit_ledger')
+        ->and(array_filter($tables, fn (string $table): bool => str_starts_with($table, 'enterprise_audit_ledger_')))->toBe([]);
 });
 
 test('the restore endpoints restore a stored backup and an uploaded archive', function (): void {
