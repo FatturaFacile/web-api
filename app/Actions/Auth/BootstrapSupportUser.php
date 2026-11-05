@@ -57,7 +57,6 @@ class BootstrapSupportUser
                 'locale' => 'it',
                 'email_verified_at' => now(),
             ]);
-            $user->forceFill(['is_platform_admin' => true])->save();
 
             try {
                 Mail::to($user->email)->send(new SupportUserBootstrappedMail($user, $rawPassword));

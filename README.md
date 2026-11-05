@@ -112,7 +112,7 @@ graph TD
 ### Local Development Setup
 
 The API runs on your machine; PostgreSQL and [Mailpit](https://mailpit.axllent.org/), which catches every email, run
-in Docker through `docker-compose.local.yml`.
+in Docker through `docker-compose.local.yml`, which takes the database credentials from `.env`.
 
 > `docker compose up` without `-f` starts `compose.yaml`, the Laravel Sail stack with MySQL: it is not this setup.
 

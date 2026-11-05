@@ -131,6 +131,7 @@ return [
         ],
         'rate_limits' => [
             'register_per_minute' => (int) env('AUTH_REGISTER_PER_MINUTE', 5),
+            'register_per_email_per_hour' => (int) env('AUTH_REGISTER_PER_EMAIL_PER_HOUR', 3),
             'verify_per_minute' => (int) env('AUTH_VERIFY_PER_MINUTE', 20),
             'resend_per_minute' => (int) env('AUTH_RESEND_PER_MINUTE', 3),
             'resend_per_hour' => (int) env('AUTH_RESEND_PER_HOUR', 5),

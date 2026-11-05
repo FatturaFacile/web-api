@@ -91,11 +91,20 @@ class AppServiceProvider extends ServiceProvider
             return $rule;
         });
 
-        RateLimiter::for('registration', fn (Request $request): Limit => Limit::perMinute((int) config('auth.registration.rate_limits.register_per_minute'))->by($request->ip()));
+        $emailKey = function (Request $request): string {
+            $email = $request->input('email');
+
+            return 'email:'.(is_string($email) ? mb_strtolower(trim($email)) : '');
+        };
+
+        RateLimiter::for('registration', fn (Request $request): array => [
+            Limit::perMinute((int) config('auth.registration.rate_limits.register_per_minute'))->by('ip:'.$request->ip()),
+            Limit::perHour((int) config('auth.registration.rate_limits.register_per_email_per_hour'))->by($emailKey($request)),
+        ]);
         RateLimiter::for('email-verification', fn (Request $request): Limit => Limit::perMinute((int) config('auth.registration.rate_limits.verify_per_minute'))->by($request->ip()));
         RateLimiter::for('verification-resend', fn (Request $request): array => [
             Limit::perMinute((int) config('auth.registration.rate_limits.resend_per_minute'))->by('ip:'.$request->ip()),
-            Limit::perHour((int) config('auth.registration.rate_limits.resend_per_hour'))->by('email:'.mb_strtolower((string) $request->input('email'))),
+            Limit::perHour((int) config('auth.registration.rate_limits.resend_per_hour'))->by($emailKey($request)),
         ]);
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
