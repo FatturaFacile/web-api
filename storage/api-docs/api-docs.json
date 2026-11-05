@@ -336,236 +336,6 @@
                 ]
             }
         },
-        "/api/v1/accounting/chart-of-accounts": {
-            "get": {
-                "tags": [
-                    "Accounting"
-                ],
-                "summary": "Get chart of accounts",
-                "description": "Get chart of accounts ordered by account code.",
-                "operationId": "getChartOfAccounts",
-                "responses": {
-                    "200": {
-                        "description": "Chart of accounts retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/accounting/ledger-entries": {
-            "get": {
-                "tags": [
-                    "Accounting"
-                ],
-                "summary": "List ledger entries",
-                "description": "Get paginated general ledger entries.",
-                "operationId": "getLedgerEntries",
-                "parameters": [
-                    {
-                        "name": "page",
-                        "in": "query",
-                        "description": "Page number",
-                        "required": false,
-                        "schema": {
-                            "type": "integer",
-                            "default": 1
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "General ledger entries retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Accounting"
-                ],
-                "summary": "Post ledger entry",
-                "description": "Post a new double-entry general ledger journal entry (must balance debit and credit).",
-                "operationId": "createLedgerEntry",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "entry_number",
-                                    "date",
-                                    "description",
-                                    "lines"
-                                ],
-                                "properties": {
-                                    "entry_number": {
-                                        "type": "string",
-                                        "example": "GL-2026-0001"
-                                    },
-                                    "date": {
-                                        "type": "string",
-                                        "format": "date",
-                                        "example": "2026-10-25"
-                                    },
-                                    "description": {
-                                        "type": "string",
-                                        "example": "Monthly payroll posting"
-                                    },
-                                    "lines": {
-                                        "type": "array",
-                                        "items": {
-                                            "required": [
-                                                "account_id",
-                                                "debit",
-                                                "credit"
-                                            ],
-                                            "properties": {
-                                                "account_id": {
-                                                    "type": "string",
-                                                    "format": "uuid"
-                                                },
-                                                "debit": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 500
-                                                },
-                                                "credit": {
-                                                    "type": "number",
-                                                    "format": "float",
-                                                    "example": 0
-                                                },
-                                                "description": {
-                                                    "type": "string",
-                                                    "nullable": true
-                                                }
-                                            },
-                                            "type": "object"
-                                        }
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "General ledger entry posted successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Unbalanced ledger entry or validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/accounting/vat-settlements": {
-            "get": {
-                "tags": [
-                    "Accounting"
-                ],
-                "summary": "Get VAT settlements",
-                "description": "Get VAT settlements and periodic liquidations.",
-                "operationId": "getVatSettlements",
-                "responses": {
-                    "200": {
-                        "description": "VAT settlements retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/v1/accounting/general-ledger": {
             "get": {
                 "tags": [
@@ -808,6 +578,555 @@
                     },
                     {
                         "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/accounting/chart-of-accounts": {
+            "get": {
+                "tags": [
+                    "Accounting"
+                ],
+                "summary": "Get chart of accounts",
+                "description": "Get chart of accounts ordered by account code.",
+                "operationId": "getChartOfAccounts",
+                "responses": {
+                    "200": {
+                        "description": "Chart of accounts retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/accounting/ledger-entries": {
+            "get": {
+                "tags": [
+                    "Accounting"
+                ],
+                "summary": "List ledger entries",
+                "description": "Get paginated general ledger entries.",
+                "operationId": "getLedgerEntries",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Page number",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "General ledger entries retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Accounting"
+                ],
+                "summary": "Post ledger entry",
+                "description": "Post a new double-entry general ledger journal entry (must balance debit and credit).",
+                "operationId": "createLedgerEntry",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "entry_number",
+                                    "date",
+                                    "description",
+                                    "lines"
+                                ],
+                                "properties": {
+                                    "entry_number": {
+                                        "type": "string",
+                                        "example": "GL-2026-0001"
+                                    },
+                                    "date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "example": "2026-10-25"
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "example": "Monthly payroll posting"
+                                    },
+                                    "lines": {
+                                        "type": "array",
+                                        "items": {
+                                            "required": [
+                                                "account_id",
+                                                "debit",
+                                                "credit"
+                                            ],
+                                            "properties": {
+                                                "account_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                },
+                                                "debit": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 500
+                                                },
+                                                "credit": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 0
+                                                },
+                                                "description": {
+                                                    "type": "string",
+                                                    "nullable": true
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "General ledger entry posted successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unbalanced ledger entry or validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/accounting/vat-settlements": {
+            "get": {
+                "tags": [
+                    "Accounting"
+                ],
+                "summary": "Get VAT settlements",
+                "description": "Get VAT settlements and periodic liquidations.",
+                "operationId": "getVatSettlements",
+                "responses": {
+                    "200": {
+                        "description": "VAT settlements retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/tenant-access-requests": {
+            "get": {
+                "tags": [
+                    "Platform Administration"
+                ],
+                "summary": "List the access requests of self-registered users",
+                "operationId": "listTenantAccessRequests",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "default": "pending",
+                            "enum": [
+                                "pending",
+                                "approved",
+                                "rejected"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 25,
+                            "maximum": 100
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Requests retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a platform administrator",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/tenant-access-requests/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Platform Administration"
+                ],
+                "summary": "Approve an access request",
+                "description": "Confirm the matched tenant, or create the requested company when the registration did not match any.",
+                "operationId": "approveTenantAccessRequest",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "owner",
+                                            "admin",
+                                            "accountant",
+                                            "technician",
+                                            "member"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Request approved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a platform administrator",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Already decided, or email address not confirmed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/tenant-access-requests/{id}/move": {
+            "post": {
+                "tags": [
+                    "Platform Administration"
+                ],
+                "summary": "Give the user access to a different existing tenant",
+                "operationId": "moveTenantAccessRequest",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "tenant_id"
+                                ],
+                                "properties": {
+                                    "tenant_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "role": {
+                                        "type": "string",
+                                        "enum": [
+                                            "owner",
+                                            "admin",
+                                            "accountant",
+                                            "technician",
+                                            "member"
+                                        ]
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Request approved on the chosen tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a platform administrator",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Already decided, or email address not confirmed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/admin/tenant-access-requests/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Platform Administration"
+                ],
+                "summary": "Reject an access request",
+                "operationId": "rejectTenantAccessRequest",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "maxLength": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Request rejected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not a platform administrator",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Already decided, or email address not confirmed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -2080,7 +2399,7 @@
                         }
                     },
                     "403": {
-                        "description": "Account disabled or invalid tenant access",
+                        "description": "Account disabled, email address not confirmed, tenant approval pending or rejected, or invalid tenant access",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -4319,118 +4638,6 @@
                 ]
             }
         },
-        "/api/v1/dashboard/kpi-summary": {
-            "get": {
-                "tags": [
-                    "Dashboard"
-                ],
-                "summary": "Get KPI summary",
-                "description": "Get executive KPI summary (total revenue, unpaid receivables, invoice count).",
-                "operationId": "getKpiSummary",
-                "responses": {
-                    "200": {
-                        "description": "Dashboard KPI summary retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/dashboard/cash-flow-forecast": {
-            "get": {
-                "tags": [
-                    "Dashboard"
-                ],
-                "summary": "Cash flow forecast",
-                "description": "Cash flow 30-60-90 days forecast based on active receivables and payables.",
-                "operationId": "getCashFlowForecast",
-                "responses": {
-                    "200": {
-                        "description": "Cash flow forecast generated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/dashboard/tax-deadlines": {
-            "get": {
-                "tags": [
-                    "Dashboard",
-                    "Fiscal"
-                ],
-                "summary": "Tax and compliance deadlines",
-                "description": "Tax and compliance deadlines (Italian Liquidazione IVA / Swiss MWST Abrechnung / Frontalieri reporting).",
-                "operationId": "getTaxDeadlines",
-                "responses": {
-                    "200": {
-                        "description": "Fiscal deadlines retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ]
-            }
-        },
         "/api/v1/dashboard/available-widgets": {
             "get": {
                 "tags": [
@@ -4698,6 +4905,118 @@
                     },
                     {
                         "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/dashboard/kpi-summary": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Get KPI summary",
+                "description": "Get executive KPI summary (total revenue, unpaid receivables, invoice count).",
+                "operationId": "getKpiSummary",
+                "responses": {
+                    "200": {
+                        "description": "Dashboard KPI summary retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/dashboard/cash-flow-forecast": {
+            "get": {
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "Cash flow forecast",
+                "description": "Cash flow 30-60-90 days forecast based on active receivables and payables.",
+                "operationId": "getCashFlowForecast",
+                "responses": {
+                    "200": {
+                        "description": "Cash flow forecast generated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/dashboard/tax-deadlines": {
+            "get": {
+                "tags": [
+                    "Dashboard",
+                    "Fiscal"
+                ],
+                "summary": "Tax and compliance deadlines",
+                "description": "Tax and compliance deadlines (Italian Liquidazione IVA / Swiss MWST Abrechnung / Frontalieri reporting).",
+                "operationId": "getTaxDeadlines",
+                "responses": {
+                    "200": {
+                        "description": "Fiscal deadlines retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
                     }
                 ]
             }
@@ -6661,256 +6980,6 @@
                 }
             }
         },
-        "/api/v1/inventory/products": {
-            "get": {
-                "tags": [
-                    "Inventory"
-                ],
-                "summary": "List products",
-                "description": "List paginated inventory products with associated brands and parent categories.",
-                "operationId": "getInventoryProducts",
-                "responses": {
-                    "200": {
-                        "description": "Products retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    },
-                    {
-                        "tenantHeader": []
-                    }
-                ]
-            },
-            "post": {
-                "tags": [
-                    "Inventory"
-                ],
-                "summary": "Create product",
-                "description": "Create a new catalog product with SKU, barcode, pricing, and tax rates.",
-                "operationId": "createInventoryProduct",
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "required": [
-                                    "sku",
-                                    "name",
-                                    "sale_price",
-                                    "tax_rate"
-                                ],
-                                "properties": {
-                                    "sku": {
-                                        "type": "string",
-                                        "example": "PROD-001"
-                                    },
-                                    "name": {
-                                        "type": "string",
-                                        "example": "Standard Widget"
-                                    },
-                                    "barcode": {
-                                        "type": "string",
-                                        "example": "8001234567890",
-                                        "nullable": true
-                                    },
-                                    "sale_price": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 49.9
-                                    },
-                                    "cost_price": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 25,
-                                        "nullable": true
-                                    },
-                                    "tax_rate": {
-                                        "type": "number",
-                                        "format": "float",
-                                        "example": 22
-                                    },
-                                    "track_inventory": {
-                                        "type": "boolean",
-                                        "example": true
-                                    }
-                                },
-                                "type": "object"
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "201": {
-                        "description": "Product created successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    },
-                    {
-                        "tenantHeader": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/inventory/products/{id}": {
-            "put": {
-                "tags": [
-                    "Inventory"
-                ],
-                "summary": "Update product",
-                "description": "Update existing product pricing, SKU, or attributes.",
-                "operationId": "updateInventoryProduct",
-                "parameters": [
-                    {
-                        "name": "id",
-                        "in": "path",
-                        "required": true,
-                        "schema": {
-                            "type": "string",
-                            "format": "uuid"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Product updated successfully",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "404": {
-                        "description": "Product not found",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    },
-                    "422": {
-                        "description": "Validation error",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    },
-                    {
-                        "tenantHeader": []
-                    }
-                ]
-            }
-        },
-        "/api/v1/inventory/delivery-notes": {
-            "get": {
-                "tags": [
-                    "Inventory"
-                ],
-                "summary": "List delivery notes",
-                "description": "List transport delivery notes (Documenti di Trasporto - DDT) for logistics.",
-                "operationId": "getInventoryDeliveryNotes",
-                "responses": {
-                    "200": {
-                        "description": "Delivery notes retrieved",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiSuccessResponse"
-                                }
-                            }
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthenticated",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/ApiErrorResponse"
-                                }
-                            }
-                        }
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    },
-                    {
-                        "tenantHeader": []
-                    }
-                ]
-            }
-        },
         "/api/v1/inventory/products/{id}/barcode": {
             "get": {
                 "tags": [
@@ -7375,6 +7444,256 @@
                 "security": [
                     {
                         "sanctum": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/inventory/products": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "List products",
+                "description": "List paginated inventory products with associated brands and parent categories.",
+                "operationId": "getInventoryProducts",
+                "responses": {
+                    "200": {
+                        "description": "Products retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Create product",
+                "description": "Create a new catalog product with SKU, barcode, pricing, and tax rates.",
+                "operationId": "createInventoryProduct",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "sku",
+                                    "name",
+                                    "sale_price",
+                                    "tax_rate"
+                                ],
+                                "properties": {
+                                    "sku": {
+                                        "type": "string",
+                                        "example": "PROD-001"
+                                    },
+                                    "name": {
+                                        "type": "string",
+                                        "example": "Standard Widget"
+                                    },
+                                    "barcode": {
+                                        "type": "string",
+                                        "example": "8001234567890",
+                                        "nullable": true
+                                    },
+                                    "sale_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 49.9
+                                    },
+                                    "cost_price": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 25,
+                                        "nullable": true
+                                    },
+                                    "tax_rate": {
+                                        "type": "number",
+                                        "format": "float",
+                                        "example": 22
+                                    },
+                                    "track_inventory": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Product created successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/inventory/products/{id}": {
+            "put": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "Update product",
+                "description": "Update existing product pricing, SKU, or attributes.",
+                "operationId": "updateInventoryProduct",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Product updated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/inventory/delivery-notes": {
+            "get": {
+                "tags": [
+                    "Inventory"
+                ],
+                "summary": "List delivery notes",
+                "description": "List transport delivery notes (Documenti di Trasporto - DDT) for logistics.",
+                "operationId": "getInventoryDeliveryNotes",
+                "responses": {
+                    "200": {
+                        "description": "Delivery notes retrieved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    },
+                    {
+                        "tenantHeader": []
                     }
                 ]
             }
@@ -12867,6 +13186,215 @@
                         "sanctum": []
                     }
                 ]
+            }
+        },
+        "/api/v1/auth/register": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Self-registration",
+                "description": "Create an account. The answer is the same whether or not the email address or the company is already known.",
+                "operationId": "register",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "first_name",
+                                    "last_name",
+                                    "email",
+                                    "password",
+                                    "password_confirmation",
+                                    "company_name",
+                                    "country",
+                                    "tax_id",
+                                    "terms_accepted",
+                                    "privacy_accepted"
+                                ],
+                                "properties": {
+                                    "first_name": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                    },
+                                    "last_name": {
+                                        "type": "string",
+                                        "maxLength": 100
+                                    },
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    },
+                                    "password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "password_confirmation": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "company_name": {
+                                        "type": "string",
+                                        "maxLength": 255
+                                    },
+                                    "country": {
+                                        "type": "string",
+                                        "enum": [
+                                            "IT",
+                                            "CH"
+                                        ]
+                                    },
+                                    "tax_id": {
+                                        "description": "Italian VAT number or Swiss UID",
+                                        "type": "string"
+                                    },
+                                    "terms_accepted": {
+                                        "type": "boolean"
+                                    },
+                                    "privacy_accepted": {
+                                        "type": "boolean"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Registration accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many attempts"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/verify-email": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Confirm an email address",
+                "description": "Consume a verification token. The account still needs the approval of a platform administrator.",
+                "operationId": "verifyEmail",
+                "parameters": [
+                    {
+                        "name": "token",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Email address confirmed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid or already used token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "410": {
+                        "description": "Expired token",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many attempts"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/resend-verification-email": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Resend the verification email",
+                "description": "Send a new verification link, invalidating the previous one. The answer does not reveal whether the address is known.",
+                "operationId": "resendVerificationEmail",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "email"
+                                ],
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "202": {
+                        "description": "Request accepted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many attempts"
+                    }
+                }
             }
         },
         "/api/v1/sales/orders": {
@@ -22931,6 +23459,10 @@
         {
             "name": "AP",
             "description": "AP"
+        },
+        {
+            "name": "Platform Administration",
+            "description": "Platform Administration"
         },
         {
             "name": "Alerts",

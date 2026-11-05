@@ -51,6 +51,9 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/documentation',
         'api/oauth2-callback',
         'api/v1/auth/login',
+        'api/v1/auth/register',
+        'api/v1/auth/verify-email',
+        'api/v1/auth/resend-verification-email',
         'api/v1/system/bootstrap-support',
         'api/v1/translations',
         'api/v1/lookups',
@@ -91,7 +94,9 @@ test('all non-public API routes have auth:sanctum and tenant middleware explicit
         $middleware = $route->gatherMiddleware();
 
         $hasAuth = in_array('auth:sanctum', $middleware, true);
-        $hasTenant = in_array('tenant', $middleware, true);
+        // Platform administrators work across tenants: their routes are guarded by a role instead.
+        $hasTenant = in_array('tenant', $middleware, true)
+            || (str_starts_with($uri, 'api/v1/admin/') && in_array('platform.admin', $middleware, true));
 
         if (! $hasAuth || ! $hasTenant) {
             $missingSecurityRoutes[] = sprintf(

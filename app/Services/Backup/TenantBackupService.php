@@ -48,7 +48,7 @@ class TenantBackupService
 
     public const EXCLUDED_TABLES = [
         'migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens',
-        'personal_access_tokens', 'tenants', 'users', 'tenant_user', 'tenant_backups',
+        'personal_access_tokens', 'tenants', 'users', 'tenant_user', 'tenant_backups', 'tenant_access_requests',
     ];
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\Auth\AuthProblem;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
@@ -61,7 +62,7 @@ class AuthController extends Controller
             ),
             new OA\Response(
                 response: 403,
-                description: 'Account disabled or invalid tenant access',
+                description: 'Account disabled, email address not confirmed, tenant approval pending or rejected, or invalid tenant access',
                 content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
             ),
             new OA\Response(
@@ -100,7 +101,36 @@ class AuthController extends Controller
             );
         }
 
+        if ($user->email_verified_at === null) {
+            return $this->problemDetailsResponse(
+                title: __('registration.errors.email_not_verified_title'),
+                detail: __('registration.errors.email_not_verified_detail'),
+                status: Response::HTTP_FORBIDDEN,
+                type: AuthProblem::EmailNotVerified->value,
+            );
+        }
+
         $tenants = $user->tenants;
+        $accessRequest = $tenants->isEmpty() ? $user->tenantAccessRequest : null;
+
+        if ($accessRequest?->isPending()) {
+            return $this->problemDetailsResponse(
+                title: __('registration.errors.approval_pending_title'),
+                detail: __('registration.errors.approval_pending_detail'),
+                status: Response::HTTP_FORBIDDEN,
+                type: AuthProblem::TenantApprovalPending->value,
+            );
+        }
+
+        if ($accessRequest?->isRejected()) {
+            return $this->problemDetailsResponse(
+                title: __('registration.errors.access_rejected_title'),
+                detail: __('registration.errors.access_rejected_detail'),
+                status: Response::HTTP_FORBIDDEN,
+                type: AuthProblem::TenantAccessRejected->value,
+            );
+        }
+
         $activeTenant = null;
 
         if (! empty($validated['tenant_id'])) {

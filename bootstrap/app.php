@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
@@ -31,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
             'locale' => SetLocale::class,
             'deprecated' => MarkDeprecated::class,
             'normalize.tenant' => NormalizeTenantInput::class,

@@ -1,0 +1,30 @@
+# Services for local development: the API and the frontend run on the host (see README, "Local Development Setup").
+# It uses port 5432 like docker-compose.test.yml: run one database at a time.
+name: fatturafacile-local
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: ff-pg
+    environment:
+      POSTGRES_DB: fatturafacile
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fatturafacile"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: ff-mailpit
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+volumes:
+  pg_data:
