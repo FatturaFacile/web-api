@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Actions\Auth\BootstrapSupportUser;
 use App\Enums\Auth\AuthProblem;
 use App\Mail\EmailAlreadyRegisteredMail;
 use App\Mail\TenantAccessDecisionMail;
@@ -11,6 +12,7 @@ use App\Models\TenantAccessRequest;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
 use App\Services\Auth\TaxIdentifier;
+use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -19,12 +21,23 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Mockery\MockInterface;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     Mail::fake();
 });
+
+/**
+ * Generated at runtime: it satisfies the password policy and is the same for the whole test run.
+ */
+function registrationPassword(): string
+{
+    static $password = null;
+
+    return $password ??= 'Aa1!'.Str::random(20);
+}
 
 /**
  * @param  array<string, mixed>  $overrides
@@ -36,8 +49,8 @@ function registrationPayload(array $overrides = []): array
         'first_name' => 'Giulia',
         'last_name' => 'Bianchi',
         'email' => 'giuliabianchitest@example.com',
-        'password' => 'Str0ng!Passw0rd',
-        'password_confirmation' => 'Str0ng!Passw0rd',
+        'password' => registrationPassword(),
+        'password_confirmation' => registrationPassword(),
         'company_name' => 'Bianchi Srl',
         'country' => 'IT',
         'tax_id' => '12345678901',
@@ -70,9 +83,9 @@ function platformAdmin(): User
     return $admin;
 }
 
-function loginAs(string $email = 'giuliabianchitest@example.com', string $password = 'Str0ng!Passw0rd')
+function loginAs(string $email = 'giuliabianchitest@example.com', ?string $password = null)
 {
-    return test()->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password]);
+    return test()->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password ?? registrationPassword()]);
 }
 
 function ledgerActions(): array
@@ -94,7 +107,7 @@ test('registering creates an unverified account with a pending request and no te
         ->and($user->terms_accepted_at)->not->toBeNull()
         ->and($user->privacy_accepted_at)->not->toBeNull()
         ->and($user->is_platform_admin)->toBeFalse()
-        ->and(Hash::check('Str0ng!Passw0rd', $user->password))->toBeTrue()
+        ->and(Hash::check(registrationPassword(), $user->password))->toBeTrue()
         ->and($user->tenants)->toBeEmpty()
         ->and($user->tenantAccessRequest->status)->toBe(TenantAccessRequest::PENDING)
         ->and($user->tenantAccessRequest->tenant_id)->toBeNull()
@@ -119,7 +132,7 @@ test('the raw token is never stored and verification emails are queued and encry
 test('the answer does not reveal whether the email address is already registered', function (): void {
     $fresh = $this->postJson('/api/v1/auth/register', registrationPayload(['email' => 'new@example.com']));
 
-    $existing = User::factory()->create(['email' => 'taken@example.com', 'password' => 'Original!Passw0rd1']);
+    $existing = User::factory()->create(['email' => 'taken@example.com', 'password' => registrationPassword().'original']);
     $taken = $this->postJson('/api/v1/auth/register', registrationPayload(['email' => 'taken@example.com']));
 
     expect($taken->status())->toBe($fresh->status())
@@ -128,7 +141,7 @@ test('the answer does not reveal whether the email address is already registered
     Mail::assertQueued(EmailAlreadyRegisteredMail::class, fn (EmailAlreadyRegisteredMail $mail): bool => $mail->hasTo('taken@example.com'));
     Mail::assertNotQueued(VerifyEmailMail::class, fn (VerifyEmailMail $mail): bool => $mail->hasTo('taken@example.com'));
 
-    expect(Hash::check('Original!Passw0rd1', $existing->refresh()->password))->toBeTrue()
+    expect(Hash::check(registrationPassword().'original', $existing->refresh()->password))->toBeTrue()
         ->and(TenantAccessRequest::where('user_id', $existing->id)->exists())->toBeFalse();
 });
 
@@ -143,14 +156,14 @@ test('a soft deleted account is not revived by a new registration', function ():
 });
 
 test('registering again on an unverified address replaces the data and invalidates the first link', function (): void {
-    $this->postJson('/api/v1/auth/register', registrationPayload(['password' => 'Attacker!Passw0rd1', 'password_confirmation' => 'Attacker!Passw0rd1']))->assertStatus(202);
+    $this->postJson('/api/v1/auth/register', registrationPayload(['password' => registrationPassword().'first', 'password_confirmation' => registrationPassword().'first']))->assertStatus(202);
     $firstToken = lastVerificationToken();
 
     $this->postJson('/api/v1/auth/register', registrationPayload(['first_name' => 'Owner', 'company_name' => 'Owner Srl']))->assertStatus(202);
 
     $user = User::where('email', 'giuliabianchitest@example.com')->sole();
 
-    expect(Hash::check('Str0ng!Passw0rd', $user->password))->toBeTrue()
+    expect(Hash::check(registrationPassword(), $user->password))->toBeTrue()
         ->and($user->first_name)->toBe('Owner')
         ->and($user->tenantAccessRequest->requested_company_name)->toBe('Owner Srl');
 
@@ -159,8 +172,8 @@ test('registering again on an unverified address replaces the data and invalidat
     $this->getJson('/api/v1/auth/verify-email?token='.urlencode(lastVerificationToken()))->assertOk();
 });
 
-test('registration validates the input', function (array $overrides, string $field): void {
-    $this->postJson('/api/v1/auth/register', registrationPayload($overrides))
+test('registration validates the input', function (array|Closure $overrides, string $field): void {
+    $this->postJson('/api/v1/auth/register', registrationPayload(value($overrides)))
         ->assertStatus(422)->assertJsonValidationErrors($field);
 
     expect(User::count())->toBe(0);
@@ -170,7 +183,7 @@ test('registration validates the input', function (array $overrides, string $fie
     'last name' => [['last_name' => ''], 'last_name'],
     'email format' => [['email' => 'not-an-email'], 'email'],
     'weak password' => [['password' => 'weak', 'password_confirmation' => 'weak'], 'password'],
-    'password mismatch' => [['password_confirmation' => 'Different!Passw0rd'], 'password'],
+    'password mismatch' => [fn (): array => ['password_confirmation' => registrationPassword().'x'], 'password'],
     'company' => [['company_name' => ''], 'company_name'],
     'country' => [['country' => 'FR'], 'country'],
     'italian vat format' => [['tax_id' => '123'], 'tax_id'],
@@ -232,7 +245,7 @@ test('login is blocked until the email is confirmed and then until the tenant is
 test('a wrong password never reveals the state of the account', function (): void {
     $this->postJson('/api/v1/auth/register', registrationPayload())->assertStatus(202);
 
-    loginAs(password: 'Wrong!Passw0rd1')->assertUnauthorized();
+    loginAs(password: registrationPassword().'wrong')->assertUnauthorized();
 });
 
 test('a token cannot be used twice', function (): void {
@@ -513,4 +526,73 @@ test('the role cannot be obtained through registration', function (): void {
     $user = User::where('email', 'giuliabianchitest@example.com')->first();
 
     expect($user->is_platform_admin)->toBeFalse()->and($user->email_verified_at)->toBeNull();
+});
+
+test('registering the same address is rate limited across IP addresses', function (): void {
+    $limit = config('auth.registration.rate_limits.register_per_email_per_hour');
+
+    foreach (range(1, $limit) as $i) {
+        $this->withServerVariables(['REMOTE_ADDR' => "10.0.0.{$i}"])
+            ->postJson('/api/v1/auth/register', registrationPayload())->assertStatus(202);
+    }
+
+    $token = lastVerificationToken();
+
+    $this->withServerVariables(['REMOTE_ADDR' => '10.0.1.1'])
+        ->postJson('/api/v1/auth/register', registrationPayload(['email' => ' GIULIABIANCHITEST@example.com ']))->assertStatus(429);
+
+    expect(lastVerificationToken())->toBe($token);
+
+    $this->withServerVariables(['REMOTE_ADDR' => '10.0.1.2'])
+        ->postJson('/api/v1/auth/register', registrationPayload(['email' => 'someone-else@example.com']))->assertStatus(202);
+});
+
+test('a malformed email does not break the rate limiter', function (): void {
+    $this->postJson('/api/v1/auth/register', registrationPayload(['email' => ['not', 'a', 'string']]))->assertStatus(422);
+    $this->postJson('/api/v1/auth/resend-verification-email', ['email' => ['not', 'a', 'string']])->assertStatus(422);
+});
+
+test('the status filter of the access requests is validated', function (?string $status, int $expected): void {
+    Sanctum::actingAs(platformAdmin());
+
+    $this->getJson('/api/v1/admin/tenant-access-requests'.($status === null ? '' : "?status={$status}"))->assertStatus($expected);
+})->with([
+    'default' => [null, 200],
+    'pending' => ['pending', 200],
+    'approved' => ['approved', 200],
+    'rejected' => ['rejected', 200],
+    'unknown' => ['deleted', 422],
+]);
+
+test('a decision that is rolled back sends no email and changes nothing', function (): void {
+    $user = registerAndVerify();
+    $request = $user->tenantAccessRequest;
+    Sanctum::actingAs(platformAdmin());
+
+    $this->mock(AuditLedgerInterface::class, fn (MockInterface $mock) => $mock->shouldReceive('recordPayload')->andThrow(new RuntimeException('Ledger unavailable')));
+
+    $this->postJson("/api/v1/admin/tenant-access-requests/{$request->id}/approve")->assertServerError();
+
+    expect($request->refresh()->status)->toBe(TenantAccessRequest::PENDING)
+        ->and(Tenant::count())->toBe(0)
+        ->and($user->refresh()->tenants)->toBeEmpty();
+    Mail::assertNotQueued(TenantAccessDecisionMail::class);
+});
+
+test('the migration marks the existing accounts as verified and keeps the known dates', function (): void {
+    $legacy = User::factory()->unverified()->create(['created_at' => '2025-01-15 10:00:00']);
+    $verified = User::factory()->create(['created_at' => '2025-01-15 10:00:00', 'email_verified_at' => '2025-02-20 09:00:00']);
+
+    $migration = require database_path('migrations/2027_03_03_000000_add_self_registration_to_users_table.php');
+    $migration->down();
+    $migration->up();
+
+    expect($legacy->refresh()->email_verified_at?->toDateTimeString())->toBe('2025-01-15 10:00:00')
+        ->and($verified->refresh()->email_verified_at?->toDateTimeString())->toBe('2025-02-20 09:00:00');
+});
+
+test('the bootstrapped support user does not get the platform administrator role', function (): void {
+    $result = app(BootstrapSupportUser::class)->execute();
+
+    expect($result->user->refresh()->is_platform_admin)->toBeFalse();
 });

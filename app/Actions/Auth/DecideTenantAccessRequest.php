@@ -79,7 +79,7 @@ class DecideTenantAccessRequest
      */
     private function decide(string $requestId, callable $decision): TenantAccessRequest
     {
-        return DB::transaction(function () use ($requestId, $decision): TenantAccessRequest {
+        $decided = DB::transaction(function () use ($requestId, $decision): TenantAccessRequest {
             /** @var TenantAccessRequest $request */
             $request = TenantAccessRequest::query()->with('user')->lockForUpdate()->findOrFail($requestId);
 
@@ -89,12 +89,15 @@ class DecideTenantAccessRequest
 
             $decision($request);
 
-            Mail::to($request->user->email)
-                ->locale($request->user->locale)
-                ->queue(new TenantAccessDecisionMail($request->user, $request->status));
-
             return $request->refresh();
         });
+
+        // Outside the transaction: a decision that is rolled back must not announce anything.
+        Mail::to($decided->user->email)
+            ->locale($decided->user->locale)
+            ->queue(new TenantAccessDecisionMail($decided->user, $decided->status));
+
+        return $decided;
     }
 
     private function grantAccess(TenantAccessRequest $request, Tenant $tenant, string $role, User $admin): void

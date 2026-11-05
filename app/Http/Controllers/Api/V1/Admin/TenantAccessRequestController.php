@@ -15,6 +15,7 @@ use App\Models\TenantAccessRequest;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -41,18 +42,24 @@ class TenantAccessRequestController extends Controller
             new OA\Response(response: 200, description: 'Requests retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 403, description: 'Not a platform administrator', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function index(Request $request): JsonResponse
     {
-        $status = (string) $request->query('status', TenantAccessRequest::PENDING);
+        $validated = $request->validate([
+            'status' => ['nullable', Rule::in([TenantAccessRequest::PENDING, TenantAccessRequest::APPROVED, TenantAccessRequest::REJECTED])],
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
+        ]);
+
+        $status = $validated['status'] ?? TenantAccessRequest::PENDING;
 
         $requests = TenantAccessRequest::query()
             ->with(['user', 'tenant'])
             ->where('status', $status)
             ->whereHas('user', fn ($query) => $query->whereNotNull('email_verified_at'))
             ->oldest()
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
+            ->paginate((int) ($validated['per_page'] ?? 25));
 
         return $this->successResponse(
             data: TenantAccessRequestResource::collection($requests->getCollection()),
