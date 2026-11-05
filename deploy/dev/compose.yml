@@ -12,7 +12,6 @@ services:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
       - ./fe:/srv/fe:ro
       - ./inglorious:/srv/inglorious:ro
-      - ./website:/srv/website:ro
     depends_on:
       - app
     networks:
