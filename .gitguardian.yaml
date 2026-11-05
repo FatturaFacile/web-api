@@ -1,4 +1,7 @@
 version: 2
 secret:
   ignored_paths:
+    - 'tests/**'
     - 'docker-compose.local.yml'
+    - 'README.md'
+    - '**/README.md'
