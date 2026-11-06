@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\HumanResources\Http\Controllers\ShiftPlanningController;
+use Modules\HumanResources\Http\Controllers\TimeClockDetailsController;
 
 Route::prefix('api/v1/hr')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:hr'])
@@ -26,6 +27,13 @@ Route::prefix('api/v1/hr')
         Route::put('/shifts/{id}', [ShiftPlanningController::class, 'updateShift'])->name('shifts.update');
         Route::delete('/shifts/{id}', [ShiftPlanningController::class, 'destroyShift'])->name('shifts.destroy');
         Route::get('/absence-plan', [ShiftPlanningController::class, 'absencePlan'])->name('absence-plan');
+
+        // Schedule groups and badges
+        Route::get('/schedule-groups', [TimeClockDetailsController::class, 'groups'])->name('schedule-groups.index');
+        Route::post('/schedule-groups', [TimeClockDetailsController::class, 'storeGroup'])->name('schedule-groups.store');
+        Route::post('/schedule-groups/{id}/rules', [TimeClockDetailsController::class, 'storeRule'])->name('schedule-groups.rules.store');
+        Route::post('/schedule-groups/{id}/members', [TimeClockDetailsController::class, 'storeMember'])->name('schedule-groups.members.store');
+        Route::post('/time-badges', [TimeClockDetailsController::class, 'storeBadge'])->name('time-badges.store');
     });
 
 // Employee self-service: no module role, each answer is limited to the authenticated user.
@@ -34,4 +42,9 @@ Route::prefix('api/v1/hr/time')
     ->name('api.v1.hr.time.')
     ->group(function (): void {
         Route::get('/my-shifts', [ShiftPlanningController::class, 'myShifts'])->name('my-shifts');
+        Route::get('/payroll-view', [TimeClockDetailsController::class, 'payrollView'])->name('payroll-view');
+        Route::get('/presence', [TimeClockDetailsController::class, 'presence'])->name('presence');
+        Route::post('/punches/import', [TimeClockDetailsController::class, 'importPunches'])->name('punches.import');
+        Route::get('/meal-bookings', [TimeClockDetailsController::class, 'mealBookings'])->name('meal-bookings.index');
+        Route::post('/meal-bookings', [TimeClockDetailsController::class, 'storeMealBooking'])->name('meal-bookings.store');
     });

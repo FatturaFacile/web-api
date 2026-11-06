@@ -47,10 +47,12 @@ final class SwissWorkingTimeEngine
     }
 
     /**
+     * The working periods between the events, and the anomalies by local day.
+     *
      * @param  array<int, ClockEntry>  $events
      * @return array{0: array<int, WorkInterval>, 1: array<string, array<int, string>>}
      */
-    private static function buildIntervals(array $events, CarbonImmutable $now): array
+    public static function buildIntervals(array $events, CarbonImmutable $now): array
     {
         $valid = array_values(array_filter($events, static fn (ClockEntry $event): bool => ! $event->isDeleted));
         usort($valid, static fn (ClockEntry $left, ClockEntry $right): int => $left->occurredAt <=> $right->occurredAt);
