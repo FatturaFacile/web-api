@@ -16,6 +16,7 @@ x-app: &app
   environment:
     APP_ENV: local
     APP_DEBUG: "false"
+    TELESCOPE_ENABLED: "false"
     DB_CONNECTION: pgsql
     DB_HOST: postgres
     DB_PORT: "5432"
