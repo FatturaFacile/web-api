@@ -5,30 +5,29 @@ declare(strict_types=1);
 namespace Modules\SDI\Services;
 
 use App\Models\Invoice;
+use App\Services\ItalianSdi\FatturaPaBuilderService;
 use Illuminate\Validation\ValidationException;
 use Modules\SDI\Enums\SdiChannel;
+use Modules\SDI\Enums\TipoDocumento;
 
 /**
- * Fiscal checks that must pass before a file leaves the application on a real channel. The XML builder has placeholders
- * for missing data, which must never reach SDI.
+ * Fiscal checks a file must pass before it is built: the XML builder has no placeholders, so master data is checked on
+ * every channel. The checks that depend on how the file leaves the application apply to the real channels only.
  */
 final class SdiPreflight
 {
-    public function __construct(private readonly SdiGatewayManager $gateways) {}
+    public function __construct(
+        private readonly SdiGatewayManager $gateways,
+        private readonly FatturaPaBuilderService $builder,
+    ) {}
 
     /**
      * @throws ValidationException listing everything that has to be fixed
      */
     public function assertReady(Invoice $invoice): void
     {
-        $tenant = $invoice->tenant;
-        $channel = $this->gateways->channelFor($tenant);
-
-        if ($channel === null || ! $channel->isReal()) {
-            return;
-        }
-
-        $errors = [...$this->tenantErrors($invoice), ...$this->customerErrors($invoice), ...$this->lineErrors($invoice)];
+        $errors = $this->masterDataErrors($invoice);
+        $channel = $this->gateways->channelFor($invoice->tenant);
 
         if ($channel === SdiChannel::Pec) {
             $errors = [...$errors, ...$this->pecErrors($invoice)];
@@ -40,11 +39,34 @@ final class SdiPreflight
     }
 
     /**
+     * @throws ValidationException listing the missing master data
+     */
+    public function assertMasterData(Invoice $invoice): void
+    {
+        $errors = $this->masterDataErrors($invoice);
+
+        if ($errors !== []) {
+            throw ValidationException::withMessages(['invoice' => $errors]);
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function masterDataErrors(Invoice $invoice): array
+    {
+        $type = TipoDocumento::ofInvoice($invoice);
+
+        return [...$this->tenantErrors($invoice), ...$this->counterpartyErrors($invoice, $type), ...$this->lineErrors($invoice)];
+    }
+
+    /**
      * @return list<string>
      */
     private function tenantErrors(Invoice $invoice): array
     {
         $tenant = $invoice->tenant;
+        $address = $this->builder->tenantAddress($tenant);
         $errors = [];
 
         if (empty($tenant->vat_number)) {
@@ -52,7 +74,7 @@ final class SdiPreflight
         }
 
         foreach (['street', 'postal_code', 'city'] as $field) {
-            if (empty($tenant->settings[$field] ?? null)) {
+            if (empty($address[$field])) {
                 $errors[] = __('sdi.preflight.tenant_address', ['field' => $field]);
             }
         }
@@ -61,21 +83,32 @@ final class SdiPreflight
     }
 
     /**
+     * The other party of the file: the customer, or the supplier on a self-invoice it integrates. On a document the
+     * tenant addresses to itself there is none.
+     *
      * @return list<string>
      */
-    private function customerErrors(Invoice $invoice): array
+    private function counterpartyErrors(Invoice $invoice, TipoDocumento $type): array
     {
+        if ($type->isSameParty()) {
+            return [];
+        }
+
         $contact = $invoice->contact;
         $errors = [];
 
-        if (empty($contact->vat_number) && empty($contact->fiscal_code)) {
+        if ($type->swapsParties() && empty($contact->vat_number)) {
+            $errors[] = __('sdi.preflight.supplier_identity');
+        }
+
+        if (! $type->swapsParties() && empty($contact->vat_number) && empty($contact->fiscal_code)) {
             $errors[] = __('sdi.preflight.customer_identity');
         }
 
         $address = $contact->addresses()->where('type', 'billing')->first();
 
         if ($address === null || empty($address->street) || empty($address->postal_code) || empty($address->city)) {
-            $errors[] = __('sdi.preflight.customer_address');
+            $errors[] = __($type->swapsParties() ? 'sdi.preflight.supplier_address' : 'sdi.preflight.customer_address');
         }
 
         return $errors;
@@ -88,7 +121,7 @@ final class SdiPreflight
     {
         $hasZeroRate = $invoice->items->contains(fn ($item): bool => (float) $item->tax_rate === 0.0);
 
-        if ($hasZeroRate && ! $invoice->reverse_charge && empty($invoice->tenant->settings['sdi_zero_rate_nature'] ?? null)) {
+        if ($hasZeroRate && $this->builder->lineNature($invoice, 0.0) === null) {
             return [__('sdi.preflight.zero_rate_nature')];
         }
 
@@ -105,7 +138,7 @@ final class SdiPreflight
         $errors = [];
 
         // Files for public administrations must carry a qualified signature, which this channel cannot apply.
-        if ($contact->sdi_code !== null && strlen(trim($contact->sdi_code)) === 6) {
+        if ($this->builder->transmissionFormat($invoice) === 'FPA12') {
             $errors[] = __('sdi.preflight.pec_public_administration');
         }
 

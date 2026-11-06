@@ -15,6 +15,9 @@ use App\Services\Tenancy\TenantContext;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Modules\GeneralLedger\Models\EnasarcoParameter;
+use Modules\SDI\Enums\RegimeFiscale;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -80,7 +83,7 @@ class SettingsController extends Controller
                     new OA\Property(property: 'qr_iban', type: 'string', maxLength: 34, nullable: true, example: 'CH4430000000000000000'),
                     new OA\Property(property: 'sdi_code', type: 'string', maxLength: 7, nullable: true, example: 'M5UXCR1'),
                     new OA\Property(property: 'pec_email', type: 'string', format: 'email', nullable: true, example: 'acme@pec.it'),
-                    new OA\Property(property: 'settings', type: 'object', nullable: true),
+                    new OA\Property(property: 'settings', description: 'Free settings. `regime_fiscale` must be a RegimeFiscale of the FatturaPA schema (RF01-RF20).', type: 'object', nullable: true),
                 ]
             )
         ),
@@ -124,6 +127,8 @@ class SettingsController extends Controller
             'sdi_code' => ['nullable', 'string', 'size:7'],
             'pec_email' => ['nullable', 'email'],
             'settings' => ['nullable', 'array'],
+            'settings.regime_fiscale' => ['nullable', Rule::enum(RegimeFiscale::class)],
+            'settings.enasarco_agent_type' => ['nullable', Rule::in(EnasarcoParameter::AGENT_TYPES)],
         ]);
 
         $tenant->update($validated);

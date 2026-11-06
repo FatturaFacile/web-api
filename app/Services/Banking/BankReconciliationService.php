@@ -457,8 +457,8 @@ class BankReconciliationService
     private function dueAmount(Invoice|PassiveInvoice $document): float
     {
         return $document instanceof PassiveInvoice
-            ? round((float) $document->total_amount - (float) $document->total_paid, 2)
-            : round((float) $document->total_gross - (float) $document->total_paid, 2);
+            ? round((float) $document->amountDue() - (float) $document->total_paid, 2)
+            : (float) $document->outstandingAmount();
     }
 
     private function isPayable(Invoice|PassiveInvoice $document): bool

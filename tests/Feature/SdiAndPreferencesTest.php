@@ -31,6 +31,7 @@ beforeEach(function (): void {
         'fiscal_code' => '00811720580',
         'country' => 'IT',
         'default_currency' => 'EUR',
+        'settings' => ['street' => 'Via Verdi 1', 'postal_code' => '20121', 'city' => 'Milano'],
     ]);
 
     $this->user = User::create([
@@ -50,6 +51,7 @@ beforeEach(function (): void {
         'pec' => 'customer@pec.example.com',
         'email' => 'customer@example.com',
     ]);
+    $this->contact->addresses()->create(['tenant_id' => $this->tenant->id, 'type' => 'billing', 'street' => 'Via Dante 2', 'postal_code' => '00100', 'city' => 'Roma', 'country' => 'IT']);
 });
 
 function sdiApi()

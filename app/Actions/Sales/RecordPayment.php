@@ -33,7 +33,7 @@ class RecordPayment
             }
 
             $amount = round((float) $data['amount'], 2);
-            $outstanding = round((float) $invoice->total_gross - (float) $invoice->total_paid, 2);
+            $outstanding = (float) $invoice->outstandingAmount();
 
             if ($amount > $outstanding) {
                 throw ValidationException::withMessages(['amount' => __('sales.payment_exceeds_balance')]);
@@ -54,7 +54,7 @@ class RecordPayment
             $invoice->total_paid = $totalPaid;
             $invoice->payment_status = match (true) {
                 $totalPaid <= 0 => 'unpaid',
-                $totalPaid >= (float) $invoice->total_gross => 'paid',
+                $totalPaid >= (float) $invoice->amountDue() => 'paid',
                 default => 'partially_paid',
             };
             $invoice->save();
@@ -78,7 +78,7 @@ class RecordPayment
             $invoice->total_paid = $totalPaid;
             $invoice->payment_status = match (true) {
                 $totalPaid <= 0 => 'unpaid',
-                $totalPaid >= (float) $invoice->total_gross => 'paid',
+                $totalPaid >= (float) $invoice->amountDue() => 'paid',
                 default => 'partially_paid',
             };
             $invoice->save();

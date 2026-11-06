@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\GeneralLedger\Http\Controllers\ChartOfAccountController;
+use Modules\GeneralLedger\Http\Controllers\EnasarcoController;
 use Modules\GeneralLedger\Http\Controllers\FinancialStatementController;
 use Modules\GeneralLedger\Http\Controllers\FiscalPeriodController;
 use Modules\GeneralLedger\Http\Controllers\FiscalYearController;
@@ -14,6 +15,7 @@ use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
 use Modules\GeneralLedger\Http\Controllers\VatRegisterController;
 use Modules\GeneralLedger\Http\Controllers\VatTaxSettingController;
+use Modules\GeneralLedger\Http\Controllers\WithholdingSettlementController;
 
 Route::prefix('api/v1/general-ledger')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger'])
@@ -56,6 +58,19 @@ Route::prefix('api/v1/general-ledger')
         Route::get('tax-settlements/{id}/lipe', [TaxSettlementController::class, 'lipe'])->whereUuid('id');
         Route::get('tax-settlements/{id}/f24', [TaxSettlementController::class, 'f24'])->whereUuid('id');
         Route::get('tax-settlements/{id}/statement', [TaxSettlementController::class, 'statement'])->whereUuid('id');
+
+        // Withholding Settlements (Liquidazione ritenute)
+        Route::get('withholding-settlements', [WithholdingSettlementController::class, 'index']);
+        Route::post('withholding-settlements/calculate', [WithholdingSettlementController::class, 'calculate']);
+        Route::get('withholding-settlements/certification-export', [WithholdingSettlementController::class, 'certificationExport']);
+        Route::get('withholding-settlements/{id}', [WithholdingSettlementController::class, 'show'])->whereUuid('id');
+        Route::get('withholding-settlements/{id}/f24', [WithholdingSettlementController::class, 'f24'])->whereUuid('id');
+        Route::post('withholding-settlements/{id}/pay', [WithholdingSettlementController::class, 'pay'])->whereUuid('id');
+
+        // Enasarco
+        Route::get('enasarco/parameters', [EnasarcoController::class, 'parameters']);
+        Route::put('enasarco/parameters', [EnasarcoController::class, 'saveParameter']);
+        Route::get('enasarco/summary', [EnasarcoController::class, 'summary']);
 
         // VAT Settings and Registers
         Route::get('payroll-settings', [PayrollLedgerController::class, 'showSettings']);

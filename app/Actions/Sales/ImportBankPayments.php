@@ -160,7 +160,7 @@ class ImportBankPayments
             return;
         }
 
-        $balance = round((float) $invoice->refresh()->total_gross - (float) $invoice->total_paid, 2);
+        $balance = (float) $invoice->refresh()->outstandingAmount();
 
         if ($balance > 0) {
             $this->recordPayment->execute($invoice, ['type' => 'bank_fee', 'amount' => min($fee, $balance)] + $this->paymentData($line));

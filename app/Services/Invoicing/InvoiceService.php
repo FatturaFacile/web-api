@@ -10,6 +10,7 @@ use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Modules\Invoicing\Actions\PostInvoiceAction;
+use Modules\SDI\Enums\TipoDocumento;
 
 class InvoiceService
 {
@@ -80,7 +81,7 @@ class InvoiceService
             $series = match ($data['invoice_type'] ?? 'standard') {
                 'proforma' => 'proforma',
                 'credit_note' => 'credit_note',
-                default => 'invoice',
+                default => TipoDocumento::tryFrom((string) ($data['document_type'] ?? ''))?->numberingSeries() ?? 'invoice',
             };
             $number = $this->numbering->next($series, (int) date('Y', strtotime((string) $data['date'])));
 

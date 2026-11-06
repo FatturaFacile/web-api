@@ -90,7 +90,7 @@ final readonly class ExportSupplierPaymentsAction
      */
     private function line(PassiveInvoice $invoice): array
     {
-        $balance = round((float) $invoice->total_amount - (float) $invoice->total_paid, 2);
+        $balance = round((float) $invoice->amountDue() - (float) $invoice->total_paid, 2);
 
         if ($balance <= 0 || $invoice->document_type === 'TD04') {
             throw ValidationException::withMessages(['invoice_ids' => "Invoice {$invoice->invoice_number} has nothing to pay."]);

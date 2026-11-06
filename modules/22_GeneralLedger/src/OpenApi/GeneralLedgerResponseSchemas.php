@@ -228,6 +228,57 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'GeneralLedgerWithholdingSettlementResource',
+    description: 'Monthly withholding settlement',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'year', type: 'integer'),
+        new OA\Property(property: 'month', type: 'integer'),
+        new OA\Property(property: 'currency', type: 'string'),
+        new OA\Property(property: 'total_withheld', type: 'string', description: 'Decimal string: everything withheld, contributions included'),
+        new OA\Property(property: 'total_f24', type: 'string', description: 'Decimal string: what is paid with the F24'),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'status', type: 'string', enum: ['calculated', 'paid']),
+        new OA\Property(property: 'payment_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'payment_journal_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object')),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerWithholdingF24Data',
+    description: 'F24 data of a withholding settlement',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'section', type: 'string', example: 'erario'),
+        new OA\Property(property: 'reference_month', type: 'string', example: '03'),
+        new OA\Property(property: 'reference_year', type: 'integer'),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'total', type: 'string', description: 'Decimal string'),
+        new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'tax_code', type: 'string'),
+            new OA\Property(property: 'reference_month', type: 'string'),
+            new OA\Property(property: 'reference_year', type: 'integer'),
+            new OA\Property(property: 'amount', type: 'string', description: 'Decimal string'),
+        ])),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerEnasarcoParameter',
+    description: 'Enasarco rate and ceiling of a year and agent type',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true, description: 'Null on a generic, read-only row'),
+        new OA\Property(property: 'year', type: 'integer'),
+        new OA\Property(property: 'agent_type', type: 'string', enum: ['single_mandate', 'multi_mandate']),
+        new OA\Property(property: 'rate_percent', type: 'string'),
+        new OA\Property(property: 'agent_share_percent', type: 'string'),
+        new OA\Property(property: 'annual_ceiling', type: 'string'),
+        new OA\Property(property: 'source', type: 'string'),
+    ]
+)]
+#[OA\Schema(
     schema: 'GeneralLedgerVatF24Data',
     description: 'F24 data of an Italian VAT settlement',
     type: 'object',

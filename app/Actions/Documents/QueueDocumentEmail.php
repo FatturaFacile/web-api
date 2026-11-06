@@ -22,6 +22,16 @@ class QueueDocumentEmail
     ) {}
 
     /**
+     * The language of the customer, or the current one when it states none.
+     */
+    private function languageOf(Model $document): ?string
+    {
+        $contact = $document instanceof WorkOrder ? $document->client : $document->getAttribute('contact');
+
+        return $contact?->document_language ?: null;
+    }
+
+    /**
      * Record an email for a sales document and queue its delivery. The recipient defaults to the contact's address.
      *
      * @throws ValidationException when no recipient can be determined
@@ -42,7 +52,7 @@ class QueueDocumentEmail
                 'emailable_id' => $document->getKey(),
                 'user_id' => Auth::id(),
                 'recipient' => $recipient,
-                'subject' => __("emails.document.subject.{$summary['type']}", ['number' => $summary['number']]),
+                'subject' => __("emails.document.subject.{$summary['type']}", ['number' => $summary['number']], $this->languageOf($document)),
                 'message' => $message,
                 'status' => 'queued',
             ]);

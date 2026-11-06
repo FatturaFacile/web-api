@@ -35,6 +35,79 @@ final class LedgerAccountResolver
         return $this->account($tenantId, '6960', 'Rounding differences (Arrotondamenti)', 'expense', 'debit');
     }
 
+    /**
+     * Withholding the customers kept on our invoices: a credit towards the tax authority until the tax return.
+     */
+    public function withholdingReceivable(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '1260', 'Erario c/ritenute subite (Withholding tax receivable)', 'asset', 'debit');
+    }
+
+    /**
+     * Withholding kept on supplier invoices, owed to the tax authority with the F24.
+     */
+    public function withholdingPayable(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2230', 'Erario c/ritenute da versare (Withholding tax payable)', 'liability', 'credit');
+    }
+
+    /**
+     * Contributions kept on supplier invoices (Enasarco, INPS and the other funds), owed to the fund.
+     */
+    public function contributionsPayable(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2235', 'Debiti v/enti previdenziali (Contributions payable)', 'liability', 'credit');
+    }
+
+    public function stampDutyPayable(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2240', 'Erario c/imposta di bollo (Stamp duty payable)', 'liability', 'credit');
+    }
+
+    public function stampDutyExpense(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '6810', 'Imposta di bollo (Stamp duty expense)', 'expense', 'debit');
+    }
+
+    /**
+     * What a professional fund charges through the invoice and is owed to the fund.
+     */
+    public function pensionFundPayable(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2245', 'Debiti v/casse previdenziali (Pension fund payable)', 'liability', 'credit');
+    }
+
+    /**
+     * The INPS rivalsa, which stays with the professional as income.
+     */
+    public function pensionFundRecharge(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '4095', 'Rivalsa INPS (INPS recharge income)', 'revenue', 'credit');
+    }
+
+    public function enasarcoExpense(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '6470', 'Contributi Enasarco (Enasarco contributions)', 'expense', 'debit');
+    }
+
+    /**
+     * VAT of a self-invoice the tenant owes without being able to recover it (TD21, TD27).
+     */
+    public function selfInvoiceVatCost(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '6975', 'IVA su autofatture (VAT on self-invoices)', 'expense', 'debit');
+    }
+
+    public function outputVat(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '2200', 'IVA c/Vendite (Sales Output VAT)', 'liability', 'credit');
+    }
+
+    public function inputVat(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '1400', 'IVA c/Acquisti (Purchase VAT)', 'asset', 'debit');
+    }
+
     public function cash(string $tenantId): ChartOfAccount
     {
         return $this->account($tenantId, '1000', 'Cash (Cassa)', 'asset', 'debit');

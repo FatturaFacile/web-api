@@ -36,7 +36,9 @@ class SendPaymentReminderEmail implements ShouldQueue
         }
 
         try {
-            Mail::to($reminder->recipient)->send(new PaymentReminderMail($reminder, $this->invoicePdf($pdfService, $reminder)));
+            Mail::to($reminder->recipient)
+                ->locale($reminder->invoice?->contact?->document_language ?: app()->getLocale())
+                ->send(new PaymentReminderMail($reminder, $this->invoicePdf($pdfService, $reminder)));
             $reminder->update(['status' => 'sent', 'sent_at' => now(), 'error' => null]);
         } catch (Throwable $e) {
             $reminder->update(['status' => 'failed', 'error' => mb_substr($e->getMessage(), 0, 1000)]);

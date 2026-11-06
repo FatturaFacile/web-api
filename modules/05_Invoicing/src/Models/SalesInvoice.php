@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Models;
 
+use App\Models\Concerns\HasFiscalAmounts;
 use App\Models\Contact;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -14,6 +15,8 @@ use Modules\Projects\Models\ProjectMilestone;
 
 final class SalesInvoice extends BaseEnterpriseModel
 {
+    use HasFiscalAmounts;
+
     protected $table = 'invoices';
 
     protected function casts(): array
@@ -41,6 +44,17 @@ final class SalesInvoice extends BaseEnterpriseModel
             'fund_enabled' => 'boolean',
             'fund_percent' => 'decimal:2',
             'fund_amount' => 'decimal:2',
+            'fund_vat_rate' => 'decimal:2',
+            'fund_vat_amount' => 'decimal:2',
+            'fund_subject_to_withholding' => 'boolean',
+            'skip_declaration_of_intent' => 'boolean',
+            'linked_document_date' => 'date',
+            'withholding_tax_base_percent' => 'decimal:2',
+            'stamp_duty_charged' => 'boolean',
+            'enasarco_enabled' => 'boolean',
+            'enasarco_base' => 'decimal:2',
+            'enasarco_percent' => 'decimal:2',
+            'enasarco_amount' => 'decimal:2',
         ];
     }
 
@@ -111,6 +125,6 @@ final class SalesInvoice extends BaseEnterpriseModel
 
     public function getOutstandingBalanceAttribute(): float
     {
-        return max(0.0, (float) $this->total_gross - (float) $this->total_paid);
+        return max(0.0, (float) $this->outstandingAmount());
     }
 }

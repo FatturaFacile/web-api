@@ -11,6 +11,7 @@ use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Procurement\Events\GoodsReceivedEvent;
@@ -25,7 +26,8 @@ final class ProcurementAccountingListener
 
     public function __construct(
         private readonly DoubleEntryPostingServiceInterface $postingService,
-        private readonly FiscalPeriodResolver $periods
+        private readonly FiscalPeriodResolver $periods,
+        private readonly LedgerAccountResolver $accounts = new LedgerAccountResolver
     ) {}
 
     public function handlePurchaseOrderCommitted(PurchaseOrderCommittedEvent $event): void
@@ -215,7 +217,7 @@ final class ProcurementAccountingListener
         $lines[] = [
             'account_id' => $apAcc->id,
             'debit_amount' => 0.0,
-            'credit_amount' => (float) $event->grossAmount,
+            'credit_amount' => round((float) $event->grossAmount - $event->withholdingTaxAmount - $event->contributionAmount, 2),
             'currency' => $currency,
             'exchange_rate' => $event->exchangeRate,
             'partner_type' => 'supplier',
@@ -223,6 +225,24 @@ final class ProcurementAccountingListener
             'due_date' => $event->dueDate,
             'description' => "Supplier Payable: Invoice {$event->vendorInvoiceNumber}",
         ];
+
+        $withheld = [
+            [$event->withholdingTaxAmount, $this->accounts->withholdingPayable(...)],
+            [$event->contributionAmount, $this->accounts->contributionsPayable(...)],
+        ];
+
+        foreach ($withheld as [$amount, $account]) {
+            if ($amount > 0) {
+                $lines[] = [
+                    'account_id' => $account($event->tenantId)->id,
+                    'debit_amount' => 0.0,
+                    'credit_amount' => $amount,
+                    'currency' => $currency,
+                    'exchange_rate' => $event->exchangeRate,
+                    'description' => "Withheld on Invoice {$event->vendorInvoiceNumber}",
+                ];
+            }
+        }
 
         if ($event->isCreditNote) {
             $lines = array_map(static fn (array $line): array => ['debit_amount' => $line['credit_amount'], 'credit_amount' => $line['debit_amount']] + $line, $lines);

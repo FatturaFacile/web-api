@@ -12,7 +12,9 @@ use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
+use Modules\Invoicing\Services\DeclarationOfIntentService;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
+use Modules\SDI\Enums\TipoRitenuta;
 
 /**
  * Registers a received supplier invoice in the ledger: the debt to the supplier and the deductible VAT. TD04 documents
@@ -23,6 +25,7 @@ final readonly class PostPassiveInvoiceAction
     public function __construct(
         private EventDispatcherInterface $dispatcher,
         private PaymentLedgerService $payments,
+        private DeclarationOfIntentService $declarations,
     ) {}
 
     /**
@@ -69,6 +72,7 @@ final readonly class PostPassiveInvoiceAction
         $gross = abs((float) $invoice->total_amount);
         $tax = abs((float) $invoice->total_tax);
         $net = $invoice->total_net !== null ? abs((float) $invoice->total_net) : round($gross - $tax, 2);
+        ['tax' => $withholdingTax, 'contributions' => $contributions] = $this->withheld($invoice);
 
         $event = new PurchaseLiabilityReadyEvent(
             matchLogId: (string) $invoice->id,
@@ -85,12 +89,36 @@ final readonly class PostPassiveInvoiceAction
             dueDate: $invoice->due_date !== null ? CarbonImmutable::parse($invoice->due_date)->toDateString() : null,
             isCreditNote: $isCreditNote,
             exchangeRate: (float) ($invoice->exchange_rate ?? 1.0),
+            withholdingTaxAmount: $withholdingTax,
+            contributionAmount: $contributions,
         );
 
         $this->dispatcher->publish($event);
         $this->dispatcher->dispatch($event);
 
         $invoice->refresh();
+        $this->declarations->trackPurchase($invoice);
         $this->payments->postWaitingSupplierPayments((string) $invoice->id);
+    }
+
+    /**
+     * What the document says is kept from the supplier: withholding tax on one side, contributions on the other.
+     *
+     * @return array{tax: float, contributions: float}
+     */
+    private function withheld(PassiveInvoice $invoice): array
+    {
+        $tax = 0.0;
+        $contributions = 0.0;
+
+        foreach ($invoice->withholdings ?? [] as $withholding) {
+            if (TipoRitenuta::tryFrom((string) $withholding['type'])?->isTax() === true) {
+                $tax += (float) $withholding['amount'];
+            } else {
+                $contributions += (float) $withholding['amount'];
+            }
+        }
+
+        return ['tax' => round($tax, 2), 'contributions' => round($contributions, 2)];
     }
 }

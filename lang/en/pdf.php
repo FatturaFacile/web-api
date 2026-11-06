@@ -47,6 +47,10 @@ return [
     'totals' => [
         'net' => 'Net total',
         'tax' => 'VAT',
+        'fund' => 'Pension fund contribution',
+        'enasarco' => 'Enasarco contribution',
+        'split_payment' => 'VAT paid by the customer (split payment)',
+        'due' => 'Amount payable',
         'rounding' => 'Rounding',
         'stamp_duty' => 'Stamp duty',
         'withholding_tax' => 'Withholding tax',
@@ -56,6 +60,11 @@ return [
     ],
 
     'notes' => 'Notes',
+
+    'legal' => [
+        'forfettario' => 'Transaction carried out under article 1, paragraphs 54 to 89, of Law no. 190/2014.',
+        'declaration_of_intent' => 'Non-taxable under your declaration of intent no. :protocol of :date.',
+    ],
 
     'payment' => [
         'title' => 'Payment details',

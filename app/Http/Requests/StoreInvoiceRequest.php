@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesItalianFiscalFields;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreInvoiceRequest extends FormRequest
 {
+    use ValidatesItalianFiscalFields;
+
     public function authorize(): bool
     {
         return true;
@@ -50,6 +53,7 @@ class StoreInvoiceRequest extends FormRequest
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            ...$this->italianFiscalRules($tenantId),
         ];
     }
 }

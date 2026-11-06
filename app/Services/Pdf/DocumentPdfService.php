@@ -20,10 +20,13 @@ use App\Rules\PngSignature;
 use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Traits\Localizable;
 use InvalidArgumentException;
+use Modules\SDI\Enums\RegimeFiscale;
 
 /**
  * Turns sales documents into PDFs: normalises each document type into view data, renders it through the
@@ -31,6 +34,8 @@ use InvalidArgumentException;
  */
 class DocumentPdfService
 {
+    use Localizable;
+
     public function __construct(
         private readonly PdfGenerator $generator,
         private readonly SwissQrBillService $qrBills,
@@ -42,7 +47,7 @@ class DocumentPdfService
         $tenantId = $document->getAttribute('tenant_id');
         $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
 
-        $renderCallback = function () use ($document): RenderedPdf {
+        $renderCallback = fn (): RenderedPdf => $this->withLocale($this->documentLanguage($document), function () use ($document): RenderedPdf {
             [$view, $data, $type, $number] = match (true) {
                 $document instanceof Invoice => $this->invoice($document),
                 $document instanceof Quote => $this->quote($document),
@@ -57,7 +62,7 @@ class DocumentPdfService
                 $this->generator->render($view, $data),
                 Str::studly($type).'-'.trim((string) preg_replace('/[^A-Za-z0-9._-]+/', '-', $number), '-').'.pdf'
             );
-        };
+        });
 
         if ($tenant !== null && $tenantContext->getTenantId() !== $tenant->id) {
             return $tenantContext->runWithTenant($tenant, $renderCallback);
@@ -67,11 +72,44 @@ class DocumentPdfService
     }
 
     /**
+     * The language of the customer of the document, or the current one when it states none.
+     */
+    private function documentLanguage(Model $document): string
+    {
+        $contact = $document instanceof WorkOrder ? $document->client : $document->getAttribute('contact');
+
+        return $contact?->document_language ?: App::getLocale();
+    }
+
+    /**
+     * The wording the law wants on the document, in the language of the customer.
+     *
+     * @return list<string>
+     */
+    private function legalNotes(Invoice $invoice): array
+    {
+        $notes = [];
+
+        if ($invoice->jurisdiction === 'IT' && RegimeFiscale::ofTenant($invoice->tenant)->isForfettario()) {
+            $notes[] = __('pdf.legal.forfettario');
+        }
+
+        if ($invoice->declarationOfIntent !== null) {
+            $notes[] = __('pdf.legal.declaration_of_intent', [
+                'protocol' => $invoice->declarationOfIntent->protocol_number,
+                'date' => $invoice->declarationOfIntent->receipt_date->format('d/m/Y'),
+            ]);
+        }
+
+        return $notes;
+    }
+
+    /**
      * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
      */
     private function invoice(Invoice $invoice): array
     {
-        $invoice->loadMissing(['tenant', 'contact.addresses', 'items', 'qrBillData']);
+        $invoice->loadMissing(['tenant', 'contact.addresses', 'items', 'qrBillData', 'declarationOfIntent']);
 
         $type = match ($invoice->invoice_type) {
             'credit_note' => 'credit_note',
@@ -90,13 +128,17 @@ class DocumentPdfService
             'show_prices' => true,
             'totals' => [
                 'net' => (float) $invoice->total_net,
+                'fund' => $invoice->fund_enabled ? (float) $invoice->fund_amount : 0.0,
                 'tax' => (float) $invoice->total_tax,
                 'gross' => (float) $invoice->total_gross,
                 'rounding' => (float) $invoice->rounding_amount,
                 'stamp_duty' => $invoice->stamp_duty_applied ? (float) $invoice->stamp_duty_amount : 0.0,
                 'withholding_tax' => $invoice->withholding_tax_enabled ? (float) $invoice->withholding_tax_amount : 0.0,
+                'enasarco' => $invoice->enasarco_enabled ? (float) $invoice->enasarco_amount : 0.0,
+                'split_payment' => $invoice->split_payment ? (float) $invoice->total_tax : 0.0,
+                'due' => (float) $invoice->amountDue(),
                 'paid' => (float) $invoice->total_paid,
-                'balance' => round((float) $invoice->total_gross - (float) $invoice->total_paid, 2),
+                'balance' => (float) $invoice->outstandingAmount(),
             ],
             'payment' => [
                 'method' => $invoice->payment_method,
@@ -106,6 +148,7 @@ class DocumentPdfService
             ],
             'qr' => $qr,
             'qr_error' => $qrError,
+            'legal_notes' => $this->legalNotes($invoice),
         ]), $type, $invoice->invoice_number];
     }
 

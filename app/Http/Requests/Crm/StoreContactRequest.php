@@ -32,6 +32,7 @@ class StoreContactRequest extends FormRequest
             'uid_number' => ['nullable', 'string', 'max:20'],
             'sdi_code' => ['nullable', 'string', 'size:7'],
             'pec' => ['nullable', 'email'],
+            'document_language' => ['nullable', 'string', 'in:it,en,de,fr'],
             'iban' => ['nullable', 'string', 'max:34'],
             'qr_iban' => ['nullable', 'string', 'max:34'],
             'payment_terms_days' => ['nullable', 'integer', 'min:0'],

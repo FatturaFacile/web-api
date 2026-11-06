@@ -20,6 +20,7 @@ class DocumentNumberingService
     private const DEFAULT_PREFIXES = [
         'invoice' => 'INV-',
         'credit_note' => 'CN-',
+        'self_invoice' => 'AF-',
         'proforma' => 'PF-',
         'quote' => 'QT-',
         'sales_order' => 'SO-',

@@ -13,12 +13,16 @@ use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Models\SalesInvoice;
+use Modules\SDI\Enums\SelfInvoiceLedgerTreatment;
+use Modules\SDI\Enums\TipoCassa;
+use Modules\SDI\Enums\TipoDocumento;
 
 final class InvoiceAccountingListener
 {
@@ -29,6 +33,7 @@ final class InvoiceAccountingListener
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly FiscalPeriodResolver $periods,
         private readonly PaymentLedgerService $payments,
+        private readonly LedgerAccountResolver $accounts,
         private readonly ?AuditLedgerInterface $auditLedger = null
     ) {}
 
@@ -47,6 +52,17 @@ final class InvoiceAccountingListener
         // 2. The period containing the date of the document: failing here stops the emission
         $documentDate = CarbonImmutable::parse($event->date)->toDateString();
         $period = $this->periods->forDate($event->tenantId, $documentDate);
+
+        $invoice = SalesInvoice::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $event->tenantId)
+            ->whereKey($event->invoiceId)
+            ->first();
+
+        if ($invoice !== null && TipoDocumento::ofInvoice($invoice)->isSelfInvoice()) {
+            $this->postSelfInvoice($event, $invoice, (string) $period->id, $documentDate);
+
+            return;
+        }
 
         // 3. Resolve Master General Ledger Accounts
         $arAccount = $this->resolveAccount(
@@ -100,11 +116,11 @@ final class InvoiceAccountingListener
         $totalNet = (float) $event->totalNet;
 
         // 4. Construct Balanced Journal Lines
-        // Line 1: Debit Accounts Receivable (Total Gross)
+        // Line 1: Debit Accounts Receivable: what the customer pays, not what it is billed
         $lines = [
             [
                 'account_id' => $arAccount->id,
-                'debit_amount' => $totalGross,
+                'debit_amount' => $invoice !== null ? (float) $invoice->amountDue() : $totalGross,
                 'credit_amount' => 0.0,
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
@@ -166,7 +182,7 @@ final class InvoiceAccountingListener
                     'currency' => $currency,
                     'exchange_rate' => $exchangeRate,
                     'vat_tax_amount' => (float) $taxLine['amount'],
-                    'vat_base_amount' => $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? 0.0,
+                    'vat_base_amount' => $taxLine['base_amount'] ?? $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? 0.0,
                     'vat_rate_percent' => $taxLine['tax_rate'] ?? null,
                     'vat_treatment' => $vatTreatment,
                     'description' => "Output VAT: Invoice {$event->invoiceNumber}",
@@ -184,6 +200,10 @@ final class InvoiceAccountingListener
                 'vat_treatment' => $vatTreatment,
                 'description' => "Output VAT: Invoice {$event->invoiceNumber}",
             ];
+        }
+
+        if ($invoice !== null) {
+            $lines = [...$lines, ...$this->fiscalLines($event, $invoice, (string) $defaultVatAccount->id, $currency, $exchangeRate)];
         }
 
         $roundingLine = $this->roundingLine($event, $lines, $currency, $exchangeRate);
@@ -232,6 +252,117 @@ final class InvoiceAccountingListener
             ],
             moduleCode: 'MODULE_22_GENERAL_LEDGER'
         );
+    }
+
+    /**
+     * The lines between the document total and what the customer pays. The VAT of a split-payment invoice stays on its
+     * account for the register, and leaves it in the same entry: the public administration pays it, so it is neither
+     * collected nor owed. Each line is skipped when its amount is zero.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function fiscalLines(InvoicePostedEvent $event, SalesInvoice $invoice, string $vatAccountId, string $currency, float $exchangeRate): array
+    {
+        $tenantId = $event->tenantId;
+        $number = $event->invoiceNumber;
+        $line = static fn (string $accountId, string $debit, string $credit, string $description): array => [
+            'account_id' => $accountId,
+            'debit_amount' => $debit,
+            'credit_amount' => $credit,
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
+            'description' => "{$description}: Invoice {$number}",
+        ];
+        $lines = [];
+
+        if ($invoice->withholding_tax_enabled && Decimal::isPositive((string) $invoice->withholding_tax_amount)) {
+            $lines[] = $line((string) $this->accounts->withholdingReceivable($tenantId)->id, (string) $invoice->withholding_tax_amount, '0', 'Withholding suffered');
+        }
+
+        if ($invoice->enasarco_enabled && Decimal::isPositive((string) $invoice->enasarco_amount)) {
+            $lines[] = $line((string) $this->accounts->enasarcoExpense($tenantId)->id, (string) $invoice->enasarco_amount, '0', 'Enasarco withheld');
+        }
+
+        if ($invoice->split_payment && Decimal::isPositive((string) $invoice->total_tax)) {
+            $lines[] = $line($vatAccountId, (string) $invoice->total_tax, '0', 'Split payment VAT paid by the customer to the tax authority');
+        }
+
+        if ($invoice->fund_enabled && Decimal::isPositive((string) $invoice->fund_amount)) {
+            $account = TipoCassa::tryFrom((string) $invoice->fund_type)?->isRivalsaInps() ? $this->accounts->pensionFundRecharge($tenantId) : $this->accounts->pensionFundPayable($tenantId);
+            $lines[] = $line((string) $account->id, '0', (string) $invoice->fund_amount, 'Pension fund contribution');
+        }
+
+        if ($invoice->stamp_duty_applied && Decimal::isPositive((string) $invoice->stamp_duty_amount)) {
+            $amount = (string) $invoice->stamp_duty_amount;
+            $lines[] = $line((string) $this->accounts->stampDutyPayable($tenantId)->id, '0', $amount, 'Stamp duty');
+
+            if (! $invoice->stamp_duty_charged) {
+                $lines[] = $line((string) $this->accounts->stampDutyExpense($tenantId)->id, $amount, '0', 'Stamp duty not charged to the customer');
+            }
+        }
+
+        return $lines;
+    }
+
+    /**
+     * A self-invoice opens no receivable and earns nothing: it only moves VAT, as its type says. A document without an
+     * entry is left without one, which is also what makes it pass this listener again unchanged.
+     */
+    private function postSelfInvoice(InvoicePostedEvent $event, SalesInvoice $invoice, string $periodId, string $documentDate): void
+    {
+        $treatment = TipoDocumento::ofInvoice($invoice)->ledgerTreatment();
+
+        if ($treatment === SelfInvoiceLedgerTreatment::NoEntry) {
+            return;
+        }
+
+        $tenantId = $event->tenantId;
+        $revenueByLine = array_column($event->revenueLines, 'amount', 'line_id');
+        $debitAccount = $treatment === SelfInvoiceLedgerTreatment::Integration ? $this->accounts->inputVat($tenantId) : $this->accounts->selfInvoiceVatCost($tenantId);
+        $creditAccount = $this->accounts->outputVat($tenantId);
+        $lines = [];
+
+        foreach ($event->taxLines as $taxLine) {
+            $amount = (float) $taxLine['amount'];
+
+            if ($amount === 0.0) {
+                continue;
+            }
+
+            $vat = [
+                'currency' => $event->currency,
+                'exchange_rate' => $event->exchangeRate > 0 ? $event->exchangeRate : 1.0,
+                'vat_tax_amount' => $amount,
+                'vat_base_amount' => $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? 0.0,
+                'vat_rate_percent' => $taxLine['tax_rate'] ?? null,
+            ];
+
+            $lines[] = $vat + ['account_id' => $debitAccount->id, 'debit_amount' => $amount, 'credit_amount' => 0.0, 'description' => "VAT of self-invoice {$event->invoiceNumber}"];
+            $lines[] = $vat + ['account_id' => $creditAccount->id, 'debit_amount' => 0.0, 'credit_amount' => $amount, 'description' => "VAT of self-invoice {$event->invoiceNumber}"];
+        }
+
+        if ($lines === []) {
+            return;
+        }
+
+        $journalEntry = $this->postingService->createAndPost([
+            'tenant_id' => $tenantId,
+            'company_id' => $event->companyId,
+            'fiscal_period_id' => $periodId,
+            'entry_number' => 'AF-INV-'.strtoupper(Str::random(6)),
+            'source_document_type' => 'sales_invoice',
+            'source_document_id' => $event->invoiceId,
+            'document_number' => $event->invoiceNumber,
+            'posting_date' => $documentDate,
+            'document_date' => $documentDate,
+            'journal_type' => 'standard',
+            'description' => "Self-invoice GL Posting: {$event->invoiceNumber}",
+            'lines' => $lines,
+        ]);
+
+        SalesInvoice::withoutGlobalScope(TenantScope::class)->where('id', $event->invoiceId)->update([
+            'gl_journal_entry_id' => (string) $journalEntry->id,
+        ]);
     }
 
     /**

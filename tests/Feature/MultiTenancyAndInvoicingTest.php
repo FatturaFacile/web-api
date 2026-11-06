@@ -192,6 +192,9 @@ test('it generates sdi xml for italian invoice', function (): void {
         'line_total' => 500.00,
     ]);
 
+    $this->tenantIt->update(['settings' => ['street' => 'Via Verdi 1', 'postal_code' => '20121', 'city' => 'Milano']]);
+    $contact->addresses()->create(['tenant_id' => $this->tenantIt->id, 'type' => 'billing', 'street' => 'Via Dante 2', 'postal_code' => '20121', 'city' => 'Milano', 'country' => 'IT']);
+
     $response = $this->withHeader('X-Tenant-Id', $this->tenantIt->id)
         ->postJson("/api/v1/sales/invoices/{$invoice->id}/generate-sdi-xml");
 

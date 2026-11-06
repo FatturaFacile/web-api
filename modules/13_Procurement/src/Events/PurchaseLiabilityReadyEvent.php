@@ -25,7 +25,9 @@ final readonly class PurchaseLiabilityReadyEvent implements DomainEventInterface
         public ?string $documentDate = null,
         public ?string $dueDate = null,
         public bool $isCreditNote = false,
-        public float $exchangeRate = 1.0
+        public float $exchangeRate = 1.0,
+        public float $withholdingTaxAmount = 0.0,
+        public float $contributionAmount = 0.0
     ) {}
 
     public function getEventId(): string

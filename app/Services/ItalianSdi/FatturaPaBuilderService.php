@@ -4,9 +4,21 @@ declare(strict_types=1);
 
 namespace App\Services\ItalianSdi;
 
+use App\Models\Contact;
 use App\Models\Invoice;
+use App\Models\Tenant;
+use Carbon\Carbon;
 use DOMDocument;
+use DOMElement;
 use InvalidArgumentException;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\Invoicing\Models\DeclarationOfIntent;
+use Modules\SDI\Enums\CausalePagamento;
+use Modules\SDI\Enums\NaturaIva;
+use Modules\SDI\Enums\RegimeFiscale;
+use Modules\SDI\Enums\TipoDocumento;
+use Modules\SDI\Enums\TipoRitenuta;
+use Modules\SDI\Services\SdiPreflight;
 
 class FatturaPaBuilderService
 {
@@ -93,7 +105,10 @@ class FatturaPaBuilderService
     }
 
     /**
-     * Build and serialize the official XML FatturaPA (v1.2.2 / v1.2.1) string.
+     * Build and serialize the official FatturaPA XML (schema v1.2.3). It never fills in missing master data: the document
+     * must have passed {@see SdiPreflight}, and what is still missing here is an error.
+     *
+     * @throws InvalidArgumentException when a mandatory value is missing
      */
     public function buildFatturaPaXml(Invoice $invoice, ?string $progressive = null): string
     {
@@ -103,6 +118,8 @@ class FatturaPaBuilderService
         if ($tenant === null) {
             throw new InvalidArgumentException('Invoice must belong to a valid tenant.');
         }
+
+        $type = TipoDocumento::ofInvoice($invoice);
 
         $dom = new DOMDocument('1.0', 'UTF-8');
         $dom->formatOutput = true;
@@ -115,147 +132,448 @@ class FatturaPaBuilderService
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:p', 'http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2');
         $root->setAttributeNS('http://www.w3.org/2000/xmlns/', 'xmlns:xsi', 'http://www.w3.org/2001/XMLSchema-instance');
 
-        $isPublicAdmin = ($contact->sdi_code && strlen(trim($contact->sdi_code)) === 6);
-        $formatoTrasmissione = $isPublicAdmin ? 'FPA12' : 'FPR12';
+        $formatoTrasmissione = $this->transmissionFormat($invoice);
         $root->setAttribute('versione', $formatoTrasmissione);
         $dom->appendChild($root);
 
-        // ==========================================
-        // 1. FatturaElettronicaHeader
-        // ==========================================
         $header = $dom->createElement('FatturaElettronicaHeader');
         $root->appendChild($header);
 
-        // 1.1 DatiTrasmissione
+        $header->appendChild($this->transmissionData($dom, $invoice, $type, $formatoTrasmissione, $progressive));
+        $header->appendChild($type->swapsParties() ? $this->contactAsCedente($dom, $contact) : $this->tenantAsCedente($dom, $tenant));
+        $header->appendChild($type->isSelfInvoice() ? $this->tenantAsCessionario($dom, $tenant) : $this->contactAsCessionario($dom, $contact));
+
+        if ($type->swapsParties()) {
+            $header->appendChild($dom->createElement('SoggettoEmittente', 'CC'));
+        }
+
+        $body = $dom->createElement('FatturaElettronicaBody');
+        $root->appendChild($body);
+
+        $body->appendChild($this->generalData($dom, $invoice, $type));
+        $body->appendChild($this->goodsAndServices($dom, $invoice));
+
+        if (! $type->isSelfInvoice()) {
+            $body->appendChild($this->paymentData($dom, $invoice));
+        }
+
+        return (string) $dom->saveXML();
+    }
+
+    /**
+     * The registered office of the tenant, from its settings or from the `company` preferences the documents print.
+     *
+     * @return array{street: ?string, postal_code: ?string, city: ?string, province: ?string}
+     */
+    public function tenantAddress(Tenant $tenant): array
+    {
+        $settings = $tenant->settings ?? [];
+        $company = $settings['preferences']['company'] ?? [];
+        $street = $company['street'] ?? null;
+
+        if ($street !== null && ! empty($company['house_number'])) {
+            $street .= ' '.$company['house_number'];
+        }
+
+        return [
+            'street' => $settings['street'] ?? $street,
+            'postal_code' => $settings['postal_code'] ?? ($company['postal_code'] ?? null),
+            'city' => $settings['city'] ?? ($company['city'] ?? null),
+            'province' => $settings['province'] ?? ($company['province'] ?? null),
+        ];
+    }
+
+    /**
+     * FPA12 for a public administration, recognised by its six-character office code. A self-invoice is addressed to the
+     * tenant itself, so the code of the counterparty does not count.
+     */
+    public function transmissionFormat(Invoice $invoice): string
+    {
+        $contact = $invoice->contact;
+
+        if (TipoDocumento::ofInvoice($invoice)->isSelfInvoice()) {
+            return 'FPR12';
+        }
+
+        return ($contact?->sdi_code && strlen(trim($contact->sdi_code)) === 6) ? 'FPA12' : 'FPR12';
+    }
+
+    /**
+     * VAT nature of a line, null when it carries VAT. A nature next to a rate is refused by SDI (error 00401).
+     */
+    public function lineNature(Invoice $invoice, float $rate): ?string
+    {
+        if ($invoice->reverse_charge) {
+            return 'N6.9'; // Inversione contabile - altri casi
+        }
+
+        if ($rate !== 0.0) {
+            return null;
+        }
+
+        if (RegimeFiscale::ofTenant($invoice->tenant)->isForfettario()) {
+            return NaturaIva::N22->value;
+        }
+
+        if ($invoice->declaration_of_intent_id !== null) {
+            return NaturaIva::N35->value;
+        }
+
+        return $invoice->vat_nature ?? ($invoice->tenant->settings['sdi_zero_rate_nature'] ?? null);
+    }
+
+    private function transmissionData(DOMDocument $dom, Invoice $invoice, TipoDocumento $type, string $format, ?string $progressive): DOMElement
+    {
+        $tenant = $invoice->tenant;
+        $contact = $invoice->contact;
+
         $datiTrasmissione = $dom->createElement('DatiTrasmissione');
         $idTrasmittente = $dom->createElement('IdTrasmittente');
         $idTrasmittente->appendChild($dom->createElement('IdPaese', 'IT'));
-        $idTrasmittente->appendChild($dom->createElement('IdCodice', $this->fiscalId($tenant->vat_number) ?: '99999999999'));
+        $idTrasmittente->appendChild($dom->createElement('IdCodice', $this->required($this->fiscalId($tenant->vat_number), 'tenant vat_number')));
         $datiTrasmissione->appendChild($idTrasmittente);
 
         $progressivoInvio = $progressive ?? (substr(preg_replace('/[^A-Za-z0-9]/', '', $invoice->invoice_number), 0, 10) ?: 'INV'.time());
         $datiTrasmissione->appendChild($dom->createElement('ProgressivoInvio', $progressivoInvio));
-        $datiTrasmissione->appendChild($dom->createElement('FormatoTrasmissione', $formatoTrasmissione));
+        $datiTrasmissione->appendChild($dom->createElement('FormatoTrasmissione', $format));
 
-        $codiceDestinatario = $contact->sdi_code ?: '0000000';
+        // A self-invoice comes back to the tenant, not to the supplier it integrates.
+        $sdiCode = $type->isSelfInvoice() ? $tenant->sdi_code : $contact->sdi_code;
+        $pec = $type->isSelfInvoice() ? $tenant->pec_email : $contact->pec;
+        $codiceDestinatario = $sdiCode ?: '0000000';
         $datiTrasmissione->appendChild($dom->createElement('CodiceDestinatario', strtoupper($codiceDestinatario)));
 
-        if ($codiceDestinatario === '0000000' && ! empty($contact->pec)) {
-            $datiTrasmissione->appendChild($dom->createElement('PECDestinatario', $contact->pec));
+        if ($codiceDestinatario === '0000000' && ! empty($pec)) {
+            $datiTrasmissione->appendChild($dom->createElement('PECDestinatario', $pec));
         }
-        $header->appendChild($datiTrasmissione);
 
-        // 1.2 CedentePrestatore (Supplier / Active Tenant)
+        return $datiTrasmissione;
+    }
+
+    private function tenantAsCedente(DOMDocument $dom, Tenant $tenant): DOMElement
+    {
         $cedente = $dom->createElement('CedentePrestatore');
-        $datiAnagraficiCedente = $dom->createElement('DatiAnagrafici');
-        $idFiscaleIvaCedente = $dom->createElement('IdFiscaleIVA');
-        $idFiscaleIvaCedente->appendChild($dom->createElement('IdPaese', $tenant->country ?: 'IT'));
-        $idFiscaleIvaCedente->appendChild($dom->createElement('IdCodice', $this->fiscalId($tenant->vat_number) ?: '00000000000'));
-        $datiAnagraficiCedente->appendChild($idFiscaleIvaCedente);
+        $dati = $dom->createElement('DatiAnagrafici');
+        $dati->appendChild($this->fiscalIdentity($dom, $tenant->country ?: 'IT', $this->required($this->fiscalId($tenant->vat_number), 'tenant vat_number')));
 
         if (! empty($tenant->fiscal_code)) {
-            $datiAnagraficiCedente->appendChild($dom->createElement('CodiceFiscale', $tenant->fiscal_code));
+            $dati->appendChild($dom->createElement('CodiceFiscale', $tenant->fiscal_code));
         }
 
-        $anagraficaCedente = $dom->createElement('Anagrafica');
-        $anagraficaCedente->appendChild($dom->createElement('Denominazione', htmlspecialchars($tenant->legal_name ?: $tenant->name)));
-        $datiAnagraficiCedente->appendChild($anagraficaCedente);
-        $datiAnagraficiCedente->appendChild($dom->createElement('RegimeFiscale', $tenant->settings['regime_fiscale'] ?? 'RF01'));
-        $cedente->appendChild($datiAnagraficiCedente);
+        $anagrafica = $dom->createElement('Anagrafica');
+        $anagrafica->appendChild($dom->createElement('Denominazione', htmlspecialchars($tenant->legal_name ?: $tenant->name)));
+        $dati->appendChild($anagrafica);
+        $dati->appendChild($dom->createElement('RegimeFiscale', RegimeFiscale::ofTenant($tenant)->value));
+        $cedente->appendChild($dati);
+        $cedente->appendChild($this->tenantSeat($dom, $tenant));
 
-        $sedeCedente = $dom->createElement('Sede');
-        $sedeCedente->appendChild($dom->createElement('Indirizzo', htmlspecialchars($tenant->settings['street'] ?? 'Via Roma 1')));
-        $sedeCedente->appendChild($dom->createElement('CAP', $tenant->settings['postal_code'] ?? '20121'));
-        $sedeCedente->appendChild($dom->createElement('Comune', htmlspecialchars($tenant->settings['city'] ?? 'Milano')));
-        if (! empty($tenant->settings['province'])) {
-            $sedeCedente->appendChild($dom->createElement('Provincia', strtoupper(substr($tenant->settings['province'], 0, 2))));
-        }
-        $sedeCedente->appendChild($dom->createElement('Nazione', $tenant->country ?: 'IT'));
-        $cedente->appendChild($sedeCedente);
-        $header->appendChild($cedente);
+        return $cedente;
+    }
 
-        // 1.3 CessionarioCommittente (Customer / Contact)
+    private function tenantAsCessionario(DOMDocument $dom, Tenant $tenant): DOMElement
+    {
         $cessionario = $dom->createElement('CessionarioCommittente');
-        $datiAnagraficiCessionario = $dom->createElement('DatiAnagrafici');
+        $dati = $dom->createElement('DatiAnagrafici');
+        $dati->appendChild($this->fiscalIdentity($dom, $tenant->country ?: 'IT', $this->required($this->fiscalId($tenant->vat_number), 'tenant vat_number')));
+
+        if (! empty($tenant->fiscal_code)) {
+            $dati->appendChild($dom->createElement('CodiceFiscale', $tenant->fiscal_code));
+        }
+
+        $anagrafica = $dom->createElement('Anagrafica');
+        $anagrafica->appendChild($dom->createElement('Denominazione', htmlspecialchars($tenant->legal_name ?: $tenant->name)));
+        $dati->appendChild($anagrafica);
+        $cessionario->appendChild($dati);
+        $cessionario->appendChild($this->tenantSeat($dom, $tenant));
+
+        return $cessionario;
+    }
+
+    private function tenantSeat(DOMDocument $dom, Tenant $tenant): DOMElement
+    {
+        $address = $this->tenantAddress($tenant);
+
+        return $this->seat(
+            $dom,
+            $this->required($address['street'], 'tenant street'),
+            $this->required($address['postal_code'], 'tenant postal_code'),
+            $this->required($address['city'], 'tenant city'),
+            $address['province'],
+            $tenant->country ?: 'IT'
+        );
+    }
+
+    /**
+     * The supplier of an integration document: what the buyer knows of it, under a regime it cannot state.
+     */
+    private function contactAsCedente(DOMDocument $dom, Contact $contact): DOMElement
+    {
+        $cedente = $dom->createElement('CedentePrestatore');
+        $dati = $dom->createElement('DatiAnagrafici');
+        $dati->appendChild($this->fiscalIdentity($dom, $contact->country ?: 'IT', $this->required($this->fiscalId($contact->vat_number), 'supplier vat_number')));
+
+        if (! empty($contact->fiscal_code)) {
+            $dati->appendChild($dom->createElement('CodiceFiscale', $contact->fiscal_code));
+        }
+
+        $dati->appendChild($this->contactRegistry($dom, $contact));
+        $dati->appendChild($dom->createElement('RegimeFiscale', (string) config('fiscal_it.self_invoice.supplier_regime')));
+        $cedente->appendChild($dati);
+        $cedente->appendChild($this->contactSeat($dom, $contact));
+
+        return $cedente;
+    }
+
+    private function contactAsCessionario(DOMDocument $dom, Contact $contact): DOMElement
+    {
+        $cessionario = $dom->createElement('CessionarioCommittente');
+        $dati = $dom->createElement('DatiAnagrafici');
 
         if (! empty($contact->vat_number)) {
-            $idFiscaleIvaCess = $dom->createElement('IdFiscaleIVA');
-            $idFiscaleIvaCess->appendChild($dom->createElement('IdPaese', $contact->country ?: 'IT'));
-            $idFiscaleIvaCess->appendChild($dom->createElement('IdCodice', $this->fiscalId($contact->vat_number)));
-            $datiAnagraficiCessionario->appendChild($idFiscaleIvaCess);
+            $dati->appendChild($this->fiscalIdentity($dom, $contact->country ?: 'IT', $this->fiscalId($contact->vat_number)));
         }
 
         if (! empty($contact->fiscal_code)) {
-            $datiAnagraficiCessionario->appendChild($dom->createElement('CodiceFiscale', $contact->fiscal_code));
+            $dati->appendChild($dom->createElement('CodiceFiscale', $contact->fiscal_code));
         }
 
-        $anagraficaCess = $dom->createElement('Anagrafica');
+        $dati->appendChild($this->contactRegistry($dom, $contact));
+        $cessionario->appendChild($dati);
+        $cessionario->appendChild($this->contactSeat($dom, $contact));
+
+        return $cessionario;
+    }
+
+    private function contactRegistry(DOMDocument $dom, Contact $contact): DOMElement
+    {
+        $anagrafica = $dom->createElement('Anagrafica');
+
         if (! empty($contact->company_name)) {
-            $anagraficaCess->appendChild($dom->createElement('Denominazione', htmlspecialchars($contact->company_name)));
+            $anagrafica->appendChild($dom->createElement('Denominazione', htmlspecialchars($contact->company_name)));
         } else {
-            $anagraficaCess->appendChild($dom->createElement('Nome', htmlspecialchars($contact->first_name ?: '')));
-            $anagraficaCess->appendChild($dom->createElement('Cognome', htmlspecialchars($contact->last_name ?: '')));
+            $anagrafica->appendChild($dom->createElement('Nome', htmlspecialchars($contact->first_name ?: '')));
+            $anagrafica->appendChild($dom->createElement('Cognome', htmlspecialchars($contact->last_name ?: '')));
         }
-        $datiAnagraficiCessionario->appendChild($anagraficaCess);
-        $cessionario->appendChild($datiAnagraficiCessionario);
 
+        return $anagrafica;
+    }
+
+    private function contactSeat(DOMDocument $dom, Contact $contact): DOMElement
+    {
         $billingAddress = $contact->addresses()->where('type', 'billing')->first();
-        $sedeCess = $dom->createElement('Sede');
-        $sedeCess->appendChild($dom->createElement('Indirizzo', htmlspecialchars($billingAddress?->street ?: 'Via Dante 10')));
-        $sedeCess->appendChild($dom->createElement('CAP', $billingAddress?->postal_code ?: '00100'));
-        $sedeCess->appendChild($dom->createElement('Comune', htmlspecialchars($billingAddress?->city ?: 'Roma')));
-        if (! empty($billingAddress?->state_canton)) {
-            $sedeCess->appendChild($dom->createElement('Provincia', strtoupper(substr($billingAddress->state_canton, 0, 2))));
+
+        return $this->seat(
+            $dom,
+            $this->required($billingAddress?->street, 'contact billing street'),
+            $this->required($billingAddress?->postal_code, 'contact billing postal_code'),
+            $this->required($billingAddress?->city, 'contact billing city'),
+            $billingAddress?->state_canton,
+            $contact->country ?: 'IT'
+        );
+    }
+
+    private function fiscalIdentity(DOMDocument $dom, string $country, string $code): DOMElement
+    {
+        $identity = $dom->createElement('IdFiscaleIVA');
+        $identity->appendChild($dom->createElement('IdPaese', $country));
+        $identity->appendChild($dom->createElement('IdCodice', $code));
+
+        return $identity;
+    }
+
+    private function seat(DOMDocument $dom, string $street, string $postalCode, string $city, ?string $province, string $country): DOMElement
+    {
+        $isItalian = $country === 'IT';
+        $sede = $dom->createElement('Sede');
+        $sede->appendChild($dom->createElement('Indirizzo', htmlspecialchars($street)));
+        $sede->appendChild($dom->createElement('CAP', $isItalian || preg_match('/^\d{5}$/', $postalCode) === 1 ? $postalCode : (string) config('fiscal_it.foreign_postal_code')));
+        $sede->appendChild($dom->createElement('Comune', htmlspecialchars($city)));
+
+        if ($isItalian && ! empty($province)) {
+            $sede->appendChild($dom->createElement('Provincia', strtoupper(substr($province, 0, 2))));
         }
-        $sedeCess->appendChild($dom->createElement('Nazione', $contact->country ?: 'IT'));
-        $cessionario->appendChild($sedeCess);
-        $header->appendChild($cessionario);
 
-        // ==========================================
-        // 2. FatturaElettronicaBody
-        // ==========================================
-        $body = $dom->createElement('FatturaElettronicaBody');
-        $root->appendChild($body);
+        $sede->appendChild($dom->createElement('Nazione', $country));
 
-        // 2.1 DatiGenerali
+        return $sede;
+    }
+
+    private function generalData(DOMDocument $dom, Invoice $invoice, TipoDocumento $type): DOMElement
+    {
         $datiGenerali = $dom->createElement('DatiGenerali');
         $datiGeneraliDoc = $dom->createElement('DatiGeneraliDocumento');
-
-        $tipoDocumento = match ($invoice->invoice_type) {
-            'credit_note' => 'TD04',
-            default => 'TD01',
-        };
-        $datiGeneraliDoc->appendChild($dom->createElement('TipoDocumento', $tipoDocumento));
+        $datiGeneraliDoc->appendChild($dom->createElement('TipoDocumento', $type->value));
         $datiGeneraliDoc->appendChild($dom->createElement('Divisa', $invoice->currency ?: 'EUR'));
         $datiGeneraliDoc->appendChild($dom->createElement('Data', $invoice->date->format('Y-m-d')));
         $datiGeneraliDoc->appendChild($dom->createElement('Numero', $invoice->invoice_number));
-        if ($invoice->withholding_tax_enabled) {
-            $datiRitenuta = $dom->createElement('DatiRitenuta');
-            $datiRitenuta->appendChild($dom->createElement('TipoRitenuta', $tenant->settings['sdi_withholding_type'] ?? 'RT01'));
-            $datiRitenuta->appendChild($dom->createElement('ImportoRitenuta', number_format((float) $invoice->withholding_tax_amount, 2, '.', '')));
-            $datiRitenuta->appendChild($dom->createElement('AliquotaRitenuta', number_format((float) $invoice->withholding_tax_percent, 2, '.', '')));
-            $datiRitenuta->appendChild($dom->createElement('CausalePagamento', $tenant->settings['sdi_withholding_reason'] ?? 'A'));
-            $datiGeneraliDoc->appendChild($datiRitenuta);
+
+        foreach ($this->withholdingBlocks($dom, $invoice) as $block) {
+            $datiGeneraliDoc->appendChild($block);
         }
 
         if ($invoice->stamp_duty_applied) {
             $datiBollo = $dom->createElement('DatiBollo');
             $datiBollo->appendChild($dom->createElement('BolloVirtuale', 'SI'));
-            $datiBollo->appendChild($dom->createElement('ImportoBollo', number_format((float) $invoice->stamp_duty_amount, 2, '.', '')));
+            $datiBollo->appendChild($dom->createElement('ImportoBollo', $this->money($invoice->stamp_duty_amount)));
             $datiGeneraliDoc->appendChild($datiBollo);
         }
 
-        $datiGeneraliDoc->appendChild($dom->createElement('ImportoTotaleDocumento', number_format((float) $invoice->total_gross, 2, '.', '')));
-        $datiGenerali->appendChild($datiGeneraliDoc);
-        $body->appendChild($datiGenerali);
+        if ($invoice->fund_enabled) {
+            $datiGeneraliDoc->appendChild($this->pensionFund($dom, $invoice));
+        }
 
-        // 2.2 DatiBeniServizi
+        $datiGeneraliDoc->appendChild($dom->createElement('ImportoTotaleDocumento', $this->money($invoice->total_gross)));
+
+        foreach ($this->legalWordings($invoice) as $wording) {
+            $datiGeneraliDoc->appendChild($dom->createElement('Causale', htmlspecialchars($wording)));
+        }
+
+        $datiGenerali->appendChild($datiGeneraliDoc);
+
+        $linked = $this->linkedDocument($dom, $invoice);
+
+        if ($linked !== null) {
+            $datiGenerali->appendChild($linked);
+        }
+
+        return $datiGenerali;
+    }
+
+    /**
+     * @return list<DOMElement>
+     */
+    private function withholdingBlocks(DOMDocument $dom, Invoice $invoice): array
+    {
+        $tenant = $invoice->tenant;
+        $blocks = [];
+
+        if ($invoice->withholding_tax_enabled) {
+            $blocks[] = $this->withholdingBlock(
+                $dom,
+                $invoice->withholding_tax_type ?? ($tenant->settings['sdi_withholding_type'] ?? TipoRitenuta::Rt01->value),
+                $invoice->withholding_tax_amount,
+                $invoice->withholding_tax_percent,
+                $invoice->withholding_tax_reason ?? ($tenant->settings['sdi_withholding_reason'] ?? CausalePagamento::A->value)
+            );
+        }
+
+        if ($invoice->enasarco_enabled && Decimal::isPositive((string) $invoice->enasarco_amount)) {
+            $blocks[] = $this->withholdingBlock(
+                $dom,
+                TipoRitenuta::Rt04->value,
+                $invoice->enasarco_amount,
+                $invoice->enasarco_percent,
+                ($invoice->enasarco_agent_type === 'single_mandate' ? CausalePagamento::Q : CausalePagamento::R)->value
+            );
+        }
+
+        return $blocks;
+    }
+
+    private function withholdingBlock(DOMDocument $dom, string $type, mixed $amount, mixed $rate, string $reason): DOMElement
+    {
+        $datiRitenuta = $dom->createElement('DatiRitenuta');
+        $datiRitenuta->appendChild($dom->createElement('TipoRitenuta', $type));
+        $datiRitenuta->appendChild($dom->createElement('ImportoRitenuta', $this->money($amount)));
+        $datiRitenuta->appendChild($dom->createElement('AliquotaRitenuta', $this->money($rate)));
+        $datiRitenuta->appendChild($dom->createElement('CausalePagamento', $reason));
+
+        return $datiRitenuta;
+    }
+
+    private function pensionFund(DOMDocument $dom, Invoice $invoice): DOMElement
+    {
+        $rate = (float) $invoice->fund_vat_rate;
+        $nature = $this->lineNature($invoice, $invoice->reverse_charge ? 0.0 : $rate);
+
+        $fund = $dom->createElement('DatiCassaPrevidenziale');
+        $fund->appendChild($dom->createElement('TipoCassa', (string) $invoice->fund_type));
+        $fund->appendChild($dom->createElement('AlCassa', $this->money($invoice->fund_percent)));
+        $fund->appendChild($dom->createElement('ImportoContributoCassa', $this->money($invoice->fund_amount)));
+        $fund->appendChild($dom->createElement('ImponibileCassa', $this->money($invoice->total_net)));
+        $fund->appendChild($dom->createElement('AliquotaIVA', $this->money($invoice->reverse_charge ? 0 : $rate)));
+
+        if ($invoice->fund_subject_to_withholding && $invoice->withholding_tax_enabled) {
+            $fund->appendChild($dom->createElement('Ritenuta', 'SI'));
+        }
+
+        if ($nature !== null) {
+            $fund->appendChild($dom->createElement('Natura', $nature));
+        }
+
+        return $fund;
+    }
+
+    /**
+     * The wording the law wants on the document. It stays in Italian whatever the language of the customer: the XML goes
+     * to the tax authority.
+     *
+     * @return list<string>
+     */
+    private function legalWordings(Invoice $invoice): array
+    {
+        $wordings = [];
+
+        if (RegimeFiscale::ofTenant($invoice->tenant)->isForfettario()) {
+            $wordings[] = (string) __('pdf.legal.forfettario', [], 'it');
+        }
+
+        $declaration = $invoice->declarationOfIntent;
+
+        if ($declaration !== null) {
+            $wordings[] = (string) __('pdf.legal.declaration_of_intent', [
+                'protocol' => $declaration->protocol_number,
+                'date' => $declaration->receipt_date->format('d/m/Y'),
+            ], 'it');
+        }
+
+        return $wordings;
+    }
+
+    /**
+     * The document this one refers to: the received invoice of a self-invoice, the invoice a credit note corrects, or the
+     * reference stated by hand.
+     */
+    private function linkedDocument(DOMDocument $dom, Invoice $invoice): ?DOMElement
+    {
+        $number = $invoice->linked_document_number;
+        $date = $invoice->linked_document_date;
+
+        if ($number === null && $invoice->source_passive_invoice_id !== null) {
+            $source = $invoice->sourcePassiveInvoice;
+            $number = $source?->invoice_number;
+            $date = $source?->date;
+        }
+
+        if ($number === null && $invoice->related_invoice_id !== null) {
+            $related = $invoice->relatedInvoice;
+            $number = $related?->invoice_number;
+            $date = $related?->date;
+        }
+
+        if ($number === null) {
+            return null;
+        }
+
+        $linked = $dom->createElement('DatiFattureCollegate');
+        $linked->appendChild($dom->createElement('IdDocumento', htmlspecialchars(mb_substr((string) $number, 0, 20))));
+
+        if ($date !== null) {
+            $linked->appendChild($dom->createElement('Data', Carbon::parse($date)->format('Y-m-d')));
+        }
+
+        return $linked;
+    }
+
+    private function goodsAndServices(DOMDocument $dom, Invoice $invoice): DOMElement
+    {
         $datiBeniServizi = $dom->createElement('DatiBeniServizi');
+        $declaration = $invoice->declarationOfIntent;
         $lineNumber = 1;
         $vatAggregates = [];
+        $hasWithholding = $invoice->withholding_tax_enabled || ($invoice->enasarco_enabled && Decimal::isPositive((string) $invoice->enasarco_amount));
 
         foreach ($invoice->items as $item) {
-            // A line with a VAT nature has no VAT of its own: SDI refuses a nature next to a rate (error 00401).
             $rate = $invoice->reverse_charge ? 0.0 : (float) $item->tax_rate;
             $natura = $this->lineNature($invoice, $rate);
 
@@ -264,10 +582,10 @@ class FatturaPaBuilderService
             $dettaglioLinee->appendChild($dom->createElement('Descrizione', htmlspecialchars(substr($item->description, 0, 1000))));
             $dettaglioLinee->appendChild($dom->createElement('Quantita', number_format((float) $item->quantity, 2, '.', '')));
             $dettaglioLinee->appendChild($dom->createElement('PrezzoUnitario', number_format((float) $item->unit_price, 4, '.', '')));
-            $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', number_format((float) $item->line_total, 2, '.', '')));
+            $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', $this->money($item->line_total)));
             $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', number_format($rate, 2, '.', '')));
 
-            if ($invoice->withholding_tax_enabled) {
+            if ($hasWithholding) {
                 $dettaglioLinee->appendChild($dom->createElement('Ritenuta', 'SI'));
             }
 
@@ -275,63 +593,119 @@ class FatturaPaBuilderService
                 $dettaglioLinee->appendChild($dom->createElement('Natura', $natura));
             }
 
+            if ($declaration !== null && $natura === NaturaIva::N35->value) {
+                $dettaglioLinee->appendChild($this->declarationReference($dom, $declaration));
+            }
+
             $datiBeniServizi->appendChild($dettaglioLinee);
-
-            // Group VAT for DatiRiepilogo
-            $rateKey = number_format($rate, 2, '.', '').'|'.$natura;
-            if (! isset($vatAggregates[$rateKey])) {
-                $vatAggregates[$rateKey] = [
-                    'rate' => $rate,
-                    'nature' => $natura,
-                    'taxable' => 0.0,
-                    'tax' => 0.0,
-                ];
-            }
-            $vatAggregates[$rateKey]['taxable'] += (float) $item->line_total;
-            $vatAggregates[$rateKey]['tax'] += ((float) $item->line_total * ($rate / 100.0));
+            $this->addToSummary($vatAggregates, $rate, $natura, (string) $item->line_total);
         }
 
-        // Summary records (DatiRiepilogo), in the element order of the schema
-        foreach ($vatAggregates as $agg) {
-            $datiRiepilogo = $dom->createElement('DatiRiepilogo');
-            $datiRiepilogo->appendChild($dom->createElement('AliquotaIVA', number_format($agg['rate'], 2, '.', '')));
-
-            if ($agg['nature'] !== null) {
-                $datiRiepilogo->appendChild($dom->createElement('Natura', $agg['nature']));
-            }
-
-            $datiRiepilogo->appendChild($dom->createElement('ImponibileImporto', number_format($agg['taxable'], 2, '.', '')));
-            $datiRiepilogo->appendChild($dom->createElement('Imposta', number_format($agg['tax'], 2, '.', '')));
-
-            // Split Payment check (EsigibilitaIVA = 'S')
-            if ($invoice->split_payment) {
-                $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'S'));
-            } elseif ($agg['nature'] === null) {
-                $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'I')); // Immediata
-            }
-
-            $datiBeniServizi->appendChild($datiRiepilogo);
+        if ($invoice->fund_enabled) {
+            $rate = $invoice->reverse_charge ? 0.0 : (float) $invoice->fund_vat_rate;
+            $this->addToSummary($vatAggregates, $rate, $this->lineNature($invoice, $rate), (string) $invoice->fund_amount);
         }
-        $body->appendChild($datiBeniServizi);
 
-        // 2.3 DatiPagamento
+        foreach ($vatAggregates as $aggregate) {
+            $datiBeniServizi->appendChild($this->vatSummary($dom, $invoice, $aggregate));
+        }
+
+        return $datiBeniServizi;
+    }
+
+    /**
+     * @param  array<string, array{rate: float, nature: ?string, taxable: string}>  $aggregates
+     */
+    private function addToSummary(array &$aggregates, float $rate, ?string $nature, string $amount): void
+    {
+        $key = number_format($rate, 2, '.', '').'|'.$nature;
+        $current = $aggregates[$key]['taxable'] ?? '0';
+
+        $aggregates[$key] = ['rate' => $rate, 'nature' => $nature, 'taxable' => Decimal::add($current, $amount)];
+    }
+
+    private function declarationReference(DOMDocument $dom, DeclarationOfIntent $declaration): DOMElement
+    {
+        $reference = $dom->createElement('AltriDatiGestionali');
+        $reference->appendChild($dom->createElement('TipoDato', (string) config('fiscal_it.declaration_of_intent.data_type')));
+        $reference->appendChild($dom->createElement('RiferimentoTesto', $declaration->protocol_number));
+        $reference->appendChild($dom->createElement('RiferimentoData', $declaration->receipt_date->format('Y-m-d')));
+
+        return $reference;
+    }
+
+    /**
+     * @param  array{rate: float, nature: ?string, taxable: string}  $aggregate
+     */
+    private function vatSummary(DOMDocument $dom, Invoice $invoice, array $aggregate): DOMElement
+    {
+        $rate = number_format($aggregate['rate'], 2, '.', '');
+        $tax = Decimal::round2(Decimal::div(Decimal::mul($aggregate['taxable'], $rate), '100'));
+        $reference = config('fiscal_it.legal_references')[$aggregate['nature'] ?? ''] ?? null;
+
+        $datiRiepilogo = $dom->createElement('DatiRiepilogo');
+        $datiRiepilogo->appendChild($dom->createElement('AliquotaIVA', $rate));
+
+        if ($aggregate['nature'] !== null) {
+            $datiRiepilogo->appendChild($dom->createElement('Natura', $aggregate['nature']));
+        }
+
+        $datiRiepilogo->appendChild($dom->createElement('ImponibileImporto', Decimal::round2($aggregate['taxable'])));
+        $datiRiepilogo->appendChild($dom->createElement('Imposta', $tax));
+
+        if ($invoice->split_payment) {
+            $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'S'));
+        } elseif ($aggregate['nature'] === null) {
+            $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'I')); // Immediata
+        }
+
+        if (is_string($reference)) {
+            $datiRiepilogo->appendChild($dom->createElement('RiferimentoNormativo', htmlspecialchars($reference)));
+        }
+
+        return $datiRiepilogo;
+    }
+
+    private function paymentData(DOMDocument $dom, Invoice $invoice): DOMElement
+    {
+        $tenant = $invoice->tenant;
+
         $datiPagamento = $dom->createElement('DatiPagamento');
         $datiPagamento->appendChild($dom->createElement('CondizioniPagamento', 'TP02')); // Completo
 
         $dettaglioPagamento = $dom->createElement('DettaglioPagamento');
         $dettaglioPagamento->appendChild($dom->createElement('ModalitaPagamento', $this->paymentMode($invoice)));
+
         if ($invoice->due_date) {
             $dettaglioPagamento->appendChild($dom->createElement('DataScadenzaPagamento', $invoice->due_date->format('Y-m-d')));
         }
-        $dettaglioPagamento->appendChild($dom->createElement('ImportoPagamento', number_format((float) $invoice->total_gross, 2, '.', '')));
+
+        $dettaglioPagamento->appendChild($dom->createElement('ImportoPagamento', $invoice->amountDue()));
 
         if (! empty($tenant->iban)) {
             $dettaglioPagamento->appendChild($dom->createElement('IBAN', preg_replace('/\s+/', '', $tenant->iban)));
         }
-        $datiPagamento->appendChild($dettaglioPagamento);
-        $body->appendChild($datiPagamento);
 
-        return (string) $dom->saveXML();
+        $datiPagamento->appendChild($dettaglioPagamento);
+
+        return $datiPagamento;
+    }
+
+    private function money(mixed $amount): string
+    {
+        return Decimal::round2(number_format((float) $amount, 4, '.', ''));
+    }
+
+    /**
+     * @throws InvalidArgumentException naming what is missing
+     */
+    private function required(?string $value, string $field): string
+    {
+        if ($value === null || trim($value) === '') {
+            throw new InvalidArgumentException("Missing master data for the FatturaPA file: {$field}.");
+        }
+
+        return $value;
     }
 
     /**
@@ -340,18 +714,6 @@ class FatturaPaBuilderService
     private function fiscalId(?string $value): string
     {
         return (string) preg_replace('/^[A-Z]{2}(?=\d)/', '', strtoupper(trim((string) $value)));
-    }
-
-    /**
-     * VAT nature of a line: reverse charge, or the code chosen by the company for its zero-rated sales.
-     */
-    private function lineNature(Invoice $invoice, float $rate): ?string
-    {
-        if ($invoice->reverse_charge) {
-            return 'N6.9'; // Inversione contabile - altri casi
-        }
-
-        return $rate === 0.0 ? ($invoice->tenant->settings['sdi_zero_rate_nature'] ?? null) : null;
     }
 
     /**

@@ -179,6 +179,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/invoices/{id}/reminders', [PaymentReminderController::class, 'index'])->name('invoices.reminders.index');
             Route::post('/invoices/{id}/reminders', [PaymentReminderController::class, 'store'])->name('invoices.reminders.store');
 
+            Route::post('/invoices/send-sdi-bulk', [InvoiceSdiController::class, 'sendBulk'])->name('invoices.send-sdi-bulk');
             Route::post('/invoices/{id}/send-sdi', [InvoiceSdiController::class, 'send'])->name('invoices.send-sdi');
             Route::get('/invoices/{id}/sdi-logs', [InvoiceSdiController::class, 'logs'])->name('invoices.sdi-logs');
 
@@ -263,6 +264,7 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/supplier-invoices/{id}', [SupplierInvoiceController::class, 'show'])->name('supplier-invoices.show');
             Route::post('/supplier-invoices/{id}/mark-paid', [SupplierInvoiceController::class, 'markPaid'])->name('supplier-invoices.mark-paid');
             Route::post('/passive-invoices/receive-xml', [SupplierInvoiceController::class, 'receiveXml'])->name('passive-invoices.receive-xml');
+            Route::post('/passive-invoices/{id}/self-invoice', [SupplierInvoiceController::class, 'selfInvoice'])->name('passive-invoices.self-invoice');
         });
 
         // 6. Treasury, Banking & Cash Management (Enterprise module mounted in modules/24_Treasury)

@@ -16,6 +16,7 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Modules\SDI\Services\SdiPreflight;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,7 +27,8 @@ class InvoiceController extends Controller
     public function __construct(
         private readonly InvoiceService $invoiceService,
         private readonly FatturaPaBuilderService $fatturaPaBuilder,
-        private readonly QrBillGeneratorService $qrBillGenerator
+        private readonly QrBillGeneratorService $qrBillGenerator,
+        private readonly SdiPreflight $preflight
     ) {}
 
     /**
@@ -168,6 +170,27 @@ class InvoiceController extends Controller
                     new OA\Property(property: 'jurisdiction', type: 'string', enum: ['IT', 'CH'], example: 'CH'),
                     new OA\Property(property: 'split_payment', type: 'boolean', nullable: true, example: false),
                     new OA\Property(property: 'reverse_charge', type: 'boolean', nullable: true, example: false),
+                    new OA\Property(property: 'document_type', description: 'FatturaPA TipoDocumento. TD01 when omitted; TD04 only on a credit note.', type: 'string', nullable: true, enum: ['TD01', 'TD02', 'TD03', 'TD04', 'TD05', 'TD06', 'TD16', 'TD17', 'TD18', 'TD19', 'TD20', 'TD21', 'TD22', 'TD23', 'TD24', 'TD25', 'TD26', 'TD27', 'TD28', 'TD29']),
+                    new OA\Property(property: 'vat_nature', description: 'VAT nature of the zero-rated lines (N1-N7, without the parents N2, N3, N6).', type: 'string', nullable: true),
+                    new OA\Property(property: 'source_passive_invoice_id', description: 'The received invoice a self-invoice integrates.', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'linked_document_number', description: 'Reference for DatiFattureCollegate when no stored document is linked.', type: 'string', maxLength: 20, nullable: true),
+                    new OA\Property(property: 'linked_document_date', type: 'string', format: 'date', nullable: true),
+                    new OA\Property(property: 'declaration_of_intent_id', description: 'Declaration of intent to use. An active one of the customer is applied automatically.', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'skip_declaration_of_intent', description: 'Issue with VAT even though the customer has an active declaration.', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'withholding_tax_enabled', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'withholding_tax_percent', type: 'number', nullable: true),
+                    new OA\Property(property: 'withholding_tax_type', type: 'string', nullable: true, enum: ['RT01', 'RT02', 'RT03', 'RT04', 'RT05', 'RT06']),
+                    new OA\Property(property: 'withholding_tax_reason', description: 'CausalePagamento of the CU form.', type: 'string', nullable: true),
+                    new OA\Property(property: 'withholding_tax_base_percent', description: 'Share of the amount subject to withholding, 100 when omitted.', type: 'number', nullable: true),
+                    new OA\Property(property: 'stamp_duty_applied', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'stamp_duty_charged', description: 'Whether the stamp duty is charged to the customer (default true).', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'fund_enabled', description: 'Pension fund contribution (DatiCassaPrevidenziale).', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'fund_type', description: 'TipoCassa, TC22 for the INPS rivalsa.', type: 'string', nullable: true),
+                    new OA\Property(property: 'fund_percent', type: 'number', nullable: true),
+                    new OA\Property(property: 'fund_vat_rate', description: 'VAT rate of the contribution, the highest of the lines when omitted.', type: 'number', nullable: true),
+                    new OA\Property(property: 'fund_subject_to_withholding', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'enasarco_enabled', description: 'Withhold the Enasarco contribution using the parameters of the year.', type: 'boolean', nullable: true),
+                    new OA\Property(property: 'enasarco_agent_type', type: 'string', nullable: true, enum: ['single_mandate', 'multi_mandate']),
                     new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true, example: 'Payment within 30 days.'),
                     new OA\Property(
                         property: 'items',
@@ -318,20 +341,22 @@ class InvoiceController extends Controller
     )]
     public function generateSdiXml(string $id): JsonResponse
     {
-        $invoice = Invoice::with(['tenant', 'contact.addresses', 'items'])->findOrFail($id);
+        $invoice = Invoice::with(['tenant', 'contact.addresses', 'items', 'declarationOfIntent', 'sourcePassiveInvoice', 'relatedInvoice'])->findOrFail($id);
         $this->authorize('sendSdi', $invoice);
+
+        $this->preflight->assertMasterData($invoice);
 
         $xml = $this->fatturaPaBuilder->buildFatturaPaXml($invoice);
         $fileName = sprintf(
             'IT%s_%s.xml',
-            preg_replace('/\D/', '', $invoice->tenant->vat_number ?: '99999999999'),
+            preg_replace('/\D/', '', (string) $invoice->tenant->vat_number),
             substr(preg_replace('/[^A-Za-z0-9]/', '', $invoice->invoice_number), 0, 5)
         );
 
         $metadata = $invoice->sdiMetadata()->updateOrCreate(
             ['invoice_id' => $invoice->id],
             [
-                'transmission_format' => ($invoice->contact?->sdi_code && strlen(trim($invoice->contact->sdi_code)) === 6) ? 'FPA12' : 'FPR12',
+                'transmission_format' => $this->fatturaPaBuilder->transmissionFormat($invoice),
                 'sdi_status' => 'draft',
                 'file_name' => $fileName,
                 'xml_content' => $xml,

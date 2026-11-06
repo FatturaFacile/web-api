@@ -16,7 +16,7 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
     {
         $tenantId = (string) $invoice->tenant_id;
         $customerId = (string) $invoice->contact_id;
-        $gross = (float) $invoice->total_gross;
+        $gross = (float) $invoice->amountDue();
 
         $previousBalance = (float) CustomerLedgerEntry::where('tenant_id', $tenantId)
             ->where('customer_id', $customerId)
@@ -52,7 +52,7 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
     {
         $tenantId = (string) $creditNote->tenant_id;
         $customerId = (string) $creditNote->contact_id;
-        $gross = (float) $creditNote->total_gross;
+        $gross = (float) $creditNote->amountDue();
 
         $previousBalance = (float) CustomerLedgerEntry::where('tenant_id', $tenantId)
             ->where('customer_id', $customerId)

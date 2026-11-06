@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Http\Requests;
 
+use App\Http\Requests\Concerns\ValidatesItalianFiscalFields;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class CreateInvoiceRequest extends FormRequest
 {
+    use ValidatesItalianFiscalFields;
+
     public function authorize(): bool
     {
         return true;
@@ -50,6 +54,7 @@ final class CreateInvoiceRequest extends FormRequest
             'items.*.revenue_account_id' => ['nullable', 'uuid'],
             'items.*.tax_account_id' => ['nullable', 'uuid'],
             'items.*.uom' => ['nullable', 'string', 'max:20'],
+            ...$this->italianFiscalRules(app(TenantContext::class)->getTenantId()),
         ];
     }
 }

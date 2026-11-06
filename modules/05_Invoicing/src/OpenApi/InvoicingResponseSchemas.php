@@ -96,6 +96,25 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'InvoicingDeclarationOfIntent',
+    description: 'Declaration of intent',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'direction', type: 'string', enum: ['received', 'issued']),
+        new OA\Property(property: 'protocol_number', type: 'string'),
+        new OA\Property(property: 'receipt_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'year', type: 'integer'),
+        new OA\Property(property: 'plafond_amount', type: 'string'),
+        new OA\Property(property: 'consumed_amount', type: 'string'),
+        new OA\Property(property: 'residual_amount', type: 'string'),
+        new OA\Property(property: 'valid_from', type: 'string', format: 'date'),
+        new OA\Property(property: 'valid_to', type: 'string', format: 'date'),
+        new OA\Property(property: 'notes', type: 'string', nullable: true),
+    ]
+)]
+#[OA\Schema(
     schema: 'InvoicingSalesInvoiceResource',
     description: 'JSON representation produced by SalesInvoiceResource',
     type: 'object',
@@ -122,6 +141,14 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'jurisdiction'),
         new OA\Property(property: 'split_payment', type: 'boolean'),
         new OA\Property(property: 'reverse_charge', type: 'boolean'),
+        new OA\Property(property: 'document_type', type: 'string'),
+        new OA\Property(property: 'vat_nature', type: 'string', nullable: true),
+        new OA\Property(property: 'amount_due', description: 'What the customer pays: the total less withholding, Enasarco and split-payment VAT.', type: 'number'),
+        new OA\Property(property: 'declaration_of_intent_id', type: 'string', nullable: true),
+        new OA\Property(property: 'withholding_tax_amount', type: 'number', nullable: true),
+        new OA\Property(property: 'stamp_duty_amount', type: 'number', nullable: true),
+        new OA\Property(property: 'fund_amount', type: 'number', nullable: true),
+        new OA\Property(property: 'enasarco_amount', type: 'number'),
         new OA\Property(property: 'sales_order_id', type: 'string'),
         new OA\Property(property: 'delivery_note_id', type: 'string'),
         new OA\Property(property: 'related_invoice_id', type: 'string'),

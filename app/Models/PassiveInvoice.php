@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 
 class PassiveInvoice extends Model
 {
@@ -42,6 +43,9 @@ class PassiveInvoice extends Model
         'total_paid',
         'gl_journal_entry_id',
         'exchange_rate',
+        'withholding_tax_amount',
+        'withholdings',
+        'declaration_of_intent_id',
     ];
 
     protected function casts(): array
@@ -55,7 +59,17 @@ class PassiveInvoice extends Model
             'total_tax' => 'decimal:2',
             'total_paid' => 'decimal:2',
             'exchange_rate' => 'decimal:6',
+            'withholding_tax_amount' => 'decimal:2',
+            'withholdings' => 'array',
         ];
+    }
+
+    /**
+     * What is paid to the supplier: the withholding goes to the tax authority or to the fund instead.
+     */
+    public function amountDue(): string
+    {
+        return Decimal::round2(Decimal::sub((string) ($this->total_amount ?? '0'), (string) ($this->withholding_tax_amount ?? '0')));
     }
 
     /**

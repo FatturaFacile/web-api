@@ -1,6 +1,9 @@
 @if ($totals)
     <table class="totals" role="presentation">
         <tr><td>{{ __('pdf.totals.net') }}</td><td class="right">{{ number_format($totals['net'], 2) }} {{ $currency }}</td></tr>
+        @if (($totals['fund'] ?? 0) > 0)
+            <tr><td>{{ __('pdf.totals.fund') }}</td><td class="right">{{ number_format($totals['fund'], 2) }} {{ $currency }}</td></tr>
+        @endif
         <tr><td>{{ __('pdf.totals.tax') }}</td><td class="right">{{ number_format($totals['tax'], 2) }} {{ $currency }}</td></tr>
         @if (($totals['stamp_duty'] ?? 0) > 0)
             <tr><td>{{ __('pdf.totals.stamp_duty') }}</td><td class="right">{{ number_format($totals['stamp_duty'], 2) }} {{ $currency }}</td></tr>
@@ -12,9 +15,21 @@
         @if (($totals['withholding_tax'] ?? 0) > 0)
             <tr><td>{{ __('pdf.totals.withholding_tax') }}</td><td class="right">- {{ number_format($totals['withholding_tax'], 2) }} {{ $currency }}</td></tr>
         @endif
+        @if (($totals['enasarco'] ?? 0) > 0)
+            <tr><td>{{ __('pdf.totals.enasarco') }}</td><td class="right">- {{ number_format($totals['enasarco'], 2) }} {{ $currency }}</td></tr>
+        @endif
+        @if (($totals['split_payment'] ?? 0) > 0)
+            <tr><td>{{ __('pdf.totals.split_payment') }}</td><td class="right">- {{ number_format($totals['split_payment'], 2) }} {{ $currency }}</td></tr>
+        @endif
+        @if (isset($totals['due']) && round($totals['due'], 2) !== round($totals['gross'], 2))
+            <tr class="grand"><td>{{ __('pdf.totals.due') }}</td><td class="right">{{ number_format($totals['due'], 2) }} {{ $currency }}</td></tr>
+        @endif
         @if (($totals['paid'] ?? 0) > 0)
             <tr><td>{{ __('pdf.totals.paid') }}</td><td class="right">- {{ number_format($totals['paid'], 2) }} {{ $currency }}</td></tr>
             <tr><td><strong>{{ __('pdf.totals.balance') }}</strong></td><td class="right"><strong>{{ number_format($totals['balance'], 2) }} {{ $currency }}</strong></td></tr>
         @endif
     </table>
 @endif
+@foreach (($legal_notes ?? []) as $legalNote)
+    <p class="legal-note">{{ $legalNote }}</p>
+@endforeach

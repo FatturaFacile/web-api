@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Services\ItalianSdi\InvoiceFiscalService;
 use App\Services\Sales\DocumentNumberingService;
 use Carbon\CarbonImmutable;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Enterprise\MultiTenant\Scopes\TenantScope;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
@@ -25,6 +27,7 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesInvoiceItem;
 use Modules\Invoicing\Models\SalesOrder;
+use Modules\SDI\Enums\TipoDocumento;
 
 final class InvoicingService implements InvoicingServiceInterface
 {
@@ -34,7 +37,9 @@ final class InvoicingService implements InvoicingServiceInterface
         private readonly PricingAndDiscountServiceInterface $pricingService,
         private readonly CustomerLedgerServiceInterface $ledgerService,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly DocumentNumberingService $numbering
+        private readonly DocumentNumberingService $numbering,
+        private readonly InvoiceFiscalService $fiscal,
+        private readonly DeclarationOfIntentService $declarations
     ) {}
 
     /**
@@ -85,6 +90,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'customer_agreement_id' => $data['customer_agreement_id'] ?? null,
             'notes' => $data['notes'] ?? null,
             'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
+            ...Arr::only($data, InvoiceFiscalService::INPUT_FIELDS),
         ]);
 
         $actualInvoiceId = (string) $invoice->id;
@@ -115,6 +121,9 @@ final class InvoicingService implements InvoicingServiceInterface
                 'notes' => $item['notes'] ?? null,
             ]);
         }
+
+        $this->fiscal->apply($invoice);
+        $invoice->save();
 
         $this->dispatchDomainEvent(new InvoiceDraftedEvent(
             invoiceId: $actualInvoiceId,
@@ -333,6 +342,13 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoice->load('items');
         $tenantId = (string) $invoice->tenant_id;
 
+        $this->fiscal->apply($invoice);
+        $this->fiscal->assertIssuable($invoice);
+
+        if ($invoice->declaration_of_intent_id !== null) {
+            $this->declarations->consume($invoice);
+        }
+
         $revenueLines = [];
         $taxLines = [];
 
@@ -353,9 +369,20 @@ final class InvoicingService implements InvoicingServiceInterface
             ];
         }
 
-        $postedUserId = Str::isUuid($userId) ? $userId : null;
+        if ($invoice->fund_enabled && (float) $invoice->fund_vat_amount !== 0.0) {
+            $taxLines[] = [
+                'line_id' => null,
+                'account_id' => null,
+                'tax_rate' => (float) $invoice->fund_vat_rate,
+                'amount' => (float) $invoice->fund_vat_amount,
+                'base_amount' => (float) $invoice->fund_amount,
+            ];
+        }
 
-        $this->assignFiscalNumber($invoice, 'invoice');
+        $postedUserId = Str::isUuid($userId) ? $userId : null;
+        $documentType = TipoDocumento::ofInvoice($invoice);
+
+        $this->assignFiscalNumber($invoice, $documentType->numberingSeries());
         $this->applyCashRounding($invoice);
 
         $invoice->status = 'posted';
@@ -363,8 +390,8 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoice->posted_by = $postedUserId;
         $invoice->save();
 
-        // 1. Record customer ledger entry
-        $ledgerEntry = $this->ledgerService->recordInvoiceEntry($invoice, (string) $postedUserId);
+        // 1. Record customer ledger entry: a self-invoice opens no item with the counterparty
+        $ledgerEntry = $documentType->isSelfInvoice() ? null : $this->ledgerService->recordInvoiceEntry($invoice, (string) $postedUserId);
 
         // 2. Dispatch domain event
         $this->dispatchDomainEvent(new InvoicePostedEvent(
@@ -388,11 +415,11 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoice->refresh();
 
         // 3. Emit ReceivableReadyEvent for Treasury integration, unless the ledger posting already announced the item
-        if ($invoice->gl_journal_entry_id === null) {
+        if ($invoice->gl_journal_entry_id === null && $ledgerEntry !== null) {
             $this->dispatchDomainEvent(new ReceivableReadyEvent(
                 customerLedgerId: (string) $ledgerEntry->id,
                 customerId: (string) $invoice->contact_id,
-                openAmount: (float) $invoice->total_gross,
+                openAmount: (float) $invoice->amountDue(),
                 currency: (string) ($invoice->currency ?? 'EUR'),
                 dueDate: CarbonImmutable::parse($invoice->due_date ?? now())->toDateString(),
                 journalEntryId: '',
@@ -410,8 +437,11 @@ final class InvoicingService implements InvoicingServiceInterface
     private function postCreditNote(SalesInvoice $creditNote, string $userId): SalesInvoice
     {
         $creditNote->load('items');
+        $this->fiscal->assertIssuable($creditNote);
         $this->assignFiscalNumber($creditNote, 'credit_note');
         $this->applyCashRounding($creditNote);
+
+        $original = $creditNote->related_invoice_id === null ? null : SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($creditNote->related_invoice_id)->lockForUpdate()->first();
 
         $creditNote->status = 'posted';
         $creditNote->posted_at = now();
@@ -419,9 +449,8 @@ final class InvoicingService implements InvoicingServiceInterface
         $creditNote->total_paid = $creditNote->total_gross;
         $creditNote->payment_status = 'paid';
         $creditNote->receivable_amount = 0.0;
+        $creditNote->split_payment = $creditNote->split_payment || (bool) $original?->split_payment;
         $creditNote->save();
-
-        $original = $creditNote->related_invoice_id === null ? null : SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($creditNote->related_invoice_id)->lockForUpdate()->first();
 
         $this->completeCreditNote($creditNote, $original, $creditNote->items->map(static fn ($item): array => [
             'quantity' => $item->quantity,
@@ -431,8 +460,7 @@ final class InvoicingService implements InvoicingServiceInterface
         ])->all(), $userId);
 
         if ($original !== null) {
-            $outstanding = round((float) $original->total_gross - (float) $original->total_paid, 2);
-            $credited = min($outstanding, (float) $creditNote->total_gross);
+            $credited = min((float) $original->outstandingAmount(), (float) $creditNote->amountDue());
 
             if ($credited > 0) {
                 $this->applyCreditNote($creditNote, $original, $credited, $userId);
@@ -448,6 +476,7 @@ final class InvoicingService implements InvoicingServiceInterface
     private function completeCreditNote(SalesInvoice $creditNote, ?SalesInvoice $original, array $items, string $userId): void
     {
         $this->ledgerService->recordCreditNoteEntry($creditNote, $userId);
+        $this->declarations->release($creditNote, $original);
 
         $this->dispatchDomainEvent(new CreditNoteIssuedEvent(
             creditNoteId: (string) $creditNote->id,
@@ -507,6 +536,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'fiscal_year' => $number['fiscal_year'] ?? null,
             'sequential_number' => $number['sequential_number'] ?? null,
             'related_invoice_id' => (string) $originalInvoice->id,
+            'split_payment' => (bool) $originalInvoice->split_payment,
             'date' => $date,
             'due_date' => now()->toDateString(),
             'currency' => $originalInvoice->currency ?? 'EUR',
@@ -565,7 +595,7 @@ final class InvoicingService implements InvoicingServiceInterface
         ]);
 
         $newPaid = (float) $targetInvoice->total_paid + $amount;
-        $isFullyPaid = $newPaid >= (float) $targetInvoice->total_gross;
+        $isFullyPaid = $newPaid >= (float) $targetInvoice->amountDue();
 
         $targetInvoice->update([
             'total_paid' => $newPaid,

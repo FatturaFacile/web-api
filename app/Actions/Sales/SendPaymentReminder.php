@@ -61,7 +61,7 @@ class SendPaymentReminder
                 'tenant_id' => $invoice->tenant_id,
                 'level' => $level,
                 'recipient' => $recipient,
-                'amount_due' => round((float) $invoice->total_gross - (float) $invoice->total_paid, 2),
+                'amount_due' => (float) $invoice->outstandingAmount(),
                 'status' => 'queued',
             ]);
 

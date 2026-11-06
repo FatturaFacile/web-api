@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Invoicing\Http\Controllers\CreditNoteController;
 use Modules\Invoicing\Http\Controllers\CustomerCreditController;
 use Modules\Invoicing\Http\Controllers\CustomerLedgerController;
+use Modules\Invoicing\Http\Controllers\DeclarationOfIntentController;
 use Modules\Invoicing\Http\Controllers\DeliveryNoteController;
 use Modules\Invoicing\Http\Controllers\InvoiceController;
 use Modules\Invoicing\Http\Controllers\SalesOrderController;
@@ -46,6 +47,14 @@ Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 
     // Credit Notes
     Route::post('credit-notes', [CreditNoteController::class, 'store'])->name('invoicing.credit-notes.store');
     Route::post('credit-notes/{creditNoteId}/apply', [CreditNoteController::class, 'apply'])->name('invoicing.credit-notes.apply');
+
+    // Declarations of Intent (Lettere di intento)
+    Route::get('declarations-of-intent', [DeclarationOfIntentController::class, 'index'])->name('invoicing.declarations-of-intent.index');
+    Route::post('declarations-of-intent', [DeclarationOfIntentController::class, 'store'])->name('invoicing.declarations-of-intent.store');
+    Route::get('declarations-of-intent/summary', [DeclarationOfIntentController::class, 'summary'])->name('invoicing.declarations-of-intent.summary');
+    Route::get('declarations-of-intent/{id}', [DeclarationOfIntentController::class, 'show'])->whereUuid('id')->name('invoicing.declarations-of-intent.show');
+    Route::put('declarations-of-intent/{id}', [DeclarationOfIntentController::class, 'update'])->whereUuid('id')->name('invoicing.declarations-of-intent.update');
+    Route::delete('declarations-of-intent/{id}', [DeclarationOfIntentController::class, 'destroy'])->whereUuid('id')->name('invoicing.declarations-of-intent.destroy');
 
     // Credit Risk Management
     Route::get('customer-credit/{customerId}', [CustomerCreditController::class, 'show'])->name('invoicing.customer-credit.show');

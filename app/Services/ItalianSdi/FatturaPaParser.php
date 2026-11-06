@@ -14,7 +14,7 @@ use SimpleXMLElement;
 class FatturaPaParser
 {
     /**
-     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string}>}
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: ?string, reason: ?string}>}>}
      */
     public function parse(string $xml): array
     {
@@ -58,6 +58,7 @@ class FatturaPaParser
                 'net' => round($net, 2),
                 'tax' => round($tax, 2),
                 'due_date' => $this->value($body, 'DatiPagamento/DettaglioPagamento/DataScadenzaPagamento'),
+                'withholdings' => $this->withholdings($body),
             ];
         }
 
@@ -105,6 +106,25 @@ class FatturaPaParser
         }
 
         return $document;
+    }
+
+    /**
+     * @return list<array{type: string, amount: string, rate: ?string, reason: ?string}>
+     */
+    private function withholdings(SimpleXMLElement $body): array
+    {
+        $withholdings = [];
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiRitenuta') ?: [] as $block) {
+            $withholdings[] = [
+                'type' => (string) $this->value($block, 'TipoRitenuta'),
+                'amount' => (string) $this->value($block, 'ImportoRitenuta'),
+                'rate' => $this->value($block, 'AliquotaRitenuta'),
+                'reason' => $this->value($block, 'CausalePagamento'),
+            ];
+        }
+
+        return $withholdings;
     }
 
     private function value(SimpleXMLElement $node, string $path): ?string
