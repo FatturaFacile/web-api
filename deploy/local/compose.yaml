@@ -19,10 +19,8 @@ x-app: &app
     DB_CONNECTION: pgsql
     DB_HOST: postgres
     DB_PORT: "5432"
-    REDIS_HOST: redis
-    REDIS_PORT: "6379"
-    REDIS_PASSWORD: "null"
-    CACHE_STORE: redis
+    # The published image has no PHP Redis extension: cache, session and queue use the database.
+    CACHE_STORE: database
     SESSION_DRIVER: database
     QUEUE_CONNECTION: sync
     MAIL_MAILER: log
@@ -31,8 +29,6 @@ x-app: &app
     - app_storage:/var/www/html/storage
   depends_on:
     postgres:
-      condition: service_healthy
-    redis:
       condition: service_healthy
 
 services:
@@ -81,13 +77,6 @@ services:
       timeout: 5s
       retries: 10
 
-  redis:
-    image: redis:7-alpine
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
 
 volumes:
   app_storage:
