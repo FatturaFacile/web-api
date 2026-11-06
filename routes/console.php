@@ -14,6 +14,7 @@ Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlappi
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping();
 Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping();
+Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping();
 
 // Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore
 Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverlapping();

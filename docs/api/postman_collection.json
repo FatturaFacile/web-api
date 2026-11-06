@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "6f247d5f-6712-41ee-822e-628c9a0a04ac",
+        "_postman_id": "0a5852fe-d42b-4884-af34-f9063d76cd44",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
