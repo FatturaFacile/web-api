@@ -179,7 +179,7 @@ jobs:
               set -e
               php -d memory_limit=256M artisan config:clear
               php -d memory_limit=256M artisan cache:clear
-              php -d memory_limit=512M artisan migrate:fresh --seed --force
+              php -d memory_limit=512M artisan migrate --force
               php -d memory_limit=256M artisan config:cache
               php -d memory_limit=256M artisan route:cache
               php -d memory_limit=256M artisan view:cache
