@@ -109,7 +109,12 @@ test('the IMAP client lists new UIDs and downloads a message untouched', functio
 });
 
 test('a refused login stops the client', function (): void {
-    [$client] = imapConnection("* OK ready\r\nA1 NO invalid credentials\r\n");
+    // Keep the server side open for the whole test: if it were garbage collected, the client write would hit a broken pipe.
+    [$client, $server] = imapConnection("* OK ready\r\nA1 NO invalid credentials\r\n");
 
-    NativeImapMailbox::login($client, 'user', 'wrong');
+    try {
+        NativeImapMailbox::login($client, 'user', 'wrong');
+    } finally {
+        fclose($server);
+    }
 })->throws(SdiProviderException::class);
