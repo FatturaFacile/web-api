@@ -7,7 +7,7 @@
 #
 # API on http://localhost:8000 (override with API_PORT in deploy/local/.env). Everything listens on 127.0.0.1 only.
 # Not for production: see docker-compose.yml and deploy/dev for the real stacks.
-name: fatturafacile-local
+name: fatturafacile-demo
 
 x-app: &app
   # Pinned tag. To use another release, change it here and in README.md (tags: https://hub.docker.com/r/fatturafacile/api).
