@@ -82,7 +82,7 @@ test('attachments nested in postacert.eml are found and the envelope files ignor
  */
 function imapConnection(string $script): array
 {
-    $pair = stream_socket_pair(STREAM_PF_INET, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+    $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
     fwrite($pair[1], $script);
 
     return [$pair[0], $pair[1]];
