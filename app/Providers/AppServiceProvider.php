@@ -38,6 +38,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
 use Modules\SDI\Services\TenantSdiProvider;
 
@@ -97,6 +98,12 @@ class AppServiceProvider extends ServiceProvider
             return 'email:'.(is_string($email) ? mb_strtolower(trim($email)) : '');
         };
 
+        // Credential guessing: per account from anywhere, and per address on any account.
+        RateLimiter::for('login', fn (Request $request): array => [
+            Limit::perMinute(5)->by('account:'.Str::lower((string) $request->input('email'))),
+            Limit::perMinute(20)->by('ip:'.$request->ip()),
+        ]);
+        RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(300)->by($request->user()?->getKey() ?: $request->ip()));
         RateLimiter::for('registration', fn (Request $request): array => [
             Limit::perMinute((int) config('auth.registration.rate_limits.register_per_minute'))->by('ip:'.$request->ip()),
             Limit::perHour((int) config('auth.registration.rate_limits.register_per_email_per_hour'))->by($emailKey($request)),

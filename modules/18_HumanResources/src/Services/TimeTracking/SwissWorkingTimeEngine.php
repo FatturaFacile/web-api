@@ -29,10 +29,10 @@ final class SwissWorkingTimeEngine
         );
 
         [$intervals, $issues] = self::buildIntervals($context->events, SwissWorkingTimeRules::toLocal($context->now));
-        $isSimplified = $profile->mode === TimeRecordingMode::Simplified;
 
         for ($day = $report->from; $day <= $report->to; $day = $day->addDay()) {
-            $result = $isSimplified
+            // A day outside the agreement falls back to the detailed recording of art. 73 OLL 1.
+            $result = $profile->mode === TimeRecordingMode::Simplified && self::isCoveredByAgreement($profile, $day)
                 ? self::evaluateSimplifiedDay($day, $context->dailyRecords)
                 : self::evaluateDetailedDay($day, $intervals, $issues);
             self::applyTarget($result, $context);
@@ -287,5 +287,22 @@ final class SwissWorkingTimeEngine
         } elseif ($profile->mode === TimeRecordingMode::Simplified && $profile->agreementDate === null) {
             $report->issues[] = "Registrazione semplificata senza data dell'accordo (art. 73b OLL 1).";
         }
+
+        if ($profile->mode !== TimeRecordingMode::Detailed && ! self::isPeriodCoveredByAgreement($profile, $report)) {
+            $report->issues[] = "Periodo non coperto interamente dall'accordo (art. 73a e 73b OLL 1): nei giorni scoperti vale la registrazione dettagliata (art. 73 OLL 1).";
+        }
+    }
+
+    private static function isCoveredByAgreement(EmployeeTimeProfile $profile, CarbonImmutable $day): bool
+    {
+        $date = $day->format('Y-m-d');
+
+        return ($profile->agreementValidFrom === null || $date >= $profile->agreementValidFrom)
+            && ($profile->agreementValidTo === null || $date <= $profile->agreementValidTo);
+    }
+
+    private static function isPeriodCoveredByAgreement(EmployeeTimeProfile $profile, WorkingTimeReport $report): bool
+    {
+        return self::isCoveredByAgreement($profile, $report->from) && self::isCoveredByAgreement($profile, $report->to);
     }
 }

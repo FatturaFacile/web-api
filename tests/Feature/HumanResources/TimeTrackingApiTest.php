@@ -444,7 +444,7 @@ test('the history shows employees their own entries and managers all of them, co
 test('profiles are read by their owner and managers and written by managers only', function (): void {
     $url = "/api/v1/hr/time/profiles/{$this->employee->id}";
     $payload = [
-        'mode' => 'Simplified', 'agreement_date' => '2026-01-15', 'legal_max_weekly_hours' => 50, 'weekly_hours' => 40.5,
+        'mode' => 'Simplified', 'agreement_date' => '2026-01-15', 'agreement_valid_from' => '2026-02-01', 'agreement_basis' => 'individual', 'autonomy_percent' => 30, 'legal_max_weekly_hours' => 50, 'weekly_hours' => 40.5,
         'work_days_per_week' => 5, 'hire_date' => '2024-02-01', 'termination_date' => null, 'canton' => 'ge',
     ];
 
@@ -462,7 +462,7 @@ test('profiles are read by their owner and managers and written by managers only
         ->assertJsonPath('data.weekly_hours', '40.50')
         ->assertJsonPath('data.canton', 'GE');
 
-    ttApi($this->manager)->putJson($url, [...$payload, 'mode' => 'Waived', 'reason' => 'Nuovo accordo'])->assertOk();
+    ttApi($this->manager)->putJson($url, [...$payload, 'mode' => 'Waived', 'collective_agreement_reference' => 'CCL Banche 2026', 'annual_gross_salary' => 130000, 'reason' => 'Nuovo accordo'])->assertOk();
 
     $entries = TimeAuditEntry::withoutGlobalScopes()->where('entity_type', 'TimeRecordingProfile')->orderBy('id')->get();
 
@@ -547,4 +547,52 @@ test('the tenant of a new record comes from the context, not from the request', 
 test('unauthenticated requests are refused', function (): void {
     $this->getJson('/api/v1/hr/time/events')->assertUnauthorized();
     $this->postJson('/api/v1/hr/time/events', ['event_type' => 'In'])->assertUnauthorized();
+});
+
+test('simplified recording and waiver need a dated, valid agreement', function (array $changes, string $field): void {
+    $base = ['legal_max_weekly_hours' => 45, 'weekly_hours' => 42, 'work_days_per_week' => 5];
+    $simplified = [...$base, 'mode' => 'Simplified', 'agreement_date' => '2026-01-15', 'agreement_valid_from' => '2026-02-01', 'agreement_basis' => 'collective', 'autonomy_percent' => 25];
+    $waived = [...$base, 'mode' => 'Waived', 'agreement_date' => '2026-01-15', 'agreement_valid_from' => '2026-02-01', 'collective_agreement_reference' => 'CCL', 'annual_gross_salary' => 120000.01];
+    $url = "/api/v1/hr/time/profiles/{$this->employee->id}";
+
+    ttApi($this->manager)->putJson($url, $simplified)->assertOk();
+    ttApi($this->manager)->putJson($url, $waived)->assertOk();
+
+    $payload = array_filter([...(($changes['mode'] ?? 'Simplified') === 'Waived' ? $waived : $simplified), ...$changes], fn (mixed $value): bool => $value !== null);
+
+    ttApi($this->manager)->putJson($url, $payload)->assertUnprocessable()->assertJsonValidationErrors($field);
+})->with([
+    'simplified without date' => [['agreement_date' => null], 'agreement_date'],
+    'simplified without validity' => [['agreement_valid_from' => null], 'agreement_valid_from'],
+    'simplified without basis' => [['agreement_basis' => null], 'agreement_basis'],
+    'autonomy under 25%' => [['autonomy_percent' => 24], 'autonomy_percent'],
+    'validity before the agreement' => [['agreement_valid_from' => '2026-01-01'], 'agreement_valid_from'],
+    'validity ending before it starts' => [['agreement_valid_to' => '2026-01-31'], 'agreement_valid_to'],
+    'waiver without date' => [['mode' => 'Waived', 'agreement_date' => null], 'agreement_date'],
+    'waiver without CCL' => [['mode' => 'Waived', 'collective_agreement_reference' => null], 'collective_agreement_reference'],
+    'waiver at the salary threshold' => [['mode' => 'Waived', 'annual_gross_salary' => 120000], 'annual_gross_salary'],
+]);
+
+test('an individual agreement is refused from 50 employees', function (): void {
+    foreach (range(1, 50) as $index) {
+        $user = User::create(['name' => "Worker {$index}", 'email' => "worker{$index}@example.com", 'password' => 'secret123']);
+        $user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
+    }
+
+    ttApi($this->manager)->putJson("/api/v1/hr/time/profiles/{$this->employee->id}", [
+        'mode' => 'Simplified', 'agreement_date' => '2026-01-15', 'agreement_valid_from' => '2026-02-01', 'agreement_basis' => 'individual',
+        'autonomy_percent' => 30, 'legal_max_weekly_hours' => 45, 'weekly_hours' => 42, 'work_days_per_week' => 5,
+    ])->assertUnprocessable()->assertJsonValidationErrors('agreement_basis');
+});
+
+test('the salary is stored encrypted and stays out of the history', function (): void {
+    ttApi($this->manager)->putJson("/api/v1/hr/time/profiles/{$this->employee->id}", [
+        'mode' => 'Waived', 'agreement_date' => '2026-01-15', 'agreement_valid_from' => '2026-02-01', 'collective_agreement_reference' => 'CCL',
+        'annual_gross_salary' => 130000, 'legal_max_weekly_hours' => 45, 'weekly_hours' => 42, 'work_days_per_week' => 5,
+    ])->assertOk()->assertJsonMissingPath('data.annual_gross_salary')->assertJsonPath('data.salary_threshold_met', true);
+
+    $entry = TimeAuditEntry::withoutGlobalScopes()->where('entity_type', 'TimeRecordingProfile')->firstOrFail();
+
+    expect(json_encode($entry->after_values))->not->toContain('130000')
+        ->and(DB::table('time_recording_profiles')->value('annual_gross_salary'))->not->toContain('130000');
 });

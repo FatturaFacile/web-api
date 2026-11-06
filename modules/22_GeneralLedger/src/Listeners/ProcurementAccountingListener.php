@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
-use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
@@ -17,15 +20,14 @@ use Modules\Procurement\Events\PurchaseOrderCommittedEvent;
 final class ProcurementAccountingListener
 {
     public function __construct(
-        private readonly DoubleEntryPostingServiceInterface $postingService
+        private readonly DoubleEntryPostingServiceInterface $postingService,
+        private readonly FiscalPeriodResolver $periods
     ) {}
 
     public function handlePurchaseOrderCommitted(PurchaseOrderCommittedEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $encumbranceExpAcc = $this->resolveAccount($event->tenantId, '6990', 'Encumbrance Expense', 'expense', 'debit');
         $encumbranceResAcc = $this->resolveAccount($event->tenantId, '3990', 'Reserve for Encumbrances', 'equity', 'credit');
@@ -36,6 +38,8 @@ final class ProcurementAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'ENC-'.$poNumber,
             'source_document_type' => 'purchase_order',
             'source_document_id' => $event->purchaseOrderId,
@@ -60,10 +64,8 @@ final class ProcurementAccountingListener
 
     public function handlePurchaseOrderCancelled(PurchaseOrderCancelledEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $encumbranceExpAcc = $this->resolveAccount($event->tenantId, '6990', 'Encumbrance Expense', 'expense', 'debit');
         $encumbranceResAcc = $this->resolveAccount($event->tenantId, '3990', 'Reserve for Encumbrances', 'equity', 'credit');
@@ -91,6 +93,8 @@ final class ProcurementAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'REV-ENC-'.$event->purchaseOrderId,
             'source_document_type' => 'purchase_order',
             'source_document_id' => $event->purchaseOrderId,
@@ -115,10 +119,8 @@ final class ProcurementAccountingListener
 
     public function handleGoodsReceived(GoodsReceivedEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $grIrAcc = $this->resolveAccount($event->tenantId, '2010', 'GR/IR Clearing Account', 'liability', 'credit');
@@ -137,6 +139,8 @@ final class ProcurementAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'GR-'.$event->receiptNumber,
             'source_document_type' => 'goods_receipt',
             'source_document_id' => $event->receiptId,
@@ -161,21 +165,22 @@ final class ProcurementAccountingListener
 
     public function handlePurchaseLiabilityReady(PurchaseLiabilityReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $grIrAcc = $this->resolveAccount($event->tenantId, '2010', 'GR/IR Clearing Account', 'liability', 'credit');
         $vatAcc = $this->resolveAccount($event->tenantId, '1400', 'IVA c/Acquisti (Purchase VAT)', 'asset', 'debit');
         $apAcc = $this->resolveAccount($event->tenantId, '2000', 'Accounts Payable (Debiti v/Fornitori)', 'liability', 'credit');
         $apAcc->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'supplier']);
 
+        $currency = ! empty($event->currency) ? $event->currency : TenantAccountingCurrency::of($event->tenantId);
+
         $lines = [
             [
                 'account_id' => $grIrAcc->id,
                 'debit_amount' => (float) $event->netAmount,
                 'credit_amount' => 0.0,
+                'currency' => $currency,
                 'description' => "Clear GR/IR: Invoice {$event->vendorInvoiceNumber}",
             ],
         ];
@@ -185,6 +190,10 @@ final class ProcurementAccountingListener
                 'account_id' => $vatAcc->id,
                 'debit_amount' => (float) $event->taxAmount,
                 'credit_amount' => 0.0,
+                'currency' => $currency,
+                'vat_base_amount' => (float) $event->netAmount,
+                'vat_tax_amount' => (float) $event->taxAmount,
+                'vat_rate_percent' => $this->effectiveVatRate($event),
                 'description' => "Input VAT for Invoice {$event->vendorInvoiceNumber}",
             ];
         }
@@ -193,6 +202,7 @@ final class ProcurementAccountingListener
             'account_id' => $apAcc->id,
             'debit_amount' => 0.0,
             'credit_amount' => (float) $event->grossAmount,
+            'currency' => $currency,
             'partner_type' => 'supplier',
             'partner_id' => $event->supplierId,
             'description' => "Supplier Payable: Invoice {$event->vendorInvoiceNumber}",
@@ -202,21 +212,30 @@ final class ProcurementAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'VEND-INV-'.strtoupper(Str::random(6)),
             'source_document_type' => 'vendor_invoice',
             'source_document_id' => $event->matchLogId,
+            'document_number' => $event->vendorInvoiceNumber,
             'journal_type' => 'standard',
             'description' => "Vendor Liability for Invoice {$event->vendorInvoiceNumber}",
             'lines' => $lines,
         ]);
     }
 
-    private function resolveFiscalPeriod(string $tenantId): ?FiscalPeriod
+    /**
+     * The event carries the totals of the supplier invoice, so the rate is the one they express.
+     */
+    private function effectiveVatRate(PurchaseLiabilityReadyEvent $event): ?string
     {
-        return FiscalPeriod::withoutGlobalScopes()
-            ->where('tenant_id', $tenantId)
-            ->where('status', 'open')
-            ->first();
+        $netAmount = number_format($event->netAmount, 4, '.', '');
+
+        if (! Decimal::isPositive($netAmount)) {
+            return null;
+        }
+
+        return Decimal::round2(Decimal::div(Decimal::mul(number_format($event->taxAmount, 4, '.', ''), '100'), $netAmount));
     }
 
     private function resolveAccount(string $tenantId, string $code, string $name, string $type, string $normalBalance): ChartOfAccount
@@ -229,7 +248,7 @@ final class ProcurementAccountingListener
                 'account_class' => $type,
                 'account_type' => $type,
                 'normal_balance' => $normalBalance,
-                'currency' => 'EUR',
+                'currency' => TenantAccountingCurrency::of($tenantId),
                 'is_active' => true,
             ]
         );

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Support\Facades\Route;
 use Modules\HumanResources\Http\Controllers\EmployeeController;
 use Modules\HumanResources\Http\Controllers\LeaveAndTimeController;
@@ -10,7 +11,7 @@ use Modules\HumanResources\Http\Controllers\TalentAndTrainingController;
 use Modules\HumanResources\Http\Controllers\TimeTrackingController;
 
 Route::prefix('api/v1/hr')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:hr'])
     ->group(function (): void {
         // Employee Lifecycle Routes
         Route::get('/employees', [EmployeeController::class, 'index'])->name('api.v1.hr.employees.index');
@@ -46,7 +47,8 @@ Route::prefix('api/v1/hr')
         Route::post('/timesheets/{id}/approve', [LeaveAndTimeController::class, 'approveTimesheet'])->name('api.v1.hr.timesheets.approve');
 
         // Swiss Working Time Recording Routes (LL, OLL 1)
-        Route::prefix('time')->name('api.v1.hr.time.')->group(function (): void {
+        // Employees use their own time records: TimeTrackingPolicy decides who can see what.
+        Route::prefix('time')->name('api.v1.hr.time.')->withoutMiddleware(EnsureModuleAccess::class)->group(function (): void {
             Route::get('/events', [TimeTrackingController::class, 'events'])->name('events.index');
             Route::post('/events', [TimeTrackingController::class, 'storeEvent'])->name('events.store');
             Route::patch('/events/{id}', [TimeTrackingController::class, 'correctEvent'])->whereUuid('id')->name('events.correct');

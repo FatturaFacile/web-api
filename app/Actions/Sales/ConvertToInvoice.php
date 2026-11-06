@@ -18,6 +18,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Invoicing\Actions\PostInvoiceAction;
 
 class ConvertToInvoice
 {
@@ -25,6 +26,7 @@ class ConvertToInvoice
         private readonly DocumentNumberingService $numbering,
         private readonly DocumentTotalsCalculator $totals,
         private readonly DocumentEventRecorder $events,
+        private readonly PostInvoiceAction $postInvoice,
     ) {}
 
     /**
@@ -211,8 +213,9 @@ class ConvertToInvoice
 
             $invoice->items()->createMany($computed['items']);
             $this->events->record($invoice, $event, ['source_id' => $source->getKey()]);
+            $this->postInvoice->issue((string) $invoice->id);
 
-            return $invoice->load('items');
+            return $invoice->refresh()->load('items');
         });
     }
 

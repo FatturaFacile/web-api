@@ -12,6 +12,7 @@ use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\FinancialStatementServiceInterface;
 use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
 use Modules\GeneralLedger\Contracts\TaxEngineReadinessServiceInterface;
+use Modules\GeneralLedger\Contracts\VatSettlementServiceInterface;
 use Modules\GeneralLedger\Events\AccountReconciledEvent;
 use Modules\GeneralLedger\Events\BankPostingReadyEvent;
 use Modules\GeneralLedger\Events\CashForecastReadyEvent;
@@ -38,16 +39,19 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\ReconciliationRun;
+use Modules\GeneralLedger\Models\VatSettlement;
 use Modules\GeneralLedger\Policies\ChartOfAccountPolicy;
 use Modules\GeneralLedger\Policies\FiscalPeriodPolicy;
 use Modules\GeneralLedger\Policies\FiscalYearPolicy;
 use Modules\GeneralLedger\Policies\JournalEntryPolicy;
 use Modules\GeneralLedger\Policies\ReconciliationPolicy;
+use Modules\GeneralLedger\Policies\VatSettlementPolicy;
 use Modules\GeneralLedger\Services\AccountingReconciliationService;
 use Modules\GeneralLedger\Services\DoubleEntryPostingService;
 use Modules\GeneralLedger\Services\FinancialStatementService;
 use Modules\GeneralLedger\Services\PeriodClosingService;
 use Modules\GeneralLedger\Services\TaxEngineReadinessService;
+use Modules\GeneralLedger\Services\VatSettlementService;
 use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\InventoryCostingReadyEvent;
 use Modules\Inventory\Events\InventoryRevaluationEvent;
@@ -80,6 +84,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         $this->app->singleton(FinancialStatementServiceInterface::class, FinancialStatementService::class);
         $this->app->singleton(PeriodClosingServiceInterface::class, PeriodClosingService::class);
         $this->app->singleton(AccountingReconciliationServiceInterface::class, AccountingReconciliationService::class);
+        $this->app->singleton(VatSettlementServiceInterface::class, VatSettlementService::class);
         $this->app->singleton(TaxEngineReadinessServiceInterface::class, TaxEngineReadinessService::class);
     }
 
@@ -88,6 +93,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerEventListeners();
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'general-ledger');
     }
 
     private function registerPolicies(): void
@@ -97,6 +103,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         Gate::policy(FiscalPeriod::class, FiscalPeriodPolicy::class);
         Gate::policy(JournalEntry::class, JournalEntryPolicy::class);
         Gate::policy(ReconciliationRun::class, ReconciliationPolicy::class);
+        Gate::policy(VatSettlement::class, VatSettlementPolicy::class);
     }
 
     private function registerEventListeners(): void

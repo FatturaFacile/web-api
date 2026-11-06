@@ -46,7 +46,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
 
             $unitPrice = isset($item['unit_price']) ? (float) $item['unit_price'] : $pricing['unit_price'];
             $discountPct = isset($item['discount_percentage']) ? (float) $item['discount_percentage'] : $pricing['discount_percentage'];
-            $taxRate = (float) ($item['tax_rate'] ?? 22.0);
+            $taxRate = (float) ($item['tax_rate'] ?? throw new InvalidArgumentException('Every order line must state its VAT rate.'));
             $qty = (float) ($item['quantity'] ?? 1.0);
 
             $lineNet = round(($qty * $unitPrice) * (1 - ($discountPct / 100.0)), 2);

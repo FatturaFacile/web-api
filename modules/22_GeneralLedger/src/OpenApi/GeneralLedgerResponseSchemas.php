@@ -181,7 +181,81 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'net_vat_payable', type: 'number'),
         new OA\Property(property: 'net_vat_credit', type: 'number'),
         new OA\Property(property: 'status'),
-        new OA\Property(property: 'settlement_journal_id', type: 'string'),
+        new OA\Property(property: 'settlement_journal_id', type: 'string', nullable: true),
+        new OA\Property(property: 'period_type', type: 'string', enum: ['monthly', 'quarterly', 'semiannual']),
+        new OA\Property(property: 'year', type: 'integer'),
+        new OA\Property(property: 'period', type: 'integer', description: 'Month, quarter or half year number'),
+        new OA\Property(property: 'period_from', type: 'string', format: 'date'),
+        new OA\Property(property: 'period_to', type: 'string', format: 'date'),
+        new OA\Property(property: 'country', type: 'string', enum: ['CH', 'IT']),
+        new OA\Property(property: 'currency', type: 'string'),
+        new OA\Property(property: 'turnover', type: 'string', description: 'Decimal string'),
+        new OA\Property(property: 'taxable_turnover', type: 'string', description: 'Decimal string'),
+        new OA\Property(property: 'passive_operations', type: 'string', description: 'Decimal string: net purchases of the period'),
+        new OA\Property(property: 'previous_credit', type: 'string', description: 'Decimal string: credit carried over from the previous settlement'),
+        new OA\Property(property: 'previous_debit', type: 'string', description: 'Decimal string: debt below the minimum payment carried over'),
+        new OA\Property(property: 'interest_amount', type: 'string', description: 'Decimal string: Italian quarterly interest'),
+        new OA\Property(property: 'payable_amount', type: 'string', description: 'Decimal string: positive when due, negative when a credit'),
+        new OA\Property(property: 'below_minimum_payment', type: 'boolean', description: 'The Italian debt is below EUR 25.82 and moves to the next period'),
+        new OA\Property(property: 'rate_breakdown', type: 'array', items: new OA\Items(
+            properties: [
+                new OA\Property(property: 'rate', type: 'string'),
+                new OA\Property(property: 'taxable', type: 'string'),
+                new OA\Property(property: 'tax', type: 'string'),
+            ],
+            type: 'object'
+        )),
+        new OA\Property(property: 'warnings', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'details', type: 'string', nullable: true),
+        new OA\Property(property: 'posted_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'paid_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'payment_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'payment_journal_id', type: 'string', nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerVatTaxSettingResource',
+    description: 'JSON representation produced by VatTaxSettingResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'periodicity', type: 'string', enum: ['monthly', 'quarterly', 'semiannual'], nullable: true),
+        new OA\Property(property: 'output_vat_account_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+        new OA\Property(property: 'input_vat_account_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+        new OA\Property(property: 'settlement_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'interest_expense_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'declarant_tax_code', type: 'string', nullable: true),
+        new OA\Property(property: 'declarant_role_code', type: 'string', nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerVatF24Data',
+    description: 'F24 data of an Italian VAT settlement',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'section', type: 'string', example: 'erario'),
+        new OA\Property(property: 'tax_code', type: 'string', nullable: true, example: '6031'),
+        new OA\Property(property: 'reference_year', type: 'integer'),
+        new OA\Property(property: 'amount', type: 'string', description: 'Decimal string'),
+        new OA\Property(property: 'payment_due', type: 'boolean'),
+        new OA\Property(property: 'carried_forward', type: 'string', description: 'Decimal string: credit or small debt moved to the next period'),
+        new OA\Property(property: 'summary', type: 'string'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerVatRegisterLine',
+    description: 'One VAT rate of one document of a VAT register',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'protocol_number', type: 'integer', nullable: true, description: 'Assigned when the settlement of the period is posted'),
+        new OA\Property(property: 'posting_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'document_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'document_number', type: 'string'),
+        new OA\Property(property: 'document_type', type: 'string', nullable: true),
+        new OA\Property(property: 'partner_name', type: 'string', nullable: true),
+        new OA\Property(property: 'taxable_amount', type: 'string', description: 'Decimal string'),
+        new OA\Property(property: 'vat_rate', type: 'string'),
+        new OA\Property(property: 'vat_amount', type: 'string', description: 'Decimal string'),
+        new OA\Property(property: 'vat_treatment', type: 'string', nullable: true),
     ]
 )]
 final class GeneralLedgerResponseSchemas {}

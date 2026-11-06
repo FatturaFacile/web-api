@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Invoicing\Actions\PostInvoiceAction;
 
 class GenerateConsolidatedInvoiceAction
 {
@@ -129,6 +130,8 @@ class GenerateConsolidatedInvoiceAction
             foreach ($calculatedTotals['items'] as $itemData) {
                 $invoice->items()->create($itemData);
             }
+
+            app(PostInvoiceAction::class)->issue((string) $invoice->id);
 
             $invoicedStatus = LookupItem::whereHas('category', fn ($q) => $q->where('code', 'service_report_status'))
                 ->where('code', 'invoiced')

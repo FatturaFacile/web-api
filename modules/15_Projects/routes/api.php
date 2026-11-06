@@ -13,7 +13,7 @@ use Modules\Projects\Http\Controllers\ProjectRevenueRecognitionController;
 use Modules\Projects\Http\Controllers\ProjectTimesheetController;
 
 Route::prefix('api/v1/projects')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:projects'])
     ->group(function (): void {
         // Project Lifecycle & Master
         Route::get('/', [ProjectController::class, 'index'])->name('projects.index');

@@ -41,10 +41,10 @@ class DocumentNumberingService
      *
      * @return array{number: string, sequential_number: int, fiscal_year: int}
      */
-    public function next(string $documentType, ?int $fiscalYear = null): array
+    public function next(string $documentType, ?int $fiscalYear = null, ?string $tenantId = null): array
     {
         $fiscalYear ??= (int) now()->format('Y');
-        $tenantId = $this->tenantContext->getTenantId();
+        $tenantId ??= $this->tenantContext->getTenantId();
 
         if (empty($tenantId)) {
             throw new InvalidArgumentException('Active tenant context is required to generate sequential document numbers.');

@@ -5,6 +5,7 @@ use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
 use App\Http\Middleware\SetLocale;
+use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\Authorize;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
@@ -29,9 +30,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->prepend(NormalizeTenantInput::class);
 
         $middleware->statefulApi();
+        $middleware->throttleApi();
 
         $middleware->alias([
             'tenant' => IdentifyTenant::class,
+            'module.access' => EnsureModuleAccess::class,
             'platform.admin' => EnsurePlatformAdmin::class,
             'locale' => SetLocale::class,
             'deprecated' => MarkDeprecated::class,

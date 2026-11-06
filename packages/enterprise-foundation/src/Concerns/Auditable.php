@@ -26,7 +26,7 @@ trait Auditable
                 app(AuditLedgerService::class)->record(
                     action: 'UPDATED',
                     model: $model,
-                    payloadBefore: $model->getOriginal(),
+                    payloadBefore: $model->getRawOriginal(),
                     payloadAfter: $model->getChanges()
                 );
             }
@@ -37,7 +37,7 @@ trait Auditable
                 app(AuditLedgerService::class)->record(
                     action: 'DELETED',
                     model: $model,
-                    payloadBefore: $model->getOriginal(),
+                    payloadBefore: $model->getRawOriginal(),
                     payloadAfter: null
                 );
             }

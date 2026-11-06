@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
-use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\InventoryCostingReadyEvent;
 use Modules\Inventory\Events\InventoryRevaluationEvent;
@@ -17,16 +19,15 @@ use Modules\Inventory\Events\InventoryWriteOffEvent;
 final class InventoryAccountingListener
 {
     public function __construct(
-        private readonly DoubleEntryPostingServiceInterface $postingService
+        private readonly DoubleEntryPostingServiceInterface $postingService,
+        private readonly FiscalPeriodResolver $periods
     ) {}
 
     public function handleValuationReady(InventoryValuationReadyEvent $event): void
     {
         $tenantId = ! empty($event->tenantId) ? $event->tenantId : (string) Str::uuid7();
-        $period = $this->resolveFiscalPeriod($tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $cogsAcc = $this->resolveAccount($tenantId, '5000', 'Cost of Goods Sold (COGS)', 'cogs', 'debit');
@@ -35,6 +36,8 @@ final class InventoryAccountingListener
             'tenant_id' => $tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'INV-VAL-'.strtoupper(Str::random(6)),
             'source_document_type' => 'inventory_valuation',
             'source_document_id' => $event->valuationId,
@@ -59,10 +62,8 @@ final class InventoryAccountingListener
 
     public function handleCostingReady(InventoryCostingReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $cogsAcc = $this->resolveAccount($event->tenantId, '5000', 'Cost of Goods Sold (COGS)', 'cogs', 'debit');
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
@@ -71,6 +72,8 @@ final class InventoryAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'INV-COST-'.strtoupper(Str::random(6)),
             'source_document_type' => 'inventory_costing',
             'source_document_id' => $event->movementId,
@@ -95,10 +98,8 @@ final class InventoryAccountingListener
 
     public function handleAdjustmentPosted(InventoryAdjustmentPostedEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $varAcc = $this->resolveAccount($event->tenantId, '5100', 'Inventory Variance & Shrinkage', 'expense', 'debit');
@@ -114,6 +115,8 @@ final class InventoryAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'INV-ADJ-'.strtoupper(Str::random(6)),
             'source_document_type' => 'inventory_adjustment',
             'source_document_id' => $event->adjustmentId,
@@ -138,10 +141,8 @@ final class InventoryAccountingListener
 
     public function handleWriteOff(InventoryWriteOffEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $scrapAcc = $this->resolveAccount($event->tenantId, '6500', 'Inventory Scrap & Loss Expense', 'expense', 'debit');
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
@@ -150,6 +151,8 @@ final class InventoryAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'INV-SCRAP-'.strtoupper(Str::random(6)),
             'source_document_type' => 'inventory_write_off',
             'source_document_id' => $event->writeOffId,
@@ -174,10 +177,8 @@ final class InventoryAccountingListener
 
     public function handleRevaluation(InventoryRevaluationEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $reserveAcc = $this->resolveAccount($event->tenantId, '3100', 'Inventory Revaluation Reserve', 'equity', 'credit');
@@ -195,6 +196,8 @@ final class InventoryAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'INV-REVAL-'.strtoupper(Str::random(6)),
             'source_document_type' => 'inventory_revaluation',
             'source_document_id' => $event->revaluationId,
@@ -217,13 +220,6 @@ final class InventoryAccountingListener
         ]);
     }
 
-    private function resolveFiscalPeriod(string $tenantId): ?FiscalPeriod
-    {
-        return FiscalPeriod::where('tenant_id', $tenantId)
-            ->where('status', 'open')
-            ->first();
-    }
-
     private function resolveAccount(string $tenantId, string $code, string $name, string $type, string $normalBalance): ChartOfAccount
     {
         return ChartOfAccount::firstOrCreate(
@@ -234,7 +230,7 @@ final class InventoryAccountingListener
                 'account_class' => $type,
                 'account_type' => $type,
                 'normal_balance' => $normalBalance,
-                'currency' => 'EUR',
+                'currency' => TenantAccountingCurrency::of($tenantId),
                 'is_active' => true,
             ]
         );

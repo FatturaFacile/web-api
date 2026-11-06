@@ -4,19 +4,29 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
+use App\Models\Tenant;
+use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
+use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
-use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
+use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Models\SalesInvoice;
 
 final class InvoiceAccountingListener
 {
+    /** Half of the smallest Swiss coin is the widest cash rounding; a sum of rounded lines stays below 0.05 too. */
+    private const string MAX_ROUNDING = '0.05';
+
     public function __construct(
         private readonly DoubleEntryPostingServiceInterface $postingService,
+        private readonly FiscalPeriodResolver $periods,
         private readonly ?AuditLedgerInterface $auditLedger = null
     ) {}
 
@@ -32,11 +42,9 @@ final class InvoiceAccountingListener
             return;
         }
 
-        // 2. Resolve Active Fiscal Period
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if ($period === null) {
-            return;
-        }
+        // 2. The period containing the date of the document: failing here stops the emission
+        $documentDate = CarbonImmutable::parse($event->date)->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $documentDate);
 
         // 3. Resolve Master General Ledger Accounts
         $arAccount = $this->resolveAccount(
@@ -64,7 +72,26 @@ final class InvoiceAccountingListener
             normalBalance: 'credit'
         );
 
-        $currency = ! empty($event->currency) ? $event->currency : 'EUR';
+        $vatTreatment = $this->vatTreatmentOf($event);
+
+        if ($vatTreatment === VatLedgerReader::TREATMENT_SPLIT_PAYMENT) {
+            $defaultVatAccount = $this->resolveAccount(
+                tenantId: $event->tenantId,
+                code: '2205',
+                name: 'IVA split payment (Split Payment VAT)',
+                type: 'liability',
+                normalBalance: 'credit'
+            );
+        }
+
+        $revenueByLine = [];
+        foreach ($event->revenueLines as $revenueLine) {
+            if (! empty($revenueLine['line_id'])) {
+                $revenueByLine[(string) $revenueLine['line_id']] = (float) $revenueLine['amount'];
+            }
+        }
+
+        $currency = ! empty($event->currency) ? $event->currency : TenantAccountingCurrency::of($event->tenantId);
         $exchangeRate = (float) ($event->exchangeRate > 0 ? $event->exchangeRate : 1.0);
         $totalGross = (float) $event->totalGross;
         $totalTax = (float) $event->totalTax;
@@ -81,6 +108,7 @@ final class InvoiceAccountingListener
                 'exchange_rate' => $exchangeRate,
                 'partner_type' => 'customer',
                 'partner_id' => $event->customerId,
+                'due_date' => $event->dueDate !== null && $event->dueDate !== '' ? CarbonImmutable::parse($event->dueDate)->toDateString() : null,
                 'description' => "AR Receivable: Invoice {$event->invoiceNumber}",
             ],
         ];
@@ -89,10 +117,16 @@ final class InvoiceAccountingListener
         if (! empty($event->revenueLines)) {
             foreach ($event->revenueLines as $revLine) {
                 $revAccountId = ! empty($revLine['account_id']) ? $revLine['account_id'] : $defaultRevenueAccount->id;
+                $amount = (float) $revLine['amount'];
+
+                if ($amount === 0.0) {
+                    continue;
+                }
+
                 $lines[] = [
                     'account_id' => $revAccountId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $revLine['amount'],
+                    'debit_amount' => $amount < 0 ? abs($amount) : 0.0,
+                    'credit_amount' => $amount > 0 ? $amount : 0.0,
                     'currency' => $currency,
                     'exchange_rate' => $exchangeRate,
                     'cost_center_id' => $revLine['cost_center_id'] ?? null,
@@ -114,14 +148,25 @@ final class InvoiceAccountingListener
         // Lines 3+: Credit Output VAT Lines
         if (! empty($event->taxLines)) {
             foreach ($event->taxLines as $taxLine) {
-                $vatAccountId = ! empty($taxLine['account_id']) ? $taxLine['account_id'] : $defaultVatAccount->id;
+                $vatAccountId = ! empty($taxLine['account_id']) && $vatTreatment !== VatLedgerReader::TREATMENT_SPLIT_PAYMENT
+                    ? $taxLine['account_id']
+                    : $defaultVatAccount->id;
+                $amount = (float) $taxLine['amount'];
+
+                if ($amount === 0.0) {
+                    continue;
+                }
+
                 $lines[] = [
                     'account_id' => $vatAccountId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $taxLine['amount'],
+                    'debit_amount' => $amount < 0 ? abs($amount) : 0.0,
+                    'credit_amount' => $amount > 0 ? $amount : 0.0,
                     'currency' => $currency,
                     'exchange_rate' => $exchangeRate,
                     'vat_tax_amount' => (float) $taxLine['amount'],
+                    'vat_base_amount' => $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? 0.0,
+                    'vat_rate_percent' => $taxLine['tax_rate'] ?? null,
+                    'vat_treatment' => $vatTreatment,
                     'description' => "Output VAT: Invoice {$event->invoiceNumber}",
                 ];
             }
@@ -133,8 +178,16 @@ final class InvoiceAccountingListener
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'vat_tax_amount' => $totalTax,
+                'vat_base_amount' => $totalNet,
+                'vat_treatment' => $vatTreatment,
                 'description' => "Output VAT: Invoice {$event->invoiceNumber}",
             ];
+        }
+
+        $roundingLine = $this->roundingLine($event, $lines, $currency, $exchangeRate);
+
+        if ($roundingLine !== null) {
+            $lines[] = $roundingLine;
         }
 
         // 5. Post Double-Entry Journal Entry
@@ -146,15 +199,16 @@ final class InvoiceAccountingListener
             'entry_number' => $entryNumber,
             'source_document_type' => 'sales_invoice',
             'source_document_id' => $event->invoiceId,
-            'posting_date' => $event->date,
-            'document_date' => $event->date,
+            'document_number' => $event->invoiceNumber,
+            'posting_date' => $documentDate,
+            'document_date' => $documentDate,
             'journal_type' => 'standard',
             'description' => "Sales Invoicing GL Posting: {$event->invoiceNumber}",
             'lines' => $lines,
         ]);
 
         // 6. Link GL Journal Entry back to Sales Invoice
-        SalesInvoice::where('id', $event->invoiceId)->update([
+        SalesInvoice::withoutGlobalScope(TenantScope::class)->where('id', $event->invoiceId)->update([
             'gl_journal_entry_id' => (string) $journalEntry->id,
         ]);
 
@@ -175,11 +229,59 @@ final class InvoiceAccountingListener
         );
     }
 
-    private function resolveFiscalPeriod(string $tenantId): ?FiscalPeriod
+    /**
+     * An Italian invoice under split payment or reverse charge carries VAT the seller does not settle. Split payment
+     * tax goes to its own account, so it does not end up on the output VAT account the settlement clears.
+     */
+    private function vatTreatmentOf(InvoicePostedEvent $event): ?string
     {
-        return FiscalPeriod::where('tenant_id', $tenantId)
-            ->where('status', 'open')
-            ->first();
+        if (strtoupper((string) Tenant::query()->whereKey($event->tenantId)->value('country')) !== 'IT') {
+            return null;
+        }
+
+        $invoice = SalesInvoice::withoutGlobalScope(TenantScope::class)
+            ->where('tenant_id', $event->tenantId)
+            ->whereKey($event->invoiceId)
+            ->first(['id', 'split_payment', 'reverse_charge']);
+
+        if ($invoice?->split_payment) {
+            return VatLedgerReader::TREATMENT_SPLIT_PAYMENT;
+        }
+
+        return $invoice?->reverse_charge ? VatLedgerReader::TREATMENT_REVERSE_CHARGE : null;
+    }
+
+    /**
+     * The gross of a document can differ from the sum of its lines only by the cash rounding of its currency, which
+     * goes to its own account. A bigger difference stays in the entry, so the posting refuses it as unbalanced.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     * @return array<string, mixed>|null
+     */
+    private function roundingLine(InvoicePostedEvent $event, array $lines, string $currency, float $exchangeRate): ?array
+    {
+        $difference = '0';
+
+        foreach ($lines as $line) {
+            $difference = Decimal::add($difference, number_format((float) $line['debit_amount'], 4, '.', ''));
+            $difference = Decimal::sub($difference, number_format((float) $line['credit_amount'], 4, '.', ''));
+        }
+
+        if (Decimal::isZero($difference) || Decimal::compare(Decimal::abs($difference), self::MAX_ROUNDING) > 0) {
+            return null;
+        }
+
+        $account = $this->resolveAccount($event->tenantId, '6960', 'Rounding differences (Arrotondamenti)', 'expense', 'debit');
+        $isGain = Decimal::isPositive($difference);
+
+        return [
+            'account_id' => $account->id,
+            'debit_amount' => $isGain ? 0.0 : (float) Decimal::abs($difference),
+            'credit_amount' => $isGain ? (float) $difference : 0.0,
+            'currency' => $currency,
+            'exchange_rate' => $exchangeRate,
+            'description' => "Rounding: Invoice {$event->invoiceNumber}",
+        ];
     }
 
     private function resolveAccount(string $tenantId, string $code, string $name, string $type, string $normalBalance): ChartOfAccount
@@ -192,7 +294,7 @@ final class InvoiceAccountingListener
                 'account_class' => $type,
                 'account_type' => $type,
                 'normal_balance' => $normalBalance,
-                'currency' => 'EUR',
+                'currency' => TenantAccountingCurrency::of($tenantId),
                 'is_active' => true,
             ]
         );

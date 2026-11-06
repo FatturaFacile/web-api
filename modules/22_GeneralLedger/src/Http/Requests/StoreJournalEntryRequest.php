@@ -5,9 +5,17 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class StoreJournalEntryRequest extends FormRequest
 {
+    /**
+     * Written only by the posting of the document itself: a manual entry must not take its place in the ledger.
+     *
+     * @var list<string>
+     */
+    private const array SYSTEM_DOCUMENT_TYPES = ['sales_invoice', 'credit_note', 'vendor_invoice', 'vendor_credit_note', 'customer_payment', 'supplier_payment', 'treasury_payment_line', 'treasury_collection', 'payroll_run'];
+
     public function authorize(): bool
     {
         return true;
@@ -25,9 +33,9 @@ final class StoreJournalEntryRequest extends FormRequest
             'posting_date' => ['required', 'date'],
             'document_date' => ['nullable', 'date'],
             'ledger_type' => ['nullable', 'string', 'in:statutory,ifrs,management'],
-            'journal_type' => ['nullable', 'string', 'in:standard,reversing,closing,opening,recurring,adjusting'],
+            'journal_type' => ['nullable', 'string', 'in:standard,reversing,opening,recurring,adjusting'],
             'description' => ['required', 'string', 'max:500'],
-            'source_document_type' => ['nullable', 'string', 'max:50'],
+            'source_document_type' => ['nullable', 'string', 'max:50', Rule::notIn(self::SYSTEM_DOCUMENT_TYPES)],
             'source_document_id' => ['nullable', 'uuid'],
             'status' => ['nullable', 'string', 'in:draft,posted'],
             'lines' => ['required', 'array', 'min:2'],

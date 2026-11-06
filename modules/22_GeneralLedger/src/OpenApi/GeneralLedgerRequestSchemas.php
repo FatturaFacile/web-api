@@ -30,6 +30,41 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'GeneralLedgerCalculateTaxSettlementRequest',
+    description: 'Request payload validated by CalculateTaxSettlementRequest: either a fiscal period, or a year and period number.',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'fiscal_period_id', type: 'string', format: 'uuid', nullable: true, description: 'Fiscal period spanning a calendar month, quarter or half year'),
+        new OA\Property(property: 'period_type', type: 'string', enum: ['monthly', 'quarterly', 'semiannual'], nullable: true, description: 'Defaults to the periodicity of the VAT settings'),
+        new OA\Property(property: 'year', type: 'integer', nullable: true, description: 'Required without `fiscal_period_id`'),
+        new OA\Property(property: 'period', type: 'integer', minimum: 1, maximum: 12, nullable: true, description: 'Required without `fiscal_period_id`'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerPayTaxSettlementRequest',
+    description: 'Request payload validated by PayTaxSettlementRequest',
+    required: ['payment_date'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'payment_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'bank_account_id', type: 'string', format: 'uuid', nullable: true, description: 'Ledger account of the bank: when given, the payment is registered in the journal'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerUpdateVatTaxSettingRequest',
+    description: 'Request payload validated by UpdateVatTaxSettingRequest',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'periodicity', type: 'string', enum: ['monthly', 'quarterly', 'semiannual'], nullable: true),
+        new OA\Property(property: 'output_vat_account_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), nullable: true),
+        new OA\Property(property: 'input_vat_account_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), nullable: true),
+        new OA\Property(property: 'settlement_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'interest_expense_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'declarant_tax_code', type: 'string', maxLength: 16, nullable: true),
+        new OA\Property(property: 'declarant_role_code', type: 'string', maxLength: 2, nullable: true),
+    ]
+)]
+#[OA\Schema(
     schema: 'GeneralLedgerStoreFiscalYearRequest',
     description: 'Request payload validated by StoreFiscalYearRequest',
     required: ['year_code', 'start_date', 'end_date'],

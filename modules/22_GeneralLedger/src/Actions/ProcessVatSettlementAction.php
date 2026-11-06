@@ -19,7 +19,7 @@ final readonly class ProcessVatSettlementAction
         return $this->taxService->calculateVatSettlement($tenantId, $fiscalPeriodId, $actorUserId);
     }
 
-    public function post(string $vatSettlementId, ?string $actorUserId = null): JournalEntry
+    public function post(string $vatSettlementId, ?string $actorUserId = null): ?JournalEntry
     {
         return $this->taxService->postVatSettlement($vatSettlementId, $actorUserId);
     }

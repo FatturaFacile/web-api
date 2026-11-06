@@ -28,6 +28,10 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
         return [
             'mode' => TimeRecordingMode::class,
             'agreement_date' => 'date',
+            'agreement_valid_from' => 'date',
+            'agreement_valid_to' => 'date',
+            'autonomy_percent' => 'integer',
+            'annual_gross_salary' => 'encrypted',
             'legal_max_weekly_hours' => 'integer',
             'weekly_hours' => 'decimal:2',
             'work_days_per_week' => 'integer',
@@ -37,7 +41,7 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
     }
 
     /**
-     * The values kept in the history of the changes.
+     * The values kept in the history of the changes, which is immutable: the salary itself never enters it.
      *
      * @return array<string, mixed>
      */
@@ -46,6 +50,12 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
         return [
             'mode' => $this->mode->value,
             'agreement_date' => $this->agreement_date?->format('Y-m-d'),
+            'agreement_valid_from' => $this->agreement_valid_from?->format('Y-m-d'),
+            'agreement_valid_to' => $this->agreement_valid_to?->format('Y-m-d'),
+            'agreement_basis' => $this->agreement_basis,
+            'autonomy_percent' => $this->autonomy_percent,
+            'collective_agreement_reference' => $this->collective_agreement_reference,
+            'salary_threshold_met' => $this->annual_gross_salary !== null,
             'legal_max_weekly_hours' => $this->legal_max_weekly_hours,
             'weekly_hours' => $this->weekly_hours,
             'work_days_per_week' => $this->work_days_per_week,

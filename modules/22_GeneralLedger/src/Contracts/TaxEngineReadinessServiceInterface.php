@@ -11,5 +11,5 @@ interface TaxEngineReadinessServiceInterface
 {
     public function calculateVatSettlement(string $tenantId, string $fiscalPeriodId, ?string $actorUserId = null): VatSettlement;
 
-    public function postVatSettlement(string $vatSettlementId, ?string $actorUserId = null): JournalEntry;
+    public function postVatSettlement(string $vatSettlementId, ?string $actorUserId = null): ?JournalEntry;
 }

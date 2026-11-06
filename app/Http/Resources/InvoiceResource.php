@@ -42,6 +42,7 @@ class InvoiceResource extends JsonResource
             'total_tax' => (float) $this->total_tax,
             'total_gross' => (float) $this->total_gross,
             'rounding_amount' => (float) $this->rounding_amount,
+            'status' => $this->status,
             'payment_status' => $this->payment_status,
             'total_paid' => (float) $this->total_paid,
             'proforma_id' => $this->proforma_id,

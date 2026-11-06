@@ -13,6 +13,8 @@ final readonly class EmployeeTimeProfile
      * @param  string|null  $hireDate  The first local day, as Y-m-d.
      * @param  string|null  $terminationDate  The last local day, as Y-m-d.
      * @param  string|null  $agreementDate  The date of the agreement of art. 73a or 73b OLL 1, as Y-m-d.
+     * @param  string|null  $agreementValidFrom  The first local day the agreement covers, as Y-m-d.
+     * @param  string|null  $agreementValidTo  The last local day the agreement covers, as Y-m-d.
      */
     public function __construct(
         public string $employeeId = '',
@@ -24,5 +26,7 @@ final readonly class EmployeeTimeProfile
         public ?string $hireDate = null,
         public ?string $terminationDate = null,
         public ?string $agreementDate = null,
+        public ?string $agreementValidFrom = null,
+        public ?string $agreementValidTo = null,
     ) {}
 }

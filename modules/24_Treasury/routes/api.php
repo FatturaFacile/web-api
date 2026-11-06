@@ -13,7 +13,7 @@ use Modules\Treasury\Http\Controllers\PaymentBatchController;
 use Modules\Treasury\Http\Controllers\ReceivableCollectionController;
 
 Route::prefix('api/v1/treasury')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:treasury'])
     ->group(function (): void {
         // Bank Accounts Management
         Route::apiResource('bank-accounts', BankAccountController::class);
@@ -27,7 +27,7 @@ Route::prefix('api/v1/treasury')
         Route::post('payment-batches/{id}/submit-approval', [PaymentBatchController::class, 'submitApproval']);
         Route::post('payment-batches/{id}/execute', [PaymentBatchController::class, 'execute']);
         Route::post('payment-batches/{id}/cancel', [PaymentBatchController::class, 'cancel']);
-        Route::apiResource('payment-batches', PaymentBatchController::class);
+        Route::apiResource('payment-batches', PaymentBatchController::class)->except(['update', 'destroy']);
 
         // Bank Statements & Reconciliations
         Route::get('reconciliations', [BankReconciliationController::class, 'index']);

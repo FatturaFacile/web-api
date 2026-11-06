@@ -10,7 +10,7 @@ use Modules\CRM\Http\Controllers\ForecastController;
 use Modules\CRM\Http\Controllers\LeadController;
 use Modules\CRM\Http\Controllers\OpportunityController;
 
-Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
+Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:crm'])->group(function (): void {
     // 1. Leads
     Route::get('leads/duplicates', [LeadController::class, 'detectDuplicates'])->name('crm.leads.duplicates');
     Route::post('leads/{id}/qualify', [LeadController::class, 'qualify'])->name('crm.leads.qualify');
@@ -22,7 +22,7 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
     Route::post('opportunities/{id}/stage', [OpportunityController::class, 'changeStage'])->name('crm.opportunities.stage');
     Route::post('opportunities/{id}/quote', [OpportunityController::class, 'requestQuote'])->name('crm.opportunities.quote');
     Route::post('opportunities/{id}/project', [OpportunityController::class, 'convertToProject'])->name('crm.opportunities.project');
-    Route::apiResource('opportunities', OpportunityController::class)->names('crm.opportunities');
+    Route::apiResource('opportunities', OpportunityController::class)->except(['update'])->names('crm.opportunities');
 
     // 3. Accounts
     Route::get('accounts/{id}/health', [AccountController::class, 'health'])->name('crm.accounts.health');
@@ -31,7 +31,7 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
     // 4. Activities
     Route::get('activities/timeline', [ActivityController::class, 'timeline'])->name('crm.activities.timeline');
     Route::post('activities/{id}/complete', [ActivityController::class, 'complete'])->name('crm.activities.complete');
-    Route::apiResource('activities', ActivityController::class)->names('crm.activities');
+    Route::apiResource('activities', ActivityController::class)->except(['update', 'destroy'])->names('crm.activities');
 
     // 5. Forecasts
     Route::post('forecasts/generate', [ForecastController::class, 'generate'])->name('crm.forecasts.generate');
@@ -40,5 +40,5 @@ Route::prefix('api/v1/crm')->middleware(['api', 'auth:sanctum', 'tenant', 'local
 
     // 6. Campaigns
     Route::get('campaigns/{id}/roi', [CampaignController::class, 'roi'])->name('crm.campaigns.roi');
-    Route::apiResource('campaigns', CampaignController::class)->names('crm.campaigns');
+    Route::apiResource('campaigns', CampaignController::class)->except(['update', 'destroy'])->names('crm.campaigns');
 });

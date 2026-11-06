@@ -75,7 +75,7 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
-    Route::post('/auth/login', [AuthController::class, 'login'])->middleware('locale')->name('auth.login');
+    Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['locale', 'throttle:login'])->name('auth.login');
     Route::middleware('locale')->prefix('auth')->name('auth.')->group(function (): void {
         Route::post('/register', [RegistrationController::class, 'register'])->middleware('throttle:registration')->name('register');
         Route::get('/verify-email', [RegistrationController::class, 'verify'])->middleware('throttle:email-verification')->name('verify-email');
@@ -426,7 +426,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // System: manual tenant backups
-        Route::prefix('system')->name('system.')->group(function (): void {
+        Route::prefix('system')->name('system.')->middleware('module.access:system')->group(function (): void {
             Route::get('/backups', [TenantBackupController::class, 'index'])->name('backups.index');
             Route::post('/backups', [TenantBackupController::class, 'store'])->name('backups.store');
             Route::post('/backups/restore-upload', [TenantBackupController::class, 'restoreUpload'])->name('backups.restore-upload');

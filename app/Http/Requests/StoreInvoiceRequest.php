@@ -29,11 +29,11 @@ class StoreInvoiceRequest extends FormRequest
                 Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'invoice_type' => ['required', Rule::in(['standard', 'sdi_electronic', 'ch_qr_bill', 'credit_note', 'proforma'])],
-            'invoice_number' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('invoices', 'invoice_number')->where('tenant_id', $tenantId),
+            'invoice_number' => ['exclude'],
+            'related_invoice_id' => [
+                'nullable',
+                'uuid',
+                Rule::exists('invoices', 'id')->where('tenant_id', $tenantId),
             ],
             'date' => ['required', 'date'],
             'due_date' => ['nullable', 'date', 'after_or_equal:date'],

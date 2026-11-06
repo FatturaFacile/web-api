@@ -356,3 +356,21 @@ test('deleted events are ignored and minutes are formatted as hours', function (
         ->and(WorkingTimeReport::formatMinutes(510))->toBe('8:30')
         ->and(WorkingTimeReport::formatMinutes(-75))->toBe('-1:15');
 });
+
+test('days outside the agreement fall back to the detailed recording and are reported', function (): void {
+    $profile = new EmployeeTimeProfile(mode: TimeRecordingMode::Simplified, agreementDate: '2026-11-01', agreementValidFrom: '2026-11-03');
+    $context = wteContext(wteDay(WTE_MONDAY, '08:00', '12:00'), 2, WTE_MONDAY, $profile);
+    $context->dailyRecords = [new DailyEntry(WTE_MONDAY, 999), new DailyEntry('2026-11-03', 480)];
+
+    $report = SwissWorkingTimeEngine::evaluate($context);
+
+    expect($report->days[0]->workedMinutes)->toBe(240)
+        ->and($report->days[1]->workedMinutes)->toBe(480)
+        ->and(wteHasIssue($report->issues, 'non coperto'))->toBeTrue();
+});
+
+test('a period inside the agreement raises no coverage issue', function (): void {
+    $profile = new EmployeeTimeProfile(mode: TimeRecordingMode::Simplified, agreementDate: '2026-01-01', agreementValidFrom: '2026-01-01', agreementValidTo: '2026-12-31');
+
+    expect(wteHasIssue(SwissWorkingTimeEngine::evaluate(wteContext([], 7, WTE_MONDAY, $profile))->issues, 'non coperto'))->toBeFalse();
+});

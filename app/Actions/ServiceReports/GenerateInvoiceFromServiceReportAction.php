@@ -14,6 +14,7 @@ use App\Services\Sales\DocumentTotalsCalculator;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Invoicing\Actions\PostInvoiceAction;
 
 class GenerateInvoiceFromServiceReportAction
 {
@@ -91,6 +92,8 @@ class GenerateInvoiceFromServiceReportAction
             foreach ($calculatedTotals['items'] as $itemData) {
                 $invoice->items()->create($itemData);
             }
+
+            app(PostInvoiceAction::class)->issue((string) $invoice->id);
 
             InvoiceServiceReport::create([
                 'tenant_id' => $report->tenant_id,

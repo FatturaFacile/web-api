@@ -15,7 +15,7 @@ use Modules\Inventory\Http\Controllers\StockValuationController;
 use Modules\Inventory\Http\Controllers\WarehouseController;
 
 Route::prefix('api/v1/inventory')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:inventory'])
     ->group(function (): void {
         // 1. Warehouses & Physical/Mobile Sites
         Route::apiResource('warehouses', WarehouseController::class)->names('inventory.warehouses');

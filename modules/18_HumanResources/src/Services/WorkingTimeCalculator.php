@@ -101,6 +101,8 @@ final class WorkingTimeCalculator
                 hireDate: ($profile->hire_date ?? $hrEmployee?->hire_date)?->format('Y-m-d'),
                 terminationDate: ($profile->termination_date ?? $hrEmployee?->termination_date)?->format('Y-m-d'),
                 agreementDate: $profile->agreement_date?->format('Y-m-d'),
+                agreementValidFrom: $profile->agreement_valid_from?->format('Y-m-d'),
+                agreementValidTo: $profile->agreement_valid_to?->format('Y-m-d'),
             ),
             from: $from,
             to: $to,

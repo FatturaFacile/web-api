@@ -45,6 +45,11 @@ class InvoicePolicy
             return false;
         }
 
+        // An issued invoice is in the ledger: it is corrected with a credit note, never deleted
+        if ($invoice->status === 'posted') {
+            return false;
+        }
+
         // Invoices transmitted or currently sending to SDI cannot be deleted
         if ($invoice->sdiMetadata && in_array($invoice->sdiMetadata->sdi_status, ['sending', 'delivered', 'accepted'], true)) {
             return false;

@@ -15,6 +15,7 @@ use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
+use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
@@ -42,6 +43,7 @@ return [
     CRMServiceProvider::class,
     AssetManagementServiceProvider::class,
     HumanResourcesServiceProvider::class,
+    PayrollServiceProvider::class,
     ServiceManagementServiceProvider::class,
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,

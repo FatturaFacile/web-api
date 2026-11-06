@@ -12,6 +12,15 @@ use DateTimeInterface;
  */
 final class SwissWorkingTimeRules
 {
+    /** Art. 73a OLL 1: the waiver needs an annual gross salary, bonuses included, above this amount in CHF. */
+    public const int WAIVER_MINIMUM_ANNUAL_SALARY = 120000;
+
+    /** Art. 73b OLL 1: share of the working time the employee must be able to organise alone. */
+    public const int SIMPLIFIED_MINIMUM_AUTONOMY_PERCENT = 25;
+
+    /** Art. 73b cpv. 2 OLL 1: individual agreements are allowed only in companies below this size. */
+    public const int SIMPLIFIED_INDIVIDUAL_AGREEMENT_EMPLOYEE_LIMIT = 50;
+
     /** The working time is always evaluated in local time, whatever the time zone of the records. */
     public const TIMEZONE = 'Europe/Zurich';
 

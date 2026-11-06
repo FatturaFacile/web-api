@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
-use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Projects\Events\ProjectAccrualReadyEvent;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
 use Modules\Projects\Events\ProjectCostReadyEvent;
@@ -22,15 +24,14 @@ use Modules\Projects\Events\ProjectWipReadyEvent;
 final class ProjectsAccountingListener
 {
     public function __construct(
-        private readonly DoubleEntryPostingServiceInterface $postingService
+        private readonly DoubleEntryPostingServiceInterface $postingService,
+        private readonly FiscalPeriodResolver $periods
     ) {}
 
     public function handleCostReady(ProjectCostReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Work In Progress (WIP)', 'asset', 'debit');
         $crAcc = $this->resolveAccount($event->tenantId, $event->creditAccountCode, 'Cost Allocation Clearing', 'liability', 'credit');
@@ -39,6 +40,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-COST-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_cost_entry',
             'source_document_id' => $event->costEntryId,
@@ -65,10 +68,8 @@ final class ProjectsAccountingListener
 
     public function handleRevenueReady(ProjectRevenueReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $arAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Accounts Receivable (Crediti v/Clienti)', 'asset', 'debit');
         $arAcc->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'customer']);
@@ -78,6 +79,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-REV-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_revenue',
             'source_document_id' => $event->projectId,
@@ -104,10 +107,8 @@ final class ProjectsAccountingListener
 
     public function handleWipReady(ProjectWipReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->wipAccountCode, 'Project Work In Progress (WIP)', 'asset', 'debit');
         $capAcc = $this->resolveAccount($event->tenantId, '5900', 'Capitalized Project WIP Clearing', 'expense', 'credit');
@@ -116,6 +117,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-WIP-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_wip',
             'source_document_id' => $event->projectId,
@@ -142,10 +145,8 @@ final class ProjectsAccountingListener
 
     public function handleAccrualReady(ProjectAccrualReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $expAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Accrued Project Expense', 'expense', 'debit');
         $liabAcc = $this->resolveAccount($event->tenantId, $event->creditAccountCode, 'Accrued Liabilities', 'liability', 'credit');
@@ -154,6 +155,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-ACCR-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_accrual',
             'source_document_id' => $event->projectId,
@@ -193,6 +196,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-MRG-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_margin',
             'source_document_id' => $event->projectId,
@@ -219,10 +224,8 @@ final class ProjectsAccountingListener
 
     public function handleClosureReady(ProjectClosureReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $cogsAcc = $this->resolveAccount($event->tenantId, '5000', 'Cost of Goods Sold (COGS)', 'cogs', 'debit');
         $wipAcc = $this->resolveAccount($event->tenantId, '1250', 'Project Work In Progress (WIP)', 'asset', 'debit');
@@ -231,10 +234,12 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-CLOSE-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_closure',
             'source_document_id' => $event->projectId,
-            'journal_type' => 'closing',
+            'journal_type' => 'adjusting',
             'description' => 'Final Project Closure: Clear WIP to COGS',
             'lines' => [
                 [
@@ -257,10 +262,8 @@ final class ProjectsAccountingListener
 
     public function handleRevenueRecognitionReady(ProjectRevenueRecognitionReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $assetAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Contract Asset / Unbilled AR', 'asset', 'debit');
         $revAcc = $this->resolveAccount($event->tenantId, $event->creditAccountCode, 'Recognized Contract Revenue (ASC 606)', 'revenue', 'credit');
@@ -273,6 +276,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-REV-REC-'.strtoupper(Str::random(6)),
             'source_document_type' => 'revenue_recognition',
             'source_document_id' => $event->recognitionId,
@@ -299,10 +304,8 @@ final class ProjectsAccountingListener
 
     public function handleExpensePostingReady(ProjectExpensePostingReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $expAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Travel & Direct Expenses', 'expense', 'debit');
         $apAcc = $this->resolveAccount($event->tenantId, $event->creditAccountCode, 'Employee Expense Reimbursement Payable', 'liability', 'credit');
@@ -311,6 +314,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-EXP-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_expense',
             'source_document_id' => $event->expenseId,
@@ -337,10 +342,8 @@ final class ProjectsAccountingListener
 
     public function handleLabourCostReady(ProjectLabourCostReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Work In Progress (WIP - Labor)', 'asset', 'debit');
         $payrollAcc = $this->resolveAccount($event->tenantId, $event->creditAccountCode, 'Direct Labor Payroll Absorption', 'liability', 'credit');
@@ -349,6 +352,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-LAB-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_timesheet',
             'source_document_id' => $event->timesheetId,
@@ -375,10 +380,8 @@ final class ProjectsAccountingListener
 
     public function handleMaterialCostReady(ProjectMaterialCostReadyEvent $event): void
     {
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period) {
-            return;
-        }
+        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Work In Progress (WIP - Material)', 'asset', 'debit');
         $invAcc = $this->resolveAccount($event->tenantId, $event->creditAccountCode, 'Merchandise Inventory Asset', 'asset', 'debit');
@@ -387,6 +390,8 @@ final class ProjectsAccountingListener
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
+            'posting_date' => $postingDate,
+            'document_date' => $postingDate,
             'entry_number' => 'PRJ-MAT-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_material',
             'source_document_id' => $event->consumptionId,
@@ -411,13 +416,6 @@ final class ProjectsAccountingListener
         ]);
     }
 
-    private function resolveFiscalPeriod(string $tenantId): ?FiscalPeriod
-    {
-        return FiscalPeriod::where('tenant_id', $tenantId)
-            ->where('status', 'open')
-            ->first();
-    }
-
     private function resolveAccount(string $tenantId, string $code, string $name, string $type, string $normalBalance): ChartOfAccount
     {
         return ChartOfAccount::firstOrCreate(
@@ -428,7 +426,7 @@ final class ProjectsAccountingListener
                 'account_class' => $type,
                 'account_type' => $type,
                 'normal_balance' => $normalBalance,
-                'currency' => 'EUR',
+                'currency' => TenantAccountingCurrency::of($tenantId),
                 'is_active' => true,
             ]
         );

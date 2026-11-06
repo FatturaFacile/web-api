@@ -148,18 +148,19 @@ class InvoiceController extends Controller
     #[OA\Post(
         path: '/api/v1/sales/invoices',
         operationId: 'createInvoice',
-        description: 'Store a newly created invoice with validated items and tax computations.',
+        description: 'Creates and issues an invoice: the number comes from the sequence of the year and series, and any document but a proforma is posted to the ledger in the fiscal period of its date. When that period does not exist or is closed, nothing is created and the response is 422.',
         summary: 'Create new invoice',
         security: [['bearerAuth' => []]],
         tags: ['Invoices', 'Sales'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['contact_id', 'invoice_type', 'invoice_number', 'date', 'currency', 'jurisdiction', 'items'],
+                required: ['contact_id', 'invoice_type', 'date', 'currency', 'jurisdiction', 'items'],
                 properties: [
                     new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', example: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'),
                     new OA\Property(property: 'invoice_type', type: 'string', enum: ['standard', 'sdi_electronic', 'ch_qr_bill', 'credit_note', 'proforma'], example: 'standard'),
-                    new OA\Property(property: 'invoice_number', type: 'string', maxLength: 50, example: 'INV-2026-0001'),
+                    new OA\Property(property: 'invoice_number', description: 'Ignored: the server assigns the number from the sequence of the year and series.', type: 'string', maxLength: 50, deprecated: true, example: 'INV-2026-0001'),
+                    new OA\Property(property: 'related_invoice_id', description: 'For a credit note: the invoice it credits.', type: 'string', format: 'uuid', nullable: true),
                     new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-10-25'),
                     new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true, example: '2026-11-24'),
                     new OA\Property(property: 'currency', type: 'string', example: 'CHF'),
@@ -205,7 +206,7 @@ class InvoiceController extends Controller
             ),
             new OA\Response(
                 response: 422,
-                description: 'Validation error',
+                description: 'Validation error, or no open fiscal period contains the date of the document',
                 content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')
             ),
         ]
@@ -407,7 +408,7 @@ class InvoiceController extends Controller
         );
 
         // Update rounded total on invoice if currency is CHF
-        if ($invoice->currency === 'CHF') {
+        if ($invoice->currency === 'CHF' && $invoice->status !== 'posted') {
             $invoice->total_gross = $qrData['amount'];
             $invoice->rounding_amount = $qrData['rounding_amount'];
             $invoice->save();

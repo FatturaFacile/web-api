@@ -9,7 +9,7 @@ use Modules\Manufacturing\Http\Controllers\ProductionOrderController;
 use Modules\Manufacturing\Http\Controllers\QualityController;
 use Modules\Manufacturing\Http\Controllers\ShopFloorController;
 
-Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])->group(function (): void {
+Route::prefix('api/v1/manufacturing')->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:manufacturing'])->group(function (): void {
     // BOMs
     Route::get('/boms', [BomController::class, 'index'])->name('mfg.boms.index');
     Route::post('/boms', [BomController::class, 'store'])->name('mfg.boms.store');

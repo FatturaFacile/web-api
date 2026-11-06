@@ -36,6 +36,7 @@ class EmployeeProfile extends Model
     {
         return [
             'is_cross_border_commuter' => 'boolean',
+            'social_security_number' => 'encrypted',
             'swiss_cantonal_tax_rate' => 'decimal:2',
             'hire_date' => 'date',
             'termination_date' => 'date',

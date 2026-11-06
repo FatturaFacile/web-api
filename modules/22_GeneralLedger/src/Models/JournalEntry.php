@@ -7,6 +7,7 @@ namespace Modules\GeneralLedger\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 
 final class JournalEntry extends BaseEnterpriseModel
 {
@@ -61,9 +62,14 @@ final class JournalEntry extends BaseEnterpriseModel
 
     public function isBalanced(): bool
     {
-        $debit = (float) $this->lines()->sum('debit_amount');
-        $credit = (float) $this->lines()->sum('credit_amount');
+        $debit = '0';
+        $credit = '0';
 
-        return abs($debit - $credit) < 0.0001 && $debit > 0;
+        foreach ($this->lines()->get(['debit_amount', 'credit_amount']) as $line) {
+            $debit = Decimal::add($debit, (string) $line->debit_amount);
+            $credit = Decimal::add($credit, (string) $line->credit_amount);
+        }
+
+        return Decimal::compare($debit, $credit) === 0 && Decimal::isPositive($debit);
     }
 }

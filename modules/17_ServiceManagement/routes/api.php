@@ -9,7 +9,7 @@ use Modules\ServiceManagement\Http\Controllers\TicketController;
 use Modules\ServiceManagement\Http\Controllers\WorkOrderController;
 
 Route::prefix('api/v1/esm')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:service'])
     ->group(function (): void {
         // Tickets & Helpdesk Routes
         Route::get('/tickets', [TicketController::class, 'index'])->name('api.v1.esm.tickets.index');

@@ -19,6 +19,10 @@ final class Employee extends BaseEnterpriseModel implements LockableByWorkflowIn
     protected function casts(): array
     {
         return [
+            'personal_email' => 'encrypted',
+            'phone' => 'encrypted',
+            'tax_code' => 'encrypted',
+            'social_security_number' => 'encrypted',
             'birth_date' => 'date',
             'hire_date' => 'date',
             'probation_end_date' => 'date',

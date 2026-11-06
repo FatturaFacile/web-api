@@ -45,7 +45,7 @@ final class CreateInvoiceRequest extends FormRequest
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0'],
+            'items.*.tax_rate' => ['required', 'numeric', 'min:0'],
             'items.*.discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.revenue_account_id' => ['nullable', 'uuid'],
             'items.*.tax_account_id' => ['nullable', 'uuid'],

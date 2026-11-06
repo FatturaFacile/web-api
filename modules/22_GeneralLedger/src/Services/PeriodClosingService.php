@@ -20,6 +20,7 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\PeriodLock;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
 final class PeriodClosingService implements PeriodClosingServiceInterface
 {
@@ -259,7 +260,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                     'account_class' => 'equity',
                     'account_type' => 'equity',
                     'normal_balance' => 'credit',
-                    'currency' => 'EUR',
+                    'currency' => TenantAccountingCurrency::of((string) $fy->tenant_id),
                     'is_active' => true,
                 ]);
             }
@@ -284,14 +285,13 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
 
             $closingJournal = null;
             if (! empty($closingLines)) {
-                $closingJournal = $this->postingService->createAndPost([
+                $closingJournal = $this->postingService->postYearEndClosing([
                     'tenant_id' => $fy->tenant_id,
                     'company_id' => $fy->company_id,
                     'fiscal_period_id' => $closingPeriod->id,
                     'entry_number' => 'YE-CLOSE-'.$fy->year_code,
                     'posting_date' => $fy->end_date,
                     'document_date' => $fy->end_date,
-                    'journal_type' => 'closing',
                     'description' => "Year-end financial closing for {$fy->year_code}",
                     'lines' => $closingLines,
                 ], $closedByUuid);

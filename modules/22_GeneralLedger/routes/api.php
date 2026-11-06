@@ -11,19 +11,21 @@ use Modules\GeneralLedger\Http\Controllers\JournalEntryController;
 use Modules\GeneralLedger\Http\Controllers\ReconciliationController;
 use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
+use Modules\GeneralLedger\Http\Controllers\VatRegisterController;
+use Modules\GeneralLedger\Http\Controllers\VatTaxSettingController;
 
 Route::prefix('api/v1/general-ledger')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger'])
     ->group(function (): void {
         // Chart of Accounts
         Route::get('accounts-tree', [ChartOfAccountController::class, 'hierarchy']);
         Route::apiResource('accounts', ChartOfAccountController::class);
 
         // Fiscal Calendar
-        Route::apiResource('fiscal-years', FiscalYearController::class);
+        Route::apiResource('fiscal-years', FiscalYearController::class)->except(['update', 'destroy']);
         Route::post('fiscal-years/{id}/close', [FiscalYearController::class, 'closeYear']);
 
-        Route::apiResource('fiscal-periods', FiscalPeriodController::class);
+        Route::apiResource('fiscal-periods', FiscalPeriodController::class)->except(['update', 'destroy']);
         Route::post('fiscal-periods/{id}/close', [FiscalPeriodController::class, 'closePeriod']);
         Route::post('fiscal-periods/{id}/reopen', [FiscalPeriodController::class, 'reopenPeriod']);
 
@@ -31,7 +33,7 @@ Route::prefix('api/v1/general-ledger')
         Route::post('journals/validate-balance', [JournalEntryController::class, 'validateBalance']);
         Route::post('journals/{id}/post', [JournalEntryController::class, 'post']);
         Route::post('journals/{id}/reverse', [JournalEntryController::class, 'reverse']);
-        Route::apiResource('journals', JournalEntryController::class);
+        Route::apiResource('journals', JournalEntryController::class)->except(['update', 'destroy']);
 
         // Financial Statements
         Route::get('financial-statements/trial-balance', [FinancialStatementController::class, 'trialBalance']);
@@ -40,12 +42,22 @@ Route::prefix('api/v1/general-ledger')
         Route::get('financial-statements/cash-flow', [FinancialStatementController::class, 'cashFlow']);
 
         // Subledgers & Reconciliations
-        Route::apiResource('reconciliations', ReconciliationController::class);
+        Route::apiResource('reconciliations', ReconciliationController::class)->except(['update', 'destroy']);
         Route::get('subledgers/customers', [SubledgerController::class, 'customerLedger']);
         Route::get('subledgers/suppliers', [SubledgerController::class, 'supplierLedger']);
 
         // Tax Settlements (Liquidazione IVA)
-        Route::get('tax-settlements/{id}', [TaxSettlementController::class, 'show']);
+        Route::get('tax-settlements', [TaxSettlementController::class, 'index']);
         Route::post('tax-settlements/calculate', [TaxSettlementController::class, 'calculate']);
-        Route::post('tax-settlements/{id}/post', [TaxSettlementController::class, 'post']);
+        Route::get('tax-settlements/{id}', [TaxSettlementController::class, 'show'])->whereUuid('id');
+        Route::post('tax-settlements/{id}/post', [TaxSettlementController::class, 'post'])->whereUuid('id');
+        Route::post('tax-settlements/{id}/pay', [TaxSettlementController::class, 'pay'])->whereUuid('id');
+        Route::get('tax-settlements/{id}/lipe', [TaxSettlementController::class, 'lipe'])->whereUuid('id');
+        Route::get('tax-settlements/{id}/f24', [TaxSettlementController::class, 'f24'])->whereUuid('id');
+        Route::get('tax-settlements/{id}/statement', [TaxSettlementController::class, 'statement'])->whereUuid('id');
+
+        // VAT Settings and Registers
+        Route::get('tax-settings', [VatTaxSettingController::class, 'show']);
+        Route::put('tax-settings', [VatTaxSettingController::class, 'update']);
+        Route::get('vat-registers/{type}', [VatRegisterController::class, 'show'])->whereIn('type', ['sales', 'purchases']);
     });
