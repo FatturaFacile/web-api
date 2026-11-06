@@ -104,19 +104,82 @@ graph TD
 
 ### Prerequisites
 
-- **PHP**: `^8.5` (Extensions: `pdo`, `pdo_pgsql`, `bcmath`, `mbstring`, `openssl`, `xml`, `curl`)
-- **Composer**: `^2.6`
+- **To try it**: only Docker with the Compose plugin (see "Try it now")
+- **To develop**: PHP `^8.5` (Extensions: `pdo`, `pdo_pgsql`, `bcmath`, `mbstring`, `openssl`, `xml`, `curl`)
+  and Composer `^2.6`, or Docker alone with Laravel Sail
 - **Docker**: for PostgreSQL and Mailpit
 - **Node.js**: `^22.0` with Corepack, for [web-frontend](https://github.com/FatturaFacile/web-frontend)
 
-### Local Development Setup
+### Try it now (Docker, no PHP or Composer needed)
 
-The API runs on your machine; PostgreSQL and [Mailpit](https://mailpit.axllent.org/), which catches every email, run
-in Docker through `docker-compose.local.yml`, which takes the database credentials from `.env`.
+Runs the published image [`docker.io/fatturafacile/api:0.1.2`](https://hub.docker.com/r/fatturafacile/api) with
+PostgreSQL 16 and a minimal nginx. Nothing is built and the `vendor/` folder is not needed. Only Docker with the Compose
+plugin is required. Everything listens on `127.0.0.1`. This is for a quick trial, not for production.
 
-> `docker compose up` without `-f` starts `compose.yaml`, the Laravel Sail stack with MySQL: it is not this setup.
+```bash
+git clone https://github.com/FatturaFacile/web-api.git && cd web-api
+cp deploy/local/env.example deploy/local/.env
+docker compose -f deploy/local/compose.yaml up -d --wait
+docker compose -f deploy/local/compose.yaml exec app php artisan migrate --force
+docker compose -f deploy/local/compose.yaml exec app php artisan erp:bootstrap
+```
 
-#### First run
+Check it: `curl http://localhost:8000/up` answers 200, the Swagger UI is on http://localhost:8000/api/documentation and
+the OpenAPI file on http://localhost:8000/docs/api-docs.json. Demo login (via `POST /api/v1/auth/login`):
+`admin@demo-group.com` / `Password123!`.
+
+- The tag is pinned in `deploy/local/compose.yaml`; change it there to try another release (tags on Docker Hub).
+- `APP_KEY` is generated at the first start and kept in the storage volume. Credentials and the port (`API_PORT`) are in
+  `deploy/local/.env`, which is not committed.
+- The image has no PHP Redis extension, so this stack has no Redis: cache, sessions and queue use the database and
+  emails go to the log.
+- Stop and keep the data: `docker compose -f deploy/local/compose.yaml stop`. Remove everything, data included:
+  `docker compose -f deploy/local/compose.yaml down -v`.
+
+> `docker compose up` without `-f` starts `compose.yaml` (the Laravel Sail development stack), and
+> `docker-compose.yml` is the production stack (nginx on 80/443, certbot, a mandatory `.env`): neither is for a first trial.
+
+### Develop (you change the code)
+
+`vendor/` is not in the repository: run `composer install` first (PHP `^8.5`; without PHP locally you can run
+`docker run --rm -u "$(id -u):$(id -g)" -v "$PWD":/app -w /app composer:2 install --ignore-platform-reqs`).
+Then choose one of the two ways.
+
+#### With Laravel Sail (everything in Docker)
+
+`compose.yaml` runs PHP 8.5, PostgreSQL 16, Redis and Mailpit (the schema is PostgreSQL-only: MySQL does not work).
+
+```bash
+composer install
+cp .env.example .env
+```
+
+```dotenv
+# Set these values in .env
+DB_CONNECTION=pgsql
+DB_HOST=pgsql
+DB_PORT=5432
+DB_DATABASE=fatturafacile
+DB_USERNAME=sail
+DB_PASSWORD=password
+REDIS_HOST=redis
+```
+
+```bash
+export WWWUSER=$(id -u) WWWGROUP=$(id -g)   # if port 80 is busy: also APP_PORT=8081
+./vendor/bin/sail up -d laravel.test pgsql redis mailpit
+./vendor/bin/sail artisan key:generate
+./vendor/bin/sail artisan migrate
+./vendor/bin/sail artisan erp:bootstrap
+./vendor/bin/sail artisan l5-swagger:generate   # regenerate the OpenAPI file
+```
+
+The API answers on `http://localhost` (or `APP_PORT`): `/up`, `/api/documentation`. Stop with `./vendor/bin/sail down`
+(`-v` also removes the database).
+
+#### With PHP on your machine
+
+##### First run
 
 ```bash
 # 1. Install the dependencies and create the environment file
@@ -189,6 +252,12 @@ php artisan auth:grant-platform-admin admin@demo-group.com
 
 Sign in as that user, list the requests with `GET /api/v1/admin/tenant-access-requests`, then call
 `POST /api/v1/admin/tenant-access-requests/{id}/approve`, `/move` or `/reject`.
+
+#### Recovering a password
+
+`POST /api/v1/auth/forgot-password` always answers 202, and sends a link only to active accounts with a confirmed
+address. The link opens `/reset-password` on the frontend and lasts `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`. Completing the
+reset revokes the user's access tokens and deletes their rows in `sessions`, which requires `SESSION_DRIVER=database`.
 
 ### The Platform Bootstrap Command
 

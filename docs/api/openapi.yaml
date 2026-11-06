@@ -15761,6 +15761,152 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/auth/forgot-password:
+    post:
+      operationId: auth.forgot-password
+      tags:
+        - PasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '202':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'If the email address exists in our system, you will receive an email with instructions to recover your password.'
+                  data:
+                    type: 'null'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/auth/resend-reset-password-email:
+    post:
+      operationId: auth.resend-reset-password-email
+      tags:
+        - PasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '202':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'If the email address exists in our system, you will receive an email with instructions to recover your password.'
+                  data:
+                    type: 'null'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/auth/validate-reset-token:
+    get:
+      operationId: auth.validate-reset-token
+      tags:
+        - PasswordReset
+      parameters:
+        -
+          name: token
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  -
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                        const: 'The link is valid.'
+                      data:
+                        type: 'null'
+                      meta:
+                        type: string
+                    required:
+                      - success
+                      - message
+                      - data
+                      - meta
+                  -
+                    type: string
+  /v1/auth/reset-password:
+    post:
+      operationId: auth.reset-password
+      tags:
+        - PasswordReset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                anyOf:
+                  -
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                        const: 'Password updated. You can now sign in with your new password.'
+                      data:
+                        type: 'null'
+                      meta:
+                        type: string
+                    required:
+                      - success
+                      - message
+                      - data
+                      - meta
+                  -
+                    type: string
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/treasury/payment-batches/{id}/download-xml':
     get:
       operationId: paymentBatch.downloadXml
@@ -39191,6 +39337,16 @@ components:
         - created_at
         - updated_at
       title: ForecastResource
+    ForgotPasswordRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 255
+      required:
+        - email
+      title: ForgotPasswordRequest
     FxPosition:
       type: object
       properties:
@@ -45366,6 +45522,21 @@ components:
       required:
         - email
       title: ResendVerificationRequest
+    ResetPasswordRequest:
+      type: object
+      properties:
+        token:
+          type: string
+          maxLength: 255
+        password:
+          type: string
+        password_confirmation:
+          type: string
+      required:
+        - token
+        - password
+        - password_confirmation
+      title: ResetPasswordRequest
     ResolveTicketRequest:
       type: object
       properties:
@@ -56461,6 +56632,9 @@ tags:
   -
     name: Organization
     description: 'Operations of the Organization module.'
+  -
+    name: PasswordReset
+    description: 'Operations of the PasswordReset module.'
   -
     name: PaymentBatch
     description: 'Operations of the PaymentBatch module.'

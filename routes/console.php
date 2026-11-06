@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\PasswordResetToken;
 use App\Models\Tenant;
 use Enterprise\EventBus\Jobs\MaintainOutboxLifecycleJob;
 use Enterprise\EventBus\Jobs\RelayOutboxEventsJob;
@@ -33,6 +34,7 @@ Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping(
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping();
+Schedule::command('model:prune', ['--model' => [PasswordResetToken::class]])->dailyAt('04:15')->withoutOverlapping();
 Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping();
 Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping();
 Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping();
