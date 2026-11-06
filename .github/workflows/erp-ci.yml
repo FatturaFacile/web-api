@@ -110,6 +110,12 @@ jobs:
           php artisan key:generate
           php artisan migrate:fresh --force
 
+      # Verify the OpenAPI (Swagger) documentation can be generated, as the deploy does after the build
+      - name: Generate Swagger Documentation
+        run: |
+          php artisan l5-swagger:generate
+          test -s storage/api-docs/api-docs.json
+
       # Verify architectural boundary invariants (Clean Architecture / Domain rules)
       - name: Run Pest Architecture Boundary Tests
         run: ./vendor/bin/pest tests/Architecture --no-coverage
