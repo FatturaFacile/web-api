@@ -38,6 +38,7 @@ use App\Http\Controllers\Api\V1\InvoicePaymentController;
 use App\Http\Controllers\Api\V1\InvoiceQrBillController;
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
 use App\Http\Controllers\Api\V1\LoyaltyCardController;
+use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
 use App\Http\Controllers\Api\V1\PaymentReminderController;
 use App\Http\Controllers\Api\V1\PaymentTermController;
@@ -80,6 +81,10 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/register', [RegistrationController::class, 'register'])->middleware('throttle:registration')->name('register');
         Route::get('/verify-email', [RegistrationController::class, 'verify'])->middleware('throttle:email-verification')->name('verify-email');
         Route::post('/resend-verification-email', [RegistrationController::class, 'resend'])->middleware('throttle:verification-resend')->name('resend-verification-email');
+        Route::post('/forgot-password', [PasswordResetController::class, 'forgot'])->middleware('throttle:password-reset-request')->name('forgot-password');
+        Route::post('/resend-reset-password-email', [PasswordResetController::class, 'resend'])->middleware('throttle:password-reset-request')->name('resend-reset-password-email');
+        Route::get('/validate-reset-token', [PasswordResetController::class, 'validateToken'])->middleware('throttle:password-reset-attempt')->name('validate-reset-token');
+        Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset-attempt')->name('reset-password');
     });
 
     // Platform administrators work across tenants, so these routes have no tenant context.

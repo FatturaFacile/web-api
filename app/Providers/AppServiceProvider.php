@@ -107,6 +107,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perHour((int) config('auth.registration.rate_limits.resend_per_hour'))->by($emailKey($request)),
         ]);
 
+        RateLimiter::for('password-reset-request', fn (Request $request): Limit => Limit::perMinute((int) config('auth.password_reset.rate_limits.request_per_minute'))->by($request->ip()));
+        RateLimiter::for('password-reset-attempt', fn (Request $request): Limit => Limit::perMinute((int) config('auth.password_reset.rate_limits.attempts_per_minute'))->by($request->ip()));
+
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 
         Gate::define('viewApiDocs', function ($user) {

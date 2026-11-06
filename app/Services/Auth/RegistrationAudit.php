@@ -8,7 +8,7 @@ use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 
 /**
- * Registration events on the audit ledger. They identify users by id only: the ledger is immutable, so it must not
+ * Registration and password recovery events on the audit ledger. They identify users by id only: the ledger is immutable, so it must not
  * accumulate email addresses, and tokens never reach it. Events without a tenant go on the ledger's system chain.
  */
 final class RegistrationAudit
@@ -30,6 +30,26 @@ final class RegistrationAudit
     public const ACCESS_MOVED = 'TENANT_ACCESS_MOVED';
 
     public const ACCESS_REJECTED = 'TENANT_ACCESS_REJECTED';
+
+    public const PASSWORD_RESET_REQUESTED = 'PASSWORD_RESET_REQUESTED';
+
+    public const PASSWORD_RESET_SENT = 'PASSWORD_RESET_SENT';
+
+    public const PASSWORD_RESET_RESENT = 'PASSWORD_RESET_RESENT';
+
+    public const PASSWORD_RESET_LINK_OPENED = 'PASSWORD_RESET_LINK_OPENED';
+
+    public const PASSWORD_RESET_COMPLETED = 'PASSWORD_RESET_COMPLETED';
+
+    public const PASSWORD_RESET_TOKEN_INVALID = 'PASSWORD_RESET_TOKEN_INVALID';
+
+    public const PASSWORD_RESET_TOKEN_EXPIRED = 'PASSWORD_RESET_TOKEN_EXPIRED';
+
+    public const PASSWORD_RESET_ATTEMPTS_EXCEEDED = 'PASSWORD_RESET_ATTEMPTS_EXCEEDED';
+
+    public const PASSWORD_RESET_SESSIONS_REVOKED = 'PASSWORD_RESET_SESSIONS_REVOKED';
+
+    public const PASSWORD_CHANGE_NOTIFIED = 'PASSWORD_CHANGE_NOTIFIED';
 
     public function __construct(private readonly AuditLedgerInterface $ledger) {}
 

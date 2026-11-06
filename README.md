@@ -190,6 +190,12 @@ php artisan auth:grant-platform-admin admin@demo-group.com
 Sign in as that user, list the requests with `GET /api/v1/admin/tenant-access-requests`, then call
 `POST /api/v1/admin/tenant-access-requests/{id}/approve`, `/move` or `/reject`.
 
+#### Recovering a password
+
+`POST /api/v1/auth/forgot-password` always answers 202, and sends a link only to active accounts with a confirmed
+address. The link opens `/reset-password` on the frontend and lasts `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`. Completing the
+reset revokes the user's access tokens and deletes their rows in `sessions`, which requires `SESSION_DRIVER=database`.
+
 ### The Platform Bootstrap Command
 
 The `php artisan erp:bootstrap` command fills a migrated database with reference data, users and demo records. It does

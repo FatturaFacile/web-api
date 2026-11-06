@@ -30,7 +30,8 @@ final class AuthAuditListener
                 'model_id' => $event->user->id,
                 'actor_user_id' => $event->user->id,
                 'payload_after' => [
-                    'email' => $event->user->email,
+                    // TODO: GDPR, the ledger is immutable and must not store email addresses: remove this line and define the retention of IP and user agent.
+                    // 'email' => $event->user->email,
                     'guard' => $event->guard,
                 ],
                 'ip_address' => request()->ip(),
@@ -52,7 +53,8 @@ final class AuthAuditListener
                 'model_id' => $event->user->id,
                 'actor_user_id' => $event->user->id,
                 'payload_after' => [
-                    'email' => $event->user->email,
+                    // TODO: GDPR, the ledger is immutable and must not store email addresses: remove this line and define the retention of IP and user agent.
+                    // 'email' => $event->user->email,
                     'guard' => $event->guard,
                 ],
                 'ip_address' => request()->ip(),
@@ -76,7 +78,8 @@ final class AuthAuditListener
             'model_id' => $user?->id ?? (string) Str::uuid7(),
             'actor_user_id' => $user?->id,
             'payload_after' => [
-                'email' => $email,
+                // TODO: GDPR, the ledger is immutable and must not store email addresses: remove this line and define the retention of IP and user agent.
+                // 'email' => $email,
                 'guard' => $event->guard,
             ],
             'ip_address' => request()->ip(),
