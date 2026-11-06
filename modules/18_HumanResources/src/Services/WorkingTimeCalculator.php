@@ -6,17 +6,21 @@ namespace Modules\HumanResources\Services;
 
 use App\Models\User;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\LeaveRequest;
+use Modules\HumanResources\Models\Shift;
 use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Models\TimePublicHoliday;
 use Modules\HumanResources\Models\TimeRecordingProfile;
+use Modules\HumanResources\Services\Shifts\ShiftCategory;
 use Modules\HumanResources\Services\TimeTracking\AbsenceEntry;
 use Modules\HumanResources\Services\TimeTracking\ClockEntry;
 use Modules\HumanResources\Services\TimeTracking\DailyEntry;
 use Modules\HumanResources\Services\TimeTracking\EmployeeTimeProfile;
 use Modules\HumanResources\Services\TimeTracking\HolidayEntry;
+use Modules\HumanResources\Services\TimeTracking\PlannedShiftEntry;
 use Modules\HumanResources\Services\TimeTracking\SwissHolidayCalendar;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeEngine;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
@@ -89,6 +93,7 @@ final class WorkingTimeCalculator
         $hrEmployees = Employee::query()->where('user_id', $employee->id)->get();
         $hrEmployee = $hrEmployees->first();
         $profile = TimeRecordingProfile::query()->where('user_id', $employee->id)->first() ?? new TimeRecordingProfile;
+        $publishedShifts = $this->publishedShifts($hrEmployees->pluck('id')->all(), $from, $to);
 
         return new WorkingTimeContext(
             profile: new EmployeeTimeProfile(
@@ -109,9 +114,48 @@ final class WorkingTimeCalculator
             now: CarbonImmutable::now(SwissWorkingTimeRules::TIMEZONE),
             events: $this->events((string) $employee->id, $from, $to),
             dailyRecords: $this->dailyRecords((string) $employee->id, $from, $to),
-            absences: $this->absences($hrEmployees->pluck('id')->all(), $from, $to),
+            absences: [...$this->absences($hrEmployees->pluck('id')->all(), $from, $to), ...$this->absenceShifts($publishedShifts)],
             holidays: $this->holidaysBetween($profile->canton, $from->year, $to->year),
+            plannedShifts: $publishedShifts->map(static fn (Shift $shift): PlannedShiftEntry => new PlannedShiftEntry(
+                $shift->work_date->format('Y-m-d'),
+                (string) $shift->type?->code,
+                $shift->planned_minutes,
+            ))->values()->all(),
         );
+    }
+
+    /**
+     * @param  array<int, string>  $hrEmployeeIds
+     * @return Collection<int, Shift>
+     */
+    private function publishedShifts(array $hrEmployeeIds, CarbonImmutable $from, CarbonImmutable $to): Collection
+    {
+        return Shift::query()
+            ->with('type')
+            ->published()
+            ->whereIn('employee_id', $hrEmployeeIds)
+            ->betweenDays($from->format('Y-m-d'), $to->format('Y-m-d'))
+            ->get();
+    }
+
+    /**
+     * The published absence shifts. They come after the leave requests: on a day with both, the approved leave decides.
+     *
+     * @param  Collection<int, Shift>  $shifts
+     * @return array<int, AbsenceEntry>
+     */
+    private function absenceShifts(Collection $shifts): array
+    {
+        return $shifts
+            ->filter(static fn (Shift $shift): bool => $shift->type?->category === ShiftCategory::Absence)
+            ->map(static fn (Shift $shift): AbsenceEntry => new AbsenceEntry(
+                absenceType: (string) $shift->type->code,
+                startDate: $shift->work_date->format('Y-m-d'),
+                endDate: $shift->work_date->format('Y-m-d'),
+                isPaid: (bool) $shift->type->is_paid_absence,
+            ))
+            ->values()
+            ->all();
     }
 
     /**

@@ -76,7 +76,10 @@ final class HumanResourcesServiceProvider extends ServiceProvider
     {
         $this->app->booted(function (): void {
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+            $this->loadRoutesFrom(__DIR__.'/../../routes/workforce.php');
         });
+
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'hr');
 
         Gate::policy(Employee::class, EmployeePolicy::class);
         Gate::policy(LeaveRequest::class, LeaveRequestPolicy::class);

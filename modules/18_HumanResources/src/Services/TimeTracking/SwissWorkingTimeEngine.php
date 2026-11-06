@@ -36,6 +36,7 @@ final class SwissWorkingTimeEngine
                 ? self::evaluateSimplifiedDay($day, $context->dailyRecords)
                 : self::evaluateDetailedDay($day, $intervals, $issues);
             self::applyTarget($result, $context);
+            self::applyPlan($result, $context);
             $report->days[] = $result;
         }
 
@@ -241,6 +242,21 @@ final class SwissWorkingTimeEngine
         }
 
         $result->targetMinutes = $target;
+    }
+
+    /**
+     * The published plan of the day, next to what was recorded: the balance stays on the contractual target.
+     */
+    private static function applyPlan(WorkingDayResult $result, WorkingTimeContext $context): void
+    {
+        $date = $result->date->format('Y-m-d');
+
+        foreach ($context->plannedShifts as $shift) {
+            if ($shift->workDate === $date) {
+                $result->plannedMinutes = ($result->plannedMinutes ?? 0) + $shift->plannedMinutes;
+                $result->plannedShifts[] = $shift->code;
+            }
+        }
     }
 
     private static function addWeeks(WorkingTimeReport $report, float|int|string $legalMaximumHours, int $workDaysPerWeek): void
