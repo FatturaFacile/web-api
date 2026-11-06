@@ -7,6 +7,7 @@ namespace Modules\Payroll\Http\Requests;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Payroll\Services\Frontier\FrontierRegime;
 
 final class SaveEmployeeProfileRequest extends FormRequest
 {
@@ -46,6 +47,13 @@ final class SaveEmployeeProfileRequest extends FormRequest
             'is_withholding_tax_subject' => ['sometimes', 'boolean'],
             'withholding_tax_code' => [Rule::requiredIf($this->boolean('is_withholding_tax_subject')), 'nullable', 'string', 'regex:/^[A-Z][0-9][NY]$/'],
             'withholding_tax_rate_percent' => ['sometimes', 'nullable', 'numeric', 'between:0,100'],
+            'birth_place' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'italian_tax_code' => ['sometimes', 'nullable', 'string', 'regex:/^[A-Z0-9]{16}$/'],
+            'frontier_regime' => ['sometimes', 'nullable', Rule::enum(FrontierRegime::class)],
+            'frontier_status_valid_from' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'frontier_commune_in_zone' => ['sometimes', 'nullable', 'boolean'],
+            'frontier_returns_daily' => ['sometimes', 'boolean'],
+            'ccl_zone' => ['sometimes', 'nullable', 'string', 'max:30'],
             'non_occupational_accident_rate_percent' => $rate,
             'occupational_accident_rate_percent' => $rate,
             'daily_sickness_rate_percent' => $rate,

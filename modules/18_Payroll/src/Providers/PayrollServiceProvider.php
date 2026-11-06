@@ -35,6 +35,7 @@ final class PayrollServiceProvider extends ServiceProvider
     {
         $this->app->booted(function (): void {
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+            $this->loadRoutesFrom(__DIR__.'/../../routes/compliance.php');
         });
 
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'payroll');
