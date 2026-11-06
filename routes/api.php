@@ -22,6 +22,8 @@ use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryNoteController;
 use App\Http\Controllers\Api\V1\DocumentEmailController;
 use App\Http\Controllers\Api\V1\DocumentPdfController;
+use App\Http\Controllers\Api\V1\DocumentQuotaController;
+use App\Http\Controllers\Api\V1\DocumentTemplateController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceChannelController;
 use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
 use App\Http\Controllers\Api\V1\ExpenseController;
@@ -60,6 +62,7 @@ use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
+use App\Http\Controllers\Api\V1\SupplierCostRuleController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
@@ -92,6 +95,7 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/tenant-access-requests', [TenantAccessRequestController::class, 'index'])->name('tenant-access-requests.index');
         Route::post('/tenant-access-requests/{id}/approve', [TenantAccessRequestController::class, 'approve'])->name('tenant-access-requests.approve');
         Route::post('/tenant-access-requests/{id}/move', [TenantAccessRequestController::class, 'move'])->name('tenant-access-requests.move');
+        Route::put('/tenants/{id}/document-quota', [DocumentQuotaController::class, 'update'])->name('tenants.document-quota');
         Route::post('/tenant-access-requests/{id}/reject', [TenantAccessRequestController::class, 'reject'])->name('tenant-access-requests.reject');
     });
 
@@ -259,6 +263,14 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/orders/{id}/receive', [PurchaseOrderController::class, 'receive'])->name('orders.receive');
             Route::get('/goods-receipts', [PurchaseOrderController::class, 'receipts'])->name('goods-receipts.index');
             Route::get('/goods-receipts/{id}', [PurchaseOrderController::class, 'showReceipt'])->name('goods-receipts.show');
+            Route::middleware('module.access:ledger')->group(function (): void {
+                Route::get('/cost-rules', [SupplierCostRuleController::class, 'index'])->name('cost-rules.index');
+                Route::post('/cost-rules', [SupplierCostRuleController::class, 'store'])->name('cost-rules.store');
+                Route::delete('/cost-rules/{id}', [SupplierCostRuleController::class, 'destroy'])->name('cost-rules.destroy');
+                Route::put('/supplier-invoices/{id}/cost-account', [SupplierCostRuleController::class, 'overrideCostAccount'])->name('supplier-invoices.cost-account');
+            });
+
+            Route::get('/supplier-invoices/{id}/lines', [SupplierCostRuleController::class, 'lines'])->name('supplier-invoices.lines');
             Route::get('/supplier-invoices', [SupplierInvoiceController::class, 'index'])->name('supplier-invoices.index');
             Route::get('/supplier-invoices/{id}', [SupplierInvoiceController::class, 'show'])->name('supplier-invoices.show');
             Route::post('/supplier-invoices/{id}/mark-paid', [SupplierInvoiceController::class, 'markPaid'])->name('supplier-invoices.mark-paid');
@@ -451,6 +463,13 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/users', [SettingsController::class, 'users'])->name('users');
             Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
             Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
+            Route::get('/document-quota', [DocumentQuotaController::class, 'usage'])->name('document-quota');
+
+            Route::middleware('module.access:integrations')->group(function (): void {
+                Route::get('/document-templates', [DocumentTemplateController::class, 'index'])->name('document-templates.index');
+                Route::put('/document-templates/{type}', [DocumentTemplateController::class, 'update'])->name('document-templates.update');
+                Route::delete('/document-templates/{type}', [DocumentTemplateController::class, 'destroy'])->name('document-templates.destroy');
+            });
         });
     });
 });
