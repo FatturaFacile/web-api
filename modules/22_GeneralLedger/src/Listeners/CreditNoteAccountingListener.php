@@ -15,6 +15,7 @@ use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
+use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Models\SalesInvoice;
 
@@ -72,6 +73,19 @@ final class CreditNoteAccountingListener
         );
         $arAccount->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'customer']);
 
+        // A split-payment invoice left only the net on the receivable: its credit note takes back the same amount.
+        $isSplitPayment = (bool) $creditNote?->split_payment;
+
+        if ($isSplitPayment) {
+            $vatReversalAcc = $this->resolveAccount(
+                tenantId: $event->tenantId,
+                code: '2205',
+                name: 'IVA split payment (Split Payment VAT)',
+                type: 'liability',
+                normalBalance: 'credit'
+            );
+        }
+
         $currency = ! empty($creditNote?->currency) ? (string) $creditNote->currency : TenantAccountingCurrency::of($event->tenantId);
         $exchangeRate = (float) ($creditNote?->exchange_rate ?: 1.0);
         $creditedGross = number_format($event->creditedAmount, 2, '.', '');
@@ -118,6 +132,7 @@ final class CreditNoteAccountingListener
                 'vat_tax_amount' => (float) $group['tax'],
                 'vat_base_amount' => (float) $group['net'],
                 'vat_rate_percent' => $group['rate'],
+                'vat_treatment' => $isSplitPayment ? VatLedgerReader::TREATMENT_SPLIT_PAYMENT : null,
                 'description' => "VAT Reversal: Credit Note {$event->creditNoteNumber}",
             ];
         }
@@ -126,13 +141,24 @@ final class CreditNoteAccountingListener
         $lines[] = [
             'account_id' => $arAccount->id,
             'debit_amount' => 0.0,
-            'credit_amount' => $creditedGross,
+            'credit_amount' => $isSplitPayment ? round($creditedGross - $vatCredited, 2) : $creditedGross,
             'currency' => $currency,
             'exchange_rate' => $exchangeRate,
             'partner_type' => 'customer',
             'partner_id' => $event->customerId,
             'description' => "AR Credit Offset: Credit Note {$event->creditNoteNumber}",
         ];
+
+        if ($isSplitPayment && $vatCredited > 0) {
+            $lines[] = [
+                'account_id' => $vatReversalAcc->id,
+                'debit_amount' => 0.0,
+                'credit_amount' => $vatCredited,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+                'description' => "Split payment VAT: Credit Note {$event->creditNoteNumber}",
+            ];
+        }
 
         // 6. Post Double-Entry Journal Entry
         $entryNumber = 'CN-GL-'.strtoupper(Str::random(6));

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use App\Models\Concerns\HasFiscalAmounts;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,10 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Invoicing\Models\DeclarationOfIntent;
 
 class Invoice extends Model
 {
-    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, SoftDeletes;
 
     protected $fillable = [
         'contact_id',
@@ -58,6 +60,25 @@ class Invoice extends Model
         'fund_type',
         'fund_percent',
         'fund_amount',
+        'document_type',
+        'vat_nature',
+        'source_passive_invoice_id',
+        'linked_document_number',
+        'linked_document_date',
+        'declaration_of_intent_id',
+        'skip_declaration_of_intent',
+        'withholding_tax_type',
+        'withholding_tax_reason',
+        'withholding_tax_base_percent',
+        'stamp_duty_charged',
+        'fund_vat_rate',
+        'fund_vat_amount',
+        'fund_subject_to_withholding',
+        'enasarco_enabled',
+        'enasarco_agent_type',
+        'enasarco_base',
+        'enasarco_percent',
+        'enasarco_amount',
     ];
 
     protected function casts(): array
@@ -82,7 +103,42 @@ class Invoice extends Model
             'fund_enabled' => 'boolean',
             'fund_percent' => 'decimal:2',
             'fund_amount' => 'decimal:2',
+            'fund_vat_rate' => 'decimal:2',
+            'fund_vat_amount' => 'decimal:2',
+            'fund_subject_to_withholding' => 'boolean',
+            'skip_declaration_of_intent' => 'boolean',
+            'linked_document_date' => 'date',
+            'withholding_tax_base_percent' => 'decimal:2',
+            'stamp_duty_charged' => 'boolean',
+            'enasarco_enabled' => 'boolean',
+            'enasarco_base' => 'decimal:2',
+            'enasarco_percent' => 'decimal:2',
+            'enasarco_amount' => 'decimal:2',
         ];
+    }
+
+    /**
+     * @return BelongsTo<DeclarationOfIntent, $this>
+     */
+    public function declarationOfIntent(): BelongsTo
+    {
+        return $this->belongsTo(DeclarationOfIntent::class, 'declaration_of_intent_id');
+    }
+
+    /**
+     * @return BelongsTo<PassiveInvoice, $this>
+     */
+    public function sourcePassiveInvoice(): BelongsTo
+    {
+        return $this->belongsTo(PassiveInvoice::class, 'source_passive_invoice_id');
+    }
+
+    /**
+     * @return BelongsTo<Invoice, $this>
+     */
+    public function relatedInvoice(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'related_invoice_id');
     }
 
     /**

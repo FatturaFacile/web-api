@@ -29,6 +29,7 @@ class ContactResource extends JsonResource
             'uid_number' => $this->uid_number,
             'sdi_code' => $this->sdi_code,
             'pec' => $this->pec,
+            'document_language' => $this->document_language,
             'iban' => $this->iban,
             'qr_iban' => $this->qr_iban,
             'payment_terms_days' => $this->payment_terms_days,

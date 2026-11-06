@@ -33,7 +33,7 @@ class VendorAgingReportService
         $rows = [];
 
         foreach ($invoices as $invoice) {
-            $balance = (int) round(((float) $invoice->total_amount - (float) $invoice->total_paid) * 100);
+            $balance = (int) round(((float) $invoice->amountDue() - (float) $invoice->total_paid) * 100);
 
             if ($balance <= 0) {
                 continue;

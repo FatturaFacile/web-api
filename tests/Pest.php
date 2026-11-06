@@ -1,6 +1,10 @@
 <?php
 
 declare(strict_types=1);
+use App\Models\Tenant;
+use Carbon\CarbonImmutable;
+use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\FiscalYear;
 use Tests\TestCase;
 
 /*
@@ -38,3 +42,31 @@ pest()->extend(TestCase::class)->in('Unit');
 | global functions to help you build a more flexible test suite.
 |
 */
+
+/**
+ * An open fiscal calendar, so that documents of that year can reach the ledger.
+ */
+function fiscalCalendar(Tenant $tenant, int $year = 2027): void
+{
+    $fiscalYear = FiscalYear::create([
+        'tenant_id' => (string) $tenant->id,
+        'year_code' => "FY{$year}",
+        'start_date' => "{$year}-01-01",
+        'end_date' => "{$year}-12-31",
+        'status' => 'open',
+    ]);
+
+    foreach (range(1, 12) as $month) {
+        $first = CarbonImmutable::create($year, $month, 1);
+
+        FiscalPeriod::create([
+            'tenant_id' => (string) $tenant->id,
+            'fiscal_year_id' => $fiscalYear->id,
+            'period_number' => $month,
+            'period_name' => $first->format('F Y'),
+            'start_date' => $first->toDateString(),
+            'end_date' => $first->endOfMonth()->toDateString(),
+            'status' => 'open',
+        ]);
+    }
+}

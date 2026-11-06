@@ -39,6 +39,7 @@ class Contact extends Model
         'payment_terms_days',
         'price_list_id',
         'payment_term_id',
+        'document_language',
     ];
 
     /**

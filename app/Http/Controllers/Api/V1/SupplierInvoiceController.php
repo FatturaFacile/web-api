@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Actions\Purchases\ReceivePassiveInvoice;
+use App\Actions\Sdi\CreateSelfInvoice;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Purchases\StoreSelfInvoiceRequest;
 use App\Http\Requests\Purchases\UploadPassiveInvoiceRequest;
 use App\Http\Resources\CatalogResource;
+use App\Http\Resources\InvoiceResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\PassiveInvoice;
 use App\Services\Sales\DocumentEventRecorder;
@@ -134,6 +137,48 @@ class SupplierInvoiceController extends Controller
             __('purchases.messages.invoices_received'),
             Response::HTTP_CREATED
         );
+    }
+
+    /**
+     * Issue the integration or self-invoice of a received invoice.
+     */
+    #[OA\Post(
+        path: '/api/v1/purchases/passive-invoices/{id}/self-invoice',
+        operationId: 'createSelfInvoiceFromPassiveInvoice',
+        summary: 'Create a self-invoice from a received invoice',
+        description: 'Issues a TD16-TD23, TD28 or TD29 document from a received supplier invoice: the supplier is the cedente, the tenant the cessionario, and the received invoice the DatiFattureCollegate reference. Nothing is collected on it, and only one document of each type can exist per received invoice.',
+        tags: ['Supplier Invoices'],
+        security: [['sanctum' => []]],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['document_type', 'date', 'tax_rate'],
+                properties: [
+                    new OA\Property(property: 'document_type', type: 'string', enum: ['TD16', 'TD17', 'TD18', 'TD19', 'TD20', 'TD21', 'TD22', 'TD23', 'TD28', 'TD29']),
+                    new OA\Property(property: 'date', type: 'string', format: 'date'),
+                    new OA\Property(property: 'tax_rate', description: 'VAT rate the tenant accounts for. Zero requires vat_nature.', type: 'number'),
+                    new OA\Property(property: 'vat_nature', type: 'string', nullable: true),
+                    new OA\Property(property: 'description', type: 'string', maxLength: 1000, nullable: true),
+                    new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 201, description: 'Self-invoice issued'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 404, description: 'Supplier invoice not found'),
+            new OA\Response(response: 422, description: 'Invalid type, inconsistent document, or already issued'),
+        ]
+    )]
+    public function selfInvoice(StoreSelfInvoiceRequest $request, CreateSelfInvoice $action, string $id): JsonResponse
+    {
+        $source = PassiveInvoice::findOrFail($id);
+        $invoice = $action->execute($source, $request->validated());
+
+        return $this->successResponse(new InvoiceResource($invoice), __('sdi.messages.self_invoice_created'), Response::HTTP_CREATED);
     }
 
     #[OA\Post(

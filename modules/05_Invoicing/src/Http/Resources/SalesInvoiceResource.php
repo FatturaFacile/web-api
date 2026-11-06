@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Http\Resources;
 
+use App\Http\Resources\Concerns\ExposesItalianFiscalFields;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Invoicing\Models\SalesInvoice;
@@ -13,6 +14,8 @@ use Modules\Invoicing\Models\SalesInvoice;
  */
 final class SalesInvoiceResource extends JsonResource
 {
+    use ExposesItalianFiscalFields;
+
     /**
      * @return array<string, mixed>
      */
@@ -49,6 +52,7 @@ final class SalesInvoiceResource extends JsonResource
             'posted_at' => $this->posted_at?->toISOString(),
             'posted_by' => $this->posted_by,
             'items' => $this->whenLoaded('items'),
+            ...$this->italianFiscalFields(),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),
         ];

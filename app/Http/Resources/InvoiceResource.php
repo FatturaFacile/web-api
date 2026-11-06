@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\ExposesItalianFiscalFields;
 use App\Models\Invoice;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class InvoiceResource extends JsonResource
 {
+    use ExposesItalianFiscalFields;
+
     /**
      * @return array<string, mixed>
      */
@@ -68,6 +71,7 @@ class InvoiceResource extends JsonResource
                 'creditor_info' => $this->qrBillData->creditor_info,
                 'debtor_info' => $this->qrBillData->debtor_info,
             ]),
+            ...$this->italianFiscalFields(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

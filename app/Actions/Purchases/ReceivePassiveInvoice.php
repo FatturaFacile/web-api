@@ -77,6 +77,8 @@ class ReceivePassiveInvoice
                     'document_hash' => $hash,
                     'sdi_file_name' => $fileName,
                     'xml_payload' => $xml,
+                    'withholdings' => $document['withholdings'] === [] ? null : $document['withholdings'],
+                    'withholding_tax_amount' => number_format(array_sum(array_map(static fn (array $withholding): float => (float) $withholding['amount'], $document['withholdings'])), 2, '.', ''),
                 ]);
 
                 $this->post($invoice, $deferLedgerErrors);

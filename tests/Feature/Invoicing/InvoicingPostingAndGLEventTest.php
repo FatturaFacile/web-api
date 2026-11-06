@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Services\ItalianSdi\InvoiceFiscalService;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
@@ -18,6 +19,7 @@ use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Models\CustomerLedgerEntry;
+use Modules\Invoicing\Services\DeclarationOfIntentService;
 use Modules\Invoicing\Services\InvoicingService;
 
 uses(RefreshDatabase::class);
@@ -84,7 +86,9 @@ test('posts invoice from sales order, records customer ledger entry, and dispatc
         app(PricingAndDiscountServiceInterface::class),
         app(CustomerLedgerServiceInterface::class),
         $mockDispatcher,
-        app(DocumentNumberingService::class)
+        app(DocumentNumberingService::class),
+        app(InvoiceFiscalService::class),
+        app(DeclarationOfIntentService::class)
     );
 
     $invoice = $invoicingService->createInvoiceFromOrder($order, [

@@ -28,7 +28,7 @@ final readonly class TreasuryCollectionEventListener
             $invoice = SalesInvoice::find($event->invoiceId);
             if ($invoice !== null) {
                 $newPaid = (float) $invoice->total_paid + $event->collectedAmount;
-                $isPaid = $newPaid >= (float) $invoice->total_gross;
+                $isPaid = $newPaid >= (float) $invoice->amountDue();
 
                 $invoice->update([
                     'total_paid' => $newPaid,

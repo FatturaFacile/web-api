@@ -39,13 +39,13 @@ class SendInvoiceToSdi
     {
         $this->assertEligible($invoice);
 
-        $invoice->loadMissing(['tenant', 'contact.addresses', 'items', 'sdiMetadata']);
+        $invoice->loadMissing(['tenant', 'contact.addresses', 'items', 'sdiMetadata', 'declarationOfIntent', 'sourcePassiveInvoice', 'relatedInvoice']);
 
         $this->preflight->assertReady($invoice);
 
         ['file_name' => $fileName, 'progressive' => $progressive] = $this->transmissionName($invoice);
         $xml = $this->builder->buildFatturaPaXml($invoice, $progressive);
-        $format = ($invoice->contact?->sdi_code && strlen(trim($invoice->contact->sdi_code)) === 6) ? 'FPA12' : 'FPR12';
+        $format = $this->builder->transmissionFormat($invoice);
 
         try {
             $result = $this->provider->send($fileName, $xml);

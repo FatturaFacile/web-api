@@ -53,7 +53,11 @@ class SendDocumentEmailJob implements ShouldQueue
             // The PDF is generated in memory and attached; a rendering failure marks the email as failed.
             $pdf = $pdfService->render($document);
 
-            Mail::to($email->recipient)->send(new DocumentMail($email, $summary->summarize($document), $pdf));
+            $contact = $document instanceof WorkOrder ? $document->client : $document->contact;
+
+            Mail::to($email->recipient)
+                ->locale($contact?->document_language ?: app()->getLocale())
+                ->send(new DocumentMail($email, $summary->summarize($document), $pdf));
             $email->update(['status' => 'sent', 'sent_at' => now(), 'error' => null, 'attachment_name' => $pdf->filename]);
         } catch (Throwable $e) {
             $email->update(['status' => 'failed', 'error' => mb_substr($e->getMessage(), 0, 1000)]);

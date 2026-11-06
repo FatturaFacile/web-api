@@ -34,7 +34,7 @@ class RecordSupplierPayment
                 ->firstOrFail();
             $amount = round((float) $data['amount'], 2);
 
-            if (($data['type'] ?? 'payment') !== 'bank_fee' && $amount > round((float) $invoice->total_amount - (float) $invoice->total_paid, 2)) {
+            if (($data['type'] ?? 'payment') !== 'bank_fee' && $amount > round((float) $invoice->amountDue() - (float) $invoice->total_paid, 2)) {
                 throw ValidationException::withMessages(['amount' => __('banking.errors.supplier_payment_exceeds_balance')]);
             }
 
@@ -71,7 +71,7 @@ class RecordSupplierPayment
             $invoice->total_paid = $paid;
             $invoice->payment_status = match (true) {
                 $paid <= 0 => 'unpaid',
-                $paid >= (float) $invoice->total_amount => 'paid',
+                $paid >= (float) $invoice->amountDue() => 'paid',
                 default => 'partially_paid',
             };
             $invoice->is_reconciled = $invoice->payment_status === 'paid';

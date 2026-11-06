@@ -33,7 +33,7 @@ class ContactInsights
         $credits = $invoices->where('invoice_type', 'credit_note');
         $today = today();
 
-        $balances = $billable->map(fn (Invoice $invoice): float => round((float) $invoice->total_gross - (float) $invoice->total_paid, 2));
+        $balances = $billable->map(fn (Invoice $invoice): float => (float) $invoice->outstandingAmount());
         $overdue = $billable->filter(fn (Invoice $invoice): bool => $invoice->payment_status !== 'paid' && $invoice->due_date !== null && $invoice->due_date->lt($today));
 
         return [
@@ -41,8 +41,8 @@ class ContactInsights
             'invoice_count' => $billable->count(),
             'invoiced_total' => round((float) $billable->sum('total_gross') - (float) $credits->sum('total_gross'), 2),
             'paid_total' => round((float) $billable->sum('total_paid'), 2),
-            'outstanding_total' => max(0.0, round($balances->sum() - (float) $credits->sum('total_gross'), 2)),
-            'overdue_total' => round($overdue->sum(fn (Invoice $invoice): float => (float) $invoice->total_gross - (float) $invoice->total_paid), 2),
+            'outstanding_total' => max(0.0, round($balances->sum() - (float) $credits->sum(fn (Invoice $credit): float => (float) $credit->amountDue()), 2)),
+            'overdue_total' => round($overdue->sum(fn (Invoice $invoice): float => (float) $invoice->outstandingAmount()), 2),
             'average_invoice_value' => $billable->isEmpty() ? 0.0 : round((float) $billable->avg('total_gross'), 2),
             'first_invoice_date' => $billable->min('date')?->toDateString(),
             'last_invoice_date' => $billable->max('date')?->toDateString(),
@@ -75,7 +75,7 @@ class ContactInsights
             ->orderBy('due_date')
             ->get()
             ->map(function (Invoice $invoice) use ($asOf): array {
-                $balance = round((float) $invoice->total_gross - (float) $invoice->total_paid, 2);
+                $balance = (float) $invoice->outstandingAmount();
                 $daysOverdue = $invoice->due_date !== null && $invoice->due_date->lt($asOf) ? (int) $invoice->due_date->diffInDays($asOf) : 0;
 
                 return [
