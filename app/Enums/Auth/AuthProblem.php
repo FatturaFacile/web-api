@@ -14,4 +14,7 @@ enum AuthProblem: string
     case TenantAccessRejected = 'urn:fatturafacile:problem:tenant-access-rejected';
     case VerificationTokenInvalid = 'urn:fatturafacile:problem:verification-token-invalid';
     case VerificationTokenExpired = 'urn:fatturafacile:problem:verification-token-expired';
+    case PasswordResetTokenInvalid = 'urn:fatturafacile:problem:password-reset-token-invalid';
+    case PasswordResetTokenExpired = 'urn:fatturafacile:problem:password-reset-token-expired';
+    case PasswordResetLocked = 'urn:fatturafacile:problem:password-reset-locked';
 }

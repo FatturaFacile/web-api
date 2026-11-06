@@ -138,4 +138,16 @@ return [
         ],
     ],
 
+    'password_reset' => [
+        'expires_minutes' => (int) env('AUTH_PASSWORD_RESET_EXPIRES_MINUTES', 60),
+        'prune_after_days' => (int) env('AUTH_PASSWORD_RESET_PRUNE_AFTER_DAYS', 7),
+        'max_failed_attempts' => (int) env('AUTH_PASSWORD_RESET_MAX_FAILED_ATTEMPTS', 10),
+        'lockout_minutes' => (int) env('AUTH_PASSWORD_RESET_LOCKOUT_MINUTES', 15),
+        'rate_limits' => [
+            'request_per_minute' => (int) env('AUTH_PASSWORD_RESET_REQUEST_PER_MINUTE', 5),
+            'request_per_email_per_hour' => (int) env('AUTH_PASSWORD_RESET_REQUEST_PER_EMAIL_PER_HOUR', 3),
+            'attempts_per_minute' => (int) env('AUTH_PASSWORD_RESET_ATTEMPTS_PER_MINUTE', 20),
+        ],
+    ],
+
 ];
