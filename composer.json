@@ -63,6 +63,7 @@
             "Modules\\SubscriptionBilling\\": "modules/19_SubscriptionBilling/src/",
             "Modules\\Manufacturing\\": "modules/30_Manufacturing/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
+            "Modules\\Customs\\": "modules/32_Customs/src/",
             "Modules\\": "modules/"
         }
     },
