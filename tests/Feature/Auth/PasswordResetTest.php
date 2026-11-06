@@ -289,7 +289,7 @@ test('the new password follows the configurable policy and must be confirmed', f
     test()->postJson('/api/v1/auth/reset-password', [
         'token' => $token,
         'password' => newPassword(),
-        'password_confirmation' => 'Ee5!'.Str::random(20),
+        'password_confirmation' => newPassword().'x',
     ])->assertStatus(422)->assertJsonValidationErrors('password');
 
     config(['auth.registration.password.min_length' => 40]);
