@@ -9,6 +9,10 @@ use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Modules\Associations\Jobs\ExpireMembershipsJob;
+use Modules\Associations\Jobs\SendCertificateAlertsJob;
+use Modules\Associations\Jobs\SendFeeRemindersJob;
+use Modules\Associations\Jobs\SendRenewalRemindersJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
 use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
@@ -71,3 +75,7 @@ $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object
 $forEachTenant('manufacturing:mrp', static fn (Tenant $tenant): object => new ProcessMrpRunJob($tenant->id, now()->toDateString(), now()->addDays(90)->toDateString()))->dailyAt('02:15');
 $forEachTenant('manufacturing:capacity', static fn (Tenant $tenant): object => new ProcessWorkCenterCapacityJob($tenant->id, now()->toDateString()))->dailyAt('02:30');
 $forEachTenant('manufacturing:forecast', static fn (Tenant $tenant): object => new ProcessManufacturingForecastJob($tenant->id))->monthlyOn(1, '02:45');
+$forEachTenant('associations:expire-memberships', static fn (Tenant $tenant): object => new ExpireMembershipsJob($tenant->id))->dailyAt('00:30');
+$forEachTenant('associations:fee-reminders', static fn (Tenant $tenant): object => new SendFeeRemindersJob($tenant->id))->dailyAt('08:15');
+$forEachTenant('associations:renewal-reminders', static fn (Tenant $tenant): object => new SendRenewalRemindersJob($tenant->id))->dailyAt('08:30');
+$forEachTenant('associations:certificate-alerts', static fn (Tenant $tenant): object => new SendCertificateAlertsJob($tenant->id))->dailyAt('08:45');
