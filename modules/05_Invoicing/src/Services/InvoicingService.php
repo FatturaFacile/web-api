@@ -11,8 +11,8 @@ use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
@@ -252,7 +252,7 @@ final class InvoicingService implements InvoicingServiceInterface
     public function approveInvoice(SalesInvoice $invoice, string $userId): SalesInvoice
     {
         if ($invoice->status !== 'draft') {
-            throw new InvalidArgumentException("Invoice in status [{$invoice->status}] cannot be approved.");
+            throw new LedgerPostingException("Invoice in status [{$invoice->status}] cannot be approved.");
         }
 
         $invoice->update([
@@ -279,11 +279,11 @@ final class InvoicingService implements InvoicingServiceInterface
             }
 
             if ($locked->invoice_type === 'proforma') {
-                throw new InvalidArgumentException('A proforma is not a fiscal document and cannot be posted.');
+                throw new LedgerPostingException('A proforma is not a fiscal document and cannot be posted.');
             }
 
             if (! in_array($locked->status, ['draft', 'approved'], true)) {
-                throw new InvalidArgumentException("Invoice in status [{$locked->status}] cannot be posted.");
+                throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be posted.");
             }
 
             return $locked->isCreditNote() ? $this->postCreditNote($locked, $userId) : $this->postLockedInvoice($locked, $userId);
@@ -468,7 +468,7 @@ final class InvoicingService implements InvoicingServiceInterface
     {
         foreach ($items as $item) {
             if (! isset($item['tax_rate'])) {
-                throw new InvalidArgumentException('Every invoice line must state its VAT rate.');
+                throw new LedgerPostingException('Every invoice line must state its VAT rate.');
             }
         }
     }

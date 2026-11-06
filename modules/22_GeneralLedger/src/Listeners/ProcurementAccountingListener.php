@@ -6,8 +6,8 @@ namespace Modules\GeneralLedger\Listeners;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
@@ -259,7 +259,7 @@ final class ProcurementAccountingListener
 
         foreach ($event->receivedLines as $line) {
             if (! isset($line['unit_cost'])) {
-                throw new InvalidArgumentException("Goods receipt {$event->receiptNumber}: a line has no unit cost.");
+                throw new LedgerPostingException("Goods receipt {$event->receiptNumber}: a line has no unit cost.");
             }
 
             $quantity = number_format((float) ($line['quantity_accepted'] ?? $line['quantity_received'] ?? 0.0), 4, '.', '');
@@ -267,7 +267,7 @@ final class ProcurementAccountingListener
         }
 
         if (! Decimal::isPositive($total)) {
-            throw new InvalidArgumentException("Goods receipt {$event->receiptNumber} has no value to post.");
+            throw new LedgerPostingException("Goods receipt {$event->receiptNumber} has no value to post.");
         }
 
         return bcadd($total, '0', 4);

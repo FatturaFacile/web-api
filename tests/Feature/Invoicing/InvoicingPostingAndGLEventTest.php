@@ -9,6 +9,7 @@ use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
@@ -18,6 +19,8 @@ use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Models\CustomerLedgerEntry;
 use Modules\Invoicing\Services\InvoicingService;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

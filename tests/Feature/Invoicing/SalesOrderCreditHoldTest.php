@@ -6,10 +6,13 @@ use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Models\SalesOrderHold;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

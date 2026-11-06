@@ -54,7 +54,7 @@ afterEach(fn () => app(TenantContext::class)->clear());
 function workQueue(): void
 {
     app(TenantContext::class)->clear();
-    Artisan::call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1]);
+    Artisan::call('queue:work', ['connection' => 'database', '--stop-when-empty' => true, '--tries' => 1, '--memory' => 4096]);
 }
 
 test('a queued job finds the data of the tenant that dispatched it', function (): void {

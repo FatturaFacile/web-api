@@ -7,7 +7,10 @@ namespace Tests\Feature\Foundation;
 use Enterprise\EventBus\Models\TransactionalOutbox;
 use Enterprise\EventBus\Models\TransactionalOutboxArchive;
 use Enterprise\EventBus\Services\OutboxLifecycleService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
 
 test('archives processed outbox messages older than 30 days and preserves pending messages', function (): void {
     $service = app(OutboxLifecycleService::class);

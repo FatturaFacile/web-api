@@ -7,6 +7,7 @@ namespace Tests\Feature\GeneralLedger;
 use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Listeners\CreditNoteAccountingListener;
 use Modules\GeneralLedger\Models\ChartOfAccount;
@@ -16,6 +17,8 @@ use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Models\SalesInvoice;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

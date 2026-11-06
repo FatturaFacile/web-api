@@ -10,10 +10,13 @@ use App\Services\Tenancy\TenantContext;
 use Database\Seeders\AssetDemoDataSeeder;
 use Database\Seeders\AssetReferenceSeeder;
 use Database\Seeders\AssetTestingSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\AssetManagement\Models\Asset;
 use Modules\AssetManagement\Models\AssetCategory;
 use Modules\AssetManagement\Models\FixedAsset;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

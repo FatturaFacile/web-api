@@ -7,6 +7,7 @@ namespace Tests\Feature\CRM;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\CRM\Contracts\CampaignServiceInterface;
 use Modules\CRM\Contracts\ForecastServiceInterface;
@@ -16,6 +17,8 @@ use Modules\CRM\Models\Forecast;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

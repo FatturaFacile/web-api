@@ -7,6 +7,8 @@ namespace Tests\Feature\Security;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Routing\Middleware\ThrottleRequests;
+use Illuminate\Routing\Route as RouteDefinition;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
@@ -44,6 +46,19 @@ beforeEach(function (): void {
     ]);
     $this->userB->tenants()->attach($this->tenantB->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
 });
+
+/**
+ * Fills the route parameters with a UUID, or with an accepted value where the route constrains the parameter.
+ */
+function resolveRouteUri(RouteDefinition $route): string
+{
+    return preg_replace_callback('/\{([a-zA-Z_]+)\??\}/', function (array $parameter) use ($route): string {
+        $constraint = $route->wheres[$parameter[1]] ?? null;
+        $candidates = [(string) Str::uuid(), '2026', ...explode('|', (string) $constraint)];
+
+        return $constraint === null ? $candidates[0] : collect($candidates)->first(fn (string $value): bool => preg_match("#^(?:{$constraint})$#", $value) === 1);
+    }, $route->uri());
+}
 
 function isPublicApiEndpoint(string $uri, string $method): bool
 {
@@ -117,6 +132,8 @@ test('all non-public API routes have auth:sanctum and tenant middleware explicit
 });
 
 test('every non-public API endpoint rejects unauthenticated requests with 401 Unauthorized', function (): void {
+    $this->withoutMiddleware(ThrottleRequests::class);
+
     $routes = Route::getRoutes()->getRoutes();
     $tested = 0;
 
@@ -134,7 +151,7 @@ test('every non-public API endpoint rejects unauthenticated requests with 401 Un
         }
 
         // Replace route parameters with dummy UUIDs
-        $resolvedUri = preg_replace('/\{[a-zA-Z_?]+\}/', (string) Str::uuid(), $uri);
+        $resolvedUri = resolveRouteUri($route);
 
         $response = $this->json($method, $resolvedUri);
 
@@ -146,6 +163,8 @@ test('every non-public API endpoint rejects unauthenticated requests with 401 Un
 });
 
 test('every non-public API endpoint rejects cross-tenant requests with 403 Forbidden', function (): void {
+    $this->withoutMiddleware(ThrottleRequests::class);
+
     Sanctum::actingAs($this->userA);
 
     $routes = Route::getRoutes()->getRoutes();
@@ -165,7 +184,7 @@ test('every non-public API endpoint rejects cross-tenant requests with 403 Forbi
         }
 
         // Send tenant B context while authenticated as user A
-        $resolvedUri = preg_replace('/\{[a-zA-Z_?]+\}/', (string) Str::uuid(), $uri);
+        $resolvedUri = resolveRouteUri($route);
 
         $response = $this->withHeader('X-Tenant-Id', $this->tenantB->id)
             ->json($method, $resolvedUri);

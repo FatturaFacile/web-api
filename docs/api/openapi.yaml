@@ -3851,6 +3851,342 @@ paths:
           $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/collective-agreements:
+    get:
+      operationId: v1.payroll.collective-agreements.index
+      summary: 'List collective agreements'
+      tags:
+        - CollectiveAgreement
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.payroll.collective-agreements.store
+      summary: 'Create a collective agreement'
+      tags:
+        - CollectiveAgreement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCollectiveAgreementRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/collective-agreements/{id}':
+    get:
+      operationId: v1.payroll.collective-agreements.show
+      summary: 'Show a collective agreement'
+      tags:
+        - CollectiveAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.payroll.collective-agreements.update
+      summary: 'Change a collective agreement'
+      tags:
+        - CollectiveAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveCollectiveAgreementRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.collective-agreements.destroy
+      summary: 'Delete a collective agreement'
+      tags:
+        - CollectiveAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payroll/collective-agreements/{id}/levels':
+    post:
+      operationId: v1.payroll.collective-agreements.levels.store
+      summary: 'Add a level'
+      tags:
+        - CollectiveAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAgreementLevelRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/collective-agreements/{id}/levels/{levelId}':
+    put:
+      operationId: v1.payroll.collective-agreements.levels.update
+      summary: 'Change a level'
+      tags:
+        - CollectiveAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: levelId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAgreementLevelRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.collective-agreements.levels.destroy
+      summary: 'Delete a level'
+      tags:
+        - CollectiveAgreement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: levelId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/construction/sites:
     get:
       operationId: construction.sites
@@ -8061,6 +8397,933 @@ paths:
                     $ref: '#/components/schemas/EmployeeResource'
                 required:
                   - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/employee-profiles:
+    get:
+      operationId: v1.payroll.employee-profiles.index
+      summary: 'List payroll profiles'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: employee_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/employee-profiles/{employeeId}':
+    get:
+      operationId: v1.payroll.employee-profiles.show
+      summary: 'Show the payroll profile of an employee'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    anyOf:
+                      -
+                        $ref: '#/components/schemas/PayrollRecordResource'
+                      -
+                        type: 'null'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.payroll.employee-profiles.save
+      summary: 'Create or change the payroll profile of an employee'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: employeeId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveEmployeeProfileRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/inputs:
+    get:
+      operationId: v1.payroll.inputs.index
+      summary: 'List variable inputs'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: employee_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: v1.payroll.inputs.store
+      summary: 'Add a variable input'
+      tags:
+        - EmployeePayrollData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavePayrollInputRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/inputs/{id}':
+    put:
+      operationId: v1.payroll.inputs.update
+      summary: 'Change a variable input'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SavePayrollInputRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.inputs.destroy
+      summary: 'Delete a variable input'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/absences:
+    get:
+      operationId: v1.payroll.absences.index
+      summary: 'List absences'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: employee_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: v1.payroll.absences.store
+      summary: 'Add an absence'
+      tags:
+        - EmployeePayrollData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAbsenceRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/absences/{id}':
+    put:
+      operationId: v1.payroll.absences.update
+      summary: 'Change an absence'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAbsenceRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.absences.destroy
+      summary: 'Delete an absence'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/children:
+    get:
+      operationId: v1.payroll.children.index
+      summary: 'List children'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: employee_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: v1.payroll.children.store
+      summary: 'Add a child'
+      tags:
+        - EmployeePayrollData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveEmployeeChildRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/children/{id}':
+    put:
+      operationId: v1.payroll.children.update
+      summary: 'Change a child'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveEmployeeChildRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.children.destroy
+      summary: 'Delete a child'
+      tags:
+        - EmployeePayrollData
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/expenses/export:
@@ -14546,10 +15809,32 @@ paths:
                 $ref: '#/components/schemas/PaymentBatchResource'
         '401':
           $ref: '#/components/responses/AuthenticationException'
-  '/v1/treasury/payment-batches/{id}/execute':
+  '/v1/treasury/payment-batches/{id}/approve':
     post:
-      operationId: paymentBatch.execute
-      summary: 'Transmits a payment batch to the banking network with the chosen protocol and returns the execution details'
+      operationId: paymentBatch.approve
+      summary: 'Records the approval of the authenticated signatory'
+      tags:
+        - PaymentBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/treasury/payment-batches/{id}/export':
+    post:
+      operationId: paymentBatch.export
+      summary: 'Generates and freezes the pain.001 file of an approved batch'
       tags:
         - PaymentBatch
       parameters:
@@ -14569,22 +15854,128 @@ paths:
                 properties:
                   message:
                     type: string
-                    const: 'Payment batch successfully transmitted to banking network.'
+                    const: 'pain.001 file generated: it must be sent to the bank, and the outcome confirmed.'
                   execution_id:
                     type: string
-                  bank_transmission_reference:
-                    type:
-                      - string
-                      - 'null'
-                  clearing_timestamp:
-                    type:
-                      - string
-                      - 'null'
+                  status:
+                    type: string
+                    const: exported
                 required:
                   - message
                   - execution_id
-                  - bank_transmission_reference
-                  - clearing_timestamp
+                  - status
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/treasury/payment-batches/{id}/execute':
+    post:
+      operationId: paymentBatch.execute
+      description: 'Use POST /api/v1/treasury/payment-batches/{id}/export: this route never contacted the bank.'
+      deprecated: true
+      tags:
+        - PaymentBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'pain.001 file generated: it must be sent to the bank, and the outcome confirmed.'
+                  execution_id:
+                    type: string
+                  status:
+                    type: string
+                    const: exported
+                required:
+                  - message
+                  - execution_id
+                  - status
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/treasury/payment-batches/{id}/confirm':
+    post:
+      operationId: paymentBatch.confirm
+      summary: 'Records the manual confirmation of the bank outcome'
+      tags:
+        - PaymentBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                bank_reference:
+                  type: string
+                  maxLength: 100
+                value_date:
+                  type:
+                    - string
+                    - 'null'
+                  format: date-time
+              required:
+                - bank_reference
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/treasury/payment-batches/{id}/pain002':
+    post:
+      operationId: paymentBatch.importPain002
+      summary: 'Applies the pain.002 status report of the bank'
+      tags:
+        - PaymentBatch
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                xml:
+                  type: string
+              required:
+                - xml
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/treasury/payment-batches/{id}/cancel':
@@ -15143,6 +16534,1346 @@ paths:
             application/json:
               schema:
                 type: object
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/exports/salary-declaration:
+    get:
+      operationId: v1.payroll.exports.salary-declaration
+      summary: 'Swiss annual salary declaration'
+      tags:
+        - PayrollExport
+      parameters:
+        -
+          name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            X-Filing-Summary:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/exports/f24:
+    get:
+      operationId: v1.payroll.exports.f24
+      summary: 'Italian payroll F24'
+      tags:
+        - PayrollExport
+      parameters:
+        -
+          name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            X-Filing-Summary:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/exports/uniemens:
+    get:
+      operationId: v1.payroll.exports.uniemens
+      summary: 'UniEmens data of a month'
+      tags:
+        - PayrollExport
+      parameters:
+        -
+          name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            X-Filing-Summary:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/exports/cu:
+    get:
+      operationId: v1.payroll.exports.cu
+      summary: 'Certificazione Unica data of a year'
+      tags:
+        - PayrollExport
+      parameters:
+        -
+          name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2000
+            maximum: 2100
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+            X-Filing-Summary:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/payroll-settings:
+    get:
+      operationId: payrollLedger.showSettings
+      summary: 'Returns the payroll accounts of the active tenant'
+      tags:
+        - PayrollLedger
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollLedgerSetting'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: payrollLedger.updateSettings
+      summary: 'Updates the payroll accounts of the active tenant'
+      tags:
+        - PayrollLedger
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePayrollLedgerSettingRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollLedgerSetting'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/payroll-postings:
+    get:
+      operationId: payrollLedger.postings
+      summary: 'Lists the payroll runs and their state towards the ledger'
+      tags:
+        - PayrollLedger
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollLedgerPosting'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/payroll-postings/{runId}/post':
+    post:
+      operationId: payrollLedger.post
+      summary: 'Posts a payroll run that was waiting'
+      tags:
+        - PayrollLedger
+      parameters:
+        -
+          name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/annual-parameters:
+    get:
+      operationId: v1.payroll.annual-parameters.index
+      summary: 'List annual parameters'
+      tags:
+        - PayrollLegalTables
+      responses:
+        '200':
+          description: 'Array of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payroll/annual-parameters/{country}/{year}':
+    put:
+      operationId: v1.payroll.annual-parameters.save
+      summary: 'Save the parameters of a year for the company'
+      tags:
+        - PayrollLegalTables
+      parameters:
+        -
+          name: country
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: year
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveAnnualParametersRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/withholding-tax-tariffs:
+    get:
+      operationId: v1.payroll.withholding-tax-tariffs.index
+      summary: 'Summarize the imported tariffs'
+      tags:
+        - PayrollLegalTables
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/withholding-tax-tariffs/import:
+    post:
+      operationId: v1.payroll.withholding-tax-tariffs.import
+      summary: 'Import an ESTV tariff file for the company'
+      tags:
+        - PayrollLegalTables
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImportWithholdingTaxTariffsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      imported:
+                        type: integer
+                    required:
+                      - imported
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/family-allowance-rates:
+    get:
+      operationId: v1.payroll.family-allowance-rates.index
+      summary: 'List family allowances'
+      tags:
+        - PayrollLegalTables
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.payroll.family-allowance-rates.store
+      summary: 'Add the family allowances of a canton for the company'
+      tags:
+        - PayrollLegalTables
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveFamilyAllowanceRateRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/family-allowance-rates/{id}':
+    put:
+      operationId: v1.payroll.family-allowance-rates.update
+      summary: 'Change the family allowances of the company'
+      tags:
+        - PayrollLegalTables
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveFamilyAllowanceRateRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.family-allowance-rates.destroy
+      summary: 'Delete the family allowances of the company'
+      tags:
+        - PayrollLegalTables
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/runs:
+    get:
+      operationId: v1.payroll.runs.index
+      summary: 'List the monthly runs of the company'
+      tags:
+        - PayrollRun
+      parameters:
+        -
+          name: year
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/runs/calculate:
+    post:
+      operationId: v1.payroll.runs.calculate
+      summary: 'Calculate or recalculate the run of a month'
+      tags:
+        - PayrollRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculatePayrollRunRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/runs/simulate:
+    post:
+      operationId: v1.payroll.runs.simulate
+      summary: 'Run the monthly engine without saving anything'
+      tags:
+        - PayrollRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SimulatePayrollRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {}
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/runs/preview:
+    post:
+      operationId: v1.payroll.runs.preview
+      summary: 'Estimate the monthly pay of an employee from the annual salary'
+      tags:
+        - PayrollRun
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreviewPayrollRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      country_code:
+                        type: string
+                        enum:
+                          - CH
+                          - IT
+                      currency:
+                        type: string
+                        enum:
+                          - CHF
+                          - EUR
+                      gross_monthly_salary:
+                        type: string
+                      total_deductions:
+                        type: string
+                      net_monthly_salary:
+                        type: string
+                      employer_total_cost:
+                        type: string
+                      deduction_breakdown:
+                        anyOf:
+                          -
+                            type: object
+                            properties:
+                              AVS/AI/IPG:
+                                type: string
+                              AD:
+                                type: string
+                              LPP/BVG:
+                                type: string
+                              'LAINF NBU':
+                                type: string
+                              IGM/KTG:
+                                type: string
+                              'Imposta alla fonte':
+                                type: string
+                            required:
+                              - AVS/AI/IPG
+                              - AD
+                              - LPP/BVG
+                              - 'LAINF NBU'
+                              - IGM/KTG
+                              - 'Imposta alla fonte'
+                          -
+                            type: object
+                            properties:
+                              'Contributi INPS dipendente':
+                                type: string
+                              'IRPEF netta':
+                                type: string
+                              'Addizionali regionale e comunale':
+                                type: string
+                              'Somma non imponibile cuneo fiscale':
+                                type: string
+                              'TFR maturato (costo azienda)':
+                                type: string
+                            required:
+                              - 'Contributi INPS dipendente'
+                              - 'IRPEF netta'
+                              - 'Addizionali regionale e comunale'
+                              - 'Somma non imponibile cuneo fiscale'
+                              - 'TFR maturato (costo azienda)'
+                      compliance_notes:
+                        type: string
+                    required:
+                      - country_code
+                      - currency
+                      - gross_monthly_salary
+                      - total_deductions
+                      - net_monthly_salary
+                      - employer_total_cost
+                      - deduction_breakdown
+                      - compliance_notes
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/runs/{id}':
+    get:
+      operationId: v1.payroll.runs.show
+      summary: 'Show a run with its payslips and its history'
+      tags:
+        - PayrollRun
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payroll/runs/{id}/finalize':
+    post:
+      operationId: v1.payroll.runs.finalize
+      summary: 'Close a run'
+      tags:
+        - PayrollRun
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payroll/runs/{id}/reopen':
+    post:
+      operationId: v1.payroll.runs.reopen
+      summary: 'Reopen the latest closed run'
+      tags:
+        - PayrollRun
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReopenPayrollRunRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/runs/{id}/labour-book':
+    get:
+      operationId: v1.payroll.runs.labour-book
+      summary: 'Print the labour book of a run'
+      tags:
+        - PayrollRun
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/setup:
+    post:
+      operationId: v1.payroll.setup
+      summary: 'Create what a Swiss company needs to start'
+      tags:
+        - PayrollSettings
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      changed:
+                        type: boolean
+                    required:
+                      - changed
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/payroll/settings/swiss:
+    get:
+      operationId: v1.payroll.settings.swiss.show
+      summary: 'Show the Swiss settings'
+      tags:
+        - PayrollSettings
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    anyOf:
+                      -
+                        $ref: '#/components/schemas/PayrollRecordResource'
+                      -
+                        type: 'null'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.payroll.settings.swiss.update
+      summary: 'Change the Swiss settings'
+      tags:
+        - PayrollSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveSwissSettingsRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/settings/italian:
+    get:
+      operationId: v1.payroll.settings.italian.show
+      summary: 'Show the INPS and INAIL settings'
+      tags:
+        - PayrollSettings
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    anyOf:
+                      -
+                        $ref: '#/components/schemas/PayrollRecordResource'
+                      -
+                        type: 'null'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.payroll.settings.italian.update
+      summary: 'Change the INPS and INAIL settings'
+      tags:
+        - PayrollSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveItalianSettingsRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/payslips:
+    get:
+      operationId: v1.payroll.payslips.index
+      summary: 'List payslips'
+      tags:
+        - Payslip
+      parameters:
+        -
+          name: employee_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/payslips/{id}':
+    get:
+      operationId: v1.payroll.payslips.show
+      summary: 'Show a payslip with its lines'
+      tags:
+        - Payslip
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payroll/payslips/{id}/pdf':
+    get:
+      operationId: v1.payroll.payslips.pdf
+      summary: 'Print a payslip'
+      tags:
+        - Payslip
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/subscriptions/plans:
@@ -20019,6 +22750,16 @@ paths:
               properties:
                 qr_payload:
                   type: string
+                total_tax:
+                  type:
+                    - number
+                    - 'null'
+                  minimum: 0
+                exchange_rate:
+                  type:
+                    - number
+                    - 'null'
+                  minimum: 1.0E-6
               required:
                 - qr_payload
       responses:
@@ -20039,44 +22780,18 @@ paths:
                     properties:
                       id:
                         type: string
-                      creditor:
-                        anyOf:
-                          -
-                            type: string
-                          -
-                            type: string
-                            enum:
-                              - 'Swiss Creditor'
-                      qr_iban:
-                        anyOf:
-                          -
-                            type: string
-                          -
-                            type: string
-                            enum:
-                              - ''
-                      scor_reference:
-                        anyOf:
-                          -
-                            type: string
-                          -
-                            type: string
-                            enum:
-                              - ''
+                      creditor: {}
+                      qr_iban: {}
+                      reference_type: {}
+                      scor_reference: {}
                       amount:
                         type: number
-                      currency:
-                        anyOf:
-                          -
-                            type: string
-                          -
-                            type: string
-                            enum:
-                              - CHF
+                      currency: {}
                     required:
                       - id
                       - creditor
                       - qr_iban
+                      - reference_type
                       - scor_reference
                       - amount
                       - currency
@@ -20094,7 +22809,7 @@ paths:
   /v1/purchases/export-pain001:
     post:
       operationId: purchases.export-pain001
-      summary: 'Export payment orders to ISO 20022 pain.001.001.03 (SEPA/Swiss Credit Transfer)'
+      summary: 'Export supplier invoices to an ISO 20022 pain.001 file through Treasury'
       tags:
         - Purchases
       requestBody:
@@ -20119,6 +22834,11 @@ paths:
                     - string
                     - 'null'
                   format: date-time
+                bank_account_id:
+                  type:
+                    - string
+                    - 'null'
+                  format: uuid
               required:
                 - invoice_ids
                 - format
@@ -20144,12 +22864,15 @@ paths:
                         type: string
                       format:
                         type: string
+                      status:
+                        type: string
                       xml_preview:
                         type: string
                     required:
                       - batch_id
                       - message_id
                       - format
+                      - status
                       - xml_preview
                   meta:
                     type: string
@@ -21222,6 +23945,250 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/payroll/salary-certificates:
+    get:
+      operationId: v1.payroll.salary-certificates.index
+      summary: 'List salary certificates'
+      tags:
+        - SalaryCertificate
+      parameters:
+        -
+          name: employee_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: year
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 2000
+            maximum: 2100
+        -
+          name: month
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 12
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/payroll/salary-certificates/generate:
+    post:
+      operationId: v1.payroll.salary-certificates.generate
+      summary: 'Generate the certificates of a year from the closed runs'
+      tags:
+        - SalaryCertificate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateSalaryCertificatesRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      generated:
+                        type: integer
+                    required:
+                      - generated
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/salary-certificates/{id}':
+    get:
+      operationId: v1.payroll.salary-certificates.show
+      summary: 'Show a certificate'
+      tags:
+        - SalaryCertificate
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payroll/salary-certificates/{id}/pdf':
+    get:
+      operationId: v1.payroll.salary-certificates.pdf
+      summary: 'Print a certificate'
+      tags:
+        - SalaryCertificate
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/invoicing/orders:
     get:
       operationId: invoicing.orders.index
@@ -26221,6 +29188,91 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/general-ledger/tax-settlements:
+    get:
+      operationId: taxSettlement.index
+      summary: 'Lists the VAT settlements of the active tenant'
+      tags:
+        - TaxSettlement
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+        -
+          name: year
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VatSettlementResource'
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+                    required:
+                      - current_page
+                      - last_page
+                      - per_page
+                      - total
+                required:
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/general-ledger/tax-settlements/calculate:
+    post:
+      operationId: taxSettlement.calculate
+      summary: 'Calculates the VAT settlement of a fiscal period, or of a month, quarter or half year'
+      tags:
+        - TaxSettlement
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CalculateTaxSettlementRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'VAT settlement calculated successfully'
+                  data:
+                    $ref: '#/components/schemas/VatSettlementResource'
+                required:
+                  - message
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/general-ledger/tax-settlements/{id}':
     get:
       operationId: taxSettlement.show
@@ -26247,57 +29299,7 @@ paths:
                 required:
                   - data
         '403':
-          description: 'An error'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: 'Error overview.'
-                    examples:
-                      - 'Missing or unresolvable tenant context'
-                required:
-                  - message
-        '401':
-          $ref: '#/components/responses/AuthenticationException'
-  /v1/general-ledger/tax-settlements/calculate:
-    post:
-      operationId: taxSettlement.calculate
-      summary: 'Calculates the VAT settlement of the fiscal period'
-      tags:
-        - TaxSettlement
-      responses:
-        '200':
-          description: ''
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    const: 'VAT settlement calculated successfully'
-                  data:
-                    $ref: '#/components/schemas/VatSettlementResource'
-                required:
-                  - message
-                  - data
-        '403':
-          description: 'An error'
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    description: 'Error overview.'
-                    examples:
-                      - 'Missing or unresolvable tenant context'
-                required:
-                  - message
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/general-ledger/tax-settlements/{id}/post':
@@ -26325,12 +29327,40 @@ paths:
                     type: string
                     const: 'VAT settlement journal posted successfully'
                   data:
-                    $ref: '#/components/schemas/JournalEntryResource'
+                    anyOf:
+                      -
+                        $ref: '#/components/schemas/JournalEntryResource'
+                      -
+                        type: 'null'
                 required:
                   - message
                   - data
         '403':
-          description: 'An error'
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/tax-settlements/{id}/pay':
+    post:
+      operationId: taxSettlement.pay
+      summary: 'Records the payment of a posted VAT settlement'
+      tags:
+        - TaxSettlement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PayTaxSettlementRequest'
+      responses:
+        '200':
+          description: ''
           content:
             application/json:
               schema:
@@ -26338,11 +29368,130 @@ paths:
                 properties:
                   message:
                     type: string
-                    description: 'Error overview.'
-                    examples:
-                      - 'Missing or unresolvable tenant context'
+                    const: 'VAT settlement marked as paid'
+                  data:
+                    $ref: '#/components/schemas/VatSettlementResource'
                 required:
                   - message
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/tax-settlements/{id}/lipe':
+    get:
+      operationId: taxSettlement.lipe
+      summary: 'Downloads the LIPE XML file of an Italian VAT settlement'
+      tags:
+        - TaxSettlement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/xml:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/tax-settlements/{id}/f24':
+    get:
+      operationId: taxSettlement.f24
+      summary: 'Returns the F24 data of an Italian VAT settlement'
+      tags:
+        - TaxSettlement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      section:
+                        type: string
+                        const: erario
+                      tax_code:
+                        type:
+                          - string
+                          - 'null'
+                      reference_year:
+                        type: integer
+                      amount:
+                        type: string
+                      payment_due:
+                        type: boolean
+                      carried_forward:
+                        type: string
+                      summary:
+                        type: string
+                    required:
+                      - section
+                      - tax_code
+                      - reference_year
+                      - amount
+                      - payment_due
+                      - carried_forward
+                      - summary
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/tax-settlements/{id}/statement':
+    get:
+      operationId: taxSettlement.statement
+      summary: 'Downloads the Swiss MWST statement of a VAT settlement'
+      tags:
+        - TaxSettlement
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+            application/pdf:
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/admin/tenant-access-requests:
@@ -29332,6 +32481,172 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/vat-registers/{type}':
+    get:
+      operationId: vatRegister.show
+      summary: 'Returns the sales or purchases VAT register of a date range'
+      tags:
+        - VatRegister
+      parameters:
+        -
+          name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - json
+              - csv
+              - null
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        protocol_number:
+                          type:
+                            - string
+                            - 'null'
+                        posting_date:
+                          type: string
+                        document_date:
+                          type: string
+                        document_number:
+                          type: string
+                        document_type:
+                          type: string
+                        partner_name:
+                          type:
+                            - string
+                            - 'null'
+                        taxable_amount:
+                          type: string
+                        vat_rate:
+                          type: string
+                        vat_amount:
+                          type: string
+                        vat_treatment:
+                          type: string
+                      required:
+                        - protocol_number
+                        - posting_date
+                        - document_date
+                        - document_number
+                        - document_type
+                        - partner_name
+                        - taxable_amount
+                        - vat_rate
+                        - vat_amount
+                        - vat_treatment
+                  totals:
+                    type: object
+                    properties:
+                      taxable:
+                        type: string
+                      tax:
+                        type: string
+                    required:
+                      - taxable
+                      - tax
+                required:
+                  - data
+                  - totals
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/tax-settings:
+    get:
+      operationId: vatTaxSetting.show
+      summary: 'Returns the VAT settings of the active tenant'
+      tags:
+        - VatTaxSetting
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/VatTaxSettingResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: vatTaxSetting.update
+      summary: 'Updates the VAT settings of the active tenant'
+      tags:
+        - VatTaxSetting
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateVatTaxSettingRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'VAT settings updated successfully'
+                  data:
+                    $ref: '#/components/schemas/VatTaxSettingResource'
+                required:
+                  - message
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/accounting/vendor-aging:
     get:
       operationId: accounting.vendor-aging
@@ -29389,6 +32704,205 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/payroll/wage-types:
+    get:
+      operationId: v1.payroll.wage-types.index
+      summary: 'List wage types'
+      tags:
+        - WageType
+      responses:
+        '200':
+          description: 'Paginated set of `PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PayrollRecordResource'
+                  links:
+                    type: object
+                    properties:
+                      first:
+                        type:
+                          - string
+                          - 'null'
+                      last:
+                        type:
+                          - string
+                          - 'null'
+                      prev:
+                        type:
+                          - string
+                          - 'null'
+                      next:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - first
+                      - last
+                      - prev
+                      - next
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                        minimum: 1
+                      from:
+                        type:
+                          - integer
+                          - 'null'
+                        minimum: 1
+                      last_page:
+                        type: integer
+                        minimum: 1
+                      links:
+                        type: array
+                        description: 'Generated paginator links.'
+                        items:
+                          type: object
+                          properties:
+                            url:
+                              type:
+                                - string
+                                - 'null'
+                            label:
+                              type: string
+                            active:
+                              type: boolean
+                          required:
+                            - url
+                            - label
+                            - active
+                      path:
+                        type:
+                          - string
+                          - 'null'
+                        description: 'Base path for paginator generated URLs.'
+                      per_page:
+                        type: integer
+                        description: 'Number of items shown per page.'
+                        minimum: 0
+                      to:
+                        type:
+                          - integer
+                          - 'null'
+                        description: 'Number of the last item in the slice.'
+                        minimum: 1
+                      total:
+                        type: integer
+                        description: 'Total number of items being paginated.'
+                        minimum: 0
+                    required:
+                      - current_page
+                      - from
+                      - last_page
+                      - links
+                      - path
+                      - per_page
+                      - to
+                      - total
+                required:
+                  - data
+                  - links
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.payroll.wage-types.store
+      summary: 'Create a wage type'
+      tags:
+        - WageType
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveWageTypeRequest'
+      responses:
+        '201':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/payroll/wage-types/{id}':
+    put:
+      operationId: v1.payroll.wage-types.update
+      summary: 'Change a wage type'
+      tags:
+        - WageType
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveWageTypeRequest'
+      responses:
+        '200':
+          description: '`PayrollRecordResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PayrollRecordResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: v1.payroll.wage-types.destroy
+      summary: 'Delete a wage type'
+      tags:
+        - WageType
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/inventory/warehouses:
     get:
       operationId: inventory.warehouses.index
@@ -32019,6 +35533,56 @@ components:
         - responded_at
         - created_at
       title: CSATSurveyResource
+    CalculatePayrollRunRequest:
+      type: object
+      properties:
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        payment_date:
+          type:
+            - string
+            - 'null'
+          format: date
+      required:
+        - year
+        - month
+      title: CalculatePayrollRunRequest
+    CalculateTaxSettlementRequest:
+      type: object
+      properties:
+        fiscal_period_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        period_type:
+          type:
+            - string
+            - 'null'
+          enum:
+            - monthly
+            - quarterly
+            - semiannual
+            - null
+        year:
+          type:
+            - integer
+            - 'null'
+          minimum: 2000
+          maximum: 2100
+        period:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 12
+      title: CalculateTaxSettlementRequest
     CampaignResource:
       type: object
       properties:
@@ -33590,9 +37154,7 @@ components:
                 type: number
                 minimum: 0
               tax_rate:
-                type:
-                  - number
-                  - 'null'
+                type: number
                 minimum: 0
               discount_percentage:
                 type:
@@ -33619,6 +37181,7 @@ components:
               - description
               - quantity
               - unit_price
+              - tax_rate
           minItems: 1
       required:
         - contact_id
@@ -35841,6 +39404,16 @@ components:
             - 'null'
           format: date-time
       title: GenerateForecastRequest
+    GenerateSalaryCertificatesRequest:
+      type: object
+      properties:
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+      required:
+        - year
+      title: GenerateSalaryCertificatesRequest
     GenerateVariantsMatrixRequest:
       type: object
       description: 'Bulk generation of the variants of a parent product from an attribute matrix.'
@@ -36091,6 +39664,17 @@ components:
         - bank_account_id
         - lines
       title: ImportStatementRequest
+    ImportWithholdingTaxTariffsRequest:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+          contentMediaType: application/octet-stream
+          description: 'Maximum file size: 102400 kilobytes.'
+        content:
+          type: string
+      title: ImportWithholdingTaxTariffsRequest
     IncidentResource:
       type: object
       properties:
@@ -36513,6 +40097,8 @@ components:
           type: number
         rounding_amount:
           type: number
+        status:
+          type: string
         payment_status:
           type: string
         total_paid:
@@ -36615,6 +40201,7 @@ components:
         - total_tax
         - total_gross
         - rounding_amount
+        - status
         - payment_status
         - total_paid
         - proforma_id
@@ -38373,6 +41960,20 @@ components:
         - sdi_file_name
         - total_paid
       title: PassiveInvoice
+    PayTaxSettlementRequest:
+      type: object
+      properties:
+        payment_date:
+          type: string
+          format: date
+        bank_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - payment_date
+      title: PayTaxSettlementRequest
     PaymentBatchResource:
       type: object
       properties:
@@ -38484,6 +42085,29 @@ components:
       type: array
       items: {}
       title: PaymentResource
+    PayrollLedgerPosting:
+      type: array
+      items:
+        type: string
+      minItems: 0
+      maxItems: 0
+      title: PayrollLedgerPosting
+    PayrollLedgerSetting:
+      type: array
+      items:
+        type: string
+      minItems: 0
+      maxItems: 0
+      title: PayrollLedgerSetting
+    PayrollRecordResource:
+      type: object
+      properties:
+        is_generic:
+          type: boolean
+      required:
+        - is_generic
+      additionalProperties: {}
+      title: PayrollRecordResource
     PerformanceReviewResource:
       type: object
       properties:
@@ -38990,6 +42614,20 @@ components:
         - readiness_level
         - is_active
       title: PositionResource
+    PreviewPayrollRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        target_month:
+          type:
+            - string
+            - 'null'
+          format: date
+      required:
+        - employee_id
+      title: PreviewPayrollRequest
     PrintLabelsRequest:
       type: object
       properties:
@@ -41684,6 +45322,16 @@ components:
         - updated_at
         - deleted_at
       title: RentalVehicle
+    ReopenPayrollRunRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          minLength: 5
+          maxLength: 1000
+      required:
+        - reason
+      title: ReopenPayrollRunRequest
     ReplyPortalTicketRequest:
       type: object
       properties:
@@ -42665,6 +46313,441 @@ components:
         - created_at
         - updated_at
       title: SalesQuoteResource
+    SaveAbsenceRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        absence_type:
+          type: string
+          enum:
+            - Sickness
+            - Accident
+            - Maternity
+            - Paternity
+            - Military
+            - Vacation
+            - Unpaid
+            - Other
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        percent:
+          type: number
+          minimum: 1
+          maximum: 100
+        note:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - employee_id
+        - absence_type
+        - start_date
+        - end_date
+      title: SaveAbsenceRequest
+    SaveAgreementLevelRequest:
+      type: object
+      properties:
+        level:
+          type: string
+          maxLength: 30
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        monthly_minimum:
+          type: number
+          minimum: 0
+      required:
+        - level
+        - monthly_minimum
+      title: SaveAgreementLevelRequest
+    SaveAnnualParametersRequest:
+      type: object
+      properties:
+        parameters:
+          type: array
+          items:
+            type: number
+          minItems: 1
+        legal_reference:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - parameters
+      title: SaveAnnualParametersRequest
+    SaveCollectiveAgreementRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          maxLength: 30
+        name:
+          type: string
+          maxLength: 255
+        weekly_hours:
+          type: number
+          minimum: 0
+          maximum: 80
+        installments:
+          type: integer
+          minimum: 12
+          maximum: 14
+        fourteenth_month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        employer_inps_rate_percent:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 100
+        notes:
+          type:
+            - string
+            - 'null'
+      required:
+        - code
+        - name
+      title: SaveCollectiveAgreementRequest
+    SaveEmployeeChildRequest:
+      type: object
+      properties:
+        employee_id:
+          type: string
+          format: uuid
+        first_name:
+          type: string
+          maxLength: 100
+        last_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
+        date_of_birth:
+          type: string
+          format: date
+        in_education:
+          type: boolean
+        education_end_date:
+          type:
+            - string
+            - 'null'
+          format: date
+        allowance_eligible:
+          type: boolean
+      required:
+        - employee_id
+        - first_name
+        - date_of_birth
+      title: SaveEmployeeChildRequest
+    SaveEmployeeProfileRequest:
+      type: object
+      properties:
+        social_security_number:
+          type:
+            - string
+            - 'null'
+          pattern: '^756\.?\d{4}\.?\d{4}\.?\d{2}$'
+          maxLength: 30
+        iban:
+          type:
+            - string
+            - 'null'
+          maxLength: 34
+        street:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        house_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        postal_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 20
+        city:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        gender:
+          type:
+            - string
+            - 'null'
+          enum:
+            - M
+            - F
+            - null
+        residence_permit:
+          type:
+            - string
+            - 'null'
+          enum:
+            - CH
+            - C
+            - B
+            - L
+            - G
+            - F
+            - 'N'
+            - S
+            - CI
+            - null
+        residence_country:
+          type: string
+          minLength: 2
+          maxLength: 2
+        residence_canton:
+          type:
+            - string
+            - 'null'
+          enum:
+            - AG
+            - AI
+            - AR
+            - BE
+            - BL
+            - BS
+            - FR
+            - GE
+            - GL
+            - GR
+            - JU
+            - LU
+            - NE
+            - NW
+            - OW
+            - SG
+            - SH
+            - SO
+            - SZ
+            - TG
+            - TI
+            - UR
+            - VD
+            - VS
+            - ZG
+            - ZH
+            - null
+        work_canton:
+          type:
+            - string
+            - 'null'
+          enum:
+            - AG
+            - AI
+            - AR
+            - BE
+            - BL
+            - BS
+            - FR
+            - GE
+            - GL
+            - GR
+            - JU
+            - LU
+            - NE
+            - NW
+            - OW
+            - SG
+            - SH
+            - SO
+            - SZ
+            - TG
+            - TI
+            - UR
+            - VD
+            - VS
+            - ZG
+            - ZH
+            - null
+        civil_status:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        church_tax:
+          type: boolean
+        pay_type:
+          type: string
+          enum:
+            - monthly
+            - hourly
+        salary_installments_per_year:
+          type: integer
+          minimum: 12
+          maximum: 14
+        hourly_wage:
+          type: number
+          minimum: 0
+        weekly_hours:
+          type: number
+          minimum: 0
+          maximum: 80
+        holiday_weeks:
+          type: integer
+          minimum: 0
+          maximum: 12
+        is_fixed_term_contract:
+          type: boolean
+        is_withholding_tax_subject:
+          type: boolean
+        withholding_tax_code:
+          type:
+            - string
+            - 'null'
+          pattern: '^[A-Z][0-9][NY]$'
+        withholding_tax_rate_percent:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 100
+        non_occupational_accident_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        occupational_accident_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        daily_sickness_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        family_allowance_fund_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        pension_fund_employee_rate_percent:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 100
+        regional_surcharge_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        municipal_surcharge_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        collective_agreement_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        contract_level:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        inps_qualification:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        region_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 10
+        municipality_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 10
+      title: SaveEmployeeProfileRequest
+    SaveFamilyAllowanceRateRequest:
+      type: object
+      properties:
+        canton:
+          type: string
+          enum:
+            - AG
+            - AI
+            - AR
+            - BE
+            - BL
+            - BS
+            - FR
+            - GE
+            - GL
+            - GR
+            - JU
+            - LU
+            - NE
+            - NW
+            - OW
+            - SG
+            - SH
+            - SO
+            - SZ
+            - TG
+            - TI
+            - UR
+            - VD
+            - VS
+            - ZG
+            - ZH
+        valid_from:
+          type: string
+          format: date
+        child_allowance:
+          type: number
+          minimum: 215
+        education_allowance:
+          type: number
+          minimum: 268
+      required:
+        - canton
+        - valid_from
+        - child_allowance
+        - education_allowance
+      title: SaveFamilyAllowanceRateRequest
+    SaveItalianSettingsRequest:
+      type: object
+      properties:
+        inps_company_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        inps_office_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        inail_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        employee_inps_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        employer_inps_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+      title: SaveItalianSettingsRequest
     SaveLookupTranslationRequest:
       type: object
       properties:
@@ -42696,6 +46779,143 @@ components:
         - locale
         - label
       title: SaveLookupTranslationRequest
+    SavePayrollInputRequest:
+      type: object
+      properties:
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        employee_id:
+          type: string
+          format: uuid
+        wage_type_code:
+          type: string
+          maxLength: 6
+        quantity:
+          type: number
+        rate:
+          type: number
+        amount:
+          type: number
+        note:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      required:
+        - year
+        - month
+        - employee_id
+        - wage_type_code
+      title: SavePayrollInputRequest
+    SaveSwissSettingsRequest:
+      type: object
+      properties:
+        ahv_employee_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 20
+        ahv_employer_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        ahv_administration_cost_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        alv_employee_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        alv_employer_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        alv_annual_ceiling:
+          type: number
+        uvg_annual_ceiling:
+          type: number
+        nbu_employee_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        bu_employer_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        ktg_employee_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        ktg_employer_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        fak_employer_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        bvg_employer_share_percent:
+          type: number
+          minimum: 50
+          maximum: 100
+        bvg_risk_rate_percent:
+          type: number
+          minimum: 0
+          maximum: 100
+        pensioner_allowance_monthly:
+          type: number
+          minimum: 0
+        default_work_canton:
+          type: string
+          enum:
+            - AG
+            - AI
+            - AR
+            - BE
+            - BL
+            - BS
+            - FR
+            - GE
+            - GL
+            - GR
+            - JU
+            - LU
+            - NE
+            - NW
+            - OW
+            - SG
+            - SH
+            - SO
+            - SZ
+            - TG
+            - TI
+            - UR
+            - VD
+            - VS
+            - ZG
+            - ZH
+        ahv_member_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 50
+        uvg_insurer:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        bvg_insurer:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+      title: SaveSwissSettingsRequest
     SaveTimeDailyRecordRequest:
       type: object
       properties:
@@ -42746,6 +46966,39 @@ components:
             - string
             - 'null'
           format: date
+        agreement_valid_from:
+          type:
+            - string
+            - 'null'
+          format: date
+        agreement_valid_to:
+          type:
+            - string
+            - 'null'
+          format: date
+        agreement_basis:
+          type:
+            - string
+            - 'null'
+          enum:
+            - collective
+            - individual
+            - null
+        autonomy_percent:
+          type:
+            - integer
+            - 'null'
+          minimum: 25
+          maximum: 100
+        collective_agreement_reference:
+          type:
+            - string
+            - 'null'
+          maxLength: 120
+        annual_gross_salary:
+          type:
+            - number
+            - 'null'
         legal_max_weekly_hours:
           type: integer
           enum:
@@ -42813,6 +47066,52 @@ components:
         - weekly_hours
         - work_days_per_week
       title: SaveTimeProfileRequest
+    SaveWageTypeRequest:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: '^[0-9A-Z]{1,6}$'
+        name:
+          type: string
+          maxLength: 255
+        kind:
+          type: string
+          enum:
+            - Earning
+            - NonCash
+            - Expense
+            - Deduction
+            - Employer
+            - Information
+        subject_to_ahv:
+          type: boolean
+        subject_to_alv:
+          type: boolean
+        subject_to_uvg:
+          type: boolean
+        subject_to_ktg:
+          type: boolean
+        subject_to_bvg:
+          type: boolean
+        subject_to_withholding_tax:
+          type: boolean
+        is_irregular:
+          type: boolean
+        certificate_box:
+          type:
+            - string
+            - 'null'
+          maxLength: 10
+        sort_order:
+          type: integer
+        is_active:
+          type: boolean
+      required:
+        - code
+        - name
+        - kind
+      title: SaveWageTypeRequest
     ScheduleAppointmentRequest:
       type: object
       properties:
@@ -43474,6 +47773,26 @@ components:
         - signed_by
         - signature_base64
       title: SignWorkOrderRequest
+    SimulatePayrollRequest:
+      type: object
+      properties:
+        year:
+          type: integer
+          minimum: 2000
+          maximum: 2100
+        month:
+          type: integer
+          minimum: 1
+          maximum: 12
+        employee_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - year
+        - month
+      title: SimulatePayrollRequest
     StartWorkflowRequest:
       type: object
       properties:
@@ -45322,7 +49641,11 @@ components:
             - proforma
         invoice_number:
           type: string
-          maxLength: 50
+        related_invoice_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
         date:
           type: string
           format: date-time
@@ -45395,7 +49718,6 @@ components:
       required:
         - contact_id
         - invoice_type
-        - invoice_number
         - date
         - currency
         - jurisdiction
@@ -45441,7 +49763,6 @@ components:
           enum:
             - standard
             - reversing
-            - closing
             - opening
             - recurring
             - adjusting
@@ -48872,6 +53193,22 @@ components:
           type:
             - string
             - 'null'
+        agreement_valid_from:
+          type:
+            - string
+            - 'null'
+        agreement_valid_to:
+          type:
+            - string
+            - 'null'
+        agreement_basis:
+          type: string
+        autonomy_percent:
+          type: string
+        collective_agreement_reference:
+          type: string
+        salary_threshold_met:
+          type: boolean
         legal_max_weekly_hours:
           type: string
         weekly_hours:
@@ -48893,6 +53230,12 @@ components:
         - is_configured
         - mode
         - agreement_date
+        - agreement_valid_from
+        - agreement_valid_to
+        - agreement_basis
+        - autonomy_percent
+        - collective_agreement_reference
+        - salary_threshold_met
         - legal_max_weekly_hours
         - weekly_hours
         - work_days_per_week
@@ -49776,6 +54119,57 @@ components:
       required:
         - target_stage_code
       title: UpdateOpportunityStageRequest
+    UpdatePayrollLedgerSettingRequest:
+      type: object
+      properties:
+        salary_expense_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        employer_cost_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        expense_allowance_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        employee_payable_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        social_payable_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        tax_payable_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        non_cash_benefit_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        rounding_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        wage_type_accounts:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+      title: UpdatePayrollLedgerSettingRequest
     UpdateProductRequest:
       type: object
       description: 'Update of a product: only the fields sent change. `min_stock` may be set to null to stop monitoring the product.'
@@ -50468,6 +54862,53 @@ components:
           items:
             type: string
       title: UpdateSupplierRequest
+    UpdateVatTaxSettingRequest:
+      type: object
+      properties:
+        periodicity:
+          type:
+            - string
+            - 'null'
+          enum:
+            - monthly
+            - quarterly
+            - semiannual
+            - null
+        output_vat_account_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+        input_vat_account_ids:
+          type:
+            - array
+            - 'null'
+          items:
+            type: string
+            format: uuid
+        settlement_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        interest_expense_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        declarant_tax_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 16
+        declarant_role_code:
+          type:
+            - string
+            - 'null'
+          maxLength: 2
+      title: UpdateVatTaxSettingRequest
     UpdateWarehouseRequest:
       type: object
       properties:
@@ -50796,6 +55237,78 @@ components:
           type:
             - string
             - 'null'
+        period_type:
+          type: string
+        year:
+          type: integer
+        period:
+          type: integer
+        period_from:
+          type:
+            - string
+            - 'null'
+        period_to:
+          type:
+            - string
+            - 'null'
+        country:
+          type: string
+        currency:
+          type: string
+        turnover:
+          type: string
+        taxable_turnover:
+          type: string
+        passive_operations:
+          type: string
+        previous_credit:
+          type: string
+        previous_debit:
+          type: string
+        interest_amount:
+          type: string
+        payable_amount:
+          type: string
+        below_minimum_payment:
+          type: boolean
+        rate_breakdown:
+          anyOf:
+            -
+              type: string
+            -
+              type: array
+              items:
+                type: string
+              minItems: 0
+              maxItems: 0
+        warnings:
+          anyOf:
+            -
+              type: string
+            -
+              type: array
+              items:
+                type: string
+              minItems: 0
+              maxItems: 0
+        details:
+          type: string
+        posted_at:
+          type:
+            - string
+            - 'null'
+        paid_at:
+          type:
+            - string
+            - 'null'
+        payment_date:
+          type:
+            - string
+            - 'null'
+        payment_journal_id:
+          type:
+            - string
+            - 'null'
       required:
         - id
         - tenant_id
@@ -50807,7 +55320,71 @@ components:
         - net_vat_credit
         - status
         - settlement_journal_id
+        - period_type
+        - year
+        - period
+        - period_from
+        - period_to
+        - country
+        - currency
+        - turnover
+        - taxable_turnover
+        - passive_operations
+        - previous_credit
+        - previous_debit
+        - interest_amount
+        - payable_amount
+        - below_minimum_payment
+        - rate_breakdown
+        - warnings
+        - details
+        - posted_at
+        - paid_at
+        - payment_date
+        - payment_journal_id
       title: VatSettlementResource
+    VatTaxSettingResource:
+      type: object
+      properties:
+        periodicity:
+          type: string
+        output_vat_account_ids:
+          anyOf:
+            -
+              type: string
+            -
+              type: array
+              items:
+                type: string
+              minItems: 0
+              maxItems: 0
+        input_vat_account_ids:
+          anyOf:
+            -
+              type: string
+            -
+              type: array
+              items:
+                type: string
+              minItems: 0
+              maxItems: 0
+        settlement_account_id:
+          type: string
+        interest_expense_account_id:
+          type: string
+        declarant_tax_code:
+          type: string
+        declarant_role_code:
+          type: string
+      required:
+        - periodicity
+        - output_vat_account_ids
+        - input_vat_account_ids
+        - settlement_account_id
+        - interest_expense_account_id
+        - declarant_tax_code
+        - declarant_role_code
+      title: VatTaxSettingResource
     Vehicle:
       type: object
       properties:
@@ -51741,6 +56318,9 @@ tags:
     name: ChartOfAccount
     description: 'Operations of the ChartOfAccount module.'
   -
+    name: CollectiveAgreement
+    description: 'Operations of the CollectiveAgreement module.'
+  -
     name: Construction
     description: 'Operations of the Construction module.'
   -
@@ -51788,6 +56368,9 @@ tags:
   -
     name: Employee
     description: 'Operations of the Employee module.'
+  -
+    name: EmployeePayrollData
+    description: 'Operations of the EmployeePayrollData module.'
   -
     name: Expense
     description: 'Operations of the Expense module.'
@@ -51891,6 +56474,24 @@ tags:
     name: PaymentTerm
     description: 'Operations of the PaymentTerm module.'
   -
+    name: PayrollExport
+    description: 'Operations of the PayrollExport module.'
+  -
+    name: PayrollLedger
+    description: 'Operations of the PayrollLedger module.'
+  -
+    name: PayrollLegalTables
+    description: 'Operations of the PayrollLegalTables module.'
+  -
+    name: PayrollRun
+    description: 'Operations of the PayrollRun module.'
+  -
+    name: PayrollSettings
+    description: 'Operations of the PayrollSettings module.'
+  -
+    name: Payslip
+    description: 'Operations of the Payslip module.'
+  -
     name: Plan
     description: 'Operations of the Plan module.'
   -
@@ -51986,6 +56587,9 @@ tags:
   -
     name: RevenueRecognition
     description: 'Operations of the RevenueRecognition module.'
+  -
+    name: SalaryCertificate
+    description: 'Operations of the SalaryCertificate module.'
   -
     name: SalesOrder
     description: 'Operations of the SalesOrder module.'
@@ -52098,8 +56702,17 @@ tags:
     name: UsageBilling
     description: 'Operations of the UsageBilling module.'
   -
+    name: VatRegister
+    description: 'Operations of the VatRegister module.'
+  -
+    name: VatTaxSetting
+    description: 'Operations of the VatTaxSetting module.'
+  -
     name: VendorAging
     description: 'Operations of the VendorAging module.'
+  -
+    name: WageType
+    description: 'Operations of the WageType module.'
   -
     name: Warehouse
     description: 'Operations of the Warehouse module.'

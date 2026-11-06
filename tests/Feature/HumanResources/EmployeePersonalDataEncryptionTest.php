@@ -40,7 +40,7 @@ test('the immutable audit ledger never receives personal data in clear', functio
     $employee->update(['tax_code' => 'VRDGPP70A01F205X']);
     $employee->delete();
 
-    $payloads = DB::table('enterprise_audit_ledger')->where('entity_id', $employee->id)->get(['payload_before', 'payload_after'])->toJson();
+    $payloads = DB::table('enterprise_audit_ledger')->where('resource_id', $employee->id)->get(['payload_before', 'payload_after'])->toJson();
 
     expect($payloads)->not->toContain('RSSMRA')->and($payloads)->not->toContain('VRDGPP');
 });

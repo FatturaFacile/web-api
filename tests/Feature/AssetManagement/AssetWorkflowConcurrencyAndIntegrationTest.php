@@ -7,6 +7,7 @@ namespace Tests\Feature\AssetManagement;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\AssetManagement\Contracts\AssetLifecycleServiceInterface;
@@ -25,6 +26,8 @@ use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

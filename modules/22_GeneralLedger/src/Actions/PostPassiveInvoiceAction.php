@@ -7,7 +7,8 @@ namespace Modules\GeneralLedger\Actions;
 use App\Models\PassiveInvoice;
 use Carbon\CarbonImmutable;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
-use InvalidArgumentException;
+use Illuminate\Support\Facades\DB;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
@@ -25,7 +26,22 @@ final readonly class PostPassiveInvoiceAction
     ) {}
 
     /**
-     * @throws InvalidArgumentException when the invoice is in a foreign currency and states no exchange rate
+     * Stores a received document and posts it, both or neither.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    public function register(array $attributes): PassiveInvoice
+    {
+        return DB::transaction(function () use ($attributes): PassiveInvoice {
+            $invoice = PassiveInvoice::create($attributes);
+            $this->execute($invoice);
+
+            return $invoice;
+        });
+    }
+
+    /**
+     * @throws LedgerPostingException when the invoice is in a foreign currency and states no exchange rate
      */
     public function execute(PassiveInvoice $invoice): void
     {
@@ -47,7 +63,7 @@ final readonly class PostPassiveInvoiceAction
         $accountingCurrency = TenantAccountingCurrency::of($tenantId);
 
         if ($currency !== $accountingCurrency && $invoice->exchange_rate === null) {
-            throw new InvalidArgumentException("Supplier invoice {$invoice->invoice_number} is in {$currency}: state the exchange rate to {$accountingCurrency} to register it.");
+            throw new LedgerPostingException("Supplier invoice {$invoice->invoice_number} is in {$currency}: state the exchange rate to {$accountingCurrency} to register it.");
         }
 
         $gross = abs((float) $invoice->total_amount);

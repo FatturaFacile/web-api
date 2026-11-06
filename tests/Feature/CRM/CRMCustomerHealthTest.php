@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Models\TransactionalOutbox;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\CRM\Contracts\CustomerHealthServiceInterface;
 use Modules\CRM\DTOs\EvaluateHealthDTO;
@@ -15,7 +16,10 @@ use Modules\CRM\Models\Account;
 use Modules\CRM\Models\Activity;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Invoicing\Events\InvoicePostedEvent;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(
@@ -127,6 +131,8 @@ test('detects high churn risk when customer is inactive and has high overdue rec
 });
 
 test('recalculates health when invoice is posted via InvoicePostedEvent', function (): void {
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) date('Y'));
+
     $event = new InvoicePostedEvent(
         invoiceId: (string) Str::uuid7(),
         invoiceNumber: 'INV-CRM-001',

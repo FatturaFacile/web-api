@@ -7,11 +7,14 @@ namespace Tests\Feature\AssetManagement;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
 use Modules\AssetManagement\DTOs\RunDepreciationDTO;
 use Modules\AssetManagement\Models\AssetCategory;
 use Modules\AssetManagement\Models\FixedAsset;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

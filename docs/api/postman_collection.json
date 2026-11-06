@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "0a5852fe-d42b-4884-af34-f9063d76cd44",
+        "_postman_id": "69d08146-aef3-486a-ae72-91f6de619421",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1374,7 +1374,7 @@
                         "description": "Store a newly created invoice with validated items and tax computations",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"invoice_number\": \"string\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5\n        }\n    ]\n}",
+                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"invoice_number\": \"string\",\n    \"related_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2572,7 +2572,7 @@
                         "description": "Scan & decode raw Swiss QR-Bill text payload into a passive invoice",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"qr_payload\": \"string\"\n}",
+                            "raw": "{\n    \"qr_payload\": \"string\",\n    \"total_tax\": 1.5,\n    \"exchange_rate\": 1.5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -2582,7 +2582,7 @@
                     }
                 },
                 {
-                    "name": "Export payment orders to ISO 20022 pain.001.001.03 (SEPA/Swiss Credit Transfer)",
+                    "name": "Export supplier invoices to an ISO 20022 pain.001 file through Treasury",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -2613,10 +2613,10 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Export payment orders to ISO 20022 pain.001.001.03 (SEPA/Swiss Credit Transfer)",
+                        "description": "Export supplier invoices to an ISO 20022 pain.001 file through Treasury",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"invoice_ids\": [\n        \"string\"\n    ],\n    \"format\": \"sepa_pain_001_it\",\n    \"execution_date\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "raw": "{\n    \"invoice_ids\": [\n        \"string\"\n    ],\n    \"format\": \"sepa_pain_001_it\",\n    \"execution_date\": \"2026-01-31T12:00:00+00:00\",\n    \"bank_account_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -14411,6 +14411,158 @@
                     }
                 },
                 {
+                    "name": "Returns the payroll accounts of the active tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/payroll-settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "payroll-settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Returns the payroll accounts of the active tenant"
+                    }
+                },
+                {
+                    "name": "Updates the payroll accounts of the active tenant",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/payroll-settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "payroll-settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Updates the payroll accounts of the active tenant",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"salary_expense_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"employer_cost_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"expense_allowance_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"employee_payable_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"social_payable_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"tax_payable_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"non_cash_benefit_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"rounding_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"wage_type_accounts\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Lists the payroll runs and their state towards the ledger",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/payroll-postings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "payroll-postings"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Lists the payroll runs and their state towards the ledger"
+                    }
+                },
+                {
+                    "name": "Posts a payroll run that was waiting",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/payroll-postings/:runId/post",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "payroll-postings",
+                                ":runId",
+                                "post"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "runId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Posts a payroll run that was waiting"
+                    }
+                },
+                {
                     "name": "Returns the paginated list of reconciliations of the active tenant",
                     "request": {
                         "method": "GET",
@@ -14614,6 +14766,95 @@
                     }
                 },
                 {
+                    "name": "Lists the VAT settlements of the active tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Lists the VAT settlements of the active tenant"
+                    }
+                },
+                {
+                    "name": "Calculates the VAT settlement of a fiscal period, or of a month, quarter or half year",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/calculate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements",
+                                "calculate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Calculates the VAT settlement of a fiscal period, or of a month, quarter or half year",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fiscal_period_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"period_type\": \"monthly\",\n    \"year\": 1,\n    \"period\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Returns a VAT settlement of the active tenant",
                     "request": {
                         "method": "GET",
@@ -14649,38 +14890,6 @@
                             ]
                         },
                         "description": "Returns a VAT settlement of the active tenant"
-                    }
-                },
-                {
-                    "name": "Calculates the VAT settlement of the fiscal period",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/calculate",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "general-ledger",
-                                "tax-settlements",
-                                "calculate"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "Calculates the VAT settlement of the fiscal period"
                     }
                 },
                 {
@@ -14720,6 +14929,307 @@
                             ]
                         },
                         "description": "Posts the journal entry of a VAT settlement and returns it"
+                    }
+                },
+                {
+                    "name": "Records the payment of a posted VAT settlement",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/:id/pay",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements",
+                                ":id",
+                                "pay"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Records the payment of a posted VAT settlement",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"payment_date\": \"2026-01-31\",\n    \"bank_account_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Downloads the LIPE XML file of an Italian VAT settlement",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/:id/lipe",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements",
+                                ":id",
+                                "lipe"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Downloads the LIPE XML file of an Italian VAT settlement"
+                    }
+                },
+                {
+                    "name": "Returns the F24 data of an Italian VAT settlement",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/:id/f24",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements",
+                                ":id",
+                                "f24"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Returns the F24 data of an Italian VAT settlement"
+                    }
+                },
+                {
+                    "name": "Downloads the Swiss MWST statement of a VAT settlement",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/:id/statement",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements",
+                                ":id",
+                                "statement"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Downloads the Swiss MWST statement of a VAT settlement"
+                    }
+                },
+                {
+                    "name": "Returns the sales or purchases VAT register of a date range",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/vat-registers/:type?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "vat-registers",
+                                ":type"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "format",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "type",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Returns the sales or purchases VAT register of a date range"
+                    }
+                },
+                {
+                    "name": "Returns the VAT settings of the active tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Returns the VAT settings of the active tenant"
+                    }
+                },
+                {
+                    "name": "Updates the VAT settings of the active tenant",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Updates the VAT settings of the active tenant",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"periodicity\": \"monthly\",\n    \"output_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"input_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"settlement_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"interest_expense_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"declarant_tax_code\": \"string\",\n    \"declarant_role_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 }
             ]
@@ -16715,7 +17225,7 @@
                         "description": "",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"mode\": \"Detailed\",\n    \"agreement_date\": \"2026-01-31\",\n    \"legal_max_weekly_hours\": \"45\",\n    \"weekly_hours\": 1.5,\n    \"work_days_per_week\": 1,\n    \"hire_date\": \"2026-01-31\",\n    \"termination_date\": \"2026-01-31\",\n    \"canton\": \"AG\",\n    \"reason\": \"string\"\n}",
+                            "raw": "{\n    \"mode\": \"Detailed\",\n    \"agreement_date\": \"2026-01-31\",\n    \"agreement_valid_from\": \"2026-01-31\",\n    \"agreement_valid_to\": \"2026-01-31\",\n    \"agreement_basis\": \"collective\",\n    \"autonomy_percent\": 1,\n    \"collective_agreement_reference\": \"string\",\n    \"annual_gross_salary\": 1.5,\n    \"legal_max_weekly_hours\": \"45\",\n    \"weekly_hours\": 1.5,\n    \"work_days_per_week\": 1,\n    \"hire_date\": \"2026-01-31\",\n    \"termination_date\": \"2026-01-31\",\n    \"canton\": \"AG\",\n    \"reason\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -20149,6 +20659,2579 @@
                             ]
                         },
                         "description": "Records machine downtime on a shop floor execution"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Payroll",
+            "item": [
+                {
+                    "name": "List collective agreements",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List collective agreements"
+                    }
+                },
+                {
+                    "name": "Create a collective agreement",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Create a collective agreement",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"weekly_hours\": 1.5,\n    \"installments\": 1,\n    \"fourteenth_month\": 1,\n    \"employer_inps_rate_percent\": 1.5,\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Show a collective agreement",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show a collective agreement"
+                    }
+                },
+                {
+                    "name": "Change a collective agreement",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change a collective agreement",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"weekly_hours\": 1.5,\n    \"installments\": 1,\n    \"fourteenth_month\": 1,\n    \"employer_inps_rate_percent\": 1.5,\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete a collective agreement",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete a collective agreement"
+                    }
+                },
+                {
+                    "name": "Add a level",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements/:id/levels",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements",
+                                ":id",
+                                "levels"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Add a level",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"level\": \"string\",\n    \"description\": \"string\",\n    \"monthly_minimum\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Change a level",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements/:id/levels/:levelId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements",
+                                ":id",
+                                "levels",
+                                ":levelId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "levelId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change a level",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"level\": \"string\",\n    \"description\": \"string\",\n    \"monthly_minimum\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete a level",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/collective-agreements/:id/levels/:levelId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "collective-agreements",
+                                ":id",
+                                "levels",
+                                ":levelId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "levelId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete a level"
+                    }
+                },
+                {
+                    "name": "List payroll profiles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/employee-profiles",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "employee-profiles"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List payroll profiles"
+                    }
+                },
+                {
+                    "name": "Show the payroll profile of an employee",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/employee-profiles/:employeeId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "employee-profiles",
+                                ":employeeId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "employeeId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show the payroll profile of an employee"
+                    }
+                },
+                {
+                    "name": "Create or change the payroll profile of an employee",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/employee-profiles/:employeeId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "employee-profiles",
+                                ":employeeId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "employeeId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Create or change the payroll profile of an employee",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"social_security_number\": \"string\",\n    \"iban\": \"string\",\n    \"street\": \"string\",\n    \"house_number\": \"string\",\n    \"postal_code\": \"string\",\n    \"city\": \"string\",\n    \"gender\": \"M\",\n    \"residence_permit\": \"CH\",\n    \"residence_country\": \"string\",\n    \"residence_canton\": \"AG\",\n    \"work_canton\": \"AG\",\n    \"civil_status\": \"string\",\n    \"church_tax\": false,\n    \"pay_type\": \"monthly\",\n    \"salary_installments_per_year\": 1,\n    \"hourly_wage\": 1.5,\n    \"weekly_hours\": 1.5,\n    \"holiday_weeks\": 1,\n    \"is_fixed_term_contract\": false,\n    \"is_withholding_tax_subject\": false,\n    \"withholding_tax_code\": \"string\",\n    \"withholding_tax_rate_percent\": 1.5,\n    \"non_occupational_accident_rate_percent\": 1.5,\n    \"occupational_accident_rate_percent\": 1.5,\n    \"daily_sickness_rate_percent\": 1.5,\n    \"family_allowance_fund_rate_percent\": 1.5,\n    \"pension_fund_employee_rate_percent\": 1.5,\n    \"regional_surcharge_rate_percent\": 1.5,\n    \"municipal_surcharge_rate_percent\": 1.5,\n    \"collective_agreement_code\": \"string\",\n    \"contract_level\": \"string\",\n    \"inps_qualification\": \"string\",\n    \"region_code\": \"string\",\n    \"municipality_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "List variable inputs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/inputs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "inputs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List variable inputs"
+                    }
+                },
+                {
+                    "name": "Add a variable input",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/inputs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "inputs"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Add a variable input",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"wage_type_code\": \"string\",\n    \"quantity\": 1.5,\n    \"rate\": 1.5,\n    \"amount\": 1.5,\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Change a variable input",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/inputs/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "inputs",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change a variable input",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"wage_type_code\": \"string\",\n    \"quantity\": 1.5,\n    \"rate\": 1.5,\n    \"amount\": 1.5,\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete a variable input",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/inputs/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "inputs",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete a variable input"
+                    }
+                },
+                {
+                    "name": "List absences",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/absences",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "absences"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List absences"
+                    }
+                },
+                {
+                    "name": "Add an absence",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/absences",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "absences"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Add an absence",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"absence_type\": \"Sickness\",\n    \"start_date\": \"2026-01-31\",\n    \"end_date\": \"2026-01-31\",\n    \"percent\": 1.5,\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Change an absence",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/absences/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "absences",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change an absence",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"absence_type\": \"Sickness\",\n    \"start_date\": \"2026-01-31\",\n    \"end_date\": \"2026-01-31\",\n    \"percent\": 1.5,\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete an absence",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/absences/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "absences",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete an absence"
+                    }
+                },
+                {
+                    "name": "List children",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/children",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "children"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List children"
+                    }
+                },
+                {
+                    "name": "Add a child",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/children",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "children"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Add a child",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"date_of_birth\": \"2026-01-31\",\n    \"in_education\": false,\n    \"education_end_date\": \"2026-01-31\",\n    \"allowance_eligible\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Change a child",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/children/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "children",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change a child",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"date_of_birth\": \"2026-01-31\",\n    \"in_education\": false,\n    \"education_end_date\": \"2026-01-31\",\n    \"allowance_eligible\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete a child",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/children/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "children",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete a child"
+                    }
+                },
+                {
+                    "name": "Swiss annual salary declaration",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/exports/salary-declaration?year=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "exports",
+                                "salary-declaration"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Swiss annual salary declaration"
+                    }
+                },
+                {
+                    "name": "Italian payroll F24",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/exports/f24?year=&month=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "exports",
+                                "f24"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Italian payroll F24"
+                    }
+                },
+                {
+                    "name": "UniEmens data of a month",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/exports/uniemens?year=&month=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "exports",
+                                "uniemens"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "UniEmens data of a month"
+                    }
+                },
+                {
+                    "name": "Certificazione Unica data of a year",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/exports/cu?year=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "exports",
+                                "cu"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Certificazione Unica data of a year"
+                    }
+                },
+                {
+                    "name": "List annual parameters",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/annual-parameters",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "annual-parameters"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List annual parameters"
+                    }
+                },
+                {
+                    "name": "Save the parameters of a year for the company",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/annual-parameters/:country/:year",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "annual-parameters",
+                                ":country",
+                                ":year"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "country",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Save the parameters of a year for the company",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"parameters\": [\n        1.5\n    ],\n    \"legal_reference\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Summarize the imported tariffs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/withholding-tax-tariffs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "withholding-tax-tariffs"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Summarize the imported tariffs"
+                    }
+                },
+                {
+                    "name": "Import an ESTV tariff file for the company",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/withholding-tax-tariffs/import",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "withholding-tax-tariffs",
+                                "import"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Import an ESTV tariff file for the company",
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": []
+                                },
+                                {
+                                    "key": "content",
+                                    "type": "text",
+                                    "value": "string"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List family allowances",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/family-allowance-rates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "family-allowance-rates"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List family allowances"
+                    }
+                },
+                {
+                    "name": "Add the family allowances of a canton for the company",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/family-allowance-rates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "family-allowance-rates"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Add the family allowances of a canton for the company",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"canton\": \"AG\",\n    \"valid_from\": \"2026-01-31\",\n    \"child_allowance\": 1.5,\n    \"education_allowance\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Change the family allowances of the company",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/family-allowance-rates/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "family-allowance-rates",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change the family allowances of the company",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"canton\": \"AG\",\n    \"valid_from\": \"2026-01-31\",\n    \"child_allowance\": 1.5,\n    \"education_allowance\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete the family allowances of the company",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/family-allowance-rates/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "family-allowance-rates",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete the family allowances of the company"
+                    }
+                },
+                {
+                    "name": "List the monthly runs of the company",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List the monthly runs of the company"
+                    }
+                },
+                {
+                    "name": "Calculate or recalculate the run of a month",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/calculate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                "calculate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Calculate or recalculate the run of a month",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"payment_date\": \"2026-01-31\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Run the monthly engine without saving anything",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/simulate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                "simulate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Run the monthly engine without saving anything",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Estimate the monthly pay of an employee from the annual salary",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/preview",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                "preview"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Estimate the monthly pay of an employee from the annual salary",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_month\": \"2026-01-31\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Show a run with its payslips and its history",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show a run with its payslips and its history"
+                    }
+                },
+                {
+                    "name": "Close a run",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/:id/finalize",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                ":id",
+                                "finalize"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Close a run"
+                    }
+                },
+                {
+                    "name": "Reopen the latest closed run",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/:id/reopen",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                ":id",
+                                "reopen"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Reopen the latest closed run",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Print the labour book of a run",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/:id/labour-book",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                ":id",
+                                "labour-book"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Print the labour book of a run"
+                    }
+                },
+                {
+                    "name": "Create what a Swiss company needs to start",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/setup",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "setup"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Create what a Swiss company needs to start"
+                    }
+                },
+                {
+                    "name": "Show the Swiss settings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/settings/swiss",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "settings",
+                                "swiss"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Show the Swiss settings"
+                    }
+                },
+                {
+                    "name": "Change the Swiss settings",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/settings/swiss",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "settings",
+                                "swiss"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Change the Swiss settings",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"ahv_employee_rate_percent\": 1.5,\n    \"ahv_employer_rate_percent\": 1.5,\n    \"ahv_administration_cost_percent\": 1.5,\n    \"alv_employee_rate_percent\": 1.5,\n    \"alv_employer_rate_percent\": 1.5,\n    \"alv_annual_ceiling\": 1.5,\n    \"uvg_annual_ceiling\": 1.5,\n    \"nbu_employee_rate_percent\": 1.5,\n    \"bu_employer_rate_percent\": 1.5,\n    \"ktg_employee_rate_percent\": 1.5,\n    \"ktg_employer_rate_percent\": 1.5,\n    \"fak_employer_rate_percent\": 1.5,\n    \"bvg_employer_share_percent\": 1.5,\n    \"bvg_risk_rate_percent\": 1.5,\n    \"pensioner_allowance_monthly\": 1.5,\n    \"default_work_canton\": \"AG\",\n    \"ahv_member_number\": \"string\",\n    \"uvg_insurer\": \"string\",\n    \"bvg_insurer\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Show the INPS and INAIL settings",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/settings/italian",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "settings",
+                                "italian"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Show the INPS and INAIL settings"
+                    }
+                },
+                {
+                    "name": "Change the INPS and INAIL settings",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/settings/italian",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "settings",
+                                "italian"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Change the INPS and INAIL settings",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"inps_company_number\": \"string\",\n    \"inps_office_code\": \"string\",\n    \"inail_code\": \"string\",\n    \"employee_inps_rate_percent\": 1.5,\n    \"employer_inps_rate_percent\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "List payslips",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/payslips",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "payslips"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List payslips"
+                    }
+                },
+                {
+                    "name": "Show a payslip with its lines",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/payslips/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "payslips",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show a payslip with its lines"
+                    }
+                },
+                {
+                    "name": "Print a payslip",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/payslips/:id/pdf",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "payslips",
+                                ":id",
+                                "pdf"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Print a payslip"
+                    }
+                },
+                {
+                    "name": "List salary certificates",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/salary-certificates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "salary-certificates"
+                            ],
+                            "query": [
+                                {
+                                    "key": "employee_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List salary certificates"
+                    }
+                },
+                {
+                    "name": "Generate the certificates of a year from the closed runs",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/salary-certificates/generate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "salary-certificates",
+                                "generate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Generate the certificates of a year from the closed runs",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Show a certificate",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/salary-certificates/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "salary-certificates",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show a certificate"
+                    }
+                },
+                {
+                    "name": "Print a certificate",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/salary-certificates/:id/pdf",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "salary-certificates",
+                                ":id",
+                                "pdf"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Print a certificate"
+                    }
+                },
+                {
+                    "name": "List wage types",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/wage-types",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "wage-types"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List wage types"
+                    }
+                },
+                {
+                    "name": "Create a wage type",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/wage-types",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "wage-types"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Create a wage type",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"kind\": \"Earning\",\n    \"subject_to_ahv\": false,\n    \"subject_to_alv\": false,\n    \"subject_to_uvg\": false,\n    \"subject_to_ktg\": false,\n    \"subject_to_bvg\": false,\n    \"subject_to_withholding_tax\": false,\n    \"is_irregular\": false,\n    \"certificate_box\": \"string\",\n    \"sort_order\": 1,\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Change a wage type",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/wage-types/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "wage-types",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change a wage type",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"kind\": \"Earning\",\n    \"subject_to_ahv\": false,\n    \"subject_to_alv\": false,\n    \"subject_to_uvg\": false,\n    \"subject_to_ktg\": false,\n    \"subject_to_bvg\": false,\n    \"subject_to_withholding_tax\": false,\n    \"is_irregular\": false,\n    \"certificate_box\": \"string\",\n    \"sort_order\": 1,\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Delete a wage type",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/wage-types/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "wage-types",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Delete a wage type"
                     }
                 }
             ]
@@ -28138,7 +31221,85 @@
                     }
                 },
                 {
-                    "name": "Transmits a payment batch to the banking network with the chosen protocol and returns the execution details",
+                    "name": "Records the approval of the authenticated signatory",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/treasury/payment-batches/:id/approve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "treasury",
+                                "payment-batches",
+                                ":id",
+                                "approve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Records the approval of the authenticated signatory"
+                    }
+                },
+                {
+                    "name": "Generates and freezes the pain.001 file of an approved batch",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/treasury/payment-batches/:id/export",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "treasury",
+                                "payment-batches",
+                                ":id",
+                                "export"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Generates and freezes the pain.001 file of an approved batch"
+                    }
+                },
+                {
+                    "name": "POST /v1/treasury/payment-batches/:id/execute",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -28173,7 +31334,111 @@
                                 }
                             ]
                         },
-                        "description": "Transmits a payment batch to the banking network with the chosen protocol and returns the execution details"
+                        "description": "Use POST /api/v1/treasury/payment-batches/{id}/export: this route never contacted the bank."
+                    }
+                },
+                {
+                    "name": "Records the manual confirmation of the bank outcome",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/treasury/payment-batches/:id/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "treasury",
+                                "payment-batches",
+                                ":id",
+                                "confirm"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Records the manual confirmation of the bank outcome",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"bank_reference\": \"string\",\n    \"value_date\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Applies the pain.002 status report of the bank",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/treasury/payment-batches/:id/pain002",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "treasury",
+                                "payment-batches",
+                                ":id",
+                                "pain002"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Applies the pain.002 status report of the bank",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"xml\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {

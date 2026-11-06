@@ -8,11 +8,14 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Models\TransactionalOutbox;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\CRM\Contracts\ActivityServiceInterface;
 use Modules\CRM\DTOs\CreateActivityDTO;
 use Modules\CRM\Models\Account;
 use Modules\CRM\Models\Activity;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

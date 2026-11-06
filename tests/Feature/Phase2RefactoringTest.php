@@ -14,6 +14,7 @@ use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Listeners\ProcurementAccountingListener;
 use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
 
 uses(DatabaseTransactions::class);
@@ -52,7 +53,7 @@ test('procurement accounting listener uses dynamic commitment amount instead of 
         ->andReturn($fakeEntry);
 
     // Mock resolveFiscalPeriod & resolveAccount in listener if needed, or create chart of account & fiscal period
-    $listener = new ProcurementAccountingListener($postingServiceMock);
+    $listener = new ProcurementAccountingListener($postingServiceMock, app(FiscalPeriodResolver::class));
 
     // Create DB dependencies for listener
     DB::table('fiscal_years')->insert([

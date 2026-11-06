@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Modules\AssetManagement\Events\AssetAssignedEvent;
 use Modules\AssetManagement\Events\AssetDisposedEvent;
 use Modules\AssetManagement\Events\AssetTransferredEvent;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\LeaveBalance;
 use Modules\HumanResources\Models\LeaveRequest;
@@ -144,6 +145,7 @@ test('WorkflowInstanceCompletedEvent and WorkflowInstanceRejectedEvent unlock an
 test('Projects ProjectClosureReadyEvent finalizes approved project timesheets to posted_to_project', function () {
     $tenant = Tenant::factory()->create();
     app(TenantContext::class)->setTenant($tenant);
+    app(OpenFiscalYearAction::class)->execute((string) $tenant->id, (int) date('Y'));
 
     $employee = Employee::factory()->active()->create(['tenant_id' => $tenant->id]);
     $projectId = (string) Str::uuid7();

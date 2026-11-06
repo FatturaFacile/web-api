@@ -39,7 +39,9 @@ final class EnsureModuleAccess
         $tenantId = $this->tenantContext->getTenantId();
         $membership = $user !== null && $tenantId !== null ? $user->tenants()->where('tenants.id', $tenantId)->first()?->pivot : null;
 
-        if ($membership !== null && $this->isAllowed((string) $membership->role, $membership->permissions, $allowedRoles, "{$module}.{$access}")) {
+        $acceptedPermissions = ["{$module}.{$access}", '*', ...config("permissions.modules.{$module}.grants.{$access}", [])];
+
+        if ($membership !== null && $this->isAllowed((string) $membership->role, $membership->permissions, $allowedRoles, $acceptedPermissions)) {
             return $next($request);
         }
 
@@ -52,8 +54,9 @@ final class EnsureModuleAccess
 
     /**
      * @param  array<int, string>  $allowedRoles
+     * @param  array<int, string>  $acceptedPermissions
      */
-    private function isAllowed(string $role, mixed $permissions, array $allowedRoles, string $permission): bool
+    private function isAllowed(string $role, mixed $permissions, array $allowedRoles, array $acceptedPermissions): bool
     {
         if (in_array('*', $allowedRoles, true) || in_array($role, $allowedRoles, true)) {
             return true;
@@ -61,6 +64,6 @@ final class EnsureModuleAccess
 
         $granted = is_string($permissions) ? json_decode($permissions, true) : $permissions;
 
-        return is_array($granted) && (in_array($permission, $granted, true) || in_array('*', $granted, true));
+        return is_array($granted) && array_intersect($acceptedPermissions, $granted) !== [];
     }
 }

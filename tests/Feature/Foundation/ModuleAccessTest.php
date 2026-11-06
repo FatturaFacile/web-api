@@ -72,6 +72,16 @@ test('a single permission on the membership opens one module only', function ():
     $this->getJson('/api/v1/hr/employees')->assertForbidden();
 });
 
+test('a ledger grant opens only the access it names', function (string $grant, bool $canWrite): void {
+    moduleUser('member', [$grant]);
+
+    expect($this->getJson('/api/v1/general-ledger/tax-settings')->status())->not->toBe(403)
+        ->and($this->putJson('/api/v1/general-ledger/tax-settings', [])->status() !== 403)->toBe($canWrite);
+})->with([
+    'every ledger action' => ['gl.*', true],
+    'posting only' => ['gl.journals.post', false],
+]);
+
 test('employees keep their own time records without HR rights', function (): void {
     moduleUser('member');
 

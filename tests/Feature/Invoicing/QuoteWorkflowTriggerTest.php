@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Models\TransactionalOutbox;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;
 use Modules\Invoicing\Listeners\WorkflowApprovalInvoicingListener;
@@ -18,6 +19,8 @@ use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Models\WorkflowDefinition;
 use Modules\Workflow\Models\WorkflowNode;
 use Modules\Workflow\Models\WorkflowTransition;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

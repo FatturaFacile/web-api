@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Models\TransactionalOutbox;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\CRM\Contracts\OpportunityServiceInterface;
 use Modules\CRM\DTOs\CreateOpportunityDTO;
@@ -18,6 +19,8 @@ use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Projects\Models\Project;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

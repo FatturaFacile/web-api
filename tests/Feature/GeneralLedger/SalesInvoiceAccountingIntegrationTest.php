@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Models\TransactionalOutbox;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Listeners\CreditNoteAccountingListener;
 use Modules\GeneralLedger\Listeners\InvoiceAccountingListener;
@@ -18,6 +19,8 @@ use Modules\GeneralLedger\Models\JournalLine;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Models\SalesInvoice;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

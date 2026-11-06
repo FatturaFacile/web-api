@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Enterprise\EventBus\Models\TransactionalOutbox;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\AssetManagement\Contracts\AssetLifecycleServiceInterface;
 use Modules\AssetManagement\DTOs\CapitalizeAssetDTO;
@@ -19,6 +20,8 @@ use Modules\AssetManagement\DTOs\ValuateAssetDTO;
 use Modules\AssetManagement\Models\AssetCategory;
 use Modules\AssetManagement\Models\AssetLocation;
 use Modules\GeneralLedger\Models\JournalEntry;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

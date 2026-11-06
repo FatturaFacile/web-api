@@ -6,11 +6,14 @@ use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Models\CustomerLedgerEntry;
 use Modules\Invoicing\Models\SalesInvoice;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

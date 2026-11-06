@@ -6,9 +6,12 @@ use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;
 use Modules\Invoicing\Models\SalesQuote;
+
+uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::firstOrCreate(

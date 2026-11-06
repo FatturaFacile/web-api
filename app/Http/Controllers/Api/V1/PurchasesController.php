@@ -15,7 +15,6 @@ use App\Services\Tenancy\TenantContext;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
 use Modules\Treasury\Actions\ExportSupplierPaymentsAction;
 use OpenApi\Attributes as OA;
@@ -28,7 +27,8 @@ class PurchasesController extends Controller
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly QrBillGeneratorService $qrBillGenerator,
-        private readonly ExportSupplierPaymentsAction $paymentFiles
+        private readonly ExportSupplierPaymentsAction $paymentFiles,
+        private readonly PostPassiveInvoiceAction $passiveInvoices
     ) {}
 
     #[OA\Get(
@@ -174,25 +174,19 @@ class PurchasesController extends Controller
             $totalTax += (float) $taxNode->nodeValue;
         }
 
-        $passiveInvoice = DB::transaction(function () use ($supplier, $invoiceNumber, $invoiceDate, $totalAmount, $totalTax, $currency, $content): PassiveInvoice {
-            $invoice = PassiveInvoice::create([
-                'supplier_id' => $supplier->id,
-                'invoice_number' => $invoiceNumber,
-                'date' => $invoiceDate,
-                'total_amount' => $totalAmount,
-                'total_net' => round($totalAmount - $totalTax, 2),
-                'total_tax' => round($totalTax, 2),
-                'currency' => $currency,
-                'payment_status' => 'unpaid',
-                'sdi_lot_id' => 'SDI-IMP-'.now()->timestamp,
-                'is_reconciled' => false,
-                'xml_payload' => $content,
-            ]);
-
-            app(PostPassiveInvoiceAction::class)->execute($invoice);
-
-            return $invoice;
-        });
+        $passiveInvoice = $this->passiveInvoices->register([
+            'supplier_id' => $supplier->id,
+            'invoice_number' => $invoiceNumber,
+            'date' => $invoiceDate,
+            'total_amount' => $totalAmount,
+            'total_net' => round($totalAmount - $totalTax, 2),
+            'total_tax' => round($totalTax, 2),
+            'currency' => $currency,
+            'payment_status' => 'unpaid',
+            'sdi_lot_id' => 'SDI-IMP-'.now()->timestamp,
+            'is_reconciled' => false,
+            'xml_payload' => $content,
+        ]);
 
         return $this->successResponse(
             data: [
@@ -267,25 +261,19 @@ class PurchasesController extends Controller
 
         $totalTax = isset($validated['total_tax']) ? round((float) $validated['total_tax'], 2) : 0.0;
 
-        $passiveInvoice = DB::transaction(function () use ($supplier, $scorRef, $amount, $currency, $totalTax, $validated): PassiveInvoice {
-            $invoice = PassiveInvoice::create([
-                'supplier_id' => $supplier->id,
-                'invoice_number' => 'QR-'.($scorRef !== '' ? $scorRef : strtoupper(substr(hash('sha256', $validated['qr_payload']), 0, 16))),
-                'date' => now()->toDateString(),
-                'total_amount' => $amount,
-                'total_net' => round($amount - $totalTax, 2),
-                'total_tax' => $totalTax,
-                'exchange_rate' => $validated['exchange_rate'] ?? null,
-                'currency' => $currency,
-                'payment_status' => 'unpaid',
-                'is_reconciled' => false,
-                'qr_raw_payload' => $validated['qr_payload'],
-            ]);
-
-            app(PostPassiveInvoiceAction::class)->execute($invoice);
-
-            return $invoice;
-        });
+        $passiveInvoice = $this->passiveInvoices->register([
+            'supplier_id' => $supplier->id,
+            'invoice_number' => 'QR-'.($scorRef !== '' ? $scorRef : strtoupper(substr(hash('sha256', $validated['qr_payload']), 0, 16))),
+            'date' => now()->toDateString(),
+            'total_amount' => $amount,
+            'total_net' => round($amount - $totalTax, 2),
+            'total_tax' => $totalTax,
+            'exchange_rate' => $validated['exchange_rate'] ?? null,
+            'currency' => $currency,
+            'payment_status' => 'unpaid',
+            'is_reconciled' => false,
+            'qr_raw_payload' => $validated['qr_payload'],
+        ]);
 
         return $this->successResponse(
             data: [

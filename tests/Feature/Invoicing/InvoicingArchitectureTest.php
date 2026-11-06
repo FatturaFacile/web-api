@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
@@ -57,6 +58,8 @@ use Modules\Invoicing\Services\InvoicingService;
 use Modules\Invoicing\Services\PricingAndDiscountService;
 use Modules\Invoicing\Services\SalesOrderService;
 use Modules\Invoicing\Services\SalesQuoteService;
+
+uses(RefreshDatabase::class);
 
 test('all invoicing models extend BaseEnterpriseModel', function (): void {
     $models = [
