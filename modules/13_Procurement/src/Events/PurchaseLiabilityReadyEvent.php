@@ -25,7 +25,9 @@ final readonly class PurchaseLiabilityReadyEvent implements DomainEventInterface
         public ?string $documentDate = null,
         public ?string $dueDate = null,
         public bool $isCreditNote = false,
-        public float $exchangeRate = 1.0
+        public float $exchangeRate = 1.0,
+        /** @var list<array{account_id: string, amount: float}> Share of the net amount that goes to specific cost accounts */
+        public array $costAllocations = [],
     ) {}
 
     public function getEventId(): string

@@ -14,7 +14,7 @@ use SimpleXMLElement;
 class FatturaPaParser
 {
     /**
-     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string}>}
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, lines: list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string}>}>}
      */
     public function parse(string $xml): array
     {
@@ -58,6 +58,7 @@ class FatturaPaParser
                 'net' => round($net, 2),
                 'tax' => round($tax, 2),
                 'due_date' => $this->value($body, 'DatiPagamento/DettaglioPagamento/DataScadenzaPagamento'),
+                'lines' => $this->lines($body),
             ];
         }
 
@@ -72,6 +73,29 @@ class FatturaPaParser
             'recipient_fiscal_code' => $recipient !== null ? $this->value($recipient, 'CodiceFiscale') : null,
             'documents' => $documents,
         ];
+    }
+
+    /**
+     * @return list<array{line_number: int, description: string, quantity: ?string, unit_of_measure: ?string, unit_price: string, line_total: string, tax_rate: string, vat_nature: ?string}>
+     */
+    private function lines(SimpleXMLElement $body): array
+    {
+        $lines = [];
+
+        foreach ($body->xpath('DatiBeniServizi/DettaglioLinee') ?: [] as $index => $line) {
+            $lines[] = [
+                'line_number' => (int) ($this->value($line, 'NumeroLinea') ?? $index + 1),
+                'description' => $this->value($line, 'Descrizione') ?? '',
+                'quantity' => $this->value($line, 'Quantita'),
+                'unit_of_measure' => $this->value($line, 'UnitaMisura'),
+                'unit_price' => $this->value($line, 'PrezzoUnitario') ?? '0',
+                'line_total' => $this->value($line, 'PrezzoTotale') ?? '0',
+                'tax_rate' => $this->value($line, 'AliquotaIVA') ?? '0',
+                'vat_nature' => $this->value($line, 'Natura'),
+            ];
+        }
+
+        return $lines;
     }
 
     /**

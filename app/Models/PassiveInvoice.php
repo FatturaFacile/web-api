@@ -42,6 +42,8 @@ class PassiveInvoice extends Model
         'total_paid',
         'gl_journal_entry_id',
         'exchange_rate',
+        'cost_account_id',
+        'cost_account_source',
     ];
 
     protected function casts(): array
@@ -64,6 +66,14 @@ class PassiveInvoice extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * @return HasMany<PassiveInvoiceLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PassiveInvoiceLine::class)->orderBy('line_number');
     }
 
     /**

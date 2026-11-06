@@ -85,6 +85,7 @@ final readonly class PostPassiveInvoiceAction
             dueDate: $invoice->due_date !== null ? CarbonImmutable::parse($invoice->due_date)->toDateString() : null,
             isCreditNote: $isCreditNote,
             exchangeRate: (float) ($invoice->exchange_rate ?? 1.0),
+            costAllocations: $this->costAllocations($invoice, $net),
         );
 
         $this->dispatcher->publish($event);
@@ -92,5 +93,42 @@ final readonly class PostPassiveInvoiceAction
 
         $invoice->refresh();
         $this->payments->postWaitingSupplierPayments((string) $invoice->id);
+    }
+
+    /**
+     * The net amount of the document by cost account, from the lines and from the account of the document. Whatever
+     * lines and accounts do not cover stays on the default purchases account.
+     *
+     * @return list<array{account_id: string, amount: float}>
+     */
+    private function costAllocations(PassiveInvoice $invoice, float $net): array
+    {
+        $byAccount = [];
+        $allocated = '0.00';
+
+        foreach ($invoice->lines()->whereNotNull('cost_account_id')->get() as $line) {
+            $account = (string) $line->cost_account_id;
+            $amount = bcadd((string) abs((float) $line->line_total), '0', 2);
+            $byAccount[$account] = bcadd($byAccount[$account] ?? '0.00', $amount, 2);
+            $allocated = bcadd($allocated, $amount, 2);
+        }
+
+        $remaining = bcsub(number_format($net, 2, '.', ''), $allocated, 2);
+
+        if ($invoice->cost_account_id !== null && bccomp($remaining, '0', 2) === 1) {
+            $account = (string) $invoice->cost_account_id;
+            $byAccount[$account] = bcadd($byAccount[$account] ?? '0.00', $remaining, 2);
+            $remaining = '0.00';
+        }
+
+        if (bccomp($remaining, '0', 2) === -1) {
+            return [];
+        }
+
+        return array_map(
+            static fn (string $account, string $amount): array => ['account_id' => $account, 'amount' => (float) $amount],
+            array_keys($byAccount),
+            array_values($byAccount),
+        );
     }
 }
