@@ -82,7 +82,7 @@ test('attachments nested in postacert.eml are found and the envelope files ignor
  */
 function imapConnection(string $script): array
 {
-    $pair = stream_socket_pair(STREAM_PF_INET, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
+    $pair = stream_socket_pair(STREAM_PF_UNIX, STREAM_SOCK_STREAM, STREAM_IPPROTO_IP);
     fwrite($pair[1], $script);
 
     return [$pair[0], $pair[1]];
@@ -109,7 +109,12 @@ test('the IMAP client lists new UIDs and downloads a message untouched', functio
 });
 
 test('a refused login stops the client', function (): void {
-    [$client] = imapConnection("* OK ready\r\nA1 NO invalid credentials\r\n");
+    // Keep the server side open for the whole test: if it were garbage collected, the client write would hit a broken pipe.
+    [$client, $server] = imapConnection("* OK ready\r\nA1 NO invalid credentials\r\n");
 
-    NativeImapMailbox::login($client, 'user', 'wrong');
+    try {
+        NativeImapMailbox::login($client, 'user', 'wrong');
+    } finally {
+        fclose($server);
+    }
 })->throws(SdiProviderException::class);
