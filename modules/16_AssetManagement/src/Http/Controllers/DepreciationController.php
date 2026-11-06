@@ -15,6 +15,7 @@ use Modules\AssetManagement\Http\Resources\DepreciationScheduleResource;
 use Modules\AssetManagement\Models\DepreciationRun;
 use Modules\AssetManagement\Models\DepreciationSchedule;
 use Modules\AssetManagement\Models\FixedAsset;
+use OpenApi\Attributes as OA;
 
 final class DepreciationController extends Controller
 {
@@ -23,6 +24,21 @@ final class DepreciationController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated depreciation runs of the active tenant, latest first.
+     */
+    #[OA\Get(
+        path: '/api/v1/eam/depreciation/runs',
+        operationId: 'getIndexRunsEamDepreciationRuns',
+        description: 'Returns the paginated depreciation runs of the active tenant, latest first.',
+        summary: 'List depreciation runs',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Depreciation'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationRunResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function indexRuns(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -39,6 +55,23 @@ final class DepreciationController extends Controller
         ]);
     }
 
+    /**
+     * Executes a depreciation run for the given period.
+     */
+    #[OA\Post(
+        path: '/api/v1/eam/depreciation/runs',
+        operationId: 'executeRunEamDepreciationRuns',
+        description: 'Executes a depreciation run for the given period.',
+        summary: 'Execute depreciation run',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Depreciation'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AssetManagementRunDepreciationRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Run created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationRunResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function executeRun(RunDepreciationRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -58,6 +91,25 @@ final class DepreciationController extends Controller
         return response()->json(['data' => new DepreciationRunResource($run)], 201);
     }
 
+    /**
+     * Returns a depreciation run of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/eam/depreciation/runs/{id}',
+        operationId: 'getShowRunEamDepreciationRuns',
+        description: 'Returns a depreciation run of the active tenant.',
+        summary: 'Get depreciation run',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Depreciation'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the run', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationRunResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function showRun(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -66,6 +118,25 @@ final class DepreciationController extends Controller
         return response()->json(['data' => new DepreciationRunResource($run)]);
     }
 
+    /**
+     * Returns the depreciation schedules of a fixed asset ordered by period.
+     */
+    #[OA\Get(
+        path: '/api/v1/eam/assets/{id}/depreciation-schedules',
+        operationId: 'getAssetSchedulesEamAsset',
+        description: 'Returns the depreciation schedules of a fixed asset ordered by period.',
+        summary: 'List asset depreciation schedules',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Assets'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the asset', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationScheduleResource'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function assetSchedules(string $assetId): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();

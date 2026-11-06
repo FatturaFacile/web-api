@@ -8,7 +8,9 @@ use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 trait BelongsToTenant
 {
@@ -25,6 +27,24 @@ trait BelongsToTenant
                 $model->tenant_id = $tenantContext->getTenantId();
             }
         });
+
+        static::updating(static fn (Model $model) => static::assertNotGenericRecord($model));
+        static::deleting(static fn (Model $model) => static::assertNotGenericRecord($model));
+    }
+
+    /**
+     * Generic records (tenant_id null) are shared by every tenant of the installation, so a request acting for one
+     * tenant can read them but not change them. Console and system code run without an explicit tenant and may.
+     *
+     * @throws AccessDeniedHttpException
+     */
+    protected static function assertNotGenericRecord(Model $model): void
+    {
+        $original = $model->getOriginal();
+
+        if (array_key_exists('tenant_id', $original) && $original['tenant_id'] === null && app(TenantContext::class)->isExplicit()) {
+            throw new AccessDeniedHttpException('Generic records are read-only for tenant users.');
+        }
     }
 
     /**

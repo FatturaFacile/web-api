@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Modules\GeneralLedger\Http\Requests\StoreChartOfAccountRequest;
 use Modules\GeneralLedger\Http\Resources\ChartOfAccountResource;
 use Modules\GeneralLedger\Models\ChartOfAccount;
+use OpenApi\Attributes as OA;
 
 final class ChartOfAccountController extends Controller
 {
@@ -19,6 +20,27 @@ final class ChartOfAccountController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of accounts of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/accounts',
+        operationId: 'listGeneralLedgerAccounts',
+        description: 'Returns the paginated list of accounts of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List accounts',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'type', in: 'query', required: false, description: 'Filter by type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'active', in: 'query', required: false, description: 'Filter by active', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 50)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of accounts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/GeneralLedgerChartOfAccountResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
@@ -42,6 +64,23 @@ final class ChartOfAccountController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new account in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/general-ledger/accounts',
+        operationId: 'createGeneralLedgerAccount',
+        description: 'Creates a new account in the active tenant.',
+        summary: 'Create account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Accounts'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/GeneralLedgerStoreChartOfAccountRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Account created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerChartOfAccountResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreChartOfAccountRequest $request): JsonResponse
     {
         $this->authorize('create', ChartOfAccount::class);
@@ -62,6 +101,25 @@ final class ChartOfAccountController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single account of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/accounts/{account}',
+        operationId: 'getGeneralLedgerAccount',
+        description: 'Returns a single account of the active tenant.',
+        summary: 'Get account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'account', in: 'path', required: true, description: 'Identifier of the account', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerChartOfAccountResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $account = ChartOfAccount::with('subAccounts')->findOrFail($id);
@@ -72,6 +130,27 @@ final class ChartOfAccountController extends Controller
         ]);
     }
 
+    /**
+     * Updates an existing account of the active tenant.
+     */
+    #[OA\Put(
+        path: '/api/v1/general-ledger/accounts/{account}',
+        operationId: 'updateGeneralLedgerAccount',
+        description: 'Updates an existing account of the active tenant. Also accepts the PATCH method.',
+        summary: 'Update account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'account', in: 'path', required: true, description: 'Identifier of the account', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/GeneralLedgerStoreChartOfAccountRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerChartOfAccountResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function update(StoreChartOfAccountRequest $request, string $id): JsonResponse
     {
         $account = ChartOfAccount::findOrFail($id);
@@ -85,6 +164,25 @@ final class ChartOfAccountController extends Controller
         ]);
     }
 
+    /**
+     * Deletes a account of the active tenant.
+     */
+    #[OA\Delete(
+        path: '/api/v1/general-ledger/accounts/{account}',
+        operationId: 'deleteGeneralLedgerAccount',
+        description: 'Deletes a account of the active tenant.',
+        summary: 'Delete account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'account', in: 'path', required: true, description: 'Identifier of the account', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $account = ChartOfAccount::findOrFail($id);
@@ -97,6 +195,21 @@ final class ChartOfAccountController extends Controller
         ]);
     }
 
+    /**
+     * Returns the root accounts of the active tenant with their sub-accounts, ordered by account code.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/accounts-tree',
+        operationId: 'getHierarchyGeneralLedgerAccountsTree',
+        description: 'Returns the root accounts of the active tenant with their sub-accounts, ordered by account code.',
+        summary: 'Get chart of accounts tree',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Accounts'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/GeneralLedgerChartOfAccountResource'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function hierarchy(Request $request): JsonResponse
     {
         $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;

@@ -32,7 +32,7 @@ class StorePriceListRequest extends FormRequest
             'valid_from' => ['nullable', 'date'],
             'valid_to' => ['nullable', 'date', 'after_or_equal:valid_from'],
             'items' => ['nullable', 'array'],
-            'items.*.product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)],
+            'items.*.product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'items.*.price' => ['required', 'numeric', 'min:0'],
             'items.*.min_quantity' => ['nullable', 'numeric', 'gt:0'],
         ];

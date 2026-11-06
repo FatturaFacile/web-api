@@ -1,8 +1,10 @@
 <?php
 
+use App\OpenApi\Processors\DocumentRequestContext;
 use L5Swagger\CustomBuilderInterface;
 use L5Swagger\CustomGeneratorInterface;
 use L5Swagger\Generator;
+use OpenApi\Processors\CleanUnmerged;
 use OpenApi\scan;
 
 return [
@@ -136,7 +138,9 @@ return [
             /**
              * Custom processors.
              */
-            'processors' => [],
+            'processors' => [
+                ['class' => DocumentRequestContext::class, 'after' => CleanUnmerged::class],
+            ],
 
             /**
              * pattern: string File pattern(s) to scan (default: *.php) .

@@ -17,6 +17,7 @@ use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
+use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
@@ -44,4 +45,5 @@ return [
     ServiceManagementServiceProvider::class,
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,
+    SdiServiceProvider::class,
 ];

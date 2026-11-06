@@ -83,7 +83,7 @@ function sdiInvoice(array $attributes = []): Invoice
 
 test('tenant preferences are stored per group, validated, and cleared with null', function (): void {
     expect(sdiApi()->getJson('/api/v1/settings/preferences')->assertOk()->json('data'))
-        ->toEqual(['invoice' => [], 'email' => [], 'sdi' => [], 'work_orders' => [], 'company' => [], 'labels' => [], 'inventory' => [], 'banking' => [], 'accounting' => []]);
+        ->toEqual(['invoice' => [], 'email' => [], 'sdi' => [], 'work_orders' => [], 'company' => [], 'labels' => [], 'inventory' => [], 'banking' => [], 'accounting' => [], 'time_tracking' => []]);
 
     sdiApi()->putJson('/api/v1/settings/preferences/invoice', ['footer_text' => 'Thank you', 'reminder_interval_days' => 7])
         ->assertOk()->assertJsonPath('data.reminder_interval_days', 7);

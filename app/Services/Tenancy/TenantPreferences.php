@@ -9,13 +9,14 @@ use App\Services\Inventory\LabelPresetRegistry;
 use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
+use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
 
 /**
  * Typed, whitelisted per-tenant preferences stored under `tenants.settings.preferences.<group>.<key>`.
  */
 class TenantPreferences
 {
-    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting'];
+    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking'];
 
     /**
      * Preference keys that hold a group of options, merged option by option when updated.
@@ -45,7 +46,7 @@ class TenantPreferences
 
         return match ($group) {
             'invoice' => [
-                'default_payment_term_id' => ['nullable', 'uuid', Rule::exists('payment_terms', 'id')->where('tenant_id', $tenantId)],
+                'default_payment_term_id' => ['nullable', 'uuid', Rule::exists('payment_terms', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
                 'footer_text' => ['nullable', 'string', 'max:1000'],
                 'reminder_grace_days' => ['nullable', 'integer', 'min:0', 'max:365'],
                 'reminder_interval_days' => ['nullable', 'integer', 'min:1', 'max:365'],
@@ -113,6 +114,9 @@ class TenantPreferences
             'inventory' => [
                 'auto_deactivate_on_zero_stock' => ['nullable', 'boolean'],
                 'sync_deactivation_to_ecommerce' => ['nullable', 'boolean'],
+            ],
+            'time_tracking' => [
+                'retention_years' => ['nullable', 'integer', 'min:'.DataRetentionPolicy::MINIMUM_YEARS, 'max:'.DataRetentionPolicy::MAXIMUM_YEARS],
             ],
             'work_orders' => [
                 'auto_invoice' => ['nullable', 'boolean'],

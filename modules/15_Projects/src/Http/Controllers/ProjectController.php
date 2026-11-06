@@ -21,9 +21,32 @@ use Modules\Projects\Http\Requests\UpdateProjectRequest;
 use Modules\Projects\Http\Resources\ProjectFinancialSummaryResource;
 use Modules\Projects\Http\Resources\ProjectResource;
 use Modules\Projects\Models\Project;
+use OpenApi\Attributes as OA;
 
 final class ProjectController extends Controller
 {
+    /**
+     * Returns the paginated list of projects of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/projects',
+        operationId: 'listProjects',
+        description: 'Returns the paginated list of projects of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List projects',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'project_type', in: 'query', required: false, description: 'Filter by project type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'contact_id', in: 'query', required: false, description: 'Filter by contact', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 15)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of projects', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsProjectResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenant = $tenantContext->getTenant();
@@ -46,6 +69,26 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new project in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects',
+        operationId: 'createProject',
+        description: 'Creates a new project in the active tenant.',
+        summary: 'Create project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'X-Tenant-Id', in: 'header', required: false, description: 'Value of the X-Tenant-Id header', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsStoreProjectRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Project created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreProjectRequest $request, CreateProjectAction $action, TenantContext $tenantContext): JsonResponse
     {
         $tenant = $tenantContext->getTenant();
@@ -79,6 +122,25 @@ final class ProjectController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single project of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/projects/{id}',
+        operationId: 'getProject',
+        description: 'Returns a single project of the active tenant.',
+        summary: 'Get project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $project = Project::with(['phases', 'milestones', 'financialSummary'])->findOrFail($id);
@@ -88,6 +150,27 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Updates an existing project of the active tenant.
+     */
+    #[OA\Put(
+        path: '/api/v1/projects/{id}',
+        operationId: 'updateProject',
+        description: 'Updates an existing project of the active tenant.',
+        summary: 'Update project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsUpdateProjectRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function update(string $id, UpdateProjectRequest $request): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -99,6 +182,25 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Deletes a project of the active tenant.
+     */
+    #[OA\Delete(
+        path: '/api/v1/projects/{id}',
+        operationId: 'deleteProject',
+        description: 'Deletes a project of the active tenant.',
+        summary: 'Delete project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -109,6 +211,25 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Sets the project to active, records the actual start date and publishes the project started event.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/start',
+        operationId: 'startProject',
+        description: 'Sets the project to active, records the actual start date and publishes the project started event.',
+        summary: 'Start project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function start(string $id, EventDispatcher $dispatcher): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -131,6 +252,26 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Puts the project on hold and publishes the project paused event with the given reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/pause',
+        operationId: 'pauseProject',
+        description: 'Puts the project on hold and publishes the project paused event with the given reason.',
+        summary: 'Pause project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'reason', type: 'string', default: 'Suspension of activities')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function pause(string $id, Request $request, EventDispatcher $dispatcher): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -152,6 +293,25 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Sets a paused project back to active and publishes the project resumed event.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/resume',
+        operationId: 'resumeProject',
+        description: 'Sets a paused project back to active and publishes the project resumed event.',
+        summary: 'Resume project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function resume(string $id, EventDispatcher $dispatcher): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -171,6 +331,26 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Closes the project through the closing action, recording the actor and the reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/close',
+        operationId: 'closeProject',
+        description: 'Closes the project through the closing action, recording the actor and the reason.',
+        summary: 'Close project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'reason', type: 'string', default: 'Administrative project closure')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function close(string $id, Request $request, CloseProjectAction $action): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -185,6 +365,25 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Returns the financial summary of the project, or null when none has been calculated yet.
+     */
+    #[OA\Get(
+        path: '/api/v1/projects/{id}/financial-summary',
+        operationId: 'getFinancialSummaryProject',
+        description: 'Returns the financial summary of the project, or null when none has been calculated yet.',
+        summary: 'Get project financial summary',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectFinancialSummaryResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function financialSummary(string $id): JsonResponse
     {
         $project = Project::with('financialSummary')->findOrFail($id);
@@ -194,6 +393,25 @@ final class ProjectController extends Controller
         ]);
     }
 
+    /**
+     * Recalculates the earned value management metrics of the project and returns the updated financial summary.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/recalculate-evm',
+        operationId: 'recalculateEVMProject',
+        description: 'Recalculates the earned value management metrics of the project and returns the updated financial summary.',
+        summary: 'Recalculate project EVM',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectFinancialSummaryResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function recalculateEVM(string $id, EarnedValueCalculationServiceInterface $evmService): JsonResponse
     {
         $project = Project::findOrFail($id);
@@ -209,6 +427,25 @@ final class ProjectController extends Controller
         return $this->recalculateEVM($id, $evmService);
     }
 
+    /**
+     * Returns the planned dates, phases, milestones and task dependencies needed to draw the Gantt chart of the project.
+     */
+    #[OA\Get(
+        path: '/api/v1/projects/{id}/gantt',
+        operationId: 'getGanttProject',
+        description: 'Returns the planned dates, phases, milestones and task dependencies needed to draw the Gantt chart of the project.',
+        summary: 'Get project Gantt data',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'project_id', type: 'string', format: 'uuid'), new OA\Property(property: 'project_name', type: 'string'), new OA\Property(property: 'planned_start_date', type: 'string', format: 'date'), new OA\Property(property: 'planned_end_date', type: 'string', format: 'date'), new OA\Property(property: 'progress_percentage', type: 'number'), new OA\Property(property: 'phases'), new OA\Property(property: 'tasks')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function gantt(string $id): JsonResponse
     {
         $project = Project::with(['phases.milestones', 'phases.tasks.predecessors', 'tasks.successors'])->findOrFail($id);

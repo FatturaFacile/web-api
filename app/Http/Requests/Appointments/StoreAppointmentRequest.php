@@ -28,12 +28,12 @@ class StoreAppointmentRequest extends FormRequest
             'contact_id' => [
                 'required',
                 'uuid',
-                Rule::exists('contacts', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'ticket_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('tickets', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('tickets', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'status_id' => ['nullable', 'uuid', 'exists:lookup_items,id'],
             'title' => ['required', 'string', 'max:255'],

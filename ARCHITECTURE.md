@@ -34,12 +34,15 @@ infrastructure concerns from core fiscal and domain rules.
 
 ### 2.1 Schema Strategy
 
-FatturaFacile implements a **Single-Database, Shared-Schema, Scoped Data Isolation** architecture with UUID primary and
-foreign keys. This provides:
+Every customer has a **dedicated database and DNS name**. One installation can hold several companies (tenants), which
+share that database with `tenant_id` columns and UUID primary and foreign keys. This provides:
 
-- High resource efficiency and simplified database migration management.
-- Complete data isolation enforced at the Eloquent query engine level.
+- Complete separation between customers at infrastructure level.
+- Simple sharing of data between the companies of the same customer.
 - Multi-company membership (a user can hold different roles across multiple tenants).
+
+Rows with a null `tenant_id` are **generic data**: every query returns them together with the rows of the active
+tenant. They are read-only for requests acting for a tenant; console and system code maintain them.
 
 ### 2.2 Dynamic Global Tenant Scope
 
@@ -67,15 +70,16 @@ trait BelongsToTenant
 The global scope `TenantScope` automatically injects:
 
 ```sql
-WHERE `table`.`tenant_id` = 'active-tenant-uuid'
+WHERE (`table`.`tenant_id` = 'active-tenant-uuid' OR `table`.`tenant_id` IS NULL)
 ```
 
-into every query, preventing accidental cross-tenant data leakage.
+into every query, preventing accidental access to the data of another company of the installation.
 
 ### 2.3 Tenancy Resolution Lifecycle
 
 1. Incoming HTTP requests pass through `App\Http\Middleware\IdentifyTenant`.
-2. The middleware reads the `X-Tenant-Id` header (or defaults to the user's primary company).
+2. The middleware requires `X-Tenant-Id` and `X-User-Id` (or the `tenant_id` and `user_id` query parameters) and checks
+   them against the access token. `TENANCY_REQUIRE_REQUEST_CONTEXT=false` restores the fallback for old clients.
 3. The tenant is resolved from the database.
 4. Membership and authorization are verified.
 5. The active `Tenant` instance is bound into the container singleton `App\Services\Tenancy\TenantContext`.

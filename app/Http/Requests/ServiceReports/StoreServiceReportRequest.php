@@ -28,7 +28,7 @@ class StoreServiceReportRequest extends FormRequest
             'contact_id' => [
                 'required',
                 'uuid',
-                Rule::exists('contacts', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'technician_id' => [
                 'required',
@@ -38,7 +38,7 @@ class StoreServiceReportRequest extends FormRequest
             'ticket_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('tickets', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('tickets', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'project_id' => ['nullable', 'uuid'],
             'report_date' => ['required', 'date'],
@@ -55,7 +55,7 @@ class StoreServiceReportRequest extends FormRequest
             'lines.*.item_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('products', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'lines.*.description' => ['required_with:lines', 'string', 'max:255'],
             'lines.*.quantity' => ['required_with:lines', 'numeric', 'min:0.0001'],

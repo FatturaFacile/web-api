@@ -84,9 +84,8 @@ class ExportApiDocumentation extends Command
 
         File::put("{$directory}/openapi.json", json_encode($spec, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n");
         File::put("{$directory}/openapi.yaml", Yaml::dump($spec, 40, 2, Yaml::DUMP_OBJECT_AS_MAP | Yaml::DUMP_MULTI_LINE_LITERAL_BLOCK | Yaml::DUMP_EMPTY_ARRAY_AS_SEQUENCE));
-        File::put("{$directory}/postman_collection.json", json_decode((string) json_encode($spec), true)
-                |> $this(...)
-                |> (fn ($x) => json_encode($x, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR))."\n");
+        $collection = $this->collection(json_decode((string) json_encode($spec), true));
+        File::put("{$directory}/postman_collection.json", json_encode($collection, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR)."\n");
 
         $this->info(__('docs.export.done', ['paths' => count((array) $spec->paths), 'directory' => $this->option('path')]));
 
@@ -315,9 +314,10 @@ class ExportApiDocumentation extends Command
 
             foreach ($schema['properties'] ?? [] as $name => $property) {
                 $property = $this->resolve($property, $doc);
+                $example = $this->example($property, $doc) ?? '';
                 $fields[] = ($property['format'] ?? null) === 'binary'
                     ? ['key' => $name, 'type' => 'file', 'src' => []]
-                    : ['key' => $name, 'type' => 'text', 'value' => (string) ($this->example($property, $doc) ?? '')];
+                    : ['key' => $name, 'type' => 'text', 'value' => is_array($example) ? (string) json_encode($example) : (string) $example];
             }
 
             return ['mode' => 'formdata', 'formdata' => $fields];

@@ -19,6 +19,7 @@ use Modules\ServiceManagement\Http\Requests\ScheduleAppointmentRequest;
 use Modules\ServiceManagement\Http\Requests\StoreWorkOrderRequest;
 use Modules\ServiceManagement\Http\Resources\WorkOrderResource;
 use Modules\ServiceManagement\Models\WorkOrder;
+use OpenApi\Attributes as OA;
 
 final class WorkOrderController extends Controller
 {
@@ -28,6 +29,26 @@ final class WorkOrderController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of work orders of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/esm/work-orders',
+        operationId: 'listEsmWorkOrders',
+        description: 'Returns the paginated list of work orders of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List work orders',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'work_type', in: 'query', required: false, description: 'Filter by work type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of work orders', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServiceManagementWorkOrderResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -52,6 +73,23 @@ final class WorkOrderController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new work order in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders',
+        operationId: 'createEsmWorkOrder',
+        description: 'Creates a new work order in the active tenant.',
+        summary: 'Create work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ServiceManagementStoreWorkOrderRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Work order created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementWorkOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreWorkOrderRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -87,6 +125,25 @@ final class WorkOrderController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single work order of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/esm/work-orders/{workOrder}',
+        operationId: 'getEsmWorkOrder',
+        description: 'Returns a single work order of the active tenant.',
+        summary: 'Get work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementWorkOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(WorkOrder $workOrder): JsonResponse
     {
         return response()->json([
@@ -94,6 +151,26 @@ final class WorkOrderController extends Controller
         ]);
     }
 
+    /**
+     * Dispatches a work order to a technician.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders/{workOrder}/dispatch',
+        operationId: 'dispatchEsmWorkOrder',
+        description: 'Dispatches a work order to a technician.',
+        summary: 'Dispatch work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'technician_id')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementWorkOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function dispatch(WorkOrder $workOrder, Request $request): JsonResponse
     {
         $technicianId = $request->input('technician_id');
@@ -105,6 +182,27 @@ final class WorkOrderController extends Controller
         ]);
     }
 
+    /**
+     * Schedules a service appointment for a work order.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders/{workOrder}/schedule',
+        operationId: 'scheduleEsmWorkOrder',
+        description: 'Schedules a service appointment for a work order.',
+        summary: 'Schedule work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ServiceManagementScheduleAppointmentRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementServiceAppointmentModel')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function schedule(WorkOrder $workOrder, ScheduleAppointmentRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -125,6 +223,27 @@ final class WorkOrderController extends Controller
         ]);
     }
 
+    /**
+     * Records a technician visit on a work order.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders/{workOrder}/record-visit',
+        operationId: 'recordVisitEsmWorkOrder',
+        description: 'Records a technician visit on a work order.',
+        summary: 'Record work order visit',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ServiceManagementRecordVisitRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementServiceVisitModel')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function recordVisit(WorkOrder $workOrder, RecordVisitRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -147,6 +266,26 @@ final class WorkOrderController extends Controller
         ]);
     }
 
+    /**
+     * Completes a work order with the completion notes and the customer signature.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders/{workOrder}/complete',
+        operationId: 'completeEsmWorkOrder',
+        description: 'Completes a work order with the completion notes and the customer signature.',
+        summary: 'Complete work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'completion_notes'), new OA\Property(property: 'resolution_summary'), new OA\Property(property: 'customer_signature_url'), new OA\Property(property: 'signed_by_customer_name'), new OA\Property(property: 'signed_at')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementWorkOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function complete(WorkOrder $workOrder, Request $request): JsonResponse
     {
         $dto = new CompleteWorkOrderDTO(

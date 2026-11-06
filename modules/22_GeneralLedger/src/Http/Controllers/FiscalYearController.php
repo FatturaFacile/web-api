@@ -13,6 +13,7 @@ use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
 use Modules\GeneralLedger\Http\Requests\StoreFiscalYearRequest;
 use Modules\GeneralLedger\Http\Resources\FiscalYearResource;
 use Modules\GeneralLedger\Models\FiscalYear;
+use OpenApi\Attributes as OA;
 
 final class FiscalYearController extends Controller
 {
@@ -21,6 +22,21 @@ final class FiscalYearController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the list of fiscal years of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/fiscal-years',
+        operationId: 'listGeneralLedgerFiscalYears',
+        description: 'Returns the list of fiscal years of the active tenant.',
+        summary: 'List fiscal years',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Fiscal Years'],
+        responses: [
+            new OA\Response(response: 200, description: 'List of fiscal years', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/GeneralLedgerFiscalYearResource'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
@@ -38,6 +54,23 @@ final class FiscalYearController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new fiscal year in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/general-ledger/fiscal-years',
+        operationId: 'createGeneralLedgerFiscalYear',
+        description: 'Creates a new fiscal year in the active tenant.',
+        summary: 'Create fiscal year',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Fiscal Years'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/GeneralLedgerStoreFiscalYearRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Fiscal year created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerFiscalYearResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreFiscalYearRequest $request): JsonResponse
     {
         $this->authorize('create', FiscalYear::class);
@@ -59,6 +92,25 @@ final class FiscalYearController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single fiscal year of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/fiscal-years/{fiscal_year}',
+        operationId: 'getGeneralLedgerFiscalYear',
+        description: 'Returns a single fiscal year of the active tenant.',
+        summary: 'Get fiscal year',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Fiscal Years'],
+        parameters: [
+            new OA\Parameter(name: 'fiscal_year', in: 'path', required: true, description: 'Identifier of the fiscal year', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerFiscalYearResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $year = FiscalYear::with('periods')->findOrFail($id);
@@ -69,6 +121,25 @@ final class FiscalYearController extends Controller
         ]);
     }
 
+    /**
+     * Runs the closing of the fiscal year and returns the closing run.
+     */
+    #[OA\Post(
+        path: '/api/v1/general-ledger/fiscal-years/{id}/close',
+        operationId: 'closeYearGeneralLedgerFiscalYear',
+        description: 'Runs the closing of the fiscal year and returns the closing run.',
+        summary: 'Close fiscal year',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Fiscal Years'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the fiscal year', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerFinancialClosingRunModel')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function closeYear(Request $request, string $id): JsonResponse
     {
         $year = FiscalYear::findOrFail($id);

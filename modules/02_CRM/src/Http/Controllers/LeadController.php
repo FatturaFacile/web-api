@@ -17,6 +17,7 @@ use Modules\CRM\Http\Resources\AccountResource;
 use Modules\CRM\Http\Resources\LeadResource;
 use Modules\CRM\Http\Resources\OpportunityResource;
 use Modules\CRM\Models\Lead;
+use OpenApi\Attributes as OA;
 
 final class LeadController extends Controller
 {
@@ -25,6 +26,26 @@ final class LeadController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of leads of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/leads',
+        operationId: 'listCrmLeads',
+        description: 'Returns the paginated list of leads of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List leads',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'rating', in: 'query', required: false, description: 'Filter by rating', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of leads', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMLeadResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -49,6 +70,23 @@ final class LeadController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new lead in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/leads',
+        operationId: 'createCrmLead',
+        description: 'Creates a new lead in the active tenant.',
+        summary: 'Create lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CRMStoreLeadRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Lead created', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreLeadRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -76,6 +114,25 @@ final class LeadController extends Controller
         return response()->json(new LeadResource($lead), 201);
     }
 
+    /**
+     * Returns a single lead of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/leads/{lead}',
+        operationId: 'getCrmLead',
+        description: 'Returns a single lead of the active tenant.',
+        summary: 'Get lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'lead', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -84,6 +141,26 @@ final class LeadController extends Controller
         return response()->json(new LeadResource($lead));
     }
 
+    /**
+     * Updates an existing lead of the active tenant.
+     */
+    #[OA\Put(
+        path: '/api/v1/crm/leads/{lead}',
+        operationId: 'updateCrmLead',
+        description: 'Updates an existing lead of the active tenant. Also accepts the PATCH method.',
+        summary: 'Update lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'lead', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'first_name'), new OA\Property(property: 'last_name'), new OA\Property(property: 'company_name'), new OA\Property(property: 'title'), new OA\Property(property: 'email'), new OA\Property(property: 'phone'), new OA\Property(property: 'website'), new OA\Property(property: 'country'), new OA\Property(property: 'estimated_budget'), new OA\Property(property: 'tags')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -98,6 +175,25 @@ final class LeadController extends Controller
         return response()->json(new LeadResource($lead));
     }
 
+    /**
+     * Deletes a lead of the active tenant.
+     */
+    #[OA\Delete(
+        path: '/api/v1/crm/leads/{lead}',
+        operationId: 'deleteCrmLead',
+        description: 'Deletes a lead of the active tenant.',
+        summary: 'Delete lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'lead', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 204, description: 'Completed, no content returned'),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -107,6 +203,25 @@ final class LeadController extends Controller
         return response()->json(null, 204);
     }
 
+    /**
+     * Marks a lead as qualified.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/qualify',
+        operationId: 'qualifyCrmLead',
+        description: 'Marks a lead as qualified.',
+        summary: 'Qualify lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function qualify(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -118,6 +233,27 @@ final class LeadController extends Controller
         return response()->json(new LeadResource($qualified));
     }
 
+    /**
+     * Marks a lead as disqualified, recording the reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/disqualify',
+        operationId: 'disqualifyCrmLead',
+        description: 'Marks a lead as disqualified, recording the reason.',
+        summary: 'Disqualify lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMLeadResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function disqualify(Request $request, string $id): JsonResponse
     {
         $request->validate(['reason' => ['required', 'string']]);
@@ -131,6 +267,27 @@ final class LeadController extends Controller
         return response()->json(new LeadResource($disqualified));
     }
 
+    /**
+     * Converts a lead into an account, using an existing account or creating a new one.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/leads/{id}/convert',
+        operationId: 'convertCrmLead',
+        description: 'Converts a lead into an account, using an existing account or creating a new one.',
+        summary: 'Convert lead',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the lead', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CRMConvertLeadRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'account', ref: '#/components/schemas/CRMAccountResource'), new OA\Property(property: 'contact_id', type: 'string'), new OA\Property(property: 'opportunity', ref: '#/components/schemas/CRMOpportunityResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function convert(ConvertLeadRequest $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -156,6 +313,26 @@ final class LeadController extends Controller
         ]);
     }
 
+    /**
+     * Returns the leads that match the given email, phone or company name.
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/leads/duplicates',
+        operationId: 'getDetectDuplicatesCrmLeadsDuplicates',
+        description: 'Returns the leads that match the given email, phone or company name.',
+        summary: 'Detect duplicate leads',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Leads'],
+        parameters: [
+            new OA\Parameter(name: 'email', in: 'query', required: false, description: 'Filter by email', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'phone', in: 'query', required: false, description: 'Filter by phone', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'company_name', in: 'query', required: false, description: 'Filter by company name', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMLeadResource'))),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function detectDuplicates(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();

@@ -27,10 +27,27 @@ class IdentifyTenant
      */
     public function handle(Request $request, Closure $next): Response
     {
-        $tenantId = $request->header('X-Tenant-Id');
-
         /** @var User|null $user */
         $user = $request->user();
+
+        $tenantId = $request->header('X-Tenant-Id') ?: $request->query('tenant_id');
+        $declaredUserId = $this->declaredUserId($request);
+
+        if ($user !== null && config('tenancy.require_request_context') && (empty($tenantId) || $declaredUserId === '')) {
+            return $this->problemDetailsResponse(
+                title: 'Missing Request Context',
+                detail: 'Every route requires tenant_id and user_id, as X-Tenant-Id and X-User-Id headers or as query parameters.',
+                status: Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        if ($user !== null && $declaredUserId !== '' && ! hash_equals((string) $user->getKey(), $declaredUserId)) {
+            return $this->problemDetailsResponse(
+                title: 'User Mismatch',
+                detail: 'The declared user_id does not match the authenticated user.',
+                status: Response::HTTP_FORBIDDEN,
+            );
+        }
 
         if (empty($tenantId) && $user !== null) {
             $tenantId = $user->tenants()->first()?->id;
@@ -78,6 +95,15 @@ class IdentifyTenant
         } finally {
             $this->tenantContext->clear();
         }
+    }
+
+    /**
+     * The header states the identity. When it is present the user_id query parameter stays free for the list filters
+     * that already use it (expenses, timesheets), so those can still ask for another user.
+     */
+    private function declaredUserId(Request $request): string
+    {
+        return (string) ($request->header('X-User-Id') ?: $request->query('user_id'));
     }
 
     public function terminate(Request $request, Response $response): void

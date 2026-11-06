@@ -26,7 +26,7 @@ class StoreProductCategoryRequest extends FormRequest
 
         return [
             'name' => [$presence, 'string', 'max:100', Rule::unique('product_categories', 'name')->where('tenant_id', $tenantId)->ignore($ignore)],
-            'parent_id' => ['nullable', 'uuid', Rule::exists('product_categories', 'id')->where('tenant_id', $tenantId), Rule::notIn([$ignore])],
+            'parent_id' => ['nullable', 'uuid', Rule::exists('product_categories', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')), Rule::notIn([$ignore])],
         ];
     }
 }

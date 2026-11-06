@@ -95,7 +95,7 @@ class FatturaPaBuilderService
     /**
      * Build and serialize the official XML FatturaPA (v1.2.2 / v1.2.1) string.
      */
-    public function buildFatturaPaXml(Invoice $invoice): string
+    public function buildFatturaPaXml(Invoice $invoice, ?string $progressive = null): string
     {
         $tenant = $invoice->tenant;
         $contact = $invoice->contact;
@@ -130,10 +130,10 @@ class FatturaPaBuilderService
         $datiTrasmissione = $dom->createElement('DatiTrasmissione');
         $idTrasmittente = $dom->createElement('IdTrasmittente');
         $idTrasmittente->appendChild($dom->createElement('IdPaese', 'IT'));
-        $idTrasmittente->appendChild($dom->createElement('IdCodice', substr($tenant->vat_number ?: '99999999999', 0, 28)));
+        $idTrasmittente->appendChild($dom->createElement('IdCodice', $this->fiscalId($tenant->vat_number) ?: '99999999999'));
         $datiTrasmissione->appendChild($idTrasmittente);
 
-        $progressivoInvio = substr(preg_replace('/[^A-Za-z0-9]/', '', $invoice->invoice_number), 0, 10) ?: 'INV'.time();
+        $progressivoInvio = $progressive ?? (substr(preg_replace('/[^A-Za-z0-9]/', '', $invoice->invoice_number), 0, 10) ?: 'INV'.time());
         $datiTrasmissione->appendChild($dom->createElement('ProgressivoInvio', $progressivoInvio));
         $datiTrasmissione->appendChild($dom->createElement('FormatoTrasmissione', $formatoTrasmissione));
 
@@ -150,7 +150,7 @@ class FatturaPaBuilderService
         $datiAnagraficiCedente = $dom->createElement('DatiAnagrafici');
         $idFiscaleIvaCedente = $dom->createElement('IdFiscaleIVA');
         $idFiscaleIvaCedente->appendChild($dom->createElement('IdPaese', $tenant->country ?: 'IT'));
-        $idFiscaleIvaCedente->appendChild($dom->createElement('IdCodice', $tenant->vat_number ?: '00000000000'));
+        $idFiscaleIvaCedente->appendChild($dom->createElement('IdCodice', $this->fiscalId($tenant->vat_number) ?: '00000000000'));
         $datiAnagraficiCedente->appendChild($idFiscaleIvaCedente);
 
         if (! empty($tenant->fiscal_code)) {
@@ -181,7 +181,7 @@ class FatturaPaBuilderService
         if (! empty($contact->vat_number)) {
             $idFiscaleIvaCess = $dom->createElement('IdFiscaleIVA');
             $idFiscaleIvaCess->appendChild($dom->createElement('IdPaese', $contact->country ?: 'IT'));
-            $idFiscaleIvaCess->appendChild($dom->createElement('IdCodice', $contact->vat_number));
+            $idFiscaleIvaCess->appendChild($dom->createElement('IdCodice', $this->fiscalId($contact->vat_number)));
             $datiAnagraficiCessionario->appendChild($idFiscaleIvaCess);
         }
 
@@ -229,6 +229,22 @@ class FatturaPaBuilderService
         $datiGeneraliDoc->appendChild($dom->createElement('Divisa', $invoice->currency ?: 'EUR'));
         $datiGeneraliDoc->appendChild($dom->createElement('Data', $invoice->date->format('Y-m-d')));
         $datiGeneraliDoc->appendChild($dom->createElement('Numero', $invoice->invoice_number));
+        if ($invoice->withholding_tax_enabled) {
+            $datiRitenuta = $dom->createElement('DatiRitenuta');
+            $datiRitenuta->appendChild($dom->createElement('TipoRitenuta', $tenant->settings['sdi_withholding_type'] ?? 'RT01'));
+            $datiRitenuta->appendChild($dom->createElement('ImportoRitenuta', number_format((float) $invoice->withholding_tax_amount, 2, '.', '')));
+            $datiRitenuta->appendChild($dom->createElement('AliquotaRitenuta', number_format((float) $invoice->withholding_tax_percent, 2, '.', '')));
+            $datiRitenuta->appendChild($dom->createElement('CausalePagamento', $tenant->settings['sdi_withholding_reason'] ?? 'A'));
+            $datiGeneraliDoc->appendChild($datiRitenuta);
+        }
+
+        if ($invoice->stamp_duty_applied) {
+            $datiBollo = $dom->createElement('DatiBollo');
+            $datiBollo->appendChild($dom->createElement('BolloVirtuale', 'SI'));
+            $datiBollo->appendChild($dom->createElement('ImportoBollo', number_format((float) $invoice->stamp_duty_amount, 2, '.', '')));
+            $datiGeneraliDoc->appendChild($datiBollo);
+        }
+
         $datiGeneraliDoc->appendChild($dom->createElement('ImportoTotaleDocumento', number_format((float) $invoice->total_gross, 2, '.', '')));
         $datiGenerali->appendChild($datiGeneraliDoc);
         $body->appendChild($datiGenerali);
@@ -239,46 +255,58 @@ class FatturaPaBuilderService
         $vatAggregates = [];
 
         foreach ($invoice->items as $item) {
+            // A line with a VAT nature has no VAT of its own: SDI refuses a nature next to a rate (error 00401).
+            $rate = $invoice->reverse_charge ? 0.0 : (float) $item->tax_rate;
+            $natura = $this->lineNature($invoice, $rate);
+
             $dettaglioLinee = $dom->createElement('DettaglioLinee');
             $dettaglioLinee->appendChild($dom->createElement('NumeroLinea', (string) $lineNumber++));
             $dettaglioLinee->appendChild($dom->createElement('Descrizione', htmlspecialchars(substr($item->description, 0, 1000))));
             $dettaglioLinee->appendChild($dom->createElement('Quantita', number_format((float) $item->quantity, 2, '.', '')));
             $dettaglioLinee->appendChild($dom->createElement('PrezzoUnitario', number_format((float) $item->unit_price, 4, '.', '')));
             $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', number_format((float) $item->line_total, 2, '.', '')));
-            $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', number_format((float) $item->tax_rate, 2, '.', '')));
+            $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', number_format($rate, 2, '.', '')));
 
-            if ($invoice->reverse_charge) {
-                $dettaglioLinee->appendChild($dom->createElement('Natura', 'N6.9')); // Inversione contabile - altri casi
+            if ($invoice->withholding_tax_enabled) {
+                $dettaglioLinee->appendChild($dom->createElement('Ritenuta', 'SI'));
+            }
+
+            if ($natura !== null) {
+                $dettaglioLinee->appendChild($dom->createElement('Natura', $natura));
             }
 
             $datiBeniServizi->appendChild($dettaglioLinee);
 
             // Group VAT for DatiRiepilogo
-            $rateKey = number_format((float) $item->tax_rate, 2, '.', '');
+            $rateKey = number_format($rate, 2, '.', '').'|'.$natura;
             if (! isset($vatAggregates[$rateKey])) {
                 $vatAggregates[$rateKey] = [
-                    'rate' => (float) $item->tax_rate,
+                    'rate' => $rate,
+                    'nature' => $natura,
                     'taxable' => 0.0,
                     'tax' => 0.0,
                 ];
             }
             $vatAggregates[$rateKey]['taxable'] += (float) $item->line_total;
-            $vatAggregates[$rateKey]['tax'] += ((float) $item->line_total * ((float) $item->tax_rate / 100.0));
+            $vatAggregates[$rateKey]['tax'] += ((float) $item->line_total * ($rate / 100.0));
         }
 
-        // Summary records (DatiRiepilogo)
+        // Summary records (DatiRiepilogo), in the element order of the schema
         foreach ($vatAggregates as $agg) {
             $datiRiepilogo = $dom->createElement('DatiRiepilogo');
             $datiRiepilogo->appendChild($dom->createElement('AliquotaIVA', number_format($agg['rate'], 2, '.', '')));
+
+            if ($agg['nature'] !== null) {
+                $datiRiepilogo->appendChild($dom->createElement('Natura', $agg['nature']));
+            }
+
             $datiRiepilogo->appendChild($dom->createElement('ImponibileImporto', number_format($agg['taxable'], 2, '.', '')));
             $datiRiepilogo->appendChild($dom->createElement('Imposta', number_format($agg['tax'], 2, '.', '')));
 
             // Split Payment check (EsigibilitaIVA = 'S')
             if ($invoice->split_payment) {
                 $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'S'));
-            } elseif ($invoice->reverse_charge) {
-                $datiRiepilogo->appendChild($dom->createElement('Natura', 'N6.9'));
-            } else {
+            } elseif ($agg['nature'] === null) {
                 $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'I')); // Immediata
             }
 
@@ -291,7 +319,7 @@ class FatturaPaBuilderService
         $datiPagamento->appendChild($dom->createElement('CondizioniPagamento', 'TP02')); // Completo
 
         $dettaglioPagamento = $dom->createElement('DettaglioPagamento');
-        $dettaglioPagamento->appendChild($dom->createElement('ModalitaPagamento', 'MP05')); // Bonifico
+        $dettaglioPagamento->appendChild($dom->createElement('ModalitaPagamento', $this->paymentMode($invoice)));
         if ($invoice->due_date) {
             $dettaglioPagamento->appendChild($dom->createElement('DataScadenzaPagamento', $invoice->due_date->format('Y-m-d')));
         }
@@ -304,5 +332,33 @@ class FatturaPaBuilderService
         $body->appendChild($datiPagamento);
 
         return (string) $dom->saveXML();
+    }
+
+    /**
+     * A fiscal id without the country prefix some records store: the country travels in IdPaese.
+     */
+    private function fiscalId(?string $value): string
+    {
+        return (string) preg_replace('/^[A-Z]{2}(?=\d)/', '', strtoupper(trim((string) $value)));
+    }
+
+    /**
+     * VAT nature of a line: reverse charge, or the code chosen by the company for its zero-rated sales.
+     */
+    private function lineNature(Invoice $invoice, float $rate): ?string
+    {
+        if ($invoice->reverse_charge) {
+            return 'N6.9'; // Inversione contabile - altri casi
+        }
+
+        return $rate === 0.0 ? ($invoice->tenant->settings['sdi_zero_rate_nature'] ?? null) : null;
+    }
+
+    /**
+     * ModalitaPagamento of the invoice, bank transfer when it does not state a FatturaPA code.
+     */
+    private function paymentMode(Invoice $invoice): string
+    {
+        return preg_match('/^MP\d{2}$/', (string) $invoice->payment_method) === 1 ? $invoice->payment_method : 'MP05';
     }
 }

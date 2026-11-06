@@ -13,6 +13,7 @@ use Modules\CRM\DTOs\CreateActivityDTO;
 use Modules\CRM\Http\Requests\StoreActivityRequest;
 use Modules\CRM\Http\Resources\ActivityResource;
 use Modules\CRM\Models\Activity;
+use OpenApi\Attributes as OA;
 
 final class ActivityController extends Controller
 {
@@ -21,6 +22,26 @@ final class ActivityController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of activities of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/activities',
+        operationId: 'listCrmActivities',
+        description: 'Returns the paginated list of activities of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List activities',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Activities'],
+        parameters: [
+            new OA\Parameter(name: 'type', in: 'query', required: false, description: 'Filter by type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of activities', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMActivityResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -45,6 +66,23 @@ final class ActivityController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new activity in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/activities',
+        operationId: 'createCrmActivity',
+        description: 'Creates a new activity in the active tenant.',
+        summary: 'Create activity',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Activities'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CRMStoreActivityRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Activity created', content: new OA\JsonContent(ref: '#/components/schemas/CRMActivityResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreActivityRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -69,6 +107,25 @@ final class ActivityController extends Controller
         return response()->json(new ActivityResource($activity), 201);
     }
 
+    /**
+     * Returns a single activity of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/activities/{activity}',
+        operationId: 'getCrmActivity',
+        description: 'Returns a single activity of the active tenant.',
+        summary: 'Get activity',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Activities'],
+        parameters: [
+            new OA\Parameter(name: 'activity', in: 'path', required: true, description: 'Identifier of the activity', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMActivityResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -77,6 +134,26 @@ final class ActivityController extends Controller
         return response()->json(new ActivityResource($activity));
     }
 
+    /**
+     * Marks an activity as completed, recording the optional outcome.
+     */
+    #[OA\Post(
+        path: '/api/v1/crm/activities/{id}/complete',
+        operationId: 'completeCrmActivity',
+        description: 'Marks an activity as completed, recording the optional outcome.',
+        summary: 'Complete activity',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Activities'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the activity', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'outcome')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMActivityResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function complete(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -92,6 +169,26 @@ final class ActivityController extends Controller
         return response()->json(new ActivityResource($completed));
     }
 
+    /**
+     * Returns the activity timeline of the given related record.
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/activities/timeline',
+        operationId: 'getTimelineCrmActivity',
+        description: 'Returns the activity timeline of the given related record.',
+        summary: 'Get activity timeline',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Activities'],
+        parameters: [
+            new OA\Parameter(name: 'related_type', in: 'query', required: true, description: 'Filter by related type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'related_id', in: 'query', required: true, description: 'Filter by related', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMActivityResource'))),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function timeline(Request $request): JsonResponse
     {
         $request->validate([

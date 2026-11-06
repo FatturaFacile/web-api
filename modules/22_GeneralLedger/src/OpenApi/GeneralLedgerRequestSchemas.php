@@ -1,0 +1,96 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\GeneralLedger\OpenApi;
+
+use OpenApi\Attributes as OA;
+
+/**
+ * Request payloads of the module, derived from its form requests.
+ */
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreChartOfAccountRequest',
+    description: 'Request payload validated by StoreChartOfAccountRequest',
+    required: ['account_code', 'name', 'account_type', 'normal_balance'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'account_code', type: 'string', maxLength: 50),
+        new OA\Property(property: 'name', type: 'string', maxLength: 255),
+        new OA\Property(property: 'account_class', type: 'string', maxLength: 30, nullable: true),
+        new OA\Property(property: 'account_type', type: 'string', enum: ['asset', 'liability', 'equity', 'revenue', 'expense', 'cogs', 'wip', 'memo', 'statistical']),
+        new OA\Property(property: 'normal_balance', type: 'string', enum: ['debit', 'credit']),
+        new OA\Property(property: 'parent_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'currency', type: 'string', minLength: 3, maxLength: 3, nullable: true),
+        new OA\Property(property: 'is_reconciliation_account', type: 'boolean', nullable: true),
+        new OA\Property(property: 'reconciliation_type', type: 'string', maxLength: 20, nullable: true),
+        new OA\Property(property: 'allows_manual_posting', type: 'boolean', nullable: true),
+        new OA\Property(property: 'is_cost_center_mandatory', type: 'boolean', nullable: true),
+        new OA\Property(property: 'is_active', type: 'boolean', nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreFiscalYearRequest',
+    description: 'Request payload validated by StoreFiscalYearRequest',
+    required: ['year_code', 'start_date', 'end_date'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'year_code', type: 'string', maxLength: 20),
+        new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'Must be after `start_date`.'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreFiscalPeriodRequest',
+    description: 'Request payload validated by StoreFiscalPeriodRequest',
+    required: ['fiscal_year_id', 'period_number', 'period_name', 'start_date', 'end_date'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'fiscal_year_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'period_number', type: 'integer', minimum: 1, maximum: 13),
+        new OA\Property(property: 'period_name', type: 'string', maxLength: 100),
+        new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'end_date', type: 'string', format: 'date', description: 'Must be after `start_date`.'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerReverseJournalEntryRequest',
+    description: 'Request payload validated by ReverseJournalEntryRequest',
+    required: ['reversal_date'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'reversal_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'reason', type: 'string', maxLength: 255, nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreJournalEntryRequest',
+    description: 'Request payload validated by StoreJournalEntryRequest',
+    required: ['fiscal_period_id', 'posting_date', 'description', 'lines'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'fiscal_period_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'batch_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'entry_number', type: 'string', maxLength: 50, nullable: true),
+        new OA\Property(property: 'posting_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'document_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'ledger_type', type: 'string', nullable: true, enum: ['statutory', 'ifrs', 'management']),
+        new OA\Property(property: 'journal_type', type: 'string', nullable: true, enum: ['standard', 'reversing', 'closing', 'opening', 'recurring', 'adjusting']),
+        new OA\Property(property: 'description', type: 'string', maxLength: 500),
+        new OA\Property(property: 'source_document_type', type: 'string', maxLength: 50, nullable: true),
+        new OA\Property(property: 'source_document_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'status', type: 'string', nullable: true, enum: ['draft', 'posted']),
+        new OA\Property(property: 'lines', type: 'array', minItems: 2, items: new OA\Items(type: 'object', required: ['account_id'], properties: [new OA\Property(property: 'account_id', type: 'string', format: 'uuid'), new OA\Property(property: 'debit_amount', type: 'number', minimum: 0, description: 'Required without `lines.*.credit_amount`.'), new OA\Property(property: 'credit_amount', type: 'number', minimum: 0, description: 'Required without `lines.*.debit_amount`.'), new OA\Property(property: 'description', type: 'string', maxLength: 255, nullable: true), new OA\Property(property: 'cost_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'profit_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'partner_type', type: 'string', nullable: true, enum: ['customer', 'supplier', 'employee']), new OA\Property(property: 'partner_id', type: 'string', format: 'uuid', nullable: true)])),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerRunReconciliationRequest',
+    description: 'Request payload validated by RunReconciliationRequest',
+    required: ['reconciliation_type', 'fiscal_period_id'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'reconciliation_type', type: 'string', enum: ['subledger_ar', 'subledger_ap', 'gr_ir', 'inventory', 'project']),
+        new OA\Property(property: 'fiscal_period_id', type: 'string', format: 'uuid'),
+    ]
+)]
+final class GeneralLedgerRequestSchemas {}

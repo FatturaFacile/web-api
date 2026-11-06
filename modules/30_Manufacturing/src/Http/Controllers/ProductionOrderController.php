@@ -15,6 +15,7 @@ use Modules\Manufacturing\Http\Controllers\Concerns\ResolvesTenant;
 use Modules\Manufacturing\Http\Requests\CreateProductionOrderRequest;
 use Modules\Manufacturing\Http\Resources\MfgProductionOrderResource;
 use Modules\Manufacturing\Models\MfgProductionOrder;
+use OpenApi\Attributes as OA;
 
 final class ProductionOrderController extends Controller
 {
@@ -26,6 +27,24 @@ final class ProductionOrderController extends Controller
         private ProductionCostingServiceInterface $costingService
     ) {}
 
+    /**
+     * Returns the paginated list of production orders of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/manufacturing/production-orders',
+        operationId: 'listManufacturingProductionOrders',
+        description: 'Returns the paginated list of production orders of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List production orders',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of production orders', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -40,6 +59,23 @@ final class ProductionOrderController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new production order in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/manufacturing/production-orders',
+        operationId: 'createManufacturingProductionOrder',
+        description: 'Creates a new production order in the active tenant.',
+        summary: 'Create production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ManufacturingCreateProductionOrderRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Production order created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(CreateProductionOrderRequest $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -65,6 +101,25 @@ final class ProductionOrderController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single production order of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/manufacturing/production-orders/{id}',
+        operationId: 'getManufacturingProductionOrder',
+        description: 'Returns a single production order of the active tenant.',
+        summary: 'Get production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(Request $request, string $id): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -73,6 +128,25 @@ final class ProductionOrderController extends Controller
         return response()->json(['data' => new MfgProductionOrderResource($order)]);
     }
 
+    /**
+     * Releases a production order to the shop floor.
+     */
+    #[OA\Post(
+        path: '/api/v1/manufacturing/production-orders/{id}/release',
+        operationId: 'releaseManufacturingProductionOrder',
+        description: 'Releases a production order to the shop floor.',
+        summary: 'Release production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function release(Request $request, string $id): JsonResponse
     {
         $order = $this->executionService->releaseOrder($id);
@@ -83,6 +157,25 @@ final class ProductionOrderController extends Controller
         ]);
     }
 
+    /**
+     * Starts a released production order.
+     */
+    #[OA\Post(
+        path: '/api/v1/manufacturing/production-orders/{id}/start',
+        operationId: 'startManufacturingProductionOrder',
+        description: 'Starts a released production order.',
+        summary: 'Start production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function start(Request $request, string $id): JsonResponse
     {
         $order = $this->executionService->startOrder($id);
@@ -93,6 +186,25 @@ final class ProductionOrderController extends Controller
         ]);
     }
 
+    /**
+     * Completes a production order.
+     */
+    #[OA\Post(
+        path: '/api/v1/manufacturing/production-orders/{id}/complete',
+        operationId: 'completeManufacturingProductionOrder',
+        description: 'Completes a production order.',
+        summary: 'Complete production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function complete(Request $request, string $id): JsonResponse
     {
         $order = $this->executionService->completeOrder($id);
@@ -103,6 +215,25 @@ final class ProductionOrderController extends Controller
         ]);
     }
 
+    /**
+     * Closes a completed production order.
+     */
+    #[OA\Post(
+        path: '/api/v1/manufacturing/production-orders/{id}/close',
+        operationId: 'closeManufacturingProductionOrder',
+        description: 'Closes a completed production order.',
+        summary: 'Close production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function close(Request $request, string $id): JsonResponse
     {
         $order = $this->executionService->closeOrder($id);
@@ -113,6 +244,26 @@ final class ProductionOrderController extends Controller
         ]);
     }
 
+    /**
+     * Cancels a production order, recording the reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/manufacturing/production-orders/{id}/cancel',
+        operationId: 'cancelManufacturingProductionOrder',
+        description: 'Cancels a production order, recording the reason.',
+        summary: 'Cancel production order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'reason', type: 'string', default: 'Cancelled by user request')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgProductionOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function cancel(Request $request, string $id): JsonResponse
     {
         $reason = (string) $request->input('reason', 'Cancelled by user request');
@@ -124,6 +275,25 @@ final class ProductionOrderController extends Controller
         ]);
     }
 
+    /**
+     * Returns the standard cost rollup and the actual cost with its variance for a production order.
+     */
+    #[OA\Get(
+        path: '/api/v1/manufacturing/production-orders/{id}/cost-rollup',
+        operationId: 'getCostRollupManufacturingProductionOrder',
+        description: 'Returns the standard cost rollup and the actual cost with its variance for a production order.',
+        summary: 'Get production cost rollup',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Manufacturing Production Orders'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the production order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'production_order_id'), new OA\Property(property: 'standard_cost_rollup', type: 'object', properties: [new OA\Property(property: 'material_cost', type: 'number'), new OA\Property(property: 'labor_cost', type: 'number'), new OA\Property(property: 'machine_cost', type: 'number'), new OA\Property(property: 'overhead_cost', type: 'number'), new OA\Property(property: 'total_standard_cost', type: 'number')]), new OA\Property(property: 'actual_cost_and_variance', type: 'object', properties: [new OA\Property(property: 'actual_material_cost', type: 'number'), new OA\Property(property: 'actual_labor_cost', type: 'number'), new OA\Property(property: 'actual_machine_cost', type: 'number'), new OA\Property(property: 'actual_overhead_cost', type: 'number'), new OA\Property(property: 'actual_total_cost', type: 'number'), new OA\Property(property: 'variance_total', type: 'number'), new OA\Property(property: 'variance_type', type: 'string')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function costRollup(Request $request, string $id): JsonResponse
     {
         $rollup = $this->costingService->calculateStandardCostRollup($id);

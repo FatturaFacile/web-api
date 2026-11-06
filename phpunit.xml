@@ -58,6 +58,8 @@
     -->
     <env name="MAIL_MAILER" value="array"/>
     <env name="QUEUE_CONNECTION" value="sync"/>
+    <env name="TENANCY_REQUIRE_REQUEST_CONTEXT" value="false"/>
+    <env name="SDI_DEFAULT_CHANNEL" value="local"/>
     <env name="SESSION_DRIVER" value="array"/>
     <env name="PULSE_ENABLED" value="false"/>
     <env name="TELESCOPE_ENABLED" value="false"/>

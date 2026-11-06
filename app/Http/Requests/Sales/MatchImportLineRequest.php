@@ -21,7 +21,7 @@ class MatchImportLineRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'invoice_id' => ['required', 'uuid', Rule::exists('invoices', 'id')->where('tenant_id', app(TenantContext::class)->getTenantId())],
+            'invoice_id' => ['required', 'uuid', Rule::exists('invoices', 'id')->where(fn ($query) => $query->where('tenant_id', app(TenantContext::class)->getTenantId())->orWhereNull('tenant_id'))],
         ];
     }
 }

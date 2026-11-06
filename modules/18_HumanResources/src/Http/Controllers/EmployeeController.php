@@ -19,6 +19,7 @@ use Modules\HumanResources\Http\Requests\TerminateEmployeeRequest;
 use Modules\HumanResources\Http\Requests\TransferEmployeeRequest;
 use Modules\HumanResources\Http\Resources\EmployeeResource;
 use Modules\HumanResources\Models\Employee;
+use OpenApi\Attributes as OA;
 
 final class EmployeeController extends Controller
 {
@@ -27,6 +28,26 @@ final class EmployeeController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of employees of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/employees',
+        operationId: 'listHrEmployees',
+        description: 'Returns the paginated list of employees of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List employees',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'employment_status', in: 'query', required: false, description: 'Filter by employment status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'department_id', in: 'query', required: false, description: 'Filter by department', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of employees', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HumanResourcesEmployeeResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -51,6 +72,23 @@ final class EmployeeController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new employee in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/employees',
+        operationId: 'createHrEmployee',
+        description: 'Creates a new employee in the active tenant.',
+        summary: 'Create employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HumanResourcesHireEmployeeRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Employee created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(HireEmployeeRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -82,6 +120,25 @@ final class EmployeeController extends Controller
         return response()->json(['data' => new EmployeeResource($employee)], 201);
     }
 
+    /**
+     * Returns a single employee of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/employees/{id}',
+        operationId: 'getHrEmployee',
+        description: 'Returns a single employee of the active tenant.',
+        summary: 'Get employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -90,6 +147,26 @@ final class EmployeeController extends Controller
         return response()->json(['data' => new EmployeeResource($employee)]);
     }
 
+    /**
+     * Updates an existing employee of the active tenant.
+     */
+    #[OA\Put(
+        path: '/api/v1/hr/employees/{id}',
+        operationId: 'updateHrEmployee',
+        description: 'Updates an existing employee of the active tenant.',
+        summary: 'Update employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'first_name'), new OA\Property(property: 'last_name'), new OA\Property(property: 'phone'), new OA\Property(property: 'personal_email'), new OA\Property(property: 'emergency_contact'), new OA\Property(property: 'metadata')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -102,6 +179,25 @@ final class EmployeeController extends Controller
         return response()->json(['data' => new EmployeeResource($employee->fresh())]);
     }
 
+    /**
+     * Deletes a employee of the active tenant.
+     */
+    #[OA\Delete(
+        path: '/api/v1/hr/employees/{id}',
+        operationId: 'deleteHrEmployee',
+        description: 'Deletes a employee of the active tenant.',
+        summary: 'Delete employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -111,6 +207,26 @@ final class EmployeeController extends Controller
         return response()->json(['message' => 'Employee record archived']);
     }
 
+    /**
+     * Confirms an employee at the end of the probation period.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/employees/{id}/complete-probation',
+        operationId: 'completeProbationHrEmployee',
+        description: 'Confirms an employee at the end of the probation period.',
+        summary: 'Complete employee probation',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'confirmation_date')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function completeProbation(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -126,6 +242,27 @@ final class EmployeeController extends Controller
         return response()->json(['data' => new EmployeeResource($updated)]);
     }
 
+    /**
+     * Promotes an employee to a new position, job grade and salary.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/employees/{id}/promote',
+        operationId: 'promoteHrEmployee',
+        description: 'Promotes an employee to a new position, job grade and salary.',
+        summary: 'Promote employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HumanResourcesPromoteEmployeeRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Employee created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeLifecycleEventModel')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function promote(PromoteEmployeeRequest $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -144,6 +281,27 @@ final class EmployeeController extends Controller
         return response()->json(['data' => $event], 201);
     }
 
+    /**
+     * Transfers an employee to another department, team or business unit.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/employees/{id}/transfer',
+        operationId: 'transferHrEmployee',
+        description: 'Transfers an employee to another department, team or business unit.',
+        summary: 'Transfer employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HumanResourcesTransferEmployeeRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Employee created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeLifecycleEventModel')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function transfer(TransferEmployeeRequest $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -165,6 +323,27 @@ final class EmployeeController extends Controller
         return response()->json(['data' => $event], 201);
     }
 
+    /**
+     * Terminates an employee at the given date, recording the reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/employees/{id}/terminate',
+        operationId: 'terminateHrEmployee',
+        description: 'Terminates an employee at the given date, recording the reason.',
+        summary: 'Terminate employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HumanResourcesTerminateEmployeeRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function terminate(TerminateEmployeeRequest $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -181,6 +360,26 @@ final class EmployeeController extends Controller
         return response()->json(['data' => new EmployeeResource($updated)]);
     }
 
+    /**
+     * Rehires a former employee at the given date and salary.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/employees/{id}/rehire',
+        operationId: 'rehireHrEmployee',
+        description: 'Rehires a former employee at the given date and salary.',
+        summary: 'Rehire employee',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Employees'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the employee', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'new_base_annual_salary', type: 'number'), new OA\Property(property: 'rehire_date')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesEmployeeResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function rehire(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();

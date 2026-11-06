@@ -24,8 +24,8 @@ class StoreWorkOrderRequest extends FormRequest
         $presence = $this->isMethod('POST') ? 'required' : 'sometimes';
 
         return [
-            'client_id' => [$presence, 'uuid', Rule::exists('contacts', 'id')->where('tenant_id', $tenantId)],
-            'ticket_id' => ['nullable', 'uuid', Rule::exists('tickets', 'id')->where('tenant_id', $tenantId)],
+            'client_id' => [$presence, 'uuid', Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
+            'ticket_id' => ['nullable', 'uuid', Rule::exists('tickets', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'technician_user_id' => ['nullable', 'uuid', Rule::exists('tenant_user', 'user_id')->where('tenant_id', $tenantId)],
             'date' => [$presence, 'date'],
             'started_at' => ['nullable', 'date'],
@@ -34,7 +34,7 @@ class StoreWorkOrderRequest extends FormRequest
             'notes' => ['nullable', 'string', 'max:5000'],
             'lines' => [$presence, 'array', 'min:1'],
             'lines.*.type' => ['nullable', Rule::in(['labor', 'material', 'travel'])],
-            'lines.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)],
+            'lines.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'lines.*.description' => ['required', 'string', 'max:1000'],
             'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
             'lines.*.unit_price' => ['required', 'numeric', 'min:0'],

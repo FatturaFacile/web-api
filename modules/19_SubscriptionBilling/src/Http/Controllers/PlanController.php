@@ -13,6 +13,7 @@ use Modules\SubscriptionBilling\Http\Resources\PlanResource;
 use Modules\SubscriptionBilling\Models\PlanFeature;
 use Modules\SubscriptionBilling\Models\PricingTier;
 use Modules\SubscriptionBilling\Models\SubscriptionPlan;
+use OpenApi\Attributes as OA;
 
 final class PlanController extends Controller
 {
@@ -20,6 +21,26 @@ final class PlanController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of plans of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/subscriptions/plans',
+        operationId: 'listSubscriptionsPlans',
+        description: 'Returns the paginated list of plans of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List plans',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Plans'],
+        parameters: [
+            new OA\Parameter(name: 'interval', in: 'query', required: false, description: 'Filter by interval', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'is_active', in: 'query', required: false, description: 'Filter by is active', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of plans', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingPlanResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -44,6 +65,23 @@ final class PlanController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new plan in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/plans',
+        operationId: 'createSubscriptionsPlan',
+        description: 'Creates a new plan in the active tenant.',
+        summary: 'Create plan',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Plans'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingCreatePlanRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Plan created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingPlanResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(CreatePlanRequest $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -104,6 +142,25 @@ final class PlanController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single plan of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/subscriptions/plans/{id}',
+        operationId: 'getSubscriptionsPlan',
+        description: 'Returns a single plan of the active tenant.',
+        summary: 'Get plan',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Plans'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the plan', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingPlanResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(Request $request, string $id): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);

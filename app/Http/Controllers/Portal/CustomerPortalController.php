@@ -28,6 +28,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
+use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
 class CustomerPortalController extends Controller
@@ -45,6 +46,22 @@ class CustomerPortalController extends Controller
     /**
      * Authenticate magic link token and retrieve customer dashboard summary.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/access/{token}',
+        operationId: 'getAccessPortal',
+        description: 'Authenticates the magic link token and returns the customer dashboard summary. Public endpoint: the token is the credential.',
+        summary: 'Access customer portal',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'customer', type: 'object', properties: [new OA\Property(property: 'id', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'email', type: 'string')]), new OA\Property(property: 'token_type'), new OA\Property(property: 'scope_type'), new OA\Property(property: 'scope_id', type: 'string'), new OA\Property(property: 'expires_at'), new OA\Property(property: 'summary', type: 'object', properties: [new OA\Property(property: 'pending_quotes', type: 'integer'), new OA\Property(property: 'unpaid_invoices', type: 'integer'), new OA\Property(property: 'open_tickets', type: 'integer'), new OA\Property(property: 'upcoming_appointments', type: 'integer')])])])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function access(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -95,6 +112,22 @@ class CustomerPortalController extends Controller
     /**
      * Retrieve quote details for approval/review.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/quotes/{token}',
+        operationId: 'getShowQuotePortalQuotes',
+        description: 'Returns the quote details for review and approval. Public endpoint: the token is the credential.',
+        summary: 'Get portal quote',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/PortalQuoteResource')])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function showQuote(Request $request, string $token): JsonResponse|HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -131,6 +164,24 @@ class CustomerPortalController extends Controller
     /**
      * Customer approves quote.
      */
+    #[OA\Post(
+        path: '/api/v1/portal/quotes/{token}/approve',
+        operationId: 'approveQuotePortalQuote',
+        description: 'Lets the customer approve the quote reached with the token.',
+        summary: 'Approve portal quote',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ApprovePortalQuoteRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/PortalQuoteResource')])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function approveQuote(ApprovePortalQuoteRequest $request, string $token): JsonResponse|HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -164,6 +215,24 @@ class CustomerPortalController extends Controller
     /**
      * Customer rejects quote.
      */
+    #[OA\Post(
+        path: '/api/v1/portal/quotes/{token}/reject',
+        operationId: 'rejectQuotePortalQuote',
+        description: 'Lets the customer reject the quote reached with the token.',
+        summary: 'Reject portal quote',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RejectPortalQuoteRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/PortalQuoteResource')])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function rejectQuote(RejectPortalQuoteRequest $request, string $token): JsonResponse|HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -195,6 +264,23 @@ class CustomerPortalController extends Controller
     /**
      * Download Quote PDF via portal link.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/quotes/{token}/pdf',
+        operationId: 'getDownloadQuotePdfPortalQuote',
+        description: 'Downloads the PDF of the quote reached with the token.',
+        summary: 'Download portal quote PDF',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'inline', in: 'query', required: false, description: 'Filter by inline', schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'File content', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function downloadQuotePdf(Request $request, string $token): HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -222,6 +308,22 @@ class CustomerPortalController extends Controller
     /**
      * List customer invoices with payment status and totals.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/invoices/{token}',
+        operationId: 'listInvoicesPortalInvoices',
+        description: 'Returns the customer invoices with payment status and totals.',
+        summary: 'List portal invoices',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PortalInvoiceResource'))])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function listInvoices(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -240,6 +342,24 @@ class CustomerPortalController extends Controller
     /**
      * Download Invoice PDF via portal link.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/invoices/{token}/{id}/pdf',
+        operationId: 'getDownloadInvoicePdfPortalInvoice',
+        description: 'Downloads the PDF of a customer invoice.',
+        summary: 'Download portal invoice PDF',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the {token}', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'inline', in: 'query', required: false, description: 'Filter by inline', schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'File content', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function downloadInvoicePdf(Request $request, string $token, string $invoiceId): HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -265,6 +385,22 @@ class CustomerPortalController extends Controller
     /**
      * List customer signed service reports.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/service-reports/{token}',
+        operationId: 'listServiceReportsPortalServiceReports',
+        description: 'Returns the signed service reports of the customer.',
+        summary: 'List portal service reports',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PortalServiceReportResource'))])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function listServiceReports(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -284,6 +420,24 @@ class CustomerPortalController extends Controller
     /**
      * Download Service Report PDF via portal link.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/service-reports/{token}/{id}/pdf',
+        operationId: 'getDownloadServiceReportPdfPortalServiceReport',
+        description: 'Downloads the PDF of a customer service report.',
+        summary: 'Download portal service report PDF',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the {token}', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'inline', in: 'query', required: false, description: 'Filter by inline', schema: new OA\Schema(type: 'boolean')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'File content', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function downloadServiceReportPdf(Request $request, string $token, string $reportId): HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -311,6 +465,22 @@ class CustomerPortalController extends Controller
     /**
      * List customer support tickets with customer-facing messages.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/tickets/{token}',
+        operationId: 'listTicketsPortalTickets',
+        description: 'Returns the customer support tickets with their customer-facing messages.',
+        summary: 'List portal tickets',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PortalTicketResource'))])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function listTickets(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -329,6 +499,25 @@ class CustomerPortalController extends Controller
     /**
      * Customer replies to a ticket.
      */
+    #[OA\Post(
+        path: '/api/v1/portal/tickets/{token}/reply/{ticketId}',
+        operationId: 'replyTicketPortalTicketsReply',
+        description: 'Adds a customer reply to a support ticket.',
+        summary: 'Reply to portal ticket',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'ticketId', in: 'path', required: true, description: 'Identifier of the ticket', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/ReplyPortalTicketRequest'))),
+        responses: [
+            new OA\Response(response: 201, description: 'Reply created', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'author_name'), new OA\Property(property: 'message'), new OA\Property(property: 'created_at')])])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function replyTicket(ReplyPortalTicketRequest $request, string $token, string $ticketId): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -358,6 +547,22 @@ class CustomerPortalController extends Controller
     /**
      * List customer appointments visible on the portal.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/appointments/{token}',
+        operationId: 'listAppointmentsPortalAppointments',
+        description: 'Returns the customer appointments visible on the portal.',
+        summary: 'List portal appointments',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'appointment_number'), new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'description', type: 'string'), new OA\Property(property: 'starts_at'), new OA\Property(property: 'ends_at'), new OA\Property(property: 'all_day', type: 'boolean', nullable: true), new OA\Property(property: 'address'), new OA\Property(property: 'customer_notes'), new OA\Property(property: 'status', type: 'string'), new OA\Property(property: 'technicians', type: 'array', items: new OA\Items(type: 'object', properties: [new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'role')])), new OA\Property(property: 'is_cancelled', type: 'boolean')]))])])),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function listAppointments(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
@@ -402,6 +607,24 @@ class CustomerPortalController extends Controller
     /**
      * Securely download or view an attachment via portal link.
      */
+    #[OA\Get(
+        path: '/api/v1/portal/attachments/{token}/{attachment}',
+        operationId: 'getDownloadAttachmentPortalAttachments',
+        description: 'Securely downloads or displays an attachment, after verifying that the customer owns it through its parent record.',
+        summary: 'Download portal attachment',
+        security: [],
+        tags: ['Customer Portal'],
+        parameters: [
+            new OA\Parameter(name: 'token', in: 'path', required: true, description: 'Customer portal magic-link token', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'attachment', in: 'path', required: true, description: 'Identifier of the attachment', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'File content', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 410, description: 'The link has expired', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function downloadAttachment(string $token, string $attachmentId): HttpResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);

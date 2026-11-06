@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Modules\Treasury\Http\Requests\StoreBankAccountRequest;
 use Modules\Treasury\Http\Resources\BankAccountResource;
 use Modules\Treasury\Models\BankAccount;
+use OpenApi\Attributes as OA;
 
 final class BankAccountController extends Controller
 {
@@ -32,6 +33,23 @@ final class BankAccountController extends Controller
         return response()->json(BankAccountResource::collection($accounts)->response()->getData(true));
     }
 
+    /**
+     * Creates a new bank account in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/treasury/bank-accounts',
+        operationId: 'createTreasuryBankAccount',
+        description: 'Creates a new bank account in the active tenant.',
+        summary: 'Create bank account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Bank Accounts'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TreasuryStoreBankAccountRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Bank account created', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryBankAccountResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(StoreBankAccountRequest $request, TenantContext $tenantContext): JsonResponse
     {
         $data = $request->validated();
@@ -48,6 +66,25 @@ final class BankAccountController extends Controller
         return response()->json(new BankAccountResource($account), 201);
     }
 
+    /**
+     * Returns a single bank account of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/treasury/bank-accounts/{bank_account}',
+        operationId: 'getTreasuryBankAccount',
+        description: 'Returns a single bank account of the active tenant.',
+        summary: 'Get bank account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Bank Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'bank_account', in: 'path', required: true, description: 'Identifier of the bank account', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryBankAccountResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $id): JsonResponse
     {
         $account = BankAccount::findOrFail($id);
@@ -55,6 +92,26 @@ final class BankAccountController extends Controller
         return response()->json(new BankAccountResource($account));
     }
 
+    /**
+     * Updates an existing bank account of the active tenant.
+     */
+    #[OA\Put(
+        path: '/api/v1/treasury/bank-accounts/{bank_account}',
+        operationId: 'updateTreasuryBankAccount',
+        description: 'Updates an existing bank account of the active tenant. Also accepts the PATCH method.',
+        summary: 'Update bank account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Bank Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'bank_account', in: 'path', required: true, description: 'Identifier of the bank account', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'bank_name'), new OA\Property(property: 'branch_name'), new OA\Property(property: 'overdraft_limit'), new OA\Property(property: 'credit_line_limit'), new OA\Property(property: 'is_default'), new OA\Property(property: 'is_active')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryBankAccountResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function update(Request $request, string $id): JsonResponse
     {
         $account = BankAccount::findOrFail($id);
@@ -70,6 +127,25 @@ final class BankAccountController extends Controller
         return response()->json(new BankAccountResource($account));
     }
 
+    /**
+     * Deletes a bank account of the active tenant.
+     */
+    #[OA\Delete(
+        path: '/api/v1/treasury/bank-accounts/{bank_account}',
+        operationId: 'deleteTreasuryBankAccount',
+        description: 'Deletes a bank account of the active tenant.',
+        summary: 'Delete bank account',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Bank Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'bank_account', in: 'path', required: true, description: 'Identifier of the bank account', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function destroy(string $id): JsonResponse
     {
         $account = BankAccount::findOrFail($id);

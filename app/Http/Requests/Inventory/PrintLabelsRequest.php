@@ -42,7 +42,7 @@ class PrintLabelsRequest extends FormRequest
                 'layout' => ['required_if:layout_mode,custom', 'nullable', 'array'],
                 'start_offset' => ['nullable', 'integer', 'min:0'],
                 'items' => ['required', 'array', 'min:1', 'max:200'],
-                'items.*.product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)->whereNull('deleted_at')],
+                'items.*.product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))->whereNull('deleted_at')],
                 'items.*.quantity' => ['required', 'integer', 'min:1', 'max:'.config('labels.max_quantity_per_item')],
             ],
             LabelPresetRegistry::geometryRules('layout', 'required_if:layout_mode,custom'),

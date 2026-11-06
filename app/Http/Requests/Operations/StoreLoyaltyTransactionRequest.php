@@ -26,7 +26,7 @@ class StoreLoyaltyTransactionRequest extends FormRequest
             'type' => ['required', Rule::in(['earn', 'redeem', 'topup', 'adjust'])],
             'amount' => ['required', 'numeric', $this->input('type') === 'adjust' ? 'not_in:0' : 'gt:0'],
             'description' => ['nullable', 'string', 'max:255'],
-            'invoice_id' => ['nullable', 'uuid', Rule::exists('invoices', 'id')->where('tenant_id', $tenantId)],
+            'invoice_id' => ['nullable', 'uuid', Rule::exists('invoices', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
         ];
     }
 }

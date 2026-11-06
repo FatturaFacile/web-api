@@ -375,7 +375,7 @@ class TenantRestoreService
         }
 
         foreach (array_reverse(array_keys($scopes)) as $table) {
-            if ($table !== TenantBackupService::AUDIT_LEDGER_TABLE) {
+            if ($table !== TenantBackupService::AUDIT_LEDGER_TABLE && ! in_array($table, TenantBackupService::APPEND_ONLY_TABLES, true)) {
                 $scopes[$table](DB::table($table))->delete();
             }
         }
@@ -401,7 +401,11 @@ class TenantRestoreService
             $perInsert = max(1, intdiv(self::INSERT_VARIABLE_LIMIT, max(1, count($schema['columns']))));
 
             foreach (array_chunk($pending, $perInsert) as $chunk) {
-                DB::table($table)->insert($chunk);
+                if (in_array($table, TenantBackupService::APPEND_ONLY_TABLES, true)) {
+                    DB::table($table)->insertOrIgnore($chunk);
+                } else {
+                    DB::table($table)->insert($chunk);
+                }
             }
 
             $rows += count($pending);

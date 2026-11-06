@@ -14,6 +14,8 @@ use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Tenancy\TenantPreferences;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\SDI\Services\SdiFileNamer;
+use Modules\SDI\Services\SdiPreflight;
 
 class SendInvoiceToSdi
 {
@@ -22,6 +24,8 @@ class SendInvoiceToSdi
         private readonly FatturaPaBuilderService $builder,
         private readonly DocumentEventRecorder $events,
         private readonly TenantPreferences $preferences,
+        private readonly SdiFileNamer $fileNames,
+        private readonly SdiPreflight $preflight,
     ) {}
 
     /**
@@ -37,8 +41,10 @@ class SendInvoiceToSdi
 
         $invoice->loadMissing(['tenant', 'contact.addresses', 'items', 'sdiMetadata']);
 
-        $xml = $this->builder->buildFatturaPaXml($invoice);
-        $fileName = $invoice->sdiMetadata?->file_name ?? $this->fileName($invoice);
+        $this->preflight->assertReady($invoice);
+
+        ['file_name' => $fileName, 'progressive' => $progressive] = $this->transmissionName($invoice);
+        $xml = $this->builder->buildFatturaPaXml($invoice, $progressive);
         $format = ($invoice->contact?->sdi_code && strlen(trim($invoice->contact->sdi_code)) === 6) ? 'FPA12' : 'FPR12';
 
         try {
@@ -60,10 +66,11 @@ class SendInvoiceToSdi
                 'delivered_at' => null,
             ]);
 
-            $invoice->sdiUuidLinks()->create([
-                'tenant_id' => $invoice->tenant_id,
+            $invoice->sdiUuidLinks()->firstOrCreate([
                 'provider' => $this->provider->name(),
                 'sdi_uuid' => $result['uuid'],
+            ], [
+                'tenant_id' => $invoice->tenant_id,
             ]);
 
             EiOutboundLog::create([
@@ -95,26 +102,26 @@ class SendInvoiceToSdi
 
         $status = $invoice->sdiMetadata()->value('sdi_status');
 
-        if (in_array($status, ['sending', 'delivered', 'accepted'], true)) {
+        // A file SDI could not deliver is still a valid invoice: it stays in the tax drawer of the customer.
+        if (in_array($status, ['sending', 'delivered', 'accepted', 'not_delivered'], true)) {
             throw ValidationException::withMessages(['invoice' => __('sdi.already_sent', ['status' => $status])]);
         }
     }
 
     /**
-     * SDI file name: IT<VAT>_<5-char progressive>.xml, derived from the invoice sequence when available.
+     * A file never transmitted keeps its name on a retry. After a rejection SDI wants a new name, or it answers 00002.
+     *
+     * @return array{file_name: string, progressive: string}
      */
-    private function fileName(Invoice $invoice): string
+    private function transmissionName(Invoice $invoice): array
     {
-        $progressive = $invoice->sequential_number !== null
-            ? base_convert((string) $invoice->sequential_number, 10, 36)
-                |> strtoupper(...)
-                |> (fn ($x) => str_pad($x, 5, '0', STR_PAD_LEFT))
-            : $invoice->id
-                |> md5(...)
-                |> (fn ($x) => substr($x, 0, 5))
-                |> strtoupper(...);
+        $metadata = $invoice->sdiMetadata;
 
-        return sprintf('IT%s_%s.xml', preg_replace('/\D/', '', (string) $invoice->tenant?->vat_number) ?: '99999999999', substr($progressive, -5));
+        if ($metadata?->file_name !== null && $metadata->sdi_status !== 'rejected') {
+            return ['file_name' => $metadata->file_name, 'progressive' => $this->fileNames->progressiveOf($metadata->file_name)];
+        }
+
+        return $this->fileNames->next($invoice->tenant);
     }
 
     private function recordFailure(Invoice $invoice, string $fileName, string $xml, string $format, SdiProviderException $e): void

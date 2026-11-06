@@ -13,6 +13,7 @@ use Modules\Projects\Http\Requests\StoreProjectBudgetRequest;
 use Modules\Projects\Http\Resources\ProjectBudgetResource;
 use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectBudget;
+use OpenApi\Attributes as OA;
 
 final class ProjectBudgetController extends Controller
 {
@@ -20,6 +21,25 @@ final class ProjectBudgetController extends Controller
         private readonly ProjectBudgetServiceInterface $budgetService
     ) {}
 
+    /**
+     * Returns a single project of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/projects/{id}/budget',
+        operationId: 'getProjectsBudget',
+        description: 'Returns a single project of the active tenant.',
+        summary: 'Get project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectBudgetResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(string $projectId): JsonResponse
     {
         $budget = ProjectBudget::with(['lines', 'versions'])
@@ -31,6 +51,27 @@ final class ProjectBudgetController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new project in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/budget',
+        operationId: 'createProjectsBudget',
+        description: 'Creates a new project in the active tenant.',
+        summary: 'Create project',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsStoreProjectBudgetRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Project created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectBudgetResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(string $projectId, StoreProjectBudgetRequest $request): JsonResponse
     {
         $project = Project::findOrFail($projectId);
@@ -58,6 +99,25 @@ final class ProjectBudgetController extends Controller
         ], 201);
     }
 
+    /**
+     * Establishes the baseline snapshot of the project budget.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/budget/baseline',
+        operationId: 'baselineProjectsBudget',
+        description: 'Establishes the baseline snapshot of the project budget.',
+        summary: 'Baseline project budget',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'version_number', type: 'integer', nullable: true), new OA\Property(property: 'baseline_cost', type: 'string', nullable: true, description: 'Decimal value serialized as a string.'), new OA\Property(property: 'baseline_revenue', type: 'string', nullable: true, description: 'Decimal value serialized as a string.'), new OA\Property(property: 'created_at', type: 'string', format: 'date-time')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function baseline(string $projectId, Request $request): JsonResponse
     {
         $budget = ProjectBudget::where('project_id', $projectId)->firstOrFail();
@@ -78,6 +138,25 @@ final class ProjectBudgetController extends Controller
         ]);
     }
 
+    /**
+     * Approves the budget of the project on behalf of the authenticated user.
+     */
+    #[OA\Post(
+        path: '/api/v1/projects/{id}/budget/approve',
+        operationId: 'approveProjectsBudget',
+        description: 'Approves the budget of the project on behalf of the authenticated user.',
+        summary: 'Approve project budget',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Projects'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectBudgetResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function approve(string $projectId): JsonResponse
     {
         $budget = ProjectBudget::where('project_id', $projectId)->firstOrFail();

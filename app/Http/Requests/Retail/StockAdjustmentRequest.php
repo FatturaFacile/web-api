@@ -23,8 +23,8 @@ class StockAdjustmentRequest extends FormRequest
         $tenantId = app(TenantContext::class)->getTenantId();
 
         return [
-            'product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)],
-            'warehouse_id' => ['nullable', 'uuid', Rule::exists('warehouses', 'id')->where('tenant_id', $tenantId)],
+            'product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
+            'warehouse_id' => ['nullable', 'uuid', Rule::exists('warehouses', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'quantity' => ['required', 'numeric', 'not_in:0'],
             'notes' => ['nullable', 'string', 'max:500'],
         ];

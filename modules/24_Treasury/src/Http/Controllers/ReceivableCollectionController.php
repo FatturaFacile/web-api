@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Modules\Treasury\Contracts\ReceivableCollectionServiceInterface;
 use Modules\Treasury\Http\Resources\ReceivableCollectionResource;
 use Modules\Treasury\Models\ReceivableCollection;
+use OpenApi\Attributes as OA;
 
 final class ReceivableCollectionController extends Controller
 {
@@ -18,6 +19,27 @@ final class ReceivableCollectionController extends Controller
         private readonly ReceivableCollectionServiceInterface $collectionService
     ) {}
 
+    /**
+     * Returns the paginated list of collections of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/treasury/collections',
+        operationId: 'listTreasuryCollections',
+        description: 'Returns the paginated list of collections of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List collections',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Collections'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'customer_id', in: 'query', required: false, description: 'Filter by customer', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of collections', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryReceivableCollectionResource')), new OA\Property(property: 'links', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
@@ -35,6 +57,24 @@ final class ReceivableCollectionController extends Controller
         return response()->json(ReceivableCollectionResource::collection($collections)->response()->getData(true));
     }
 
+    /**
+     * Returns the customer aging of the receivables, optionally for a single company.
+     */
+    #[OA\Get(
+        path: '/api/v1/treasury/collections/aging',
+        operationId: 'getAgingTreasuryCollection',
+        description: 'Returns the customer aging of the receivables, optionally for a single company.',
+        summary: 'Get receivables aging',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Collections'],
+        parameters: [
+            new OA\Parameter(name: 'company_id', in: 'query', required: false, description: 'Filter by company', schema: new OA\Schema(type: 'string')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function aging(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
@@ -45,6 +85,27 @@ final class ReceivableCollectionController extends Controller
         return response()->json($aging);
     }
 
+    /**
+     * Records an amount received against a receivable collection.
+     */
+    #[OA\Post(
+        path: '/api/v1/treasury/collections/{id}/record',
+        operationId: 'recordCollectionTreasuryCollection',
+        description: 'Records an amount received against a receivable collection.',
+        summary: 'Record received collection',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Collections'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the collection', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['amount'], properties: [new OA\Property(property: 'amount', type: 'number'), new OA\Property(property: 'collection_date', type: 'string', format: 'date', nullable: true)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryReceivableCollectionResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function recordCollection(Request $request, string $id): JsonResponse
     {
         $request->validate([
@@ -58,6 +119,21 @@ final class ReceivableCollectionController extends Controller
         return response()->json(new ReceivableCollectionResource($collection));
     }
 
+    /**
+     * Returns the overdue receivables that are ready for dunning, with their count.
+     */
+    #[OA\Get(
+        path: '/api/v1/treasury/collections/dunning-readiness',
+        operationId: 'getEvaluateDunningTreasuryCollectionsDunningReadiness',
+        description: 'Returns the overdue receivables that are ready for dunning, with their count.',
+        summary: 'Evaluate dunning readiness',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Collections'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'evaluated_count', type: 'integer'), new OA\Property(property: 'overdue_items', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryReceivableCollectionResource'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function evaluateDunning(TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();

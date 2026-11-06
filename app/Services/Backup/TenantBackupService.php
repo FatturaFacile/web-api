@@ -46,6 +46,13 @@ class TenantBackupService
      */
     public const AUDIT_LEDGER_TABLE = 'enterprise_audit_ledger';
 
+    /**
+     * Immutable history: a restore adds the rows of the archive that are missing, and never deletes the existing ones.
+     *
+     * @var list<string>
+     */
+    public const APPEND_ONLY_TABLES = ['time_audit_entries'];
+
     public const EXCLUDED_TABLES = [
         'migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens',
         'personal_access_tokens', 'tenants', 'users', 'tenant_user', 'tenant_backups', 'tenant_access_requests',

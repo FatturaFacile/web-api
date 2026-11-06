@@ -38,6 +38,9 @@ return [
     'sdi' => [
         // Shared secret expected in the X-Webhook-Secret header of SDI notification webhooks.
         'webhook_secret' => env('SDI_WEBHOOK_SECRET'),
+
+        // Channel of the tenants that have not chosen one. Empty means they cannot transmit until they do.
+        'default_channel' => env('SDI_DEFAULT_CHANNEL'),
     ],
 
 ];

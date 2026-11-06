@@ -70,24 +70,16 @@ class TenantScope implements Scope
             return;
         }
 
-        if ($isShared) {
-            $tenantId = $tenantContext->hasTenant() ? $tenantContext->getTenantId() : null;
+        $tenantId = $tenantContext->hasTenant() ? $tenantContext->getTenantId() : null;
 
-            $builder->where(function (Builder $query) use ($column, $tenantId): void {
-                if (! empty($tenantId)) {
-                    $query->where($column, $tenantId)
-                        ->orWhereNull($column);
-                } else {
-                    $query->whereNull($column);
-                }
-            });
-        } else {
-            if ($tenantContext->hasTenant()) {
-                $builder->where($column, $tenantContext->getTenantId());
+        // Each customer has a dedicated database: rows without a tenant are generic data shared by all its tenants.
+        $builder->where(function (Builder $query) use ($column, $tenantId): void {
+            if (! empty($tenantId)) {
+                $query->where($column, $tenantId)
+                    ->orWhereNull($column);
             } else {
-                // Fail-closed behavior: operational records must never be returned without a tenant context
-                $builder->whereRaw('1 = 0');
+                $query->whereNull($column);
             }
-        }
+        });
     }
 }

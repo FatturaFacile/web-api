@@ -38,6 +38,34 @@ class Tenant extends Model
         'settings',
         'id',
         'status',
+        'sdi_channel',
+        'sdi_environment',
+        'sdi_pec_smtp_host',
+        'sdi_pec_smtp_port',
+        'sdi_pec_imap_host',
+        'sdi_pec_imap_port',
+        'sdi_pec_username',
+        'sdi_pec_password',
+        'sdi_pec_address',
+        'sdi_pec_first_sent_at',
+        'sdi_pec_last_uid',
+        'sdi_api_credentials',
+        'sdi_webhook_secret',
+        'sdi_sign_outgoing',
+        'sdi_last_poll_at',
+        'ade_telematic_address_registered',
+        'ade_conservation_agreement_at',
+    ];
+
+    /**
+     * Mailbox and gateway credentials never leave the API, not even towards the administrators of the tenant.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'sdi_pec_password',
+        'sdi_api_credentials',
+        'sdi_webhook_secret',
     ];
 
     protected function casts(): array
@@ -45,6 +73,14 @@ class Tenant extends Model
         return [
             'settings' => 'array',
             'is_maintenance' => 'boolean',
+            'sdi_pec_password' => 'encrypted',
+            'sdi_api_credentials' => 'encrypted:array',
+            'sdi_webhook_secret' => 'encrypted',
+            'sdi_sign_outgoing' => 'boolean',
+            'sdi_pec_first_sent_at' => 'datetime',
+            'sdi_last_poll_at' => 'datetime',
+            'ade_telematic_address_registered' => 'boolean',
+            'ade_conservation_agreement_at' => 'date',
         ];
     }
 

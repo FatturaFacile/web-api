@@ -12,9 +12,25 @@ use Modules\Workflow\Actions\CreateDelegationAction;
 use Modules\Workflow\DTOs\CreateDelegationDTO;
 use Modules\Workflow\Http\Requests\CreateDelegationRequest;
 use Modules\Workflow\Models\WorkflowDelegation;
+use OpenApi\Attributes as OA;
 
 final class WorkflowDelegationController extends Controller
 {
+    /**
+     * Returns the list of delegations of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/workflows/delegations',
+        operationId: 'listWorkflowsDelegations',
+        description: 'Returns the list of delegations of the active tenant.',
+        summary: 'List active user delegations',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Delegations'],
+        responses: [
+            new OA\Response(response: 200, description: 'List of delegations', content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowDelegationModel'))),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'List active user delegations', tags: ['Workflow Engine'])]
     public function index(): JsonResponse
     {
@@ -29,6 +45,23 @@ final class WorkflowDelegationController extends Controller
         return response()->json($delegations);
     }
 
+    /**
+     * Creates a new delegation in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/workflows/delegations',
+        operationId: 'createWorkflowsDelegation',
+        description: 'Creates a new delegation in the active tenant.',
+        summary: 'Create a new out-of-office workflow delegation',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Delegations'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkflowCreateDelegationRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Delegation created', content: new OA\JsonContent(ref: '#/components/schemas/WorkflowDelegationModel')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Create a new out-of-office workflow delegation', tags: ['Workflow Engine'])]
     public function store(CreateDelegationRequest $request, CreateDelegationAction $action): JsonResponse
     {
@@ -46,6 +79,25 @@ final class WorkflowDelegationController extends Controller
         return response()->json($delegation, 201);
     }
 
+    /**
+     * Deletes a delegation of the active tenant.
+     */
+    #[OA\Delete(
+        path: '/api/v1/workflows/delegations/{id}',
+        operationId: 'deleteWorkflowsDelegation',
+        description: 'Deletes a delegation of the active tenant.',
+        summary: 'Revoke an existing workflow delegation',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Delegations'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the delegation', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Revoke an existing workflow delegation', tags: ['Workflow Engine'])]
     public function destroy(string $id): JsonResponse
     {

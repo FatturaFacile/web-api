@@ -11,9 +11,26 @@ use Modules\Workflow\Actions\RecordDecisionAction;
 use Modules\Workflow\DTOs\RecordDecisionDTO;
 use Modules\Workflow\Http\Requests\ConsumeRemoteTokenRequest;
 use Modules\Workflow\Services\ExternalActionTokenService;
+use OpenApi\Attributes as OA;
 
 final class RemoteApprovalController extends Controller
 {
+    /**
+     * Verifies and atomically consumes a single-use remote approval token, then records the decision it carries.
+     */
+    #[OA\Post(
+        path: '/api/v1/workflows/remote-approval',
+        operationId: 'consumeWorkflowsRemoteApproval',
+        description: 'Verifies and atomically consumes a single-use remote approval token, then records the decision it carries. Public endpoint: the token is the credential.',
+        summary: 'Consume remote approval token',
+        security: [],
+        tags: ['Workflow Remote Approval'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkflowConsumeRemoteTokenRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'step_id', type: 'string', format: 'uuid'), new OA\Property(property: 'status')])),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Consume cryptographic single-use remote approval token', tags: ['Workflow Engine'])]
     public function consume(
         ConsumeRemoteTokenRequest $request,

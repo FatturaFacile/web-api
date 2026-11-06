@@ -7,6 +7,7 @@ use Modules\HumanResources\Http\Controllers\EmployeeController;
 use Modules\HumanResources\Http\Controllers\LeaveAndTimeController;
 use Modules\HumanResources\Http\Controllers\OrganizationController;
 use Modules\HumanResources\Http\Controllers\TalentAndTrainingController;
+use Modules\HumanResources\Http\Controllers\TimeTrackingController;
 
 Route::prefix('api/v1/hr')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
@@ -43,6 +44,20 @@ Route::prefix('api/v1/hr')
         Route::get('/timesheets', [LeaveAndTimeController::class, 'timesheets'])->name('api.v1.hr.timesheets.index');
         Route::post('/timesheets', [LeaveAndTimeController::class, 'submitTimesheet'])->name('api.v1.hr.timesheets.store');
         Route::post('/timesheets/{id}/approve', [LeaveAndTimeController::class, 'approveTimesheet'])->name('api.v1.hr.timesheets.approve');
+
+        // Swiss Working Time Recording Routes (LL, OLL 1)
+        Route::prefix('time')->name('api.v1.hr.time.')->group(function (): void {
+            Route::get('/events', [TimeTrackingController::class, 'events'])->name('events.index');
+            Route::post('/events', [TimeTrackingController::class, 'storeEvent'])->name('events.store');
+            Route::patch('/events/{id}', [TimeTrackingController::class, 'correctEvent'])->whereUuid('id')->name('events.correct');
+            Route::delete('/events/{id}', [TimeTrackingController::class, 'destroyEvent'])->whereUuid('id')->name('events.destroy');
+            Route::put('/daily-records', [TimeTrackingController::class, 'saveDailyRecord'])->name('daily-records.save');
+            Route::get('/report', [TimeTrackingController::class, 'report'])->name('report');
+            Route::get('/audit', [TimeTrackingController::class, 'audit'])->name('audit');
+            Route::get('/holidays', [TimeTrackingController::class, 'holidays'])->name('holidays');
+            Route::get('/profiles/{userId}', [TimeTrackingController::class, 'profile'])->whereUuid('userId')->name('profiles.show');
+            Route::put('/profiles/{userId}', [TimeTrackingController::class, 'saveProfile'])->whereUuid('userId')->name('profiles.save');
+        });
 
         // Talent, Performance & Training Routes
         Route::get('/performance-reviews', [TalentAndTrainingController::class, 'reviews'])->name('api.v1.hr.performance-reviews.index');

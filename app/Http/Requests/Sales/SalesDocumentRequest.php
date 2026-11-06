@@ -32,12 +32,12 @@ abstract class SalesDocumentRequest extends FormRequest
         $presence = $this->presence();
 
         return [
-            'contact_id' => [$presence, 'uuid', Rule::exists('contacts', 'id')->where('tenant_id', $tenantId)],
+            'contact_id' => [$presence, 'uuid', Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'date' => [$presence, 'date'],
             'currency' => [$presence, 'string', 'size:3'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => [$presence, 'array', 'min:1'],
-            'items.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)],
+            'items.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'items.*.description' => ['required', 'string', 'max:1000'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],

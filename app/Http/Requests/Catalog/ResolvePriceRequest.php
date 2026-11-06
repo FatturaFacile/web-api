@@ -23,8 +23,8 @@ class ResolvePriceRequest extends FormRequest
         $tenantId = app(TenantContext::class)->getTenantId();
 
         return [
-            'product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)],
-            'contact_id' => ['nullable', 'uuid', Rule::exists('contacts', 'id')->where('tenant_id', $tenantId)],
+            'product_id' => ['required', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
+            'contact_id' => ['nullable', 'uuid', Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'quantity' => ['nullable', 'numeric', 'gt:0'],
             'date' => ['nullable', 'date'],
         ];

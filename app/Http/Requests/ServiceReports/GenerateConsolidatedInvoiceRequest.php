@@ -29,7 +29,7 @@ class GenerateConsolidatedInvoiceRequest extends FormRequest
             'report_ids.*' => [
                 'required',
                 'uuid',
-                Rule::exists('service_reports', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('service_reports', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
         ];
     }

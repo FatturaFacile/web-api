@@ -1,0 +1,185 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Invoicing\OpenApi;
+
+use OpenApi\Attributes as OA;
+
+/**
+ * Response payloads of the module, derived from its API resources and models.
+ */
+#[OA\Schema(
+    schema: 'InvoicingSalesQuoteResource',
+    description: 'JSON representation produced by SalesQuoteResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string'),
+        new OA\Property(property: 'contact_id', type: 'string'),
+        new OA\Property(property: 'quote_number'),
+        new OA\Property(property: 'date', type: 'string', format: 'date'),
+        new OA\Property(property: 'valid_until', type: 'string', format: 'date'),
+        new OA\Property(property: 'currency', type: 'string'),
+        new OA\Property(property: 'subtotal', type: 'number'),
+        new OA\Property(property: 'discount_amount', type: 'number'),
+        new OA\Property(property: 'total_net', type: 'number'),
+        new OA\Property(property: 'total_tax', type: 'number'),
+        new OA\Property(property: 'total_gross', type: 'number'),
+        new OA\Property(property: 'status'),
+        new OA\Property(property: 'payment_terms'),
+        new OA\Property(property: 'shipping_terms'),
+        new OA\Property(property: 'revision_number', type: 'integer', nullable: true),
+        new OA\Property(property: 'notes', type: 'string'),
+        new OA\Property(property: 'items'),
+        new OA\Property(property: 'created_at'),
+        new OA\Property(property: 'updated_at'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'InvoicingSalesOrderResource',
+    description: 'JSON representation produced by SalesOrderResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string'),
+        new OA\Property(property: 'contact_id', type: 'string'),
+        new OA\Property(property: 'quote_id', type: 'string'),
+        new OA\Property(property: 'order_number'),
+        new OA\Property(property: 'date', type: 'string', format: 'date'),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'currency', type: 'string'),
+        new OA\Property(property: 'subtotal', type: 'number'),
+        new OA\Property(property: 'discount_amount', type: 'number'),
+        new OA\Property(property: 'total_net', type: 'number'),
+        new OA\Property(property: 'total_tax', type: 'number'),
+        new OA\Property(property: 'total_gross', type: 'number'),
+        new OA\Property(property: 'status'),
+        new OA\Property(property: 'credit_status'),
+        new OA\Property(property: 'credit_hold_reason'),
+        new OA\Property(property: 'inventory_status'),
+        new OA\Property(property: 'fulfillment_status'),
+        new OA\Property(property: 'billing_status'),
+        new OA\Property(property: 'payment_terms'),
+        new OA\Property(property: 'shipping_method'),
+        new OA\Property(property: 'notes', type: 'string'),
+        new OA\Property(property: 'items'),
+        new OA\Property(property: 'holds'),
+        new OA\Property(property: 'created_at'),
+        new OA\Property(property: 'updated_at'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'InvoicingSalesDeliveryNoteResource',
+    description: 'JSON representation produced by SalesDeliveryNoteResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string'),
+        new OA\Property(property: 'contact_id', type: 'string'),
+        new OA\Property(property: 'sales_order_id', type: 'string'),
+        new OA\Property(property: 'warehouse_id', type: 'string'),
+        new OA\Property(property: 'ddt_number'),
+        new OA\Property(property: 'date', type: 'string', format: 'date'),
+        new OA\Property(property: 'transport_reason'),
+        new OA\Property(property: 'packages_count', type: 'integer', nullable: true),
+        new OA\Property(property: 'gross_weight_kg', type: 'number'),
+        new OA\Property(property: 'carrier_name'),
+        new OA\Property(property: 'status'),
+        new OA\Property(property: 'shipping_status'),
+        new OA\Property(property: 'tracking_number'),
+        new OA\Property(property: 'shipped_at'),
+        new OA\Property(property: 'delivered_at'),
+        new OA\Property(property: 'items'),
+        new OA\Property(property: 'created_at'),
+        new OA\Property(property: 'updated_at'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'InvoicingSalesInvoiceResource',
+    description: 'JSON representation produced by SalesInvoiceResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string'),
+        new OA\Property(property: 'contact_id', type: 'string'),
+        new OA\Property(property: 'invoice_number'),
+        new OA\Property(property: 'invoice_type'),
+        new OA\Property(property: 'status'),
+        new OA\Property(property: 'date', type: 'string', format: 'date'),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'currency', type: 'string'),
+        new OA\Property(property: 'exchange_rate', type: 'number'),
+        new OA\Property(property: 'subtotal', type: 'number'),
+        new OA\Property(property: 'discount_amount', type: 'number'),
+        new OA\Property(property: 'total_net', type: 'number'),
+        new OA\Property(property: 'total_tax', type: 'number'),
+        new OA\Property(property: 'total_gross', type: 'number'),
+        new OA\Property(property: 'receivable_amount', type: 'number'),
+        new OA\Property(property: 'total_paid', type: 'number'),
+        new OA\Property(property: 'outstanding_balance', type: 'number'),
+        new OA\Property(property: 'payment_status'),
+        new OA\Property(property: 'jurisdiction'),
+        new OA\Property(property: 'split_payment', type: 'boolean'),
+        new OA\Property(property: 'reverse_charge', type: 'boolean'),
+        new OA\Property(property: 'sales_order_id', type: 'string'),
+        new OA\Property(property: 'delivery_note_id', type: 'string'),
+        new OA\Property(property: 'related_invoice_id', type: 'string'),
+        new OA\Property(property: 'project_id', type: 'string'),
+        new OA\Property(property: 'project_milestone_id', type: 'string'),
+        new OA\Property(property: 'posted_at'),
+        new OA\Property(property: 'posted_by'),
+        new OA\Property(property: 'items'),
+        new OA\Property(property: 'created_at'),
+        new OA\Property(property: 'updated_at'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'InvoicingCustomerCreditProfileResource',
+    description: 'JSON representation produced by CustomerCreditProfileResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string'),
+        new OA\Property(property: 'customer_id', type: 'string'),
+        new OA\Property(property: 'credit_limit', type: 'number'),
+        new OA\Property(property: 'used_credit', type: 'number'),
+        new OA\Property(property: 'pending_orders_amount', type: 'number'),
+        new OA\Property(property: 'total_exposure', type: 'number'),
+        new OA\Property(property: 'overdue_amount', type: 'number'),
+        new OA\Property(property: 'max_overdue_days', type: 'integer', nullable: true),
+        new OA\Property(property: 'credit_status'),
+        new OA\Property(property: 'risk_rating'),
+        new OA\Property(property: 'is_credit_hold', type: 'boolean'),
+        new OA\Property(property: 'hold_reason'),
+        new OA\Property(property: 'last_evaluated_at'),
+        new OA\Property(property: 'created_at'),
+        new OA\Property(property: 'updated_at'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'InvoicingCustomerLedgerEntryResource',
+    description: 'JSON representation produced by CustomerLedgerEntryResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string'),
+        new OA\Property(property: 'customer_id', type: 'string'),
+        new OA\Property(property: 'invoice_id', type: 'string'),
+        new OA\Property(property: 'entry_number'),
+        new OA\Property(property: 'entry_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'entry_type'),
+        new OA\Property(property: 'document_reference'),
+        new OA\Property(property: 'debit_amount', type: 'number'),
+        new OA\Property(property: 'credit_amount', type: 'number'),
+        new OA\Property(property: 'balance_after', type: 'number'),
+        new OA\Property(property: 'cleared_amount', type: 'number'),
+        new OA\Property(property: 'outstanding_amount', type: 'number'),
+        new OA\Property(property: 'currency', type: 'string'),
+        new OA\Property(property: 'status'),
+        new OA\Property(property: 'cleared_at'),
+        new OA\Property(property: 'created_at'),
+    ]
+)]
+final class InvoicingResponseSchemas {}

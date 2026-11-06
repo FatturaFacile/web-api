@@ -26,7 +26,7 @@ class VendorAgingRequest extends FormRequest
     {
         return [
             'as_of_date' => ['sometimes', 'date_format:Y-m-d'],
-            'supplier_id' => ['sometimes', 'uuid', Rule::exists('contacts', 'id')->where('tenant_id', app(TenantContext::class)->getTenantId())],
+            'supplier_id' => ['sometimes', 'uuid', Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', app(TenantContext::class)->getTenantId())->orWhereNull('tenant_id'))],
         ];
     }
 

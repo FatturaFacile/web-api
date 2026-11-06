@@ -21,6 +21,7 @@ use Modules\SubscriptionBilling\Http\Requests\DowngradePlanRequest;
 use Modules\SubscriptionBilling\Http\Requests\UpgradePlanRequest;
 use Modules\SubscriptionBilling\Http\Resources\SubscriptionResource;
 use Modules\SubscriptionBilling\Models\Subscription;
+use OpenApi\Attributes as OA;
 
 final class SubscriptionController extends Controller
 {
@@ -31,6 +32,26 @@ final class SubscriptionController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the paginated list of contracts of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/sub/contracts',
+        operationId: 'listSubContracts',
+        description: 'Returns the paginated list of contracts of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List contracts',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'customer_id', in: 'query', required: false, description: 'Filter by customer', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of contracts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -56,6 +77,23 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Creates a new contract in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/sub/contracts',
+        operationId: 'createSubContract',
+        description: 'Creates a new contract in the active tenant.',
+        summary: 'Create contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingCreateSubscriptionRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Contract created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function store(CreateSubscriptionRequest $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -85,6 +123,25 @@ final class SubscriptionController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns a single contract of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/sub/contracts/{id}',
+        operationId: 'getSubContract',
+        description: 'Returns a single contract of the active tenant.',
+        summary: 'Get contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function show(Request $request, string $id): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -98,6 +155,41 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Activates a subscription.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/activate',
+        operationId: 'activateSubscription',
+        description: 'Activates a subscription.',
+        summary: 'Activate subscription',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the subscription', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    #[OA\Post(
+        path: '/api/v1/sub/contracts/{id}/activate',
+        operationId: 'activateSubContract',
+        description: 'Activates a subscription contract.',
+        summary: 'Activate subscription contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function activate(Request $request, string $id): JsonResponse
     {
         $subscription = $this->lifecycleService->activateSubscription($id, $request->user()?->id);
@@ -108,6 +200,43 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Suspends a subscription, recording the reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/suspend',
+        operationId: 'suspendSubscription',
+        description: 'Suspends a subscription, recording the reason.',
+        summary: 'Suspend subscription',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the subscription', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'reason', type: 'string', default: 'Administrative suspension')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    #[OA\Post(
+        path: '/api/v1/sub/contracts/{id}/suspend',
+        operationId: 'suspendSubContract',
+        description: 'Suspends a subscription contract, recording the reason.',
+        summary: 'Suspend subscription contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'reason', type: 'string', default: 'Administrative suspension')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function suspend(Request $request, string $id): JsonResponse
     {
         $reason = $request->input('reason', 'Administrative suspension');
@@ -119,6 +248,41 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Reactivates a suspended subscription.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/reactivate',
+        operationId: 'reactivateSubscription',
+        description: 'Reactivates a suspended subscription.',
+        summary: 'Reactivate subscription',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the subscription', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    #[OA\Post(
+        path: '/api/v1/sub/contracts/{id}/reactivate',
+        operationId: 'reactivateSubContract',
+        description: 'Reactivates a suspended subscription contract.',
+        summary: 'Reactivate subscription contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function reactivate(Request $request, string $id): JsonResponse
     {
         $subscription = $this->lifecycleService->reactivateSubscription($id, $request->user()?->id);
@@ -129,6 +293,45 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Moves a subscription to a higher plan.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/upgrade',
+        operationId: 'upgradeSubscription',
+        description: 'Moves a subscription to a higher plan.',
+        summary: 'Upgrade subscription',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the subscription', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingUpgradePlanRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    #[OA\Post(
+        path: '/api/v1/sub/contracts/{id}/upgrade',
+        operationId: 'upgradeSubContract',
+        description: 'Moves a subscription contract to a higher plan.',
+        summary: 'Upgrade subscription contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingUpgradePlanRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function upgrade(UpgradePlanRequest $request, string $id): JsonResponse
     {
         $validated = $request->validated();
@@ -148,6 +351,45 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Moves a subscription to a lower plan.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/{id}/downgrade',
+        operationId: 'downgradeSubscription',
+        description: 'Moves a subscription to a lower plan.',
+        summary: 'Downgrade subscription',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the subscription', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingDowngradePlanRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    #[OA\Post(
+        path: '/api/v1/sub/contracts/{id}/downgrade',
+        operationId: 'downgradeSubContract',
+        description: 'Moves a subscription contract to a lower plan.',
+        summary: 'Downgrade subscription contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingDowngradePlanRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function downgrade(DowngradePlanRequest $request, string $id): JsonResponse
     {
         $validated = $request->validated();
@@ -167,6 +409,27 @@ final class SubscriptionController extends Controller
         ]);
     }
 
+    /**
+     * Cancels a subscription contract at the given date, recording the reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/sub/contracts/{id}/cancel',
+        operationId: 'cancelSubContract',
+        description: 'Cancels a subscription contract at the given date, recording the reason.',
+        summary: 'Cancel subscription contract',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Contracts'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingCancelSubscriptionRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function cancel(CancelSubscriptionRequest $request, string $id): JsonResponse
     {
         $validated = $request->validated();

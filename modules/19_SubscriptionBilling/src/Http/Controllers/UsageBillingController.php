@@ -18,6 +18,7 @@ use Modules\SubscriptionBilling\Http\Resources\BillingRunResource;
 use Modules\SubscriptionBilling\Http\Resources\UsageEventResource;
 use Modules\SubscriptionBilling\Models\SubscriptionItem;
 use Modules\SubscriptionBilling\Models\UsageEvent;
+use OpenApi\Attributes as OA;
 
 final class UsageBillingController extends Controller
 {
@@ -27,6 +28,23 @@ final class UsageBillingController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Records a metered usage event on a subscription item.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/usage',
+        operationId: 'recordUsageSubscriptionsUsage',
+        description: 'Records a metered usage event on a subscription item.',
+        summary: 'Record usage event',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Usage'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingRecordUsageRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Usage created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingUsageEventResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function recordUsage(RecordUsageRequest $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -54,6 +72,26 @@ final class UsageBillingController extends Controller
         ], 201);
     }
 
+    /**
+     * Returns the paginated usage events of the active tenant, latest first, optionally filtered by subscription and metric.
+     */
+    #[OA\Get(
+        path: '/api/v1/subscriptions/usage',
+        operationId: 'listUsageEventsSubscriptionsUsage',
+        description: 'Returns the paginated usage events of the active tenant, latest first, optionally filtered by subscription and metric.',
+        summary: 'List usage events',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Usage'],
+        parameters: [
+            new OA\Parameter(name: 'subscription_id', in: 'query', required: false, description: 'Filter by subscription', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'metric_code', in: 'query', required: false, description: 'Filter by metric code', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingUsageEventResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function listUsageEvents(Request $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);
@@ -78,6 +116,23 @@ final class UsageBillingController extends Controller
         ]);
     }
 
+    /**
+     * Executes a billing run at the given date with the given lookahead.
+     */
+    #[OA\Post(
+        path: '/api/v1/subscriptions/billing-runs',
+        operationId: 'executeBillingRunSubscriptionsBillingRuns',
+        description: 'Executes a billing run at the given date with the given lookahead.',
+        summary: 'Execute billing run',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Subscriptions Billing Runs'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingExecuteBillingRunRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingBillingRunResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function executeBillingRun(ExecuteBillingRunRequest $request): JsonResponse
     {
         $tenantId = $this->resolveTenantId($request);

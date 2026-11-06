@@ -21,7 +21,7 @@ class OpenPosSessionRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'pos_terminal_id' => ['required', 'uuid', Rule::exists('pos_terminals', 'id')->where('tenant_id', app(TenantContext::class)->getTenantId())],
+            'pos_terminal_id' => ['required', 'uuid', Rule::exists('pos_terminals', 'id')->where(fn ($query) => $query->where('tenant_id', app(TenantContext::class)->getTenantId())->orWhereNull('tenant_id'))],
             'opening_float' => ['nullable', 'numeric', 'min:0'],
         ];
     }

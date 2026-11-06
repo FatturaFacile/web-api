@@ -250,6 +250,24 @@ class AppointmentController extends Controller
     /**
      * Update an appointment.
      */
+    #[OA\Patch(
+        path: '/api/v1/appointments/{id}',
+        operationId: 'patchAppointment',
+        description: 'Updates an existing appointment of the active tenant.',
+        summary: 'Update appointment',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Appointments'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the appointment', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/UpdateAppointmentRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AppointmentResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     #[OA\Put(
         path: '/api/v1/appointments/{id}',
         summary: 'Update appointment',

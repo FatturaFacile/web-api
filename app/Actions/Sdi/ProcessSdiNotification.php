@@ -17,15 +17,16 @@ class ProcessSdiNotification
 {
     /**
      * SDI receipt codes mapped to the invoice SDI status.
-     * RC delivered, NS rejected by SDI, MC delivery failed, DT deadline passed (treated as delivered),
-     * NEC1 accepted by the customer, NEC2 rejected by the customer.
+     * RC delivered, NS rejected by SDI, MC and AT not delivered (the invoice is valid and waits in the tax drawer of the
+     * customer), DT deadline passed (treated as delivered), NEC1 accepted by the customer, NEC2 rejected by the customer.
      *
      * @var array<string, string>
      */
     private const STATUS_BY_EVENT = [
         'RC' => 'delivered',
         'NS' => 'rejected',
-        'MC' => 'failed',
+        'MC' => 'not_delivered',
+        'AT' => 'not_delivered',
         'DT' => 'delivered',
         'NEC1' => 'accepted',
         'NEC2' => 'rejected',
@@ -103,6 +104,7 @@ class ProcessSdiNotification
                 'event_type' => $data['event_type'],
                 'sdi_status' => $status,
                 'message' => $data['message'] ?? null,
+                'courtesy_copy_required' => $status === 'not_delivered',
             ]);
 
             return $this->finish($log, 'processed');

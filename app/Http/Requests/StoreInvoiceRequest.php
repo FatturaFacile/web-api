@@ -26,7 +26,7 @@ class StoreInvoiceRequest extends FormRequest
             'contact_id' => [
                 'required',
                 'uuid',
-                Rule::exists('contacts', 'id')->where('tenant_id', $tenantId),
+                Rule::exists('contacts', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
             'invoice_type' => ['required', Rule::in(['standard', 'sdi_electronic', 'ch_qr_bill', 'credit_note', 'proforma'])],
             'invoice_number' => [
@@ -44,7 +44,7 @@ class StoreInvoiceRequest extends FormRequest
             'reverse_charge' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where('tenant_id', $tenantId)],
+            'items.*.product_id' => ['nullable', 'uuid', Rule::exists('products', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'items.*.description' => ['required', 'string', 'max:1000'],
             'items.*.quantity' => ['required', 'numeric', 'gt:0'],
             'items.*.unit_price' => ['required', 'numeric', 'min:0'],

@@ -31,6 +31,7 @@ class TenantAccessRequestController extends Controller
     #[OA\Get(
         path: '/api/v1/admin/tenant-access-requests',
         operationId: 'listTenantAccessRequests',
+        description: 'Returns the paginated access requests created by self-registered users, filtered by status.',
         summary: 'List the access requests of self-registered users',
         security: [['bearerAuth' => []]],
         tags: ['Platform Administration'],
@@ -91,6 +92,7 @@ class TenantAccessRequestController extends Controller
     #[OA\Post(
         path: '/api/v1/admin/tenant-access-requests/{id}/move',
         operationId: 'moveTenantAccessRequest',
+        description: 'Approves the access request on a different existing tenant than the one the registration matched.',
         summary: 'Give the user access to a different existing tenant',
         security: [['bearerAuth' => []]],
         tags: ['Platform Administration'],
@@ -119,6 +121,7 @@ class TenantAccessRequestController extends Controller
     #[OA\Post(
         path: '/api/v1/admin/tenant-access-requests/{id}/reject',
         operationId: 'rejectTenantAccessRequest',
+        description: 'Rejects the access request, recording the optional reason.',
         summary: 'Reject an access request',
         security: [['bearerAuth' => []]],
         tags: ['Platform Administration'],

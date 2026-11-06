@@ -21,6 +21,7 @@ use Modules\HumanResources\Models\Certification;
 use Modules\HumanResources\Models\PerformanceReview;
 use Modules\HumanResources\Models\TrainingCourse;
 use Modules\HumanResources\Models\TrainingRecord;
+use OpenApi\Attributes as OA;
 
 final class TalentAndTrainingController extends Controller
 {
@@ -30,6 +31,21 @@ final class TalentAndTrainingController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
+    /**
+     * Returns the performance reviews of the active tenant, latest first.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/performance-reviews',
+        operationId: 'getReviewsHrPerformanceReviews',
+        description: 'Returns the performance reviews of the active tenant, latest first.',
+        summary: 'List performance reviews',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Performance Reviews'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HumanResourcesPerformanceReviewResource'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function reviews(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -38,6 +54,23 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => PerformanceReviewResource::collection($reviews)]);
     }
 
+    /**
+     * Submits a performance review for an employee.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/performance-reviews',
+        operationId: 'submitReviewHrPerformanceReviews',
+        description: 'Submits a performance review for an employee.',
+        summary: 'Submit performance review',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Performance Reviews'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HumanResourcesSubmitPerformanceReviewRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Performance review created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesPerformanceReviewResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function submitReview(SubmitPerformanceReviewRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -65,6 +98,25 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => new PerformanceReviewResource($review)], 201);
     }
 
+    /**
+     * Completes a performance review on behalf of the authenticated user.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/performance-reviews/{id}/complete',
+        operationId: 'completeReviewHrPerformanceReview',
+        description: 'Completes a performance review on behalf of the authenticated user.',
+        summary: 'Complete performance review',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Performance Reviews'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the performance review', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesPerformanceReviewResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function completeReview(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -76,6 +128,21 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => new PerformanceReviewResource($updated)]);
     }
 
+    /**
+     * Returns the training courses of the active tenant ordered by course code.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/training-courses',
+        operationId: 'getCoursesHrTrainingCourses',
+        description: 'Returns the training courses of the active tenant ordered by course code.',
+        summary: 'List training courses',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Training Courses'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HumanResourcesTrainingCourseModel'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function courses(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -85,6 +152,22 @@ final class TalentAndTrainingController extends Controller
         ]);
     }
 
+    /**
+     * Creates a training course in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/training-courses',
+        operationId: 'storeCourseHrTrainingCourses',
+        description: 'Creates a training course in the active tenant.',
+        summary: 'Create training course',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Training Courses'],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'course_code', type: 'string'), new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'category', type: 'string', default: 'safety'), new OA\Property(property: 'provider', type: 'string', default: 'Enterprise Academy'), new OA\Property(property: 'duration_hours', type: 'number', default: 8), new OA\Property(property: 'cost_per_participant', type: 'number', default: 0), new OA\Property(property: 'validity_months', type: 'integer', default: 24), new OA\Property(property: 'is_mandatory_compliance', type: 'boolean', default: false)])),
+        responses: [
+            new OA\Response(response: 201, description: 'Training course created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesTrainingCourseModel')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function storeCourse(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -106,6 +189,21 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => $course], 201);
     }
 
+    /**
+     * Returns the training records of the active tenant, latest assignment first.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/training-records',
+        operationId: 'getTrainingRecordsHr',
+        description: 'Returns the training records of the active tenant, latest assignment first.',
+        summary: 'List training records',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Training Records'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HumanResourcesTrainingRecordResource'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function trainingRecords(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -114,6 +212,23 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => TrainingRecordResource::collection($records)]);
     }
 
+    /**
+     * Assigns a training course to an employee.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/training-records',
+        operationId: 'assignTrainingHrTrainingRecords',
+        description: 'Assigns a training course to an employee.',
+        summary: 'Assign training',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Training Records'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HumanResourcesAssignTrainingRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Training record created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesTrainingRecordResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     public function assignTraining(AssignTrainingRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -131,6 +246,26 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => new TrainingRecordResource($record)], 201);
     }
 
+    /**
+     * Completes a training record with the final score.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/training-records/{id}/complete',
+        operationId: 'completeTrainingHrTrainingRecord',
+        description: 'Completes a training record with the final score.',
+        summary: 'Complete training',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Training Records'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the training record', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'score', type: 'number', default: 100)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesTrainingRecordResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function completeTraining(Request $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -146,6 +281,21 @@ final class TalentAndTrainingController extends Controller
         return response()->json(['data' => new TrainingRecordResource($updated)]);
     }
 
+    /**
+     * Returns the certifications of the active tenant ordered by expiry date.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/certifications',
+        operationId: 'getCertificationsHr',
+        description: 'Returns the certifications of the active tenant ordered by expiry date.',
+        summary: 'List certifications',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Certifications'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HumanResourcesCertificationModel'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function certifications(): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -155,6 +305,22 @@ final class TalentAndTrainingController extends Controller
         ]);
     }
 
+    /**
+     * Raises alerts for the certifications that expire within the given days and returns how many were alerted.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/certifications/scan-expiring',
+        operationId: 'scanExpiringCertificationsHrCertificationsScanExpiring',
+        description: 'Raises alerts for the certifications that expire within the given days and returns how many were alerted.',
+        summary: 'Scan expiring certifications',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Certifications'],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'within_days', type: 'integer', default: 30)])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'expiring_certifications_alerted', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function scanExpiringCertifications(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();

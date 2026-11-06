@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\AssetManagement\Events\AssetAssignedEvent;
 use Modules\AssetManagement\Events\AssetDisposedEvent;
 use Modules\AssetManagement\Events\AssetTransferredEvent;
+use Modules\HumanResources\Console\Commands\PurgeExpiredTimeRecordsCommand;
 use Modules\HumanResources\Contracts\EmployeeLifecycleServiceInterface;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
 use Modules\HumanResources\Contracts\OrganizationManagementServiceInterface;
@@ -40,11 +41,16 @@ use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\LeaveRequest;
 use Modules\HumanResources\Models\PerformanceReview;
+use Modules\HumanResources\Models\TimeAuditEntry;
+use Modules\HumanResources\Models\TimeClockEvent;
+use Modules\HumanResources\Models\TimeDailyRecord;
+use Modules\HumanResources\Models\TimeRecordingProfile;
 use Modules\HumanResources\Models\TrainingRecord;
 use Modules\HumanResources\Policies\DepartmentPolicy;
 use Modules\HumanResources\Policies\EmployeePolicy;
 use Modules\HumanResources\Policies\LeaveRequestPolicy;
 use Modules\HumanResources\Policies\PerformanceReviewPolicy;
+use Modules\HumanResources\Policies\TimeTrackingPolicy;
 use Modules\HumanResources\Policies\TrainingRecordPolicy;
 use Modules\HumanResources\Services\EmployeeLifecycleService;
 use Modules\HumanResources\Services\LeaveAndTimeService;
@@ -77,6 +83,14 @@ final class HumanResourcesServiceProvider extends ServiceProvider
         Gate::policy(Department::class, DepartmentPolicy::class);
         Gate::policy(PerformanceReview::class, PerformanceReviewPolicy::class);
         Gate::policy(TrainingRecord::class, TrainingRecordPolicy::class);
+        Gate::policy(TimeClockEvent::class, TimeTrackingPolicy::class);
+        Gate::policy(TimeDailyRecord::class, TimeTrackingPolicy::class);
+        Gate::policy(TimeAuditEntry::class, TimeTrackingPolicy::class);
+        Gate::policy(TimeRecordingProfile::class, TimeTrackingPolicy::class);
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([PurgeExpiredTimeRecordsCommand::class]);
+        }
 
         $domainEvents = [
             EmployeeHiredEvent::class,

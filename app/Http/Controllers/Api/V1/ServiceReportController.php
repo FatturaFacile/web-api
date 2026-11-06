@@ -208,6 +208,24 @@ class ServiceReportController extends Controller
     /**
      * Update an existing service report and its lines.
      */
+    #[OA\Patch(
+        path: '/api/v1/service-reports/{id}',
+        operationId: 'patchServiceReport',
+        description: 'Updates an existing service report of the active tenant.',
+        summary: 'Update service report',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Service Reports'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the service report', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/UpdateServiceReportRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ServiceReportResource')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     #[OA\Put(
         path: '/api/v1/service-reports/{id}',
         summary: 'Update service report',

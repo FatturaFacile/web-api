@@ -16,9 +16,32 @@ use Modules\Workflow\Http\Resources\WorkflowAuditEntryResource;
 use Modules\Workflow\Http\Resources\WorkflowInstanceResource;
 use Modules\Workflow\Models\WorkflowInstance;
 use Modules\Workflow\Services\WorkflowEngineService;
+use OpenApi\Attributes as OA;
 
 final class WorkflowInstanceController extends Controller
 {
+    /**
+     * Returns the paginated list of instances of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/workflows/instances',
+        operationId: 'listWorkflowsInstances',
+        description: 'Returns the paginated list of instances of the active tenant. Results can be narrowed with the query parameters.',
+        summary: 'List active and historical workflow instances',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Instances'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'approvable_type', in: 'query', required: false, description: 'Filter by approvable type', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'approvable_id', in: 'query', required: false, description: 'Filter by approvable', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'List of instances', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowInstanceResource')), new OA\Property(property: 'links', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'List active and historical workflow instances', tags: ['Workflow Engine'])]
     public function index(Request $request): JsonResponse
     {
@@ -32,6 +55,25 @@ final class WorkflowInstanceController extends Controller
         return response()->json(WorkflowInstanceResource::collection($instances)->response()->getData(true));
     }
 
+    /**
+     * Returns a single instance of the active tenant.
+     */
+    #[OA\Get(
+        path: '/api/v1/workflows/instances/{id}',
+        operationId: 'getWorkflowsInstance',
+        description: 'Returns a single instance of the active tenant.',
+        summary: 'Retrieve workflow instance details with active steps',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the instance', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/WorkflowInstanceResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Retrieve workflow instance details with active steps', tags: ['Workflow Engine'])]
     public function show(string $id): JsonResponse
     {
@@ -40,6 +82,23 @@ final class WorkflowInstanceController extends Controller
         return response()->json(new WorkflowInstanceResource($instance));
     }
 
+    /**
+     * Creates a new instance in the active tenant.
+     */
+    #[OA\Post(
+        path: '/api/v1/workflows/instances',
+        operationId: 'createWorkflowsInstance',
+        description: 'Creates a new instance in the active tenant.',
+        summary: 'Initiate a new workflow instance for an approvable entity',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Instances'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkflowStartWorkflowRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Instance created', content: new OA\JsonContent(ref: '#/components/schemas/WorkflowInstanceResource')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Initiate a new workflow instance for an approvable entity', tags: ['Workflow Engine'])]
     public function store(StartWorkflowRequest $request, StartWorkflowAction $action): JsonResponse
     {
@@ -61,6 +120,26 @@ final class WorkflowInstanceController extends Controller
         return response()->json(new WorkflowInstanceResource($instance), 201);
     }
 
+    /**
+     * Cancels an active workflow instance, recording the optional reason.
+     */
+    #[OA\Post(
+        path: '/api/v1/workflows/instances/{id}/cancel',
+        operationId: 'cancelWorkflowsInstance',
+        description: 'Cancels an active workflow instance, recording the optional reason.',
+        summary: 'Cancel workflow instance',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the instance', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'reason')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Cancel an active workflow instance', tags: ['Workflow Engine'])]
     public function cancel(string $id, Request $request, WorkflowEngineService $engine): JsonResponse
     {
@@ -70,6 +149,25 @@ final class WorkflowInstanceController extends Controller
         return response()->json(['message' => 'Workflow instance successfully cancelled.']);
     }
 
+    /**
+     * Returns the cryptographic forensic audit trail of a workflow instance.
+     */
+    #[OA\Get(
+        path: '/api/v1/workflows/instances/{id}/audit-trail',
+        operationId: 'getAuditTrailWorkflowsInstance',
+        description: 'Returns the cryptographic forensic audit trail of a workflow instance.',
+        summary: 'Get workflow audit trail',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Instances'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the instance', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowAuditEntryResource'))),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     #[EnterpriseEndpoint(summary: 'Retrieve cryptographic forensic audit trail for a workflow instance', tags: ['Workflow Engine'])]
     public function auditTrail(string $id): JsonResponse
     {
