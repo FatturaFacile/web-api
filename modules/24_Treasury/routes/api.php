@@ -11,6 +11,7 @@ use Modules\Treasury\Http\Controllers\FxRiskController;
 use Modules\Treasury\Http\Controllers\LiquidityController;
 use Modules\Treasury\Http\Controllers\PaymentBatchController;
 use Modules\Treasury\Http\Controllers\ReceivableCollectionController;
+use Modules\Treasury\Http\Controllers\RibaController;
 
 Route::prefix('api/v1/treasury')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:treasury'])
@@ -32,6 +33,14 @@ Route::prefix('api/v1/treasury')
         Route::post('payment-batches/{id}/pain002', [PaymentBatchController::class, 'importPain002']);
         Route::post('payment-batches/{id}/cancel', [PaymentBatchController::class, 'cancel']);
         Route::apiResource('payment-batches', PaymentBatchController::class)->except(['update', 'destroy']);
+
+        // Ri.Ba. collections: created and approved like any batch, exported to the CBI flat file
+        Route::post('riba/batches', [RibaController::class, 'store'])->name('treasury.riba.store');
+        Route::get('riba/batches/{id}', [RibaController::class, 'show'])->name('treasury.riba.show');
+        Route::post('riba/batches/{id}/export', [RibaController::class, 'export'])->name('treasury.riba.export');
+        Route::get('riba/batches/{id}/file', [RibaController::class, 'file'])->name('treasury.riba.file');
+        Route::post('riba/receipts/{id}/paid', [RibaController::class, 'paid'])->name('treasury.riba.paid');
+        Route::post('riba/receipts/{id}/unpaid', [RibaController::class, 'unpaid'])->name('treasury.riba.unpaid');
 
         // Bank Statements & Reconciliations
         Route::get('reconciliations', [BankReconciliationController::class, 'index']);
