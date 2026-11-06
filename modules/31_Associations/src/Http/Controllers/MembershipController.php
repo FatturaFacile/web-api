@@ -54,7 +54,7 @@ final class MembershipController extends AssociationController
     }
 
     #[AssociationPost('/api/v1/associations/memberships', 'createAssociationMembership', 'Open a membership for a person', 'AssociationMembershipRequest')]
-    public function store(StoreMembershipRequest $request): AssociationRecordResource
+    public function store(StoreMembershipRequest $request): JsonResponse
     {
         $this->authorize('create', Membership::class);
 
@@ -64,7 +64,8 @@ final class MembershipController extends AssociationController
             MembershipType::query()->findOrFail($request->validated('membership_type_id')),
         );
 
-        return new AssociationRecordResource($request->boolean('activate') ? $this->memberships->activate($membership) : $membership);
+        return (new AssociationRecordResource($request->boolean('activate') ? $this->memberships->activate($membership) : $membership))
+            ->response()->setStatusCode(201);
     }
 
     #[AssociationGet('/api/v1/associations/memberships/{id}', 'showAssociationMembership', 'Show a membership')]
@@ -86,18 +87,18 @@ final class MembershipController extends AssociationController
     }
 
     #[AssociationPost('/api/v1/associations/memberships/{id}/renew', 'renewAssociationMembership', 'Renew a membership in a following year, with the same card number', 'AssociationMembershipRenewRequest')]
-    public function renew(RenewMembershipRequest $request, string $id): AssociationRecordResource
+    public function renew(RenewMembershipRequest $request, string $id): JsonResponse
     {
         $membership = Membership::query()->with(['year', 'membershipType'])->findOrFail($id);
         $this->authorize('update', $membership);
         $typeId = $request->validated('membership_type_id');
 
-        return new AssociationRecordResource($this->memberships->renew(
+        return (new AssociationRecordResource($this->memberships->renew(
             $membership,
             AssociativeYear::query()->findOrFail($request->validated('year_id')),
             $typeId === null ? null : MembershipType::query()->findOrFail($typeId),
             $request->boolean('activate', true),
-        ));
+        )))->response()->setStatusCode(201);
     }
 
     #[AssociationPost('/api/v1/associations/memberships/{id}/suspend', 'suspendAssociationMembership', 'Suspend a membership. Its credentials stop working', 'AssociationReasonRequest')]

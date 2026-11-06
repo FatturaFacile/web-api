@@ -11,7 +11,8 @@ use Modules\Associations\Models\Member;
 use Modules\Associations\Support\AssociationCapability;
 
 /**
- * A person as the staff sees it. Health data needs its own capability.
+ * A person as the staff sees it. Health data needs its own capability; what an accountant does not need for fees and
+ * receipts stays with those who manage the registry.
  *
  * @mixin Member
  */
@@ -23,6 +24,7 @@ final class MemberResource extends JsonResource
     public function toArray(Request $request): array
     {
         $canSeeHealth = Gate::allows(AssociationCapability::Health->value);
+        $canManage = Gate::allows(AssociationCapability::Manage->value);
 
         return [
             'id' => $this->id,
@@ -41,10 +43,10 @@ final class MemberResource extends JsonResource
             'birth_place' => $this->birth_place,
             'gender' => $this->gender,
             'tax_code' => $this->tax_code,
-            'identity_document' => $this->identity_document,
+            'identity_document' => $this->when($canManage, $this->identity_document),
             'custom_fields' => $this->custom_fields ?? [],
-            'internal_notes' => $this->internal_notes,
-            'emergency_contact' => $this->emergency_contact,
+            'internal_notes' => $this->when($canManage, $this->internal_notes),
+            'emergency_contact' => $this->when($canManage, $this->emergency_contact),
             'health_notes' => $this->when($canSeeHealth, $this->health_notes),
             'allergies' => $this->when($canSeeHealth, $this->allergies),
             'registry_assignments' => $this->whenLoaded('registryAssignments'),

@@ -35,12 +35,14 @@ final class AuthenticateMemberArea
             return $this->problemDetailsResponse(title: 'Unauthenticated', detail: 'The X-Area-Token header is required.', status: Response::HTTP_UNAUTHORIZED);
         }
 
+        $previous = $this->tenantContext->isExplicit() ? $this->tenantContext->getTenant() : null;
+
         try {
             $request->attributes->set('areaAccess', $this->tokens->access($token));
 
             return $next($request);
         } finally {
-            $this->tenantContext->clear();
+            $previous === null ? $this->tenantContext->clear() : $this->tenantContext->setTenant($previous);
         }
     }
 }

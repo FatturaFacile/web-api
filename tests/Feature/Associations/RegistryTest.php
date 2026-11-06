@@ -123,7 +123,7 @@ test('documents stay on the private disk and are downloaded through authorizatio
         'expires_on' => now()->addDays(10)->toDateString(),
     ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
 
-    expect(DB::table('assoc_member_documents')->where('id', $id)->value('path'))->toStartWith("associations/{$this->tenant->id}/")
+    expect(DB::table('assoc_member_documents')->where('id', $id)->value('path'))->toStartWith("tenants/{$this->tenant->id}/associations/")
         ->and($this->getJson("/api/v1/associations/members/{$member->id}/documents")->json('data.0'))->not->toHaveKey('path')
         ->and($this->getJson('/api/v1/associations/member-documents/expiring?days=30')->json('data'))->toHaveCount(1);
 

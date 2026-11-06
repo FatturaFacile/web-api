@@ -36,13 +36,14 @@ final class AuthenticateAccessDevice
             return $this->problemDetailsResponse(title: 'Unauthenticated', detail: 'Unknown device or wrong secret.', status: Response::HTTP_UNAUTHORIZED);
         }
 
+        $previous = $this->tenantContext->isExplicit() ? $this->tenantContext->getTenant() : null;
         $this->tenantContext->setTenant($tenant);
         $request->attributes->set('accessDevice', $device);
 
         try {
             return $next($request);
         } finally {
-            $this->tenantContext->clear();
+            $previous === null ? $this->tenantContext->clear() : $this->tenantContext->setTenant($previous);
         }
     }
 }

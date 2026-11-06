@@ -11,8 +11,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
- * The files of the module live on the private disk, under a directory of the tenant and with a random name. They are
- * only reachable through the authorized download endpoints.
+ * The files of the module live on the private disk, under the directory of the tenant that backups copy, with a random
+ * name. They are only reachable through the authorized download endpoints.
  */
 final class PrivateFiles
 {
@@ -21,9 +21,9 @@ final class PrivateFiles
      */
     public function store(UploadedFile $file, string $tenantId, string $folder): array
     {
-        $disk = (string) config('filesystems.private_disk', 'private');
+        $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
         $name = Str::random(40).'.'.strtolower($file->guessExtension() ?: 'bin');
-        $path = "associations/{$tenantId}/{$folder}/{$name}";
+        $path = "tenants/{$tenantId}/associations/{$folder}/{$name}";
 
         Storage::disk($disk)->put($path, $file->getContent());
 

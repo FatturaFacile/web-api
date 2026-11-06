@@ -6,10 +6,10 @@ namespace Modules\Associations\DTOs;
 
 use App\Models\Contact;
 use App\Models\PortalAccessToken;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Collection;
 use Modules\Associations\Models\Course;
 use Modules\Associations\Models\Member;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * Who is using the member area: a contact, what it is in the registry, the minors in its care and the courses it
@@ -34,17 +34,17 @@ final readonly class AreaAccess
      */
     public function subjects(): Collection
     {
-        return $this->self === null ? $this->wards : $this->wards->prepend($this->self);
+        return $this->self === null ? $this->wards : collect([$this->self])->merge($this->wards);
     }
 
     /**
      * A person this access can see: itself or a minor in its care.
      *
-     * @throws ModelNotFoundException for everybody else
+     * @throws NotFoundHttpException for everybody else
      */
     public function subject(string $memberId): Member
     {
-        return $this->subjects()->firstOrFail(static fn (Member $member): bool => $member->id === $memberId);
+        return $this->subjects()->first(static fn (Member $member): bool => $member->id === $memberId) ?? throw new NotFoundHttpException('Not found.');
     }
 
     public function isGuardianOf(Member $member): bool
@@ -54,7 +54,7 @@ final readonly class AreaAccess
 
     public function course(string $courseId): Course
     {
-        return $this->courses->firstOrFail(static fn (Course $course): bool => $course->id === $courseId);
+        return $this->courses->first(static fn (Course $course): bool => $course->id === $courseId) ?? throw new NotFoundHttpException('Not found.');
     }
 
     /**

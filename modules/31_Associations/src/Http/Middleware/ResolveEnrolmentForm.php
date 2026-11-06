@@ -38,13 +38,14 @@ final class ResolveEnrolmentForm
             return $this->problemDetailsResponse(title: __('backup.maintenance.title'), detail: __('backup.maintenance.detail'), status: Response::HTTP_SERVICE_UNAVAILABLE);
         }
 
+        $previous = $this->tenantContext->isExplicit() ? $this->tenantContext->getTenant() : null;
         $this->tenantContext->setTenant($tenant);
         $request->attributes->set('enrolmentForm', $form);
 
         try {
             return $next($request);
         } finally {
-            $this->tenantContext->clear();
+            $previous === null ? $this->tenantContext->clear() : $this->tenantContext->setTenant($previous);
         }
     }
 }

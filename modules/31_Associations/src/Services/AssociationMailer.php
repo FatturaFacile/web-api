@@ -7,9 +7,11 @@ namespace Modules\Associations\Services;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Mail;
 use Modules\Associations\Mail\AssociationNoticeMail;
+use Throwable;
 
 /**
- * Sends the notices of the association through Laravel mail.
+ * Sends the notices of the association through Laravel mail. A mail server that is down never undoes the work the
+ * notice is about: the failure is reported and the caller carries on.
  */
 final class AssociationMailer
 {
@@ -24,6 +26,10 @@ final class AssociationMailer
             return;
         }
 
-        Mail::to($email)->send(new AssociationNoticeMail($subject, $lines, (string) $this->tenantContext->getTenant()?->name, $actionUrl));
+        try {
+            Mail::to($email)->send(new AssociationNoticeMail($subject, $lines, (string) $this->tenantContext->getTenant()?->name, $actionUrl));
+        } catch (Throwable $exception) {
+            report($exception);
+        }
     }
 }

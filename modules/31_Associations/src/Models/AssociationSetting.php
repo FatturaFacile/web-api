@@ -15,6 +15,16 @@ final class AssociationSetting extends AssociationRecord
 
     protected $table = 'assoc_settings';
 
+    protected $attributes = [
+        'card_prefix' => '',
+        'card_padding' => 6,
+        'receipt_prefix' => 'REC-',
+        'default_receipt_kind' => 'simple',
+        'certificate_alert_days' => 30,
+        'presence_max_hours' => 12,
+        'ledger_enabled' => true,
+    ];
+
     protected function casts(): array
     {
         return [

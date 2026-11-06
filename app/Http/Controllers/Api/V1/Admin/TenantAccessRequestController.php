@@ -77,7 +77,7 @@ class TenantAccessRequestController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Platform Administration'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
-        requestBody: new OA\RequestBody(content: new OA\JsonContent(properties: [new OA\Property(property: 'role', type: 'string', enum: ['owner', 'admin', 'accountant', 'technician', 'member'])])),
+        requestBody: new OA\RequestBody(content: new OA\JsonContent(properties: [new OA\Property(property: 'role', type: 'string', enum: ['owner', 'admin', 'accountant', 'secretary', 'technician', 'member'])])),
         responses: [
             new OA\Response(response: 200, description: 'Request approved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 403, description: 'Not a platform administrator', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -101,7 +101,7 @@ class TenantAccessRequestController extends Controller
             required: true,
             content: new OA\JsonContent(required: ['tenant_id'], properties: [
                 new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid'),
-                new OA\Property(property: 'role', type: 'string', enum: ['owner', 'admin', 'accountant', 'technician', 'member']),
+                new OA\Property(property: 'role', type: 'string', enum: ['owner', 'admin', 'accountant', 'secretary', 'technician', 'member']),
             ])
         ),
         responses: [

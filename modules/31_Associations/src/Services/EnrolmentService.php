@@ -7,6 +7,7 @@ namespace Modules\Associations\Services;
 use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -56,7 +57,7 @@ final class EnrolmentService
     {
         $trackingCode = Str::random(40);
 
-        $application = DB::transaction(function () use ($form, $data, $uploads, $ip, $trackingCode): EnrolmentApplication {
+        $store = fn (): EnrolmentApplication => DB::transaction(function () use ($form, $data, $uploads, $ip, $trackingCode): EnrolmentApplication {
             $hash = BlindIndex::taxCode($data['tax_code'], (string) $this->tenantContext->getTenantId());
             $known = Member::query()->where('tax_code_hash', $hash)->first();
             $member = $known ?? $this->createCandidate($data);
@@ -80,6 +81,13 @@ final class EnrolmentService
 
             return $application;
         });
+
+        try {
+            $application = $store();
+        } catch (UniqueConstraintViolationException) {
+            // The same person applied at the same moment: this time the first application is found.
+            $application = $store();
+        }
 
         $application->refresh();
 

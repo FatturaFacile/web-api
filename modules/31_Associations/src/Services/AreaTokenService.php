@@ -76,7 +76,7 @@ final class AreaTokenService
     public function access(string $token): AreaAccess
     {
         $accessToken = $this->tokens->resolveToken($token, self::TokenType);
-        $contact = $accessToken->contact;
+        $contact = Contact::query()->findOrFail($accessToken->contact_id);
         $self = Member::query()->with('contact')->where('contact_id', $contact->id)->first();
 
         $wards = Member::query()->with('contact')->whereIn(
