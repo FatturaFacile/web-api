@@ -51,6 +51,8 @@ final readonly class WorkflowApprovalInvoicingListener
 
         SalesQuote::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->update(['status' => 'rejected']);
         SalesOrder::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->update(['status' => 'rejected']);
-        SalesInvoice::where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId)->update(['status' => 'rejected']);
+        SalesInvoice::where(fn ($query) => $query->where('workflow_instance_id', $instanceId)->orWhere('id', $instanceId))
+            ->where('status', '!=', 'posted')
+            ->update(['status' => 'rejected']);
     }
 }

@@ -7,6 +7,8 @@ namespace Modules\GeneralLedger\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\GeneralLedger\Console\OpenFiscalYearCommand;
+use Modules\GeneralLedger\Console\PostPendingDocumentsCommand;
 use Modules\GeneralLedger\Contracts\AccountingReconciliationServiceInterface;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\FinancialStatementServiceInterface;
@@ -31,8 +33,10 @@ use Modules\GeneralLedger\Listeners\CreditNoteAccountingListener;
 use Modules\GeneralLedger\Listeners\DispatchOutboxOnGeneralLedgerEventListener;
 use Modules\GeneralLedger\Listeners\InventoryAccountingListener;
 use Modules\GeneralLedger\Listeners\InvoiceAccountingListener;
+use Modules\GeneralLedger\Listeners\PayrollAccountingListener;
 use Modules\GeneralLedger\Listeners\ProcurementAccountingListener;
 use Modules\GeneralLedger\Listeners\ProjectsAccountingListener;
+use Modules\GeneralLedger\Listeners\TreasuryAccountingListener;
 use Modules\GeneralLedger\Listeners\WorkflowApprovalGeneralLedgerListener;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\FiscalPeriod;
@@ -59,6 +63,8 @@ use Modules\Inventory\Events\InventoryValuationReadyEvent;
 use Modules\Inventory\Events\InventoryWriteOffEvent;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
+use Modules\Payroll\Events\PayrollRunFinalizedEvent;
+use Modules\Payroll\Events\PayrollRunReopenedEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Procurement\Events\PurchaseOrderCancelledEvent;
@@ -73,6 +79,8 @@ use Modules\Projects\Events\ProjectMaterialCostReadyEvent;
 use Modules\Projects\Events\ProjectRevenueReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognitionReadyEvent;
 use Modules\Projects\Events\ProjectWipReadyEvent;
+use Modules\Treasury\Events\CollectionReceivedEvent;
+use Modules\Treasury\Events\PaymentExecutedEvent;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
@@ -92,6 +100,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
         $this->registerEventListeners();
+        $this->registerConsoleCommands();
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'general-ledger');
     }
@@ -104,6 +113,13 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         Gate::policy(JournalEntry::class, JournalEntryPolicy::class);
         Gate::policy(ReconciliationRun::class, ReconciliationPolicy::class);
         Gate::policy(VatSettlement::class, VatSettlementPolicy::class);
+    }
+
+    private function registerConsoleCommands(): void
+    {
+        if ($this->app->runningInConsole()) {
+            $this->commands([OpenFiscalYearCommand::class, PostPendingDocumentsCommand::class]);
+        }
     }
 
     private function registerEventListeners(): void
@@ -158,6 +174,14 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         // Upstream Invoicing Event Consumers
         Event::listen(InvoicePostedEvent::class, [InvoiceAccountingListener::class, 'handle']);
         Event::listen(CreditNoteIssuedEvent::class, [CreditNoteAccountingListener::class, 'handle']);
+
+        // Upstream Treasury Event Consumers
+        Event::listen(PaymentExecutedEvent::class, [TreasuryAccountingListener::class, 'handlePaymentExecuted']);
+        Event::listen(CollectionReceivedEvent::class, [TreasuryAccountingListener::class, 'handleCollectionReceived']);
+
+        // Upstream Payroll Event Consumers
+        Event::listen(PayrollRunFinalizedEvent::class, [PayrollAccountingListener::class, 'handleFinalized']);
+        Event::listen(PayrollRunReopenedEvent::class, [PayrollAccountingListener::class, 'handleReopened']);
 
         // Workflow Engine V2 Approvals
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalGeneralLedgerListener::class, 'handleCompleted']);

@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 uses(RefreshDatabase::class);
 
@@ -23,6 +24,7 @@ beforeEach(function (): void {
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     $user = User::create(['name' => 'Leonardo', 'email' => 'leo@fatturafacile.com', 'password' => bcrypt('secret123'), 'locale' => 'en']);
     $user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);

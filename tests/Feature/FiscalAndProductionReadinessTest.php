@@ -20,6 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 uses(RefreshDatabase::class);
 
@@ -34,6 +35,7 @@ beforeEach(function (): void {
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     app(TenantContext::class)->setTenant($this->tenant);
 

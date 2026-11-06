@@ -21,7 +21,8 @@ final readonly class ProjectsBillingEventListener
             customerId: $event->contactId,
             amount: $event->billingAmount,
             description: 'Project Billing - '.$event->billingType,
-            tenantId: $event->tenantId
+            tenantId: $event->tenantId,
+            taxRate: $event->taxRate ?? null
         );
     }
 }

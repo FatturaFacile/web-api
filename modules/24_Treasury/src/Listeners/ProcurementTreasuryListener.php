@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Listeners;
 
+use App\Models\Contact;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Support\Str;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
@@ -27,7 +28,16 @@ final readonly class ProcurementTreasuryListener
             return;
         }
 
-        $dueDate = now()->addDays(30)->toDateString();
+        $supplier = Contact::withoutGlobalScopes()->whereKey($event->supplierId)->first();
+        $supplierIban = $supplier?->iban ?: $supplier?->qr_iban;
+
+        // Only three-way-matched orders are scheduled here: supplier invoices without an order are paid on request.
+        // A credit note is not a payment, and without the real bank details there is nothing to pay to.
+        if ($event->purchaseOrderId === '' || $event->isCreditNote || empty($supplierIban)) {
+            return;
+        }
+
+        $dueDate = $event->dueDate ?? now()->addDays(30)->toDateString();
 
         $batch = PaymentBatch::firstOrCreate(
             [
@@ -59,8 +69,8 @@ final readonly class ProcurementTreasuryListener
             'line_number' => $batch->lines()->count() + 1,
             'recipient_type' => 'supplier',
             'recipient_id' => $event->supplierId,
-            'recipient_name' => "Vendor {$event->supplierId}",
-            'recipient_iban' => 'IT02L1234512345000000123456',
+            'recipient_name' => (string) ($supplier->company_name ?: trim($supplier->first_name.' '.$supplier->last_name)),
+            'recipient_iban' => str_replace(' ', '', (string) $supplierIban),
             'amount' => $grossAmount,
             'currency' => $event->currency,
             'instruction_id' => 'INSTR-PO-'.strtoupper(Str::random(6)),

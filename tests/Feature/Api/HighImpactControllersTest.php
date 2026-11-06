@@ -18,6 +18,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
+use Modules\Treasury\Models\BankAccount as TreasuryBankAccount;
 
 uses(RefreshDatabase::class);
 
@@ -29,6 +31,7 @@ beforeEach(function (): void {
         'default_currency' => 'EUR',
         'iban' => 'IT60X0542811101000000123456',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
     app(TenantContext::class)->setTenant($this->tenant);
 
     $this->user = User::create([
@@ -161,12 +164,14 @@ test('purchases controller scans swiss qr bill payload and exports pain001', fun
     $qrLines[5] = 'Swiss Telecom AG';
     $qrLines[18] = '149.90';
     $qrLines[19] = 'CHF';
-    $qrLines[27] = '210000000003139471430009017';
+    $qrLines[27] = 'QRR';
+    $qrLines[28] = '210000000003139471430009017';
 
     $payload = implode("\n", $qrLines);
 
     $qrResponse = apiRequest()->postJson('/api/v1/purchases/passive-invoices/scan-qr-bill', [
         'qr_payload' => $payload,
+        'exchange_rate' => 1.05,
     ]);
 
     $qrResponse->assertCreated()
@@ -175,6 +180,11 @@ test('purchases controller scans swiss qr bill payload and exports pain001', fun
         ->assertJsonPath('data.currency', 'CHF');
 
     // 3. Export pain.001 XML
+    TreasuryBankAccount::create([
+        'tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'bank_name' => 'PostFinance', 'account_number' => 'PF-1', 'account_type' => 'OPERATING',
+        'iban' => 'CH9300762011623852957', 'currency' => 'CHF', 'is_active' => true,
+    ]);
+
     $painResponse = apiRequest()->postJson('/api/v1/purchases/export-pain001', [
         'invoice_ids' => [$qrResponse->json('data.id')],
         'format' => 'sepa_pain_001_it',

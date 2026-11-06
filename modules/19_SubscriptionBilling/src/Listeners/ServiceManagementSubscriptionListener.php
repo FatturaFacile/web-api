@@ -41,10 +41,10 @@ final readonly class ServiceManagementSubscriptionListener
                 ChurnPrediction::create([
                     'tenant_id' => $event->tenantId,
                     'subscription_id' => $subscription->id,
-                    'churn_probability_score' => 78.50,
+                    'churn_probability_score' => min(100.0, round((5 - $event->score) * 25.0, 2)),
                     'risk_tier' => 'high',
                     'primary_churn_factor' => 'Low CSAT rating ('.$event->score.'/5) on field service visit',
-                    'ai_mitigation_recommendation' => 'Trigger Customer Success executive check-in and apply 15% goodwill retainer credit.',
+                    'ai_mitigation_recommendation' => 'Trigger a Customer Success check-in.',
                     'analyzed_at' => now(),
                 ]);
             }

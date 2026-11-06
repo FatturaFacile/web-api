@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
 use App\Models\PassiveInvoice;
-use App\Models\PaymentBatch;
 use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Services\SwissQrBill\QrBillGeneratorService;
@@ -16,7 +15,9 @@ use App\Services\Tenancy\TenantContext;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
+use Modules\Treasury\Actions\ExportSupplierPaymentsAction;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -26,7 +27,8 @@ class PurchasesController extends Controller
 
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly QrBillGeneratorService $qrBillGenerator
+        private readonly QrBillGeneratorService $qrBillGenerator,
+        private readonly ExportSupplierPaymentsAction $paymentFiles
     ) {}
 
     #[OA\Get(
@@ -166,16 +168,31 @@ class PurchasesController extends Controller
             ]);
         }
 
-        $passiveInvoice = PassiveInvoice::create([
-            'supplier_id' => $supplier->id,
-            'invoice_number' => $invoiceNumber,
-            'date' => $invoiceDate,
-            'total_amount' => $totalAmount,
-            'currency' => $currency,
-            'sdi_lot_id' => 'SDI-IMP-'.now()->timestamp,
-            'is_reconciled' => false,
-            'xml_payload' => $content,
-        ]);
+        $totalTax = 0.0;
+
+        foreach ($dom->getElementsByTagName('Imposta') as $taxNode) {
+            $totalTax += (float) $taxNode->nodeValue;
+        }
+
+        $passiveInvoice = DB::transaction(function () use ($supplier, $invoiceNumber, $invoiceDate, $totalAmount, $totalTax, $currency, $content): PassiveInvoice {
+            $invoice = PassiveInvoice::create([
+                'supplier_id' => $supplier->id,
+                'invoice_number' => $invoiceNumber,
+                'date' => $invoiceDate,
+                'total_amount' => $totalAmount,
+                'total_net' => round($totalAmount - $totalTax, 2),
+                'total_tax' => round($totalTax, 2),
+                'currency' => $currency,
+                'payment_status' => 'unpaid',
+                'sdi_lot_id' => 'SDI-IMP-'.now()->timestamp,
+                'is_reconciled' => false,
+                'xml_payload' => $content,
+            ]);
+
+            app(PostPassiveInvoiceAction::class)->execute($invoice);
+
+            return $invoice;
+        });
 
         return $this->successResponse(
             data: [
@@ -205,6 +222,8 @@ class PurchasesController extends Controller
                 required: ['qr_payload'],
                 properties: [
                     new OA\Property(property: 'qr_payload', description: 'Raw multi-line SPC QR-code text payload', type: 'string'),
+                    new OA\Property(property: 'total_tax', description: 'Deductible VAT of the bill. A QR-bill does not state it: when omitted, the whole amount is posted as a cost and no VAT is deducted.', type: 'number', format: 'float', nullable: true),
+                    new OA\Property(property: 'exchange_rate', description: 'Rate to the accounting currency, required when the bill is in another currency.', type: 'number', format: 'float', nullable: true),
                 ]
             )
         ),
@@ -219,11 +238,12 @@ class PurchasesController extends Controller
     {
         $validated = $request->validate([
             'qr_payload' => ['required', 'string'],
+            'total_tax' => ['nullable', 'numeric', 'min:0'],
+            'exchange_rate' => ['nullable', 'numeric', 'min:0.000001'],
         ]);
 
-        $lines = str_replace("\n", "\r\n", $validated['qr_payload'])
-                |> trim(...)
-                |> (fn ($x) => explode("\r\n", $x));
+        $lines = preg_split('/\r\n|\r|\n/', trim($validated['qr_payload']));
+
         if (count($lines) < 20 || $lines[0] !== 'SPC') {
             return $this->problemDetailsResponse(
                 title: 'Invalid Swiss QR Code',
@@ -236,28 +256,43 @@ class PurchasesController extends Controller
         $creditorName = $lines[5] ?? 'Swiss Creditor';
         $amount = (float) ($lines[18] ?? 0.0);
         $currency = $lines[19] ?? 'CHF';
-        $scorRef = $lines[27] ?? '';
+        // SPC 0200: element 27 is the reference type (QRR, SCOR, NON), element 28 the reference, empty with NON.
+        $referenceType = $lines[27] ?? '';
+        $scorRef = $lines[28] ?? '';
 
         $supplier = Contact::firstOrCreate(
             ['company_name' => $creditorName],
             ['type' => 'supplier', 'country' => 'CH', 'qr_iban' => $qrIban]
         );
 
-        $passiveInvoice = PassiveInvoice::create([
-            'supplier_id' => $supplier->id,
-            'invoice_number' => 'QR-'.$scorRef,
-            'date' => now()->toDateString(),
-            'total_amount' => $amount,
-            'currency' => $currency,
-            'is_reconciled' => false,
-            'qr_raw_payload' => $validated['qr_payload'],
-        ]);
+        $totalTax = isset($validated['total_tax']) ? round((float) $validated['total_tax'], 2) : 0.0;
+
+        $passiveInvoice = DB::transaction(function () use ($supplier, $scorRef, $amount, $currency, $totalTax, $validated): PassiveInvoice {
+            $invoice = PassiveInvoice::create([
+                'supplier_id' => $supplier->id,
+                'invoice_number' => 'QR-'.($scorRef !== '' ? $scorRef : strtoupper(substr(hash('sha256', $validated['qr_payload']), 0, 16))),
+                'date' => now()->toDateString(),
+                'total_amount' => $amount,
+                'total_net' => round($amount - $totalTax, 2),
+                'total_tax' => $totalTax,
+                'exchange_rate' => $validated['exchange_rate'] ?? null,
+                'currency' => $currency,
+                'payment_status' => 'unpaid',
+                'is_reconciled' => false,
+                'qr_raw_payload' => $validated['qr_payload'],
+            ]);
+
+            app(PostPassiveInvoiceAction::class)->execute($invoice);
+
+            return $invoice;
+        });
 
         return $this->successResponse(
             data: [
                 'id' => $passiveInvoice->id,
                 'creditor' => $creditorName,
                 'qr_iban' => $qrIban,
+                'reference_type' => $referenceType,
                 'scor_reference' => $scorRef,
                 'amount' => $amount,
                 'currency' => $currency,
@@ -268,12 +303,12 @@ class PurchasesController extends Controller
     }
 
     /**
-     * Export payment orders to ISO 20022 pain.001.001.03 (SEPA/Swiss Credit Transfer).
+     * Export supplier invoices to an ISO 20022 pain.001 file through Treasury.
      */
     #[OA\Post(
         path: '/api/v1/purchases/export-pain001',
         operationId: 'exportPain001PaymentOrders',
-        description: 'Export selected supplier invoices into an ISO 20022 pain.001.001.03 XML payment initiation file.',
+        description: 'Exports the open balance of the selected supplier invoices into a pain.001.001.09 payment file through Treasury. The batch becomes exported: nothing is paid until a pain.002 import or a manual confirmation on the batch. Requires an active bank account and the IBAN of every supplier.',
         summary: 'Export pain.001 XML',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         requestBody: new OA\RequestBody(
@@ -284,6 +319,7 @@ class PurchasesController extends Controller
                     new OA\Property(property: 'invoice_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
                     new OA\Property(property: 'format', type: 'string', enum: ['sepa_pain_001_it', 'iso_pain_001_ch']),
                     new OA\Property(property: 'execution_date', type: 'string', format: 'date', nullable: true),
+                    new OA\Property(property: 'bank_account_id', description: 'Treasury bank account to debit; default: the active account in the currency of the invoices.', type: 'string', format: 'uuid', nullable: true),
                 ]
             )
         ),
@@ -300,58 +336,11 @@ class PurchasesController extends Controller
             'invoice_ids' => ['required', 'array', 'min:1'],
             'format' => ['required', 'in:sepa_pain_001_it,iso_pain_001_ch'],
             'execution_date' => ['nullable', 'date'],
-        ]);
-
-        $tenant = $this->tenantContext->getTenant();
-        $batchId = 'BATCH-'.now()->format('YmdHis');
-        $msgId = 'MSG-'.Str::random(12);
-        $execDate = $validated['execution_date'] ?? now()->addDay()->toDateString();
-
-        $xml = <<<XML
-<?xml version="1.0" encoding="UTF-8"?>
-<Document xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03">
-  <CstmrCdtTrfInitn>
-    <GrpHdr>
-      <MsgId>{$msgId}</MsgId>
-      <CreDtTm>2026-10-20T21:00:00Z</CreDtTm>
-      <NbOfTxs>1</NbOfTxs>
-      <InitgPty>
-        <Nm>{$tenant->legal_name}</Nm>
-      </InitgPty>
-    </GrpHdr>
-    <PmtInf>
-      <PmtInfId>{$batchId}</PmtInfId>
-      <PmtMtd>TRF</PmtMtd>
-      <ReqdExctnDt>{$execDate}</ReqdExctnDt>
-      <Dbtr>
-        <Nm>{$tenant->legal_name}</Nm>
-      </Dbtr>
-      <DbtrAcct>
-        <Id>
-          <IBAN>{$tenant->iban}</IBAN>
-        </Id>
-      </DbtrAcct>
-    </PmtInf>
-  </CstmrCdtTrfInitn>
-</Document>
-XML;
-
-        $batch = PaymentBatch::create([
-            'format' => $validated['format'],
-            'status' => 'generated',
-            'file_path' => "payments/{$batchId}.xml",
-            'total_amount' => 1500.00,
-            'currency' => $tenant->default_currency,
-            'execution_date' => $execDate,
+            'bank_account_id' => ['nullable', 'uuid'],
         ]);
 
         return $this->successResponse(
-            data: [
-                'batch_id' => $batch->id,
-                'message_id' => $msgId,
-                'format' => $validated['format'],
-                'xml_preview' => $xml,
-            ],
+            data: $this->paymentFiles->export($validated, (string) $request->user()?->id, $request->ip()),
             message: 'ISO 20022 pain.001 XML generated successfully'
         );
     }

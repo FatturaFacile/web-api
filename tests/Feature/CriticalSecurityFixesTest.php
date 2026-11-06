@@ -21,6 +21,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 uses(RefreshDatabase::class);
 
@@ -32,6 +33,7 @@ beforeEach(function (): void {
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenantA->id, (int) now()->format('Y'));
 
     // User A
     $this->userA = User::create([
@@ -227,7 +229,7 @@ test('CRIT-02: POST sales/invoices ignores injected tenant_id and binds to authe
 
     $response->assertCreated();
 
-    $createdInvoice = Invoice::where('invoice_number', 'INV-SEC-001')->firstOrFail();
+    $createdInvoice = Invoice::findOrFail($response->json('data.id'));
 
     // Must be bound to Tenant A, never the injected malicious tenant ID
     expect($createdInvoice->tenant_id)->toBe($this->tenantA->id)

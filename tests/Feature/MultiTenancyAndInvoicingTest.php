@@ -10,6 +10,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 uses(RefreshDatabase::class);
 
@@ -25,6 +26,7 @@ beforeEach(function (): void {
         'iban' => 'IT60X0542811101000000123456',
         'sdi_code' => 'M5UXCR1',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenantIt->id, (int) now()->format('Y'));
 
     // Tenant 2 (CH)
     $this->tenantCh = Tenant::create([
@@ -36,6 +38,7 @@ beforeEach(function (): void {
         'iban' => 'CH9300762011623852957',
         'qr_iban' => 'CH4431999123000889012',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenantCh->id, (int) now()->format('Y'));
 
     $this->user = User::create([
         'name' => 'Leonardo Da Vinci',
@@ -142,7 +145,7 @@ test('it creates a swiss invoice and automatically applies 0.05 chf rounding', f
         ->postJson('/api/v1/sales/invoices', $payload);
 
     $response->assertCreated()
-        ->assertJsonPath('data.invoice_number', 'INV-CH-100')
+        ->assertJsonPath('data.invoice_number', 'INV-'.now()->format('Y').'-0001')
         ->assertJsonPath('data.total_net', 100.43)
         ->assertJsonPath('data.total_gross', 100.45)
         ->assertJsonPath('data.rounding_amount', 0.02);

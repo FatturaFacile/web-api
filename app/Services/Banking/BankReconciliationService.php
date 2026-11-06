@@ -13,9 +13,12 @@ use App\Models\Invoice;
 use App\Models\PassiveInvoice;
 use App\Models\Payment;
 use App\Models\SupplierPayment;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
+use Modules\GeneralLedger\Services\PaymentLedgerService;
 
 /**
  * Reconciles the lines of a bank statement, so that the whole statement can be closed.
@@ -75,6 +78,7 @@ class BankReconciliationService
     public function __construct(
         private readonly RecordPayment $payments,
         private readonly RecordSupplierPayment $supplierPayments,
+        private readonly PaymentLedgerService $ledger,
     ) {}
 
     /**
@@ -356,12 +360,17 @@ class BankReconciliationService
             default => BankStatementLine::EXACT,
         };
 
-        DB::transaction(fn () => $this->book(
-            $line,
-            $document instanceof PassiveInvoice ? PassiveInvoice::lockForUpdate()->findOrFail($document->id) : Invoice::lockForUpdate()->findOrFail($document->id),
-            $mode,
-            $reconciliation,
-        ));
+        try {
+            DB::transaction(fn () => $this->book(
+                $line,
+                $document instanceof PassiveInvoice ? PassiveInvoice::lockForUpdate()->findOrFail($document->id) : Invoice::lockForUpdate()->findOrFail($document->id),
+                $mode,
+                $reconciliation,
+            ));
+        } catch (FiscalPeriodException) {
+            // The line stays open: it can be matched once its period is available.
+            return false;
+        }
 
         return true;
     }
@@ -416,6 +425,10 @@ class BankReconciliationService
     private function revertPayments(BankStatementLine $line): void
     {
         if ($line->isCredit()) {
+            foreach (Payment::query()->where('bank_statement_line_id', $line->id)->get() as $payment) {
+                $this->ledger->reverse(PaymentLedgerService::SOURCE_CUSTOMER, (string) $payment->id, (string) $payment->tenant_id, CarbonImmutable::parse($payment->paid_at));
+            }
+
             Payment::query()->where('bank_statement_line_id', $line->id)->delete();
             $document = Invoice::find($line->matched_document_id);
 
@@ -424,6 +437,10 @@ class BankReconciliationService
             }
 
             return;
+        }
+
+        foreach (SupplierPayment::query()->where('bank_statement_line_id', $line->id)->get() as $payment) {
+            $this->ledger->reverse(PaymentLedgerService::SOURCE_SUPPLIER, (string) $payment->id, (string) $payment->tenant_id, CarbonImmutable::parse($payment->paid_at));
         }
 
         SupplierPayment::query()->where('bank_statement_line_id', $line->id)->delete();

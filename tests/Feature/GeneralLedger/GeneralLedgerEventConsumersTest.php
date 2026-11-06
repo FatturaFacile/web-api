@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
@@ -25,6 +26,7 @@ beforeEach(function () {
     ]);
     app(TenantContext::class)->setTenant($this->tenant);
     $this->tenantId = (string) $this->tenant->id;
+    app(OpenFiscalYearAction::class)->execute($this->tenantId, (int) now()->format('Y'));
 
     $this->fiscalYear = FiscalYear::create([
         'id' => (string) Str::uuid7(),
@@ -79,7 +81,7 @@ test('procurement GoodsReceivedEvent generates GR/IR accrual journal', function 
         purchaseOrderId: (string) Str::uuid7(),
         supplierDeliveryNoteRef: 'DDT-1234',
         receivedLines: [
-            ['purchase_order_line_id' => (string) Str::uuid7(), 'quantity_received' => 10.0, 'quantity_accepted' => 10.0],
+            ['purchase_order_line_id' => (string) Str::uuid7(), 'quantity_received' => 10.0, 'quantity_accepted' => 10.0, 'unit_cost' => 50.0],
         ],
         tenantId: $this->tenantId,
         companyId: $this->tenantId

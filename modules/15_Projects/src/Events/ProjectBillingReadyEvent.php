@@ -19,7 +19,8 @@ final readonly class ProjectBillingReadyEvent implements DomainEventInterface
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
-        public string $occurredAt = ''
+        public string $occurredAt = '',
+        public ?float $taxRate = null
     ) {}
 
     public function getEventId(): string

@@ -410,6 +410,8 @@ final readonly class AssetAccountingService implements AssetAccountingServiceInt
     {
         $period = FiscalPeriod::where('tenant_id', $tenantId)
             ->where('status', 'open')
+            ->whereDate('start_date', '<=', now()->toDateString())
+            ->whereDate('end_date', '>=', now()->toDateString())
             ->first();
 
         if ($period !== null) {

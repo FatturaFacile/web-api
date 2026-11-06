@@ -82,14 +82,14 @@ test('prevents double execution of the same payment batch under concurrent reque
     $userId = (string) Str::uuid7();
 
     // First execution succeeds
-    $execution1 = $this->paymentService->executeBatch($batch->id, 'sepa_pain001', $userId);
-    expect($execution1->execution_status)->toBe('TRANSMITTED');
+    $execution1 = $this->paymentService->exportBatch($batch->id, 'sepa_pain001', $userId);
+    expect($execution1->execution_status)->toBe('EXPORTED');
 
     $batch->refresh();
-    expect(in_array(strtolower((string) $batch->status), ['transmitted', 'executed']))->toBeTrue();
+    expect($batch->status)->toBe('exported');
 
     // Attempting second concurrent execution throws Exception
-    expect(fn () => $this->paymentService->executeBatch($batch->id, 'sepa_pain001', $userId))
+    expect(fn () => $this->paymentService->exportBatch($batch->id, 'sepa_pain001', $userId))
         ->toThrow(Exception::class);
 });
 

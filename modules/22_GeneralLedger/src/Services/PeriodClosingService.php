@@ -194,6 +194,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 ->where('journal_entries.tenant_id', $fy->tenant_id)
                 ->whereIn('journal_entries.fiscal_period_id', $fy->periods->pluck('id'))
                 ->where('journal_entries.status', 'posted')
+                ->where('journal_entries.ledger_type', 'statutory')
                 ->whereIn('chart_of_accounts.account_type', ['revenue', 'expense', 'cogs'])
                 ->select(
                     'chart_of_accounts.id as account_id',

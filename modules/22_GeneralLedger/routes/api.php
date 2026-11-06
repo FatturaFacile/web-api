@@ -8,6 +8,7 @@ use Modules\GeneralLedger\Http\Controllers\FinancialStatementController;
 use Modules\GeneralLedger\Http\Controllers\FiscalPeriodController;
 use Modules\GeneralLedger\Http\Controllers\FiscalYearController;
 use Modules\GeneralLedger\Http\Controllers\JournalEntryController;
+use Modules\GeneralLedger\Http\Controllers\PayrollLedgerController;
 use Modules\GeneralLedger\Http\Controllers\ReconciliationController;
 use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
@@ -57,6 +58,10 @@ Route::prefix('api/v1/general-ledger')
         Route::get('tax-settlements/{id}/statement', [TaxSettlementController::class, 'statement'])->whereUuid('id');
 
         // VAT Settings and Registers
+        Route::get('payroll-settings', [PayrollLedgerController::class, 'showSettings']);
+        Route::put('payroll-settings', [PayrollLedgerController::class, 'updateSettings']);
+        Route::get('payroll-postings', [PayrollLedgerController::class, 'postings']);
+        Route::post('payroll-postings/{runId}/post', [PayrollLedgerController::class, 'post'])->whereUuid('runId');
         Route::get('tax-settings', [VatTaxSettingController::class, 'show']);
         Route::put('tax-settings', [VatTaxSettingController::class, 'update']);
         Route::get('vat-registers/{type}', [VatRegisterController::class, 'show'])->whereIn('type', ['sales', 'purchases']);

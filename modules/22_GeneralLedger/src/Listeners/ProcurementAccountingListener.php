@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
@@ -19,6 +20,9 @@ use Modules\Procurement\Events\PurchaseOrderCommittedEvent;
 
 final class ProcurementAccountingListener
 {
+    /** An order is a commitment, not an accounting fact: it stays out of the statutory books. */
+    private const string COMMITMENT_LEDGER = 'management';
+
     public function __construct(
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly FiscalPeriodResolver $periods
@@ -26,7 +30,7 @@ final class ProcurementAccountingListener
 
     public function handlePurchaseOrderCommitted(PurchaseOrderCommittedEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $encumbranceExpAcc = $this->resolveAccount($event->tenantId, '6990', 'Encumbrance Expense', 'expense', 'debit');
@@ -43,6 +47,7 @@ final class ProcurementAccountingListener
             'entry_number' => 'ENC-'.$poNumber,
             'source_document_type' => 'purchase_order',
             'source_document_id' => $event->purchaseOrderId,
+            'ledger_type' => self::COMMITMENT_LEDGER,
             'journal_type' => 'standard',
             'description' => "PO Encumbrance Commitment for {$poNumber}",
             'lines' => [
@@ -64,7 +69,7 @@ final class ProcurementAccountingListener
 
     public function handlePurchaseOrderCancelled(PurchaseOrderCancelledEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $encumbranceExpAcc = $this->resolveAccount($event->tenantId, '6990', 'Encumbrance Expense', 'expense', 'debit');
@@ -74,19 +79,18 @@ final class ProcurementAccountingListener
 
         $amount = (float) ($event->cancelledAmount ?? 0.0);
         if ($amount <= 0.0) {
-            $po = DB::table('procurement_purchase_orders')
-                ->where('id', $event->purchaseOrderId)
-                ->first();
-            $amount = (float) ($po->total_gross ?? $po->total_net ?? 0.0);
-        }
-        if ($amount <= 0.0) {
-            $encEntry = DB::table('gl_journal_entries')
-                ->join('gl_journal_lines', 'gl_journal_entries.id', '=', 'gl_journal_lines.journal_entry_id')
-                ->where('gl_journal_entries.source_document_id', $event->purchaseOrderId)
-                ->where('gl_journal_entries.entry_number', 'LIKE', 'ENC-%')
-                ->where('gl_journal_lines.debit_amount', '>', 0)
+            $encEntry = DB::table('journal_entries')
+                ->join('journal_lines', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+                ->where('journal_entries.tenant_id', $event->tenantId)
+                ->where('journal_entries.source_document_id', $event->purchaseOrderId)
+                ->where('journal_entries.entry_number', 'LIKE', 'ENC-%')
+                ->where('journal_lines.debit_amount', '>', 0)
                 ->first();
             $amount = (float) ($encEntry->debit_amount ?? 0.0);
+        }
+
+        if ($amount <= 0.0) {
+            return;
         }
 
         $this->postingService->createAndPost([
@@ -98,6 +102,7 @@ final class ProcurementAccountingListener
             'entry_number' => 'REV-ENC-'.$event->purchaseOrderId,
             'source_document_type' => 'purchase_order',
             'source_document_id' => $event->purchaseOrderId,
+            'ledger_type' => self::COMMITMENT_LEDGER,
             'journal_type' => 'reversing',
             'description' => "PO Encumbrance Reversal: {$reason}",
             'lines' => [
@@ -119,21 +124,13 @@ final class ProcurementAccountingListener
 
     public function handleGoodsReceived(GoodsReceivedEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $grIrAcc = $this->resolveAccount($event->tenantId, '2010', 'GR/IR Clearing Account', 'liability', 'credit');
 
-        // Estimate receipt cost (e.g. standard 100.00 per line if not priced)
-        $totalEst = 0.0;
-        foreach ($event->receivedLines as $l) {
-            $qty = (float) ($l['quantity_received'] ?? 1.0);
-            $totalEst += $qty * 50.0;
-        }
-        if ($totalEst <= 0) {
-            $totalEst = 100.0;
-        }
+        $receiptValue = $this->receiptValue($event);
 
         $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
@@ -149,14 +146,14 @@ final class ProcurementAccountingListener
             'lines' => [
                 [
                     'account_id' => $invAcc->id,
-                    'debit_amount' => $totalEst,
+                    'debit_amount' => $receiptValue,
                     'credit_amount' => 0.0,
                     'description' => "Inventory Receipt: {$event->supplierDeliveryNoteRef}",
                 ],
                 [
                     'account_id' => $grIrAcc->id,
                     'debit_amount' => 0.0,
-                    'credit_amount' => $totalEst,
+                    'credit_amount' => $receiptValue,
                     'description' => 'GR/IR Clearing Liability',
                 ],
             ],
@@ -165,10 +162,25 @@ final class ProcurementAccountingListener
 
     public function handlePurchaseLiabilityReady(PurchaseLiabilityReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $sourceType = $event->isCreditNote ? 'vendor_credit_note' : 'vendor_invoice';
+
+        $alreadyPosted = JournalEntry::withoutGlobalScopes()
+            ->where('tenant_id', $event->tenantId)
+            ->where('source_document_type', $sourceType)
+            ->where('source_document_id', $event->matchLogId)
+            ->exists();
+
+        if ($alreadyPosted) {
+            return;
+        }
+
+        $postingDate = $event->documentDate ?? $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
-        $grIrAcc = $this->resolveAccount($event->tenantId, '2010', 'GR/IR Clearing Account', 'liability', 'credit');
+        // Without a purchase order there is no goods receipt to clear: the supply is a cost.
+        $grIrAcc = $event->purchaseOrderId === ''
+            ? $this->resolveAccount($event->tenantId, '6000', 'Purchases and services (Acquisti e servizi)', 'expense', 'debit')
+            : $this->resolveAccount($event->tenantId, '2010', 'GR/IR Clearing Account', 'liability', 'credit');
         $vatAcc = $this->resolveAccount($event->tenantId, '1400', 'IVA c/Acquisti (Purchase VAT)', 'asset', 'debit');
         $apAcc = $this->resolveAccount($event->tenantId, '2000', 'Accounts Payable (Debiti v/Fornitori)', 'liability', 'credit');
         $apAcc->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'supplier']);
@@ -181,6 +193,7 @@ final class ProcurementAccountingListener
                 'debit_amount' => (float) $event->netAmount,
                 'credit_amount' => 0.0,
                 'currency' => $currency,
+                'exchange_rate' => $event->exchangeRate,
                 'description' => "Clear GR/IR: Invoice {$event->vendorInvoiceNumber}",
             ],
         ];
@@ -191,6 +204,7 @@ final class ProcurementAccountingListener
                 'debit_amount' => (float) $event->taxAmount,
                 'credit_amount' => 0.0,
                 'currency' => $currency,
+                'exchange_rate' => $event->exchangeRate,
                 'vat_base_amount' => (float) $event->netAmount,
                 'vat_tax_amount' => (float) $event->taxAmount,
                 'vat_rate_percent' => $this->effectiveVatRate($event),
@@ -203,25 +217,60 @@ final class ProcurementAccountingListener
             'debit_amount' => 0.0,
             'credit_amount' => (float) $event->grossAmount,
             'currency' => $currency,
+            'exchange_rate' => $event->exchangeRate,
             'partner_type' => 'supplier',
             'partner_id' => $event->supplierId,
+            'due_date' => $event->dueDate,
             'description' => "Supplier Payable: Invoice {$event->vendorInvoiceNumber}",
         ];
 
-        $this->postingService->createAndPost([
+        if ($event->isCreditNote) {
+            $lines = array_map(static fn (array $line): array => ['debit_amount' => $line['credit_amount'], 'credit_amount' => $line['debit_amount']] + $line, $lines);
+        }
+
+        $journalEntry = $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
             'company_id' => $event->companyId,
             'fiscal_period_id' => $period->id,
             'posting_date' => $postingDate,
             'document_date' => $postingDate,
             'entry_number' => 'VEND-INV-'.strtoupper(Str::random(6)),
-            'source_document_type' => 'vendor_invoice',
+            'source_document_type' => $sourceType,
             'source_document_id' => $event->matchLogId,
             'document_number' => $event->vendorInvoiceNumber,
             'journal_type' => 'standard',
             'description' => "Vendor Liability for Invoice {$event->vendorInvoiceNumber}",
             'lines' => $lines,
         ]);
+
+        DB::table('passive_invoices')
+            ->where('tenant_id', $event->tenantId)
+            ->where('id', $event->matchLogId)
+            ->update(['gl_journal_entry_id' => (string) $journalEntry->id]);
+    }
+
+    /**
+     * The value of the accepted goods at the cost of the order lines. A line without a cost is refused: the receipt
+     * must not reach the balance sheet with an invented value.
+     */
+    private function receiptValue(GoodsReceivedEvent $event): string
+    {
+        $total = '0';
+
+        foreach ($event->receivedLines as $line) {
+            if (! isset($line['unit_cost'])) {
+                throw new InvalidArgumentException("Goods receipt {$event->receiptNumber}: a line has no unit cost.");
+            }
+
+            $quantity = number_format((float) ($line['quantity_accepted'] ?? $line['quantity_received'] ?? 0.0), 4, '.', '');
+            $total = Decimal::add($total, Decimal::mul($quantity, number_format((float) $line['unit_cost'], 4, '.', '')));
+        }
+
+        if (! Decimal::isPositive($total)) {
+            throw new InvalidArgumentException("Goods receipt {$event->receiptNumber} has no value to post.");
+        }
+
+        return bcadd($total, '0', 4);
     }
 
     /**

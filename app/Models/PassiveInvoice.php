@@ -40,6 +40,8 @@ class PassiveInvoice extends Model
         'document_hash',
         'sdi_file_name',
         'total_paid',
+        'gl_journal_entry_id',
+        'exchange_rate',
     ];
 
     protected function casts(): array
@@ -52,6 +54,7 @@ class PassiveInvoice extends Model
             'total_net' => 'decimal:2',
             'total_tax' => 'decimal:2',
             'total_paid' => 'decimal:2',
+            'exchange_rate' => 'decimal:6',
         ];
     }
 

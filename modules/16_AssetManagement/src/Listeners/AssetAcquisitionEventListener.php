@@ -137,7 +137,8 @@ final readonly class AssetAcquisitionEventListener
 
     public function handlePurchaseLiabilityReady(PurchaseLiabilityReadyEvent $event): void
     {
-        if (! $this->recordInboxIfNew($event, 'AssetAcquisitionEventListener::handlePurchaseLiabilityReady')) {
+        // A supplier invoice without a purchase order has no asset waiting for it.
+        if ($event->purchaseOrderId === '' || ! $this->recordInboxIfNew($event, 'AssetAcquisitionEventListener::handlePurchaseLiabilityReady')) {
             return;
         }
 

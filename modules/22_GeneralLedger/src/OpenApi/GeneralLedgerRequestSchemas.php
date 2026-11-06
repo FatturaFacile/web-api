@@ -110,7 +110,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'posting_date', type: 'string', format: 'date'),
         new OA\Property(property: 'document_date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'ledger_type', type: 'string', nullable: true, enum: ['statutory', 'ifrs', 'management']),
-        new OA\Property(property: 'journal_type', type: 'string', nullable: true, enum: ['standard', 'reversing', 'closing', 'opening', 'recurring', 'adjusting']),
+        new OA\Property(property: 'journal_type', type: 'string', nullable: true, enum: ['standard', 'reversing', 'opening', 'recurring', 'adjusting']),
         new OA\Property(property: 'description', type: 'string', maxLength: 500),
         new OA\Property(property: 'source_document_type', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'source_document_id', type: 'string', format: 'uuid', nullable: true),

@@ -7,6 +7,7 @@ use App\Models\Product;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Listeners\TreasuryCollectionEventListener;
@@ -18,6 +19,7 @@ beforeEach(function (): void {
         ['name' => 'Aging Test Tenant', 'legal_name' => 'Aging Test Tenant Srl']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     $this->customer = Contact::firstOrCreate(
         ['tenant_id' => (string) $this->tenant->id, 'company_name' => 'Overdue Risk Client SpA'],

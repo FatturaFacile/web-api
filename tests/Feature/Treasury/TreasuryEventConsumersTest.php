@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
@@ -117,7 +118,7 @@ test('consumes Module 22 Treasury Readiness Events seamlessly', function () {
         journalLineId: (string) Str::uuid7(),
         bankAccountId: $this->bankAccount->id,
         amount: 15000.00,
-        direction: 'credit',
+        direction: 'debit',
         valueDate: now()->toDateString(),
         journalEntryId: (string) Str::uuid7(),
         tenantId: $this->tenantId,
@@ -149,7 +150,7 @@ test('consumes Module 13 Procurement and Module 15 Projects Events', function ()
     $liabilityEvent = new PurchaseLiabilityReadyEvent(
         matchLogId: (string) Str::uuid7(),
         purchaseOrderId: (string) Str::uuid7(),
-        supplierId: (string) Str::uuid7(),
+        supplierId: (string) Contact::create(['tenant_id' => $this->tenantId, 'type' => 'supplier', 'company_name' => 'Fornitore Reale', 'country' => 'IT', 'iban' => 'IT60X0542811101000000123456'])->id,
         netAmount: 10000.00,
         taxAmount: 2200.00,
         grossAmount: 12200.00,

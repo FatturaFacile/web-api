@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Models\ExchangeRate;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Treasury\Contracts\ForeignExchangeRiskServiceInterface;
 use Modules\Treasury\Contracts\LiquidityManagementServiceInterface;
 use Modules\Treasury\Contracts\TreasuryPositionServiceInterface;
@@ -127,7 +129,8 @@ test('can compute currency exposure matrix and execute IAS 21 FX revaluation', f
         'is_active' => true,
     ]);
 
-    // 1. Exposure Matrix
+    // 1. Exposure Matrix: positions exist only for currencies with a published rate
+    ExchangeRate::create(['source' => TenantAccountingCurrency::of($this->tenantId), 'target' => 'USD', 'rate' => 1.085, 'effective_date' => now()->toDateString()]);
     $exposure = $this->fxService->computeCurrencyExposure($this->tenantId, now()->toDateString());
     expect($exposure)->toBeArray()
         ->and(count($exposure))->toBeGreaterThanOrEqual(1);

@@ -7,6 +7,7 @@ namespace Modules\Invoicing\Services;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;

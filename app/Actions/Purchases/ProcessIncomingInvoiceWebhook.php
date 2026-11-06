@@ -25,7 +25,7 @@ class ProcessIncomingInvoiceWebhook
         return DB::transaction(function () use ($tenant, $xml, $fileName, $provider, $fingerprint): array {
             $results = $this->tenantContext->runWithTenant(
                 $tenant,
-                fn (): array => $this->receive->execute($xml, $fileName)
+                fn (): array => $this->receive->execute($xml, $fileName, deferLedgerErrors: true)
             );
 
             EiInboundLog::create([

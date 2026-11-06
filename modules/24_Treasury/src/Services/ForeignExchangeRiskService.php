@@ -4,20 +4,25 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Services;
 
+use App\Models\ExchangeRate;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Treasury\Contracts\ForeignExchangeRiskServiceInterface;
 use Modules\Treasury\Events\FXAdjustmentCalculatedEvent;
 use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Models\FxPosition;
 use Modules\Treasury\Models\FxRevaluation;
 use Modules\Treasury\Models\PaymentLine;
-use Modules\Treasury\Models\ReceivableCollection;
 
 final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskServiceInterface
 {
+    private const int VOLATILITY_WINDOW = 30;
+
+    private const int MINIMUM_RATES_FOR_VOLATILITY = 10;
+
     public function __construct(
         private AuditLedgerInterface $auditLedger,
         private EventDispatcherInterface $dispatcher
@@ -26,8 +31,13 @@ final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskSe
     public function computeCurrencyExposure(string $tenantId, ?string $asOfDate = null, ?string $companyId = null): array
     {
         $date = $asOfDate ?? now()->toDateString();
-        $currencies = ['USD', 'CHF', 'GBP']; // Foreign currencies vs base EUR
+        $baseCurrency = TenantAccountingCurrency::of($tenantId);
         $positions = [];
+        $currencies = BankAccount::where('tenant_id', $tenantId)->where('is_active', true)->pluck('currency')
+            ->merge(DB::table('invoices')->where('tenant_id', $tenantId)->where('payment_status', '!=', 'paid')->whereNull('deleted_at')->distinct()->pluck('currency'))
+            ->unique()
+            ->reject(static fn (?string $currency): bool => $currency === null || $currency === $baseCurrency)
+            ->values();
 
         foreach ($currencies as $curr) {
             $cashHoldings = (float) BankAccount::where('tenant_id', $tenantId)
@@ -35,9 +45,28 @@ final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskSe
                 ->where('is_active', true)
                 ->sum('current_balance');
 
-            $arExposure = (float) ReceivableCollection::where('tenant_id', $tenantId)
-                ->whereIn('status', ['pending', 'partial'])
-                ->sum('expected_amount') * 0.15; // Estimated 15% foreign AR
+            $rates = ExchangeRate::query()
+                ->where('source', $baseCurrency)
+                ->where('target', $curr)
+                ->whereDate('effective_date', '<=', $date)
+                ->latest('effective_date')
+                ->limit(self::VOLATILITY_WINDOW + 1)
+                ->pluck('rate');
+
+            // Without a published rate the exposure cannot be valued: no position is better than an invented one.
+            if ($rates->isEmpty()) {
+                continue;
+            }
+
+            $arExposure = (float) DB::table('invoices')
+                ->where('tenant_id', $tenantId)
+                ->where('currency', $curr)
+                ->where('status', 'posted')
+                ->where('payment_status', '!=', 'paid')
+                ->whereNotIn('invoice_type', ['proforma', 'credit_note'])
+                ->whereNull('deleted_at')
+                ->selectRaw('COALESCE(SUM(total_gross - total_paid), 0) as open_amount')
+                ->value('open_amount');
 
             $apExposure = (float) PaymentLine::where('tenant_id', $tenantId)
                 ->where('currency', $curr)
@@ -46,14 +75,9 @@ final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskSe
 
             $netExposure = $cashHoldings + $arExposure - $apExposure;
 
-            $spotRate = match ($curr) {
-                'USD' => 1.085000,
-                'CHF' => 0.955000,
-                'GBP' => 0.855000,
-                default => 1.000000,
-            };
-
-            $var95 = $this->calculateVar95(abs($netExposure), 0.012); // 1.2% daily vol
+            $spotRate = (float) $rates->first();
+            $volatility = $this->dailyVolatility($rates->map(static fn (mixed $rate): float => (float) $rate)->all());
+            $var95 = $volatility === null ? null : $this->calculateVar95(abs($netExposure), $volatility);
 
             /** @var FxPosition $pos */
             $pos = FxPosition::updateOrCreate(
@@ -69,7 +93,7 @@ final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskSe
                     'open_ar_exposure' => $arExposure,
                     'open_ap_exposure' => $apExposure,
                     'net_exposure' => $netExposure,
-                    'base_currency' => 'EUR',
+                    'base_currency' => $baseCurrency,
                     'latest_spot_rate' => $spotRate,
                     'var_95_daily' => $var95,
                 ]
@@ -79,6 +103,30 @@ final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskSe
         }
 
         return $positions;
+    }
+
+    /**
+     * Standard deviation of the daily changes of the published rates, newest first. Null when the history is too short
+     * to say anything.
+     *
+     * @param  list<float>  $rates
+     */
+    private function dailyVolatility(array $rates): ?float
+    {
+        if (count($rates) < self::MINIMUM_RATES_FOR_VOLATILITY) {
+            return null;
+        }
+
+        $changes = [];
+
+        for ($i = 0, $last = count($rates) - 1; $i < $last; $i++) {
+            $changes[] = ($rates[$i] - $rates[$i + 1]) / $rates[$i + 1];
+        }
+
+        $mean = array_sum($changes) / count($changes);
+        $variance = array_sum(array_map(static fn (float $change): float => ($change - $mean) ** 2, $changes)) / (count($changes) - 1);
+
+        return sqrt($variance);
     }
 
     public function performFxRevaluation(

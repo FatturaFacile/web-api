@@ -10,8 +10,10 @@ use App\Services\ItalianSdi\FatturaPaParser;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
 
 class ReceivePassiveInvoice
 {
@@ -19,6 +21,7 @@ class ReceivePassiveInvoice
         private readonly FatturaPaParser $parser,
         private readonly TenantContext $tenantContext,
         private readonly DocumentEventRecorder $events,
+        private readonly PostPassiveInvoiceAction $postToLedger,
     ) {}
 
     /**
@@ -28,17 +31,21 @@ class ReceivePassiveInvoice
      *
      * @return array<int, array{invoice: PassiveInvoice, duplicate: bool}>
      *
+     * The ledger entry is posted with the document. An upload fails when it cannot be posted; a file pushed by SDI
+     * cannot be refused, so `$deferLedgerErrors` keeps the document and logs the problem, and the pending-documents
+     * command posts it once the period or the rate is there.
+     *
      * @throws InvalidArgumentException when the XML is not a FatturaPA document
      * @throws ValidationException when the invoice is addressed to another company
      */
-    public function execute(string $xml, ?string $fileName = null): array
+    public function execute(string $xml, ?string $fileName = null, bool $deferLedgerErrors = false): array
     {
         $parsed = $this->parser->parse($xml);
         $tenant = $this->tenantContext->getTenant();
 
         $this->assertAddressedToTenant($parsed, (string) $tenant?->vat_number, (string) $tenant?->fiscal_code);
 
-        return DB::transaction(function () use ($parsed, $xml, $fileName, $tenant): array {
+        return DB::transaction(function () use ($parsed, $xml, $fileName, $tenant, $deferLedgerErrors): array {
             $supplier = $this->resolveSupplier($parsed['supplier']);
             $results = [];
 
@@ -72,12 +79,26 @@ class ReceivePassiveInvoice
                     'xml_payload' => $xml,
                 ]);
 
+                $this->post($invoice, $deferLedgerErrors);
                 $this->events->record($invoice, 'received', ['file_name' => $fileName, 'document_type' => $document['document_type']]);
                 $results[] = ['invoice' => $invoice, 'duplicate' => false];
             }
 
             return $results;
         });
+    }
+
+    private function post(PassiveInvoice $invoice, bool $deferLedgerErrors): void
+    {
+        try {
+            $this->postToLedger->execute($invoice);
+        } catch (InvalidArgumentException $e) {
+            if (! $deferLedgerErrors) {
+                throw $e;
+            }
+
+            Log::warning('Received supplier invoice waits for the ledger.', ['passive_invoice_id' => $invoice->id, 'reason' => $e->getMessage()]);
+        }
     }
 
     /**

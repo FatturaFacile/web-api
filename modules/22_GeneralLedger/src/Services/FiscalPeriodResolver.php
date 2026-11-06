@@ -16,6 +16,16 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 final class FiscalPeriodResolver
 {
     /**
+     * The day a domain event happened. Not every event of the older modules exposes it through the contract.
+     */
+    public function dateOfEvent(object $event): string
+    {
+        $occurredAt = method_exists($event, 'getOccurredAt') ? $event->getOccurredAt() : ($event->occurredAt ?? null);
+
+        return CarbonImmutable::parse($occurredAt ?: now())->toDateString();
+    }
+
+    /**
      * @throws FiscalPeriodException when no period contains the date or the period is not open
      */
     public function forDate(string $tenantId, string|DateTimeInterface $date, string $subledger = 'GL'): FiscalPeriod

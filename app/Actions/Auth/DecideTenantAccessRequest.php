@@ -15,6 +15,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 /**
  * The decision of a platform administrator on a registration: only here a user gets access to a tenant. A new company
@@ -118,7 +119,7 @@ class DecideTenantAccessRequest
     {
         $isSwiss = $request->requested_country === 'CH';
 
-        return Tenant::create([
+        $tenant = Tenant::create([
             'name' => $request->requested_company_name,
             'legal_name' => $request->requested_company_name,
             'country' => $request->requested_country,
@@ -126,5 +127,10 @@ class DecideTenantAccessRequest
             'vat_number' => $isSwiss ? null : $request->requested_tax_id,
             'uid_number' => $isSwiss ? TaxIdentifier::formatUid($request->requested_tax_id) : null,
         ]);
+
+        // Documents cannot be issued outside an open period: a new company starts with the current calendar year.
+        app(OpenFiscalYearAction::class)->execute($tenant->id, (int) now()->format('Y'));
+
+        return $tenant;
     }
 }

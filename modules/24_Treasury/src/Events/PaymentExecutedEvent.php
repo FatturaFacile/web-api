@@ -9,6 +9,9 @@ use Illuminate\Support\Str;
 
 final readonly class PaymentExecutedEvent implements DomainEventInterface
 {
+    /**
+     * @param  list<string>  $executedLineIds  the lines the bank really executed
+     */
     public function __construct(
         public string $paymentBatchId,
         public string $bankAccountId,
@@ -19,7 +22,9 @@ final readonly class PaymentExecutedEvent implements DomainEventInterface
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
-        public string $occurredAt = ''
+        public string $occurredAt = '',
+        public array $executedLineIds = [],
+        public ?string $valueDate = null
     ) {}
 
     public function getEventId(): string

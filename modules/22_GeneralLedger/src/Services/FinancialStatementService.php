@@ -26,6 +26,7 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
             ->join('chart_of_accounts', 'journal_lines.account_id', '=', 'chart_of_accounts.id')
             ->where('journal_entries.tenant_id', $tenantId)
             ->where('journal_entries.status', 'posted')
+            ->where('journal_entries.ledger_type', 'statutory')
             ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
             ->select(
                 'chart_of_accounts.id as account_id',

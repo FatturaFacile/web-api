@@ -25,7 +25,11 @@ Route::prefix('api/v1/treasury')
         // Payment Factory
         Route::get('payment-batches/{id}/download-xml', [PaymentBatchController::class, 'downloadXml']);
         Route::post('payment-batches/{id}/submit-approval', [PaymentBatchController::class, 'submitApproval']);
+        Route::post('payment-batches/{id}/approve', [PaymentBatchController::class, 'approve']);
+        Route::post('payment-batches/{id}/export', [PaymentBatchController::class, 'export']);
         Route::post('payment-batches/{id}/execute', [PaymentBatchController::class, 'execute']);
+        Route::post('payment-batches/{id}/confirm', [PaymentBatchController::class, 'confirm']);
+        Route::post('payment-batches/{id}/pain002', [PaymentBatchController::class, 'importPain002']);
         Route::post('payment-batches/{id}/cancel', [PaymentBatchController::class, 'cancel']);
         Route::apiResource('payment-batches', PaymentBatchController::class)->except(['update', 'destroy']);
 

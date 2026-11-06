@@ -26,6 +26,10 @@ final class PaymentExecution extends BaseEnterpriseModel
 
     public function getExecutionStatusAttribute(): string
     {
-        return 'TRANSMITTED';
+        return match ($this->pain002_status_code) {
+            null => 'EXPORTED',
+            'RJCT' => 'REJECTED',
+            default => 'CONFIRMED',
+        };
     }
 }

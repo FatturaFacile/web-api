@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Procurement\Actions\CreatePurchaseRequisitionAction;
 use Modules\Procurement\Actions\CreateSupplierAction;
 use Modules\Procurement\Actions\ExecuteThreeWayMatchAction;
@@ -41,6 +42,7 @@ beforeEach(function (): void {
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     app(TenantContext::class)->setTenant($this->tenant);
 

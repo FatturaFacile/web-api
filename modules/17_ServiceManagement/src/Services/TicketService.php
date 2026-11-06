@@ -242,25 +242,21 @@ final readonly class TicketService implements TicketServiceInterface
         ?string $technicianId = null,
         ?string $workDescription = null,
         bool $isBillable = true,
-        float $hourlyRate = 75.0,
+        ?float $hourlyRate = null,
         ?string $actorUserId = null
     ): TicketTimeEntry {
         return DB::transaction(function () use ($ticketId, $hours, $technicianId, $workDescription, $isBillable, $hourlyRate) {
             $ticket = Ticket::findOrFail($ticketId);
 
+            $technicianId ??= $ticket->assigned_technician_id;
+
             if ($technicianId === null) {
-                $tech = ServiceTechnician::firstOrCreate(
-                    ['tenant_id' => $ticket->tenant_id, 'name' => 'Support Engineer'],
-                    [
-                        'company_id' => $ticket->company_id,
-                        'email' => 'tech.'.Str::random(5).'@support.local',
-                        'hourly_cost_rate' => 35.00,
-                        'hourly_billing_rate' => $hourlyRate,
-                    ]
-                );
-                $technicianId = $tech->id;
+                throw new InvalidArgumentException('Time can be logged only for a technician: state one or assign the ticket.');
             }
 
+            $technician = ServiceTechnician::where('tenant_id', $ticket->tenant_id)->findOrFail($technicianId);
+            $hourlyRate ??= (float) $technician->hourly_billing_rate;
+            $hourlyCost = (float) $technician->hourly_cost_rate;
             $laborCost = round($hours * $hourlyRate, 2);
 
             $entry = TicketTimeEntry::create([
@@ -270,8 +266,8 @@ final readonly class TicketService implements TicketServiceInterface
                 'technician_id' => $technicianId,
                 'hours' => $hours,
                 'hourly_rate' => $hourlyRate,
-                'hourly_cost' => 35.00,
-                'total_cost' => round($hours * 35.00, 2),
+                'hourly_cost' => $hourlyCost,
+                'total_cost' => round($hours * $hourlyCost, 2),
                 'total_charge' => $laborCost,
                 'is_billable' => $isBillable,
                 'work_date' => now()->toDateString(),

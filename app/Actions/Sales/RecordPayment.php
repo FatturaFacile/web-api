@@ -9,10 +9,14 @@ use App\Models\Payment;
 use App\Services\Sales\DocumentEventRecorder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Services\PaymentLedgerService;
 
 class RecordPayment
 {
-    public function __construct(private readonly DocumentEventRecorder $events) {}
+    public function __construct(
+        private readonly DocumentEventRecorder $events,
+        private readonly PaymentLedgerService $ledger,
+    ) {}
 
     /**
      * Register a (partial) payment and re-derive the invoice's paid total and payment status.
@@ -46,7 +50,7 @@ class RecordPayment
                 'bank_statement_line_id' => $data['bank_statement_line_id'] ?? null,
             ]);
 
-            $totalPaid = round((float) $invoice->payments()->sum('amount'), 2);
+            $totalPaid = $this->settledAmount($invoice);
             $invoice->total_paid = $totalPaid;
             $invoice->payment_status = match (true) {
                 $totalPaid <= 0 => 'unpaid',
@@ -55,6 +59,7 @@ class RecordPayment
             };
             $invoice->save();
 
+            $this->ledger->postCustomerPayment($payment, $data['ledger_options'] ?? []);
             $this->events->record($invoice, 'payment_recorded', ['amount' => $amount, 'payment_id' => $payment->id]);
 
             return $payment;
@@ -69,7 +74,7 @@ class RecordPayment
         return DB::transaction(function () use ($invoice): Invoice {
             $invoice = Invoice::lockForUpdate()->findOrFail($invoice->id);
 
-            $totalPaid = round((float) $invoice->payments()->sum('amount'), 2);
+            $totalPaid = $this->settledAmount($invoice);
             $invoice->total_paid = $totalPaid;
             $invoice->payment_status = match (true) {
                 $totalPaid <= 0 => 'unpaid',
@@ -80,5 +85,15 @@ class RecordPayment
 
             return $invoice;
         });
+    }
+
+    /**
+     * What closed the invoice so far: its payments and the credit notes applied to it.
+     */
+    private function settledAmount(Invoice $invoice): float
+    {
+        $credited = (float) DB::table('invoice_credit_applications')->where('original_invoice_id', $invoice->id)->sum('applied_amount');
+
+        return round((float) $invoice->payments()->sum('amount') + $credited, 2);
     }
 }

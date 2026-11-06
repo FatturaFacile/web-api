@@ -22,11 +22,11 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Inventory\StockService;
 use App\Services\Invoicing\InvoiceService;
-use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 /**
  * Demo company with customers, suppliers, products, stock, quotes, orders, invoices and payments, so a fresh
@@ -47,7 +47,6 @@ class DemoSeeder extends Seeder
         private readonly InvoiceService $invoices,
         private readonly SaveSalesDocument $salesDocuments,
         private readonly RecordPayment $payments,
-        private readonly DocumentNumberingService $numbering,
         private readonly StockService $stock,
     ) {}
 
@@ -85,6 +84,11 @@ class DemoSeeder extends Seeder
             'email_verified_at' => now(),
         ]);
         $user->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'owner']);
+
+        // The demo documents go back two years, and every one of them is issued in its own period.
+        foreach ([-2, -1, 0] as $yearsAgo) {
+            app(OpenFiscalYearAction::class)->execute($tenant->id, (int) now()->format('Y') + $yearsAgo);
+        }
 
         $this->tenantContext->runWithTenant($tenant, function (): void {
             $terms = $this->seedPaymentTerms();
@@ -329,14 +333,10 @@ class DemoSeeder extends Seeder
             $contact = $customers[$customer];
             $date = Carbon::today()->subDays($daysAgo);
             $due = $date->copy()->addDays($contact->payment_terms_days);
-            $number = $this->numbering->next('invoice', $date->year);
 
             $invoice = $this->invoices->createInvoice([
                 'contact_id' => $contact->id,
                 'invoice_type' => 'sdi_electronic',
-                'invoice_number' => $number['number'],
-                'sequential_number' => $number['sequential_number'],
-                'fiscal_year' => $number['fiscal_year'],
                 'date' => $date->toDateString(),
                 'due_date' => $due->toDateString(),
                 'currency' => 'EUR',

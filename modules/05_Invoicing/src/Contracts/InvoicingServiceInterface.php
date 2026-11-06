@@ -27,7 +27,8 @@ interface InvoicingServiceInterface
         string $customerId,
         float $amount,
         string $description,
-        string $tenantId
+        string $tenantId,
+        ?float $taxRate = null
     ): SalesInvoice;
 
     public function approveInvoice(SalesInvoice $invoice, string $userId): SalesInvoice;

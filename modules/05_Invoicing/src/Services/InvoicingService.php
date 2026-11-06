@@ -251,6 +251,10 @@ final class InvoicingService implements InvoicingServiceInterface
 
     public function approveInvoice(SalesInvoice $invoice, string $userId): SalesInvoice
     {
+        if ($invoice->status !== 'draft') {
+            throw new InvalidArgumentException("Invoice in status [{$invoice->status}] cannot be approved.");
+        }
+
         $invoice->update([
             'status' => 'approved',
         ]);

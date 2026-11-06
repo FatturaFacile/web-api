@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 uses(RefreshDatabase::class);
 
@@ -31,6 +32,7 @@ beforeEach(function (): void {
         'country' => 'CH',
         'default_currency' => 'CHF',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     $this->user = User::create([
         'name' => 'Mario Rossi',

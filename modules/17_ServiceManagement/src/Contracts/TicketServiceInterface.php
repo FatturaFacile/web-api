@@ -29,7 +29,7 @@ interface TicketServiceInterface
         ?string $technicianId = null,
         ?string $workDescription = null,
         bool $isBillable = true,
-        float $hourlyRate = 75.0,
+        ?float $hourlyRate = null,
         ?string $actorUserId = null
     ): TicketTimeEntry;
 }

@@ -15,6 +15,6 @@ final readonly class ExecutePaymentBatchAction
 
     public function execute(string $paymentBatchId, string $protocol = 'sepa_pain001', ?string $userId = null): PaymentExecution
     {
-        return $this->paymentFactory->executeBatch($paymentBatchId, $protocol, $userId);
+        return $this->paymentFactory->exportBatch($paymentBatchId, $protocol, $userId);
     }
 }

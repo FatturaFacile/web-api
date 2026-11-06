@@ -43,7 +43,7 @@ final class TreasuryOpenApiSchemas
                     'total_amount' => ['type' => 'number', 'format' => 'float'],
                     'currency' => ['type' => 'string', 'example' => 'EUR'],
                     'item_count' => ['type' => 'integer'],
-                    'status' => ['type' => 'string', 'enum' => ['draft', 'pending_approval', 'approved', 'transmitted', 'cleared', 'rejected']],
+                    'status' => ['type' => 'string', 'enum' => ['draft', 'pending_approval', 'approved', 'exported', 'partially_executed', 'executed', 'rejected']],
                 ],
                 'required' => ['id', 'batch_reference', 'total_amount', 'status'],
             ],

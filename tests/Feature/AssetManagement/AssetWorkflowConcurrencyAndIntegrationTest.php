@@ -18,6 +18,7 @@ use Modules\AssetManagement\DTOs\DisposeAssetDTO;
 use Modules\AssetManagement\Listeners\WorkflowApprovalAssetListener;
 use Modules\AssetManagement\Models\AssetCategory;
 use Modules\AssetManagement\Models\FixedAsset;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Events\PeriodClosedEvent;
 use Modules\Inventory\Events\InventoryValuationReadyEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
@@ -31,6 +32,7 @@ beforeEach(function (): void {
         ['name' => 'EAM Integration Tenant', 'legal_name' => 'EAM Integration Tenant SpA']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     $this->user = User::firstOrCreate(
         ['email' => 'eam.integrator@example.com'],

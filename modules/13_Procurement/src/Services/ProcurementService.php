@@ -370,6 +370,7 @@ final class ProcurementService implements ProcurementServiceInterface
                     'purchase_order_line_id' => $orderLine->id,
                     'quantity_received' => $qtyRec,
                     'quantity_accepted' => $qtyAcc,
+                    'unit_cost' => (float) $orderLine->unit_price,
                     'lot_number' => $line['lot_number'] ?? null,
                 ];
             }

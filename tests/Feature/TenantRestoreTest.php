@@ -28,6 +28,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 uses(RefreshDatabase::class);
 
@@ -414,4 +415,26 @@ test('the nightly backup is scheduled at 02:00', function (): void {
         ->and($event->expression)->toBe('0 2 * * *')
         ->and($event->command)->toContain('--all')
         ->and($event->withoutOverlapping)->toBeTrue();
+});
+
+test('a restore replaces issued invoices and posted entries, and they stay protected afterwards', function (): void {
+    app(OpenFiscalYearAction::class)->execute($this->tenant->id, 2026);
+    $contact = Contact::create(['tenant_id' => $this->tenant->id, 'company_name' => 'Ledger Customer', 'type' => 'customer', 'country' => 'IT']);
+    $payload = [
+        'contact_id' => $contact->id, 'invoice_type' => 'standard', 'date' => '2026-03-10', 'currency' => 'EUR', 'jurisdiction' => 'IT',
+        'items' => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]],
+    ];
+
+    $kept = trApi()->postJson('/api/v1/sales/invoices', $payload)->assertCreated()->json('data.id');
+    $entryId = Invoice::withoutGlobalScopes()->findOrFail($kept)->gl_journal_entry_id;
+    $backup = trBackup($this->tenant);
+    $dropped = trApi()->postJson('/api/v1/sales/invoices', $payload)->assertCreated()->json('data.id');
+
+    app(TenantRestoreService::class)->restoreBackup($backup, $this->tenant);
+
+    expect(Invoice::withoutGlobalScopes()->find($dropped))->toBeNull()
+        ->and(Invoice::withoutGlobalScopes()->findOrFail($kept)->status)->toBe('posted')
+        ->and(DB::table('journal_entries')->where('tenant_id', $this->tenant->id)->where('source_document_type', 'sales_invoice')->count())->toBe(1)
+        ->and(DB::table('journal_lines')->where('journal_entry_id', $entryId)->count())->toBeGreaterThan(1)
+        ->and(fn () => DB::transaction(fn () => DB::table('journal_entries')->where('id', $entryId)->delete()))->toThrow(QueryException::class);
 });

@@ -21,7 +21,11 @@ final readonly class PurchaseLiabilityReadyEvent implements DomainEventInterface
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
-        public string $occurredAt = ''
+        public string $occurredAt = '',
+        public ?string $documentDate = null,
+        public ?string $dueDate = null,
+        public bool $isCreditNote = false,
+        public float $exchangeRate = 1.0
     ) {}
 
     public function getEventId(): string

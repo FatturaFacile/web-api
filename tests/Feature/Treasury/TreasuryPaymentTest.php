@@ -93,8 +93,11 @@ test('can create, submit for approval and execute payment batch with ISO 20022 p
         ->and($batch->item_count)->toBe(2)
         ->and($batch->lines)->toHaveCount(2);
 
-    // 2. Submit for Approval (approves the batch in single/multi-tier approval matrix)
+    // 2. Submitting only asks for approval: a signatory other than the creator gives it
     $batch = $this->paymentService->submitForApproval($batch->id, $userId);
+    expect(strtolower((string) $batch->status))->toBe('pending_approval');
+
+    $batch = $this->paymentService->approveBatch($batch->id, (string) Str::uuid7(), '10.1.2.3');
     expect(strtolower((string) $batch->status))->toBe('approved');
 
     // 3. Generate pain.001.001.09 XML
@@ -104,18 +107,22 @@ test('can create, submit for approval and execute payment batch with ISO 20022 p
         ->and($xml)->toContain('12500.00')
         ->and($xml)->toContain('IT60X0542811101000000888999');
 
-    // 4. Execute Batch
-    $execution = $this->paymentService->executeBatch($batch->id, 'sepa_pain001', $userId);
+    // 4. Export: the file is ready, nothing has been paid
+    $execution = $this->paymentService->exportBatch($batch->id, 'sepa_pain001', $userId);
     expect($execution)->toBeInstanceOf(PaymentExecution::class)
-        ->and($execution->execution_status)->toBe('TRANSMITTED')
-        ->and($execution->bank_transmission_reference)->not->toBeEmpty();
+        ->and($execution->execution_status)->toBe('EXPORTED')
+        ->and($execution->bank_transmission_reference)->toBeNull();
 
     $batch->refresh();
-    expect(in_array(strtolower((string) $batch->status), ['transmitted', 'executed']))->toBeTrue();
+    expect($batch->status)->toBe('exported')
+        ->and((float) $this->bankAccount->refresh()->current_balance)->toBe(500000.00);
 
-    $this->bankAccount->refresh();
-    // 500,000 - 20,000 = 480,000
-    expect((float) $this->bankAccount->current_balance)->toBe(480000.00);
+    Event::assertNotDispatched(PaymentExecutedEvent::class);
+
+    // 5. The confirmation is what makes it real: 500,000 - 20,000 = 480,000
+    $batch = $this->paymentService->confirmBatch($batch->id, 'BANK-REF-1', null, $userId);
+    expect($batch->status)->toBe('executed')
+        ->and((float) $this->bankAccount->refresh()->current_balance)->toBe(480000.00);
 
     Event::assertDispatched(PaymentExecutedEvent::class);
 });
@@ -135,7 +142,7 @@ test('cannot execute an unapproved payment batch', function () {
         'status' => 'draft',
     ]);
 
-    expect(fn () => $this->paymentService->executeBatch($batch->id, 'sepa_pain001', (string) Str::uuid7()))
+    expect(fn () => $this->paymentService->exportBatch($batch->id, 'sepa_pain001', (string) Str::uuid7()))
         ->toThrow(Exception::class, 'must be approved');
 });
 

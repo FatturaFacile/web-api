@@ -43,7 +43,7 @@ final class CreditNoteAccountingListener
             ->where('tenant_id', $event->tenantId)
             ->whereKey($event->creditNoteId)
             ->first();
-        $documentDate = $creditNote?->date !== null ? CarbonImmutable::parse($creditNote->date)->toDateString() : CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $documentDate = $creditNote?->date !== null ? CarbonImmutable::parse($creditNote->date)->toDateString() : $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $documentDate);
 
         // 3. Resolve Master General Ledger Accounts

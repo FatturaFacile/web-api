@@ -13,6 +13,7 @@ use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
@@ -27,6 +28,7 @@ final class InvoiceAccountingListener
     public function __construct(
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly FiscalPeriodResolver $periods,
+        private readonly PaymentLedgerService $payments,
         private readonly ?AuditLedgerInterface $auditLedger = null
     ) {}
 
@@ -211,6 +213,9 @@ final class InvoiceAccountingListener
         SalesInvoice::withoutGlobalScope(TenantScope::class)->where('id', $event->invoiceId)->update([
             'gl_journal_entry_id' => (string) $journalEntry->id,
         ]);
+
+        // Payments recorded before the invoice reached the ledger can now settle its item
+        $this->payments->postWaitingCustomerPayments($event->invoiceId);
 
         // 7. Explicit Accounting Audit Entry
         $this->auditLedger?->record(

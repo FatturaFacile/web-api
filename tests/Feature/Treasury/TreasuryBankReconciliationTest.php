@@ -74,7 +74,8 @@ test('can import electronic statement and execute dual-pass auto reconciliation'
 
     $batch = $this->paymentService->createBatch($batchData, $lines, $userId);
     $this->paymentService->submitForApproval($batch->id, $userId);
-    $execution = $this->paymentService->executeBatch($batch->id, 'sepa_pain001', $userId);
+    $this->paymentService->approveBatch($batch->id, (string) Str::uuid7(), '10.1.2.3');
+    $execution = $this->paymentService->exportBatch($batch->id, 'sepa_pain001', $userId);
 
     // 2. Import CAMT.053 Statement
     $statementData = [

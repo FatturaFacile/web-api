@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Listeners;
 
+use App\Models\Contact;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\BankPostingReadyEvent;
@@ -44,6 +45,14 @@ final readonly class TreasuryReadinessEventListener
             return;
         }
 
+        $supplier = Contact::withoutGlobalScopes()->whereKey($event->supplierId)->first();
+        $supplierIban = $supplier?->iban ?: $supplier?->qr_iban;
+
+        // Without the real bank details of the supplier there is nothing to pay to.
+        if (empty($supplierIban)) {
+            return;
+        }
+
         // Find or create open draft batch for the execution date
         $batch = PaymentBatch::firstOrCreate(
             [
@@ -72,8 +81,8 @@ final readonly class TreasuryReadinessEventListener
             'line_number' => $batch->lines()->count() + 1,
             'recipient_type' => 'supplier',
             'recipient_id' => $event->supplierId,
-            'recipient_name' => "Supplier {$event->supplierId}",
-            'recipient_iban' => 'IT60X0542811101000000123456',
+            'recipient_name' => (string) ($supplier->company_name ?: trim($supplier->first_name.' '.$supplier->last_name)),
+            'recipient_iban' => str_replace(' ', '', (string) $supplierIban),
             'amount' => $event->amount,
             'currency' => $event->currency,
             'instruction_id' => 'INSTR-'.strtoupper(Str::random(8)),
@@ -151,14 +160,16 @@ final readonly class TreasuryReadinessEventListener
 
     public function handleBankPostingReady(BankPostingReadyEvent $event): void
     {
-        $account = BankAccount::find($event->bankAccountId)
+        $account = BankAccount::where('tenant_id', $event->tenantId)->where('gl_account_id', $event->bankAccountId)->first()
+            ?? BankAccount::find($event->bankAccountId)
             ?? BankAccount::where('tenant_id', $event->tenantId)->where('is_active', true)->first();
 
         if (! $account) {
             return;
         }
 
-        $delta = $event->direction === 'credit' ? $event->amount : -1 * $event->amount;
+        // The direction is the side of the ledger line: a debit on a bank account is money coming in.
+        $delta = $event->direction === 'debit' ? $event->amount : -1 * $event->amount;
         $this->positionService->updateBalance((string) $account->id, $delta, 'gl_bank_posting');
 
         BankTransaction::create([

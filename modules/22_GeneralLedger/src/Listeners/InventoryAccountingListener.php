@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
@@ -26,7 +25,7 @@ final class InventoryAccountingListener
     public function handleValuationReady(InventoryValuationReadyEvent $event): void
     {
         $tenantId = ! empty($event->tenantId) ? $event->tenantId : (string) Str::uuid7();
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
@@ -62,7 +61,7 @@ final class InventoryAccountingListener
 
     public function handleCostingReady(InventoryCostingReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $cogsAcc = $this->resolveAccount($event->tenantId, '5000', 'Cost of Goods Sold (COGS)', 'cogs', 'debit');
@@ -98,7 +97,7 @@ final class InventoryAccountingListener
 
     public function handleAdjustmentPosted(InventoryAdjustmentPostedEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
@@ -141,7 +140,7 @@ final class InventoryAccountingListener
 
     public function handleWriteOff(InventoryWriteOffEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $scrapAcc = $this->resolveAccount($event->tenantId, '6500', 'Inventory Scrap & Loss Expense', 'expense', 'debit');
@@ -177,7 +176,7 @@ final class InventoryAccountingListener
 
     public function handleRevaluation(InventoryRevaluationEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');

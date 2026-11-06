@@ -12,6 +12,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
 
 class ImportBankPayments
 {
@@ -127,9 +128,18 @@ class ImportBankPayments
         }
 
         try {
-            $payment = DB::transaction(fn () => $this->recordPayment->execute($invoice, $this->paymentData($line)));
+            $payment = DB::transaction(function () use ($invoice, $line) {
+                $payment = $this->recordPayment->execute($invoice, $this->paymentData($line));
+                $this->recordWithheldFee($invoice, $line);
+
+                return $payment;
+            });
         } catch (ValidationException $e) {
             $line->update(['note' => "Invoice {$invoice->invoice_number}: ".collect($e->errors())->flatten()->implode(' ')]);
+
+            return false;
+        } catch (FiscalPeriodException $e) {
+            $line->update(['note' => "Invoice {$invoice->invoice_number}: {$e->getMessage()}"]);
 
             return false;
         }
@@ -137,6 +147,24 @@ class ImportBankPayments
         $line->update(['status' => 'matched', 'invoice_id' => $invoice->id, 'payment_id' => $payment->id]);
 
         return true;
+    }
+
+    /**
+     * The fee the bank kept out of the amount the customer paid: it closes the invoice and goes to the bank charges.
+     */
+    private function recordWithheldFee(Invoice $invoice, PaymentImportLine $line): void
+    {
+        $fee = (float) $line->fee_amount;
+
+        if ($fee <= 0) {
+            return;
+        }
+
+        $balance = round((float) $invoice->refresh()->total_gross - (float) $invoice->total_paid, 2);
+
+        if ($balance > 0) {
+            $this->recordPayment->execute($invoice, ['type' => 'bank_fee', 'amount' => min($fee, $balance)] + $this->paymentData($line));
+        }
     }
 
     /**

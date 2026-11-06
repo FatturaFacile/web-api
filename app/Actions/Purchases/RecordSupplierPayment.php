@@ -8,6 +8,7 @@ use App\Models\PassiveInvoice;
 use App\Models\SupplierPayment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Services\PaymentLedgerService;
 
 /**
  * Registers payments made to a supplier and keeps the paid total and the payment status of the received invoice in
@@ -16,6 +17,8 @@ use Illuminate\Validation\ValidationException;
  */
 class RecordSupplierPayment
 {
+    public function __construct(private readonly PaymentLedgerService $ledger) {}
+
     /**
      * @param  array{amount: float|int|string, paid_at: string, type?: string, reference?: ?string, notes?: ?string, bank_statement_line_id?: ?string}  $data
      *
@@ -46,6 +49,7 @@ class RecordSupplierPayment
             ]);
 
             $this->recalculate($invoice);
+            $this->ledger->postSupplierPayment($payment, $data['ledger_options'] ?? []);
 
             return $payment;
         });

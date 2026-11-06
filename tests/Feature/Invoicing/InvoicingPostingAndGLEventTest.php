@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
@@ -79,7 +80,8 @@ test('posts invoice from sales order, records customer ledger entry, and dispatc
     $invoicingService = new InvoicingService(
         app(PricingAndDiscountServiceInterface::class),
         app(CustomerLedgerServiceInterface::class),
-        $mockDispatcher
+        $mockDispatcher,
+        app(DocumentNumberingService::class)
     );
 
     $invoice = $invoicingService->createInvoiceFromOrder($order, [
@@ -93,7 +95,7 @@ test('posts invoice from sales order, records customer ledger entry, and dispatc
     expect($invoice->payment_status)->toBe('unpaid');
 
     // Post invoice
-    $postedInvoice = $invoicingService->postInvoice($invoice, 'chief-accountant');
+    $postedInvoice = $invoicingService->postInvoice($invoice, '01929f00-0000-7000-8000-000000000001');
 
     expect($postedInvoice->status)->toBe('posted');
     expect($postedInvoice->posted_at)->not->toBeNull();

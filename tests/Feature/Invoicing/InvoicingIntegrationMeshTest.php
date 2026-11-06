@@ -48,7 +48,8 @@ test('handles ProjectBillingReadyEvent from Module 15 and creates milestone bill
         billingType: 'milestone',
         milestoneId: $milestoneId,
         tenantId: $tenantId,
-        companyId: $tenantId
+        companyId: $tenantId,
+        taxRate: 22.0
     );
 
     $listener = app(ProjectsBillingEventListener::class);

@@ -9,6 +9,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
@@ -25,6 +26,7 @@ final class InvoicingDemoDataSeeder extends Seeder
 
         $tenantId = (string) $tenant->id;
         app(TenantContext::class)->setTenant($tenant);
+        app(OpenFiscalYearAction::class)->execute((string) $tenant->id, (int) now()->format('Y'));
 
         // Check if demo quote already seeded
         $existingQuote = DB::table('quotes')->where('tenant_id', $tenantId)->where('quote_number', 'Q-DEMO-2027-001')->first();

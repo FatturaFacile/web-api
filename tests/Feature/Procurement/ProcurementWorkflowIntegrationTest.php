@@ -9,6 +9,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Procurement\Models\Supplier;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
@@ -26,6 +27,7 @@ beforeEach(function (): void {
         'country' => 'IT',
         'default_currency' => 'EUR',
     ]);
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     app(TenantContext::class)->setTenant($this->tenant);
 

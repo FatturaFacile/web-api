@@ -78,6 +78,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
      */
     private function persist(array $data, ?string $actorUserId, bool $isYearEndClosing): JournalEntry
     {
+        $data['company_id'] = ! empty($data['company_id']) ? $data['company_id'] : null;
         $actorUuid = ! empty($actorUserId) ? (Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7()) : null;
 
         return DB::transaction(function () use ($data, $actorUuid, $isYearEndClosing) {
@@ -93,7 +94,9 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 throw FiscalPeriodException::foreignPeriod((string) $fiscalPeriod->period_name);
             }
 
-            $postingDate = CarbonImmutable::parse($data['posting_date'] ?? now())->toDateString();
+            $postingDate = isset($data['posting_date'])
+                ? CarbonImmutable::parse($data['posting_date'])->toDateString()
+                : $this->dateWithin($fiscalPeriod);
             $this->assertDateInPeriod($postingDate, $fiscalPeriod);
 
             if ($fiscalPeriod->isLockedFor('GL') && ! $isYearEndClosing) {
@@ -405,6 +408,18 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         $text = is_float($value) ? number_format($value, 4, '.', '') : (string) ($value ?? '0');
 
         return bcround(Decimal::normalize($text === '' ? '0' : $text), 4, RoundingMode::HalfAwayFromZero);
+    }
+
+    /**
+     * A caller that names the period but no date books today, or the nearest day of that period.
+     */
+    private function dateWithin(FiscalPeriod $period): string
+    {
+        $today = now()->toDateString();
+        $start = CarbonImmutable::parse($period->start_date)->toDateString();
+        $end = CarbonImmutable::parse($period->end_date)->toDateString();
+
+        return max($start, min($today, $end));
     }
 
     private function assertDateInPeriod(string $postingDate, FiscalPeriod $period): void

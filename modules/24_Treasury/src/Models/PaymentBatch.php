@@ -19,6 +19,7 @@ final class PaymentBatch extends BaseEnterpriseModel
             'execution_date' => 'date',
             'total_amount' => 'decimal:2',
             'item_count' => 'integer',
+            'exported_at' => 'datetime',
         ];
     }
 

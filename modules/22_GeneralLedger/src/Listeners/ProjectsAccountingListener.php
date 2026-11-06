@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
-use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
@@ -30,7 +29,7 @@ final class ProjectsAccountingListener
 
     public function handleCostReady(ProjectCostReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Work In Progress (WIP)', 'asset', 'debit');
@@ -68,7 +67,7 @@ final class ProjectsAccountingListener
 
     public function handleRevenueReady(ProjectRevenueReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $arAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Accounts Receivable (Crediti v/Clienti)', 'asset', 'debit');
@@ -107,7 +106,7 @@ final class ProjectsAccountingListener
 
     public function handleWipReady(ProjectWipReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->wipAccountCode, 'Project Work In Progress (WIP)', 'asset', 'debit');
@@ -145,7 +144,7 @@ final class ProjectsAccountingListener
 
     public function handleAccrualReady(ProjectAccrualReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $expAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Accrued Project Expense', 'expense', 'debit');
@@ -224,7 +223,7 @@ final class ProjectsAccountingListener
 
     public function handleClosureReady(ProjectClosureReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $cogsAcc = $this->resolveAccount($event->tenantId, '5000', 'Cost of Goods Sold (COGS)', 'cogs', 'debit');
@@ -245,7 +244,7 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $cogsAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->finalActualCost,
+                    'debit_amount' => (float) $event->finalCost,
                     'credit_amount' => 0.0,
                     'description' => 'COGS Final Cost Recognition',
                 ],
@@ -253,7 +252,7 @@ final class ProjectsAccountingListener
                     'account_id' => $wipAcc->id,
                     'project_id' => $event->projectId,
                     'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->finalActualCost,
+                    'credit_amount' => (float) $event->finalCost,
                     'description' => 'WIP Relief upon Closure',
                 ],
             ],
@@ -262,7 +261,7 @@ final class ProjectsAccountingListener
 
     public function handleRevenueRecognitionReady(ProjectRevenueRecognitionReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $assetAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Contract Asset / Unbilled AR', 'asset', 'debit');
@@ -304,7 +303,7 @@ final class ProjectsAccountingListener
 
     public function handleExpensePostingReady(ProjectExpensePostingReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $expAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Travel & Direct Expenses', 'expense', 'debit');
@@ -342,7 +341,7 @@ final class ProjectsAccountingListener
 
     public function handleLabourCostReady(ProjectLabourCostReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Work In Progress (WIP - Labor)', 'asset', 'debit');
@@ -380,7 +379,7 @@ final class ProjectsAccountingListener
 
     public function handleMaterialCostReady(ProjectMaterialCostReadyEvent $event): void
     {
-        $postingDate = CarbonImmutable::parse($event->getOccurredAt())->toDateString();
+        $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
         $wipAcc = $this->resolveAccount($event->tenantId, $event->debitAccountCode, 'Project Work In Progress (WIP - Material)', 'asset', 'debit');
