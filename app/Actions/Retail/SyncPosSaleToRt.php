@@ -9,10 +9,14 @@ use App\Models\PosSale;
 use App\Models\RtFiscalReceipt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\FiscalRetail\Actions\IssueCommercialDocument;
 
 class SyncPosSaleToRt
 {
-    public function __construct(private readonly FiscalPrinterGateway $gateway) {}
+    public function __construct(
+        private readonly FiscalPrinterGateway $gateway,
+        private readonly IssueCommercialDocument $commercialDocuments,
+    ) {}
 
     /**
      * Transmit a completed sale to the fiscal printer once and store the fiscal identifiers.
@@ -31,6 +35,7 @@ class SyncPosSaleToRt
             }
 
             $result = $this->gateway->transmit($sale);
+            $this->commercialDocuments->fromPosSale($sale);
 
             return RtFiscalReceipt::create([
                 'pos_sale_id' => $sale->id,

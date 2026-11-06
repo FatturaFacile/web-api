@@ -62,6 +62,13 @@
             "Modules\\ServiceManagement\\": "modules/17_ServiceManagement/src/",
             "Modules\\SubscriptionBilling\\": "modules/19_SubscriptionBilling/src/",
             "Modules\\Manufacturing\\": "modules/30_Manufacturing/src/",
+            "Modules\\Analytics\\": "modules/20_Analytics/src/",
+            "Modules\\Communication\\": "modules/23_Communication/src/",
+            "Modules\\FiscalRetail\\": "modules/26_FiscalRetail/src/",
+            "Modules\\HealthExpenses\\": "modules/27_HealthExpenses/src/",
+            "Modules\\DataExport\\": "modules/28_DataExport/src/",
+            "Modules\\Integrations\\": "modules/29_Integrations/src/",
+            "Modules\\DocumentTrust\\": "modules/32_DocumentTrust/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\": "modules/"
         }

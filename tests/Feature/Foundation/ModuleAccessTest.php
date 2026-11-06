@@ -26,7 +26,7 @@ function moduleUser(string $role, array $permissions = []): User
 }
 
 test('every route of a business module declares its access rule', function (): void {
-    $prefixes = ['crm', 'invoicing', 'subscriptions', 'sub', 'projects', 'eam', 'esm', 'manufacturing', 'treasury', 'general-ledger', 'procurement', 'inventory'];
+    $prefixes = ['crm', 'invoicing', 'subscriptions', 'sub', 'projects', 'eam', 'esm', 'manufacturing', 'treasury', 'general-ledger', 'procurement', 'inventory', 'fiscal-retail', 'tessera-sanitaria', 'exports', 'reporting', 'analytics', 'communication', 'integrations', 'document-trust', 'payment-links'];
     $unprotected = [];
 
     foreach (app('router')->getRoutes() as $route) {

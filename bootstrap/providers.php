@@ -8,10 +8,17 @@ use Enterprise\FeatureFlags\Providers\FeatureFlagsServiceProvider;
 use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
+use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
+use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
+use Modules\DataExport\Providers\DataExportServiceProvider;
+use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
+use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
+use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
+use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
@@ -48,4 +55,11 @@ return [
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,
     SdiServiceProvider::class,
+    FiscalRetailServiceProvider::class,
+    HealthExpensesServiceProvider::class,
+    DataExportServiceProvider::class,
+    IntegrationsServiceProvider::class,
+    CommunicationServiceProvider::class,
+    AnalyticsServiceProvider::class,
+    DocumentTrustServiceProvider::class,
 ];

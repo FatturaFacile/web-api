@@ -35,6 +35,16 @@ return [
         ],
     ],
 
+    'preservation' => [
+        // Legal preservation needs an accredited provider: the `accredited` driver refuses to run until one is contracted.
+        'driver' => env('PRESERVATION_DRIVER', 'local'),
+    ],
+
+    'corrispettivi' => [
+        // Only the local driver works today: the Agenzia delle Entrate driver refuses to run until an agreement exists.
+        'driver' => env('CORRISPETTIVI_DRIVER', 'local'),
+    ],
+
     'sdi' => [
         // Shared secret expected in the X-Webhook-Secret header of SDI notification webhooks.
         'webhook_secret' => env('SDI_WEBHOOK_SECRET'),
