@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Ecommerce;
 
+use App\Enums\SalesOrderStatus;
 use App\Models\EcommerceChannel;
 use App\Rules\PublicHttpUrl;
 use App\Services\Ecommerce\Drivers\ShopifyDriver;
@@ -60,7 +61,7 @@ class StoreEcommerceChannelRequest extends FormRequest
             'sync_orders_enabled' => ['sometimes', 'boolean'],
             'settings' => ['nullable', 'array'],
             'settings.order_status_map' => ['nullable', 'array'],
-            'settings.order_status_map.*' => ['string', Rule::in(['draft', 'confirmed', 'in_production', 'shipped', 'completed', 'cancelled'])],
+            'settings.order_status_map.*' => ['string', Rule::in(SalesOrderStatus::manualValues())],
             'settings.location_id' => ['nullable', 'string', 'max:30'],
             'settings.api_version' => ['nullable', 'string', 'regex:/^\d{4}-\d{2}$/'],
             'settings.currency' => ['nullable', 'string', 'size:3'],

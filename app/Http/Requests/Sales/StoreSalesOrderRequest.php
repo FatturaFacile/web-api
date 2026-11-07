@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Sales;
 
+use App\Enums\SalesOrderStatus;
 use Illuminate\Validation\Rule;
 
 class StoreSalesOrderRequest extends SalesDocumentRequest
@@ -15,7 +16,7 @@ class StoreSalesOrderRequest extends SalesDocumentRequest
     {
         return array_merge($this->commonRules(), [
             'due_date' => ['nullable', 'date', 'after_or_equal:date'],
-            'status' => ['sometimes', Rule::in(['draft', 'confirmed', 'in_production', 'shipped', 'completed', 'cancelled'])],
+            'status' => ['sometimes', Rule::in(SalesOrderStatus::manualValues())],
         ]);
     }
 }

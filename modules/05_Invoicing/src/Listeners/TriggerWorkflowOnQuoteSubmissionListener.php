@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Listeners;
 
+use App\Enums\QuoteStatus;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
 use Modules\Invoicing\Models\SalesQuote;
+use Modules\Invoicing\Services\SalesQuoteService;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
 
@@ -20,13 +22,15 @@ final class TriggerWorkflowOnQuoteSubmissionListener
     public function handle(SalesQuoteSubmittedEvent $event): void
     {
         $quote = SalesQuote::find($event->quoteId);
-        if ($quote === null || $quote->status !== 'pending_approval') {
+        // SalesQuoteService::submitForApproval starts the workflow itself; this listener only covers a submission event
+        // raised elsewhere for a quote that has no instance yet.
+        if ($quote === null || $quote->status !== QuoteStatus::PendingApproval->value || $quote->workflow_instance_id !== null) {
             return;
         }
 
-        $workflowCode = (float) $event->totalGross > 25000.0
-            ? 'HIGH_VALUE_SALES_QUOTE_APPROVAL'
-            : 'SALES_QUOTE_APPROVAL';
+        $workflowCode = (float) $event->totalGross > SalesQuoteService::HighValueThreshold
+            ? SalesQuoteService::HighValueApprovalWorkflow
+            : SalesQuoteService::ApprovalWorkflow;
 
         try {
             $instance = $this->workflowEngine->start(new StartWorkflowDTO(

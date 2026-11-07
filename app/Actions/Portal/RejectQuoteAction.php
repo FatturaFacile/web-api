@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Portal;
 
+use App\Enums\QuoteStatus;
 use App\Events\Portal\QuoteRejectedByCustomer;
 use App\Jobs\Portal\NotifyQuoteStatusChangedJob;
 use App\Models\PortalAccessToken;
@@ -28,12 +29,16 @@ class RejectQuoteAction
                 throw ValidationException::withMessages(['quote' => 'Unauthorized quote access.']);
             }
 
-            if ($quote->status === 'accepted') {
+            if ($quote->status === QuoteStatus::Accepted->value) {
                 throw ValidationException::withMessages(['quote' => 'Accepted quotes cannot be rejected.']);
             }
 
+            if (! QuoteStatus::allows($quote->status, QuoteStatus::Rejected)) {
+                throw ValidationException::withMessages(['quote' => 'This quote is no longer available.']);
+            }
+
             $quote->update([
-                'status' => 'rejected',
+                'status' => QuoteStatus::Rejected->value,
                 'notes' => $reason ? trim(($quote->notes ? $quote->notes."\n" : '')."Customer Rejection Reason: {$reason}") : $quote->notes,
             ]);
 

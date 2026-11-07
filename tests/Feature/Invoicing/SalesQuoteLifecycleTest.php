@@ -114,6 +114,6 @@ test('approves and accepts sales quote, then converts into confirmed sales order
     expect($order->items)->toHaveCount(1);
     expect((float) $order->items->first()->quantity)->toBe(5.0);
 
-    expect($quote->fresh()->status)->toBe('converted');
+    expect($quote->fresh()->status)->toBe('accepted');
     expect($quote->fresh()->converted_to_order_id)->toBe((string) $order->id);
 });

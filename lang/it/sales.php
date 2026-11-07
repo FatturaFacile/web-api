@@ -16,6 +16,10 @@ return [
     'quote_not_signable' => 'Un preventivo rifiutato o scaduto non può essere firmato.',
 
     'quote_already_converted' => 'Questo preventivo è già stato convertito in ordine.',
+    'invalid_status_transition' => 'Un documento nello stato :from non può passare allo stato :to.',
+    'quote_not_pending_approval' => 'Solo un preventivo in attesa di approvazione può essere approvato o rifiutato.',
+    'quote_approval_in_workflow' => 'Per questo preventivo è in corso un flusso di approvazione: decidi nel flusso.',
+    'delivery_note_already_dispatched' => 'Questo documento di trasporto è già stato spedito.',
     'order_not_deliverable' => 'Solo gli ordini confermati possono essere spediti.',
     'nothing_to_deliver' => 'Nessun articolo rimasto da spedire.',
     'proforma_only' => 'Solo le fatture proforma possono essere convertite.',

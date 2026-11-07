@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Ecommerce;
 
 use App\Actions\Sales\SaveSalesDocument;
+use App\Enums\SalesOrderStatus;
 use App\Models\Contact;
 use App\Models\EcommerceChannel;
 use App\Models\EcommerceMapping;
@@ -28,8 +29,6 @@ class ImportEcommerceOrder
     public const UPDATED = 'updated';
 
     public const DUPLICATE = 'duplicate';
-
-    private const LOCAL_STATUSES = ['draft', 'confirmed', 'in_production', 'shipped', 'completed', 'cancelled'];
 
     public function __construct(
         private readonly SaveSalesDocument $saveDocument,
@@ -146,15 +145,15 @@ class ImportEcommerceOrder
     {
         $custom = $channel->settings['order_status_map'][$remote['status']] ?? null;
 
-        if (is_string($custom) && in_array($custom, self::LOCAL_STATUSES, true)) {
+        if (is_string($custom) && in_array($custom, SalesOrderStatus::manualValues(), true)) {
             return $custom;
         }
 
         return match ($remote['canonical_status']) {
-            'processing' => 'confirmed',
-            'completed' => 'completed',
-            'cancelled' => 'cancelled',
-            default => 'draft',
+            'processing' => SalesOrderStatus::Confirmed->value,
+            'completed' => SalesOrderStatus::Completed->value,
+            'cancelled' => SalesOrderStatus::Cancelled->value,
+            default => SalesOrderStatus::Draft->value,
         };
     }
 

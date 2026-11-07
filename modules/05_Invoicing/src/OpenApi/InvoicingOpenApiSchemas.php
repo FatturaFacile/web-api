@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\OpenApi;
 
+use App\Enums\DeliveryNoteStatus;
+use App\Enums\QuoteStatus;
+use App\Enums\SalesOrderStatus;
+
 final class InvoicingOpenApiSchemas
 {
     /**
@@ -27,7 +31,7 @@ final class InvoicingOpenApiSchemas
                     'total_net' => ['type' => 'number', 'format' => 'float'],
                     'total_tax' => ['type' => 'number', 'format' => 'float'],
                     'total_gross' => ['type' => 'number', 'format' => 'float'],
-                    'status' => ['type' => 'string', 'enum' => ['draft', 'pending_approval', 'approved', 'accepted', 'rejected', 'converted', 'expired']],
+                    'status' => ['type' => 'string', 'enum' => QuoteStatus::values()],
                 ],
                 'required' => ['id', 'tenant_id', 'contact_id', 'quote_number', 'total_gross'],
             ],
@@ -42,7 +46,7 @@ final class InvoicingOpenApiSchemas
                     'due_date' => ['type' => 'string', 'format' => 'date'],
                     'currency' => ['type' => 'string', 'example' => 'EUR'],
                     'total_gross' => ['type' => 'number', 'format' => 'float'],
-                    'status' => ['type' => 'string', 'enum' => ['draft', 'confirmed', 'in_fulfillment', 'shipped', 'completed', 'cancelled', 'on_hold']],
+                    'status' => ['type' => 'string', 'enum' => SalesOrderStatus::values()],
                     'credit_status' => ['type' => 'string', 'enum' => ['pending_check', 'approved', 'on_hold', 'rejected']],
                     'inventory_status' => ['type' => 'string', 'enum' => ['pending', 'reserved', 'partially_reserved', 'dispatched']],
                     'fulfillment_status' => ['type' => 'string', 'enum' => ['unfulfilled', 'partial', 'fulfilled']],
@@ -59,6 +63,7 @@ final class InvoicingOpenApiSchemas
                     'sales_order_id' => ['type' => 'string', 'format' => 'uuid'],
                     'ddt_number' => ['type' => 'string'],
                     'date' => ['type' => 'string', 'format' => 'date'],
+                    'status' => ['type' => 'string', 'enum' => DeliveryNoteStatus::values()],
                     'shipping_status' => ['type' => 'string', 'enum' => ['draft', 'picked', 'packed', 'dispatched', 'delivered']],
                     'packages_count' => ['type' => 'integer'],
                     'gross_weight_kg' => ['type' => 'number', 'format' => 'float'],

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Enums\DeliveryNoteStatus;
+use App\Enums\SalesOrderStatus;
 use App\Models\Tenant;
 use App\Services\ItalianSdi\InvoiceFiscalService;
 use App\Services\Sales\DocumentNumberingService;
@@ -178,7 +180,7 @@ final class InvoicingService implements InvoicingServiceInterface
         return DB::transaction(function () use ($order, $overrides): SalesInvoice {
             $locked = SalesOrder::withoutGlobalScope(TenantScope::class)->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->status === 'cancelled') {
+            if ($locked->status === SalesOrderStatus::Cancelled->value) {
                 throw ValidationException::withMessages(['sales_order' => __('sales.order_cancelled')]);
             }
 
@@ -264,7 +266,7 @@ final class InvoicingService implements InvoicingServiceInterface
         return DB::transaction(function () use ($deliveryNote, $overrides): SalesInvoice {
             $locked = SalesDeliveryNote::withoutGlobalScope(TenantScope::class)->whereKey($deliveryNote->id)->lockForUpdate()->firstOrFail();
 
-            $alreadyInvoiced = $locked->status === 'invoiced'
+            $alreadyInvoiced = $locked->status === DeliveryNoteStatus::Invoiced->value
                 || SalesInvoice::withoutGlobalScope(TenantScope::class)->where('delivery_note_id', $locked->id)->exists();
 
             if ($alreadyInvoiced) {
@@ -320,7 +322,7 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoice = $this->createInvoice($data, $items);
 
         $deliveryNote->update([
-            'status' => 'invoiced',
+            'status' => DeliveryNoteStatus::Invoiced->value,
         ]);
 
         return $invoice;
@@ -886,8 +888,7 @@ final class InvoicingService implements InvoicingServiceInterface
             throw ValidationException::withMessages(['amount' => __('sales.credit_note_amount_positive')]);
         }
 
-        // Query builder on purpose: the table has no soft-delete column, which the Eloquent model would filter on.
-        $applied = DB::table('invoice_credit_applications')->where('credit_note_id', $note->id)->sum('applied_amount');
+        $applied = InvoiceCreditApplication::withoutGlobalScope(TenantScope::class)->where('credit_note_id', $note->id)->sum('applied_amount');
         $available = Decimal::sub($note->amountDue(), number_format((float) $applied, 2, '.', ''));
 
         if (Decimal::compare($amount, $available) > 0) {

@@ -16,6 +16,10 @@ return [
     'quote_not_signable' => 'Un devis rejeté ou expiré ne peut pas être signé.',
 
     'quote_already_converted' => 'Ce devis a déjà été converti en commande.',
+    'invalid_status_transition' => 'Un document au statut :from ne peut pas passer au statut :to.',
+    'quote_not_pending_approval' => 'Seul un devis en attente d\'approbation peut être approuvé ou rejeté.',
+    'quote_approval_in_workflow' => 'Un workflow d\'approbation est en cours pour ce devis : décidez dans le workflow.',
+    'delivery_note_already_dispatched' => 'Ce bon de livraison a déjà été expédié.',
     'order_not_deliverable' => 'Seules les commandes confirmées peuvent être livrées.',
     'nothing_to_deliver' => 'Rien de restant à livrer.',
     'proforma_only' => 'Seules les factures proforma peuvent être converties.',

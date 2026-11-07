@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Enums\QuoteStatus;
+use App\Enums\SalesOrderStatus;
+use App\Models\Quote;
+use App\Models\SalesOrder;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class SaveSalesDocument
 {
@@ -59,6 +64,8 @@ class SaveSalesDocument
     {
         return DB::transaction(function () use ($document, $data): Model {
             unset($data['tenant_id']);
+            $this->assertStatusTransition($document, $data['status'] ?? null);
+
             if (isset($data['items'])) {
                 $computed = $this->totals->calculate($data['items']);
                 $document->items()->delete();
@@ -74,5 +81,26 @@ class SaveSalesDocument
 
             return $document->load(['items', 'contact']);
         });
+    }
+
+    /**
+     * A status changed by hand follows the state machine of the document, the same one the invoicing module obeys.
+     *
+     * @throws ValidationException when the new status cannot be reached from the current one
+     */
+    private function assertStatusTransition(Model $document, mixed $status): void
+    {
+        $statuses = match (true) {
+            $document instanceof Quote => QuoteStatus::class,
+            $document instanceof SalesOrder => SalesOrderStatus::class,
+            default => null,
+        };
+
+        if ($statuses === null || ! is_string($status) || $status === $document->getAttribute('status')) {
+            return;
+        }
+
+        $target = $statuses::tryFrom($status) ?? throw ValidationException::withMessages(['status' => __('validation.in', ['attribute' => 'status'])]);
+        $statuses::assertTransition($document->getAttribute('status'), $target);
     }
 }

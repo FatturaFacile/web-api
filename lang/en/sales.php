@@ -17,6 +17,10 @@ return [
     'quote_not_signable' => 'A rejected or expired quote cannot be signed.',
 
     'quote_already_converted' => 'This quote has already been converted to an order.',
+    'invalid_status_transition' => 'A document in status :from cannot move to :to.',
+    'quote_not_pending_approval' => 'Only a quote waiting for approval can be approved or rejected.',
+    'quote_approval_in_workflow' => 'An approval workflow is running for this quote: decide in the workflow.',
+    'delivery_note_already_dispatched' => 'This delivery note has already been dispatched.',
     'order_not_deliverable' => 'Only confirmed orders can be delivered.',
     'nothing_to_deliver' => 'Nothing left to deliver.',
     'proforma_only' => 'Only proforma invoices can be converted.',

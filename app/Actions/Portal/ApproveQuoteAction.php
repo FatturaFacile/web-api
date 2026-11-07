@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Portal;
 
+use App\Enums\QuoteStatus;
 use App\Events\Portal\QuoteApprovedByCustomer;
 use App\Jobs\Portal\NotifyQuoteStatusChangedJob;
 use App\Models\PortalAccessToken;
@@ -28,16 +29,16 @@ class ApproveQuoteAction
                 throw ValidationException::withMessages(['quote' => 'Unauthorized quote access.']);
             }
 
-            if ($quote->signed_at !== null || $quote->status === 'accepted') {
+            if ($quote->signed_at !== null || $quote->status === QuoteStatus::Accepted->value) {
                 throw ValidationException::withMessages(['quote' => 'This quote has already been accepted.']);
             }
 
-            if (in_array($quote->status, ['rejected', 'expired'], true)) {
+            if (! QuoteStatus::allows($quote->status, QuoteStatus::Accepted)) {
                 throw ValidationException::withMessages(['quote' => 'This quote is no longer available for acceptance.']);
             }
 
             $quote->update([
-                'status' => 'accepted',
+                'status' => QuoteStatus::Accepted->value,
                 'signed_by' => $signerName,
                 'signature_data' => $signatureData,
                 'signed_at' => now(),
