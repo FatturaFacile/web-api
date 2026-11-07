@@ -31,6 +31,7 @@ return [
         'sale_refunded' => 'Sale refunded successfully',
         'rt_transmitted' => 'Sale transmitted to the fiscal printer',
         'rt_simulated' => 'Sale recorded by the simulated fiscal printer: nothing was sent to the Agenzia delle Entrate',
+        'rt_not_transmitted' => 'The fiscal printer did not accept the sale yet: the receipt is kept and can be sent again',
     ],
 
 ];

@@ -11,17 +11,21 @@ use App\Models\RtFiscalReceipt;
 use App\Services\Inventory\StockService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\FiscalRetail\Actions\IssueCommercialDocument;
+use Modules\FiscalRetail\Models\CommercialDocument;
 
 class RefundPosSale
 {
     public function __construct(
         private readonly StockService $stock,
         private readonly ApplyLoyaltyTransaction $loyalty,
+        private readonly IssueCommercialDocument $commercialDocuments,
     ) {}
 
     /**
-     * Refund a whole sale of a still-open session: stock returns, the session total drops and
-     * loyalty movements are reversed. Sales already sent to the fiscal printer need a fiscal refund document.
+     * Refund a whole sale of a still-open session: stock returns, the session total drops, loyalty movements are
+     * reversed and its commercial document, if any, is voided. Sales already sent to the fiscal printer need a fiscal
+     * refund document.
      */
     public function execute(PosSale $sale): PosSale
     {
@@ -40,6 +44,7 @@ class RefundPosSale
                 throw ValidationException::withMessages(['sale' => __('pos.refund_session_closed')]);
             }
 
+            $this->voidCommercialDocument($sale);
             $this->stock->recordForLines('in', $sale, $sale->items()->get());
             $this->reverseLoyalty($sale);
 
@@ -48,6 +53,29 @@ class RefundPosSale
 
             return $sale->load('items');
         });
+    }
+
+    /**
+     * A sale that already has a commercial document is cancelled fiscally too, with the void document of the fiscal
+     * retail module. When the document cannot be voided (its day is closed, goods were already returned on it, the
+     * gateway is unavailable) the refund is refused: the money cannot go back while the document still counts as sold.
+     */
+    private function voidCommercialDocument(PosSale $sale): void
+    {
+        $document = CommercialDocument::where('pos_sale_id', $sale->id)->where('document_type', 'sale')->first();
+
+        if ($document === null || CommercialDocument::where('related_document_id', $document->id)->where('document_type', 'void')->exists()) {
+            return;
+        }
+
+        try {
+            $this->commercialDocuments->void($document);
+        } catch (ValidationException $e) {
+            throw ValidationException::withMessages(['sale' => __('sales.commercial_document_refund_blocked', [
+                'number' => $document->document_number,
+                'reason' => collect($e->errors())->flatten()->first(),
+            ])]);
+        }
     }
 
     private function reverseLoyalty(PosSale $sale): void

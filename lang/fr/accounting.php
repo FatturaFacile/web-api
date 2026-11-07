@@ -18,6 +18,7 @@ return [
         'invalid_iban' => 'La valeur :iban n\'est pas un IBAN valide.',
         'unbalanced_journal' => 'L\'écriture comptable n\'est pas équilibrée (Débit != Crédit).',
         'period_locked' => 'La période comptable est verrouillée pour les écritures.',
+        'period_max_one_year' => 'La période ne peut pas dépasser un an.',
     ],
 
     'aging' => [

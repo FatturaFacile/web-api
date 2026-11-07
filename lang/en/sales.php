@@ -71,6 +71,8 @@ return [
     'commercial_document_not_a_sale' => 'Only a sale document can be corrected.',
     'commercial_document_return_exceeds' => 'The quantity is above what is still open on the line.',
     'commercial_document_return_empty' => 'There is nothing to return on these lines.',
+    'commercial_document_refunded_sale' => 'A refunded sale cannot get a commercial document.',
+    'commercial_document_refund_blocked' => 'The sale cannot be refunded because its commercial document :number cannot be voided: :reason',
     'corrispettivi_day_closed' => 'This day is already closed.',
     'corrispettivi_day_empty' => 'This day has no documents to close.',
     'corrispettivi_future_day' => 'A future day cannot be closed.',

@@ -17,6 +17,7 @@ use Modules\Associations\Jobs\SendVolunteerAlertsJob;
 use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
+use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
@@ -96,3 +97,4 @@ $forEachTenant('dms:retention', static fn (Tenant $tenant): object => new ApplyD
 $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
 $forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new PurgeExpiredVisitorsJob($tenant->id))->dailyAt('03:50');
+$forEachTenant('fiscal-retail:retry-transmissions', static fn (Tenant $tenant): object => new RetryCorrispettiviTransmissionsJob($tenant->id))->everyFiveMinutes();

@@ -7,6 +7,7 @@ namespace Modules\DataExport\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Modules\DataExport\Services\AccountantArchiveBuilder;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -16,7 +17,7 @@ final class AccountantExportController extends Controller
     #[OA\Get(
         path: '/api/v1/exports/accountant-archive',
         operationId: 'downloadAccountantArchive',
-        description: 'ZIP with the FatturaPA XML of the documents issued and received in a period of at most 366 days, and a CSV index. Documents without a stored XML are listed in the index as `xml_missing`.',
+        description: 'ZIP with the FatturaPA XML of the documents issued and received in a period of at most one year (`to` before `from` plus one year, so a calendar year fits), and a CSV index. Documents without a stored XML are listed in the index as `xml_missing`. The archive is built page by page, so its size does not depend on the memory of the server.',
         summary: 'Download accountant archive',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Data Export'],
@@ -40,8 +41,8 @@ final class AccountantExportController extends Controller
         $from = CarbonImmutable::parse($validated['from']);
         $to = CarbonImmutable::parse($validated['to']);
 
-        if ($from->diffInDays($to) > 366) {
-            abort(422, 'The period cannot be longer than 366 days.');
+        if (! AccountantArchiveBuilder::periodFits($from, $to)) {
+            throw ValidationException::withMessages(['to' => __('accounting.errors.period_max_one_year')]);
         }
 
         return response()

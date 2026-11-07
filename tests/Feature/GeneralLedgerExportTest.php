@@ -402,3 +402,57 @@ test('data, accounts and movements of other tenants never appear', function (): 
     // The first tenant keeps its own standard account name.
     expect(glEntry($own['entries'], 'INV-1', 'invoice')['lines'][1]['ledger_account_name'])->toBe('Sales revenue');
 });
+
+// ---------------------------------------------------------------------------------------------------------------
+// Long periods
+// ---------------------------------------------------------------------------------------------------------------
+
+test('entry numbers run over the whole period, month after month, and do not change between pages, filters and the export', function (): void {
+    glInvoice('JAN-2', '2026-01-20', 10, 0);
+    glInvoice('JAN-1', '2026-01-05', 10, 0);
+    glInvoice('FEB-1', '2026-02-10', 10, 0);
+    $paid = glInvoice('MAR-1', '2026-03-03', 100, 0);
+    // One bank line whose payments fall in two months stays one entry, dated on its first payment.
+    $line = (string) Str::uuid();
+    Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $paid->id, 'amount' => 99, 'paid_at' => '2026-02-28', 'type' => 'payment', 'bank_statement_line_id' => $line]);
+    Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $paid->id, 'amount' => 1, 'paid_at' => '2026-03-02', 'type' => 'bank_fee', 'bank_statement_line_id' => $line]);
+
+    $period = 'from_date=2026-01-01&to_date=2026-03-31';
+    $paged = [];
+
+    foreach ([1, 2, 3] as $page) {
+        $response = glApi()->getJson("/api/v1/accounting/general-ledger?{$period}&per_page=2&page={$page}")->assertOk()->json('data');
+        $paged = [...$paged, ...$response['entries']];
+
+        expect($response['pagination']['total_entries'])->toBe(5)
+            ->and($response['pagination']['last_page'])->toBe(3)
+            ->and($response['totals']['entries'])->toBe(5)
+            ->and($response['totals']['balanced'])->toBeTrue();
+    }
+
+    $exported = glApi()->getJson("/api/v1/accounting/general-ledger/export?{$period}&format=json")->assertOk()->json('data.entries');
+    $receivablesOnly = glApi()->getJson("/api/v1/accounting/general-ledger?{$period}&per_page=500&source=payments")->assertOk()->json('data.entries');
+    $numbers = static fn (array $entries): array => array_map(static fn (array $entry): string => $entry['entry_number'].' '.$entry['document_number'].' '.$entry['entry_date'], $entries);
+
+    expect($numbers($paged))->toBe([
+        '000001 JAN-1 2026-01-05',
+        '000002 JAN-2 2026-01-20',
+        '000003 FEB-1 2026-02-10',
+        '000004 MAR-1 2026-02-28',
+        '000005 MAR-1 2026-03-03',
+    ])
+        ->and($numbers($exported))->toBe($numbers($paged))
+        ->and(glLines($paged[3]))->toBe([['1000', 99.0, 0.0], ['6220', 1.0, 0.0], ['1200', 0.0, 100.0]])
+        ->and($numbers($receivablesOnly))->toBe(['000001 MAR-1 2026-02-28']);
+
+    $csv = glApi()->get("/api/v1/accounting/general-ledger/export?{$period}")->assertOk()->streamedContent();
+    expect(substr_count($csv, "\r\n"))->toBe(1 + collect($exported)->sum(static fn (array $entry): int => count($entry['lines'])));
+});
+
+test('the preview and the export cover at most one year', function (): void {
+    glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-01-01&to_date=2026-12-31')->assertOk();
+    glApi()->getJson('/api/v1/accounting/general-ledger/export?from_date=2026-01-01&to_date=2026-12-31&format=json')->assertOk();
+
+    glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-01-01&to_date=2027-01-01')->assertUnprocessable()->assertJsonValidationErrors('to_date');
+    glApi()->getJson('/api/v1/accounting/general-ledger/export?from_date=2025-01-01&to_date=2026-12-31')->assertUnprocessable()->assertJsonValidationErrors('to_date');
+});

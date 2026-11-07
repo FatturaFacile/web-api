@@ -10,7 +10,9 @@ use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\FiscalRetail\Exceptions\CorrispettiviGatewayException;
 use Modules\FiscalRetail\Models\CommercialDocument;
@@ -18,10 +20,14 @@ use Modules\FiscalRetail\Models\CommercialDocumentLine;
 use Modules\FiscalRetail\Models\DailyCorrispettivo;
 use Modules\FiscalRetail\Services\CorrispettiviDayLock;
 use Modules\FiscalRetail\Services\CorrispettiviGatewayManager;
+use Modules\FiscalRetail\Services\CorrispettiviTransmitter;
 
 /**
  * Issues commercial documents and the void and return documents that correct them. A document is never edited: every
  * correction is a new numbered document that refers to the original.
+ *
+ * A document is stored as `pending` and handed to the gateway only after the commit (see CorrispettiviTransmitter):
+ * when the gateway fails the document stays issued, with status `failed`, and is sent again later.
  */
 final readonly class IssueCommercialDocument
 {
@@ -32,6 +38,7 @@ final readonly class IssueCommercialDocument
         private TenantContext $tenantContext,
         private CorrispettiviDayLock $dayLock,
         private TenantClock $clock,
+        private CorrispettiviTransmitter $transmitter,
     ) {}
 
     /**
@@ -45,26 +52,40 @@ final readonly class IssueCommercialDocument
     }
 
     /**
-     * The commercial document of a POS sale. Calling it twice returns the document already issued.
+     * The commercial document of a POS sale. Calling it twice, also at the same time, returns the document already
+     * issued: the sale row is locked while the document is checked and created, and a partial unique index on
+     * `pos_sale_id` stops any other path. A refunded sale gets no document.
      */
     public function fromPosSale(PosSale $sale): CommercialDocument
     {
-        $existing = CommercialDocument::where('pos_sale_id', $sale->id)->where('document_type', 'sale')->first();
+        $issued = static fn (): ?CommercialDocument => CommercialDocument::where('pos_sale_id', $sale->id)->where('document_type', 'sale')->first();
 
-        if ($existing !== null) {
-            return $existing;
+        try {
+            return DB::transaction(function () use ($sale, $issued): CommercialDocument {
+                $sale = PosSale::lockForUpdate()->findOrFail($sale->id);
+
+                if (($existing = $issued()) !== null) {
+                    return $existing;
+                }
+
+                if ($sale->status === 'refunded') {
+                    throw ValidationException::withMessages(['pos_sale_id' => __('sales.commercial_document_refunded_sale')]);
+                }
+
+                $this->quota->assertCanIssue($this->tenant(), DocumentQuotaService::CommercialDocumentPoints);
+
+                $lines = $sale->items()->get()->map(static fn ($item): array => [
+                    'description' => (string) $item->description,
+                    'quantity' => (string) $item->quantity,
+                    'unit_price' => (string) $item->unit_price,
+                    'tax_rate' => (string) $item->tax_rate,
+                ])->all();
+
+                return $this->store('sale', array_map($this->priced(...), $lines), (string) $sale->payment_method, (string) $sale->id);
+            });
+        } catch (UniqueConstraintViolationException $e) {
+            return $issued() ?? throw $e;
         }
-
-        return $this->sale(
-            $sale->items()->get()->map(static fn ($item): array => [
-                'description' => (string) $item->description,
-                'quantity' => (string) $item->quantity,
-                'unit_price' => (string) $item->unit_price,
-                'tax_rate' => (string) $item->tax_rate,
-            ])->all(),
-            (string) $sale->payment_method,
-            (string) $sale->id,
-        );
     }
 
     /**
@@ -150,10 +171,16 @@ final readonly class IssueCommercialDocument
             throw ValidationException::withMessages(['document' => __('sales.corrispettivi_day_closed')]);
         }
 
+        try {
+            $gateway = $this->gateways->gateway();
+            $gateway->assertAvailable();
+        } catch (CorrispettiviGatewayException $e) {
+            throw ValidationException::withMessages(['gateway' => $e->getMessage()]);
+        }
+
         $sum = static fn (string $field): string => array_reduce($lines, static fn (string $total, array $line): string => bcadd($total, $line[$field], 2), '0.00');
         $year = (int) $businessDay->format('Y');
         $number = $this->numbering->next('commercial_document', $year);
-        $gateway = $this->gateways->gateway();
         $tenant = $this->tenant();
 
         $document = CommercialDocument::create([
@@ -169,19 +196,18 @@ final readonly class IssueCommercialDocument
             'total_tax' => $sum('tax_amount'),
             'total_gross' => $sum('gross_amount'),
             'gateway' => $gateway->name(),
+            'gateway_status' => CorrispettiviTransmitter::StatusPending,
+            'transmission_key' => (string) Str::uuid(),
         ]);
 
         $document->lines()->createMany(array_map(static fn (array $line): array => [...$line, 'tenant_id' => $tenant->id], $lines));
+        $document->load('lines');
 
-        try {
-            $result = $gateway->sendDocument($tenant, $document);
-        } catch (CorrispettiviGatewayException $e) {
-            throw ValidationException::withMessages(['gateway' => $e->getMessage()]);
-        }
+        // Sent only once the outermost transaction has committed: the gateway is never called while the numbering and
+        // the day lock are held, and a rolled back document is never transmitted.
+        DB::afterCommit(fn () => $this->transmitter->transmitDocument($document));
 
-        $document->update(['gateway_status' => $result['status'], 'gateway_reference' => $result['reference']]);
-
-        return $document->load('lines');
+        return $document;
     }
 
     /**

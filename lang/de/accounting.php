@@ -18,6 +18,7 @@ return [
         'invalid_iban' => 'Der Wert :iban ist keine gültige IBAN.',
         'unbalanced_journal' => 'Der Buchungssatz ist nicht ausgeglichen (Soll ungleich Haben).',
         'period_locked' => 'Die Periode ist für Hauptbuchungen gesperrt.',
+        'period_max_one_year' => 'Der Zeitraum darf nicht länger als ein Jahr sein.',
     ],
 
     'aging' => [

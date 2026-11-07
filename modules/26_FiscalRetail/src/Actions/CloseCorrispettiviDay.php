@@ -9,12 +9,14 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Modules\FiscalRetail\Exceptions\CorrispettiviGatewayException;
 use Modules\FiscalRetail\Models\DailyCorrispettivo;
 use Modules\FiscalRetail\Services\CorrispettiviAggregator;
 use Modules\FiscalRetail\Services\CorrispettiviDayLock;
 use Modules\FiscalRetail\Services\CorrispettiviGatewayManager;
+use Modules\FiscalRetail\Services\CorrispettiviTransmitter;
 
 /**
  * Freezes the totals of a day, once. After the closure no document can be issued for that day.
@@ -27,6 +29,7 @@ final readonly class CloseCorrispettiviDay
         private TenantContext $tenantContext,
         private CorrispettiviDayLock $dayLock,
         private TenantClock $clock,
+        private CorrispettiviTransmitter $transmitter,
     ) {}
 
     /**
@@ -40,7 +43,7 @@ final readonly class CloseCorrispettiviDay
             throw ValidationException::withMessages(['date' => __('sales.corrispettivi_future_day')]);
         }
 
-        return DB::transaction(function () use ($day): Collection {
+        $closed = DB::transaction(function () use ($day): Collection {
             $this->dayLock->acquire((string) $this->tenantContext->getTenantId(), $day->toDateString());
 
             if (DailyCorrispettivo::where('business_date', $day->toDateString())->exists()) {
@@ -53,21 +56,28 @@ final readonly class CloseCorrispettiviDay
                 throw ValidationException::withMessages(['date' => __('sales.corrispettivi_day_empty')]);
             }
 
-            $gateway = $this->gateways->gateway();
-
             try {
-                $result = $gateway->sendDailyTotals($this->tenantContext->getTenant(), $day->toDateString(), $rows);
+                $gateway = $this->gateways->gateway();
+                $gateway->assertAvailable();
             } catch (CorrispettiviGatewayException $e) {
                 throw ValidationException::withMessages(['gateway' => $e->getMessage()]);
             }
 
+            $transmissionKey = (string) Str::uuid();
+
             return collect($rows)->map(static fn (array $row): DailyCorrispettivo => DailyCorrispettivo::create([
                 ...$row,
                 'gateway' => $gateway->name(),
-                'gateway_status' => $result['status'],
-                'gateway_reference' => $result['reference'],
+                'gateway_status' => CorrispettiviTransmitter::StatusPending,
+                'transmission_key' => $transmissionKey,
                 'closed_at' => now(),
             ]));
         });
+
+        // The day is closed once committed. The totals are sent afterwards, without the day lock: a failure leaves the
+        // rows `failed`, to be sent again with the same idempotency key.
+        DB::afterCommit(fn () => $this->transmitter->transmitDay($closed));
+
+        return $closed;
     }
 }

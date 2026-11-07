@@ -54,6 +54,8 @@ return [
     'commercial_document_not_a_sale' => 'Seul un document de vente peut être rectifié.',
     'commercial_document_return_exceeds' => 'La quantité dépasse celle encore ouverte sur la ligne.',
     'commercial_document_return_empty' => 'Il n\'y a rien à retourner sur ces lignes.',
+    'commercial_document_refunded_sale' => 'Une vente remboursée ne peut pas recevoir de document commercial.',
+    'commercial_document_refund_blocked' => 'La vente ne peut pas être remboursée car son document commercial :number ne peut pas être annulé : :reason',
     'corrispettivi_day_closed' => 'Cette journée est déjà clôturée.',
     'corrispettivi_day_empty' => 'Cette journée n\'a aucun document à clôturer.',
     'corrispettivi_future_day' => 'Une journée future ne peut pas être clôturée.',

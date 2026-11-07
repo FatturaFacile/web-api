@@ -94,3 +94,35 @@ test('invalid periods and other roles are refused', function (): void {
     actingAsMember($this->tenant, 'member');
     $this->getJson('/api/v1/exports/accountant-archive?from=2027-01-01&to=2027-12-31')->assertForbidden();
 });
+
+test('the period of an archive is at most one year', function (): void {
+    actingAsMember($this->tenant);
+
+    $this->get('/api/v1/exports/accountant-archive?from=2028-01-01&to=2028-12-31', ['Accept' => 'application/json'])->assertOk();
+    $this->getJson('/api/v1/exports/accountant-archive?from=2027-01-01&to=2028-01-01')->assertUnprocessable()->assertJsonValidationErrors('to');
+});
+
+test('an archive larger than one page holds every document once, in date order', function (): void {
+    $contact = Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => 'Cliente', 'vat_number' => '12345678901']);
+    $rows = [];
+
+    foreach (range(1, 230) as $index) {
+        $rows[] = [
+            'id' => (string) Str::uuid(), 'tenant_id' => $this->tenant->id, 'contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => sprintf('BULK-%03d', $index),
+            'date' => sprintf('2027-03-%02d', 28 - intdiv($index, 10)), 'due_date' => '2027-04-30', 'currency' => 'EUR', 'total_net' => 1, 'total_tax' => 0, 'total_gross' => 1,
+            'total_paid' => 0, 'payment_status' => 'unpaid', 'created_at' => now(), 'updated_at' => now(),
+        ];
+    }
+
+    Invoice::withoutEvents(fn () => Invoice::query()->insert($rows));
+    actingAsMember($this->tenant, 'accountant_readonly');
+
+    $files = archiveContents($this->get('/api/v1/exports/accountant-archive?from=2027-01-01&to=2027-12-31', ['Accept' => 'application/json'])->assertOk());
+    $dates = collect(explode("\r\n", trim($files['index.csv'])))->skip(1)->filter(fn (string $line): bool => str_starts_with($line, '"issued"'))
+        ->map(fn (string $line): string => str_getcsv($line, ';')[2])->values();
+
+    expect($dates)->toHaveCount(232)
+        ->and($dates->all())->toBe($dates->sort()->values()->all())
+        ->and(substr_count($files['index.csv'], 'BULK-'))->toBe(230)
+        ->and($files)->toHaveKey('issued/IT123_FT-1.xml');
+});

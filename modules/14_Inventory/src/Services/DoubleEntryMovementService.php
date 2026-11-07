@@ -8,7 +8,6 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
@@ -66,23 +65,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
 
             // 2. Pessimistic Lock and Increment on Destination Quant (if not customer/scrap)
             if ($destBin !== null) {
-                /** @var StockQuant $destQuant */
-                $destQuant = StockQuant::query()->firstOrCreate(
-                    [
-                        'tenant_id' => $item->tenant_id,
-                        'warehouse_bin_id' => $destBin->id,
-                        'stock_item_id' => $item->id,
-                        'lot_id' => $dto->lotId,
-                    ],
-                    [
-                        'company_id' => $item->company_id,
-                        'quantity_on_hand' => 0.0000,
-                        'quantity_reserved' => 0.0000,
-                    ]
-                );
-
-                $destQuant = StockQuant::query()->where('id', $destQuant->id)->lockForUpdate()->first();
-                $destQuant->increment('quantity_on_hand', $dto->quantity);
+                $this->lockedDestinationQuant($item, $destBin, $dto->lotId)->increment('quantity_on_hand', $dto->quantity);
             }
 
             // 3. Compute Unit Valuation
@@ -116,8 +99,8 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                 'notes' => $dto->notes,
             ]);
 
-            // 5. Forensic Audit Entry
-            $actorUserId = $dto->userId ?? auth()->id() ?? DB::table('tenant_user')->where('tenant_id', $item->tenant_id)->value('user_id') ?? (string) Str::uuid7();
+            // 5. Forensic Audit Entry: the real actor, or none for a movement run by the system.
+            $actorUserId = $dto->userId ?? auth()->id();
 
             InventoryAuditEntry::create([
                 'tenant_id' => $item->tenant_id,
@@ -159,5 +142,32 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
 
             return $movement;
         });
+    }
+
+    /**
+     * The quant of the destination slot, created when missing and locked FOR UPDATE. The slot (bin, item, lot) is unique
+     * also without a lot (`NULLS NOT DISTINCT`), so two concurrent movements cannot create it twice: the loser of the
+     * insert race reads the winner's row (`createOrFirst`). A quant deleted earlier is brought back empty.
+     */
+    private function lockedDestinationQuant(StockItem $item, WarehouseBin $bin, ?string $lotId): StockQuant
+    {
+        $slot = ['warehouse_bin_id' => $bin->id, 'stock_item_id' => $item->id, 'lot_id' => $lotId];
+
+        /** @var StockQuant $quant */
+        $quant = StockQuant::withTrashed()->firstOrCreate($slot, [
+            'tenant_id' => $item->tenant_id,
+            'company_id' => $item->company_id,
+            'quantity_on_hand' => 0.0000,
+            'quantity_reserved' => 0.0000,
+        ]);
+
+        /** @var StockQuant $locked */
+        $locked = StockQuant::withTrashed()->whereKey($quant->id)->lockForUpdate()->firstOrFail();
+
+        if ($locked->trashed()) {
+            $locked->forceFill(['quantity_on_hand' => 0, 'quantity_reserved' => 0, 'deleted_at' => null])->save();
+        }
+
+        return $locked;
     }
 }

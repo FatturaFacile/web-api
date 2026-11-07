@@ -23,12 +23,14 @@ class GeneralLedgerController extends Controller
     public function __construct(private readonly GeneralLedgerExportService $ledger) {}
 
     /**
-     * Preview of the entries of a period; the totals and the balance check cover the whole period, not just the page.
+     * Preview of the entries of a period of at most one year; the totals and the balance check cover the whole period,
+     * not just the page. The period is read month by month and only the entries of the page are kept, so the memory
+     * does not grow with the period; entry numbers are positions in the whole period and do not change between pages.
      */
     #[OA\Get(
         path: '/api/v1/accounting/general-ledger',
         operationId: 'getGeneralLedgerPreview',
-        description: 'Preview general ledger (prima nota) journal entries with balanced debit/credit verification.',
+        description: 'Preview general ledger (prima nota) journal entries with balanced debit/credit verification. The period (`from_date`, `to_date`) is at most one year; entry numbers are positions in the whole period and stay the same on every page.',
         summary: 'General ledger preview',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Accounting', 'General Ledger'],
@@ -48,14 +50,15 @@ class GeneralLedgerController extends Controller
     )]
     public function index(GeneralLedgerRequest $request): JsonResponse
     {
-        $entries = $this->ledger->entries($request->from(), $request->to(), $request->source(), $request->input('account_code'));
         $perPage = (int) $request->input('per_page', 50);
         $page = (int) $request->input('page', 1);
+        $result = $this->ledger->page($request->from(), $request->to(), $request->source(), $request->input('account_code'), $page, $perPage);
+        $total = $result['totals']['entries'];
 
         return $this->successResponse([
-            'entries' => array_map(fn ($entry): array => $this->ledger->present($entry, $request->dateFormat()), array_slice($entries, ($page - 1) * $perPage, $perPage)),
-            'totals' => $this->ledger->totals($entries),
-            'pagination' => ['page' => $page, 'per_page' => $perPage, 'total_entries' => count($entries), 'last_page' => max(1, (int) ceil(count($entries) / $perPage))],
+            'entries' => array_map(fn ($entry): array => $this->ledger->present($entry, $request->dateFormat()), $result['entries']),
+            'totals' => $result['totals'],
+            'pagination' => ['page' => $page, 'per_page' => $perPage, 'total_entries' => $total, 'last_page' => max(1, (int) ceil($total / $perPage))],
         ], __('accounting.messages.ledger_retrieved'));
     }
 
@@ -65,7 +68,7 @@ class GeneralLedgerController extends Controller
     #[OA\Get(
         path: '/api/v1/accounting/general-ledger/export',
         operationId: 'exportGeneralLedger',
-        description: 'Export general ledger records for external audit and accountant software in CSV or JSON format.',
+        description: 'Export general ledger records for external audit and accountant software in CSV or JSON format. The period is at most one year; the CSV is streamed month by month.',
         summary: 'Export general ledger',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Accounting', 'General Ledger'],
@@ -81,9 +84,9 @@ class GeneralLedgerController extends Controller
     )]
     public function export(GeneralLedgerRequest $request): StreamedResponse|JsonResponse
     {
-        $entries = $this->ledger->entries($request->from(), $request->to(), $request->source(), $request->input('account_code'));
-
         if ($request->input('format', 'csv') === 'json') {
+            $entries = $this->ledger->entries($request->from(), $request->to(), $request->source(), $request->input('account_code'));
+
             return $this->successResponse([
                 'entries' => array_map(fn ($entry): array => $this->ledger->present($entry, $request->dateFormat()), $entries),
                 'totals' => $this->ledger->totals($entries),
@@ -91,6 +94,7 @@ class GeneralLedgerController extends Controller
         }
 
         $filename = "general-ledger-{$request->from()->toDateString()}-{$request->to()->toDateString()}.csv";
+        $entries = $this->ledger->stream($request->from(), $request->to(), $request->source(), $request->input('account_code'));
 
         return response()->streamDownload(
             function () use ($entries, $request): void {

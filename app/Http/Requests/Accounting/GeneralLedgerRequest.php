@@ -6,8 +6,10 @@ namespace App\Http\Requests\Accounting;
 
 use App\Services\Accounting\GeneralLedgerExportService;
 use Carbon\CarbonImmutable;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Validator;
 
 /**
  * Period and filters of the general ledger preview and export.
@@ -33,6 +35,26 @@ class GeneralLedgerRequest extends FormRequest
             'format' => ['sometimes', Rule::in(['csv', 'json'])],
             'page' => ['sometimes', 'integer', 'min:1'],
             'per_page' => ['sometimes', 'integer', 'min:1', 'max:500'],
+        ];
+    }
+
+    /**
+     * The period is at most one year: `to_date` comes before `from_date` plus one year, so a calendar year fits.
+     *
+     * @return array<int, Closure(Validator): void>
+     */
+    public function after(): array
+    {
+        return [
+            function (Validator $validator): void {
+                if ($validator->errors()->isNotEmpty()) {
+                    return;
+                }
+
+                if (! GeneralLedgerExportService::periodFits($this->from(), $this->to())) {
+                    $validator->errors()->add('to_date', __('accounting.errors.period_max_one_year'));
+                }
+            },
         ];
     }
 

@@ -11,6 +11,7 @@ return [
 
     'errors' => [
         'invalid_iban' => 'The key :iban is not a valid IBAN.',
+        'period_max_one_year' => 'The period cannot be longer than one year.',
     ],
 
     'aging' => [

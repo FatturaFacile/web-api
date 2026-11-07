@@ -25,7 +25,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'z_report_number', type: 'string'),
         new OA\Property(property: 'fiscal_document_number', type: 'string'),
         new OA\Property(property: 'xml_lot_id', type: 'string'),
-        new OA\Property(property: 'rt_status', type: 'string', enum: ['transmitted', 'simulated', 'error', 'pending']),
+        new OA\Property(property: 'rt_status', type: 'string', enum: ['transmitted', 'simulated', 'error', 'pending', 'transmitting']),
         new OA\Property(property: 'transmitted_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'simulated', type: 'boolean'),
         new OA\Property(property: 'reached_tax_authority', type: 'boolean'),

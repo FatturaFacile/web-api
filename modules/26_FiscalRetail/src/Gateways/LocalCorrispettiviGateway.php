@@ -18,12 +18,14 @@ final class LocalCorrispettiviGateway implements CorrispettiviGateway
         return 'local';
     }
 
-    public function sendDocument(Tenant $tenant, CommercialDocument $document): array
+    public function assertAvailable(): void {}
+
+    public function sendDocument(Tenant $tenant, CommercialDocument $document, string $idempotencyKey): array
     {
         return ['status' => 'simulated', 'reference' => 'LOCAL-'.$document->id];
     }
 
-    public function sendDailyTotals(Tenant $tenant, string $businessDate, array $rows): array
+    public function sendDailyTotals(Tenant $tenant, string $businessDate, array $rows, string $idempotencyKey): array
     {
         return ['status' => 'simulated', 'reference' => 'LOCAL-'.$businessDate];
     }

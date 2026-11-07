@@ -21,12 +21,17 @@ final class AdeCorrispettiviGateway implements CorrispettiviGateway
         return 'ade';
     }
 
-    public function sendDocument(Tenant $tenant, CommercialDocument $document): array
+    public function assertAvailable(): void
     {
         throw new CorrispettiviGatewayException(__('sales.corrispettivi_ade_unavailable'));
     }
 
-    public function sendDailyTotals(Tenant $tenant, string $businessDate, array $rows): array
+    public function sendDocument(Tenant $tenant, CommercialDocument $document, string $idempotencyKey): array
+    {
+        throw new CorrispettiviGatewayException(__('sales.corrispettivi_ade_unavailable'));
+    }
+
+    public function sendDailyTotals(Tenant $tenant, string $businessDate, array $rows, string $idempotencyKey): array
     {
         throw new CorrispettiviGatewayException(__('sales.corrispettivi_ade_unavailable'));
     }
