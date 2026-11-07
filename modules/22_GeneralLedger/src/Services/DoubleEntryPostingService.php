@@ -273,11 +273,11 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         });
     }
 
-    public function reverseJournal(string $journalEntryId, string $reversalDate, ?string $reason = null, ?string $actorUserId = null): JournalEntry
+    public function reverseJournal(string $journalEntryId, string $reversalDate, ?string $reason = null, ?string $actorUserId = null, bool $bankBalanceManaged = false): JournalEntry
     {
         $actorUuid = ! empty($actorUserId) ? (Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7()) : null;
 
-        return DB::transaction(function () use ($journalEntryId, $reversalDate, $reason, $actorUuid) {
+        return DB::transaction(function () use ($journalEntryId, $reversalDate, $reason, $actorUuid, $bankBalanceManaged) {
             /** @var JournalEntry $original */
             $original = JournalEntry::where('id', $journalEntryId)->lockForUpdate()->firstOrFail();
 
@@ -360,7 +360,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
 
                 $account = ChartOfAccount::find($line->account_id);
 
-                if ($account !== null) {
+                if ($account !== null && ! $bankBalanceManaged) {
                     $this->emitBankPosting($reversalEntry, $reversalLine, $account);
                 }
             }

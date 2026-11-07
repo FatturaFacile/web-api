@@ -21,7 +21,9 @@ class RecordPayment
     /**
      * Register a (partial) payment and re-derive the invoice's paid total and payment status.
      *
-     * @param  array{amount: float|int|string, paid_at: string, payment_method?: ?string, reference?: ?string, notes?: ?string, type?: string, bank_statement_line_id?: ?string}  $data
+     * A `bank_account_id` states that the caller moved the balance of that Treasury account itself.
+     *
+     * @param  array{amount: float|int|string, paid_at: string, payment_method?: ?string, reference?: ?string, notes?: ?string, type?: string, bank_statement_line_id?: ?string, bank_account_id?: ?string, ledger_options?: array{iban?: ?string, bank_balance_managed?: bool}}  $data
      */
     public function execute(Invoice $invoice, array $data): Payment
     {
@@ -48,6 +50,7 @@ class RecordPayment
                 'notes' => $data['notes'] ?? null,
                 'type' => $data['type'] ?? 'payment',
                 'bank_statement_line_id' => $data['bank_statement_line_id'] ?? null,
+                'bank_account_id' => $data['bank_account_id'] ?? null,
             ]);
 
             $totalPaid = $this->settledAmount($invoice);

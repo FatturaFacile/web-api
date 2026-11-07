@@ -23,6 +23,7 @@ class Payment extends Model
         'notes',
         'type',
         'bank_statement_line_id',
+        'bank_account_id',
     ];
 
     protected function casts(): array

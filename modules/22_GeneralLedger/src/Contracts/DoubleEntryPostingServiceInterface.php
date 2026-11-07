@@ -22,7 +22,11 @@ interface DoubleEntryPostingServiceInterface
 
     public function postDraft(string $journalEntryId, ?string $actorUserId = null): JournalEntry;
 
-    public function reverseJournal(string $journalEntryId, string $reversalDate, ?string $reason = null, ?string $actorUserId = null): JournalEntry;
+    /**
+     * @param  bool  $bankBalanceManaged  The caller moves the balance of the bank account itself, as it did when the entry
+     *                                    was posted: the reversal then announces no bank posting.
+     */
+    public function reverseJournal(string $journalEntryId, string $reversalDate, ?string $reason = null, ?string $actorUserId = null, bool $bankBalanceManaged = false): JournalEntry;
 
     /**
      * @param  array<int, array<string, mixed>>  $lines
