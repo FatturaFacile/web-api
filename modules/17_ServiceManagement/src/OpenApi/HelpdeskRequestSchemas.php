@@ -170,4 +170,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'score', type: 'integer', minimum: 1, maximum: 5),
     new OA\Property(property: 'feedback', type: 'string', maxLength: 5000, nullable: true),
 ])]
+#[OA\Schema(schema: 'HelpdeskUpdateNotificationPreferencesRequest', description: 'Request payload validated by UpdateNotificationPreferencesRequest', required: ['preferences'], type: 'object', properties: [
+    new OA\Property(property: 'preferences', type: 'array', items: new OA\Items(ref: '#/components/schemas/HelpdeskNotificationPreference')),
+])]
 final class HelpdeskRequestSchemas {}

@@ -167,6 +167,13 @@ test('a public reply goes out by e-mail with threading headers, an internal note
     helpdeskPollMailbox($this->mailbox);
     $ticket = Ticket::query()->where('tenant_id', $this->tenant->id)->sole();
 
+    // The new ticket was acknowledged automatically, threaded on the customer's message.
+    Mail::assertSent(HelpdeskTicketMail::class, fn (HelpdeskTicketMail $mail): bool => $mail->isAutomatic
+        && $mail->hasTo('mario@customer.test')
+        && $mail->headers()->text['Auto-Submitted'] === 'auto-generated'
+        && $mail->headers()->text['In-Reply-To'] === '<question@customer.test>');
+    Mail::fake();
+
     $agent = User::create(['name' => 'Agent', 'email' => Str::uuid().'@example.com', 'password' => 'secret123']);
     $agent->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
     Sanctum::actingAs($agent);

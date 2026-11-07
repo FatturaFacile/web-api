@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskNotificationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskReportController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
@@ -98,6 +99,12 @@ Route::prefix('api/v1/esm')
         Route::post('/helpdesk/views', [AgentToolsController::class, 'storeView'])->name('api.v1.esm.helpdesk.views.store');
         Route::patch('/helpdesk/views/{id}', [AgentToolsController::class, 'updateView'])->name('api.v1.esm.helpdesk.views.update');
         Route::delete('/helpdesk/views/{id}', [AgentToolsController::class, 'destroyView'])->name('api.v1.esm.helpdesk.views.destroy');
+
+        // Helpdesk: notifications
+        Route::get('/helpdesk/notification-preferences', [HelpdeskNotificationController::class, 'preferences'])->name('api.v1.esm.helpdesk.notification-preferences.show');
+        Route::put('/helpdesk/notification-preferences', [HelpdeskNotificationController::class, 'updatePreferences'])->name('api.v1.esm.helpdesk.notification-preferences.update');
+        Route::get('/helpdesk/notifications', [HelpdeskNotificationController::class, 'notifications'])->name('api.v1.esm.helpdesk.notifications.index');
+        Route::post('/helpdesk/notifications/{id}/read', [HelpdeskNotificationController::class, 'markRead'])->name('api.v1.esm.helpdesk.notifications.read');
 
         // Helpdesk: reports
         Route::get('/helpdesk/reports', [HelpdeskReportController::class, 'show'])->name('api.v1.esm.helpdesk.reports');

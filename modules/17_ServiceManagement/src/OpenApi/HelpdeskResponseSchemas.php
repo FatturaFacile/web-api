@@ -233,4 +233,18 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'agent_workload', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'technician_id', type: 'string', format: 'uuid'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'open_tickets', type: 'integer'), new OA\Property(property: 'resolved_in_period', type: 'integer'), new OA\Property(property: 'mean_resolution_minutes', type: 'number', nullable: true)], type: 'object')),
     new OA\Property(property: 'csat_by_team', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'name', type: 'string', nullable: true), new OA\Property(property: 'responses', type: 'integer'), new OA\Property(property: 'mean_score', type: 'number', nullable: true), new OA\Property(property: 'satisfied_percent', type: 'number', nullable: true)], type: 'object')),
 ])]
+#[OA\Schema(schema: 'HelpdeskNotificationPreference', description: 'Channels a user wants for one helpdesk event', required: ['event', 'mail', 'in_app'], type: 'object', properties: [
+    new OA\Property(property: 'event', type: 'string', enum: ['ticket_created', 'ticket_replied', 'status_changed', 'ticket_assigned', 'sla_warning', 'sla_breached']),
+    new OA\Property(property: 'mail', type: 'boolean'),
+    new OA\Property(property: 'in_app', type: 'boolean'),
+])]
+#[OA\Schema(schema: 'HelpdeskNotificationResource', description: 'JSON representation produced by HelpdeskNotificationResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'ticket_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'event', type: 'string'),
+    new OA\Property(property: 'title', type: 'string'),
+    new OA\Property(property: 'body', type: 'string', nullable: true),
+    new OA\Property(property: 'read_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
 final class HelpdeskResponseSchemas {}
