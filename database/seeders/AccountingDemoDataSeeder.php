@@ -34,6 +34,11 @@ final class AccountingDemoDataSeeder extends Seeder
             return;
         }
 
+        // Posted entries are immutable: when the demo entries exist already, a second run leaves them as they are.
+        if (DB::table('journal_entries')->whereIn('id', ['0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5d01', '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5d02', '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5d03'])->exists()) {
+            return;
+        }
+
         // Demo 1: SME Sales Invoice (Dr: AR 12,200 | Cr: Revenue 10,000, Cr: Sales VAT 2,200)
         $smeEntryId = '0192a3b4-c5d6-7e8f-9a0b-1c2d3e4f5d01';
         DB::table('journal_entries')->updateOrInsert(
