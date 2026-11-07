@@ -2,12 +2,16 @@
 
 declare(strict_types=1);
 
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\TimeClockEvent;
+use Modules\Payroll\Exceptions\PayrollException;
 use Modules\Payroll\Models\PayrollInput;
 use Modules\Payroll\Models\Payslip;
 use Modules\Payroll\Models\ShortTimeClaim;
+use Modules\Payroll\Services\ShortTime\ShortTimeClaimService;
+use Tests\Support\RowLocks;
 
 require_once __DIR__.'/Support.php';
 
@@ -150,6 +154,7 @@ test('bad weather refuses to calculate while its waiting days are unverified, th
 
 test('applying a claim lowers the wage, adds the compensation and leaves the social bases on the full salary', function (): void {
     $claim = stClaim(stCase(), [stHours($this->employee->id)])->assertCreated()->json('data.id');
+    stApi()->postJson("/api/v1/payroll/short-time/claims/{$claim}/submit")->assertOk();
     stApi()->postJson("/api/v1/payroll/short-time/claims/{$claim}/apply")->assertOk();
     stApi()->postJson("/api/v1/payroll/short-time/claims/{$claim}/apply")->assertUnprocessable();
 
@@ -162,6 +167,28 @@ test('applying a claim lowers the wage, adds the compensation and leaves the soc
 
     expect((string) $slip->ahv_basis)->toBe('6000.00')
         ->and((string) $slip->gross_salary)->toBe('5784.55');
+});
+
+test('a draft claim does not reach the payroll, an applied claim is not recalculated and a stale copy is refused under the lock', function (): void {
+    $case = stCase();
+    $claim = stClaim($case, [stHours($this->employee->id)])->assertCreated()->json('data.id');
+
+    stApi()->postJson("/api/v1/payroll/short-time/claims/{$claim}/apply")->assertUnprocessable();
+    expect(PayrollInput::query()->withoutGlobalScopes()->count())->toBe(0);
+
+    stApi()->postJson("/api/v1/payroll/short-time/claims/{$claim}/submit")->assertOk();
+    app(TenantContext::class)->setTenant($this->tenant);
+    $stale = ShortTimeClaim::query()->findOrFail($claim);
+    $service = app(ShortTimeClaimService::class);
+
+    $locks = RowLocks::takenBy(fn () => $service->applyToPayroll(ShortTimeClaim::query()->findOrFail($claim)));
+
+    expect($locks)->toContain('payroll_short_time_claims')
+        ->and(fn () => $service->applyToPayroll($stale))->toThrow(PayrollException::class)
+        ->and(PayrollInput::query()->withoutGlobalScopes()->count())->toBe(2);
+
+    ShortTimeClaim::query()->whereKey($claim)->update(['status' => ShortTimeClaim::StatusDraft]);
+    stClaim($case, [stHours($this->employee->id, 100)])->assertUnprocessable();
 });
 
 test('a claim follows its states to the reimbursement and stops changing once sent', function (): void {

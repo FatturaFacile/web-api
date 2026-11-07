@@ -36,12 +36,27 @@ final class PayrollPaymentFileService
      */
     public function createBatches(PayrollRun $run, User $actor, string $currency, array $allocations): Collection
     {
-        if (! $run->isFinal()) {
-            throw new PayrollException("Gli stipendi si pagano quando l'elaborazione è chiusa.");
-        }
+        return DB::transaction(function () use ($run, $actor, $currency, $allocations): Collection {
+            $lockedRun = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
 
-        $this->assertNotPaidAlready($run);
+            if (! $lockedRun->isFinal()) {
+                throw new PayrollException("Gli stipendi si pagano quando l'elaborazione è chiusa.");
+            }
 
+            $this->assertNotPaidAlready($lockedRun);
+
+            return $this->createBatchesForLockedRun($lockedRun, $actor, $currency, $allocations);
+        });
+    }
+
+    /**
+     * Builds the batches while the run row is locked, so that a concurrent request waits and then finds these batches.
+     *
+     * @param  list<array{bank_account_id: string, employee_ids?: list<string>|null, department_id?: string|null}>  $allocations
+     * @return Collection<int, PaymentBatch>
+     */
+    private function createBatchesForLockedRun(PayrollRun $run, User $actor, string $currency, array $allocations): Collection
+    {
         $payslips = Payslip::query()->where('payroll_run_id', $run->id)->where('payout_amount', '>', 0)->orderBy('employee_name')->get();
         $profiles = PayrollEmployeeProfile::query()->whereIn('employee_id', $payslips->pluck('employee_id'))->get()->keyBy('employee_id');
         $employees = Employee::query()->withTrashed()->whereIn('id', $payslips->pluck('employee_id'))->get()->keyBy('id');
@@ -69,7 +84,7 @@ final class PayrollPaymentFileService
             throw new PayrollException('Nessuno stipendio da pagare in questa elaborazione.');
         }
 
-        return DB::transaction(fn (): Collection => collect($byAccount)->map(fn (array $lines, string $accountId): PaymentBatch => $this->batch($run, $actor, $currency, $accountId, $lines))->values());
+        return collect($byAccount)->map(fn (array $lines, string $accountId): PaymentBatch => $this->batch($run, $actor, $currency, $accountId, $lines))->values();
     }
 
     /**

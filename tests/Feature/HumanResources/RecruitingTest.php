@@ -4,16 +4,20 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\JobApplication;
 use Modules\HumanResources\Models\OnboardingChecklist;
+use Modules\HumanResources\Services\Recruiting\RecruitingService;
+use Tests\Support\RowLocks;
 
 uses(RefreshDatabase::class);
 
@@ -185,4 +189,20 @@ test('tenants are isolated and members reach nothing', function (): void {
     $member = recruitMember($this->tenant, 'member');
     recruitApi($member)->getJson('/api/v1/hr/job-applications')->assertForbidden();
     recruitApi($member)->getJson("/api/v1/hr/job-applications/{$id}")->assertForbidden();
+});
+
+test('a second hire or rejection working on a copy read before the first decision is refused under the row lock', function (): void {
+    $id = recruitApplication(recruitPosting());
+    app(TenantContext::class)->setTenant($this->tenant);
+    $stale = JobApplication::query()->findOrFail($id);
+    $service = app(RecruitingService::class);
+    $terms = ['base_annual_salary' => 72000, 'hire_date' => '2026-12-01'];
+
+    $locks = RowLocks::takenBy(fn () => $service->hire(JobApplication::query()->findOrFail($id), $terms, $this->manager));
+
+    expect($locks)->toContain('hr_job_applications')
+        ->and(fn () => $service->hire($stale, $terms, $this->manager))->toThrow(ValidationException::class)
+        ->and(fn () => $service->reject($stale, $this->manager))->toThrow(ValidationException::class)
+        ->and(Employee::query()->withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count())->toBe(1)
+        ->and(JobApplication::query()->findOrFail($id)->status)->toBe('hired');
 });

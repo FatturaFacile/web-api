@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,9 +16,12 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
 use Modules\Invoicing\Models\SalesCommission;
+use Modules\Invoicing\Models\SalesCommissionStatement;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesRepresentative;
+use Modules\Invoicing\Services\SalesCommissionService;
+use Tests\Support\RowLocks;
 
 uses(RefreshDatabase::class);
 
@@ -217,4 +223,53 @@ test('an agent sees the own statements only and cannot approve, and tenants are 
     expect(commissionApi($otherManager, $this->other)->getJson('/api/v1/invoicing/commission-statements')->assertOk()->json('data'))->toBe([]);
     commissionApi($otherManager, $this->other)->postJson('/api/v1/invoicing/sales-targets', ['sales_representative_id' => $this->rep->id, 'period_start' => '2026-03-01', 'period_end' => '2026-03-31', 'target_amount' => 1000, 'currency' => 'CHF'])->assertUnprocessable();
     expect(DB::table('sales_targets')->count())->toBe(0);
+});
+
+test('a second approval or posting that read the statement before the first committed is refused under the row lock', function (): void {
+    commissionInvoice($this->tenant, $this->rep->id, '1000.00');
+    commissionApi()->putJson('/api/v1/invoicing/commission-settings', ['expense_account_id' => commissionAccount($this->tenant, '6300', 'expense'), 'payable_account_id' => commissionAccount($this->tenant, '2305', 'liability')])->assertOk();
+    FiscalPeriod::factory()->create(['tenant_id' => $this->tenant->id, 'start_date' => '2026-03-01', 'end_date' => '2026-03-31', 'status' => 'open']);
+    $statement = commissionStatement($this->rep);
+    app(TenantContext::class)->setTenant($this->tenant);
+    $staleDraft = SalesCommissionStatement::query()->findOrFail($statement['id']);
+    $service = app(SalesCommissionService::class);
+
+    $locks = RowLocks::takenBy(fn () => $service->approve(SalesCommissionStatement::query()->findOrFail($statement['id']), $this->manager));
+
+    expect($locks)->toContain('sales_commission_statements')
+        ->and(fn () => $service->approve($staleDraft, $this->manager))->toThrow(InvalidArgumentException::class);
+
+    $stalePending = SalesCommissionStatement::query()->findOrFail($statement['id'])->forceFill(['ledger_status' => SalesCommissionStatement::LedgerPending]);
+    expect($service->retryPosting($stalePending)->ledger_status)->toBe(SalesCommissionStatement::LedgerPosted)
+        ->and(JournalEntry::withoutGlobalScopes()->where('source_document_id', $statement['id'])->count())->toBe(1);
+});
+
+test('the ledger accepts one posted entry per commission statement', function (): void {
+    commissionInvoice($this->tenant, $this->rep->id, '1000.00');
+    commissionApi()->putJson('/api/v1/invoicing/commission-settings', ['expense_account_id' => commissionAccount($this->tenant, '6300', 'expense'), 'payable_account_id' => commissionAccount($this->tenant, '2305', 'liability')])->assertOk();
+    FiscalPeriod::factory()->create(['tenant_id' => $this->tenant->id, 'start_date' => '2026-03-01', 'end_date' => '2026-03-31', 'status' => 'open']);
+    $statement = commissionStatement($this->rep);
+    commissionApi()->postJson("/api/v1/invoicing/commission-statements/{$statement['id']}/approve")->assertOk()->assertJsonPath('data.ledger_status', 'posted');
+
+    $entry = (array) DB::table('journal_entries')->where('source_document_id', $statement['id'])->first();
+    $copy = [...$entry, 'id' => (string) Str::uuid7(), 'entry_number' => 'COMMISSION-COPY'];
+
+    expect(fn () => DB::transaction(fn () => DB::table('journal_entries')->insert($copy)))->toThrow(UniqueConstraintViolationException::class);
+});
+
+test('an accrual that meets the commission of a concurrent accrual skips the invoice instead of doubling it', function (): void {
+    $invoice = commissionInvoice($this->tenant, $this->rep->id, '1000.00');
+    $raced = false;
+
+    DB::listen(function (QueryExecuted $query) use (&$raced, $invoice): void {
+        if (! $raced && str_contains($query->sql, 'select "invoice_id" from "sales_commissions"')) {
+            $raced = true;
+            DB::table('sales_commissions')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'sales_representative_id' => $this->rep->id, 'invoice_id' => $invoice->id, 'base_amount' => '1000.00', 'commission_rate' => '5.00', 'commission_amount' => '50.00', 'status' => 'accrued', 'created_at' => now(), 'updated_at' => now()]);
+        }
+    });
+
+    $outcome = commissionApi()->postJson('/api/v1/invoicing/commissions/accrue', ['from' => '2026-03-01', 'to' => '2026-03-31'])->assertOk()->json('data');
+
+    expect($outcome['accrued'])->toBe(0)
+        ->and(SalesCommission::query()->withoutGlobalScopes()->where('invoice_id', $invoice->id)->count())->toBe(1);
 });
