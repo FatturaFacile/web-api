@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\GeneralLedger\Exceptions\LedgerPostingException;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Services\ProductChargeCalculator;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
@@ -29,6 +30,7 @@ use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesInvoiceItem;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\SDI\Enums\TipoDocumento;
+use RoundingMode;
 
 final class InvoicingService implements InvoicingServiceInterface
 {
@@ -329,6 +331,9 @@ final class InvoicingService implements InvoicingServiceInterface
 
     /**
      * Swiss francs are settled in steps of 5 centimes: the emission fixes the amount the QR-bill and the ledger share.
+     * What is settled is the amount due, not the document total: with a withholding (or Enasarco, or split payment)
+     * the customer pays less than the gross, so that amount is the one rounded, and the difference goes on the gross,
+     * which keeps the withheld amounts exact. Without such deductions the two are the same.
      */
     private function applyCashRounding(SalesInvoice $invoice): void
     {
@@ -336,12 +341,14 @@ final class InvoicingService implements InvoicingServiceInterface
             return;
         }
 
-        $exact = (float) $invoice->total_gross;
-        $rounded = round(round($exact / 0.05) * 0.05, 2);
+        $exactDue = $invoice->amountDue();
+        $steps = bcround(Decimal::div($exactDue, '0.05'), 0, RoundingMode::HalfAwayFromZero);
+        $roundedDue = Decimal::round2(Decimal::mul($steps, '0.05'));
+        $rounding = Decimal::round2(Decimal::sub($roundedDue, $exactDue));
 
-        $invoice->total_gross = $rounded;
-        $invoice->rounding_amount = round($rounded - $exact, 2);
-        $invoice->receivable_amount = $rounded;
+        $invoice->total_gross = Decimal::round2(Decimal::add((string) $invoice->total_gross, $rounding));
+        $invoice->rounding_amount = $rounding;
+        $invoice->receivable_amount = $roundedDue;
     }
 
     private function postLockedInvoice(SalesInvoice $invoice, string $userId): SalesInvoice

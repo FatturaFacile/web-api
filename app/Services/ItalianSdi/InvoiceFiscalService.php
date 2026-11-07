@@ -97,6 +97,7 @@ final class InvoiceFiscalService
 
         $invoice->total_tax = Decimal::round2($tax);
         $invoice->total_gross = Decimal::round2($gross);
+        $invoice->rounding_amount = 0;
         $invoice->receivable_amount = $invoice->amountDue();
     }
 
