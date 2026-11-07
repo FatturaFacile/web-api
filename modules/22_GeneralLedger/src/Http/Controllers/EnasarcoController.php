@@ -8,10 +8,15 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Validation\Rule;
+use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
+use Modules\GeneralLedger\Models\EnasarcoPrincipalStatement;
 use Modules\GeneralLedger\Models\VatSettlement;
+use Modules\GeneralLedger\Services\EnasarcoPrincipalService;
 use Modules\GeneralLedger\Services\EnasarcoSummaryService;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use OpenApi\Attributes as OA;
 
 /**
@@ -136,5 +141,91 @@ final class EnasarcoController extends Controller
             (int) $validated['year'],
             isset($validated['quarter']) ? (int) $validated['quarter'] : null
         )]);
+    }
+
+    /**
+     * Returns the quarterly statement of the tenant as a principal.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/enasarco/principal-statements',
+        operationId: 'listGeneralLedgerEnasarcoPrincipalStatements',
+        description: 'The quarterly Enasarco statement (distinta) of the tenant as a principal, one line per agent: commissions, the part below the annual ceiling, the agent share withheld on the received invoices (RT04) and the principal share.',
+        summary: 'List Enasarco principal statement',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Tax Settlements'],
+        parameters: [
+            new OA\Parameter(name: 'year', in: 'query', required: true, description: 'Year', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'quarter', in: 'query', required: true, description: 'Quarter', schema: new OA\Schema(type: 'integer', maximum: 4, minimum: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/GeneralLedgerEnasarcoPrincipalStatementResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation failed', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function principalStatements(Request $request, EnasarcoPrincipalService $principal): JsonResponse
+    {
+        $this->authorize('viewRegisters', VatSettlement::class);
+
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'quarter' => ['required', 'integer', 'min:1', 'max:4'],
+        ]);
+
+        return $this->principalResponse($principal->statement((string) $this->tenantContext->getTenantId(), (int) $validated['year'], (int) $validated['quarter']));
+    }
+
+    /**
+     * Computes the quarterly statement of the tenant as a principal and posts its share.
+     */
+    #[OA\Post(
+        path: '/api/v1/general-ledger/enasarco/principal-statements',
+        operationId: 'generateGeneralLedgerEnasarcoPrincipalStatement',
+        description: 'Computes the quarterly statement from the received invoices with an Enasarco block and the parameters of the year (rate, agent share, annual ceiling per agent), and posts the principal share once per agent and quarter: debit of the principal contribution cost, credit of the contributions payable. Agents already in the statement keep their line. The agent type of each agent comes from `agent_types`, else from `agent_type`.',
+        summary: 'Generate Enasarco principal statement',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/GeneralLedgerEnasarcoPrincipalStatementRequest')),
+        tags: ['General Ledger Tax Settlements'],
+        responses: [
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/GeneralLedgerEnasarcoPrincipalStatementResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation failed, parameters of the year missing or period closed', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function generatePrincipalStatement(Request $request, EnasarcoPrincipalService $principal): JsonResponse
+    {
+        $this->authorize('calculate', VatSettlement::class);
+
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $validated = $request->validate([
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'quarter' => ['required', 'integer', 'min:1', 'max:4'],
+            'agent_type' => ['required', Rule::in(EnasarcoParameter::AGENT_TYPES)],
+            'agent_types' => ['sometimes', 'array'],
+            'agent_types.*' => ['required', Rule::in(EnasarcoParameter::AGENT_TYPES)],
+        ]);
+
+        try {
+            $lines = $principal->generate($tenantId, (int) $validated['year'], (int) $validated['quarter'], $validated['agent_type'], $validated['agent_types'] ?? [], (string) $request->user()?->id);
+        } catch (FiscalPeriodException $e) {
+            return $e->render();
+        }
+
+        return $this->principalResponse($lines);
+    }
+
+    /**
+     * @param  Collection<int, EnasarcoPrincipalStatement>  $lines
+     */
+    private function principalResponse(Collection $lines): JsonResponse
+    {
+        return response()->json(['data' => [
+            'lines' => $lines->values(),
+            'total_agent_withheld' => $lines->reduce(static fn (string $sum, EnasarcoPrincipalStatement $line): string => Decimal::round2(Decimal::add($sum, (string) $line->agent_withheld)), '0.00'),
+            'total_principal_amount' => $lines->reduce(static fn (string $sum, EnasarcoPrincipalStatement $line): string => Decimal::round2(Decimal::add($sum, (string) $line->principal_amount)), '0.00'),
+            'total_due' => $lines->reduce(static fn (string $sum, EnasarcoPrincipalStatement $line): string => Decimal::round2(Decimal::add($sum, (string) $line->total_due)), '0.00'),
+        ]]);
     }
 }

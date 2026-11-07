@@ -21,6 +21,6 @@ final class PaymentCallbackController extends Controller
     #[AssociationPost('/api/v1/association-payments/callback', 'handleAssociationPaymentCallback', 'Receive the outcome of an online payment', 'AssociationPaymentCallbackRequest', OperationArguments::Public)]
     public function __invoke(Request $request): JsonResponse
     {
-        return response()->json(['data' => ['status' => $this->paymentLinks->handleCallback($request)->status]]);
+        return response()->json(['data' => ['status' => $this->paymentLinks->handleCallback($request)?->status ?? 'ignored']]);
     }
 }

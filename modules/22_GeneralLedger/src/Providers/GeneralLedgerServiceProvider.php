@@ -7,6 +7,7 @@ namespace Modules\GeneralLedger\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\GeneralLedger\Console\AdjustSplitPaymentReceivablesCommand;
 use Modules\GeneralLedger\Console\OpenFiscalYearCommand;
 use Modules\GeneralLedger\Console\PostPendingDocumentsCommand;
 use Modules\GeneralLedger\Contracts\AccountingReconciliationServiceInterface;
@@ -118,7 +119,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
     private function registerConsoleCommands(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([OpenFiscalYearCommand::class, PostPendingDocumentsCommand::class]);
+            $this->commands([OpenFiscalYearCommand::class, PostPendingDocumentsCommand::class, AdjustSplitPaymentReceivablesCommand::class]);
         }
     }
 

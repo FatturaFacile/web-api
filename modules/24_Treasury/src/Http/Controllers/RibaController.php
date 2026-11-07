@@ -136,7 +136,7 @@ final class RibaController extends Controller
     #[OA\Post(
         path: '/api/v1/treasury/riba/receipts/{id}/paid',
         operationId: 'markRibaReceiptPaid',
-        description: 'Registers the collection of a presented receipt through the ordinary invoice payment flow.',
+        description: 'Registers the collection of a presented receipt through the ordinary invoice payment flow. The amount is posted to the ledger account of the bank of the batch and added to its balance.',
         summary: 'Mark Ri.Ba. receipt paid',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['paid_at'], properties: [new OA\Property(property: 'paid_at', type: 'string', format: 'date')])),
@@ -158,7 +158,7 @@ final class RibaController extends Controller
     #[OA\Post(
         path: '/api/v1/treasury/riba/receipts/{id}/unpaid',
         operationId: 'markRibaReceiptUnpaid',
-        description: 'Records an insoluto. A collection already registered is undone and the invoice is open again. The bank fee is stored on the receipt and not posted to the ledger.',
+        description: 'Records an insoluto. A collection already registered is undone, the invoice is open again and the balance of the bank account of the batch gives the amount back. The bank fee is stored on the receipt and posted to the ledger: debit of the account set in the tenant preference `banking.ledger_defaults.riba_unpaid_fee_account_code` (the bank charges account when unset), credit of the bank of the batch, whose balance it reduces.',
         summary: 'Mark Ri.Ba. receipt unpaid',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['reason', 'unpaid_at'], properties: [
@@ -171,7 +171,7 @@ final class RibaController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Receipt unpaid', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'The receipt cannot become unpaid', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'The receipt cannot become unpaid, the configured fee account does not exist or the period is closed', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function unpaid(Request $request, string $id): JsonResponse

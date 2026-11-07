@@ -109,6 +109,8 @@ class TenantPreferences
                 'ledger_defaults.tax_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
                 'ledger_defaults.payroll_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
                 'ledger_defaults.bank_charges_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                // Ledger account of the commission the bank charges on an unpaid Ri.Ba. receipt.
+                'ledger_defaults.riba_unpaid_fee_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
                 'ledger_defaults.auto_categorize_standard_codes' => ['nullable', 'boolean'],
             ],
             'inventory' => [

@@ -4,6 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Services;
 
+use App\Models\Invoice;
+use App\Models\Product;
+use App\Services\Invoicing\InvoiceService;
+use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,7 +28,9 @@ use Modules\Inventory\Models\StockSerialNumber;
 final class RepairOrderService
 {
     public function __construct(
-        private readonly DoubleEntryMovementServiceInterface $movements
+        private readonly DoubleEntryMovementServiceInterface $movements,
+        private readonly InvoiceService $invoices,
+        private readonly TenantContext $tenantContext,
     ) {}
 
     /**
@@ -109,6 +115,100 @@ final class RepairOrderService
 
             return $locked;
         });
+    }
+
+    /**
+     * Invoices a repair outside warranty, once: a labour line for the labour amount and a line for each spare part,
+     * through the ordinary sales invoice flow, which numbers, issues and posts it. The parts already left stock when
+     * they were used on the repair (one movement per part line), so invoicing issues nothing again; a part line without
+     * its movement stops the invoice. A part is priced at the sale price of its product unless the request states one,
+     * and every line takes the VAT rate of the request unless the part states its own: no rate is assumed.
+     *
+     * @param  array{tax_rate: numeric-string|float|int, date?: ?string, currency?: ?string, parts?: list<array{line_id: string, unit_price?: numeric-string|float|int|null, tax_rate?: numeric-string|float|int|null}>}  $data
+     * @return array{repair: RepairOrder, invoice: Invoice, created: bool}
+     *
+     * @throws StockRuleViolation when the repair is under warranty, not finished, has nothing to invoice or a part has no price
+     */
+    public function invoice(RepairOrder $repair, array $data): array
+    {
+        return DB::transaction(function () use ($repair, $data): array {
+            $locked = RepairOrder::query()->whereKey($repair->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->invoice_id !== null) {
+                return ['repair' => $locked, 'invoice' => Invoice::query()->findOrFail($locked->invoice_id), 'created' => false];
+            }
+
+            if ($locked->is_under_warranty) {
+                throw new StockRuleViolation('A repair under warranty is not invoiced to the customer.');
+            }
+
+            if (! in_array($locked->status, ['ready', 'delivered'], true)) {
+                throw new StockRuleViolation("A repair in status [{$locked->status}] is not finished and cannot be invoiced.");
+            }
+
+            $items = $this->invoiceLines($locked, $data);
+            $tenant = $this->tenantContext->getTenant();
+            $invoice = $this->invoices->createInvoice([
+                'contact_id' => $locked->contact_id,
+                'invoice_type' => 'standard',
+                'date' => $data['date'] ?? now()->toDateString(),
+                'currency' => $data['currency'] ?? ($tenant?->default_currency ?: 'EUR'),
+                'jurisdiction' => strtoupper((string) $tenant?->country) === 'CH' ? 'CH' : 'IT',
+                'notes' => "Repair {$locked->repair_number}",
+                'items' => $items,
+            ]);
+
+            $locked->update(['invoice_id' => $invoice->id, 'invoiced_at' => now()]);
+
+            return ['repair' => $locked->load('lines'), 'invoice' => $invoice, 'created' => true];
+        });
+    }
+
+    /**
+     * @param  array{tax_rate: numeric-string|float|int, parts?: list<array{line_id: string, unit_price?: numeric-string|float|int|null, tax_rate?: numeric-string|float|int|null}>}  $data
+     * @return list<array<string, mixed>>
+     */
+    private function invoiceLines(RepairOrder $repair, array $data): array
+    {
+        $overrides = collect($data['parts'] ?? [])->keyBy('line_id');
+        $items = [];
+
+        if (Decimal::isPositive((string) $repair->labour_amount)) {
+            $items[] = [
+                'description' => trim("Labour, repair {$repair->repair_number}".($repair->resolution ? ": {$repair->resolution}" : '')),
+                'quantity' => 1,
+                'unit_price' => (string) $repair->labour_amount,
+                'tax_rate' => (float) $data['tax_rate'],
+            ];
+        }
+
+        foreach ($repair->lines()->with('item')->orderBy('created_at')->get() as $line) {
+            if ($line->stock_movement_id === null) {
+                throw new StockRuleViolation('A spare part of this repair never left stock: it cannot be invoiced.');
+            }
+
+            $override = $overrides->get((string) $line->id, []);
+            $product = $line->item?->product_id !== null ? Product::query()->find($line->item->product_id) : null;
+            $unitPrice = $override['unit_price'] ?? ($product !== null && Decimal::isPositive((string) $product->sale_price) ? (string) $product->sale_price : null);
+
+            if ($unitPrice === null) {
+                throw new StockRuleViolation("State the sale price of the spare part [{$line->item?->name}].");
+            }
+
+            $items[] = [
+                'product_id' => $product?->id,
+                'description' => (string) ($line->item?->name ?? 'Spare part'),
+                'quantity' => (float) $line->quantity,
+                'unit_price' => (float) $unitPrice,
+                'tax_rate' => (float) ($override['tax_rate'] ?? $data['tax_rate']),
+            ];
+        }
+
+        if ($items === []) {
+            throw new StockRuleViolation('This repair has neither labour nor parts to invoice.');
+        }
+
+        return $items;
     }
 
     /**

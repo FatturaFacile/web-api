@@ -17,6 +17,7 @@ use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
+use Modules\Treasury\Models\BankAccount;
 
 /**
  * Posts the money movements of the sales and purchase documents, once per movement:
@@ -64,6 +65,7 @@ final class PaymentLedgerService
             return null;
         }
 
+        $options = $this->bankAccountOptions($payment, $options);
         $amount = (string) $payment->amount;
         $currency = (string) $invoice->currency;
         $debitAccount = match ($payment->type) {
@@ -160,7 +162,7 @@ final class PaymentLedgerService
      *
      * @throws FiscalPeriodException when neither date falls in an open period
      */
-    public function reverse(string $sourceType, string $sourceId, string $tenantId, CarbonImmutable $paidAt): void
+    public function reverse(string $sourceType, string $sourceId, string $tenantId, CarbonImmutable $paidAt, bool $bankBalanceManaged = false): void
     {
         $entry = $this->entryOf($sourceType, $sourceId, $tenantId);
 
@@ -175,7 +177,29 @@ final class PaymentLedgerService
             $date = $this->periods->forDate($tenantId, now()) !== null ? now()->toDateString() : $paidAt->toDateString();
         }
 
-        $this->postingService->reverseJournal((string) $entry->id, $date, 'Payment undone');
+        $this->postingService->reverseJournal((string) $entry->id, $date, 'Payment undone', null, $bankBalanceManaged);
+    }
+
+    /**
+     * A bank charge that is not tied to a document, such as the fee of an unpaid Ri.Ba. receipt: Dr the expense account,
+     * Cr the bank. It is posted once per source.
+     *
+     * @param  array{iban?: ?string, bank_balance_managed?: bool}  $options
+     */
+    public function postBankCharge(string $tenantId, string $sourceType, string $sourceId, string $date, string $amount, string $currency, ChartOfAccount $expenseAccount, string $documentNumber, array $options = []): JournalEntry
+    {
+        $existing = $this->entryOf($sourceType, $sourceId, $tenantId);
+
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $bank = $this->accounts->bank($tenantId, $currency, $options['iban'] ?? null);
+
+        return $this->post($tenantId, $sourceType, $sourceId, $date, $documentNumber, 'Bank charge', [
+            $this->line($expenseAccount, $amount, '0', $currency, 1, "Bank charge: {$documentNumber}"),
+            $this->line($bank, '0', $amount, $currency, 1, "Bank charge: {$documentNumber}"),
+        ], $options);
     }
 
     /**
@@ -221,6 +245,25 @@ final class PaymentLedgerService
             'exchange_rate' => (float) ($exchangeRate ?: 1),
             'description' => $description,
         ];
+    }
+
+    /**
+     * A collection that names the Treasury bank account it reached posts to the ledger account of that bank, and its
+     * balance was already moved by the flow that recorded it: the posting does not announce it again, also when it is
+     * posted later because it waited for its invoice.
+     *
+     * @param  array{iban?: ?string, bank_balance_managed?: bool}  $options
+     * @return array{iban?: ?string, bank_balance_managed?: bool}
+     */
+    private function bankAccountOptions(Payment $payment, array $options): array
+    {
+        if ($payment->bank_account_id === null) {
+            return $options;
+        }
+
+        $iban = BankAccount::withoutGlobalScopes()->where('tenant_id', $payment->tenant_id)->whereKey($payment->bank_account_id)->value('iban');
+
+        return ['iban' => $options['iban'] ?? $iban, 'bank_balance_managed' => true];
     }
 
     private function entryOf(string $sourceType, string $sourceId, string $tenantId): ?JournalEntry

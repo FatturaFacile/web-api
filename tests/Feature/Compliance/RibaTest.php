@@ -6,12 +6,20 @@ use App\Models\Contact;
 use App\Models\ContactAddress;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use App\Services\Invoicing\InvoiceService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Services\LedgerAccountResolver;
+use Modules\Treasury\Contracts\BankReconciliationServiceInterface;
 use Modules\Treasury\Contracts\CashForecastServiceInterface;
 use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Models\CashForecastLine;
 use Modules\Treasury\Models\PaymentBatch;
+use Modules\Treasury\Models\ReconciliationMatch;
+use Modules\Treasury\Models\RibaReceipt;
 
 require_once __DIR__.'/ComplianceHelpers.php';
 
@@ -59,8 +67,106 @@ beforeEach(function (): void {
     $this->travelTo('2027-02-01 10:00:00');
     $this->tenant = complianceTenant();
     actingAsMember($this->tenant);
+    fiscalCalendar($this->tenant);
     $this->bank = ribaBank($this->tenant);
     $this->invoice = ribaInvoice($this->tenant);
+});
+
+/**
+ * @return array<string, array{debit: float, credit: float}>
+ */
+function ribaEntryLines(string $sourceType, string $sourceId): array
+{
+    return DB::table('journal_lines')
+        ->join('journal_entries', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
+        ->join('chart_of_accounts', 'chart_of_accounts.id', '=', 'journal_lines.account_id')
+        ->where('journal_entries.source_document_type', $sourceType)
+        ->where('journal_entries.source_document_id', $sourceId)
+        ->get(['chart_of_accounts.account_code', 'journal_lines.debit_amount', 'journal_lines.credit_amount'])
+        ->groupBy('account_code')
+        ->map(fn ($lines): array => ['debit' => round((float) $lines->sum('debit_amount'), 2), 'credit' => round((float) $lines->sum('credit_amount'), 2)])
+        ->all();
+}
+
+/**
+ * @return array<string, mixed>
+ */
+function ribaExportedReceipt(BankAccount $bank, Invoice $invoice): array
+{
+    $id = ribaApproved([['invoice_id' => $invoice->id, 'due_date' => '2027-03-31']], $bank);
+
+    return test()->postJson("/api/v1/treasury/riba/batches/{$id}/export")->json('data.receipts.0');
+}
+
+test('a collection adds to the balance of the bank of the batch, and the insoluto takes amount and fee back off it', function (): void {
+    ribaBank($this->tenant, 'IT02L1234512345123456789012');
+    $receipt = ribaExportedReceipt($this->bank, $this->invoice);
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$receipt['id']}/paid", ['paid_at' => '2027-03-31'])->assertOk();
+    expect((float) $this->bank->fresh()->current_balance)->toBe(122.0);
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$receipt['id']}/unpaid", ['reason' => 'Insoluto', 'unpaid_at' => '2027-04-05', 'fee' => '7.50'])->assertOk();
+
+    expect((float) $this->bank->fresh()->current_balance)->toBe(-7.5)
+        ->and(ribaEntryLines('riba_unpaid_fee', $receipt['id']))->toBe([
+            '6800' => ['debit' => 7.5, 'credit' => 0.0],
+            '1020' => ['debit' => 0.0, 'credit' => 7.5],
+        ]);
+});
+
+test('a collection on an invoice in the ledger posts to the bank once and moves the balance once', function (): void {
+    $this->bank->update(['gl_account_id' => app(LedgerAccountResolver::class)->bank($this->tenant->id)->id]);
+    app(TenantContext::class)->setTenant($this->tenant);
+    $posted = app(InvoiceService::class)->createInvoice([
+        'contact_id' => $this->invoice->contact_id, 'invoice_type' => 'standard', 'date' => '2027-01-20', 'currency' => 'EUR', 'jurisdiction' => 'IT',
+        'items' => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]],
+    ]);
+    $receipt = ribaExportedReceipt($this->bank, $posted);
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$receipt['id']}/paid", ['paid_at' => '2027-03-31'])->assertOk();
+
+    $paymentId = RibaReceipt::find($receipt['id'])->payment_id;
+    expect((float) $this->bank->fresh()->current_balance)->toBe(122.0)
+        ->and(ribaEntryLines('customer_payment', $paymentId))->toBe([
+            '1020' => ['debit' => 122.0, 'credit' => 0.0],
+            '1100' => ['debit' => 0.0, 'credit' => 122.0],
+        ]);
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$receipt['id']}/unpaid", ['reason' => 'Insoluto', 'unpaid_at' => '2027-04-05'])->assertOk();
+
+    expect((float) $this->bank->fresh()->current_balance)->toBe(0.0)
+        ->and(ribaEntryLines('customer_payment', $paymentId)['1020'])->toBe(['debit' => 122.0, 'credit' => 122.0]);
+});
+
+test('the unpaid fee goes to the account the tenant configured, and an unknown account is refused', function (): void {
+    ChartOfAccount::create(['tenant_id' => $this->tenant->id, 'account_code' => '6895', 'name' => 'Commissioni insoluti', 'account_class' => 'expense', 'account_type' => 'expense', 'normal_balance' => 'debit', 'currency' => 'EUR', 'is_active' => true]);
+    $this->tenant->update(['settings' => ['preferences' => ['banking' => ['ledger_defaults' => ['riba_unpaid_fee_account_code' => '6895']]]]]);
+    $receipt = ribaExportedReceipt($this->bank, $this->invoice);
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$receipt['id']}/unpaid", ['reason' => 'Insoluto', 'unpaid_at' => '2027-04-05', 'fee' => '4.00'])->assertOk();
+    expect(ribaEntryLines('riba_unpaid_fee', $receipt['id'])['6895'])->toBe(['debit' => 4.0, 'credit' => 0.0]);
+
+    $this->tenant->update(['settings' => ['preferences' => ['banking' => ['ledger_defaults' => ['riba_unpaid_fee_account_code' => '9999']]]]]);
+    actingAsMember($this->tenant);
+    $other = ribaExportedReceipt($this->bank, ribaInvoice($this->tenant, '50.00', 'FT-9'));
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$other['id']}/unpaid", ['reason' => 'Insoluto', 'unpaid_at' => '2027-04-05', 'fee' => '4.00'])->assertUnprocessable();
+    expect(RibaReceipt::find($other['id'])->status)->toBe('presented');
+});
+
+test('a statement line of a riba collection is reconciled as a customer payment, never as a supplier payment', function (): void {
+    $receipt = ribaExportedReceipt($this->bank, $this->invoice);
+    $service = app(BankReconciliationServiceInterface::class);
+    $line = ['booking_date' => '2027-03-31', 'value_date' => '2027-03-31', 'customer_reference' => 'Ri.Ba. FT-1'];
+
+    $outgoing = $service->importStatement(['tenant_id' => $this->tenant->id, 'bank_account_id' => $this->bank->id, 'statement_date' => '2027-03-31'], [[...$line, 'amount' => -122.00]]);
+    $service->runAutoReconciliation((string) $outgoing->id);
+    expect(ReconciliationMatch::where('matched_entity_id', RibaReceipt::find($receipt['id'])->payment_line_id)->exists())->toBeFalse();
+
+    $incoming = $service->importStatement(['tenant_id' => $this->tenant->id, 'bank_account_id' => $this->bank->id, 'statement_date' => '2027-03-31'], [[...$line, 'amount' => 122.00]]);
+    $service->runAutoReconciliation((string) $incoming->id);
+
+    expect(ReconciliationMatch::where('matched_entity_id', RibaReceipt::find($receipt['id'])->payment_line_id)->value('matched_entity_type'))->toBe('customer_payment');
 });
 
 test('the file has fixed 120 character records in the published order and positions', function (): void {

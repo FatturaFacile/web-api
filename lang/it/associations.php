@@ -22,6 +22,7 @@ return [
     'fee_period_invalid' => 'La fine della quota precede il suo inizio.',
     'instalment_closed' => 'Questa rata è già saldata o annullata.',
     'payment_exceeds_outstanding' => 'L\'importo deve essere positivo e non superiore al residuo.',
+    'payment_already_reversed' => 'Questo pagamento è già stato stornato.',
     'payment_amount_mismatch' => 'L\'importo confermato è diverso da quello richiesto.',
     'vat_not_reconcilable' => 'Questo importo non si può scomporre in imponibile e IVA con l\'aliquota del piano.',
     'area_not_a_person' => 'Questo contatto non è né una persona in anagrafica né un tutore.',

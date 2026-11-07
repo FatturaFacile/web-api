@@ -413,5 +413,23 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'labour_amount', type: 'string'),
     new OA\Property(property: 'parts_amount', type: 'string'),
     new OA\Property(property: 'lines', type: 'array', items: new OA\Items(ref: '#/components/schemas/RepairOrderLine')),
+    new OA\Property(property: 'invoice_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'invoiced_at', type: 'string', format: 'date-time', nullable: true),
+])]
+#[OA\Schema(schema: 'RepairOrderInvoiceRequest', required: ['tax_rate'], properties: [
+    new OA\Property(property: 'tax_rate', description: 'VAT rate of the labour and of the parts that state none.', type: 'number'),
+    new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'currency', type: 'string', maxLength: 3, minLength: 3, nullable: true),
+    new OA\Property(property: 'parts', type: 'array', nullable: true, items: new OA\Items(required: ['line_id'], properties: [
+        new OA\Property(property: 'line_id', description: 'Part line of the repair.', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'unit_price', description: 'Sale price; the sale price of the product when omitted.', type: 'number', nullable: true),
+        new OA\Property(property: 'tax_rate', type: 'number', nullable: true),
+    ], type: 'object')),
+])]
+#[OA\Schema(schema: 'RepairOrderInvoiceResponse', properties: [
+    new OA\Property(property: 'repair_order', ref: '#/components/schemas/RepairOrder'),
+    new OA\Property(property: 'invoice_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'invoice_number', type: 'string'),
+    new OA\Property(property: 'total_gross', type: 'string'),
 ])]
 class LogisticsOpenApiSchemas {}

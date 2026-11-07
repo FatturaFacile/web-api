@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\GeneralLedger\Exceptions\LedgerPostingException;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Services\ProductChargeCalculator;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
@@ -29,6 +30,7 @@ use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesInvoiceItem;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\SDI\Enums\TipoDocumento;
+use RoundingMode;
 
 final class InvoicingService implements InvoicingServiceInterface
 {
@@ -82,6 +84,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'jurisdiction' => $data['jurisdiction'] ?? 'IT',
             'split_payment' => (bool) ($data['split_payment'] ?? false),
             'reverse_charge' => (bool) ($data['reverse_charge'] ?? false),
+            'sdi_excluded' => (bool) ($data['sdi_excluded'] ?? false),
             'payment_method' => $data['payment_method'] ?? 'MP05',
             'payment_terms' => $data['payment_terms'] ?? 'TP02',
             'bank_name' => $data['bank_name'] ?? null,
@@ -120,6 +123,7 @@ final class InvoicingService implements InvoicingServiceInterface
                 'line_total' => $lineNet,
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
                 'tax_account_id' => $item['tax_account_id'] ?? null,
+                'cost_center_id' => $item['cost_center_id'] ?? null,
                 'product_charge_type_id' => $item['product_charge_type_id'] ?? null,
                 'uom' => $item['uom'] ?? 'EA',
                 'notes' => $item['notes'] ?? null,
@@ -327,6 +331,9 @@ final class InvoicingService implements InvoicingServiceInterface
 
     /**
      * Swiss francs are settled in steps of 5 centimes: the emission fixes the amount the QR-bill and the ledger share.
+     * What is settled is the amount due, not the document total: with a withholding (or Enasarco, or split payment)
+     * the customer pays less than the gross, so that amount is the one rounded, and the difference goes on the gross,
+     * which keeps the withheld amounts exact. Without such deductions the two are the same.
      */
     private function applyCashRounding(SalesInvoice $invoice): void
     {
@@ -334,12 +341,14 @@ final class InvoicingService implements InvoicingServiceInterface
             return;
         }
 
-        $exact = (float) $invoice->total_gross;
-        $rounded = round(round($exact / 0.05) * 0.05, 2);
+        $exactDue = $invoice->amountDue();
+        $steps = bcround(Decimal::div($exactDue, '0.05'), 0, RoundingMode::HalfAwayFromZero);
+        $roundedDue = Decimal::round2(Decimal::mul($steps, '0.05'));
+        $rounding = Decimal::round2(Decimal::sub($roundedDue, $exactDue));
 
-        $invoice->total_gross = $rounded;
-        $invoice->rounding_amount = round($rounded - $exact, 2);
-        $invoice->receivable_amount = $rounded;
+        $invoice->total_gross = Decimal::round2(Decimal::add((string) $invoice->total_gross, $rounding));
+        $invoice->rounding_amount = $rounding;
+        $invoice->receivable_amount = $roundedDue;
     }
 
     private function postLockedInvoice(SalesInvoice $invoice, string $userId): SalesInvoice
@@ -358,12 +367,18 @@ final class InvoicingService implements InvoicingServiceInterface
         $taxLines = [];
 
         foreach ($invoice->items as $item) {
-            $revenueLines[] = [
+            $revenueLine = [
                 'line_id' => (string) $item->id,
                 'account_id' => $item->revenue_account_id,
                 'amount' => (float) $item->line_total,
                 'description' => $item->description,
             ];
+
+            if ($item->cost_center_id !== null) {
+                $revenueLine['cost_center_id'] = (string) $item->cost_center_id;
+            }
+
+            $revenueLines[] = $revenueLine;
 
             $taxAmount = round(((float) $item->line_total * (float) $item->tax_rate) / 100.0, 2);
             $taxLines[] = [
@@ -559,6 +574,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'related_invoice_id' => (string) $originalInvoice->id,
             'jurisdiction' => $originalInvoice->jurisdiction ?? 'IT',
             'split_payment' => (bool) $originalInvoice->split_payment,
+            'sdi_excluded' => (bool) ($data['sdi_excluded'] ?? $originalInvoice->sdi_excluded),
             'date' => $date,
             'due_date' => now()->toDateString(),
             'currency' => $originalInvoice->currency ?? 'EUR',
@@ -595,10 +611,13 @@ final class InvoicingService implements InvoicingServiceInterface
                 'tax_rate' => (float) $item['tax_rate'],
                 'discount_percentage' => $discount,
                 'line_total' => round($quantity * $unitPrice * (1 - $discount / 100.0), 2),
+                'revenue_account_id' => $item['revenue_account_id'] ?? null,
+                'cost_center_id' => $item['cost_center_id'] ?? null,
             ]);
         }
 
         $this->fiscal->applyToCreditNote($creditNote, $originalInvoice);
+        $creditNote->total_paid = $creditNote->total_gross;
         $creditNote->save();
 
         $this->completeCreditNote($creditNote, $originalInvoice, $items, (string) ($data['created_by'] ?? 'system'));

@@ -123,6 +123,7 @@ Route::prefix('api/v1/inventory')
         Route::get('repair-orders/{id}', [RepairOrderController::class, 'show'])->name('inventory.repair-orders.show');
         Route::post('repair-orders/{id}/status', [RepairOrderController::class, 'advance'])->name('inventory.repair-orders.status');
         Route::post('repair-orders/{id}/parts', [RepairOrderController::class, 'addPart'])->name('inventory.repair-orders.parts');
+        Route::post('repair-orders/{id}/invoice', [RepairOrderController::class, 'invoice'])->name('inventory.repair-orders.invoice');
 
         // 8i. Barcode Labels
         Route::post('labels/barcode', [StockLabelController::class, 'barcode'])->name('inventory.labels.barcode');

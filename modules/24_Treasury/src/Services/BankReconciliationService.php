@@ -161,8 +161,10 @@ final readonly class BankReconciliationService implements BankReconciliationServ
 
                 $lineAmount = abs((float) $line->amount);
 
-                // Pass 1: Exact reference match against PaymentLine
+                // Pass 1: Exact reference match against PaymentLine. A Ri.Ba. batch collects money, so its lines only
+                // match money coming in and are customer payments; every other batch pays out to suppliers.
                 $paymentLine = null;
+                $isIncoming = $line->direction === 'credit';
                 if (! empty($line->bank_reference) || ! empty($line->customer_reference)) {
                     $ref = $line->bank_reference ?? $line->customer_reference;
                     $paymentLine = PaymentLine::where('tenant_id', $statement->tenant_id)
@@ -171,6 +173,9 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                                 ->orWhere('end_to_end_id', $ref)
                                 ->orWhere('remittance_reference', 'like', "%{$ref}%");
                         })
+                        ->whereHas('paymentBatch', fn ($batch) => $isIncoming
+                            ? $batch->where('payment_method', 'riba')
+                            : $batch->where(fn ($method) => $method->whereNull('payment_method')->orWhere('payment_method', '!=', 'riba')))
                         ->where('status', '!=', 'reconciled')
                         ->first();
                 }
@@ -181,7 +186,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                         'tenant_id' => $statement->tenant_id,
                         'bank_reconciliation_id' => $recon->id,
                         'bank_statement_line_id' => $line->id,
-                        'matched_entity_type' => 'supplier_payment',
+                        'matched_entity_type' => $isIncoming ? 'customer_payment' : 'supplier_payment',
                         'matched_entity_id' => $paymentLine->id,
                         'match_type' => 'exact_ref',
                         'allocated_amount' => $lineAmount,

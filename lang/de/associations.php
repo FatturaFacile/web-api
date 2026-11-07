@@ -22,6 +22,7 @@ return [
     'fee_period_invalid' => 'Das Ende des Beitrags liegt vor seinem Beginn.',
     'instalment_closed' => 'Diese Rate ist bereits beglichen oder storniert.',
     'payment_exceeds_outstanding' => 'Der Betrag muss positiv sein und darf den offenen Betrag nicht übersteigen.',
+    'payment_already_reversed' => 'Diese Zahlung wurde bereits storniert.',
     'payment_amount_mismatch' => 'Der bestätigte Betrag weicht vom angeforderten ab.',
     'vat_not_reconcilable' => 'Dieser Betrag lässt sich mit dem Satz des Plans nicht in Netto und MwSt. aufteilen.',
     'area_not_a_person' => 'Dieser Kontakt ist weder eine Person im Register noch ein Erziehungsberechtigter.',

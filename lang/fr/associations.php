@@ -22,6 +22,7 @@ return [
     'fee_period_invalid' => 'La fin de la cotisation précède son début.',
     'instalment_closed' => 'Cette échéance est déjà réglée ou annulée.',
     'payment_exceeds_outstanding' => 'Le montant doit être positif et ne pas dépasser le solde.',
+    'payment_already_reversed' => 'Ce paiement a déjà été annulé.',
     'payment_amount_mismatch' => 'Le montant confirmé diffère du montant demandé.',
     'vat_not_reconcilable' => 'Ce montant ne peut pas être réparti en net et TVA au taux du plan.',
     'area_not_a_person' => 'Ce contact n\'est ni une personne du registre ni un tuteur.',

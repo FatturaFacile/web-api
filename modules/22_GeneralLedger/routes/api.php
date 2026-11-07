@@ -92,6 +92,8 @@ Route::prefix('api/v1/general-ledger')
         Route::get('enasarco/parameters', [EnasarcoController::class, 'parameters']);
         Route::put('enasarco/parameters', [EnasarcoController::class, 'saveParameter']);
         Route::get('enasarco/summary', [EnasarcoController::class, 'summary']);
+        Route::get('enasarco/principal-statements', [EnasarcoController::class, 'principalStatements']);
+        Route::post('enasarco/principal-statements', [EnasarcoController::class, 'generatePrincipalStatement']);
 
         // VAT Settings and Registers
         Route::get('payroll-settings', [PayrollLedgerController::class, 'showSettings']);

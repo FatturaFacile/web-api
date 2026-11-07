@@ -10,9 +10,11 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Modules\Associations\Http\Requests\AssignFeeRequest;
 use Modules\Associations\Http\Requests\RecordPaymentRequest;
+use Modules\Associations\Http\Requests\ReversePaymentRequest;
 use Modules\Associations\Http\Resources\AssociationRecordResource;
 use Modules\Associations\Models\FeeAssignment;
 use Modules\Associations\Models\FeeInstalment;
+use Modules\Associations\Models\FeePayment;
 use Modules\Associations\Models\FeePlan;
 use Modules\Associations\Models\Member;
 use Modules\Associations\Models\Receipt;
@@ -104,6 +106,14 @@ final class FeeController extends AssociationController
         $this->allow(AssociationCapability::Finance);
 
         return new AssociationRecordResource($this->payments->record(FeeInstalment::query()->findOrFail($id), $request->validated(), $this->actorId($request)));
+    }
+
+    #[AssociationPost('/api/v1/associations/fee-payments/{id}/reverse', 'reverseAssociationPayment', 'Reverse a recorded payment: the receipt is cancelled, the instalment is open again and, when the payment reached the accounts, its collection is reversed and a credit note outside SDI takes back the receipt document', 'AssociationPaymentReversalRequest', response: 'AssociationRecord')]
+    public function reversePayment(ReversePaymentRequest $request, string $id): AssociationRecordResource
+    {
+        $this->allow(AssociationCapability::Finance);
+
+        return new AssociationRecordResource($this->payments->reverse(FeePayment::query()->findOrFail($id), $request->validated(), $this->actorId($request)));
     }
 
     #[AssociationPost('/api/v1/associations/instalments/{id}/payment-link', 'createAssociationPaymentLink', 'Create an online payment link for an instalment')]

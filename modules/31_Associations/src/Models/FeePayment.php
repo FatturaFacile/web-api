@@ -16,7 +16,7 @@ final class FeePayment extends AssociationRecord
 
     protected function casts(): array
     {
-        return ['method' => PaymentMethod::class, 'paid_on' => 'date', 'amount' => 'decimal:2'];
+        return ['method' => PaymentMethod::class, 'paid_on' => 'date', 'amount' => 'decimal:2', 'reversed_at' => 'datetime'];
     }
 
     public function instalment(): BelongsTo

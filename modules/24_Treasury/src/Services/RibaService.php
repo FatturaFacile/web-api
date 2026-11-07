@@ -12,8 +12,12 @@ use App\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
+use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\Treasury\Contracts\PaymentFactoryServiceInterface;
+use Modules\Treasury\Contracts\TreasuryPositionServiceInterface;
 use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Models\PaymentBatch;
 use Modules\Treasury\Models\PaymentLine;
@@ -29,11 +33,16 @@ final readonly class RibaService
     /** ModalitaPagamento of the FatturaPA schema: payments store this code. */
     private const string FatturaPaRibaCode = 'MP12';
 
+    /** Source of the ledger entry of the commission on an unpaid receipt. */
+    private const string UnpaidFeeSource = 'riba_unpaid_fee';
+
     public function __construct(
         private PaymentFactoryServiceInterface $paymentFactory,
         private RibaFlatFileBuilder $builder,
         private RecordPayment $payments,
         private PaymentLedgerService $ledger,
+        private TreasuryPositionServiceInterface $positions,
+        private LedgerAccountResolver $accounts,
     ) {}
 
     /**
@@ -137,12 +146,15 @@ final readonly class RibaService
                 throw new InvalidArgumentException('Only a presented receipt can be marked as paid.');
             }
 
+            $bankAccountId = (string) PaymentBatch::whereKey($receipt->payment_batch_id)->value('bank_account_id');
             $payment = $this->payments->execute($receipt->invoice, [
                 'amount' => (string) $receipt->amount,
                 'paid_at' => $paidAt,
                 'payment_method' => self::FatturaPaRibaCode,
                 'reference' => 'RIBA-'.$receipt->receipt_number,
+                'bank_account_id' => $bankAccountId,
             ]);
+            $this->positions->updateBalance($bankAccountId, (float) $receipt->amount, 'riba_collection');
 
             $receipt->update(['status' => 'paid', 'payment_id' => $payment->id]);
             $this->settle($receipt, 'executed');
@@ -153,9 +165,13 @@ final readonly class RibaService
 
     /**
      * Records an insoluto. A collection already registered is undone, so the invoice is open again and can go into a
-     * new batch; the bank fee stays on the receipt and is not posted.
+     * new batch, and the bank balance gives the amount back. The bank fee is posted to the ledger, Dr the account set
+     * in `banking.ledger_defaults.riba_unpaid_fee_account_code` (the bank charges account when unset) and Cr the bank
+     * of the batch, whose balance it reduces.
      *
      * @param  array{reason: string, unpaid_at: string, fee?: numeric-string|float|int|null}  $outcome
+     *
+     * @throws InvalidArgumentException when the configured fee account does not exist
      */
     public function markUnpaid(RibaReceipt $receipt, array $outcome): RibaReceipt
     {
@@ -166,12 +182,22 @@ final readonly class RibaService
                 throw new InvalidArgumentException('Only a presented or paid receipt can become unpaid.');
             }
 
+            $batch = PaymentBatch::with('bankAccount')->findOrFail($receipt->payment_batch_id);
+
             if ($receipt->payment_id !== null) {
                 $payment = Payment::findOrFail($receipt->payment_id);
-                $this->ledger->reverse(PaymentLedgerService::SOURCE_CUSTOMER, (string) $payment->id, (string) $payment->tenant_id, CarbonImmutable::parse($payment->paid_at));
+                $isBalanceManaged = $payment->bank_account_id !== null;
+                $this->ledger->reverse(PaymentLedgerService::SOURCE_CUSTOMER, (string) $payment->id, (string) $payment->tenant_id, CarbonImmutable::parse($payment->paid_at), $isBalanceManaged);
+
+                if ($isBalanceManaged) {
+                    $this->positions->updateBalance((string) $payment->bank_account_id, -1 * (float) $payment->amount, 'riba_unpaid');
+                }
+
                 $payment->delete();
                 $this->payments->recalculate($receipt->invoice);
             }
+
+            $this->postUnpaidFee($receipt, $batch, (string) $outcome['unpaid_at'], bcadd((string) ($outcome['fee'] ?? '0'), '0', 2));
 
             $receipt->update([
                 'status' => 'unpaid',
@@ -184,6 +210,56 @@ final readonly class RibaService
 
             return $receipt;
         });
+    }
+
+    /**
+     * The commission the bank charges on an insoluto: posted once per receipt, and taken off the balance of the bank.
+     */
+    private function postUnpaidFee(RibaReceipt $receipt, PaymentBatch $batch, string $unpaidAt, string $fee): void
+    {
+        if (bccomp($fee, '0', 2) <= 0) {
+            return;
+        }
+
+        $tenantId = (string) $receipt->tenant_id;
+        $alreadyPosted = JournalEntry::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->where('source_document_type', self::UnpaidFeeSource)
+            ->where('source_document_id', $receipt->id)
+            ->where('status', 'posted')
+            ->exists();
+
+        if ($alreadyPosted) {
+            return;
+        }
+
+        $this->ledger->postBankCharge(
+            $tenantId,
+            self::UnpaidFeeSource,
+            (string) $receipt->id,
+            $unpaidAt,
+            $fee,
+            (string) ($batch->currency ?: 'EUR'),
+            $this->unpaidFeeAccount($tenantId),
+            "Ri.Ba. {$batch->batch_reference}/{$receipt->receipt_number}",
+            ['iban' => $batch->bankAccount?->iban, 'bank_balance_managed' => true],
+        );
+        $this->positions->updateBalance((string) $batch->bank_account_id, -1 * (float) $fee, 'riba_unpaid_fee');
+    }
+
+    /**
+     * @throws InvalidArgumentException when the configured account is not in the chart of accounts of the tenant
+     */
+    private function unpaidFeeAccount(string $tenantId): ChartOfAccount
+    {
+        $code = Tenant::find($tenantId)?->settings['preferences']['banking']['ledger_defaults']['riba_unpaid_fee_account_code'] ?? null;
+
+        if ($code === null || $code === '') {
+            return $this->accounts->bankCharges($tenantId);
+        }
+
+        return ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('account_code', $code)->first()
+            ?? throw new InvalidArgumentException("The Ri.Ba. unpaid fee account [{$code}] is not in the chart of accounts.");
     }
 
     /**

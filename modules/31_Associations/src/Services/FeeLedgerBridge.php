@@ -6,15 +6,19 @@ namespace Modules\Associations\Services;
 
 use App\Actions\Sales\RecordPayment;
 use App\Models\Invoice;
+use App\Models\Payment;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Modules\Associations\Enums\PaymentMethod;
 use Modules\Associations\Exceptions\AssociationException;
 use Modules\Associations\Models\AssociationSetting;
 use Modules\Associations\Models\FeeAssignment;
+use Modules\Associations\Models\FeePayment;
 use Modules\Associations\Models\Receipt;
 use Modules\Associations\Support\Money;
+use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
+use Modules\Invoicing\Models\SalesInvoice;
 
 /**
  * Takes a fee payment to the accounts through the flow every sale uses: a posted sales document, numbered with the
@@ -23,10 +27,14 @@ use Modules\Invoicing\Contracts\InvoicingServiceInterface;
  */
 final class FeeLedgerBridge
 {
+    /** Number of the credit note that reverses a receipt: the receipt number with this prefix, outside every series. */
+    public const string CreditNotePrefix = 'NC-';
+
     public function __construct(
         private readonly InvoicingServiceInterface $invoicing,
         private readonly RecordPayment $recordPayment,
         private readonly TenantContext $tenantContext,
+        private readonly PaymentLedgerService $payments,
     ) {}
 
     /**
@@ -57,6 +65,7 @@ final class FeeLedgerBridge
             'unit_price' => $this->netMatching($amount, $taxRate),
             'tax_rate' => $taxRate,
             'revenue_account_id' => $plan?->revenue_account_id ?? $settings->default_revenue_account_id,
+            'cost_center_id' => $assignment->course?->cost_center_id,
         ]]);
 
         $posted = $this->invoicing->postInvoice($invoice, (string) $actorId);
@@ -70,6 +79,48 @@ final class FeeLedgerBridge
         ]);
 
         return ['invoice_id' => (string) $posted->id, 'payment_id' => (string) $payment->id];
+    }
+
+    /**
+     * Undoes the accounting of a fee payment with the flows every sale uses: the collection entry is reversed and the
+     * payment removed, then a credit note on the internal receipt document (outside SDI, like the document itself) takes
+     * back revenue and VAT and closes the document. Returns the credit note.
+     */
+    public function reverse(FeePayment $feePayment, Receipt $receipt, CarbonImmutable $reversedOn, ?string $actorId): string
+    {
+        $invoice = SalesInvoice::query()->with('items')->lockForUpdate()->findOrFail($feePayment->invoice_id);
+        $payment = $feePayment->payment_id === null ? null : Payment::query()->find($feePayment->payment_id);
+
+        if ($payment !== null) {
+            $this->payments->reverse(PaymentLedgerService::SOURCE_CUSTOMER, (string) $payment->id, (string) $payment->tenant_id, CarbonImmutable::parse($payment->paid_at));
+            $payment->delete();
+            $this->recordPayment->recalculate(Invoice::query()->findOrFail($invoice->id));
+            $invoice->refresh();
+        }
+
+        $creditNote = $this->invoicing->issueCreditNote($invoice, [
+            'invoice_number' => self::CreditNotePrefix.$receipt->number,
+            'date' => $reversedOn->toDateString(),
+            'sdi_excluded' => true,
+            'created_by' => $actorId,
+            'notes' => "Reversal of association receipt {$receipt->number}",
+        ], $invoice->items->map(static fn ($item): array => [
+            'description' => (string) $item->description,
+            'quantity' => (float) $item->quantity,
+            'unit_price' => (float) $item->unit_price,
+            'tax_rate' => (float) $item->tax_rate,
+            'discount_percentage' => (float) $item->discount_percentage,
+            'revenue_account_id' => $item->revenue_account_id,
+            'cost_center_id' => $item->cost_center_id,
+        ])->all());
+
+        $credited = min((float) $invoice->outstandingAmount(), (float) $creditNote->amountDue());
+
+        if ($credited > 0) {
+            $this->invoicing->applyCreditNote($creditNote, $invoice, $credited, (string) $actorId);
+        }
+
+        return (string) $creditNote->id;
     }
 
     /**
