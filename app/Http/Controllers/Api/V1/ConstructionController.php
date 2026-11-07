@@ -12,6 +12,7 @@ use App\Models\ConstructionSite;
 use App\Models\ProgressBilling;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -88,10 +89,10 @@ class ConstructionController extends Controller
     {
         $validated = $request->validated();
 
-        $retentionPct = (float) ($validated['retention_percentage'] ?? 10.0);
-        $gross = (float) $validated['gross_certified_amount'];
-        $retention = round($gross * ($retentionPct / 100.0), 2);
-        $net = $gross - $retention;
+        $retentionPct = (string) ($validated['retention_percentage'] ?? '10');
+        $gross = Decimal::round2((string) $validated['gross_certified_amount']);
+        $retention = Decimal::round2(Decimal::div(Decimal::mul($gross, $retentionPct), '100'));
+        $net = Decimal::round2(Decimal::sub($gross, $retention));
 
         $billing = ProgressBilling::create([
             'construction_site_id' => $validated['construction_site_id'],
@@ -107,9 +108,9 @@ class ConstructionController extends Controller
         return $this->successResponse(
             data: [
                 'id' => $billing->id,
-                'gross' => $gross,
-                'retention' => $retention,
-                'net_payable' => $net,
+                'gross' => (float) $gross,
+                'retention' => (float) $retention,
+                'net_payable' => (float) $net,
             ],
             message: 'SAL progress billing created successfully',
             statusCode: Response::HTTP_CREATED

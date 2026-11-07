@@ -54,3 +54,34 @@ test('ids of another company are refused by the tire hotel, SAL, fee note and ti
     $this->postJson('/api/v1/construction/sal', [...$sal, 'construction_site_id' => $this->own['site']])->assertCreated();
     $this->postJson('/api/v1/professionals/fee-notes', [...$fee, 'client_id' => $this->own['contact'], 'legal_case_id' => $this->own['case']])->assertCreated();
 });
+
+test('a SAL computes retention and net payable to the cent', function (): void {
+    $data = $this->postJson('/api/v1/construction/sal', [
+        'construction_site_id' => $this->own['site'], 'sal_number' => 'SAL-02', 'period_start' => '2027-01-01', 'period_end' => '2027-01-31',
+        'gross_certified_amount' => '1234.56', 'retention_percentage' => '7.5',
+    ])->assertCreated()->json('data');
+
+    expect($data['retention'])->toBe(92.59)->and($data['net_payable'])->toBe(1141.97);
+
+    $stored = DB::table('progress_billings')->where('id', $data['id'])->first();
+    expect((string) $stored->retention_amount)->toBe('92.59')->and((string) $stored->net_payable_amount)->toBe('1141.97');
+});
+
+test('a fee note adds the fund and VAT and withholds on the fees, to the cent', function (): void {
+    $data = $this->postJson('/api/v1/professionals/fee-notes', [
+        'client_id' => $this->own['contact'], 'note_number' => 'P-2', 'date' => '2027-01-31', 'taxable_fees' => '1000.10',
+    ])->assertCreated()->json('data');
+
+    expect($data)->toMatchArray(['cassa_previdenza' => 40.0, 'vat' => 228.82, 'ritenuta_acconto' => 200.02, 'net_payable' => 1068.9]);
+
+    $stored = DB::table('fee_notes')->where('id', $data['id'])->first();
+    expect((string) $stored->net_payable)->toBe('1068.90');
+});
+
+test('billable time divides only once, so the fee keeps its cents', function (): void {
+    $fee = $this->postJson('/api/v1/professionals/time-logs', [
+        'legal_case_id' => $this->own['case'], 'date' => '2027-01-31', 'duration_minutes' => 7, 'hourly_rate' => '150.00', 'description' => 'Telefonata',
+    ])->assertCreated()->json('data.fee_amount');
+
+    expect($fee)->toBe(17.5);
+});

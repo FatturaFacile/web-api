@@ -13,6 +13,7 @@ use App\Models\FeeNote;
 use App\Models\LegalCase;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -88,7 +89,7 @@ class ProfessionalsController extends Controller
     {
         $validated = $request->validated();
 
-        $fee = round(($validated['duration_minutes'] / 60.0) * (float) $validated['hourly_rate'], 2);
+        $fee = Decimal::round2(Decimal::div(Decimal::mul((string) $validated['duration_minutes'], (string) $validated['hourly_rate']), '60'));
 
         $activity = BillableActivity::create([
             'legal_case_id' => $validated['legal_case_id'],
@@ -102,7 +103,7 @@ class ProfessionalsController extends Controller
         ]);
 
         return $this->successResponse(
-            data: ['id' => $activity->id, 'fee_amount' => $fee],
+            data: ['id' => $activity->id, 'fee_amount' => (float) $fee],
             message: 'Billable time logged successfully',
             statusCode: Response::HTTP_CREATED
         );
@@ -160,16 +161,14 @@ class ProfessionalsController extends Controller
     {
         $validated = $request->validated();
 
-        $taxable = (float) $validated['taxable_fees'];
-        $cpaRate = (float) ($validated['cpa_rate'] ?? 4.0);
-        $ritenutaRate = (float) ($validated['ritenuta_rate'] ?? 20.0);
-        $vatRate = (float) ($validated['vat_rate'] ?? 22.0);
+        $taxable = Decimal::round2((string) $validated['taxable_fees']);
+        $percentOf = static fn (string $amount, mixed $rate): string => Decimal::round2(Decimal::div(Decimal::mul($amount, (string) $rate), '100'));
 
-        $cpa = round($taxable * ($cpaRate / 100.0), 2);
-        $imponibileIva = $taxable + $cpa;
-        $vat = round($imponibileIva * ($vatRate / 100.0), 2);
-        $ritenuta = round($taxable * ($ritenutaRate / 100.0), 2);
-        $netPayable = ($imponibileIva + $vat) - $ritenuta;
+        $cpa = $percentOf($taxable, $validated['cpa_rate'] ?? '4');
+        $imponibileIva = Decimal::add($taxable, $cpa);
+        $vat = $percentOf($imponibileIva, $validated['vat_rate'] ?? '22');
+        $ritenuta = $percentOf($taxable, $validated['ritenuta_rate'] ?? '20');
+        $netPayable = Decimal::round2(Decimal::sub(Decimal::add($imponibileIva, $vat), $ritenuta));
 
         $feeNote = FeeNote::create([
             'legal_case_id' => $validated['legal_case_id'] ?? null,
@@ -187,11 +186,11 @@ class ProfessionalsController extends Controller
         return $this->successResponse(
             data: [
                 'id' => $feeNote->id,
-                'taxable_fees' => $taxable,
-                'cassa_previdenza' => $cpa,
-                'vat' => $vat,
-                'ritenuta_acconto' => $ritenuta,
-                'net_payable' => $netPayable,
+                'taxable_fees' => (float) $taxable,
+                'cassa_previdenza' => (float) $cpa,
+                'vat' => (float) $vat,
+                'ritenuta_acconto' => (float) $ritenuta,
+                'net_payable' => (float) $netPayable,
             ],
             message: 'Fee note (Parcella) created',
             statusCode: Response::HTTP_CREATED
