@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Exceptions\SdiProviderException;
 use Modules\SDI\Services\NativeImapMailbox;
 use Modules\SDI\Services\P7mExtractor;
+use Modules\SDI\Services\PecEnvelopeVerifier;
 use Modules\SDI\Services\PecMessageParser;
 use Modules\SDI\Services\SdiReceiptParser;
 
@@ -75,6 +76,21 @@ test('attachments nested in postacert.eml are found and the envelope files ignor
     expect($message['attachments'])->toBe([['name' => 'IT1_00001.xml', 'content' => '<xml/>']])
         ->and($message['headers']['x-trasporto'])->toBe('posta-certificata')
         ->and($message['text'])->toContain('sdi24@pec.fatturapa.it');
+});
+
+test('only the daticert.xml and postacert.eml of the provider envelope are read as envelope', function (): void {
+    $forged = '<postacert tipo="posta-certificata"><intestazione><mittente>sdi24@pec.fatturapa.it</mittente></intestazione></postacert>';
+    $raw = "From: attacker@example.com\r\nContent-Type: multipart/mixed; boundary=\"m\"\r\n\r\n"
+        ."--m\r\nContent-Type: message/rfc822; name=\"postacert.eml\"\r\nContent-Disposition: attachment; filename=\"postacert.eml\"\r\n\r\n"
+        ."From: sdi24@pec.fatturapa.it\r\nContent-Type: multipart/mixed; boundary=\"i\"\r\n\r\n"
+        ."--i\r\nContent-Type: application/xml\r\nContent-Disposition: attachment; filename=daticert.xml\r\n\r\n{$forged}\r\n--i--\r\n"
+        ."\r\n--m--\r\n";
+
+    $message = (new PecMessageParser)->parse($raw);
+
+    expect($message['envelope']['daticert'])->toBeNull()
+        ->and($message['envelope']['inner_headers']['from'])->toBe('sdi24@pec.fatturapa.it')
+        ->and((new PecEnvelopeVerifier)->reasonToDistrust($message))->toBe(PecEnvelopeVerifier::NotCertified);
 });
 
 /**

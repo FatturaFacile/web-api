@@ -7,7 +7,9 @@ namespace Modules\SDI\Services;
 use InvalidArgumentException;
 
 /**
- * Opens the CAdES envelope of a .xml.p7m file. The signature is not verified: SDI already checked it on arrival.
+ * Opens the CAdES envelope of a .xml.p7m file and checks the integrity of its signature: the signed content must match
+ * the signature of the certificate carried in the envelope. The chain of that certificate up to a qualified certification
+ * authority is not checked, since no trusted list of those authorities is configured here.
  */
 final class P7mExtractor
 {
@@ -18,32 +20,52 @@ final class P7mExtractor
      */
     public function extract(string $content): string
     {
+        return $this->open($content)['xml'];
+    }
+
+    /**
+     * Return the FatturaPA XML and whether the signature of the envelope verifies (null for a file that is not signed).
+     * A file whose signature does not verify is still opened, so the caller decides what to do with it.
+     *
+     * @return array{xml: string, signature_verified: bool|null}
+     *
+     * @throws InvalidArgumentException when the file is neither XML nor a readable envelope
+     */
+    public function open(string $content): array
+    {
         $trimmed = ltrim($content, "\xEF\xBB\xBF \t\r\n");
 
         if (str_starts_with($trimmed, '<')) {
-            return $trimmed;
+            return ['xml' => $trimmed, 'signature_verified' => null];
         }
 
         $der = $this->toDer($trimmed);
+
+        // NOVERIFY skips the certificate chain only: the signature over the content is still checked.
+        $verified = $this->content($der, OPENSSL_CMS_NOVERIFY | OPENSSL_CMS_BINARY);
+        $xml = $verified ?? $this->content($der, OPENSSL_CMS_NOVERIFY | OPENSSL_CMS_NOSIGS | OPENSSL_CMS_BINARY) ?? '';
+
+        if ($xml === '' || ! str_contains($xml, 'FatturaElettronica')) {
+            throw new InvalidArgumentException('The p7m file does not contain a FatturaPA document.');
+        }
+
+        return ['xml' => ltrim($xml, "\xEF\xBB\xBF \t\r\n"), 'signature_verified' => $verified !== null];
+    }
+
+    /**
+     * The content of the envelope, or null when OpenSSL refuses it with these flags.
+     */
+    private function content(string $der, int $flags): ?string
+    {
         $input = tempnam(sys_get_temp_dir(), 'p7m');
         $output = tempnam(sys_get_temp_dir(), 'xml');
 
         try {
             file_put_contents($input, $der);
 
-            $opened = @openssl_cms_verify(
-                $input,
-                OPENSSL_CMS_NOVERIFY | OPENSSL_CMS_NOSIGS | OPENSSL_CMS_BINARY,
-                null,
-                [],
-                null,
-                $output,
-                null,
-                null,
-                OPENSSL_ENCODING_DER,
-            );
+            $opened = @openssl_cms_verify($input, $flags, null, [], null, $output, null, null, OPENSSL_ENCODING_DER);
 
-            $xml = $opened ? (string) file_get_contents($output) : '';
+            $content = $opened ? (string) file_get_contents($output) : null;
         } finally {
             @unlink($input);
             @unlink($output);
@@ -53,11 +75,7 @@ final class P7mExtractor
             continue;
         }
 
-        if ($xml === '' || ! str_contains($xml, 'FatturaElettronica')) {
-            throw new InvalidArgumentException('The p7m file does not contain a FatturaPA document.');
-        }
-
-        return ltrim($xml, "\xEF\xBB\xBF \t\r\n");
+        return $content === '' ? null : $content;
     }
 
     /**

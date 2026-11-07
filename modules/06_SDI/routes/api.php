@@ -12,6 +12,8 @@ Route::prefix('api/v1/settings/sdi-channel')
         Route::get('/', [SdiChannelController::class, 'show'])->name('sdi.channel.show');
         Route::put('/', [SdiChannelController::class, 'update'])->name('sdi.channel.update');
         Route::post('/poll', [SdiChannelController::class, 'poll'])->name('sdi.channel.poll');
+        Route::get('/quarantine', [SdiChannelController::class, 'quarantine'])->name('sdi.channel.quarantine');
+        Route::post('/quarantine/{log}/retry', [SdiChannelController::class, 'retryQuarantined'])->whereUuid('log')->name('sdi.channel.quarantine.retry');
     });
 
 Route::post('api/v1/webhooks/sdi/gateways/{tenant}', SdiGatewayWebhookController::class)

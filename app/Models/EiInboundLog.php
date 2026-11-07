@@ -24,13 +24,26 @@ class EiInboundLog extends Model
         'status',
         'error',
         'processed_at',
+        'source_reference',
+        'raw_content',
+        'signature_verified',
+        'attempts',
     ];
+
+    /**
+     * The stored message can weigh megabytes and is only read back to retry a quarantined item.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['raw_content'];
 
     protected function casts(): array
     {
         return [
             'payload' => 'array',
             'processed_at' => 'datetime',
+            'signature_verified' => 'boolean',
+            'attempts' => 'integer',
         ];
     }
 

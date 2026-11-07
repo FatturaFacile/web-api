@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Actions\Sdi\ProcessSdiNotification;
 use App\Actions\Sdi\SendInvoiceToSdi;
 use App\Exceptions\SdiProviderException;
 use App\Models\Contact;
 use App\Models\EiInboundLog;
 use App\Models\Invoice;
+use App\Models\InvoiceSdiMetadata;
 use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
@@ -22,6 +24,7 @@ use Laravel\Sanctum\Sanctum;
 use Modules\SDI\Contracts\ImapMailbox;
 use Modules\SDI\Jobs\PollSdiChannelJob;
 use Modules\SDI\Services\FatturaPaSchemaValidator;
+use Modules\SDI\Services\P7mExtractor;
 use Modules\SDI\Services\PecMailboxFactory;
 use Modules\SDI\Services\PecMailer;
 use Modules\SDI\Services\SdiInboundProcessor;
@@ -143,20 +146,30 @@ function fakeMailbox(array $messages): void
 }
 
 /**
- * A certified message: the envelope of the PEC provider around postacert.eml, which holds the SDI attachment.
+ * A certified message: the transport envelope of the PEC provider (X-Trasporto, daticert.xml naming the certified
+ * sender) around postacert.eml, which holds the SDI attachment.
+ *
+ * @param  array<string, string>  $headers  Extra or replaced headers of the envelope
+ * @param  string|null  $certifiedSender  Sender written in daticert.xml, the From of the inner message by default
  */
-function pecMessage(string $from, string $fileName, string $content, array $headers = []): string
+function pecMessage(string $from, string $fileName, string $content, array $headers = [], ?string $certifiedSender = null): string
 {
+    $headers = ['X-Trasporto' => 'posta-certificata', ...$headers];
     $extra = implode('', array_map(fn (string $name, string $value): string => "{$name}: {$value}\r\n", array_keys($headers), $headers));
     $encoded = chunk_split(base64_encode($content));
+    $certifiedSender ??= $from;
 
     $inner = "From: {$from}\r\nContent-Type: multipart/mixed; boundary=\"inner\"\r\n\r\n"
         ."--inner\r\nContent-Type: text/plain\r\n\r\nInvio file\r\n"
         ."--inner\r\nContent-Type: application/xml; name=\"{$fileName}\"\r\nContent-Disposition: attachment; filename=\"{$fileName}\"\r\nContent-Transfer-Encoding: base64\r\n\r\n{$encoded}\r\n--inner--\r\n";
 
+    $daticert = '<?xml version="1.0" encoding="UTF-8"?><postacert tipo="posta-certificata" errore="nessuno"><intestazione>'
+        ."<mittente>{$certifiedSender}</mittente><destinatari tipo=\"certificato\">rossi@pec.example.it</destinatari><oggetto>{$fileName}</oggetto>"
+        .'</intestazione><dati><gestore-emittente>Gestore PEC</gestore-emittente><identificativo>opec-1</identificativo></dati></postacert>';
+
     return "From: Per conto di: {$from} <posta-certificata@pec.example.it>\r\n{$extra}Content-Type: multipart/mixed; boundary=\"outer\"\r\n\r\n"
         ."--outer\r\nContent-Type: text/plain\r\n\r\nMessaggio di posta certificata\r\n"
-        ."--outer\r\nContent-Type: application/xml; name=\"daticert.xml\"\r\nContent-Disposition: attachment; filename=\"daticert.xml\"\r\n\r\n<postacert/>\r\n"
+        ."--outer\r\nContent-Type: application/xml; name=\"daticert.xml\"\r\nContent-Disposition: attachment; filename=\"daticert.xml\"\r\n\r\n{$daticert}\r\n"
         ."--outer\r\nContent-Type: message/rfc822; name=\"postacert.eml\"\r\nContent-Disposition: attachment; filename=\"postacert.eml\"\r\n\r\n{$inner}\r\n--outer--\r\n";
 }
 
@@ -617,4 +630,290 @@ test('members without a management role cannot touch the channel', function (): 
 test('an address that is not an SDI mailbox is refused', function (): void {
     channelApi()->putJson('/api/v1/settings/sdi-channel', ['channel' => 'local', 'pec_address' => 'someone@example.com'])
         ->assertUnprocessable()->assertJsonValidationErrors('pec_address');
+});
+
+// ------------------------------------------------------------ Concurrent transmission
+
+test('a double click transmits the invoice once', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    $invoice = channelInvoice();
+
+    // The second click arrives while the first request is still talking to the mail server.
+    $mailer = new class($invoice->id) extends PecMailer
+    {
+        public int $sent = 0;
+
+        public ?Throwable $secondClick = null;
+
+        public function __construct(private readonly string $invoiceId) {}
+
+        public function send(Tenant $tenant, Email $email): void
+        {
+            $this->sent++;
+
+            if ($this->sent === 1) {
+                try {
+                    app(SendInvoiceToSdi::class)->execute(Invoice::findOrFail($this->invoiceId));
+                } catch (Throwable $e) {
+                    $this->secondClick = $e;
+                }
+            }
+        }
+    };
+    app()->instance(PecMailer::class, $mailer);
+
+    $metadata = app(SendInvoiceToSdi::class)->execute($invoice);
+
+    expect($mailer->sent)->toBe(1)
+        ->and($mailer->secondClick)->toBeInstanceOf(ValidationException::class)
+        ->and($metadata->sdi_status)->toBe('sending')
+        ->and($metadata->sdi_identifier)->toBe('IT00811720580_00001')
+        ->and($metadata->transmission_claimed_at)->toBeNull()
+        ->and($this->tenant->refresh()->sdi_file_counter)->toBe(1);
+});
+
+test('a claim left by a request that died is taken over only once it is stale', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    $mailer = fakePecMailer();
+    $invoice = channelInvoice();
+    $invoice->sdiMetadata()->create(['sdi_status' => 'sending', 'file_name' => 'IT00811720580_00009.xml', 'transmission_claimed_at' => now()->subMinute()]);
+
+    expect(fn () => app(SendInvoiceToSdi::class)->execute($invoice->refresh()))->toThrow(ValidationException::class)
+        ->and($mailer->sent)->toBe([]);
+
+    $invoice->sdiMetadata()->update(['transmission_claimed_at' => now()->subHour()]);
+
+    expect(app(SendInvoiceToSdi::class)->execute($invoice->refresh())->sdi_identifier)->toBe('IT00811720580_00009')
+        ->and($mailer->sent)->toHaveCount(1);
+});
+
+test('a notification about an earlier transmission of the invoice does not change its status', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    $notifications = app(ProcessSdiNotification::class);
+
+    app(SendInvoiceToSdi::class)->execute($invoice);
+    $notifications->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => 'NS', 'message' => '00200 File non conforme']);
+    app(SendInvoiceToSdi::class)->execute($invoice->refresh());
+
+    // SDI answers again about the first file, e.g. 00404 for a duplicate: it concerns a file that is no longer current.
+    $late = $notifications->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => 'NS', 'message' => '00404 Fattura duplicata']);
+
+    expect($late->status)->toBe('ignored')
+        ->and($late->error)->toBe(__('sdi.not_current_transmission'))
+        ->and($invoice->refresh()->sdiMetadata->sdi_status)->toBe('sending')
+        ->and($invoice->sdiMetadata->sdi_identifier)->toBe('IT00811720580_00002');
+
+    $notifications->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00002', 'event_type' => 'RC']);
+
+    expect($invoice->refresh()->sdiMetadata->sdi_status)->toBe('delivered');
+});
+
+// ------------------------------------------------------------ Notification processing
+
+test('a notification whose processing failed is applied when it is delivered again', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    app(SendInvoiceToSdi::class)->execute($invoice);
+
+    $failOnce = true;
+    InvoiceSdiMetadata::updating(function () use (&$failOnce): void {
+        if ($failOnce) {
+            $failOnce = false;
+
+            throw new RuntimeException('Database hiccup');
+        }
+    });
+
+    $receipt = ['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => 'RC', 'message' => null];
+
+    expect(fn () => app(ProcessSdiNotification::class)->execute($receipt))->toThrow(RuntimeException::class)
+        ->and($invoice->refresh()->sdiMetadata->sdi_status)->toBe('sending')
+        ->and(EiInboundLog::sole()->processed_at)->toBeNull();
+
+    $log = app(ProcessSdiNotification::class)->execute($receipt);
+
+    expect($log->status)->toBe('processed')
+        ->and(EiInboundLog::count())->toBe(1)
+        ->and($invoice->refresh()->sdiMetadata->sdi_status)->toBe('delivered');
+});
+
+test('a late notification never moves the invoice back', function (string $first, string $late, string $status): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    app(SendInvoiceToSdi::class)->execute($invoice);
+    $notifications = app(ProcessSdiNotification::class);
+
+    $notifications->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => $first]);
+    $log = $notifications->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => $late]);
+
+    expect($log->status)->toBe('ignored')
+        ->and($invoice->refresh()->sdiMetadata->sdi_status)->toBe($status);
+})->with([
+    'MC after RC' => ['RC', 'MC', 'delivered'],
+    'AT after DT' => ['DT', 'AT', 'delivered'],
+    'AT after MC' => ['MC', 'AT', 'not_delivered'],
+]);
+
+test('a delivery confirmed after a missed delivery moves the invoice forward', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    app(SendInvoiceToSdi::class)->execute($invoice);
+
+    app(ProcessSdiNotification::class)->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => 'MC']);
+    app(ProcessSdiNotification::class)->execute(['provider' => 'pec', 'uuid' => 'IT00811720580_00001', 'event_type' => 'RC']);
+
+    expect($invoice->refresh()->sdiMetadata->sdi_status)->toBe('delivered');
+});
+
+// ------------------------------------------------------------ PEC: quarantine
+
+function tamperedSignedInvoice(): string
+{
+    $der = signedInvoiceFixture();
+
+    return substr_replace($der, '2', strpos($der, '<Numero>1<') + 8, 1);
+}
+
+function signedInvoiceFixture(): string
+{
+    return (string) base64_decode((string) file_get_contents(dirname(__DIR__, 2).'/Fixtures/sdi/signed-invoice.p7m.b64'));
+}
+
+test('a receipt that cannot be read is quarantined whole before the cursor moves past it', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    app(SendInvoiceToSdi::class)->execute($invoice);
+
+    $raw = pecMessage('sdi24@pec.fatturapa.it', 'IT00811720580_00001_RC_001.xml', "\x00\x01 not a receipt");
+    fakeMailbox([6 => $raw]);
+
+    app(SdiInboundProcessor::class)->poll($this->tenant->refresh());
+
+    $quarantined = EiInboundLog::where('status', 'quarantined')->sole();
+
+    expect(base64_decode($quarantined->raw_content))->toBe($raw)
+        ->and($quarantined->source_reference)->toBe('imap://imaps.pec.example.it/INBOX;UID=6')
+        ->and($quarantined->error)->toContain('receipt_unreadable')
+        ->and($quarantined->toArray())->not->toHaveKey('raw_content')
+        ->and($invoice->refresh()->sdiMetadata->sdi_status)->toBe('sending')
+        ->and($this->tenant->refresh()->sdi_pec_last_uid)->toBe(6);
+});
+
+test('the cursor does not move when the quarantine cannot be stored', function (): void {
+    pecTenant();
+    fakeMailbox([6 => pecMessage('sdi11@pec.fatturapa.it', 'IT01234567897_0ABCD.xml.p7m', 'definitely not a p7m')]);
+    EiInboundLog::creating(fn () => throw new RuntimeException('Database down'));
+
+    expect(fn () => app(SdiInboundProcessor::class)->poll($this->tenant->refresh()))->toThrow(RuntimeException::class)
+        ->and((int) $this->tenant->refresh()->sdi_pec_last_uid)->toBe(0);
+});
+
+test('a supplier invoice whose signature does not verify is quarantined', function (): void {
+    pecTenant();
+    fakeMailbox([8 => pecMessage('sdi11@pec.fatturapa.it', 'IT01234567897_0ABCD.xml.p7m', tamperedSignedInvoice())]);
+
+    app(SdiInboundProcessor::class)->poll($this->tenant->refresh());
+
+    $quarantined = EiInboundLog::where('status', 'quarantined')->sole();
+
+    expect($quarantined->signature_verified)->toBeFalse()
+        ->and($quarantined->error)->toContain('p7m_signature_invalid')
+        ->and(PassiveInvoice::count())->toBe(0)
+        ->and($this->tenant->refresh()->sdi_pec_last_uid)->toBe(8);
+});
+
+test('the signature of an intact signed file verifies', function (): void {
+    expect(app(P7mExtractor::class)->open(signedInvoiceFixture())['signature_verified'])->toBeTrue()
+        ->and(app(P7mExtractor::class)->open(tamperedSignedInvoice())['signature_verified'])->toBeFalse()
+        ->and(app(P7mExtractor::class)->open(supplierInvoiceXml())['signature_verified'])->toBeNull();
+});
+
+test('a message that is not a certified message of SDI is quarantined and never applied', function (Closure $forge, string $reason): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    app(SendInvoiceToSdi::class)->execute($invoice);
+
+    fakeMailbox([
+        11 => $forge('IT00811720580_00001_NS_001.xml', rejectionReceipt('IT00811720580_00001.xml')),
+        12 => $forge('IT01234567897_0ABCD.xml', supplierInvoiceXml()),
+    ]);
+
+    $totals = app(SdiInboundProcessor::class)->poll($this->tenant->refresh());
+
+    expect($totals)->toBe(['notifications' => 0, 'invoices' => 0, 'rejected' => 0])
+        ->and($invoice->refresh()->sdiMetadata->sdi_status)->toBe('sending')
+        ->and(PassiveInvoice::count())->toBe(0)
+        ->and(EiInboundLog::where('status', 'quarantined')->count())->toBe(2)
+        ->and(EiInboundLog::where('status', 'quarantined')->pluck('error')->unique()->all())->toBe([$reason])
+        ->and($this->tenant->refresh()->sdi_pec_last_uid)->toBe(12);
+})->with([
+    'ordinary mail mentioning SDI' => [
+        fn (string $fileName, string $content): string => "From: sdi24@pec.fatturapa.it\r\nSubject: Notifica\r\nContent-Type: multipart/mixed; boundary=\"b\"\r\n\r\n"
+            ."--b\r\nContent-Type: text/plain\r\n\r\nMessaggio da sdi24@pec.fatturapa.it\r\n"
+            ."--b\r\nContent-Type: application/xml; name=\"{$fileName}\"\r\nContent-Disposition: attachment; filename=\"{$fileName}\"\r\n\r\n{$content}\r\n--b--\r\n",
+        'pec_not_certified',
+    ],
+    'ordinary mail wrapped as an anomaly by the provider' => [
+        fn (string $fileName, string $content): string => pecMessage('sdi24@pec.fatturapa.it', $fileName, $content, ['X-Trasporto' => 'errore']),
+        'pec_not_certified',
+    ],
+    'certified message from another mailbox' => [
+        fn (string $fileName, string $content): string => pecMessage('sdi24@pec.fatturapa.it', $fileName, $content, [], 'attacker@pec.example.org'),
+        'pec_sender_not_sdi',
+    ],
+    'certified sender different from the message sender' => [
+        fn (string $fileName, string $content): string => pecMessage('attacker@pec.example.org', $fileName, $content, [], 'sdi24@pec.fatturapa.it'),
+        'pec_sender_mismatch',
+    ],
+]);
+
+test('administrators list quarantined messages and retry them', function (): void {
+    pecTenant(['sdi_pec_first_sent_at' => now(), 'sdi_pec_address' => 'sdi24@pec.fatturapa.it']);
+    fakePecMailer();
+    $invoice = channelInvoice();
+    app(SendInvoiceToSdi::class)->execute($invoice);
+
+    // A receipt kept aside earlier, e.g. by a rule that has since been corrected.
+    $raw = pecMessage('sdi24@pec.fatturapa.it', 'IT00811720580_00001_RC_001.xml', deliveryReceipt('IT00811720580_00001.xml'));
+    $log = EiInboundLog::create([
+        'tenant_id' => $this->tenant->id,
+        'provider' => 'pec',
+        'event_type' => SdiInboundProcessor::QuarantineEvent,
+        'status' => SdiInboundProcessor::QuarantineStatus,
+        'fingerprint' => SdiInboundProcessor::quarantineFingerprint('pec', $this->tenant->id, $raw),
+        'source_reference' => 'imap://imaps.pec.example.it/INBOX;UID=3',
+        'raw_content' => base64_encode($raw),
+        'error' => 'receipt_unreadable: IT00811720580_00001_RC_001.xml',
+    ]);
+    $unreadable = EiInboundLog::create([
+        'tenant_id' => $this->tenant->id,
+        'provider' => 'pec',
+        'event_type' => SdiInboundProcessor::QuarantineEvent,
+        'status' => SdiInboundProcessor::QuarantineStatus,
+        'fingerprint' => hash('sha256', 'other'),
+        'raw_content' => base64_encode(pecMessage('sdi24@pec.fatturapa.it', 'IT00811720580_00001_MC_001.xml', "\x00 broken")),
+    ]);
+
+    $list = channelApi()->getJson('/api/v1/settings/sdi-channel/quarantine')->assertOk();
+
+    expect($list->json('data'))->toHaveCount(2)
+        ->and($list->getContent())->not->toContain('raw_content');
+
+    channelApi()->postJson("/api/v1/settings/sdi-channel/quarantine/{$log->id}/retry")->assertOk()->assertJsonPath('data.status', 'processed');
+    channelApi()->postJson("/api/v1/settings/sdi-channel/quarantine/{$unreadable->id}/retry")->assertOk()->assertJsonPath('data.status', 'quarantined');
+    channelApi()->postJson("/api/v1/settings/sdi-channel/quarantine/{$log->id}/retry")->assertNotFound();
+
+    expect($invoice->refresh()->sdiMetadata->sdi_status)->toBe('delivered')
+        ->and($unreadable->refresh()->attempts)->toBe(1)
+        ->and($unreadable->error)->toContain('receipt_unreadable');
+
+    $this->user->tenants()->updateExistingPivot($this->tenant->id, ['role' => 'member']);
+    channelApi()->getJson('/api/v1/settings/sdi-channel/quarantine')->assertForbidden();
 });

@@ -24,6 +24,7 @@ class InvoiceSdiMetadata extends Model
         'xml_content',
         'sent_at',
         'delivered_at',
+        'transmission_claimed_at',
     ];
 
     protected function casts(): array
@@ -31,6 +32,7 @@ class InvoiceSdiMetadata extends Model
         return [
             'sent_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'transmission_claimed_at' => 'datetime',
         ];
     }
 
