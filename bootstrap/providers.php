@@ -28,6 +28,7 @@ use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
+use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
@@ -88,4 +89,5 @@ return [
     PracticeManagementServiceProvider::class,
     HospitalityServiceProvider::class,
     VisitorsServiceProvider::class,
+    IntrastatServiceProvider::class,
 ];
