@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\ServiceManagement\Services\Helpdesk\TicketSlaClock;
 
 /**
  * A ticket with its stored columns (subject, source, category_id, assigned_technician_id, assigned_team_id, contact_id,
@@ -56,6 +57,16 @@ final class TicketResource extends JsonResource
             'is_escalated' => (bool) $this->is_escalated,
             'escalation_level' => (int) $this->escalation_level,
             'is_locked' => (bool) $this->is_locked,
+            'impact' => $this->impact,
+            'urgency' => $this->urgency,
+            'tags' => $this->tags ?? [],
+            'first_responded_at' => $this->first_responded_at?->toIso8601String(),
+            'merged_into_ticket_id' => $this->merged_into_ticket_id,
+            'split_from_ticket_id' => $this->split_from_ticket_id,
+            'reopened_count' => (int) $this->reopened_count,
+            'status_changed_at' => $this->status_changed_at?->toIso8601String(),
+            'sla_paused_at' => $this->sla_paused_at?->toIso8601String(),
+            'sla_state' => app(TicketSlaClock::class)->state($this->resource),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

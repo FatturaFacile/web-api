@@ -24,6 +24,7 @@ use Modules\ServiceManagement\Events\ChangeApprovedEvent;
 use Modules\ServiceManagement\Events\ChangeRequestCreatedEvent;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
 use Modules\ServiceManagement\Events\FieldServiceExpenseReadyEvent;
+use Modules\ServiceManagement\Events\HelpdeskTicketChanged;
 use Modules\ServiceManagement\Events\IncidentCreatedEvent;
 use Modules\ServiceManagement\Events\IncidentResolvedEvent;
 use Modules\ServiceManagement\Events\ProblemCreatedEvent;
@@ -49,13 +50,29 @@ use Modules\ServiceManagement\Listeners\CRMCustomerServiceListener;
 use Modules\ServiceManagement\Listeners\DispatchOutboxOnESMEventListener;
 use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
 use Modules\ServiceManagement\Listeners\ProjectESMListener;
+use Modules\ServiceManagement\Listeners\SendCsatSurveyListener;
+use Modules\ServiceManagement\Listeners\SendHelpdeskNotificationsListener;
+use Modules\ServiceManagement\Listeners\SendHelpdeskReplyEmailListener;
 use Modules\ServiceManagement\Listeners\WorkflowApprovalESMListener;
+use Modules\ServiceManagement\Models\BusinessHoursCalendar;
+use Modules\ServiceManagement\Models\CannedResponse;
 use Modules\ServiceManagement\Models\ChangeRequest;
+use Modules\ServiceManagement\Models\HelpdeskSetting;
 use Modules\ServiceManagement\Models\Incident;
+use Modules\ServiceManagement\Models\KnowledgeArticle;
+use Modules\ServiceManagement\Models\KnowledgeCategory;
+use Modules\ServiceManagement\Models\Macro;
+use Modules\ServiceManagement\Models\RoutingRule;
+use Modules\ServiceManagement\Models\SavedView;
+use Modules\ServiceManagement\Models\ServiceTeam;
+use Modules\ServiceManagement\Models\SupportMailbox;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\WorkOrder;
+use Modules\ServiceManagement\Policies\AgentToolPolicy;
 use Modules\ServiceManagement\Policies\ChangeRequestPolicy;
+use Modules\ServiceManagement\Policies\HelpdeskConfigurationPolicy;
 use Modules\ServiceManagement\Policies\IncidentPolicy;
+use Modules\ServiceManagement\Policies\KnowledgeArticlePolicy;
 use Modules\ServiceManagement\Policies\TicketPolicy;
 use Modules\ServiceManagement\Policies\WorkOrderPolicy;
 use Modules\ServiceManagement\Services\IncidentManagementService;
@@ -87,6 +104,20 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(ChangeRequest::class, ChangeRequestPolicy::class);
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
+
+        Gate::policy(KnowledgeArticle::class, KnowledgeArticlePolicy::class);
+
+        foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class, KnowledgeCategory::class] as $configurationModel) {
+            Gate::policy($configurationModel, HelpdeskConfigurationPolicy::class);
+        }
+
+        foreach ([CannedResponse::class, Macro::class, SavedView::class] as $agentTool) {
+            Gate::policy($agentTool, AgentToolPolicy::class);
+        }
+
+        Event::listen(HelpdeskTicketChanged::class, SendHelpdeskReplyEmailListener::class);
+        Event::listen(HelpdeskTicketChanged::class, SendCsatSurveyListener::class);
+        Event::listen(HelpdeskTicketChanged::class, SendHelpdeskNotificationsListener::class);
 
         $domainEvents = [
             TicketCreatedEvent::class,

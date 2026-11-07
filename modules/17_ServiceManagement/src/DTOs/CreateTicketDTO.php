@@ -24,6 +24,11 @@ final readonly class CreateTicketDTO
         public array $metadata = [],
         public ?string $requesterUserId = null,
         public ?string $assetId = null,
+        public string $status = 'open',
+        public ?string $impact = null,
+        public ?string $urgency = null,
+        public array $tags = [],
+        public bool $applyRoutingRules = true,
     ) {}
 
     public static function fromArray(array $data): self

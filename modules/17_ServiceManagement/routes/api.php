@@ -3,10 +3,48 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskNotificationController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskReportController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
+use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
+use Modules\ServiceManagement\Http\Controllers\PortalCsatController;
+use Modules\ServiceManagement\Http\Controllers\PortalHelpdeskController;
+use Modules\ServiceManagement\Http\Controllers\PortalKnowledgeBaseController;
 use Modules\ServiceManagement\Http\Controllers\ServiceContractController;
+use Modules\ServiceManagement\Http\Controllers\SupportMailboxController;
 use Modules\ServiceManagement\Http\Controllers\TicketController;
+use Modules\ServiceManagement\Http\Controllers\TicketConversationController;
 use Modules\ServiceManagement\Http\Controllers\WorkOrderController;
+
+// Customer portal: the magic-link token resolves the tenant and the customer.
+Route::prefix('api/v1/portal/helpdesk')
+    ->middleware(['api', 'throttle:60,1'])
+    ->group(function (): void {
+        Route::get('/{token}/tickets', [PortalHelpdeskController::class, 'index'])->name('api.v1.portal.helpdesk.tickets.index');
+        Route::post('/{token}/tickets', [PortalHelpdeskController::class, 'store'])->name('api.v1.portal.helpdesk.tickets.store');
+        Route::get('/{token}/tickets/{ticket}', [PortalHelpdeskController::class, 'show'])->name('api.v1.portal.helpdesk.tickets.show');
+        Route::post('/{token}/tickets/{ticket}/reply', [PortalHelpdeskController::class, 'reply'])->name('api.v1.portal.helpdesk.tickets.reply');
+        Route::get('/{token}/tickets/{ticket}/attachments/{attachment}', [PortalHelpdeskController::class, 'downloadAttachment'])->name('api.v1.portal.helpdesk.attachments.show');
+    });
+
+// Satisfaction survey link: the secret token resolves the survey and its tenant.
+Route::prefix('api/v1/portal/csat')
+    ->middleware(['api', 'throttle:30,1'])
+    ->group(function (): void {
+        Route::get('/{token}', [PortalCsatController::class, 'show'])->name('api.v1.portal.csat.show');
+        Route::post('/{token}', [PortalCsatController::class, 'answer'])->name('api.v1.portal.csat.answer');
+    });
+
+Route::prefix('api/v1/portal/kb')
+    ->middleware(['api', 'throttle:60,1'])
+    ->group(function (): void {
+        Route::get('/{token}/categories', [PortalKnowledgeBaseController::class, 'categories'])->name('api.v1.portal.kb.categories');
+        Route::get('/{token}/articles', [PortalKnowledgeBaseController::class, 'articles'])->name('api.v1.portal.kb.articles.index');
+        Route::get('/{token}/articles/{id}', [PortalKnowledgeBaseController::class, 'show'])->name('api.v1.portal.kb.articles.show');
+    });
 
 Route::prefix('api/v1/esm')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:service'])
@@ -14,10 +52,92 @@ Route::prefix('api/v1/esm')
         // Tickets & Helpdesk Routes
         Route::get('/tickets', [TicketController::class, 'index'])->name('api.v1.esm.tickets.index');
         Route::post('/tickets', [TicketController::class, 'store'])->name('api.v1.esm.tickets.store');
+        Route::post('/tickets/bulk', [HelpdeskTicketController::class, 'bulk'])->name('api.v1.esm.tickets.bulk');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('api.v1.esm.tickets.show');
         Route::post('/tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('api.v1.esm.tickets.assign');
         Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'resolve'])->name('api.v1.esm.tickets.resolve');
         Route::post('/tickets/{ticket}/close', [TicketController::class, 'close'])->name('api.v1.esm.tickets.close');
+
+        // Helpdesk: lifecycle
+        Route::get('/helpdesk/priority-matrix', [HelpdeskTicketController::class, 'priorityMatrix'])->name('api.v1.esm.helpdesk.priority-matrix');
+        Route::patch('/tickets/{ticket}', [HelpdeskTicketController::class, 'update'])->name('api.v1.esm.tickets.update');
+        Route::post('/tickets/{ticket}/status', [HelpdeskTicketController::class, 'changeStatus'])->name('api.v1.esm.tickets.status');
+        Route::post('/tickets/{ticket}/reopen', [HelpdeskTicketController::class, 'reopen'])->name('api.v1.esm.tickets.reopen');
+        Route::post('/tickets/{ticket}/merge', [HelpdeskTicketController::class, 'merge'])->name('api.v1.esm.tickets.merge');
+        Route::post('/tickets/{ticket}/split', [HelpdeskTicketController::class, 'split'])->name('api.v1.esm.tickets.split');
+        Route::get('/tickets/{ticket}/watchers', [HelpdeskTicketController::class, 'watchers'])->name('api.v1.esm.tickets.watchers.index');
+        Route::post('/tickets/{ticket}/watchers', [HelpdeskTicketController::class, 'addWatcher'])->name('api.v1.esm.tickets.watchers.store');
+        Route::delete('/tickets/{ticket}/watchers/{user}', [HelpdeskTicketController::class, 'removeWatcher'])->name('api.v1.esm.tickets.watchers.destroy');
+        Route::get('/tickets/{ticket}/activities', [HelpdeskTicketController::class, 'activities'])->name('api.v1.esm.tickets.activities');
+
+        // Helpdesk: routing, business hours, settings
+        Route::post('/tickets/{ticket}/auto-assign', [HelpdeskTicketController::class, 'autoAssign'])->name('api.v1.esm.tickets.auto-assign');
+        Route::get('/helpdesk/routing-rules', [HelpdeskAutomationController::class, 'routingRules'])->name('api.v1.esm.helpdesk.routing-rules.index');
+        Route::post('/helpdesk/routing-rules', [HelpdeskAutomationController::class, 'storeRoutingRule'])->name('api.v1.esm.helpdesk.routing-rules.store');
+        Route::patch('/helpdesk/routing-rules/{id}', [HelpdeskAutomationController::class, 'updateRoutingRule'])->name('api.v1.esm.helpdesk.routing-rules.update');
+        Route::delete('/helpdesk/routing-rules/{id}', [HelpdeskAutomationController::class, 'destroyRoutingRule'])->name('api.v1.esm.helpdesk.routing-rules.destroy');
+        Route::get('/helpdesk/business-hours', [HelpdeskAutomationController::class, 'businessHours'])->name('api.v1.esm.helpdesk.business-hours.index');
+        Route::post('/helpdesk/business-hours', [HelpdeskAutomationController::class, 'storeBusinessHours'])->name('api.v1.esm.helpdesk.business-hours.store');
+        Route::patch('/helpdesk/business-hours/{id}', [HelpdeskAutomationController::class, 'updateBusinessHours'])->name('api.v1.esm.helpdesk.business-hours.update');
+        Route::delete('/helpdesk/business-hours/{id}', [HelpdeskAutomationController::class, 'destroyBusinessHours'])->name('api.v1.esm.helpdesk.business-hours.destroy');
+        Route::get('/helpdesk/settings', [HelpdeskAutomationController::class, 'settings'])->name('api.v1.esm.helpdesk.settings.show');
+        Route::put('/helpdesk/settings', [HelpdeskAutomationController::class, 'updateSettings'])->name('api.v1.esm.helpdesk.settings.update');
+        Route::put('/helpdesk/teams/{id}/assignment', [HelpdeskAutomationController::class, 'updateTeamAssignment'])->name('api.v1.esm.helpdesk.teams.assignment');
+
+        // Helpdesk: agent tools
+        Route::get('/helpdesk/canned-responses', [AgentToolsController::class, 'cannedResponses'])->name('api.v1.esm.helpdesk.canned-responses.index');
+        Route::post('/helpdesk/canned-responses', [AgentToolsController::class, 'storeCannedResponse'])->name('api.v1.esm.helpdesk.canned-responses.store');
+        Route::patch('/helpdesk/canned-responses/{id}', [AgentToolsController::class, 'updateCannedResponse'])->name('api.v1.esm.helpdesk.canned-responses.update');
+        Route::delete('/helpdesk/canned-responses/{id}', [AgentToolsController::class, 'destroyCannedResponse'])->name('api.v1.esm.helpdesk.canned-responses.destroy');
+        Route::post('/tickets/{ticket}/canned-responses/{id}/render', [AgentToolsController::class, 'renderCannedResponse'])->name('api.v1.esm.tickets.canned-responses.render');
+        Route::get('/helpdesk/macros', [AgentToolsController::class, 'macros'])->name('api.v1.esm.helpdesk.macros.index');
+        Route::post('/helpdesk/macros', [AgentToolsController::class, 'storeMacro'])->name('api.v1.esm.helpdesk.macros.store');
+        Route::patch('/helpdesk/macros/{id}', [AgentToolsController::class, 'updateMacro'])->name('api.v1.esm.helpdesk.macros.update');
+        Route::delete('/helpdesk/macros/{id}', [AgentToolsController::class, 'destroyMacro'])->name('api.v1.esm.helpdesk.macros.destroy');
+        Route::post('/tickets/{ticket}/macros/{id}/apply', [AgentToolsController::class, 'applyMacro'])->name('api.v1.esm.tickets.macros.apply');
+        Route::get('/helpdesk/views', [AgentToolsController::class, 'views'])->name('api.v1.esm.helpdesk.views.index');
+        Route::post('/helpdesk/views', [AgentToolsController::class, 'storeView'])->name('api.v1.esm.helpdesk.views.store');
+        Route::patch('/helpdesk/views/{id}', [AgentToolsController::class, 'updateView'])->name('api.v1.esm.helpdesk.views.update');
+        Route::delete('/helpdesk/views/{id}', [AgentToolsController::class, 'destroyView'])->name('api.v1.esm.helpdesk.views.destroy');
+
+        // Helpdesk: notifications
+        Route::get('/helpdesk/notification-preferences', [HelpdeskNotificationController::class, 'preferences'])->name('api.v1.esm.helpdesk.notification-preferences.show');
+        Route::put('/helpdesk/notification-preferences', [HelpdeskNotificationController::class, 'updatePreferences'])->name('api.v1.esm.helpdesk.notification-preferences.update');
+        Route::get('/helpdesk/notifications', [HelpdeskNotificationController::class, 'notifications'])->name('api.v1.esm.helpdesk.notifications.index');
+        Route::post('/helpdesk/notifications/{id}/read', [HelpdeskNotificationController::class, 'markRead'])->name('api.v1.esm.helpdesk.notifications.read');
+
+        // Helpdesk: reports
+        Route::get('/helpdesk/reports', [HelpdeskReportController::class, 'show'])->name('api.v1.esm.helpdesk.reports');
+
+        // Helpdesk: knowledge base
+        Route::get('/kb/categories', [KnowledgeBaseController::class, 'categories'])->name('api.v1.esm.kb.categories.index');
+        Route::post('/kb/categories', [KnowledgeBaseController::class, 'storeCategory'])->name('api.v1.esm.kb.categories.store');
+        Route::patch('/kb/categories/{id}', [KnowledgeBaseController::class, 'updateCategory'])->name('api.v1.esm.kb.categories.update');
+        Route::delete('/kb/categories/{id}', [KnowledgeBaseController::class, 'destroyCategory'])->name('api.v1.esm.kb.categories.destroy');
+        Route::get('/kb/articles', [KnowledgeBaseController::class, 'articles'])->name('api.v1.esm.kb.articles.index');
+        Route::post('/kb/articles', [KnowledgeBaseController::class, 'storeArticle'])->name('api.v1.esm.kb.articles.store');
+        Route::get('/kb/articles/{id}', [KnowledgeBaseController::class, 'showArticle'])->name('api.v1.esm.kb.articles.show');
+        Route::patch('/kb/articles/{id}', [KnowledgeBaseController::class, 'updateArticle'])->name('api.v1.esm.kb.articles.update');
+        Route::delete('/kb/articles/{id}', [KnowledgeBaseController::class, 'destroyArticle'])->name('api.v1.esm.kb.articles.destroy');
+        Route::get('/kb/articles/{id}/versions', [KnowledgeBaseController::class, 'versions'])->name('api.v1.esm.kb.articles.versions');
+        Route::post('/kb/articles/{id}/versions/{version}/restore', [KnowledgeBaseController::class, 'restoreVersion'])->whereNumber('version')->name('api.v1.esm.kb.articles.versions.restore');
+        Route::get('/tickets/{ticket}/knowledge-links', [KnowledgeBaseController::class, 'ticketLinks'])->name('api.v1.esm.tickets.knowledge-links.index');
+        Route::post('/tickets/{ticket}/knowledge-links', [KnowledgeBaseController::class, 'linkTicket'])->name('api.v1.esm.tickets.knowledge-links.store');
+        Route::delete('/tickets/{ticket}/knowledge-links/{id}', [KnowledgeBaseController::class, 'unlinkTicket'])->name('api.v1.esm.tickets.knowledge-links.destroy');
+
+        // Helpdesk: support mailboxes
+        Route::get('/helpdesk/mailboxes', [SupportMailboxController::class, 'index'])->name('api.v1.esm.helpdesk.mailboxes.index');
+        Route::post('/helpdesk/mailboxes', [SupportMailboxController::class, 'store'])->name('api.v1.esm.helpdesk.mailboxes.store');
+        Route::patch('/helpdesk/mailboxes/{id}', [SupportMailboxController::class, 'update'])->name('api.v1.esm.helpdesk.mailboxes.update');
+        Route::delete('/helpdesk/mailboxes/{id}', [SupportMailboxController::class, 'destroy'])->name('api.v1.esm.helpdesk.mailboxes.destroy');
+        Route::post('/helpdesk/mailboxes/{id}/poll', [SupportMailboxController::class, 'poll'])->name('api.v1.esm.helpdesk.mailboxes.poll');
+        Route::get('/helpdesk/mailboxes/{id}/messages', [SupportMailboxController::class, 'messages'])->name('api.v1.esm.helpdesk.mailboxes.messages');
+
+        // Helpdesk: conversation
+        Route::get('/tickets/{ticket}/messages', [TicketConversationController::class, 'index'])->name('api.v1.esm.tickets.messages.index');
+        Route::post('/tickets/{ticket}/messages', [TicketConversationController::class, 'store'])->name('api.v1.esm.tickets.messages.store');
+        Route::post('/tickets/{ticket}/read', [TicketConversationController::class, 'markRead'])->name('api.v1.esm.tickets.read');
+        Route::get('/tickets/{ticket}/attachments/{attachment}', [TicketConversationController::class, 'downloadAttachment'])->name('api.v1.esm.tickets.attachments.show');
 
         // ITSM: Incidents, Problems, Changes
         Route::get('/incidents', [ITSMController::class, 'incidents'])->name('api.v1.esm.incidents.index');

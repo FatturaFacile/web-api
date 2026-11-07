@@ -29,6 +29,9 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'service_team_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'requester_user_id', description: 'Internal IT ticket: the colleague who asks for help', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'asset_id', description: 'Fixed asset concerned (device, workstation)', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'impact', description: 'With urgency, sets the priority through the matrix when no priority is given', type: 'string', enum: ['low', 'medium', 'high'], nullable: true),
+        new OA\Property(property: 'urgency', type: 'string', enum: ['low', 'medium', 'high'], nullable: true),
+        new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string', maxLength: 50), nullable: true),
     ]
 )]
 #[OA\Schema(

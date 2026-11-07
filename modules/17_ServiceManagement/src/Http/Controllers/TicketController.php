@@ -13,17 +13,24 @@ use Modules\ServiceManagement\DTOs\AssignTicketDTO;
 use Modules\ServiceManagement\DTOs\CreateTicketDTO;
 use Modules\ServiceManagement\DTOs\ResolveTicketDTO;
 use Modules\ServiceManagement\Http\Requests\AssignTicketRequest;
+use Modules\ServiceManagement\Http\Requests\ListTicketsRequest;
 use Modules\ServiceManagement\Http\Requests\ResolveTicketRequest;
 use Modules\ServiceManagement\Http\Requests\StoreTicketRequest;
 use Modules\ServiceManagement\Http\Resources\TicketResource;
+use Modules\ServiceManagement\Models\SavedView;
 use Modules\ServiceManagement\Models\Ticket;
+use Modules\ServiceManagement\Services\Helpdesk\HelpdeskTicketService;
+use Modules\ServiceManagement\Services\Helpdesk\TicketListFilter;
+use Modules\ServiceManagement\Services\Helpdesk\TicketPriorityMatrix;
 use OpenApi\Attributes as OA;
 
 final class TicketController extends Controller
 {
     public function __construct(
         private readonly TicketServiceInterface $ticketService,
-        private readonly TenantContext $tenantContext
+        private readonly TenantContext $tenantContext,
+        private readonly TicketPriorityMatrix $priorityMatrix,
+        private readonly HelpdeskTicketService $helpdeskTickets,
     ) {}
 
     /**
@@ -37,29 +44,39 @@ final class TicketController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['ESM Tickets'],
         parameters: [
-            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'priority', in: 'query', required: false, description: 'Filter by priority', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status, comma separated', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'priority', in: 'query', required: false, description: 'Filter by priority, comma separated', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'source', in: 'query', required: false, description: 'Filter by channel, comma separated', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'team_id', in: 'query', required: false, description: 'Filter by assigned team', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'agent_id', in: 'query', required: false, description: 'Filter by assigned agent', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'unassigned', in: 'query', required: false, description: 'Only tickets without an agent', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'tag', in: 'query', required: false, description: 'Tickets carrying every tag given, comma separated', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'sla_state', in: 'query', required: false, description: 'SLA state', schema: new OA\Schema(type: 'string', enum: ['ok', 'warning', 'breached', 'paused'])),
+            new OA\Parameter(name: 'customer_id', in: 'query', required: false, description: 'Filter by customer', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'q', in: 'query', required: false, description: 'Text in subject, number or description', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'include_merged', in: 'query', required: false, description: 'Also list tickets merged into others', schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'view_id', in: 'query', required: false, description: 'Saved view whose filters apply; query filters override them', schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Page size', schema: new OA\Schema(type: 'integer', default: 25, maximum: 100)),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
             new OA\Response(response: 200, description: 'List of tickets', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ServiceManagementTicketResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function index(Request $request): JsonResponse
+    public function index(ListTicketsRequest $request, TicketListFilter $filter): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
         $query = Ticket::where('tenant_id', $tenant->id);
+        $filters = $request->safe()->except(['view_id', 'per_page', 'page']);
 
-        if ($request->has('status')) {
-            $query->where('status', $request->query('status'));
+        if ($request->filled('view_id')) {
+            $view = SavedView::query()->where('tenant_id', $tenant->id)->visibleTo($request->user()->id)->findOrFail($request->validated('view_id'));
+            $filters = [...array_intersect_key((array) $view->filters, array_flip(TicketListFilter::Keys)), ...$filters];
         }
 
-        if ($request->has('priority')) {
-            $query->where('priority', $request->query('priority'));
-        }
-
-        $tickets = $query->orderByDesc('created_at')->paginate(25);
+        $tickets = $filter->apply($query, $filters)->orderByDesc('created_at')->paginate((int) ($request->validated('per_page') ?? 25));
 
         return response()->json([
             'data' => TicketResource::collection($tickets),
@@ -100,7 +117,7 @@ final class TicketController extends Controller
             customerId: $validated['customer_id'] ?? null,
             contactEmail: $validated['contact_email'] ?? null,
             contactPhone: $validated['contact_phone'] ?? null,
-            priority: $validated['priority'] ?? 'medium',
+            priority: $validated['priority'] ?? $this->priorityMatrix->priorityFor($validated['impact'] ?? null, $validated['urgency'] ?? null) ?? 'medium',
             serviceCategoryId: $validated['service_category_id'] ?? null,
             serviceContractId: $validated['service_contract_id'] ?? null,
             slaPolicyId: $validated['sla_policy_id'] ?? null,
@@ -109,6 +126,9 @@ final class TicketController extends Controller
             serviceTeamId: $validated['service_team_id'] ?? null,
             requesterUserId: $validated['requester_user_id'] ?? null,
             assetId: $validated['asset_id'] ?? null,
+            impact: $validated['impact'] ?? null,
+            urgency: $validated['urgency'] ?? null,
+            tags: $this->helpdeskTickets->normalizeTags($validated['tags'] ?? []),
         );
 
         $ticket = $this->ticketService->createTicket($dto, $request->user()?->id);
