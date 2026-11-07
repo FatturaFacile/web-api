@@ -51,6 +51,8 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                     ->where('warehouse_bin_id', $sourceBin->id)
                     ->where('stock_item_id', $item->id)
                     ->when($dto->lotId !== null, fn ($q) => $q->where('lot_id', $dto->lotId))
+                    ->orderByRaw('lot_id IS NULL DESC')
+                    ->orderBy('id')
                     ->lockForUpdate()
                     ->first();
 
@@ -110,7 +112,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                 'origin_document_type' => $dto->originDocumentType,
                 'origin_document_id' => $dto->originDocumentId,
                 'executed_by_user_id' => $dto->userId ?? auth()->id(),
-                'executed_at' => Carbon::now(),
+                'executed_at' => $dto->executedAt !== null ? Carbon::parse($dto->executedAt) : Carbon::now(),
                 'notes' => $dto->notes,
             ]);
 

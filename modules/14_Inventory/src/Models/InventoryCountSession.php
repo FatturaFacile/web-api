@@ -17,6 +17,7 @@ final class InventoryCountSession extends BaseEnterpriseModel implements Lockabl
     protected function casts(): array
     {
         return [
+            'effective_at' => 'datetime',
             'scheduled_date' => 'date',
             'is_locked' => 'boolean',
             'completed_at' => 'datetime',

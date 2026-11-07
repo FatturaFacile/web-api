@@ -22,6 +22,8 @@ class InvoiceItem extends Model
         'tax_rate',
         'discount_percentage',
         'line_total',
+        'revenue_account_id',
+        'product_charge_type_id',
     ];
 
     protected static function booted(): void

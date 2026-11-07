@@ -18,6 +18,7 @@ final readonly class StockTransferDTO
         public ?string $originDocumentId = null,
         public ?string $userId = null,
         public ?float $customUnitCost = null,
-        public ?string $notes = null
+        public ?string $notes = null,
+        public ?string $executedAt = null
     ) {}
 }

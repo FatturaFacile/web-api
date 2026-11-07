@@ -5,13 +5,17 @@ declare(strict_types=1);
 namespace Modules\Invoicing\Services;
 
 use App\Models\Product;
+use App\Services\Catalog\PriceResolver;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Models\CustomerGroup;
 use Modules\Invoicing\Models\DiscountPolicy;
-use Modules\Invoicing\Models\SalesPriceListItem;
 
 final class PricingAndDiscountService implements PricingAndDiscountServiceInterface
 {
+    public function __construct(
+        private readonly PriceResolver $prices = new PriceResolver
+    ) {}
+
     /**
      * @return array{unit_price: float, discount_percentage: float, discount_amount: float, final_price: float}
      */
@@ -26,14 +30,10 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
 
         // 1. Check price list item with volume tiers
         if ($priceListId !== null) {
-            $priceListItem = SalesPriceListItem::where('price_list_id', $priceListId)
-                ->where('product_id', $productId)
-                ->where('min_quantity', '<=', $quantity)
-                ->orderBy('min_quantity', 'desc')
-                ->first();
+            $listPrice = $this->prices->priceInActiveList($priceListId, $productId, $quantity, now());
 
-            if ($priceListItem !== null) {
-                $basePrice = (float) $priceListItem->price;
+            if ($listPrice !== null) {
+                $basePrice = (float) $listPrice;
             }
         }
 
@@ -41,7 +41,7 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
         if ($basePrice <= 0.0) {
             $product = Product::find($productId);
             if ($product !== null) {
-                $basePrice = (float) ($product->price ?? $product->unit_price ?? 0.0);
+                $basePrice = (float) ($product->sale_price ?? 0.0);
             }
         }
 

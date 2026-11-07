@@ -25,4 +25,8 @@ return [
     'variant_has_references' => 'La variante è collegata a movimenti di magazzino o documenti e non può essere eliminata.',
     'barcode_generation_failed' => 'Impossibile generare un codice a barre univoco.',
     'variant_name' => ':name (:attributes)',
+    'safety_sheets' => [
+        'subject' => 'Schede di sicurezza del DDT :number',
+        'body' => 'In allegato le schede di sicurezza dei prodotti consegnati con il DDT :number.',
+    ],
 ];

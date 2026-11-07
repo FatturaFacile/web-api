@@ -36,7 +36,7 @@ class DocumentTotalsCalculator
                 'tax_rate' => $taxRate,
                 'discount_percentage' => $discount,
                 'line_total' => $lineNet,
-            ];
+            ] + array_intersect_key($item, ['revenue_account_id' => true, 'product_charge_type_id' => true]);
         }
 
         return [

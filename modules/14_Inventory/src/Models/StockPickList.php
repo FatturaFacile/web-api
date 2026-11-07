@@ -13,6 +13,14 @@ final class StockPickList extends BaseEnterpriseModel
 {
     protected $table = 'stock_pick_lists';
 
+    protected function casts(): array
+    {
+        return [
+            'shortages' => 'array',
+            'completed_at' => 'datetime',
+        ];
+    }
+
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
@@ -20,7 +28,7 @@ final class StockPickList extends BaseEnterpriseModel
 
     public function lines(): HasMany
     {
-        return $this->hasMany(StockPickLine::class, 'stock_pick_list_id');
+        return $this->hasMany(StockPickLine::class, 'stock_pick_list_id')->orderBy('sequence_number');
     }
 
     public function packingLists(): HasMany

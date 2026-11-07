@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Http\Requests;
 
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 
 final class CreateSalesOrderRequest extends FormRequest
 {
@@ -18,13 +20,15 @@ final class CreateSalesOrderRequest extends FormRequest
      */
     public function rules(): array
     {
+        $tenantId = app(TenantContext::class)->getTenantId();
+
         return [
             'contact_id' => ['required', 'uuid'],
             'quote_id' => ['nullable', 'uuid'],
             'customer_agreement_id' => ['nullable', 'uuid'],
-            'price_list_id' => ['nullable', 'uuid'],
+            'price_list_id' => ['nullable', 'uuid', Rule::exists('price_lists', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'discount_policy_id' => ['nullable', 'uuid'],
-            'sales_rep_id' => ['nullable', 'uuid'],
+            'sales_rep_id' => ['nullable', 'uuid', Rule::exists('sales_representatives', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'order_number' => ['nullable', 'string', 'max:50'],
             'date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],

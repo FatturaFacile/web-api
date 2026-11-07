@@ -17,6 +17,7 @@ final class StockPickLine extends BaseEnterpriseModel
             'quantity_to_pick' => 'decimal:4',
             'quantity_picked' => 'decimal:4',
             'picked_at' => 'datetime',
+            'sequence_number' => 'integer',
         ];
     }
 

@@ -39,6 +39,7 @@ use Modules\Inventory\Listeners\CheckReorderRulesListener;
 use Modules\Inventory\Listeners\DispatchOutboxOnInventoryEventListener;
 use Modules\Inventory\Listeners\ProcurementGoodsReceivedListener;
 use Modules\Inventory\Listeners\ProcurementIntegrationListener;
+use Modules\Inventory\Listeners\SendSafetyDataSheetsOnDeliveryListener;
 use Modules\Inventory\Listeners\UpdateSerialLifecycleListener;
 use Modules\Inventory\Listeners\WorkflowApprovalInventoryListener;
 use Modules\Inventory\Models\InventoryAdjustment;
@@ -59,6 +60,7 @@ use Modules\Inventory\Services\InventoryCountService;
 use Modules\Inventory\Services\InventoryReplenishmentService;
 use Modules\Inventory\Services\StockReservationService;
 use Modules\Inventory\Services\StockValuationService;
+use Modules\Invoicing\Events\DeliveryNoteIssuedEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\InventoryAdjustmentRequestEvent;
 use Modules\Procurement\Events\InventoryReceiptRequestedEvent;
@@ -137,6 +139,7 @@ final class InventoryServiceProvider extends ServiceProvider
         Event::listen(StockTransferredEvent::class, AuditInventoryMovementListener::class);
         Event::listen(LotExpiredEvent::class, BlockAvailabilityOnLotExpiredListener::class);
         Event::listen(SerialAssignedEvent::class, UpdateSerialLifecycleListener::class);
+        Event::listen(DeliveryNoteIssuedEvent::class, SendSafetyDataSheetsOnDeliveryListener::class);
 
         // Workflow Engine V2 Approvals
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalInventoryListener::class, 'handleCompleted']);

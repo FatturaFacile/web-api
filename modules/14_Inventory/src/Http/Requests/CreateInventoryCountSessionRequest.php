@@ -24,6 +24,7 @@ final class CreateInventoryCountSessionRequest extends FormRequest
             'scheduled_date' => ['required', 'date'],
             'warehouse_zone_id' => ['nullable', 'uuid'],
             'notes' => ['nullable', 'string', 'max:2000'],
+            'effective_at' => ['nullable', 'date', 'before_or_equal:now'],
         ];
     }
 }

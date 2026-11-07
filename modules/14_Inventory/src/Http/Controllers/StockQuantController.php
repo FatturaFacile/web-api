@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Carbon\Carbon;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Inventory\Http\Resources\StockQuantResource;
 use Modules\Inventory\Models\StockQuant;
+use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Services\StockBalanceAtDateService;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Inventory Stock Quants', description: 'Real-time quant balances by warehouse, bin, lot, and serial number')]
@@ -63,6 +66,34 @@ final class StockQuantController extends Controller
         $quants = $query->paginate((int) $request->query('per_page', 25));
 
         return response()->json(StockQuantResource::collection($quants)->response()->getData(true));
+    }
+
+    #[OA\Get(
+        path: '/api/v1/inventory/quants/as-of',
+        summary: 'Stock at a past moment',
+        description: 'The balance of each bin, item and lot at a past moment: the current stock with every later movement undone.',
+        tags: ['Inventory Stock Quants'],
+        parameters: [
+            new OA\Parameter(name: 'warehouse_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'at', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date-time')),
+            new OA\Parameter(name: 'stock_item_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Balances at that moment', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/InventoryBalanceAsOf'))])),
+            new OA\Response(response: 422, description: 'Validation failed'),
+        ]
+    )]
+    #[EnterpriseEndpoint(summary: 'Stock at a past moment', tags: ['Inventory'])]
+    public function asOf(Request $request, StockBalanceAtDateService $balances): JsonResponse
+    {
+        $validated = $request->validate([
+            'warehouse_id' => ['required', 'uuid'],
+            'at' => ['required', 'date', 'before_or_equal:now'],
+            'stock_item_id' => ['nullable', 'uuid'],
+        ]);
+        $warehouse = Warehouse::findOrFail($validated['warehouse_id']);
+
+        return response()->json(['data' => $balances->balances($warehouse->id, Carbon::parse($validated['at']), $validated['stock_item_id'] ?? null)->values()]);
     }
 
     #[OA\Get(

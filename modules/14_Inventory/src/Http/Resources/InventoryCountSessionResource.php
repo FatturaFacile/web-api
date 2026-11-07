@@ -22,10 +22,10 @@ final class InventoryCountSessionResource extends JsonResource
             'count_type' => $this->count_type,
             'status' => $this->status,
             'scheduled_date' => $this->scheduled_date?->toDateString(),
+            'effective_at' => $this->effective_at?->toIso8601String(),
             'completed_at' => $this->completed_at?->toIso8601String(),
             'is_locked' => (bool) $this->is_locked,
             'warehouse' => new WarehouseResource($this->whenLoaded('warehouse')),
-            'zone' => $this->whenLoaded('zone'),
             'lines' => $this->whenLoaded('lines'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

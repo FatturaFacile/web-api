@@ -25,4 +25,8 @@ return [
     'variant_has_references' => 'Die Variante wird in Lagerbewegungen oder Belegen referenziert und kann nicht gelöscht werden.',
     'barcode_generation_failed' => 'Eindeutiger Barcode konnte nicht generiert werden.',
     'variant_name' => ':name (:attributes)',
+    'safety_sheets' => [
+        'subject' => 'Sicherheitsdatenblätter zum Lieferschein :number',
+        'body' => 'Im Anhang finden Sie die Sicherheitsdatenblätter der mit Lieferschein :number gelieferten Produkte.',
+    ],
 ];

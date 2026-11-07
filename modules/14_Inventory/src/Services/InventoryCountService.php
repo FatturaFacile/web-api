@@ -26,7 +26,8 @@ final class InventoryCountService implements InventoryCountServiceInterface
     public function __construct(
         private readonly DoubleEntryMovementServiceInterface $movementService,
         private readonly EventDispatcher $dispatcher,
-        private readonly WorkflowEngineInterface $workflowEngine
+        private readonly WorkflowEngineInterface $workflowEngine,
+        private readonly StockBalanceAtDateService $balances
     ) {}
 
     public function createSession(InventoryCountSessionDTO $dto): InventoryCountSession
@@ -43,6 +44,9 @@ final class InventoryCountService implements InventoryCountServiceInterface
                 'count_type' => $dto->countType,
                 'status' => 'in_progress',
                 'scheduled_date' => $dto->scheduledDate,
+                'effective_at' => $dto->effectiveAt,
+                'warehouse_zone_id' => $dto->zoneId,
+                'notes' => $dto->notes,
                 'is_locked' => false,
                 'created_by' => $dto->userId,
             ]);
@@ -56,6 +60,11 @@ final class InventoryCountService implements InventoryCountServiceInterface
                 $query->whereIn('warehouse_bin_id', $dto->binIds);
             }
 
+            if ($dto->zoneId !== null) {
+                $query->whereHas('bin.rack.aisle', static fn ($aisle) => $aisle->where('warehouse_zone_id', $dto->zoneId));
+            }
+
+            $balances = $dto->effectiveAt !== null ? $this->balances->balances($warehouse->id, Carbon::parse($dto->effectiveAt)) : null;
             $quants = $query->get();
             foreach ($quants as $quant) {
                 InventoryCountLine::create([
@@ -64,7 +73,9 @@ final class InventoryCountService implements InventoryCountServiceInterface
                     'warehouse_bin_id' => $quant->warehouse_bin_id,
                     'stock_item_id' => $quant->stock_item_id,
                     'lot_id' => $quant->lot_id,
-                    'system_quantity' => (float) $quant->quantity_on_hand,
+                    'system_quantity' => $balances === null
+                        ? (float) $quant->quantity_on_hand
+                        : $balances->get(StockBalanceAtDateService::key((string) $quant->warehouse_bin_id, (string) $quant->stock_item_id, $quant->lot_id))['quantity'] ?? '0',
                     'counted_quantity' => null,
                     'discrepancy_quantity' => 0.0,
                     'discrepancy_valuation' => 0.0,
@@ -178,7 +189,8 @@ final class InventoryCountService implements InventoryCountServiceInterface
                     originDocumentType: InventoryCountSession::class,
                     originDocumentId: $session->id,
                     userId: $userId,
-                    notes: "Cycle count variance surplus for session {$session->session_number}"
+                    notes: "Cycle count variance surplus for session {$session->session_number}",
+                    executedAt: $session->effective_at?->toIso8601String()
                 ));
             } else {
                 // Lost stock: Bin -> Virtual Scrap
@@ -192,7 +204,8 @@ final class InventoryCountService implements InventoryCountServiceInterface
                     originDocumentType: InventoryCountSession::class,
                     originDocumentId: $session->id,
                     userId: $userId,
-                    notes: "Cycle count variance deficit for session {$session->session_number}"
+                    notes: "Cycle count variance deficit for session {$session->session_number}",
+                    executedAt: $session->effective_at?->toIso8601String()
                 ));
             }
         }

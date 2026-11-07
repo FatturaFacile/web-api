@@ -81,6 +81,26 @@ final class StockAllocationPlanner
      */
     public function split(Collection $quants, string $quantity, string $warehouseName): array
     {
+        ['shares' => $shares, 'short' => $short] = $this->take($quants, $quantity);
+
+        if (Decimal::isPositive($short)) {
+            $requested = bcadd($quantity, '0', 4);
+            $missing = bcadd($short, '0', 4);
+
+            throw new StockRuleViolation("Insufficient available stock in warehouse [{$warehouseName}]. Requested: {$requested}, short by: {$missing}.");
+        }
+
+        return $shares;
+    }
+
+    /**
+     * Takes what the quants can give towards a quantity, and says how much is missing.
+     *
+     * @param  Collection<int, StockQuant>  $quants
+     * @return array{shares: list<array{quant: StockQuant, quantity: string}>, short: string}
+     */
+    public function take(Collection $quants, string $quantity): array
+    {
         $remaining = Decimal::normalize($quantity);
         $allocations = [];
 
@@ -98,14 +118,7 @@ final class StockAllocationPlanner
             }
         }
 
-        if (Decimal::isPositive($remaining)) {
-            $requested = bcadd($quantity, '0', 4);
-            $short = bcadd($remaining, '0', 4);
-
-            throw new StockRuleViolation("Insufficient available stock in warehouse [{$warehouseName}]. Requested: {$requested}, short by: {$short}.");
-        }
-
-        return $allocations;
+        return ['shares' => $allocations, 'short' => $remaining];
     }
 
     /**

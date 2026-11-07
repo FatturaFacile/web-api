@@ -22,5 +22,7 @@ return [
         'updated' => 'Product variant updated successfully',
         'deleted' => 'Product variant deleted successfully',
     ],
-
+    'validation' => [
+        'price_list_loop' => 'A price list cannot inherit from itself, directly or through other lists.',
+    ],
 ];

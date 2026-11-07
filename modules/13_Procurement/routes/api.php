@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Procurement\Http\Controllers\PurchaseOrderController;
+use Modules\Procurement\Http\Controllers\PurchasePriceCheckController;
 use Modules\Procurement\Http\Controllers\PurchaseReceiptController;
 use Modules\Procurement\Http\Controllers\PurchaseRequisitionController;
 use Modules\Procurement\Http\Controllers\PurchaseReturnController;
@@ -52,5 +53,6 @@ Route::prefix('api/v1/procurement')
 
         // 7. Three-Way Matching Engine
         Route::get('three-way-match', [ThreeWayMatchController::class, 'index'])->name('procurement.three-way-match.index');
+        Route::post('price-checks', PurchasePriceCheckController::class)->name('procurement.price-checks');
         Route::post('three-way-match/execute', [ThreeWayMatchController::class, 'execute'])->name('procurement.three-way-match.execute');
     });

@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\GeneralLedger\Exceptions\LedgerPostingException;
+use Modules\Inventory\Services\ProductChargeCalculator;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
@@ -34,7 +35,8 @@ final class InvoicingService implements InvoicingServiceInterface
         private readonly PricingAndDiscountServiceInterface $pricingService,
         private readonly CustomerLedgerServiceInterface $ledgerService,
         private readonly EventDispatcherInterface $eventDispatcher,
-        private readonly DocumentNumberingService $numbering
+        private readonly DocumentNumberingService $numbering,
+        private readonly ProductChargeCalculator $charges = new ProductChargeCalculator
     ) {}
 
     /**
@@ -47,6 +49,7 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoiceId = (string) Str::uuid7();
 
         $this->assertTaxRates($items);
+        $items = [...$items, ...$this->chargeLines($data, $items, $tenantId)];
         $totals = $this->pricingService->calculateOrderTotals($items);
 
         // The fiscal number is assigned at emission: a draft only carries a placeholder.
@@ -111,6 +114,7 @@ final class InvoicingService implements InvoicingServiceInterface
                 'line_total' => $lineNet,
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
                 'tax_account_id' => $item['tax_account_id'] ?? null,
+                'product_charge_type_id' => $item['product_charge_type_id'] ?? null,
                 'uom' => $item['uom'] ?? 'EA',
                 'notes' => $item['notes'] ?? null,
             ]);
@@ -195,6 +199,7 @@ final class InvoicingService implements InvoicingServiceInterface
                 'unit_price' => (float) $dnItem->unit_price,
                 'tax_rate' => (float) $dnItem->tax_rate,
                 'discount_percentage' => 0.0,
+                'uom' => $dnItem->uom ?? 'EA',
             ];
         }
 
@@ -459,6 +464,22 @@ final class InvoicingService implements InvoicingServiceInterface
             tenantId: (string) $creditNote->tenant_id,
             companyId: (string) $creditNote->tenant_id
         ));
+    }
+
+    /**
+     * The supplementary charges of the products on the invoice, as lines of their own.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function chargeLines(array $data, array $items, string $tenantId): array
+    {
+        if (($data['invoice_type'] ?? 'standard') === 'proforma') {
+            return [];
+        }
+
+        return $this->charges->linesFor($items, (string) ($data['date'] ?? now()->toDateString()), (string) ($data['currency'] ?? 'EUR'), $tenantId);
     }
 
     /**
