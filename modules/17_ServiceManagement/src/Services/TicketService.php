@@ -110,8 +110,12 @@ final readonly class TicketService implements TicketServiceInterface
 
     public function assignTicket(AssignTicketDTO $dto, ?string $actorUserId = null): Ticket
     {
-        return DB::transaction(function () use ($dto) {
-            $ticket = Ticket::findOrFail($dto->ticketId);
+        return DB::transaction(function () use ($dto, $actorUserId) {
+            $ticket = Ticket::query()->whereKey($dto->ticketId)->lockForUpdate()->firstOrFail();
+
+            if ($ticket->merged_into_ticket_id !== null) {
+                throw new HelpdeskRuleViolation("Ticket {$ticket->ticket_number} was merged into another ticket.");
+            }
 
             $oldValues = [
                 'assigned_technician_id' => $ticket->assigned_technician_id,
@@ -141,6 +145,11 @@ final readonly class TicketService implements TicketServiceInterface
                 tenantId: $ticket->tenant_id,
                 companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
+
+            event(new HelpdeskTicketChanged($ticket->id, $ticket->tenant_id, HelpdeskTicketChanged::Assigned, $actorUserId, [
+                'team_id' => $ticket->assigned_team_id,
+                'technician_id' => $dto->assignedToId,
+            ]));
 
             return $ticket;
         });
