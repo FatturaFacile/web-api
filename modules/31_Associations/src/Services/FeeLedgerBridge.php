@@ -43,6 +43,7 @@ final class FeeLedgerBridge
             'tenant_id' => $tenant->id,
             'contact_id' => $assignment->payer_contact_id,
             'invoice_type' => 'standard',
+            'sdi_excluded' => true,
             'invoice_number' => $receipt->number,
             'date' => $paidOn->toDateString(),
             'due_date' => $paidOn->toDateString(),

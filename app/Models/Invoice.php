@@ -22,6 +22,7 @@ class Invoice extends Model
     protected $fillable = [
         'contact_id',
         'invoice_type',
+        'sdi_excluded',
         'invoice_number',
         'date',
         'due_date',
@@ -92,6 +93,7 @@ class Invoice extends Model
             'total_gross' => 'decimal:2',
             'rounding_amount' => 'decimal:2',
             'split_payment' => 'boolean',
+            'sdi_excluded' => 'boolean',
             'reverse_charge' => 'boolean',
             'total_paid' => 'decimal:2',
             'is_deposit' => 'boolean',
