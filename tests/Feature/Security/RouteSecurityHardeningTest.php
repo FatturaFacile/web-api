@@ -81,6 +81,10 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         // Machine feed: authenticated by a tenant API key instead of Sanctum, see Compliance\ApiKeyAndReportingTest.
         'api/v1/reporting',
         'api/v1/workflows/remote-approval',
+        'api/v1/association-public',
+        'api/v1/association-area',
+        'api/v1/association-access/verify',
+        'api/v1/association-payments/callback',
         'docs',
         'sanctum/csrf-cookie',
         'up',

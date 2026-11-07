@@ -19,7 +19,7 @@ class DecideTenantAccessRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'role' => ['nullable', 'string', 'in:owner,admin,accountant,accountant_readonly,technician,member'],
+            'role' => ['nullable', 'string', 'in:owner,admin,accountant,accountant_readonly,secretary,customs,technician,member'],
             'tenant_id' => [$this->routeIs('admin.tenant-access-requests.move') ? 'required' : 'prohibited', 'uuid', 'exists:tenants,id'],
             'reason' => ['nullable', 'string', 'max:500'],
         ];

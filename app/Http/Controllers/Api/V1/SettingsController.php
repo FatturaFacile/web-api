@@ -264,6 +264,7 @@ class SettingsController extends Controller
             ['key' => 'owner', 'name' => 'Enterprise Owner', 'description' => 'Full administrative access across all modules and fiscal settings'],
             ['key' => 'admin', 'name' => 'Tenant Administrator', 'description' => 'Operational admin for CRM, Sales, AP, and HR'],
             ['key' => 'accountant', 'name' => 'Fiduciario / Commercialista', 'description' => 'Dedicated access to fiscal invoicing, general ledger, and VAT declarations'],
+            ['key' => 'secretary', 'name' => 'Association Secretary', 'description' => 'Registry, memberships, enrolment, courses and medical certificates of an association'],
             ['key' => 'technician', 'name' => 'Field Technician', 'description' => 'Access to service tickets, work orders (rapportini), and time clocking'],
             ['key' => 'member', 'name' => 'Staff Member', 'description' => 'Standard self-service attendance clocking and expense submission'],
         ];

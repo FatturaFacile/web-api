@@ -130,6 +130,7 @@ class DatabaseSeeder extends Seeder
             SubscriptionReferenceSeeder::class,
             SubscriptionDemoDataSeeder::class,
             ManufacturingReferenceSeeder::class,
+            AssociationsReferenceSeeder::class,
             ManufacturingDemoDataSeeder::class,
             EnterpriseDemoMasterSeeder::class,
         ]);

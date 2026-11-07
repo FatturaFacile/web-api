@@ -15,6 +15,13 @@ use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 class PortalTokenService
 {
+    /**
+     * Token types of other areas built on these links: they open their own area and never the customer portal.
+     *
+     * @var list<string>
+     */
+    public const DEDICATED_TOKEN_TYPES = ['association_area'];
+
     public function __construct(private readonly TenantContext $tenantContext) {}
 
     /**
@@ -55,8 +62,10 @@ class PortalTokenService
     /**
      * Resolve and validate a plaintext token from the URL.
      * Sets tenant context automatically upon successful resolution.
+     *
+     * @param  ?string  $requiredType  the only token type accepted; without it, any type of the customer portal
      */
-    public function resolveToken(string $plaintext): PortalAccessToken
+    public function resolveToken(string $plaintext, ?string $requiredType = null): PortalAccessToken
     {
         $tokenHash = hash('sha256', trim($plaintext));
 
@@ -66,7 +75,11 @@ class PortalTokenService
             ->where('token_hash', $tokenHash)
             ->first();
 
-        if (! $token) {
+        $isAccepted = $token !== null && ($requiredType !== null
+            ? $token->token_type === $requiredType
+            : ! in_array($token->token_type, self::DEDICATED_TOKEN_TYPES, true));
+
+        if (! $isAccepted) {
             throw new NotFoundHttpException('Invalid or expired portal link.');
         }
 

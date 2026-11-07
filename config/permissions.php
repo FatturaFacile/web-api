@@ -51,6 +51,9 @@ return [
         'document_trust' => ['read' => $financeReaders, 'write' => $finance],
         'integrations' => ['read' => $managers, 'write' => $managers],
         'payment_links' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
+        // Personal data of members, minors included: closed to ordinary members. The accountant writes fees and payments
+        // only, which the module checks by capability. Instructors, guardians and members use the member area.
+        'associations' => ['read' => ['owner', 'admin', 'secretary', 'accountant'], 'write' => ['owner', 'admin', 'secretary', 'accountant']],
     ],
 
     /*

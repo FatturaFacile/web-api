@@ -10,6 +10,7 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
+use Modules\Associations\Providers\AssociationsServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
@@ -56,6 +57,7 @@ return [
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,
     SdiServiceProvider::class,
+    AssociationsServiceProvider::class,
     CustomsServiceProvider::class,
     FiscalRetailServiceProvider::class,
     HealthExpensesServiceProvider::class,
