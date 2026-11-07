@@ -198,7 +198,13 @@ final class ThirdSectorFilingService
     public function saveMissionAnswers(int $year, array $answers): MissionReport
     {
         $report = MissionReport::query()->firstOrNew(['year' => $year], ['answers' => []]);
-        $merged = array_filter([...($report->answers ?? []), ...array_map(static fn (?string $text): ?string => $text === null ? null : trim($text), $answers)], static fn (?string $text): bool => $text !== null && $text !== '');
+        $merged = $report->answers ?? [];
+
+        foreach ($answers as $point => $text) {
+            $merged[(string) (int) $point] = $text === null ? null : trim($text);
+        }
+
+        $merged = array_filter($merged, static fn (?string $text): bool => $text !== null && $text !== '');
         $report->answers = $merged;
         $report->save();
 
