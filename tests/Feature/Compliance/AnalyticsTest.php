@@ -41,6 +41,18 @@ test('revenue compares each month with the year before, credit notes subtract an
         ->and($data['totals']['current'])->toBe('100.00');
 });
 
+test('revenue leaves out cancelled, void and placeholder drafts and converts other currencies with the stored rate', function (): void {
+    salesFact($this->tenant, '2027-03-08', '500.00')->forceFill(['status' => 'cancelled'])->save();
+    salesFact($this->tenant, '2027-03-08', '500.00')->forceFill(['status' => 'void'])->save();
+    salesFact($this->tenant, '2027-03-08', '500.00')->forceFill(['status' => 'draft', 'invoice_number' => 'DRAFT-ABC123'])->save();
+    salesFact($this->tenant, '2027-03-09', '100.00')->forceFill(['status' => 'posted', 'currency' => 'CHF', 'exchange_rate' => '1.050000'])->save();
+
+    $data = $this->getJson('/api/v1/analytics/revenue-comparison?year=2027')->assertOk()->json('data');
+
+    expect(Tenant::query()->findOrFail($this->tenant->id)->default_currency)->toBe('EUR')
+        ->and($data['months'][2]['current'])->toBe('205.00');
+});
+
 test('the breakdown by customer type separates businesses and private customers', function (): void {
     $rows = collect($this->getJson('/api/v1/analytics/breakdown/customer-type?year=2027')->assertOk()->json('data.rows'))->keyBy('key');
 
