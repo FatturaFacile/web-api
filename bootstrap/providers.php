@@ -39,6 +39,7 @@ use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
+use Modules\Visitors\Providers\VisitorsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
 use Modules\Workshop\Providers\WorkshopServiceProvider;
 use Modules\WorkspaceSync\Providers\WorkspaceSyncServiceProvider;
@@ -86,4 +87,5 @@ return [
     ChildcareServiceProvider::class,
     PracticeManagementServiceProvider::class,
     HospitalityServiceProvider::class,
+    VisitorsServiceProvider::class,
 ];

@@ -269,6 +269,7 @@ class SettingsController extends Controller
             ['key' => 'secretary', 'name' => 'Association Secretary', 'description' => 'Registry, memberships, enrolment, courses and medical certificates of an association'],
             ['key' => 'childcare_manager', 'name' => 'Kindergarten Manager', 'description' => 'Children, reference persons, documents, corrections, fees and subsidies of a kindergarten'],
             ['key' => 'educator', 'name' => 'Educator', 'description' => 'Attendance, notes, meals and messages of the children of a kindergarten'],
+            ['key' => 'receptionist', 'name' => 'Receptionist', 'description' => 'Visitor register, check-in and check-out with badges, who is on site'],
             ['key' => 'technician', 'name' => 'Field Technician', 'description' => 'Access to service tickets, work orders (rapportini), and time clocking'],
             ['key' => 'member', 'name' => 'Staff Member', 'description' => 'Standard self-service attendance clocking and expense submission'],
         ];

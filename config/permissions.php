@@ -86,6 +86,9 @@ return [
             'read' => [...$financeReaders, 'sales', 'member'],
             'write' => ['owner', 'admin', 'sales', 'member'],
         ],
+        // Every member announces their own guests; the policy reserves the register of visitors, check-in, the list of
+        // who is on site and the kiosks to reception (owner, admin, receptionist). Read-only roles never write.
+        'visitors' => ['read' => $anyMember, 'write' => $anyMember],
     ],
 
     /*
