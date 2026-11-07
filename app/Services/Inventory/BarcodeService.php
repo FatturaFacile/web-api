@@ -21,7 +21,7 @@ use Picqer\Barcode\Exceptions\InvalidLengthException;
 use Throwable;
 
 /**
- * Generates 1D (EAN-13, EAN-8, Code 128; picqer/php-barcode-generator) and 2D (QR Code; endroid/qr-code) barcodes
+ * Generates 1D (EAN-13, EAN-8, Code 128, Code 39; picqer/php-barcode-generator) and 2D (QR Code; endroid/qr-code) barcodes
  * as SVG or PNG. Values are validated first so callers always get a typed {@see BarcodeGenerationException}.
  */
 class BarcodeService
@@ -55,6 +55,7 @@ class BarcodeService
             BarcodeType::Ean13 => $this->normalizeEan($value, 12),
             BarcodeType::Ean8 => $this->normalizeEan($value, 7),
             BarcodeType::Code128 => $this->normalizeCode128($value),
+            BarcodeType::Code39 => $this->normalizeCode39($value),
             BarcodeType::QrCode => $this->normalizeQr($value),
         };
     }
@@ -171,6 +172,24 @@ class BarcodeService
         return $value;
     }
 
+    /**
+     * Code 39 has no lower case: letters are folded to upper case, anything outside its alphabet is refused.
+     */
+    private function normalizeCode39(string $value): string
+    {
+        $value = strtoupper($value);
+
+        if (! preg_match('/^[0-9A-Z \-.$\/+%]+$/', $value)) {
+            throw BarcodeGenerationException::because(BarcodeGenerationException::INVALID_CHARACTERS, $value);
+        }
+
+        if (strlen($value) > self::CODE128_MAX_LENGTH) {
+            throw BarcodeGenerationException::because(BarcodeGenerationException::INVALID_LENGTH, $value);
+        }
+
+        return $value;
+    }
+
     private function normalizeQr(string $value): string
     {
         if (mb_strlen($value) > self::QR_MAX_LENGTH) {
@@ -190,6 +209,7 @@ class BarcodeService
             BarcodeType::Ean13 => BarcodeGenerator::TYPE_EAN_13,
             BarcodeType::Ean8 => BarcodeGenerator::TYPE_EAN_8,
             BarcodeType::Code128 => BarcodeGenerator::TYPE_CODE_128,
+            BarcodeType::Code39 => BarcodeGenerator::TYPE_CODE_39,
             BarcodeType::QrCode => throw BarcodeGenerationException::because(BarcodeGenerationException::UNSUPPORTED_TYPE),
         };
     }

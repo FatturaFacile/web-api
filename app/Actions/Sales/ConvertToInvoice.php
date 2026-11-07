@@ -18,6 +18,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Inventory\Services\ProductChargeCalculator;
 use Modules\Invoicing\Actions\PostInvoiceAction;
 
 class ConvertToInvoice
@@ -27,6 +28,7 @@ class ConvertToInvoice
         private readonly DocumentTotalsCalculator $totals,
         private readonly DocumentEventRecorder $events,
         private readonly PostInvoiceAction $postInvoice,
+        private readonly ProductChargeCalculator $charges,
     ) {}
 
     /**
@@ -188,11 +190,17 @@ class ConvertToInvoice
     private function build(Model $source, array $lines, array $links, string $event, array $extra = []): Invoice
     {
         return DB::transaction(function () use ($source, $lines, $links, $event, $extra): Invoice {
-            $computed = $this->totals->calculate(array_map(
+            $date = (string) ($extra['date'] ?? now()->toDateString());
+            $payload = array_map(
                 fn (Model $line): array => $line->only(['product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage']),
                 $lines
-            ));
-            $date = (string) ($extra['date'] ?? now()->toDateString());
+            );
+
+            if (empty($extra['is_deposit'])) {
+                $payload = [...$payload, ...$this->charges->linesFor($payload, $date, (string) ($source->currency ?? 'EUR'), (string) $source->tenant_id)];
+            }
+
+            $computed = $this->totals->calculate($payload);
             $number = $this->numbering->next('invoice', (int) date('Y', strtotime($date)));
 
             $invoice = Invoice::create(array_merge([

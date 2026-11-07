@@ -70,6 +70,7 @@ final class InventoryCountController extends Controller
                     new OA\Property(property: 'count_type', type: 'string', enum: ['full_physical', 'cycle_count_abc', 'spot_check', 'zone_sweep']),
                     new OA\Property(property: 'scheduled_date', type: 'string', format: 'date'),
                     new OA\Property(property: 'warehouse_zone_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'effective_at', type: 'string', format: 'date-time', description: 'Retroactive stocktake: compares the count with the stock at this past moment, and dates the adjustment there'),
                 ]
             )
         ),
@@ -87,9 +88,10 @@ final class InventoryCountController extends Controller
             warehouseId: $request->string('warehouse_id')->value(),
             countType: $request->string('count_type')->value(),
             scheduledDate: $request->string('scheduled_date')->value(),
+            userId: (string) auth()->id(),
             zoneId: $request->input('warehouse_zone_id'),
             notes: $request->input('notes'),
-            userId: (string) auth()->id()
+            effectiveAt: $request->input('effective_at')
         );
 
         $session = $service->createSession($dto);

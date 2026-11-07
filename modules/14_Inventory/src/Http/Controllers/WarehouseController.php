@@ -65,7 +65,10 @@ final class WarehouseController extends Controller
                 properties: [
                     new OA\Property(property: 'code', type: 'string', example: 'WH-MAIN'),
                     new OA\Property(property: 'name', type: 'string', example: 'Milano Central Logistics Hub'),
-                    new OA\Property(property: 'type', type: 'string', enum: ['standard', 'van', 'transit', 'quarantine', 'consignment'], example: 'standard'),
+                    new OA\Property(property: 'type', type: 'string', enum: ['standard', 'van', 'transit', 'quarantine', 'consignment', 'virtual'], example: 'standard'),
+                    new OA\Property(property: 'picking_strategy', type: 'string', enum: ['fifo', 'fefo'], nullable: true),
+                    new OA\Property(property: 'is_virtual', type: 'boolean', description: 'A logical warehouse with no physical location, such as stock held at a third party'),
+                    new OA\Property(property: 'owner_contact_id', type: 'string', format: 'uuid', nullable: true, description: 'The customer who owns the stock kept here, shown on the customer portal'),
                     new OA\Property(property: 'address', type: 'string', example: 'Via Logistica 10'),
                     new OA\Property(property: 'city', type: 'string', example: 'Milano'),
                     new OA\Property(property: 'postal_code', type: 'string', example: '20100'),
@@ -84,7 +87,7 @@ final class WarehouseController extends Controller
     {
         $this->authorize('create', Warehouse::class);
 
-        $warehouse = Warehouse::create($request->validated());
+        $warehouse = Warehouse::create($this->attributesFrom($request->validated()));
 
         return response()->json(new WarehouseResource($warehouse), 201);
     }
@@ -142,7 +145,7 @@ final class WarehouseController extends Controller
         $warehouse = Warehouse::findOrFail($id);
         $this->authorize('update', $warehouse);
 
-        $warehouse->update($request->validated());
+        $warehouse->update($this->attributesFrom($request->validated()));
 
         return response()->json(new WarehouseResource($warehouse));
     }
@@ -169,5 +172,21 @@ final class WarehouseController extends Controller
         $warehouse->delete();
 
         return response()->json(null, 204);
+    }
+
+    /**
+     * The API calls `warehouse_type` simply `type`.
+     *
+     * @param  array<string, mixed>  $validated
+     * @return array<string, mixed>
+     */
+    private function attributesFrom(array $validated): array
+    {
+        if (array_key_exists('type', $validated)) {
+            $validated['warehouse_type'] = $validated['type'];
+            unset($validated['type']);
+        }
+
+        return $validated;
     }
 }

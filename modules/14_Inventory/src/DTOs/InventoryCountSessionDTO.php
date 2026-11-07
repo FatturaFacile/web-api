@@ -15,6 +15,9 @@ final readonly class InventoryCountSessionDTO
         public string $scheduledDate,
         public string $userId,
         public array $binIds = [],
-        public ?string $sessionNumber = null
+        public ?string $sessionNumber = null,
+        public ?string $zoneId = null,
+        public ?string $notes = null,
+        public ?string $effectiveAt = null
     ) {}
 }

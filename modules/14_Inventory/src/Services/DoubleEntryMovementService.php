@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Events\StockTransferredEvent;
+use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\InventoryAuditEntry;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
@@ -50,12 +51,14 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                     ->where('warehouse_bin_id', $sourceBin->id)
                     ->where('stock_item_id', $item->id)
                     ->when($dto->lotId !== null, fn ($q) => $q->where('lot_id', $dto->lotId))
+                    ->orderByRaw('lot_id IS NULL DESC')
+                    ->orderBy('id')
                     ->lockForUpdate()
                     ->first();
 
                 if (! $sourceQuant || $sourceQuant->quantity_available < $dto->quantity) {
                     $available = $sourceQuant ? $sourceQuant->quantity_available : 0.0;
-                    throw new InvalidArgumentException("Insufficient available stock in bin [{$sourceBin->barcode}]. Required: {$dto->quantity}, Available: {$available}.");
+                    throw new StockRuleViolation("Insufficient available stock in bin [{$sourceBin->barcode}]. Required: {$dto->quantity}, Available: {$available}.");
                 }
 
                 $sourceQuant->decrement('quantity_on_hand', $dto->quantity);
@@ -109,7 +112,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                 'origin_document_type' => $dto->originDocumentType,
                 'origin_document_id' => $dto->originDocumentId,
                 'executed_by_user_id' => $dto->userId ?? auth()->id(),
-                'executed_at' => Carbon::now(),
+                'executed_at' => $dto->executedAt !== null ? Carbon::parse($dto->executedAt) : Carbon::now(),
                 'notes' => $dto->notes,
             ]);
 

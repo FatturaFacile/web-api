@@ -31,6 +31,7 @@ final class SalesOrderController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'credit_status', in: 'query', required: false, description: 'Filter by credit status', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'contact_id', in: 'query', required: false, description: 'Filter by contact', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'sales_rep_id', in: 'query', required: false, description: 'Filter by sales agent', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 25)),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
@@ -52,6 +53,9 @@ final class SalesOrderController extends Controller
         }
         if ($request->has('contact_id')) {
             $query->where('contact_id', (string) $request->query('contact_id'));
+        }
+        if ($request->has('sales_rep_id')) {
+            $query->where('sales_rep_id', (string) $request->query('sales_rep_id'));
         }
 
         $orders = $query->orderBy('created_at', 'desc')->paginate((int) $request->query('per_page', 25));

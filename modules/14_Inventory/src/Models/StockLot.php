@@ -19,6 +19,8 @@ final class StockLot extends BaseEnterpriseModel
             'manufacturing_date' => 'date',
             'expiration_date' => 'date',
             'is_quarantined' => 'boolean',
+            'received_at' => 'date',
+            'certification_date' => 'date',
         ];
     }
 
@@ -35,6 +37,22 @@ final class StockLot extends BaseEnterpriseModel
     public function quants(): HasMany
     {
         return $this->hasMany(StockQuant::class, 'lot_id');
+    }
+
+    /**
+     * The links to the lots this one was made from.
+     */
+    public function componentLinks(): HasMany
+    {
+        return $this->hasMany(StockLotLink::class, 'lot_id');
+    }
+
+    /**
+     * The links to the lots made from this one.
+     */
+    public function derivedLinks(): HasMany
+    {
+        return $this->hasMany(StockLotLink::class, 'component_lot_id');
     }
 
     public function serialNumbers(): HasMany

@@ -13,6 +13,8 @@ final readonly class StockReservationDTO
         public string $reservedForId,
         public float $quantity,
         public ?string $expiresAt = null,
-        public ?string $userId = null
+        public ?string $userId = null,
+        public ?string $lotId = null,
+        public ?string $warehouseBinId = null
     ) {}
 }

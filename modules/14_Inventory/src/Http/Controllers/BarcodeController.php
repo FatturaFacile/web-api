@@ -40,8 +40,7 @@ final class BarcodeController extends Controller
     public function scan(BarcodeScanRequest $request, ProcessWarehouseBarcodeScanAction $action): JsonResponse
     {
         $dto = new BarcodeScanDTO(
-            rawPayload: $request->string('raw_payload')->value(),
-            symbology: $request->string('symbology', 'auto')->value(),
+            rawBarcode: $request->string('raw_payload')->value(),
             warehouseId: $request->input('warehouse_id')
         );
 

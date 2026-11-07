@@ -6,14 +6,31 @@ namespace Modules\Inventory\Actions;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\Inventory\Exceptions\StockRuleViolation;
+use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockPickLine;
 use Modules\Inventory\Models\StockPickList;
-use Modules\Inventory\Models\StockQuant;
+use Modules\Inventory\Models\StockReservationAllocation;
+use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Models\WarehouseBin;
+use Modules\Inventory\Services\PickRouteOptimizer;
+use Modules\Inventory\Services\StockAllocationPlanner;
 
+/**
+ * Builds a pick list: each request takes its quants in FEFO or FIFO order and holds them, or follows the allocations of
+ * an existing reservation, then the stops are put in walking order. What the warehouse cannot cover is listed in
+ * `shortages`, not invented as a line.
+ */
 final readonly class GeneratePickListAction
 {
+    public function __construct(
+        private StockAllocationPlanner $planner,
+        private PickRouteOptimizer $route
+    ) {}
+
     /**
-     * @param  array<int, array{stock_item_id: string, quantity: float, lot_id?: ?string}>  $items
+     * @param  array<int, array{stock_item_id: string, quantity?: float|string|null, lot_id?: ?string, reservation_id?: ?string}>  $items
      */
     public function execute(
         string $warehouseId,
@@ -23,80 +40,98 @@ final readonly class GeneratePickListAction
         ?string $originId = null
     ): StockPickList {
         return DB::transaction(function () use ($warehouseId, $items, $assignedPickerId, $originType, $originId): StockPickList {
+            $warehouse = Warehouse::findOrFail($warehouseId);
+            $stops = [];
+            $shortages = [];
+
+            foreach ($items as $request) {
+                $item = StockItem::findOrFail($request['stock_item_id']);
+
+                if (! empty($request['reservation_id'])) {
+                    array_push($stops, ...$this->stopsFromReservation($item, (string) $request['reservation_id']));
+
+                    continue;
+                }
+
+                $requested = bcadd((string) ($request['quantity'] ?? '0'), '0', 4);
+                $quants = $this->planner->lockEligibleQuants($item, $warehouse, $request['lot_id'] ?? null);
+                ['shares' => $shares, 'short' => $short] = $this->planner->take($quants, $requested);
+
+                foreach ($shares as $share) {
+                    $quant = $share['quant'];
+                    $quant->quantity_reserved = bcadd((string) $quant->quantity_reserved, $share['quantity'], 4);
+                    $quant->save();
+
+                    $stops[] = $this->stop($item, $quant->warehouse_bin_id, $quant->lot_id, $share['quantity']);
+                }
+
+                if (Decimal::isPositive($short)) {
+                    $shortages[] = ['stock_item_id' => $item->id, 'requested' => $requested, 'short' => bcadd($short, '0', 4)];
+                }
+            }
+
+            if ($stops === []) {
+                throw new StockRuleViolation("Nothing can be picked from warehouse [{$warehouse->name}].");
+            }
+
             $pickList = StockPickList::create([
-                'warehouse_id' => $warehouseId,
-                'pick_list_number' => 'PICK-'.now()->format('Ymd').'-'.strtoupper(Str::random(4)),
+                'tenant_id' => $warehouse->tenant_id,
+                'company_id' => $warehouse->company_id,
+                'warehouse_id' => $warehouse->id,
+                'pick_list_number' => 'PICK-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
                 'assigned_picker_user_id' => $assignedPickerId,
-                'status' => 'draft',
+                'status' => $assignedPickerId === null ? 'draft' : 'assigned',
                 'origin_document_type' => $originType,
                 'origin_document_id' => $originId,
+                'shortages' => $shortages === [] ? null : $shortages,
             ]);
 
-            $sequence = 1;
-            foreach ($items as $item) {
-                $stockItemId = (string) $item['stock_item_id'];
-                $requiredQty = (float) $item['quantity'];
-                $lotId = $item['lot_id'] ?? null;
+            $bins = WarehouseBin::query()->with('rack.aisle.zone')->whereIn('id', array_column($stops, 'warehouse_bin_id'))->get()->keyBy('id');
 
-                // Find optimal quants in warehouse ordered by pick path (aisle, rack, bin)
-                $quantQuery = StockQuant::query()
-                    ->where('warehouse_id', $warehouseId)
-                    ->where('stock_item_id', $stockItemId)
-                    ->where('available_quantity', '>', 0);
-
-                if ($lotId) {
-                    $quantQuery->where('lot_id', $lotId);
-                }
-
-                $quants = $quantQuery->with(['bin.rack.aisle'])->get()
-                    ->sortBy(function (StockQuant $q) {
-                        return [
-                            $q->bin?->rack?->aisle?->code ?? 'ZZ',
-                            $q->bin?->rack?->code ?? 'ZZ',
-                            $q->bin?->code ?? 'ZZ',
-                        ];
-                    });
-
-                $remainingToPick = $requiredQty;
-
-                foreach ($quants as $quant) {
-                    if ($remainingToPick <= 0) {
-                        break;
-                    }
-
-                    $canPick = min($remainingToPick, (float) $quant->available_quantity);
-
-                    StockPickLine::create([
-                        'stock_pick_list_id' => $pickList->id,
-                        'stock_item_id' => $stockItemId,
-                        'warehouse_bin_id' => $quant->warehouse_bin_id,
-                        'lot_id' => $quant->lot_id,
-                        'serial_number_id' => $quant->serial_number_id,
-                        'requested_quantity' => $canPick,
-                        'picked_quantity' => 0.0,
-                        'status' => 'pending',
-                        'sequence_number' => $sequence++,
-                    ]);
-
-                    $remainingToPick -= $canPick;
-                }
-
-                if ($remainingToPick > 0) {
-                    // Fallback line for shortage or unassigned bin
-                    StockPickLine::create([
-                        'stock_pick_list_id' => $pickList->id,
-                        'stock_item_id' => $stockItemId,
-                        'warehouse_bin_id' => $quants->first()?->warehouse_bin_id ?? (string) Str::uuid(),
-                        'lot_id' => $lotId,
-                        'requested_quantity' => $remainingToPick,
-                        'picked_quantity' => 0.0,
-                        'status' => 'shortage',
-                        'sequence_number' => $sequence++,
-                    ]);
-                }
+            foreach ($this->route->sequence($stops, $bins) as $sequence => $stop) {
+                StockPickLine::create($stop + [
+                    'tenant_id' => $warehouse->tenant_id,
+                    'stock_pick_list_id' => $pickList->id,
+                    'quantity_picked' => 0,
+                    'status' => 'pending',
+                    'sequence_number' => $sequence + 1,
+                ]);
             }
 
             return $pickList->load('lines');
         });
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function stopsFromReservation(StockItem $item, string $reservationId): array
+    {
+        $allocations = StockReservationAllocation::query()
+            ->where('stock_reservation_id', $reservationId)
+            ->whereHas('reservation', static fn ($reservation) => $reservation->where('status', 'active')->where('stock_item_id', $item->id))
+            ->get();
+
+        if ($allocations->isEmpty()) {
+            throw new StockRuleViolation("Reservation [{$reservationId}] has nothing active to pick for item [{$item->sku}].");
+        }
+
+        return $allocations
+            ->map(fn (StockReservationAllocation $allocation): array => $this->stop($item, $allocation->warehouse_bin_id, $allocation->lot_id, (string) $allocation->quantity, $reservationId))
+            ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function stop(StockItem $item, string $binId, ?string $lotId, string $quantity, ?string $reservationId = null): array
+    {
+        return [
+            'stock_item_id' => $item->id,
+            'warehouse_bin_id' => $binId,
+            'lot_id' => $lotId,
+            'quantity_to_pick' => bcadd($quantity, '0', 4),
+            'stock_reservation_id' => $reservationId,
+        ];
     }
 }

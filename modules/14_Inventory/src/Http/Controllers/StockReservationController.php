@@ -41,7 +41,7 @@ final class StockReservationController extends Controller
     {
         $this->authorize('viewAny', StockReservation::class);
 
-        $query = StockReservation::with(['item', 'warehouse', 'bin'])
+        $query = StockReservation::with(['item', 'warehouse', 'allocations.lot'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('warehouse_id')) {
@@ -64,7 +64,7 @@ final class StockReservationController extends Controller
     #[OA\Post(
         path: '/api/v1/inventory/reservations',
         summary: 'Allocate stock reservation',
-        description: 'Reserves physical available stock for sales orders, service interventions, or projects.',
+        description: 'Reserves available stock for sales orders, service interventions, or projects, lot by lot in the FEFO or FIFO order of the item or warehouse. Quarantined, expired and too short-dated lots and quarantine or transit areas are skipped.',
         tags: ['Inventory Stock Reservations'],
         requestBody: new OA\RequestBody(
             required: true,
@@ -76,11 +76,14 @@ final class StockReservationController extends Controller
                     new OA\Property(property: 'quantity', type: 'number', example: 5),
                     new OA\Property(property: 'source_type', type: 'string', example: 'sales_order'),
                     new OA\Property(property: 'source_id', type: 'string', format: 'uuid'),
+                    new OA\Property(property: 'lot_id', type: 'string', format: 'uuid', description: 'Reserve from this lot only'),
+                    new OA\Property(property: 'warehouse_bin_id', type: 'string', format: 'uuid', description: 'Reserve from this bin only'),
+                    new OA\Property(property: 'expires_at', type: 'string', format: 'date-time'),
                 ]
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Stock reserved'),
+            new OA\Response(response: 201, description: 'Stock reserved', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockReservationDetail')),
             new OA\Response(response: 422, description: 'Insufficient stock or validation error'),
         ]
     )]
@@ -92,17 +95,18 @@ final class StockReservationController extends Controller
         $dto = new StockReservationDTO(
             stockItemId: $request->string('stock_item_id')->value(),
             warehouseId: $request->string('warehouse_id')->value(),
+            reservedForType: $request->string('source_type')->value(),
+            reservedForId: $request->string('source_id')->value(),
             quantity: (float) $request->input('quantity'),
-            sourceType: $request->string('source_type')->value(),
-            sourceId: $request->string('source_id')->value(),
-            warehouseBinId: $request->input('warehouse_bin_id'),
+            expiresAt: $request->input('expires_at'),
             userId: (string) auth()->id(),
-            expiresAt: $request->filled('expires_at') ? now()->parse($request->input('expires_at')) : null
+            lotId: $request->input('lot_id'),
+            warehouseBinId: $request->input('warehouse_bin_id')
         );
 
         $reservation = $action->execute($dto);
 
-        return response()->json(new StockReservationResource($reservation->load(['item', 'warehouse'])), 201);
+        return response()->json(new StockReservationResource($reservation->load(['item', 'warehouse', 'allocations.lot'])), 201);
     }
 
     #[OA\Post(

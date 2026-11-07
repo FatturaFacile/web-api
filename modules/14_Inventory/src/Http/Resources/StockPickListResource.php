@@ -23,6 +23,8 @@ final class StockPickListResource extends JsonResource
             'origin_document_type' => $this->origin_document_type,
             'origin_document_id' => $this->origin_document_id,
             'warehouse' => new WarehouseResource($this->whenLoaded('warehouse')),
+            'shortages' => $this->shortages,
+            'completed_at' => $this->completed_at?->toIso8601String(),
             'lines' => $this->whenLoaded('lines'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

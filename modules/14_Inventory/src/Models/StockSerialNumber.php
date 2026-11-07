@@ -16,6 +16,8 @@ final class StockSerialNumber extends BaseEnterpriseModel
         return [
             'warranty_start_date' => 'date',
             'warranty_end_date' => 'date',
+            'purchase_date' => 'date',
+            'purchase_value' => 'decimal:2',
         ];
     }
 

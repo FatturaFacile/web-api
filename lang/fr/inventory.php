@@ -25,4 +25,8 @@ return [
     'variant_has_references' => 'La variante est référencée par des mouvements de stock et ne peut être supprimée.',
     'barcode_generation_failed' => 'Impossible de générer un code-barres unique.',
     'variant_name' => ':name (:attributes)',
+    'safety_sheets' => [
+        'subject' => 'Fiches de données de sécurité du bon de livraison :number',
+        'body' => 'Vous trouverez ci-joint les fiches de données de sécurité des produits livrés avec le bon de livraison :number.',
+    ],
 ];

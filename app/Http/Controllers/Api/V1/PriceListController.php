@@ -94,6 +94,15 @@ class PriceListController extends Controller
                     new OA\Property(property: 'name', type: 'string', example: 'Wholesale Tier A'),
                     new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
                     new OA\Property(property: 'is_default', type: 'boolean', default: false),
+                    new OA\Property(property: 'parent_price_list_id', type: 'string', format: 'uuid', nullable: true, description: 'Products missing here are priced from this list'),
+                    new OA\Property(property: 'price_adjustment_percent', type: 'number', nullable: true, description: 'Applied to prices inherited from the parent'),
+                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(properties: [
+                        new OA\Property(property: 'product_id', type: 'string', format: 'uuid'),
+                        new OA\Property(property: 'price', type: 'number'),
+                        new OA\Property(property: 'min_quantity', type: 'number'),
+                        new OA\Property(property: 'valid_from', type: 'string', format: 'date', nullable: true),
+                        new OA\Property(property: 'valid_to', type: 'string', format: 'date', nullable: true),
+                    ])),
                 ]
             )
         ),
@@ -224,6 +233,8 @@ class PriceListController extends Controller
                     'product_id' => $item['product_id'],
                     'price' => $item['price'],
                     'min_quantity' => $item['min_quantity'] ?? 1,
+                    'valid_from' => $item['valid_from'] ?? null,
+                    'valid_to' => $item['valid_to'] ?? null,
                 ], $items));
             }
 
