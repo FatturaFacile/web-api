@@ -32,6 +32,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
+use Modules\Workshop\Providers\WorkshopServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -66,4 +67,5 @@ return [
     CommunicationServiceProvider::class,
     AnalyticsServiceProvider::class,
     DocumentTrustServiceProvider::class,
+    WorkshopServiceProvider::class,
 ];

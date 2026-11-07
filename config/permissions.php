@@ -54,6 +54,11 @@ return [
         // Personal data of members, minors included: closed to ordinary members. The accountant writes fees and payments
         // only, which the module checks by capability. Instructors, guardians and members use the member area.
         'associations' => ['read' => ['owner', 'admin', 'secretary', 'accountant'], 'write' => ['owner', 'admin', 'secretary', 'accountant']],
+        // Workshop staff work the folders; invoices and vehicle sales are reserved by the policy to the invoicing roles.
+        'workshop' => [
+            'read' => [...$financeReaders, 'sales', 'technician', 'service_manager'],
+            'write' => [...$finance, 'sales', 'technician', 'service_manager'],
+        ],
     ],
 
     /*

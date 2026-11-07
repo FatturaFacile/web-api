@@ -72,6 +72,7 @@
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\Associations\\": "modules/31_Associations/src/",
             "Modules\\Customs\\": "modules/32_Customs/src/",
+            "Modules\\Workshop\\": "modules/33_Workshop/src/",
             "Modules\\": "modules/"
         }
     },
