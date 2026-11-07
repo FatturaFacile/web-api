@@ -56,4 +56,16 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'subject', type: 'string', maxLength: 200),
     new OA\Property(property: 'description', type: 'string', maxLength: 10000),
 ])]
+#[OA\Schema(schema: 'HelpdeskSaveSupportMailboxRequest', description: 'Request payload validated by SaveSupportMailboxRequest. On creation name, email_address, imap_host, imap_username and imap_password are required.', type: 'object', properties: [
+    new OA\Property(property: 'name', type: 'string', maxLength: 150),
+    new OA\Property(property: 'email_address', type: 'string', format: 'email', maxLength: 180),
+    new OA\Property(property: 'imap_host', type: 'string', maxLength: 180),
+    new OA\Property(property: 'imap_port', type: 'integer', default: 993),
+    new OA\Property(property: 'imap_username', type: 'string', maxLength: 255, writeOnly: true),
+    new OA\Property(property: 'imap_password', type: 'string', maxLength: 255, writeOnly: true),
+    new OA\Property(property: 'default_team_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'default_category_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'default_priority', type: 'string', enum: ['low', 'medium', 'high', 'critical']),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+])]
 final class HelpdeskRequestSchemas {}

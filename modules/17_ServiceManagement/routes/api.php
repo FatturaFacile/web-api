@@ -7,6 +7,7 @@ use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
 use Modules\ServiceManagement\Http\Controllers\PortalHelpdeskController;
 use Modules\ServiceManagement\Http\Controllers\ServiceContractController;
+use Modules\ServiceManagement\Http\Controllers\SupportMailboxController;
 use Modules\ServiceManagement\Http\Controllers\TicketController;
 use Modules\ServiceManagement\Http\Controllers\TicketConversationController;
 use Modules\ServiceManagement\Http\Controllers\WorkOrderController;
@@ -44,6 +45,14 @@ Route::prefix('api/v1/esm')
         Route::post('/tickets/{ticket}/watchers', [HelpdeskTicketController::class, 'addWatcher'])->name('api.v1.esm.tickets.watchers.store');
         Route::delete('/tickets/{ticket}/watchers/{user}', [HelpdeskTicketController::class, 'removeWatcher'])->name('api.v1.esm.tickets.watchers.destroy');
         Route::get('/tickets/{ticket}/activities', [HelpdeskTicketController::class, 'activities'])->name('api.v1.esm.tickets.activities');
+
+        // Helpdesk: support mailboxes
+        Route::get('/helpdesk/mailboxes', [SupportMailboxController::class, 'index'])->name('api.v1.esm.helpdesk.mailboxes.index');
+        Route::post('/helpdesk/mailboxes', [SupportMailboxController::class, 'store'])->name('api.v1.esm.helpdesk.mailboxes.store');
+        Route::patch('/helpdesk/mailboxes/{id}', [SupportMailboxController::class, 'update'])->name('api.v1.esm.helpdesk.mailboxes.update');
+        Route::delete('/helpdesk/mailboxes/{id}', [SupportMailboxController::class, 'destroy'])->name('api.v1.esm.helpdesk.mailboxes.destroy');
+        Route::post('/helpdesk/mailboxes/{id}/poll', [SupportMailboxController::class, 'poll'])->name('api.v1.esm.helpdesk.mailboxes.poll');
+        Route::get('/helpdesk/mailboxes/{id}/messages', [SupportMailboxController::class, 'messages'])->name('api.v1.esm.helpdesk.mailboxes.messages');
 
         // Helpdesk: conversation
         Route::get('/tickets/{ticket}/messages', [TicketConversationController::class, 'index'])->name('api.v1.esm.tickets.messages.index');

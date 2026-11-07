@@ -28,6 +28,7 @@ use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
 use Modules\Manufacturing\Jobs\ProcessWorkCenterCapacityJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
 use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
+use Modules\ServiceManagement\Jobs\PollSupportMailboxesJob;
 use Modules\ServiceManagement\Jobs\ProcessServiceContractRenewalsJob;
 use Modules\ServiceManagement\Jobs\ScanSLABreachesJob;
 use Modules\SubscriptionBilling\Jobs\AggregateMeteredUsageJob;
@@ -68,7 +69,8 @@ $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedu
 $forEachTenant('workflow:webhooks', static fn (): object => new DispatchOutboundWebhooksJob)->everyMinute();
 $forEachTenant('workflow:timeouts', static fn (): object => new ProcessBusinessCalendarTimeoutsJob)->everyFifteenMinutes();
 $forEachTenant('workflow:prune-tokens', static fn (): object => new PruneExpiredApprovalTokensJob)->dailyAt('03:20');
-$forEachTenant('esm:sla-breaches', static fn (Tenant $tenant): object => new ScanSLABreachesJob($tenant->id))->everyFifteenMinutes();
+$forEachTenant('esm:sla-breaches', static fn (Tenant $tenant): object => new ScanSLABreachesJob($tenant->id))->everyFiveMinutes();
+$forEachTenant('esm:support-mailboxes', static fn (Tenant $tenant): object => new PollSupportMailboxesJob($tenant->id))->everyTwoMinutes();
 $forEachTenant('esm:contract-renewals', static fn (Tenant $tenant): object => new ProcessServiceContractRenewalsJob($tenant->id))->dailyAt('05:00');
 $forEachTenant('inventory:expire-reservations', static fn (): object => new ExpireStaleReservationsJob)->hourly();
 $forEachTenant('inventory:reorder-rules', static fn (Tenant $tenant): object => new EvaluateWarehouseReorderRulesJob($tenant->id))->hourly();

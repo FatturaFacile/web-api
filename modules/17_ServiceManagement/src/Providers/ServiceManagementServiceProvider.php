@@ -24,6 +24,7 @@ use Modules\ServiceManagement\Events\ChangeApprovedEvent;
 use Modules\ServiceManagement\Events\ChangeRequestCreatedEvent;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
 use Modules\ServiceManagement\Events\FieldServiceExpenseReadyEvent;
+use Modules\ServiceManagement\Events\HelpdeskTicketChanged;
 use Modules\ServiceManagement\Events\IncidentCreatedEvent;
 use Modules\ServiceManagement\Events\IncidentResolvedEvent;
 use Modules\ServiceManagement\Events\ProblemCreatedEvent;
@@ -49,12 +50,15 @@ use Modules\ServiceManagement\Listeners\CRMCustomerServiceListener;
 use Modules\ServiceManagement\Listeners\DispatchOutboxOnESMEventListener;
 use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
 use Modules\ServiceManagement\Listeners\ProjectESMListener;
+use Modules\ServiceManagement\Listeners\SendHelpdeskReplyEmailListener;
 use Modules\ServiceManagement\Listeners\WorkflowApprovalESMListener;
 use Modules\ServiceManagement\Models\ChangeRequest;
 use Modules\ServiceManagement\Models\Incident;
+use Modules\ServiceManagement\Models\SupportMailbox;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\WorkOrder;
 use Modules\ServiceManagement\Policies\ChangeRequestPolicy;
+use Modules\ServiceManagement\Policies\HelpdeskConfigurationPolicy;
 use Modules\ServiceManagement\Policies\IncidentPolicy;
 use Modules\ServiceManagement\Policies\TicketPolicy;
 use Modules\ServiceManagement\Policies\WorkOrderPolicy;
@@ -87,6 +91,9 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(ChangeRequest::class, ChangeRequestPolicy::class);
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
+        Gate::policy(SupportMailbox::class, HelpdeskConfigurationPolicy::class);
+
+        Event::listen(HelpdeskTicketChanged::class, SendHelpdeskReplyEmailListener::class);
 
         $domainEvents = [
             TicketCreatedEvent::class,

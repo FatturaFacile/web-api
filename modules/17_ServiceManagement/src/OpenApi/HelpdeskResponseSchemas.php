@@ -71,4 +71,32 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'attachments', type: 'array', items: new OA\Items(ref: '#/components/schemas/HelpdeskTicketAttachmentResource')),
     new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 ])]
+#[OA\Schema(schema: 'HelpdeskSupportMailboxResource', description: 'JSON representation produced by SupportMailboxResource. Credentials are never returned.', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'email_address', type: 'string', format: 'email'),
+    new OA\Property(property: 'imap_host', type: 'string'),
+    new OA\Property(property: 'imap_port', type: 'integer'),
+    new OA\Property(property: 'has_credentials', type: 'boolean'),
+    new OA\Property(property: 'default_team_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'default_category_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'default_priority', type: 'string'),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'last_uid', type: 'integer'),
+    new OA\Property(property: 'last_polled_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'last_error', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskSupportMailboxMessageResource', description: 'JSON representation produced by SupportMailboxMessageResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'mailbox_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'uid', type: 'integer'),
+    new OA\Property(property: 'message_id', type: 'string', nullable: true),
+    new OA\Property(property: 'from_email', type: 'string', nullable: true),
+    new OA\Property(property: 'subject', type: 'string', nullable: true),
+    new OA\Property(property: 'outcome', type: 'string', enum: ['created', 'threaded', 'duplicate', 'ignored_auto_reply', 'ignored_loop', 'failed']),
+    new OA\Property(property: 'ticket_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'reason', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
 final class HelpdeskResponseSchemas {}
