@@ -30,6 +30,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'sla_policy_id', type: 'string'),
         new OA\Property(property: 'assigned_to_id', type: 'string'),
         new OA\Property(property: 'service_team_id', type: 'string'),
+        new OA\Property(property: 'requester_user_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'asset_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'response_due_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'resolution_due_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'resolved_at', type: 'string', format: 'date-time'),

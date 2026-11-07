@@ -107,6 +107,8 @@ final class TicketController extends Controller
             channel: $validated['channel'] ?? 'portal',
             assignedToId: $validated['assigned_to_id'] ?? null,
             serviceTeamId: $validated['service_team_id'] ?? null,
+            requesterUserId: $validated['requester_user_id'] ?? null,
+            assetId: $validated['asset_id'] ?? null,
         );
 
         $ticket = $this->ticketService->createTicket($dto, $request->user()?->id);

@@ -59,6 +59,8 @@ final readonly class TicketService implements TicketServiceInterface
                 'response_due_at' => $responseDue,
                 'resolution_due_at' => $resolutionDue,
                 'metadata' => $dto->metadata,
+                'requester_user_id' => $dto->requesterUserId,
+                'asset_id' => $dto->assetId,
             ]);
 
             $this->auditLedger->record(

@@ -28,6 +28,8 @@ final class TicketResource extends JsonResource
             'sla_policy_id' => $this->sla_policy_id,
             'assigned_to_id' => $this->assigned_to_id,
             'service_team_id' => $this->service_team_id,
+            'requester_user_id' => $this->requester_user_id,
+            'asset_id' => $this->asset_id,
             'response_due_at' => $this->response_due_at?->toIso8601String(),
             'resolution_due_at' => $this->resolution_due_at?->toIso8601String(),
             'resolved_at' => $this->resolved_at?->toIso8601String(),
