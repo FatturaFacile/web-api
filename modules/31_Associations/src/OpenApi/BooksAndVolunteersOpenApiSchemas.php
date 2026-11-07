@@ -33,7 +33,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'meeting_id', type: 'string', format: 'uuid', nullable: true),
     new OA\Property(property: 'file', type: 'string', format: 'binary'),
 ], type: 'object')]
-#[OA\Schema(schema: 'AssociationReasonRequest', required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')], type: 'object')]
+#[OA\Schema(schema: 'AssociationRequiredReasonRequest', required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')], type: 'object')]
 #[OA\Schema(schema: 'AssociationVolunteerExpiries', properties: [
     new OA\Property(property: 'trainings', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssociationRecord')),
     new OA\Property(property: 'insurance', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssociationRecord')),
@@ -66,7 +66,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'cost_center_id', type: 'string', format: 'uuid', nullable: true),
     new OA\Property(property: 'expense_account_id', type: 'string', format: 'uuid', nullable: true),
 ], type: 'object')]
-#[OA\Schema(schema: 'AssociationDecisionRequest', required: ['approved'], properties: [
+#[OA\Schema(schema: 'AssociationReimbursementDecisionRequest', required: ['approved'], properties: [
     new OA\Property(property: 'approved', type: 'boolean'),
     new OA\Property(property: 'reason', description: 'Required for a rejection', type: 'string', nullable: true),
 ], type: 'object')]

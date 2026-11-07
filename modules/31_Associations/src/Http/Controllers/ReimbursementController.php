@@ -70,7 +70,7 @@ final class ReimbursementController extends AssociationController
         return $files->download($attachment->disk, $attachment->path, $attachment->original_name);
     }
 
-    #[AssociationPost('/api/v1/associations/reimbursements/{id}/decision', 'decideAssociationReimbursement', 'Approve or reject a reimbursement', 'AssociationDecisionRequest', response: 'AssociationRecord')]
+    #[AssociationPost('/api/v1/associations/reimbursements/{id}/decision', 'decideAssociationReimbursement', 'Approve or reject a reimbursement', 'AssociationReimbursementDecisionRequest', response: 'AssociationRecord')]
     public function decide(DecisionRequest $request, string $id): AssociationRecordResource
     {
         $this->allow(AssociationCapability::Finance);

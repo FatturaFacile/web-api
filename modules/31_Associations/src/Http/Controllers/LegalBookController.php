@@ -89,7 +89,7 @@ final class LegalBookController extends AssociationController
         return (new AssociationRecordResource($entry))->response()->setStatusCode(201);
     }
 
-    #[AssociationPost('/api/v1/associations/protocol/{id}/cancel', 'cancelAssociationProtocolEntry', 'Cancel a protocol entry with a reason; the number stays used', 'AssociationReasonRequest', response: 'AssociationRecord')]
+    #[AssociationPost('/api/v1/associations/protocol/{id}/cancel', 'cancelAssociationProtocolEntry', 'Cancel a protocol entry with a reason; the number stays used', 'AssociationRequiredReasonRequest', response: 'AssociationRecord')]
     public function cancel(ReasonRequest $request, string $id, ProtocolService $protocol): AssociationRecordResource
     {
         $this->allow(AssociationCapability::Manage);

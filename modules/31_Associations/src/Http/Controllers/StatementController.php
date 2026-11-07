@@ -165,7 +165,7 @@ final class StatementController extends AssociationController
         return (new AssociationRecordResource($filing))->additional(['meta' => self::FilingMeta])->response()->setStatusCode(201);
     }
 
-    #[AssociationPost('/api/v1/associations/statement-filings/{id}/filed', 'markAssociationStatementFiled', 'Record the reference of the filing made on the register portal', 'AssociationReasonRequest', response: 'AssociationRecord')]
+    #[AssociationPost('/api/v1/associations/statement-filings/{id}/filed', 'markAssociationStatementFiled', 'Record the reference of the filing made on the register portal', 'AssociationRequiredReasonRequest', response: 'AssociationRecord')]
     public function markFiled(ReasonRequest $request, string $id): AssociationRecordResource
     {
         $this->allow(AssociationCapability::Finance);

@@ -66,7 +66,7 @@ final class FundraisingController extends AssociationController
         return (new AssociationRecordResource($receipt))->additional(['meta' => ['tax_effects_not_stated' => true]])->response()->setStatusCode(201);
     }
 
-    #[AssociationPost('/api/v1/associations/donation-receipts/{id}/cancel', 'cancelAssociationDonationReceipt', 'Cancel a receipt with a reason; it keeps its number', 'AssociationReasonRequest', response: 'AssociationRecord')]
+    #[AssociationPost('/api/v1/associations/donation-receipts/{id}/cancel', 'cancelAssociationDonationReceipt', 'Cancel a receipt with a reason; it keeps its number', 'AssociationRequiredReasonRequest', response: 'AssociationRecord')]
     public function cancelReceipt(ReasonRequest $request, string $id): AssociationRecordResource
     {
         $this->allow(AssociationCapability::Finance);

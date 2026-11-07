@@ -10,7 +10,6 @@ use OpenApi\Attributes as OA;
  * Parameters, payloads and responses shared by the restaurant endpoints.
  */
 #[OA\Tag(name: 'Hospitality', description: 'Restaurant service on the POS: room plan, orders by course, kitchen tickets, split bills')]
-#[OA\Parameter(parameter: 'HospitalityId', name: 'id', description: 'Record identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Response(response: 'HospitalityUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'HospitalityForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'HospitalityNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]

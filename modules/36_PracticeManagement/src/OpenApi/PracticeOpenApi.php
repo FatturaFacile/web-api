@@ -10,7 +10,6 @@ use OpenApi\Attributes as OA;
  * Parameters, payloads and responses shared by the practice management endpoints.
  */
 #[OA\Tag(name: 'Practice Management', description: 'Trust offices and law firms: activity control, fee notes from activities, multi-client period closing')]
-#[OA\Parameter(parameter: 'PracticeId', name: 'id', description: 'Record identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Response(response: 'PracticeUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'PracticeForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'PracticeNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]

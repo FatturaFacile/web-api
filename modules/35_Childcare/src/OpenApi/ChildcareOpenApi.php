@@ -12,7 +12,6 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Childcare', description: 'Kindergartens: children, attendance, care, documents, fees and cantonal subsidies')]
 #[OA\Tag(name: 'Childcare Family Portal', description: 'What guardians see and do with their personal link')]
 #[OA\SecurityScheme(securityScheme: 'familyToken', type: 'apiKey', description: 'Personal token of a guardian on the family portal', name: 'X-Family-Token', in: 'header')]
-#[OA\Parameter(parameter: 'ChildcareId', name: 'id', description: 'Record identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Response(response: 'ChildcareUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'ChildcareForbidden', description: 'The role of the user does not allow this area of the module', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'ChildcareNotFound', description: 'Record not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]

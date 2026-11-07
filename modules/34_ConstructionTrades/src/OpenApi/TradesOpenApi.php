@@ -10,8 +10,6 @@ use OpenApi\Attributes as OA;
  * Parameters, payloads and responses shared by the construction trades endpoints.
  */
 #[OA\Tag(name: 'Construction Trades', description: 'Painters, plasterers and builders: price lists, work cycles, bids, settlements, billings and site costs')]
-#[OA\Parameter(parameter: 'TradesId', name: 'id', description: 'Record identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
-#[OA\Parameter(parameter: 'TradesPositionId', name: 'positionId', description: 'Bid position identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Response(response: 'TradesUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'TradesForbidden', description: 'The role of the user in the company does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'TradesNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]

@@ -176,7 +176,7 @@ final class PrivacyController extends AssociationController
         return (new AssociationRecordResource($this->privacy->receiveRequest($request->validated())))->response()->setStatusCode(201);
     }
 
-    #[AssociationPost('/api/v1/associations/privacy/requests/{id}/extend', 'extendAssociationDataSubjectRequest', 'Extend the deadline by two further months, with a reason', 'AssociationReasonRequest', response: 'AssociationRecord')]
+    #[AssociationPost('/api/v1/associations/privacy/requests/{id}/extend', 'extendAssociationDataSubjectRequest', 'Extend the deadline by two further months, with a reason', 'AssociationRequiredReasonRequest', response: 'AssociationRecord')]
     public function extend(ReasonRequest $request, string $id): AssociationRecordResource
     {
         $this->allow(AssociationCapability::Privacy);
