@@ -33,6 +33,7 @@ final class RepairOrder extends BaseEnterpriseModel
             'parts_amount' => 'decimal:2',
             'received_at' => 'datetime',
             'delivered_at' => 'datetime',
+            'invoiced_at' => 'datetime',
         ];
     }
 

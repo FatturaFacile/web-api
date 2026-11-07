@@ -225,6 +225,44 @@ final class RepairOrderController extends Controller
         return response()->json($repairs->addPart(RepairOrder::findOrFail($id), $validated, (string) auth()->id()), 201);
     }
 
+    #[OA\Post(
+        path: '/api/v1/inventory/repair-orders/{id}/invoice',
+        summary: 'Invoice a repair outside warranty',
+        description: 'Issues, once, the sales invoice of a finished repair (ready or delivered) that is not under warranty: a labour line for the labour amount and one line per spare part, at the sale price of its product unless stated. The parts already left stock when they were used, so nothing is issued again. A second call returns the invoice already issued.',
+        tags: ['Inventory Warranties and Repairs'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RepairOrderInvoiceRequest')),
+        responses: [
+            new OA\Response(response: 201, description: 'Invoice issued', content: new OA\JsonContent(ref: '#/components/schemas/RepairOrderInvoiceResponse')),
+            new OA\Response(response: 200, description: 'The repair was already invoiced', content: new OA\JsonContent(ref: '#/components/schemas/RepairOrderInvoiceResponse')),
+            new OA\Response(response: 404, description: 'Repair order not found'),
+            new OA\Response(response: 422, description: 'Under warranty, not finished, nothing to invoice, a part without price, or a closed period'),
+        ]
+    )]
+    #[EnterpriseEndpoint(summary: 'Invoice a repair outside warranty', tags: ['Inventory'])]
+    public function invoice(string $id, Request $request, RepairOrderService $repairs): JsonResponse
+    {
+        $repair = RepairOrder::findOrFail($id);
+        $validated = $request->validate([
+            'tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
+            'date' => ['nullable', 'date_format:Y-m-d'],
+            'currency' => ['nullable', 'string', 'size:3'],
+            'parts' => ['sometimes', 'array'],
+            'parts.*.line_id' => ['required', 'uuid', Rule::exists('repair_order_lines', 'id')->where('repair_order_id', $repair->id)],
+            'parts.*.unit_price' => ['nullable', 'numeric', 'min:0'],
+            'parts.*.tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+        ]);
+
+        $result = $repairs->invoice($repair, $validated);
+
+        return response()->json([
+            'repair_order' => $result['repair'],
+            'invoice_id' => $result['invoice']->id,
+            'invoice_number' => $result['invoice']->invoice_number,
+            'total_gross' => (string) $result['invoice']->total_gross,
+        ], $result['created'] ? 201 : 200);
+    }
+
     /**
      * @return array<string, mixed>
      */
