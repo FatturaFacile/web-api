@@ -150,6 +150,24 @@ jobs:
               exit 1
             fi
 
+            # About 3600 relations: tenant backups and schema rebuilds need more lock slots than the default 64.
+            # ALTER SYSTEM keeps the value in the data volume; PostgreSQL restarts only when the value changes.
+            LOCKS=$(docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -tAc "SHOW max_locks_per_transaction"' | tr -d '[:space:]')
+            if [ "$LOCKS" != "256" ]; then
+              echo "Raising max_locks_per_transaction from $LOCKS to 256..."
+              docker compose exec -T postgres sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "ALTER SYSTEM SET max_locks_per_transaction = 256"'
+              docker compose restart postgres
+              RETRIES=30
+              until docker compose exec -T postgres pg_isready -h localhost || [ $RETRIES -eq 0 ]; do
+                sleep 2
+                RETRIES=$((RETRIES-1))
+              done
+              if [ $RETRIES -eq 0 ]; then
+                echo "Deployment failed: PostgreSQL did not come back after the lock setting change."
+                exit 1
+              fi
+            fi
+
             # Launch web application container
             docker compose up -d app
 
@@ -183,7 +201,7 @@ jobs:
               php -d memory_limit=256M artisan config:cache
               php -d memory_limit=256M artisan route:cache
               php -d memory_limit=256M artisan view:cache
-              php -d memory_limit=512M artisan l5-swagger:generate
+              php -d memory_limit=1G artisan l5-swagger:generate
             "
 
             # Start worker daemons after migrations and cache generation succeed
