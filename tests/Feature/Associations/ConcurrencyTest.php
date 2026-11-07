@@ -27,7 +27,7 @@ function runConcurrently(string $mode, string $fixtureFile): array
 
     for ($index = 0; $index < ASSOCIATION_CONCURRENT_WORKERS; $index++) {
         $pipes = [];
-        $process = proc_open([PHP_BINARY, '-d', 'memory_limit=1G', $script, $mode, $fixtureFile, (string) $index, (string) $startAt], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+        $process = proc_open([PHP_BINARY, '-d', 'memory_limit=1G', $script, $mode, $fixtureFile, (string) $index, (string) $startAt], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, base_path(), workerEnvironment());
         $processes[] = [$process, $pipes];
     }
 
@@ -44,10 +44,25 @@ function runConcurrently(string $mode, string $fixtureFile): array
     return $outcomes;
 }
 
+/**
+ * The environment of a worker: the one of this process, pointed at the database this test process uses.
+ *
+ * @return array<string, string>
+ */
+function workerEnvironment(): array
+{
+    return [
+        ...getenv(),
+        'APP_ENV' => 'testing',
+        'DB_CONNECTION' => 'pgsql',
+        'DB_DATABASE' => (string) config('database.connections.pgsql.database'),
+    ];
+}
+
 function workerCommand(string ...$arguments): string
 {
     $pipes = [];
-    $process = proc_open([PHP_BINARY, '-d', 'memory_limit=1G', __DIR__.'/concurrency_worker.php', ...$arguments], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes);
+    $process = proc_open([PHP_BINARY, '-d', 'memory_limit=1G', __DIR__.'/concurrency_worker.php', ...$arguments], [1 => ['pipe', 'w'], 2 => ['pipe', 'w']], $pipes, base_path(), workerEnvironment());
     $output = (string) stream_get_contents($pipes[1]);
     $error = (string) stream_get_contents($pipes[2]);
     proc_close($process);
