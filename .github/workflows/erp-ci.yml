@@ -88,7 +88,10 @@ jobs:
       - name: Run Laravel Pint Code Formatter Check
         run: ./vendor/bin/pint --test
 
-      # PostgreSQL runs as a step, not a service: a service cannot pass server options, and about 3600 relations need
+      - name: Larastan
+        run: ./vendor/bin/phpstan analyse
+
+        # PostgreSQL runs as a step, not a service: a service cannot pass server options, and about 3600 relations need
       # more lock slots than the default to drop the schema in each parallel test process. tmpfs keeps it in RAM.
       - name: Start PostgreSQL
         run: |
