@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Middleware\EnsurePlatformAdmin;
+use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
@@ -32,8 +33,13 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->throttleApi();
 
+        // The tenant context and, after it, the two-factor requirement of that tenant.
+        $middleware->group('tenant', [
+            IdentifyTenant::class,
+            EnsureTwoFactorEnrolled::class,
+        ]);
+
         $middleware->alias([
-            'tenant' => IdentifyTenant::class,
             'module.access' => EnsureModuleAccess::class,
             'platform.admin' => EnsurePlatformAdmin::class,
             'locale' => SetLocale::class,

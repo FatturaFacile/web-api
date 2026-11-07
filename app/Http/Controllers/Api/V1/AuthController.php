@@ -6,15 +6,19 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Auth\AuthProblem;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\TwoFactorChallengeRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -26,7 +30,9 @@ class AuthController extends Controller
     use ApiResponse;
 
     public function __construct(
-        private readonly TenantContext $tenantContext
+        private readonly TenantContext $tenantContext,
+        private readonly TwoFactorAuthentication $twoFactor,
+        private readonly RegistrationAudit $audit,
     ) {}
 
     /**
@@ -146,6 +152,120 @@ class AuthController extends Controller
             $activeTenant = $tenants->first();
         }
 
+        // With two factors the password alone gives no access token: a short-lived challenge is exchanged for one.
+        if ($this->twoFactor->isEnabled($user)) {
+            return $this->successResponse(
+                data: [
+                    'two_factor_required' => true,
+                    'challenge_token' => $this->twoFactor->createChallenge($user, $activeTenant?->id),
+                    'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
+                ],
+                message: __('two_factor.messages.challenge_required')
+            );
+        }
+
+        return $this->authenticatedResponse($request, $user, $activeTenant, $tenants);
+    }
+
+    /**
+     * Exchange the challenge of a login with two factors for a Sanctum Bearer token.
+     */
+    #[OA\Post(
+        path: '/api/v1/auth/two-factor-challenge',
+        operationId: 'twoFactorChallenge',
+        description: 'Second step of a login with two-factor authentication: the challenge_token returned by the login is exchanged for an access token with a code of the authenticator app or a recovery code. A challenge expires after a few minutes and after repeated wrong codes; the user then logs in again.',
+        summary: 'Complete a login with two factors',
+        tags: ['Authentication'],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['challenge_token'],
+                properties: [
+                    new OA\Property(property: 'challenge_token', type: 'string', example: 'wq3...64 chars'),
+                    new OA\Property(property: 'code', description: 'Six-digit code of the authenticator app. Required without recovery_code.', type: 'string', example: '123456', nullable: true),
+                    new OA\Property(property: 'recovery_code', description: 'Single-use recovery code. Required without code.', type: 'string', example: 'abcde-fghjk', nullable: true),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Authenticated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Challenge expired or unknown, or wrong code', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Account disabled or no longer a member of the tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 429, description: 'Too many attempts', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function twoFactorChallenge(TwoFactorChallengeRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $token = (string) $validated['challenge_token'];
+        $challenge = $this->twoFactor->findChallenge($token);
+
+        /** @var User|null $user */
+        $user = $challenge === null ? null : User::with('tenants')->find($challenge['user_id']);
+
+        if ($challenge === null || $user === null) {
+            return $this->problemDetailsResponse(
+                title: __('two_factor.errors.challenge_invalid_title'),
+                detail: __('two_factor.errors.challenge_invalid_detail'),
+                status: Response::HTTP_UNAUTHORIZED,
+                type: AuthProblem::TwoFactorChallengeInvalid->value,
+            );
+        }
+
+        $method = $this->twoFactor->verifyCode($user, $validated['code'] ?? null, $validated['recovery_code'] ?? null);
+
+        if ($method === null) {
+            $this->twoFactor->recordFailedAttempt($token);
+            $this->audit->record(RegistrationAudit::TWO_FACTOR_CHALLENGE_FAILED, (string) $user->id);
+            event(new Failed('sanctum', $user, ['two_factor' => true]));
+
+            return $this->problemDetailsResponse(
+                title: __('two_factor.errors.code_invalid_title'),
+                detail: __('two_factor.errors.code_invalid_detail'),
+                status: Response::HTTP_UNAUTHORIZED,
+                type: AuthProblem::TwoFactorCodeInvalid->value,
+            );
+        }
+
+        $this->twoFactor->forgetChallenge($token);
+
+        // The account may have changed in the minutes between the password and the code.
+        if (! $user->is_active || $user->email_verified_at === null) {
+            return $this->problemDetailsResponse(
+                title: 'Account Disabled',
+                detail: 'Your user account has been disabled. Please contact your organization administrator.',
+                status: Response::HTTP_FORBIDDEN
+            );
+        }
+
+        $tenants = $user->tenants;
+        $activeTenant = $challenge['tenant_id'] === null ? $tenants->first() : $tenants->firstWhere('id', $challenge['tenant_id']);
+
+        if ($challenge['tenant_id'] !== null && $activeTenant === null) {
+            return $this->problemDetailsResponse(
+                title: 'Invalid Tenant Access',
+                detail: 'You are not a member of the requested tenant.',
+                status: Response::HTTP_FORBIDDEN
+            );
+        }
+
+        if ($method === TwoFactorAuthentication::METHOD_RECOVERY_CODE) {
+            $this->audit->record(RegistrationAudit::TWO_FACTOR_RECOVERY_CODE_USED, (string) $user->id, [
+                'remaining_recovery_codes' => $this->twoFactor->remainingRecoveryCodes($user),
+            ]);
+        }
+
+        return $this->authenticatedResponse($request, $user, $activeTenant, $tenants);
+    }
+
+    /**
+     * Opens the session and issues the access token of a user who passed every login check.
+     *
+     * @param  Collection<int, Tenant>  $tenants
+     */
+    private function authenticatedResponse(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants): JsonResponse
+    {
         if ($request->hasSession()) {
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
@@ -165,7 +285,9 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'locale' => $user->locale,
+                    'two_factor_enabled' => $this->twoFactor->isEnabled($user),
                 ],
+                'two_factor_setup_required' => ! $this->twoFactor->isEnabled($user) && $this->twoFactor->isRequiredBy($activeTenant),
                 'active_tenant' => $activeTenant ? [
                     'id' => $activeTenant->id,
                     'name' => $activeTenant->name,

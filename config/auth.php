@@ -150,4 +150,20 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Two-factor authentication (TOTP)
+    |--------------------------------------------------------------------------
+    */
+
+    'two_factor' => [
+        'issuer' => env('AUTH_TWO_FACTOR_ISSUER', env('APP_NAME', 'FatturaFacile')),
+        'challenge_ttl_minutes' => (int) env('AUTH_TWO_FACTOR_CHALLENGE_TTL_MINUTES', 5),
+        'max_challenge_attempts' => (int) env('AUTH_TWO_FACTOR_MAX_CHALLENGE_ATTEMPTS', 5),
+        'recovery_codes' => (int) env('AUTH_TWO_FACTOR_RECOVERY_CODES', 8),
+        'rate_limits' => [
+            'challenge_per_minute' => (int) env('AUTH_TWO_FACTOR_CHALLENGE_PER_MINUTE', 10),
+        ],
+    ],
+
 ];

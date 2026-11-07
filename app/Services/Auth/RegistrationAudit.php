@@ -51,6 +51,22 @@ final class RegistrationAudit
 
     public const PASSWORD_CHANGE_NOTIFIED = 'PASSWORD_CHANGE_NOTIFIED';
 
+    public const TWO_FACTOR_SETUP_STARTED = 'TWO_FACTOR_SETUP_STARTED';
+
+    public const TWO_FACTOR_ENABLED = 'TWO_FACTOR_ENABLED';
+
+    public const TWO_FACTOR_DISABLED = 'TWO_FACTOR_DISABLED';
+
+    public const TWO_FACTOR_RESET_BY_ADMIN = 'TWO_FACTOR_RESET_BY_ADMIN';
+
+    public const TWO_FACTOR_RECOVERY_CODES_REGENERATED = 'TWO_FACTOR_RECOVERY_CODES_REGENERATED';
+
+    public const TWO_FACTOR_RECOVERY_CODE_USED = 'TWO_FACTOR_RECOVERY_CODE_USED';
+
+    public const TWO_FACTOR_CHALLENGE_FAILED = 'TWO_FACTOR_CHALLENGE_FAILED';
+
+    public const TWO_FACTOR_REQUIREMENT_CHANGED = 'TWO_FACTOR_REQUIREMENT_CHANGED';
+
     public function __construct(private readonly AuditLedgerInterface $ledger) {}
 
     /**

@@ -38,6 +38,9 @@ class User extends Authenticatable
         'password',
         'remember_token',
         'email_verification_token',
+        'two_factor_secret',
+        'two_factor_recovery_codes',
+        'two_factor_last_used_step',
     ];
 
     protected function casts(): array
@@ -53,6 +56,10 @@ class User extends Authenticatable
             'is_platform_admin' => 'boolean',
             'password' => 'hashed',
             'is_active' => 'boolean',
+            'two_factor_secret' => 'encrypted',
+            'two_factor_recovery_codes' => 'encrypted:array',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_last_used_step' => 'integer',
         ];
     }
 

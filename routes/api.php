@@ -69,6 +69,7 @@ use App\Http\Controllers\Api\V1\System\TenantBackupController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
+use App\Http\Controllers\Api\V1\TwoFactorController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
@@ -80,6 +81,7 @@ Route::prefix('v1')->group(function (): void {
     // Public Auth & Bootstrap Routes
     // ----------------------------------------------------
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware(['locale', 'throttle:login'])->name('auth.login');
+    Route::post('/auth/two-factor-challenge', [AuthController::class, 'twoFactorChallenge'])->middleware(['locale', 'throttle:two-factor-challenge'])->name('auth.two-factor-challenge');
     Route::middleware('locale')->prefix('auth')->name('auth.')->group(function (): void {
         Route::post('/register', [RegistrationController::class, 'register'])->middleware('throttle:registration')->name('register');
         Route::get('/verify-email', [RegistrationController::class, 'verify'])->middleware('throttle:email-verification')->name('verify-email');
@@ -146,6 +148,11 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
             Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
             Route::post('/switch-tenant', [AuthController::class, 'switchTenant'])->name('switch-tenant');
+            Route::get('/two-factor', [TwoFactorController::class, 'status'])->name('two-factor.status');
+            Route::post('/two-factor/enable', [TwoFactorController::class, 'enable'])->middleware('throttle:6,1')->name('two-factor.enable');
+            Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirm'])->middleware('throttle:6,1')->name('two-factor.confirm');
+            Route::post('/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->middleware('throttle:6,1')->name('two-factor.recovery-codes');
+            Route::post('/two-factor/disable', [TwoFactorController::class, 'disable'])->middleware('throttle:6,1')->name('two-factor.disable');
         });
 
         // 2. Executive Dashboard & Financial Health
@@ -466,6 +473,12 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
             Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
             Route::get('/document-quota', [DocumentQuotaController::class, 'usage'])->name('document-quota');
+
+            Route::middleware('module.access:system')->group(function (): void {
+                Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');
+                Route::put('/security/two-factor', [TwoFactorController::class, 'updatePolicy'])->name('security.two-factor.update');
+                Route::post('/users/{userId}/two-factor/reset', [TwoFactorController::class, 'resetMember'])->whereUuid('userId')->name('users.two-factor.reset');
+            });
 
             Route::middleware('module.access:integrations')->group(function (): void {
                 Route::get('/document-templates', [DocumentTemplateController::class, 'index'])->name('document-templates.index');
