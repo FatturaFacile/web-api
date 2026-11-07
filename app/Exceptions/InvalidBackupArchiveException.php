@@ -38,6 +38,14 @@ class InvalidBackupArchiveException extends RuntimeException
 
     public const SNAPSHOT_FAILED = 'snapshot_failed';
 
+    public const UNSIGNED_ARCHIVE = 'unsigned_archive';
+
+    public const INVALID_SIGNATURE = 'invalid_signature';
+
+    public const FILE_CHECKSUM_MISMATCH = 'file_checksum_mismatch';
+
+    public const FOREIGN_REFERENCE = 'foreign_reference';
+
     /**
      * @param  array<string, mixed>  $context  replacements of the message
      */

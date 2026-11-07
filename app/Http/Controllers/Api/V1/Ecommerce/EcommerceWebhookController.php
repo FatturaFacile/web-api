@@ -10,11 +10,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\EcommerceChannel;
 use App\Services\Ecommerce\EcommerceManager;
+use App\Services\Ecommerce\WebhookReplayGuard;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
+use Throwable;
 
 class EcommerceWebhookController extends Controller
 {
@@ -67,7 +69,7 @@ class EcommerceWebhookController extends Controller
             ),
         ]
     )]
-    public function __invoke(Request $request, EcommerceManager $manager, ProcessEcommerceWebhook $process, string $channelUuid): JsonResponse
+    public function __invoke(Request $request, EcommerceManager $manager, ProcessEcommerceWebhook $process, WebhookReplayGuard $replays, string $channelUuid): JsonResponse
     {
         $channel = Str::isUuid($channelUuid)
             ? EcommerceChannel::withoutGlobalScopes()->where('is_active', true)->find($channelUuid)
@@ -77,14 +79,35 @@ class EcommerceWebhookController extends Controller
             return $this->problemDetailsResponse(__('ecommerce.problem_titles.webhook'), __('ecommerce.errors.unknown_channel'), Response::HTTP_NOT_FOUND);
         }
 
+        $claim = ['status' => WebhookReplayGuard::ACCEPTED, 'keys' => []];
+
         try {
-            if (! $manager->driver($channel)->verifyWebhookSignature($request)) {
+            $driver = $manager->driver($channel);
+
+            if (! $driver->verifyWebhookSignature($request)) {
                 return $this->problemDetailsResponse(__('ecommerce.problem_titles.webhook'), __('ecommerce.errors.invalid_signature'), Response::HTTP_UNAUTHORIZED);
+            }
+
+            $claim = $replays->claim($channel, $driver, $request);
+
+            if ($claim['status'] === WebhookReplayGuard::EXPIRED) {
+                return $this->problemDetailsResponse(__('ecommerce.problem_titles.webhook'), __('ecommerce.errors.webhook_expired'), Response::HTTP_UNAUTHORIZED);
+            }
+
+            // Acknowledged without processing, so the platform stops retrying a delivery that was already handled.
+            if ($claim['status'] === WebhookReplayGuard::REPLAYED) {
+                return $this->successResponse(['replayed' => true], __('ecommerce.messages.webhook_replayed'));
             }
 
             return $this->successResponse($process->execute($channel, $request), __('ecommerce.messages.webhook_processed'));
         } catch (EcommerceException $e) {
+            $replays->release($claim['keys']);
+
             return $this->problemDetailsResponse(__('ecommerce.problem_titles.webhook'), $e->getMessage(), Response::HTTP_BAD_GATEWAY);
+        } catch (Throwable $e) {
+            $replays->release($claim['keys']);
+
+            throw $e;
         }
     }
 }

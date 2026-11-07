@@ -6,6 +6,7 @@ namespace Modules\Childcare\Http\Controllers;
 
 use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
+use App\Services\Security\CsvFormulaNeutralizer;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -145,7 +146,7 @@ final class ChildcareBillingController extends Controller
         fputcsv($stream, $columns, ';', '"', '');
 
         foreach ($rows as $row) {
-            fputcsv($stream, array_map(static fn (string $column): string => (string) $row[$column], $columns), ';', '"', '');
+            fputcsv($stream, array_map(static fn (string $column): string => CsvFormulaNeutralizer::neutralize($row[$column]), $columns), ';', '"', '');
         }
 
         rewind($stream);

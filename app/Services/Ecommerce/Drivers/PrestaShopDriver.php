@@ -40,7 +40,7 @@ class PrestaShopDriver extends AbstractEcommerceDriver
 
     protected function http(): PendingRequest
     {
-        return Http::withBasicAuth($this->credential('api_key'), '')->timeout(self::TIMEOUT_SECONDS);
+        return $this->guarded(Http::withBasicAuth($this->credential('api_key'), '')->timeout(self::TIMEOUT_SECONDS));
     }
 
     public function testConnection(): bool

@@ -117,7 +117,7 @@ test('fees are billed monthly net of a subsidy that applies only once verified',
     $this->postJson('/api/v1/childcare/billing/runs', ['period' => '2026-11', 'date' => '2026-11-30'])->assertOk()
         ->assertJsonCount(0, 'data.billed')->assertJsonPath('data.skipped.0.reason', fn (string $reason): bool => str_contains($reason, 'not verified'));
 
-    $this->postJson("/api/v1/childcare/subsidy-rules/{$rule}/verify", ['source_reference' => 'Test fixture, not an official rule'])->assertOk();
+    $this->postJson("/api/v1/childcare/subsidy-rules/{$rule}/verify", ['source_reference' => '=Test fixture, not an official rule'])->assertOk();
     $run = $this->postJson('/api/v1/childcare/billing/runs', ['period' => '2026-11', 'date' => '2026-11-30'])->assertOk()->assertJsonPath('data.billed.0.net_amount', '170.00');
 
     $invoice = Invoice::query()->with('items')->findOrFail($run->json('data.billed.0.invoice_id'));
@@ -128,7 +128,8 @@ test('fees are billed monthly net of a subsidy that applies only once verified',
 
     $this->postJson('/api/v1/childcare/billing/runs', ['period' => '2026-11', 'date' => '2026-11-30'])->assertOk()->assertJsonCount(0, 'data.billed');
     $csv = (string) $this->get('/api/v1/childcare/billing/subsidies/export?period=2026-11&canton=TI')->assertOk()->getContent();
-    expect($csv)->toContain($child['code'])->toContain('60.00')->toContain('Test fixture');
+    // The source reference starts with a formula character: the CSV neutralises it.
+    expect($csv)->toContain($child['code'])->toContain('60.00')->toContain("'=Test fixture")->not->toContain(';=Test fixture');
 
     app(TenantContext::class)->setTenant($this->tenant);
     $model = SubsidyRule::query()->findOrFail($rule);

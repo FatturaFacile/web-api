@@ -25,9 +25,9 @@ class WooCommerceDriver extends AbstractEcommerceDriver
 
     protected function http(): PendingRequest
     {
-        return Http::withBasicAuth($this->credential('consumer_key'), $this->credential('consumer_secret'))
+        return $this->guarded(Http::withBasicAuth($this->credential('consumer_key'), $this->credential('consumer_secret'))
             ->acceptJson()
-            ->timeout(self::TIMEOUT_SECONDS);
+            ->timeout(self::TIMEOUT_SECONDS));
     }
 
     public function testConnection(): bool
@@ -145,6 +145,13 @@ class WooCommerceDriver extends AbstractEcommerceDriver
         }
 
         return [['type' => 'order', 'order' => $this->normalizeOrder($body)]];
+    }
+
+    public function webhookDeliveryId(Request $request): ?string
+    {
+        $id = $request->header('X-WC-Webhook-Delivery-ID');
+
+        return is_string($id) && $id !== '' ? mb_substr($id, 0, 200) : null;
     }
 
     public function verifyWebhookSignature(Request $request): bool

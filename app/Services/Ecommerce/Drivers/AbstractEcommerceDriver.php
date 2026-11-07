@@ -5,19 +5,24 @@ declare(strict_types=1);
 namespace App\Services\Ecommerce\Drivers;
 
 use App\Contracts\Ecommerce\EcommerceDriverInterface;
+use App\Contracts\Ecommerce\IdentifiesWebhookDeliveries;
 use App\Exceptions\EcommerceException;
+use App\Exceptions\UnsafeOutboundUrlException;
 use App\Models\EcommerceChannel;
 use App\Models\EcommerceMapping;
 use App\Models\Product;
+use App\Services\Security\OutboundUrlGuard;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 
 /**
  * Shared plumbing of the platform drivers: credentials, HTTP error handling, mapping lookup and signature helpers.
- * Drivers talk to the shop exclusively through Laravel's HTTP client, so tests can fake every call.
+ * Drivers talk to the shop exclusively through Laravel's HTTP client, so tests can fake every call, and every client
+ * goes through {@see guarded()}: the shop URL must resolve to public addresses, which are pinned, and redirects are off.
  */
-abstract class AbstractEcommerceDriver implements EcommerceDriverInterface
+abstract class AbstractEcommerceDriver implements EcommerceDriverInterface, IdentifiesWebhookDeliveries
 {
     protected const TIMEOUT_SECONDS = 20;
 
@@ -44,6 +49,34 @@ abstract class AbstractEcommerceDriver implements EcommerceDriverInterface
      * @return array<string, mixed>
      */
     abstract protected function normalizeOrder(array $order): array;
+
+    /**
+     * The client with the outbound guard applied: a shop URL (or a pagination link the shop returns) that points to a
+     * non-public address fails with an `invalid_url` error instead of being called.
+     */
+    protected function guarded(PendingRequest $request): PendingRequest
+    {
+        return app(OutboundUrlGuard::class)->protect(
+            $request,
+            static fn (UnsafeOutboundUrlException $exception): EcommerceException => EcommerceException::because(EcommerceException::INVALID_URL),
+        );
+    }
+
+    /**
+     * The delivery id the platform sends with a webhook, when it sends one. Not covered by the signature.
+     */
+    public function webhookDeliveryId(Request $request): ?string
+    {
+        return null;
+    }
+
+    /**
+     * When the platform triggered the webhook, when it says so. Not covered by the signature.
+     */
+    public function webhookTriggeredAt(Request $request): ?CarbonImmutable
+    {
+        return null;
+    }
 
     protected function credential(string $key): string
     {

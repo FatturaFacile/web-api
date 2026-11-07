@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Services\Shipping;
 
+use App\Exceptions\UnsafeOutboundUrlException;
+use App\Services\Security\OutboundUrlGuard;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 use Modules\Inventory\Contracts\ShippingCarrierDriver;
 use Modules\Inventory\DTOs\CarrierBooking;
 use Modules\Inventory\DTOs\CarrierTrackingEvent;
@@ -32,6 +36,10 @@ final class DpdSwitzerlandDriver implements ShippingCarrierDriver
 
     private const int ADDRESS_LINE_LENGTH = 35;
 
+    private const int REASON_LENGTH = 120;
+
+    private const int TIMEOUT_SECONDS = 30;
+
     /** The DPD status codes, as the steps of this application. */
     private const array STATUS_MAP = [
         'ACCEPTED' => 'picked_up',
@@ -55,7 +63,7 @@ final class DpdSwitzerlandDriver implements ShippingCarrierDriver
         $grams = (int) bcmul((string) ($shipment->gross_weight_kg ?? '0'), '1000', 0);
         $share = (int) ceil($grams / $parcels);
 
-        $response = $this->send($carrier, fn (string $token): Response => Http::withToken($token)->acceptJson()->post($this->url($carrier, '/api/v1/shipments'), [[
+        $response = $this->send($carrier, fn (string $token): Response => $this->http()->withToken($token)->post($this->url($carrier, '/api/v1/shipments'), [[
             'invoicingNumber' => (string) $carrier->contract_number,
             'numberOfParcels' => $parcels,
             'clientSoftware' => 'FatturaFacile',
@@ -93,7 +101,7 @@ final class DpdSwitzerlandDriver implements ShippingCarrierDriver
 
     public function track(ShippingCarrier $carrier, Shipment $shipment): array
     {
-        $response = $this->send($carrier, fn (string $token): Response => Http::withToken($token)->acceptJson()
+        $response = $this->send($carrier, fn (string $token): Response => $this->http()->withToken($token)
             ->get($this->url($carrier, '/api/v1/tracking/'.rawurlencode((string) $shipment->tracking_number)), ['lang' => 'it_CH']));
 
         if ($response->status() === 404) {
@@ -135,7 +143,7 @@ final class DpdSwitzerlandDriver implements ShippingCarrierDriver
         $credentials = $this->credentials($carrier);
 
         try {
-            $login = Http::acceptJson()->post($this->url($carrier, '/api/v1/login'), ['username' => $credentials['username'], 'password' => $credentials['password']]);
+            $login = $this->http()->post($this->url($carrier, '/api/v1/login'), ['username' => $credentials['username'], 'password' => $credentials['password']]);
 
             if (! $login->successful() || ! is_string($login->json('token'))) {
                 throw new CarrierException('DPD refused the login of carrier ['.$carrier->code.'].');
@@ -169,7 +177,25 @@ final class DpdSwitzerlandDriver implements ShippingCarrierDriver
 
     private function url(ShippingCarrier $carrier, string $path): string
     {
-        return rtrim((string) (((array) $carrier->credentials)['base_url'] ?? self::PRODUCTION_URL), '/').$path;
+        $base = (string) (((array) $carrier->credentials)['base_url'] ?? self::PRODUCTION_URL);
+
+        // A stored base URL is checked again here: it may predate the validation, and only https is acceptable.
+        if (! str_starts_with(strtolower($base), 'https://') || ! app(OutboundUrlGuard::class)->isPublicUrl($base)) {
+            throw new CarrierException('The DPD base URL of carrier ['.$carrier->code.'] is not a public https address.');
+        }
+
+        return rtrim($base, '/').$path;
+    }
+
+    /**
+     * Every call goes through the outbound guard: public addresses only, pinned, no redirects.
+     */
+    private function http(): PendingRequest
+    {
+        return app(OutboundUrlGuard::class)->protect(
+            Http::acceptJson()->timeout(self::TIMEOUT_SECONDS),
+            static fn (UnsafeOutboundUrlException $exception): CarrierException => new CarrierException('The DPD address is not a public address.'),
+        );
     }
 
     /**
@@ -189,8 +215,15 @@ final class DpdSwitzerlandDriver implements ShippingCarrierDriver
         ], static fn (?string $value): bool => $value !== null && $value !== '');
     }
 
+    /**
+     * A short, printable reason from the DPD answer: the remote text is reduced to letters, digits and simple
+     * punctuation and cut, so a hostile or broken endpoint cannot echo arbitrary content through the API.
+     */
     private function reasonOf(Response $response): string
     {
-        return (string) ($response->json('failed.0.reason') ?? $response->json('failed.0.errorCode') ?? $response->json('message') ?? "HTTP {$response->status()}");
+        $reason = $response->json('failed.0.reason') ?? $response->json('failed.0.errorCode') ?? $response->json('message');
+        $reason = is_scalar($reason) ? trim((string) preg_replace('/[^\p{L}\p{N} .,:;_\-()\/]+/u', ' ', (string) $reason)) : '';
+
+        return $reason === '' ? "HTTP {$response->status()}" : Str::limit((string) preg_replace('/\s+/', ' ', $reason), self::REASON_LENGTH, '...');
     }
 }

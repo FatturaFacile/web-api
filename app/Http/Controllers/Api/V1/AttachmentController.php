@@ -100,7 +100,7 @@ class AttachmentController extends Controller
         $file = $request->file('file');
         $path = $file->storeAs(
             "tenants/{$this->tenantContext->getTenantId()}/attachments",
-            Str::uuid().'-'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.$file->getClientOriginalExtension(),
+            Str::uuid().'-'.Str::slug(pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME)).'.'.($file->guessExtension() ?: 'bin'),
             $disk
         );
 

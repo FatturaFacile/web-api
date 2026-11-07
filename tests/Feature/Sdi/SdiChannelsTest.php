@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Sdi\ProcessSdiNotification;
 use App\Actions\Sdi\SendInvoiceToSdi;
+use App\Contracts\Security\HostResolver;
 use App\Exceptions\SdiProviderException;
 use App\Models\Contact;
 use App\Models\EiInboundLog;
@@ -29,6 +30,7 @@ use Modules\SDI\Services\PecMailboxFactory;
 use Modules\SDI\Services\PecMailer;
 use Modules\SDI\Services\SdiInboundProcessor;
 use Symfony\Component\Mime\Email;
+use Tests\Support\StaticHostResolver;
 
 uses(RefreshDatabase::class);
 
@@ -607,6 +609,23 @@ test('administrators configure the channel and secrets never come back', functio
     expect($stored->sdi_pec_password)->toBe('mailbox-password')
         ->and(Tenant::query()->toBase()->where('id', $stored->id)->value('sdi_pec_password'))->not->toBe('mailbox-password')
         ->and($stored->toArray())->not->toHaveKey('sdi_pec_password');
+});
+
+test('pec mail servers must be public hosts on mail ports', function (): void {
+    app()->instance(HostResolver::class, new StaticHostResolver(['mail.corp-intranet.com' => ['192.168.0.25']]));
+    $pec = fn (array $values): array => $values + [
+        'channel' => 'pec', 'pec_email' => 'rossi@pec.example.it', 'pec_smtp_host' => 'smtps.pec.example.it',
+        'pec_imap_host' => 'imaps.pec.example.it', 'pec_username' => 'rossi@pec.example.it', 'pec_password' => 'pw',
+    ];
+
+    foreach (['127.0.0.1', 'localhost', 'mail.corp-intranet.com', '0x7f.1', 'metadata.google.internal'] as $host) {
+        channelApi()->putJson('/api/v1/settings/sdi-channel', $pec(['pec_imap_host' => $host]))->assertUnprocessable()->assertJsonValidationErrors('pec_imap_host');
+        channelApi()->putJson('/api/v1/settings/sdi-channel', $pec(['pec_smtp_host' => $host]))->assertUnprocessable()->assertJsonValidationErrors('pec_smtp_host');
+    }
+
+    channelApi()->putJson('/api/v1/settings/sdi-channel', $pec(['pec_imap_port' => 6379]))->assertUnprocessable()->assertJsonValidationErrors('pec_imap_port');
+    channelApi()->putJson('/api/v1/settings/sdi-channel', $pec(['pec_smtp_port' => 22]))->assertUnprocessable()->assertJsonValidationErrors('pec_smtp_port');
+    channelApi()->putJson('/api/v1/settings/sdi-channel', $pec(['pec_imap_port' => 993, 'pec_smtp_port' => 465]))->assertOk();
 });
 
 test('secrets left out keep their stored value and credentials are listed by name only', function (): void {

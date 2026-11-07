@@ -50,6 +50,10 @@ return [
         'missing_file' => 'The archive is missing the file :path.',
         'missing_archive' => 'The backup archive is not available in storage.',
         'snapshot_failed' => 'The safety snapshot taken before the restore failed, so nothing was changed.',
+        'unsigned_archive' => 'The archive does not carry the signature of this server. Archives created before signing was introduced (format 2) cannot be restored: create a new backup.',
+        'invalid_signature' => 'The signature of the archive is invalid: the archive has been altered or was not created by this server.',
+        'file_checksum_mismatch' => 'The file :path does not match the checksum of the manifest: the archive has been altered or is damaged.',
+        'foreign_reference' => 'The archive links records to data outside the organization (:table.:column).',
     ],
 
 ];

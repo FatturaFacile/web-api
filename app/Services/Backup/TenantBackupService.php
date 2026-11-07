@@ -24,7 +24,8 @@ use ZipArchive;
  * - `data.json`: the tenant, its members and every row of every tenant table (tables with a `tenant_id` and the child
  *   tables reachable from them through foreign keys, such as invoice items), secrets redacted;
  * - `files/...`: the files the tenant stored (attachments, signatures);
- * - `manifest.json`: row counts per table and the list of files.
+ * - `manifest.json`: row counts per table, the list of files and the SHA-256 of every entry;
+ * - `manifest.sig`: the server signature of the manifest ({@see BackupArchiveSigner}), checked before any restore.
  *
  * Only the 7 (configurable) most recent completed backups of a tenant are kept.
  */
@@ -66,6 +67,13 @@ class TenantBackupService
     public const REDACTED_COLUMNS = ['credentials', 'webhook_secret', 'password', 'remember_token', 'token'];
 
     private const JSON_FLAGS = JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE;
+
+    /**
+     * Archive format: 3 adds the per-file checksums and the server signature; older archives cannot be restored.
+     */
+    public const int FORMAT_VERSION = 3;
+
+    public function __construct(private readonly BackupArchiveSigner $signer) {}
 
     /**
      * Register a pending backup for the tenant.
@@ -204,6 +212,7 @@ ailed when the snapshot could not be built.
         $zip->addFile($dataFile, 'data.json');
         $disk = Storage::disk((string) config('backup.files_disk'));
         $entries = [];
+        $fileChecksums = [];
 
         foreach ($files as $path) {
             $copy = $this->temporaryFile($temporary);
@@ -219,16 +228,22 @@ ailed when the snapshot could not be built.
             $entry = 'files/'.Str::after($path, "tenants/{$tenant->id}/");
             $zip->addFile($copy, $entry);
             $entries[] = $entry;
+            $fileChecksums[$entry] = (string) hash_file('sha256', $copy);
         }
 
-        $zip->addFromString('manifest.json', (string) json_encode([
-            'format_version' => 2,
+        // Format 3: the manifest fixes the checksum of every entry and is signed by the server (manifest.sig).
+        $manifest = (string) json_encode([
+            'format_version' => self::FORMAT_VERSION,
             'tenant_id' => $tenant->id,
             'generated_at' => now()->toIso8601String(),
             'tables' => $counts,
             'files' => $entries,
+            'files_sha256' => (object) $fileChecksums,
             'data_sha256' => $checksum,
-        ], self::JSON_FLAGS | JSON_PRETTY_PRINT));
+        ], self::JSON_FLAGS | JSON_PRETTY_PRINT);
+
+        $zip->addFromString('manifest.json', $manifest);
+        $zip->addFromString(BackupArchiveSigner::SIGNATURE_ENTRY, $this->signer->sign($manifest));
 
         if (! $zip->close()) {
             throw new RuntimeException('The backup archive could not be written.');
@@ -320,6 +335,26 @@ ailed when the snapshot could not be built.
             'foreignKeyMap' => $foreignKeyMap,
             'dependencyOrder' => $dependencyOrder,
         ];
+    }
+
+    /**
+     * The single-column foreign keys between backed-up tables, by table.
+     *
+     * @return array<string, list<array{column: string, foreign_table: string, foreign_column: string}>>
+     */
+    public function foreignKeyMap(): array
+    {
+        return $this->getTableMetadata()['foreignKeyMap'];
+    }
+
+    /**
+     * The backed-up tables that carry a `tenant_id` column.
+     *
+     * @return list<string>
+     */
+    public function tenantColumnTables(): array
+    {
+        return $this->getTableMetadata()['directTables'];
     }
 
     /**

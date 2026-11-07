@@ -23,13 +23,14 @@ class AttachReceiptAction
     {
         return DB::transaction(function () use ($expense, $file, $isReceipt): ExpenseAttachment {
             $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
-            $extension = $file->getClientOriginalExtension() ?: 'bin';
+            // Type and extension come from the content, never from what the client claims.
+            $extension = $file->guessExtension() ?: 'bin';
             $fileName = (string) Str::uuid().'.'.$extension;
             $relativeDirectory = "tenants/{$expense->tenant_id}/expenses/{$expense->id}";
 
             $path = $file->storeAs($relativeDirectory, $fileName, ['disk' => $disk]);
             $originalName = $file->getClientOriginalName();
-            $mimeType = $file->getClientMimeType() ?: 'application/octet-stream';
+            $mimeType = $file->getMimeType() ?: 'application/octet-stream';
             $size = $file->getSize() ?: 0;
             $userId = Auth::id() ?? $expense->created_by;
 

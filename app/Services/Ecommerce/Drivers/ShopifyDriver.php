@@ -7,11 +7,13 @@ namespace App\Services\Ecommerce\Drivers;
 use App\Exceptions\EcommerceException;
 use App\Models\Product;
 use Carbon\Carbon;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Throwable;
 
 /**
  * Shopify Admin REST API. The access token travels in `X-Shopify-Access-Token`, webhooks are signed with HMAC-SHA256
@@ -26,16 +28,69 @@ class ShopifyDriver extends AbstractEcommerceDriver
     {
         $root = (string) $this->channel->api_url !== ''
             ? $this->apiUrl()
-            : 'https://'.$this->credential('shop_domain');
+            : 'https://'.$this->shopDomain();
 
         return rtrim($root, '/').'/admin/api/'.$this->setting('api_version', self::DEFAULT_API_VERSION);
     }
 
+    /**
+     * The shop domain must be a bare host name: anything else (a path, credentials, a port) could move the request to
+     * another host. Whether it resolves to a public address is checked by the outbound guard on every request.
+     */
+    private function shopDomain(): string
+    {
+        $domain = strtolower($this->credential('shop_domain'));
+
+        if (! self::isBareHost($domain)) {
+            throw EcommerceException::because(EcommerceException::INVALID_URL);
+        }
+
+        return $domain;
+    }
+
+    /**
+     * A host name made of DNS labels only, such as `demo.myshopify.com`.
+     */
+    public static function isBareHost(string $domain): bool
+    {
+        return strlen($domain) <= 253 && preg_match('/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$/i', $domain) === 1;
+    }
+
+    /**
+     * A `*.myshopify.com` domain, the address Shopify gives every shop.
+     */
+    public static function isMyShopifyDomain(string $domain): bool
+    {
+        return preg_match('/^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.myshopify\.com$/i', $domain) === 1;
+    }
+
+    public function webhookDeliveryId(Request $request): ?string
+    {
+        $id = $request->header('X-Shopify-Webhook-Id');
+
+        return is_string($id) && $id !== '' ? mb_substr($id, 0, 200) : null;
+    }
+
+    public function webhookTriggeredAt(Request $request): ?CarbonImmutable
+    {
+        $value = $request->header('X-Shopify-Triggered-At');
+
+        if (! is_string($value) || $value === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value);
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
     protected function http(): PendingRequest
     {
-        return Http::withHeaders(['X-Shopify-Access-Token' => $this->credential('access_token')])
+        return $this->guarded(Http::withHeaders(['X-Shopify-Access-Token' => $this->credential('access_token')])
             ->acceptJson()
-            ->timeout(self::TIMEOUT_SECONDS);
+            ->timeout(self::TIMEOUT_SECONDS));
     }
 
     public function testConnection(): bool

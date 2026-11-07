@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\DataExport\Services;
 
+use App\Services\Security\CsvFormulaNeutralizer;
+
 /**
  * CSV that Excel opens correctly in an Italian locale: semicolons, a UTF-8 byte order mark and CRLF. Text cells that a
  * spreadsheet would run as a formula are neutralised.
@@ -51,12 +53,6 @@ final class ExcelCsvWriter
 
     private function cell(mixed $value): string
     {
-        $text = (string) $value;
-
-        if ($text !== '' && ! is_numeric($text) && in_array($text[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
-            $text = "'".$text;
-        }
-
-        return '"'.str_replace('"', '""', $text).'"';
+        return '"'.str_replace('"', '""', CsvFormulaNeutralizer::neutralize($value)).'"';
     }
 }

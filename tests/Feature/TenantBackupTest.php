@@ -211,8 +211,8 @@ test('the archive holds the data and files of the tenant and nothing from other 
     $tables = $archive['data']['tables'];
 
     expect($backup->status)->toBe('completed')
-        ->and($archive['names'])->toContain('data.json', 'manifest.json', 'files/attachments/own.txt', 'files/signatures/work-orders/sig.png')
-        ->and($archive['names'])->toHaveCount(4)
+        ->and($archive['names'])->toContain('data.json', 'manifest.json', 'manifest.sig', 'files/attachments/own.txt', 'files/signatures/work-orders/sig.png')
+        ->and($archive['names'])->toHaveCount(5)
         ->and($archive['data']['tenant_id'])->toBe($this->tenant->id)
         ->and($archive['data']['tenant']['name'])->toBe('FatturaFacile Italy SRL')
         ->and($archive['data']['tenant']['settings']['preferences']['invoice']['footer_text'])->toBe('Own footer text')

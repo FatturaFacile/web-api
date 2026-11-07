@@ -29,8 +29,10 @@ use ZipArchive;
 /**
  * Restores a tenant from a backup archive (`data.json`, `files/...`, `manifest.json`), replacing its current data.
  *
- * 1. The archive is inspected before anything is touched: it must open, carry a manifest of this tenant, match its
- *    SHA-256 checksum and row counts, and name only known tables and safe file paths.
+ * 1. The archive is inspected before anything is touched: it must open, carry a manifest of this tenant signed by this
+ *    server (`manifest.sig`, see {@see BackupArchiveSigner}), match its SHA-256 checksums and row counts, name only
+ *    known tables and safe file paths, and every foreign key between restored tables must point to a row of the
+ *    archive or to a shared row. Unsigned archives (format 2, made before signing was introduced) are refused.
  * 2. A safety snapshot of the current state (pre-restore-safety-{timestamp}.zip) is taken, so a wrong archive can be
  *    rolled back by restoring that snapshot.
  * 3. The tenant is put in maintenance (`is_maintenance`), which rejects writes from other requests.
@@ -56,6 +58,7 @@ class TenantRestoreService
         private readonly RecordSupplierPayment $supplierPayments,
         private readonly BankReconciliationService $reconciliation,
         private readonly AuditLedgerInterface $auditLedger,
+        private readonly BackupArchiveSigner $signer,
     ) {}
 
     /**
@@ -152,7 +155,8 @@ class TenantRestoreService
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::MISSING_MANIFEST);
         }
 
-        $manifest = json_decode((string) $zip->getFromName('manifest.json'), true);
+        $rawManifest = (string) $zip->getFromName('manifest.json');
+        $manifest = json_decode($rawManifest, true);
 
         if (! is_array($manifest)
             || ! is_string($manifest['tenant_id'] ?? null)
@@ -160,6 +164,19 @@ class TenantRestoreService
             || ! is_array($manifest['files'] ?? null)
             || ! is_string($manifest['data_sha256'] ?? null)
             || preg_match('/^[a-f0-9]{64}$/', $manifest['data_sha256']) !== 1) {
+            throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_MANIFEST);
+        }
+
+        // Only archives signed by this server are trusted: an uploaded archive could otherwise carry any row.
+        if ($zip->locateName(BackupArchiveSigner::SIGNATURE_ENTRY) === false) {
+            throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::UNSIGNED_ARCHIVE);
+        }
+
+        if (! $this->signer->verify($rawManifest, (string) $zip->getFromName(BackupArchiveSigner::SIGNATURE_ENTRY))) {
+            throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_SIGNATURE);
+        }
+
+        if (! is_array($manifest['files_sha256'] ?? null)) {
             throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_MANIFEST);
         }
 
@@ -181,11 +198,120 @@ class TenantRestoreService
             if ($zip->locateName($entry) === false) {
                 throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::MISSING_FILE, ['path' => $entry]);
             }
+
+            $this->assertFileChecksum($zip, $entry, $manifest['files_sha256'][$entry] ?? null);
         }
 
         $this->assertData($zip, $tenant, $manifest['tables']);
+        $this->assertReferences($zip, $tenant);
 
         return ['tables' => $manifest['tables'], 'files' => $manifest['files']];
+    }
+
+    private function assertFileChecksum(ZipArchive $zip, string $entry, mixed $expected): void
+    {
+        $stream = $zip->getStream($entry);
+        $context = hash_init('sha256');
+
+        while (is_resource($stream) && ! feof($stream)) {
+            hash_update($context, (string) fread($stream, 65536));
+        }
+
+        is_resource($stream) && fclose($stream);
+
+        if (! is_string($expected) || ! hash_equals(strtolower($expected), hash_final($context))) {
+            throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::FILE_CHECKSUM_MISMATCH, ['path' => $entry]);
+        }
+    }
+
+    /**
+     * Every foreign key between restored tables must point to a row of the archive itself, or to a shared row (a row
+     * without tenant of a table that has one, such as default lookups), or to a row of the tenant in a table the
+     * restore does not replace (append-only history). A row pointing elsewhere (another tenant's contact, say) is
+     * refused before anything is touched: foreign keys are not enforced while the archive is loaded.
+     */
+    private function assertReferences(ZipArchive $zip, Tenant $tenant): void
+    {
+        $scopes = $this->backups->tableScopes($tenant->id);
+        $references = [];
+        $collected = [];
+
+        foreach ($this->backups->foreignKeyMap() as $table => $foreignKeys) {
+            foreach (isset($scopes[$table]) ? $foreignKeys : [] as $foreignKey) {
+                if (isset($scopes[$foreignKey['foreign_table']])) {
+                    $references[$table][] = $foreignKey;
+                    $collected[$foreignKey['foreign_table']][$foreignKey['foreign_column']] = true;
+                }
+            }
+        }
+
+        if ($references === []) {
+            return;
+        }
+
+        $known = [];
+
+        foreach ($this->readData($zip, $tenant) as [$table, $row]) {
+            foreach ($row === null ? [] : array_keys($collected[$table] ?? []) as $column) {
+                if (isset($row[$column]) && is_scalar($row[$column])) {
+                    $known[$table][$column][(string) $row[$column]] = true;
+                }
+            }
+        }
+
+        $tenantColumnTables = array_flip($this->backups->tenantColumnTables());
+        $outside = [];
+
+        foreach ($this->readData($zip, $tenant) as [$table, $row]) {
+            foreach ($row === null ? [] : $references[$table] ?? [] as $foreignKey) {
+                $value = $row[$foreignKey['column']] ?? null;
+
+                if ($value === null) {
+                    continue;
+                }
+
+                if (! is_scalar($value)) {
+                    throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::INVALID_DATA);
+                }
+
+                $target = $foreignKey['foreign_table'];
+                $targetColumn = $foreignKey['foreign_column'];
+
+                if (isset($known[$target][$targetColumn][(string) $value])) {
+                    continue;
+                }
+
+                $outside["{$target}.{$targetColumn}.{$value}"] ??= $this->isKeptReference($target, $targetColumn, $value, isset($tenantColumnTables[$target]), $scopes);
+
+                if (! $outside["{$target}.{$targetColumn}.{$value}"]) {
+                    throw InvalidBackupArchiveException::because(InvalidBackupArchiveException::FOREIGN_REFERENCE, ['table' => $table, 'column' => $foreignKey['column']]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Whether a referenced row outside the archive survives the restore and may be referenced by the tenant.
+     *
+     * @param  array<string, \Closure(Builder): Builder>  $scopes
+     */
+    private function isKeptReference(string $table, string $column, int|float|string|bool $value, bool $hasTenantColumn, array $scopes): bool
+    {
+        // A value the column cannot hold references nothing (and would abort the transaction on PostgreSQL).
+        $type = strtolower((string) (collect(Schema::getColumns($table))->firstWhere('name', $column)['type_name'] ?? ''));
+
+        if (($type === 'uuid' && ! Str::isUuid((string) $value))
+            || (in_array($type, ['int2', 'int4', 'int8', 'integer', 'bigint', 'smallint'], true) && preg_match('/^-?\d{1,18}$/', (string) $value) !== 1)) {
+            return false;
+        }
+
+        if ($hasTenantColumn && DB::table($table)->where($column, $value)->whereNull('tenant_id')->exists()) {
+            return true;
+        }
+
+        $kept = $table === TenantBackupService::AUDIT_LEDGER_TABLE || in_array($table, TenantBackupService::APPEND_ONLY_TABLES, true);
+
+        return $kept && $scopes[$table](DB::table($table))->where("{$table}.{$column}", $value)->exists();
     }
 
     private function assertChecksum(ZipArchive $zip, string $expected): void

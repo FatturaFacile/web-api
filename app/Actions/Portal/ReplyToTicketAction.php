@@ -57,7 +57,7 @@ class ReplyToTicketAction
             $disk = config('filesystems.private_disk', config('filesystems.default', 'local'));
             foreach ($attachments as $file) {
                 if ($file instanceof UploadedFile) {
-                    $filename = 'ticket_reply_'.time().'_'.bin2hex(random_bytes(4)).'.'.$file->getClientOriginalExtension();
+                    $filename = 'ticket_reply_'.time().'_'.bin2hex(random_bytes(4)).'.'.($file->guessExtension() ?: 'bin');
                     $path = "tenants/{$token->tenant_id}/tickets/{$ticket->id}/{$filename}";
                     Storage::disk($disk)->put($path, $file->getContent());
 

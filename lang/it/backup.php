@@ -50,6 +50,10 @@ return [
         'missing_file' => 'All\'archivio manca il file :path.',
         'missing_archive' => "L'archivio di backup non è disponibile nello storage.",
         'snapshot_failed' => 'Lo snapshot di sicurezza prima del ripristino è fallito, nessuna modifica apportata.',
+        'unsigned_archive' => "L'archivio non porta la firma del server. Gli archivi creati prima dell'introduzione della firma (formato 2) non possono essere ripristinati: crea un nuovo backup.",
+        'invalid_signature' => "La firma dell'archivio non è valida: l'archivio è stato modificato o non è stato creato da questo server.",
+        'file_checksum_mismatch' => 'Il file :path non corrisponde al checksum del manifest: archivio alterato o danneggiato.',
+        'foreign_reference' => "L'archivio collega dati a record esterni all'organizzazione (:table.:column).",
     ],
 
 ];

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Security\HostResolver;
+use App\Exceptions\SdiProviderException;
 use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
@@ -24,6 +26,7 @@ use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\TicketMessage;
 use Modules\ServiceManagement\Services\Helpdesk\Email\SupportMailboxConnector;
 use Modules\ServiceManagement\Services\Helpdesk\Email\SupportMailboxPoller;
+use Tests\Support\StaticHostResolver;
 
 uses(RefreshDatabase::class);
 
@@ -228,4 +231,29 @@ test('only service managers manage support mailboxes and credentials are never r
     $this->getJson('/api/v1/esm/helpdesk/mailboxes')->assertOk()->assertJsonCount(2, 'data')->assertJsonMissing(['imap_password' => 'imap-secret']);
     $this->patchJson("/api/v1/esm/helpdesk/mailboxes/{$foreignMailbox->id}", ['name' => 'X'])->assertNotFound();
     $this->postJson('/api/v1/esm/helpdesk/mailboxes', ['name' => 'Dup', 'email_address' => 'sales@alfa.test', 'imap_host' => 'h', 'imap_username' => 'u', 'imap_password' => 'p'])->assertUnprocessable();
+});
+
+test('support mailboxes cannot point at internal hosts or arbitrary ports', function (): void {
+    $manager = User::create(['name' => 'Manager', 'email' => Str::uuid().'@example.com', 'password' => 'secret123']);
+    $manager->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'service_manager']);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
+    Sanctum::actingAs($manager);
+    app()->instance(HostResolver::class, new StaticHostResolver(['imap.corp-intranet.com' => ['10.1.1.1']]));
+    $mailbox = fn (array $values): array => $values + ['name' => 'Sales', 'email_address' => 'sales@alfa.test', 'imap_host' => 'imap.alfa.test', 'imap_username' => 'u', 'imap_password' => 'p'];
+
+    foreach (['127.0.0.1', 'localhost', '169.254.169.254', '2130706433', '[::1]', 'imap.corp-intranet.com', 'redis.internal'] as $host) {
+        $this->postJson('/api/v1/esm/helpdesk/mailboxes', $mailbox(['imap_host' => $host]))->assertUnprocessable()->assertJsonValidationErrors('imap_host');
+    }
+
+    foreach ([6379, 22, 80, 5432] as $port) {
+        $this->postJson('/api/v1/esm/helpdesk/mailboxes', $mailbox(['imap_port' => $port]))->assertUnprocessable()->assertJsonValidationErrors('imap_port');
+    }
+
+    $this->postJson('/api/v1/esm/helpdesk/mailboxes', $mailbox(['imap_port' => 993]))->assertCreated();
+});
+
+test('an unreachable mailbox reports a generic error without the socket details', function (): void {
+    expect(fn () => NativeImapMailbox::connect('127.0.0.1', 1, 'u', 'p'))->toThrow(function (SdiProviderException $exception): void {
+        expect($exception->getMessage())->toBe('The IMAP server could not be reached.');
+    });
 });
