@@ -7,27 +7,45 @@ namespace Modules\ServiceManagement\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * A ticket with its stored columns (subject, source, category_id, assigned_technician_id, assigned_team_id, contact_id,
+ * type). The earlier keys (title, channel, service_category_id, assigned_to_id, service_team_id) stay, read from the same
+ * columns, because the published schema and clients use them. Contact e-mail, phone and SLA policy have no column of
+ * their own and come from the metadata the ticket was created with.
+ */
 final class TicketResource extends JsonResource
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
+
         return [
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
             'ticket_number' => $this->ticket_number,
-            'title' => $this->title,
+            'type' => $this->type,
+            'subject' => $this->subject,
+            'title' => $this->subject,
             'description' => $this->description,
             'customer_id' => $this->customer_id,
-            'contact_email' => $this->contact_email,
-            'contact_phone' => $this->contact_phone,
+            'contact_id' => $this->contact_id,
+            'contact_email' => $metadata['contact_email'] ?? null,
+            'contact_phone' => $metadata['contact_phone'] ?? null,
             'priority' => $this->priority,
             'status' => $this->status,
-            'channel' => $this->channel,
-            'service_category_id' => $this->service_category_id,
+            'source' => $this->source,
+            'channel' => $this->source,
+            'category_id' => $this->category_id,
+            'service_category_id' => $this->category_id,
             'service_contract_id' => $this->service_contract_id,
-            'sla_policy_id' => $this->sla_policy_id,
-            'assigned_to_id' => $this->assigned_to_id,
-            'service_team_id' => $this->service_team_id,
+            'sla_policy_id' => $metadata['sla_policy_id'] ?? null,
+            'assigned_technician_id' => $this->assigned_technician_id,
+            'assigned_to_id' => $this->assigned_technician_id,
+            'assigned_team_id' => $this->assigned_team_id,
+            'service_team_id' => $this->assigned_team_id,
             'response_due_at' => $this->response_due_at?->toIso8601String(),
             'resolution_due_at' => $this->resolution_due_at?->toIso8601String(),
             'resolved_at' => $this->resolved_at?->toIso8601String(),
