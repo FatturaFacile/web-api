@@ -226,6 +226,42 @@ test('the period summary adds up what was withheld per counterparty', function (
         ->and($year['withheld_from_tenant']['by_contact'][0]['documents'])->toBe(2);
 });
 
+test('a credit note takes back its share of withholding and Enasarco, in the XML, the ledger, the summary and the ceiling', function (): void {
+    enasarcoParameters('1500');
+    $invoice = issueInvoice(['enasarco_enabled' => true, 'enasarco_agent_type' => 'multi_mandate', 'withholding_tax_enabled' => true, 'withholding_tax_percent' => 20]);
+
+    expect((string) $invoice->withholding_tax_amount)->toBe('200.00')->and((string) $invoice->enasarco_amount)->toBe('50.00');
+
+    $credit = issueInvoice(['invoice_type' => 'credit_note', 'related_invoice_id' => $invoice->id], unitPrice: 400);
+
+    expect((string) $credit->withholding_tax_amount)->toBe('80.00')
+        ->and((string) $credit->enasarco_base)->toBe('400.00')
+        ->and((string) $credit->enasarco_amount)->toBe('20.00')
+        ->and($credit->amountDue())->toBe('388.00');
+
+    $xml = issuedXml($credit);
+    expect($xml)->toContain('<TipoDocumento>TD04</TipoDocumento>')
+        ->and($xml)->toContain('<TipoRitenuta>RT01</TipoRitenuta>')
+        ->and($xml)->toContain('<ImportoRitenuta>80.00</ImportoRitenuta>')
+        ->and($xml)->toContain('<TipoRitenuta>RT04</TipoRitenuta>');
+
+    $lines = DB::table('journal_lines')->join('chart_of_accounts', 'chart_of_accounts.id', '=', 'journal_lines.account_id')
+        ->where('journal_lines.journal_entry_id', $credit->refresh()->gl_journal_entry_id)->pluck('journal_lines.credit_amount', 'chart_of_accounts.account_code');
+    expect((float) $lines['1100'])->toBe(388.0)->and((float) $lines['1260'])->toBe(80.0)->and((float) $lines['6470'])->toBe(20.0);
+
+    expect(app(EnasarcoSummaryService::class)->summary($this->tenant->id, 2027)['withheld_from_tenant']['total_base'])->toBe('600.00');
+
+    $next = issueInvoice(['enasarco_enabled' => true, 'enasarco_agent_type' => 'multi_mandate']);
+    expect((string) $next->enasarco_base)->toBe('900.00');
+});
+
+test('a credit note cannot state a withholding its invoice does not have', function (): void {
+    $invoice = issueInvoice();
+
+    expect(fn () => issueInvoice(['invoice_type' => 'credit_note', 'related_invoice_id' => $invoice->id, 'withholding_tax_enabled' => true, 'withholding_tax_percent' => 20], unitPrice: 400))
+        ->toThrow(ValidationException::class);
+});
+
 test('generic parameters are read-only: the tenant writes its own row', function (): void {
     DB::table('enasarco_parameters')->insert([
         'id' => (string) Str::uuid(), 'tenant_id' => null, 'year' => 2027, 'agent_type' => 'single_mandate', 'rate_percent' => 10, 'agent_share_percent' => 50, 'annual_ceiling' => 1000, 'source' => 'Generic',
@@ -356,6 +392,59 @@ test('the draft and post flow of the invoicing module derives the same amounts',
         ->and($invoice->amountDue())->toBe('1068.80')
         ->and($invoice->status)->toBe('posted')
         ->and($invoice->gl_journal_entry_id)->not->toBeNull();
+});
+
+test('a draft keeps its VAT under a declaration until emission, and a refused emission leaves the rates untouched', function (): void {
+    declarationFor($this->customer, ['plafond_amount' => 500]);
+    Sanctum::actingAs($this->user);
+    $api = $this->withHeaders(['X-Tenant-ID' => $this->tenant->id]);
+
+    $draft = $api->postJson('/api/v1/invoicing/invoices', [
+        'contact_id' => $this->customer->id, 'date' => '2027-03-01', 'jurisdiction' => 'IT',
+        'items' => [['description' => 'Service', 'quantity' => 1, 'unit_price' => 1000, 'tax_rate' => 22]],
+    ])->assertCreated()->json('id');
+
+    expect((float) DB::table('invoice_items')->where('invoice_id', $draft)->value('tax_rate'))->toBe(22.0);
+
+    $api->postJson("/api/v1/invoicing/invoices/{$draft}/post")->assertUnprocessable();
+
+    expect((float) DB::table('invoice_items')->where('invoice_id', $draft)->value('tax_rate'))->toBe(22.0)
+        ->and(Invoice::query()->findOrFail($draft)->declaration_of_intent_id)->toBeNull()
+        ->and(DeclarationOfIntent::first()->consumed_amount)->toBe('0.00');
+
+    DeclarationOfIntent::query()->update(['plafond_amount' => 5000]);
+    $api->postJson("/api/v1/invoicing/invoices/{$draft}/post")->assertOk();
+
+    expect((float) DB::table('invoice_items')->where('invoice_id', $draft)->value('tax_rate'))->toBe(0.0)
+        ->and(Invoice::query()->findOrFail($draft)->vat_nature)->toBe('N3.5');
+});
+
+test('opting out of the declaration also drops the one the request named', function (): void {
+    $declaration = declarationFor($this->customer);
+
+    $invoice = issueInvoice(['declaration_of_intent_id' => $declaration->id, 'skip_declaration_of_intent' => true]);
+
+    expect($invoice->declaration_of_intent_id)->toBeNull()
+        ->and((float) $invoice->total_tax)->toBe(220.0)
+        ->and($declaration->refresh()->consumed_amount)->toBe('0.00');
+});
+
+test('the fund carries no VAT under the flat-rate regime or a declaration, even when a rate is stated', function (): void {
+    declarationFor($this->customer);
+    $declared = issueInvoice(['fund_enabled' => true, 'fund_type' => 'TC22', 'fund_percent' => 4, 'fund_vat_rate' => 22]);
+
+    expect((float) $declared->fund_vat_amount)->toBe(0.0)
+        ->and((float) $declared->total_tax)->toBe(0.0)
+        ->and(DeclarationOfIntent::first()->consumed_amount)->toBe('1040.00');
+    issuedXml($declared);
+
+    $credit = issueInvoice(['invoice_type' => 'credit_note', 'related_invoice_id' => $declared->id, 'skip_declaration_of_intent' => true], unitPrice: 400, rate: 0);
+    expect($credit->id)->not->toBeNull()->and(DeclarationOfIntent::first()->consumed_amount)->toBe('624.00');
+
+    forfettario();
+    $flat = issueInvoice(['fund_enabled' => true, 'fund_type' => 'TC22', 'fund_percent' => 4, 'fund_vat_rate' => 22], rate: 0);
+
+    expect((float) $flat->fund_vat_amount)->toBe(0.0)->and((float) $flat->total_gross)->toBe(1042.0);
 });
 
 test('a fiscal field the schema does not know is refused by both flows', function (): void {

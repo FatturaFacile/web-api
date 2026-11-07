@@ -38,7 +38,11 @@ final class InvoiceFiscalService
 
     public function __construct(private readonly DeclarationOfIntentService $declarations) {}
 
-    public function apply(SalesInvoice $invoice): void
+    /**
+     * @param  bool  $atIssue  A declaration of intent takes the VAT off the lines only at emission, inside its transaction: a
+     *                         draft keeps its rates, so a refused emission (plafond exhausted) leaves nothing to undo.
+     */
+    public function apply(SalesInvoice $invoice, bool $atIssue = false): void
     {
         if (! $this->isItalianSale($invoice) || $invoice->isCreditNote()) {
             return;
@@ -54,7 +58,7 @@ final class InvoiceFiscalService
         $invoice->loadMissing('items');
         $tenant = Tenant::query()->find($invoice->tenant_id);
         $regime = RegimeFiscale::ofTenant($tenant);
-        $hasDeclaration = ! $regime->isForfettario() && $this->applyDeclaration($invoice);
+        $hasDeclaration = ! $regime->isForfettario() && $this->applyDeclaration($invoice, $atIssue);
 
         if (! $hasDeclaration && ! $regime->isForfettario() && ! $invoice->fund_enabled && ! $invoice->withholding_tax_enabled
             && ! $invoice->enasarco_enabled && ! $invoice->stamp_duty_applied) {
@@ -73,7 +77,7 @@ final class InvoiceFiscalService
             $highestRate = Decimal::compare((string) $item->tax_rate, $highestRate) > 0 ? (string) $item->tax_rate : $highestRate;
         }
 
-        $fund = $this->applyFund($invoice, $net, $highestRate);
+        $fund = $this->applyFund($invoice, $net, $highestRate, $regime->isForfettario() || $hasDeclaration);
         $tax = Decimal::add($tax, (string) $invoice->fund_vat_amount);
 
         if ($invoice->fund_vat_rate !== null && Decimal::isZero((string) $invoice->fund_vat_rate)) {
@@ -93,6 +97,44 @@ final class InvoiceFiscalService
         $invoice->total_tax = Decimal::round2($tax);
         $invoice->total_gross = Decimal::round2($gross);
         $invoice->receivable_amount = $invoice->amountDue();
+    }
+
+    /**
+     * A credit note takes back the share of the withholding and of the Enasarco of its invoice that matches the share of
+     * the taxable amount it credits: the customer is credited only what it paid, and the withholding receivable and the
+     * Enasarco base go down by the same proportion. The fund is not supported on a credit note and stays refused.
+     */
+    public function applyToCreditNote(SalesInvoice $creditNote, ?SalesInvoice $original): void
+    {
+        if (! $this->isItalianSale($creditNote) || ! $creditNote->isCreditNote() || $original === null) {
+            return;
+        }
+
+        $originalNet = (string) $original->total_net;
+
+        if (! Decimal::isPositive($originalNet)) {
+            return;
+        }
+
+        $ratio = Decimal::div((string) $creditNote->total_net, $originalNet);
+        $ratio = Decimal::compare($ratio, '1') > 0 ? '1' : $ratio;
+        $share = static fn (mixed $amount): string => Decimal::round2(Decimal::mul((string) ($amount ?? '0'), $ratio));
+
+        if ($original->withholding_tax_enabled && Decimal::isPositive((string) $original->withholding_tax_amount)) {
+            $creditNote->withholding_tax_enabled = true;
+            $creditNote->withholding_tax_type = $original->withholding_tax_type;
+            $creditNote->withholding_tax_reason = $original->withholding_tax_reason;
+            $creditNote->withholding_tax_percent = $original->withholding_tax_percent;
+            $creditNote->withholding_tax_amount = $share($original->withholding_tax_amount);
+        }
+
+        if ($original->enasarco_enabled && Decimal::isPositive((string) $original->enasarco_amount)) {
+            $creditNote->enasarco_enabled = true;
+            $creditNote->enasarco_agent_type = $original->enasarco_agent_type;
+            $creditNote->enasarco_percent = $original->enasarco_percent;
+            $creditNote->enasarco_base = $share($original->enasarco_base);
+            $creditNote->enasarco_amount = $share($original->enasarco_amount);
+        }
     }
 
     /**
@@ -127,15 +169,22 @@ final class InvoiceFiscalService
     /**
      * Links the sale to the declaration of the customer: its lines lose the VAT and take nature N3.5.
      */
-    private function applyDeclaration(SalesInvoice $invoice): bool
+    private function applyDeclaration(SalesInvoice $invoice, bool $atIssue): bool
     {
+        if ($invoice->skip_declaration_of_intent) {
+            $invoice->declaration_of_intent_id = null;
+            $invoice->vat_nature = $invoice->vat_nature === NaturaIva::N35->value ? null : $invoice->vat_nature;
+
+            return false;
+        }
+
         if (TipoDocumento::ofInvoice($invoice)->isSelfInvoice() || $invoice->split_payment) {
             return false;
         }
 
         $declaration = $this->declarations->resolveForSale($invoice);
 
-        if ($declaration === null) {
+        if ($declaration === null || ! $atIssue) {
             return false;
         }
 
@@ -152,7 +201,10 @@ final class InvoiceFiscalService
         return true;
     }
 
-    private function applyFund(SalesInvoice $invoice, string $net, string $highestRate): string
+    /**
+     * @param  bool  $isVatFree  Under the flat-rate regime or a declaration of intent the contribution carries no VAT either.
+     */
+    private function applyFund(SalesInvoice $invoice, string $net, string $highestRate, bool $isVatFree): string
     {
         if (! $invoice->fund_enabled || $invoice->fund_percent === null) {
             $invoice->fund_vat_amount = 0;
@@ -161,7 +213,11 @@ final class InvoiceFiscalService
         }
 
         $amount = $this->percentOf($net, (string) $invoice->fund_percent);
-        $rate = $invoice->fund_vat_rate !== null ? (string) $invoice->fund_vat_rate : $highestRate;
+        $rate = match (true) {
+            $isVatFree => '0',
+            $invoice->fund_vat_rate !== null => (string) $invoice->fund_vat_rate,
+            default => $highestRate,
+        };
 
         $invoice->fund_amount = $amount;
         $invoice->fund_vat_rate = $rate;
@@ -208,14 +264,15 @@ final class InvoiceFiscalService
             return;
         }
 
-        $alreadySubject = (string) SalesInvoice::withoutGlobalScope(TenantScope::class)
+        $alreadySubject = (string) (SalesInvoice::withoutGlobalScope(TenantScope::class)
             ->where('tenant_id', $invoice->tenant_id)
             ->where('contact_id', $invoice->contact_id)
             ->where('enasarco_enabled', true)
             ->where('status', 'posted')
             ->whereKeyNot($invoice->id)
             ->whereYear('date', $year)
-            ->sum('enasarco_base');
+            ->selectRaw("COALESCE(SUM(CASE WHEN invoice_type = 'credit_note' THEN -enasarco_base ELSE enasarco_base END), 0) AS subject")
+            ->value('subject') ?? '0');
 
         $room = Decimal::sub((string) $parameter->annual_ceiling, $alreadySubject);
         $room = Decimal::isNegative($room) ? '0' : $room;
@@ -225,6 +282,23 @@ final class InvoiceFiscalService
         $invoice->enasarco_base = Decimal::round2($base);
         $invoice->enasarco_percent = $agentRate;
         $invoice->enasarco_amount = $this->percentOf($base, $agentRate);
+    }
+
+    /**
+     * Withholding or Enasarco on a credit note stand only as the share of its invoice that applyToCreditNote() derives.
+     */
+    private function hasUnderivedAdjustment(SalesInvoice $creditNote): bool
+    {
+        if (! $creditNote->withholding_tax_enabled && ! $creditNote->enasarco_enabled) {
+            return false;
+        }
+
+        $original = $creditNote->related_invoice_id === null
+            ? null
+            : SalesInvoice::withoutGlobalScope(TenantScope::class)->where('tenant_id', $creditNote->tenant_id)->whereKey($creditNote->related_invoice_id)->first();
+
+        return ($creditNote->withholding_tax_enabled && ($original === null || ! $original->withholding_tax_enabled))
+            || ($creditNote->enasarco_enabled && ($original === null || ! $original->enasarco_enabled));
     }
 
     private function applyStampDuty(SalesInvoice $invoice, string $vatFree, bool $isAutomatic): void
@@ -277,7 +351,8 @@ final class InvoiceFiscalService
      */
     private function regimeErrors(SalesInvoice $invoice, ?Tenant $tenant, TipoDocumento $type): array
     {
-        $hasVat = $invoice->items->contains(static fn ($item): bool => ! Decimal::isZero((string) $item->tax_rate));
+        $hasVat = $invoice->items->contains(static fn ($item): bool => ! Decimal::isZero((string) $item->tax_rate))
+            || ($invoice->fund_enabled && Decimal::isPositive((string) $invoice->fund_vat_amount));
         $errors = [];
 
         if ($invoice->vat_nature !== null && $hasVat) {
@@ -327,7 +402,7 @@ final class InvoiceFiscalService
         $errors = [];
 
         if ($invoice->isCreditNote()) {
-            return $invoice->fund_enabled || $invoice->withholding_tax_enabled || $invoice->enasarco_enabled
+            return $invoice->fund_enabled || $this->hasUnderivedAdjustment($invoice)
                 ? [__('sdi.fiscal.credit_note_adjustments')]
                 : [];
         }

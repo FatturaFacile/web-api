@@ -347,7 +347,7 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoice->load('items');
         $tenantId = (string) $invoice->tenant_id;
 
-        $this->fiscal->apply($invoice);
+        $this->fiscal->apply($invoice, atIssue: true);
         $this->fiscal->assertIssuable($invoice);
 
         if ($invoice->declaration_of_intent_id !== null) {
@@ -442,11 +442,11 @@ final class InvoicingService implements InvoicingServiceInterface
     private function postCreditNote(SalesInvoice $creditNote, string $userId): SalesInvoice
     {
         $creditNote->load('items');
+        $original = $creditNote->related_invoice_id === null ? null : SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($creditNote->related_invoice_id)->lockForUpdate()->first();
+        $this->fiscal->applyToCreditNote($creditNote, $original);
         $this->fiscal->assertIssuable($creditNote);
         $this->assignFiscalNumber($creditNote, 'credit_note');
         $this->applyCashRounding($creditNote);
-
-        $original = $creditNote->related_invoice_id === null ? null : SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($creditNote->related_invoice_id)->lockForUpdate()->first();
 
         $creditNote->status = 'posted';
         $creditNote->posted_at = now();
@@ -557,6 +557,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'fiscal_year' => $number['fiscal_year'] ?? null,
             'sequential_number' => $number['sequential_number'] ?? null,
             'related_invoice_id' => (string) $originalInvoice->id,
+            'jurisdiction' => $originalInvoice->jurisdiction ?? 'IT',
             'split_payment' => (bool) $originalInvoice->split_payment,
             'date' => $date,
             'due_date' => now()->toDateString(),
@@ -596,6 +597,9 @@ final class InvoicingService implements InvoicingServiceInterface
                 'line_total' => round($quantity * $unitPrice * (1 - $discount / 100.0), 2),
             ]);
         }
+
+        $this->fiscal->applyToCreditNote($creditNote, $originalInvoice);
+        $creditNote->save();
 
         $this->completeCreditNote($creditNote, $originalInvoice, $items, (string) ($data['created_by'] ?? 'system'));
 
