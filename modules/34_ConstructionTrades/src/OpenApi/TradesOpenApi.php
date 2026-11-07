@@ -112,6 +112,17 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'quantity', description: 'Hours for labour', type: 'string'),
     new OA\Property(property: 'unit_cost', type: 'string'),
 ])]
+#[OA\Schema(schema: 'ConstructionSiteRequest', description: 'A construction site. On PUT and PATCH every field is optional.', type: 'object', required: ['client_id', 'code', 'name', 'address'], properties: [
+    new OA\Property(property: 'client_id', description: 'Customer contact', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'code', description: 'Unique in the company', type: 'string', maxLength: 50),
+    new OA\Property(property: 'name', type: 'string', maxLength: 255),
+    new OA\Property(property: 'address', type: 'string', maxLength: 255),
+    new OA\Property(property: 'sia_norm_reference', description: 'Swiss SIA norm, e.g. SIA 118', type: 'string', nullable: true),
+    new OA\Property(property: 'npk_code', description: 'Swiss NPK position catalogue code', type: 'string', nullable: true),
+    new OA\Property(property: 'start_date', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'estimated_end_date', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'status', type: 'string', enum: ['planning', 'active', 'paused', 'completed']),
+])]
 #[OA\Schema(schema: 'TradesRecordResponse', type: 'object', properties: [
     new OA\Property(property: 'data', type: 'object', properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),

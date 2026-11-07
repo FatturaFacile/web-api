@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ConstructionTrades\Providers;
 
+use App\Models\ConstructionSite;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\ConstructionTrades\Models\Bid;
@@ -27,7 +28,7 @@ final class ConstructionTradesServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'construction-trades');
 
-        foreach ([PriceList::class, PriceItem::class, WorkCycle::class, WorkCycleStep::class, Bid::class, BidPosition::class, Measurement::class, Billing::class, SiteCost::class] as $model) {
+        foreach ([ConstructionSite::class, PriceList::class, PriceItem::class, WorkCycle::class, WorkCycleStep::class, Bid::class, BidPosition::class, Measurement::class, Billing::class, SiteCost::class] as $model) {
             Gate::policy($model, TradesPolicy::class);
         }
     }

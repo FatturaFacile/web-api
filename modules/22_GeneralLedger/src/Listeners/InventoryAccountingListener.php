@@ -103,9 +103,10 @@ final class InventoryAccountingListener
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $varAcc = $this->resolveAccount($event->tenantId, '5100', 'Inventory Variance & Shrinkage', 'expense', 'debit');
 
-        $cost = abs((float) $event->totalCostImpact);
-        if ($cost <= 0) {
-            $cost = 50.0;
+        // Nothing to post for an adjustment without cost impact: no amount is made up.
+        $cost = round(abs((float) $event->totalCostImpact), 2);
+        if ($cost <= 0.0) {
+            return;
         }
 
         $isPositive = (float) $event->totalCostImpact >= 0;
@@ -160,14 +161,14 @@ final class InventoryAccountingListener
             'lines' => [
                 [
                     'account_id' => $scrapAcc->id,
-                    'debit_amount' => (float) $event->totalLossAmount,
+                    'debit_amount' => (float) $event->totalWriteOffAmount,
                     'credit_amount' => 0.0,
                     'description' => "Loss on inventory scrap: {$event->reason}",
                 ],
                 [
                     'account_id' => $invAcc->id,
                     'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalLossAmount,
+                    'credit_amount' => (float) $event->totalWriteOffAmount,
                     'description' => 'Inventory Asset De-recognition',
                 ],
             ],
@@ -182,7 +183,7 @@ final class InventoryAccountingListener
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $reserveAcc = $this->resolveAccount($event->tenantId, '3100', 'Inventory Revaluation Reserve', 'equity', 'credit');
 
-        $diff = (float) $event->totalRevaluationImpact;
+        $diff = (float) $event->deltaAmount;
         $absDiff = abs($diff);
 
         if ($absDiff <= 0) {

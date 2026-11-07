@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Projects\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
@@ -13,7 +13,7 @@ use Modules\Projects\DTOs\RecordJobCostDTO;
 use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectFinancialSummary;
 
-final readonly class ProcurementIntegrationListener implements ShouldQueue
+final readonly class ProcurementIntegrationListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private JobCostingAccumulationServiceInterface $costingService

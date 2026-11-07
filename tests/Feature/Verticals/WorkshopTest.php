@@ -169,3 +169,37 @@ test('ordinary members stay out, technicians work folders but do not invoice', f
     verticalApi(verticalMember($this->tenant, 'sales'), $this->tenant);
     $this->postJson("/api/v1/workshop/folders/{$id}/invoice", ['date' => '2026-11-07'])->assertCreated();
 });
+
+test('customer vehicles can be registered, changed and archived, and then opened as a folder', function (): void {
+    $other = verticalTenant();
+    $foreignContact = verticalContact($other, 'Altro SA');
+    app(TenantContext::class)->setTenant($this->tenant);
+
+    $this->postJson('/api/v1/automotive/vehicles', ['client_id' => $foreignContact->id, 'license_plate' => 'ZH 1', 'make' => 'Fiat', 'model' => 'Panda'])
+        ->assertUnprocessable()->assertJsonValidationErrors('client_id');
+    $this->postJson('/api/v1/automotive/vehicles', ['client_id' => $this->customer->id, 'license_plate' => 'ti 123456', 'make' => 'Fiat', 'model' => 'Panda'])
+        ->assertUnprocessable()->assertJsonValidationErrors('license_plate');
+
+    $id = $this->postJson('/api/v1/automotive/vehicles', [
+        'client_id' => $this->customer->id, 'license_plate' => 'ge 98765', 'vin_chassis' => 'zfa31200000123456', 'make' => 'Fiat', 'model' => '500', 'year' => 2021, 'mileage_km' => 42000,
+    ])->assertCreated()->assertJsonPath('data.license_plate', 'GE 98765')->json('data.id');
+
+    expect((string) Vehicle::query()->findOrFail($id)->tenant_id)->toBe((string) $this->tenant->id);
+
+    $this->getJson("/api/v1/automotive/vehicles/{$id}")->assertOk()->assertJsonPath('data.client.id', $this->customer->id);
+    $this->patchJson("/api/v1/automotive/vehicles/{$id}", ['mileage_km' => 43500])->assertOk()->assertJsonPath('data.mileage_km', 43500);
+    $this->postJson('/api/v1/workshop/folders', ['vehicle_id' => $id, 'kind' => 'mechanics', 'currency' => 'CHF'])->assertCreated();
+
+    $this->deleteJson("/api/v1/automotive/vehicles/{$id}")->assertNoContent();
+    expect(Vehicle::withTrashed()->findOrFail($id)->trashed())->toBeTrue();
+    $this->getJson("/api/v1/automotive/vehicles/{$id}")->assertNotFound();
+});
+
+test('a member of another company cannot read or change a vehicle', function (): void {
+    $other = verticalTenant();
+    verticalApi(verticalMember($other, 'admin'), $other);
+
+    $this->getJson("/api/v1/automotive/vehicles/{$this->vehicle->id}")->assertNotFound();
+    $this->putJson("/api/v1/automotive/vehicles/{$this->vehicle->id}", ['mileage_km' => 1])->assertNotFound();
+    $this->deleteJson("/api/v1/automotive/vehicles/{$this->vehicle->id}")->assertNotFound();
+});

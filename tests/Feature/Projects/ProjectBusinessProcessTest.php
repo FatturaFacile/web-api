@@ -12,6 +12,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Projects\Actions\ApproveProjectTimesheetAction;
 use Modules\Projects\Actions\CloseProjectAction;
 use Modules\Projects\Actions\CreateProjectAction;
@@ -48,6 +49,8 @@ beforeEach(function (): void {
     ]);
 
     app(TenantContext::class)->setTenant($this->tenant);
+    // Project cost and revenue events now reach the General Ledger listeners.
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->year);
 
     $this->user = User::first() ?? User::create([
         'id' => (string) Str::uuid7(),

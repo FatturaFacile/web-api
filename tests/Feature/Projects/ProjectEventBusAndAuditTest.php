@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Inventory\Events\ProjectMaterialConsumptionEvent;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Projects\Events\ProjectCostReadyEvent;
@@ -41,6 +42,8 @@ beforeEach(function (): void {
     ]);
 
     app(TenantContext::class)->setTenant($this->tenant);
+    // Project cost and revenue events now reach the General Ledger listeners.
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->year);
 
     $this->user = User::first() ?? User::create([
         'id' => (string) Str::uuid7(),

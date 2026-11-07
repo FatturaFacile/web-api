@@ -64,7 +64,7 @@ final readonly class CloseProjectAction
             ]);
 
             // Emit Domain Events
-            $this->dispatcher->publish(new ProjectClosedEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectClosedEvent(
                 projectId: (string) $project->id,
                 projectNumber: (string) $project->project_number,
                 closedBy: $userId,
@@ -73,7 +73,7 @@ final readonly class CloseProjectAction
                 companyId: (string) ($project->company_id ?? $project->tenant_id)
             ));
 
-            $this->dispatcher->publish(new ProjectClosureReadyEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectClosureReadyEvent(
                 projectId: (string) $project->id,
                 finalContractValue: $finalContractValue,
                 finalCost: $finalCost,

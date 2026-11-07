@@ -47,7 +47,7 @@ final readonly class WorkflowApprovalTreasuryListener
 
         $this->paymentFactory->cancelBatch(
             (string) $batch->id,
-            "Rejected by workflow engine instance {$event->instanceId}: {$event->reason}"
+            "Rejected by workflow engine instance {$event->instanceId}"
         );
     }
 }

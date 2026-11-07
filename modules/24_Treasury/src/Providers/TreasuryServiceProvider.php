@@ -22,11 +22,7 @@ use Modules\GeneralLedger\Events\TreasuryAllocationReadyEvent;
 use Modules\GeneralLedger\Events\TrialBalanceGeneratedEvent;
 use Modules\GeneralLedger\Events\YearClosedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
-use Modules\Projects\Events\ProjectBillingReadyEvent;
 use Modules\Projects\Events\ProjectCashFlowForecastEvent;
-use Modules\Projects\Events\ProjectCollectionForecastEvent;
-use Modules\Projects\Events\ProjectPaymentForecastEvent;
-use Modules\Projects\Events\ProjectReceivableReadyEvent;
 use Modules\Treasury\Contracts\BankReconciliationServiceInterface;
 use Modules\Treasury\Contracts\CashForecastServiceInterface;
 use Modules\Treasury\Contracts\ForeignExchangeRiskServiceInterface;
@@ -121,10 +117,6 @@ final class TreasuryServiceProvider extends ServiceProvider
 
         // 4. Module 15 Projects Events
         Event::listen(ProjectCashFlowForecastEvent::class, [ProjectsTreasuryListener::class, 'handleCashFlowForecast']);
-        Event::listen(ProjectBillingReadyEvent::class, [ProjectsTreasuryListener::class, 'handleBillingReady']);
-        Event::listen(ProjectCollectionForecastEvent::class, [ProjectsTreasuryListener::class, 'handleCollectionForecast']);
-        Event::listen(ProjectPaymentForecastEvent::class, [ProjectsTreasuryListener::class, 'handlePaymentForecast']);
-        Event::listen(ProjectReceivableReadyEvent::class, [ProjectsTreasuryListener::class, 'handleReceivableReady']);
 
         // 5. Module 21 Workflow Engine Events
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalTreasuryListener::class, 'handleWorkflowApproved']);

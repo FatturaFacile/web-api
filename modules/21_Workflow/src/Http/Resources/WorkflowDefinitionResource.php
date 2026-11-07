@@ -30,6 +30,8 @@ final class WorkflowDefinitionResource extends JsonResource
             'configuration' => $this->configuration,
             'published_at' => $this->published_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'nodes' => WorkflowNodeResource::collection($this->whenLoaded('nodes')),
+            'transitions' => WorkflowTransitionResource::collection($this->whenLoaded('transitions')),
         ];
     }
 }

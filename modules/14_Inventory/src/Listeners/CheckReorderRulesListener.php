@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Inventory\Contracts\InventoryReplenishmentServiceInterface;
 use Modules\Inventory\Events\StockTransferredEvent;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockReorderRule;
 
-final readonly class CheckReorderRulesListener implements ShouldQueue
+final readonly class CheckReorderRulesListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private InventoryReplenishmentServiceInterface $replenishmentService

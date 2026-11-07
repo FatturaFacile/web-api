@@ -42,4 +42,26 @@ return [
         'total' => 'Totale',
     ],
 
+    'appointment_reminder' => [
+        'subject' => 'Promemoria appuntamento :number del :date',
+        'body' => 'Le ricordiamo l\'appuntamento <strong>:title</strong> (:number) previsto per il :date alle :time.',
+        'address' => 'Indirizzo: :address',
+    ],
+
+    'portal_activity' => [
+        'quote_approved' => [
+            'subject' => 'Preventivo :number approvato dal cliente',
+            'body' => ':customer ha approvato il preventivo :number dal portale clienti.',
+        ],
+        'quote_rejected' => [
+            'subject' => 'Preventivo :number rifiutato dal cliente',
+            'body' => ':customer ha rifiutato il preventivo :number dal portale clienti.',
+            'reason' => 'Motivazione: :reason',
+        ],
+        'ticket_replied' => [
+            'subject' => 'Nuova risposta del cliente al ticket :number',
+            'body' => ':customer ha risposto al ticket :number dal portale clienti.',
+        ],
+    ],
+
 ];

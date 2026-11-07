@@ -29,11 +29,11 @@ final readonly class SalesEventListener
                 $opportunity,
                 new UpdateOpportunityStageDTO(
                     targetStageCode: 'closed_won',
-                    amount: (float) $event->totalGross,
+                    amount: (float) $event->totalAmount,
                     probability: 100.0,
                     actualCloseDate: date('Y-m-d')
                 ),
-                actorUserId: $event->userId
+                actorUserId: (string) ($opportunity->owner_user_id ?? '00000000-0000-0000-0000-000000000000')
             );
         }
     }

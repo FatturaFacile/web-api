@@ -155,7 +155,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
                 companyId: (string) ($item->company_id ?? '')
             );
 
-            $this->dispatcher->publish($event);
+            $this->dispatcher->publishAndDispatch($event);
 
             return $movement;
         });

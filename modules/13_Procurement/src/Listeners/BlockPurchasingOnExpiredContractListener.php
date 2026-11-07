@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace Modules\Procurement\Listeners;
 
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Procurement\Events\SupplierContractExpiredEvent;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Models\SupplierContract;
 
-final readonly class BlockPurchasingOnExpiredContractListener implements ShouldQueue
+final readonly class BlockPurchasingOnExpiredContractListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private ?AuditLedgerInterface $auditLedger = null

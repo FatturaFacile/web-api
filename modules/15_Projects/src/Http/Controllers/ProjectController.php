@@ -278,7 +278,7 @@ final class ProjectController extends Controller
         $reason = (string) $request->input('reason', 'Suspension of activities');
         $project->update(['status' => 'on_hold']);
 
-        $dispatcher->publish(new ProjectPausedEvent(
+        $dispatcher->publishAndDispatch(new ProjectPausedEvent(
             projectId: $project->id,
             projectNumber: $project->project_number,
             reason: $reason,
@@ -317,7 +317,7 @@ final class ProjectController extends Controller
         $project = Project::findOrFail($id);
         $project->update(['status' => 'active']);
 
-        $dispatcher->publish(new ProjectResumedEvent(
+        $dispatcher->publishAndDispatch(new ProjectResumedEvent(
             projectId: $project->id,
             projectNumber: $project->project_number,
             resumedBy: (string) auth()->id(),

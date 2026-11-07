@@ -9,6 +9,7 @@ use Modules\GeneralLedger\Http\Controllers\FinancialAnalysisController;
 use Modules\GeneralLedger\Http\Controllers\FinancialStatementController;
 use Modules\GeneralLedger\Http\Controllers\FiscalPeriodController;
 use Modules\GeneralLedger\Http\Controllers\FiscalYearController;
+use Modules\GeneralLedger\Http\Controllers\JournalBookController;
 use Modules\GeneralLedger\Http\Controllers\JournalEntryController;
 use Modules\GeneralLedger\Http\Controllers\LedgerBudgetController;
 use Modules\GeneralLedger\Http\Controllers\PayrollLedgerController;
@@ -41,6 +42,7 @@ Route::prefix('api/v1/general-ledger')
         Route::post('journals/{id}/post', [JournalEntryController::class, 'post']);
         Route::post('journals/{id}/reverse', [JournalEntryController::class, 'reverse']);
         Route::apiResource('journals', JournalEntryController::class)->except(['update', 'destroy']);
+        Route::get('journal-book/export', [JournalBookController::class, 'export'])->name('general-ledger.journal-book.export');
 
         // Financial Statements
         Route::get('financial-statements/trial-balance', [FinancialStatementController::class, 'trialBalance']);

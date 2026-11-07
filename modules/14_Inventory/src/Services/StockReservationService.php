@@ -71,7 +71,7 @@ final class StockReservationService implements StockReservationServiceInterface
                 tenantId: $item->tenant_id,
                 companyId: (string) ($item->company_id ?? '')
             );
-            $this->dispatcher->publish($event);
+            $this->dispatcher->publishAndDispatch($event);
 
             return $reservation;
         });
@@ -114,7 +114,7 @@ final class StockReservationService implements StockReservationServiceInterface
                 tenantId: $reservation->tenant_id,
                 companyId: (string) ($reservation->company_id ?? '')
             );
-            $this->dispatcher->publish($event);
+            $this->dispatcher->publishAndDispatch($event);
         });
     }
 

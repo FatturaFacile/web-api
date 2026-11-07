@@ -107,7 +107,7 @@ final readonly class CreateProjectAction
             );
 
             // Dispatch Domain Event
-            $this->dispatcher->publish(new ProjectCreatedEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectCreatedEvent(
                 projectId: (string) $project->id,
                 projectNumber: $project->project_number,
                 projectName: $project->name,

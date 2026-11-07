@@ -84,6 +84,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'fiscal_period_id', type: 'string'),
         new OA\Property(property: 'batch_id', type: 'string'),
         new OA\Property(property: 'entry_number'),
+        new OA\Property(property: 'journal_number', description: 'Progressive libro giornale number per tenant and fiscal year, assigned at posting', type: 'integer', nullable: true),
+        new OA\Property(property: 'fiscal_year_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'posting_date', type: 'string', format: 'date'),
         new OA\Property(property: 'document_date', type: 'string', format: 'date'),
         new OA\Property(property: 'ledger_type'),

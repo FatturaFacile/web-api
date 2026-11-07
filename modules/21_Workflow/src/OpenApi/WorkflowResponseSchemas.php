@@ -25,6 +25,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'configuration'),
         new OA\Property(property: 'published_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'nodes', description: 'Present on show and write responses', type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowNodeResource')),
+        new OA\Property(property: 'transitions', description: 'Present on show and write responses', type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowTransitionResource')),
     ]
 )]
 #[OA\Schema(
@@ -104,6 +106,37 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'is_active', type: 'boolean', nullable: true),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WorkflowNodeResource',
+    description: 'JSON representation produced by WorkflowNodeResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'workflow_definition_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'node_key', type: 'string'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'node_type', type: 'string'),
+        new OA\Property(property: 'approval_type', type: 'string', nullable: true),
+        new OA\Property(property: 'assignee_type', type: 'string', nullable: true),
+        new OA\Property(property: 'assignee_id', type: 'string', nullable: true),
+        new OA\Property(property: 'timeout_hours', type: 'integer', nullable: true),
+        new OA\Property(property: 'ui_metadata', type: 'object'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WorkflowTransitionResource',
+    description: 'JSON representation produced by WorkflowTransitionResource',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'workflow_definition_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'from_node_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'to_node_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'action_trigger', type: 'string'),
+        new OA\Property(property: 'priority', type: 'integer'),
+        new OA\Property(property: 'condition_rules', type: 'array', items: new OA\Items(type: 'object')),
     ]
 )]
 final class WorkflowResponseSchemas {}

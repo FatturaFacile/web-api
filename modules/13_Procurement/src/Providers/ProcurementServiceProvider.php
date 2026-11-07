@@ -36,7 +36,6 @@ use Modules\Procurement\Listeners\AuthorizeReceivingOnPurchaseOrderApprovedListe
 use Modules\Procurement\Listeners\AutoGeneratePoOnRequisitionApprovedListener;
 use Modules\Procurement\Listeners\BlockPurchasingOnExpiredContractListener;
 use Modules\Procurement\Listeners\CommitBudgetOnPurchaseOrderApprovedListener;
-use Modules\Procurement\Listeners\DispatchInventoryIntegrationOnGoodsReceivedListener;
 use Modules\Procurement\Listeners\DispatchOutboxOnProcurementEventListener;
 use Modules\Procurement\Listeners\EnforceSupplierSuspensionListener;
 use Modules\Procurement\Listeners\EscalateWorkflowOnThreeWayMatchFailedListener;
@@ -133,7 +132,6 @@ final class ProcurementServiceProvider extends ServiceProvider
         Event::listen(SupplierSuspendedEvent::class, EnforceSupplierSuspensionListener::class);
         Event::listen(SupplierContractExpiredEvent::class, BlockPurchasingOnExpiredContractListener::class);
         Event::listen(ThreeWayMatchDiscrepancyDetectedEvent::class, EscalateWorkflowOnThreeWayMatchFailedListener::class);
-        Event::listen(GoodsReceivedEvent::class, DispatchInventoryIntegrationOnGoodsReceivedListener::class);
 
         // Synchronize Workflow Approvals/Rejections with Module 21
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalProcurementListener::class, 'handleCompleted']);

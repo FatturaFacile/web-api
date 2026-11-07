@@ -97,7 +97,7 @@ final readonly class ProjectExpenseService implements ProjectExpenseServiceInter
             );
 
             // Dispatch domain event
-            $this->dispatcher->publish(new ProjectExpenseApprovedEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectExpenseApprovedEvent(
                 expenseId: (string) $costEntry->id,
                 projectId: (string) $project->id,
                 expenseCategory: (string) $costEntry->cost_category,
@@ -108,7 +108,7 @@ final readonly class ProjectExpenseService implements ProjectExpenseServiceInter
             ));
 
             // Accounting readiness event
-            $this->dispatcher->publish(new ProjectExpensePostingReadyEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectExpensePostingReadyEvent(
                 costEntryId: (string) $costEntry->id,
                 projectId: (string) $project->id,
                 expenseCategory: (string) $costEntry->cost_category,

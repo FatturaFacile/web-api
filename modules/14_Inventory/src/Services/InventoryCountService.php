@@ -160,7 +160,7 @@ final class InventoryCountService implements InventoryCountServiceInterface
                 companyId: (string) ($session->company_id ?? ''),
                 sessionId: (string) $session->id
             );
-            $this->dispatcher->publish($event);
+            $this->dispatcher->publishAndDispatch($event);
 
             return $adjustment;
         });

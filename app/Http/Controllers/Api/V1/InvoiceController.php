@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Exceptions\QrBillGenerationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreInvoiceRequest;
 use App\Http\Resources\InvoiceResource;
@@ -11,7 +12,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
 use App\Services\Invoicing\InvoiceService;
 use App\Services\ItalianSdi\FatturaPaBuilderService;
-use App\Services\SwissQrBill\QrBillGeneratorService;
+use App\Services\SwissQrBill\SwissQrBillService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -27,7 +28,6 @@ class InvoiceController extends Controller
     public function __construct(
         private readonly InvoiceService $invoiceService,
         private readonly FatturaPaBuilderService $fatturaPaBuilder,
-        private readonly QrBillGeneratorService $qrBillGenerator,
         private readonly SdiPreflight $preflight
     ) {}
 
@@ -377,7 +377,7 @@ class InvoiceController extends Controller
     /**
      * Generate Swiss QR-Bill data structure, SCOR reference, and SVG payment slip.
      *
-     * @deprecated Produces a placeholder slip. Use GET /api/v1/sales/invoices/{id}/qr-bill for the real Swiss QR code.
+     * @deprecated Alias of GET /api/v1/sales/invoices/{id}/qr-bill (same read-only response); use that endpoint.
      */
     #[OA\Post(
         path: '/api/v1/sales/invoices/{id}/generate-qr-bill',
@@ -414,51 +414,16 @@ class InvoiceController extends Controller
             ),
         ]
     )]
-    public function generateQrBill(string $id): JsonResponse
+    public function generateQrBill(SwissQrBillService $qrBills, string $id): JsonResponse
     {
-        $invoice = Invoice::with(['tenant', 'contact.addresses'])->findOrFail($id);
-        $this->authorize('generateQrBill', $invoice);
-
-        $qrData = $this->qrBillGenerator->generateForInvoice($invoice);
-
-        $invoice->qrBillData()->updateOrCreate(
-            ['invoice_id' => $invoice->id],
-            [
-                'qr_iban' => $qrData['qr_iban'],
-                'scor_reference' => $qrData['scor_reference'],
-                'creditor_info' => $qrData['creditor_info'],
-                'debtor_info' => $qrData['debtor_info'],
-                'qr_bill_svg' => $qrData['svg'],
-            ]
-        );
-
-        // Update rounded total on invoice if currency is CHF
-        if ($invoice->currency === 'CHF' && $invoice->status !== 'posted') {
-            $invoice->total_gross = $qrData['amount'];
-            $invoice->rounding_amount = $qrData['rounding_amount'];
-            $invoice->save();
-        }
-
-        return $this->successResponse(
-            data: [
-                'invoice_id' => $invoice->id,
-                'qr_iban' => $qrData['qr_iban'],
-                'scor_reference' => $qrData['scor_reference'],
-                'scor_formatted' => $qrData['scor_formatted'],
-                'amount' => $qrData['amount'],
-                'rounding_amount' => $qrData['rounding_amount'],
-                'currency' => $qrData['currency'],
-                'raw_payload' => $qrData['payload'],
-                'svg_preview' => $qrData['svg'],
-            ],
-            message: 'Swiss QR-Bill payment slip generated successfully'
-        );
+        // Read-only alias of GET /sales/invoices/{id}/qr-bill: it no longer stores a placeholder slip nor touches totals.
+        return app(InvoiceQrBillController::class)->show($qrBills, $id);
     }
 
     /**
      * Download the Swiss QR-Bill SVG payment slip file directly.
      *
-     * @deprecated Serves a placeholder slip. Use GET /api/v1/sales/invoices/{id}/qr-bill or the invoice PDF instead.
+     * @deprecated Serves the SVG of the real QR-bill. Use GET /api/v1/sales/invoices/{id}/qr-bill or the invoice PDF instead.
      */
     #[OA\Get(
         path: '/api/v1/sales/invoices/{id}/download-qr-bill',
@@ -495,16 +460,20 @@ class InvoiceController extends Controller
             ),
         ]
     )]
-    public function downloadQrBill(string $id): HttpResponse
+    public function downloadQrBill(SwissQrBillService $qrBills, string $id): HttpResponse|JsonResponse
     {
-        $invoice = Invoice::with(['qrBillData', 'tenant', 'contact'])->findOrFail($id);
+        $invoice = Invoice::findOrFail($id);
         $this->authorize('download', $invoice);
 
-        if (! $invoice->qrBillData || empty($invoice->qrBillData->qr_bill_svg)) {
-            $qrData = $this->qrBillGenerator->generateForInvoice($invoice);
-            $svg = $qrData['svg'];
-        } else {
-            $svg = $invoice->qrBillData->qr_bill_svg;
+        try {
+            $svg = $qrBills->generate($invoice)->svg;
+        } catch (QrBillGenerationException $e) {
+            return $this->problemDetailsResponse(
+                title: __('qr_bill.problem_title'),
+                detail: $e->getMessage(),
+                status: Response::HTTP_UNPROCESSABLE_ENTITY,
+                invalidParams: array_map(fn (string $violation): array => ['reason' => $violation], $e->violations)
+            );
         }
 
         $fileName = "qr-bill-{$invoice->invoice_number}.svg";

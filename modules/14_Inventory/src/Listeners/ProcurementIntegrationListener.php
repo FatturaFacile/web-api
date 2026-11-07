@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
@@ -20,7 +20,7 @@ use Modules\Procurement\Events\InventoryReceiptRequestedEvent;
 use Modules\Procurement\Events\InventoryReservationRequestedEvent;
 use Modules\Procurement\Events\SupplierReturnRequestedEvent;
 
-final readonly class ProcurementIntegrationListener implements ShouldQueue
+final readonly class ProcurementIntegrationListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private DoubleEntryMovementServiceInterface $movementService,

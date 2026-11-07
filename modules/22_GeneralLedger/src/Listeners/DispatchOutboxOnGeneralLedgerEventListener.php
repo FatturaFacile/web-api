@@ -6,9 +6,12 @@ namespace Modules\GeneralLedger\Listeners;
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Services\TransactionalOutboxService;
-use Illuminate\Contracts\Queue\ShouldQueue;
 
-final readonly class DispatchOutboxOnGeneralLedgerEventListener implements ShouldQueue
+/**
+ * Runs synchronously so the outbox row is written in the same transaction as the
+ * state change and deduplicated against EventDispatcher::publishAndDispatch().
+ */
+final readonly class DispatchOutboxOnGeneralLedgerEventListener
 {
     public function __construct(
         private TransactionalOutboxService $outboxService

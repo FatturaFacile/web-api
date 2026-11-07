@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Modules\Procurement\Listeners;
 
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseRequisitionApprovedEvent;
 use Modules\Procurement\Events\ThreeWayMatchPassedEvent;
@@ -16,7 +16,7 @@ use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Models\WorkflowInstance;
 
-final readonly class WorkflowApprovalProcurementListener implements ShouldQueue
+final readonly class WorkflowApprovalProcurementListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher
@@ -66,13 +66,13 @@ final readonly class WorkflowApprovalProcurementListener implements ShouldQueue
         } elseif ($instance->subject_type === ThreeWayMatchLog::class) {
             $matchLog = ThreeWayMatchLog::find($instance->subject_id);
             if ($matchLog !== null) {
-                $matchLog->update(['status' => 'matched']);
+                $matchLog->update(['match_status' => 'matched', 'approved_by' => $instance->assigned_to_user_id]);
 
                 $this->eventDispatcher->dispatch(new ThreeWayMatchPassedEvent(
                     matchLogId: (string) $matchLog->id,
                     purchaseOrderId: (string) $matchLog->purchase_order_id,
-                    supplierId: (string) $matchLog->supplier_id,
-                    matchedAmount: (float) $matchLog->invoice_amount,
+                    supplierId: (string) (PurchaseOrder::find($matchLog->purchase_order_id)?->supplier_id ?? ''),
+                    matchedAmount: (float) $matchLog->invoice_total_amount,
                     tenantId: (string) $matchLog->tenant_id,
                     companyId: (string) ($matchLog->company_id ?? '')
                 ));
@@ -106,7 +106,7 @@ final readonly class WorkflowApprovalProcurementListener implements ShouldQueue
         } elseif ($instance->subject_type === ThreeWayMatchLog::class) {
             $matchLog = ThreeWayMatchLog::find($instance->subject_id);
             if ($matchLog !== null) {
-                $matchLog->update(['status' => 'rejected']);
+                $matchLog->update(['match_status' => 'rejected']);
             }
         }
     }

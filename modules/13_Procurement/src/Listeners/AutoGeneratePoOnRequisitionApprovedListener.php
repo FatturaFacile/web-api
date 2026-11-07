@@ -6,7 +6,7 @@ namespace Modules\Procurement\Listeners;
 
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Procurement\Events\PurchaseOrderCreatedEvent;
@@ -16,7 +16,7 @@ use Modules\Procurement\Models\PurchaseOrderLine;
 use Modules\Procurement\Models\PurchaseRequisition;
 use Modules\Procurement\Models\Supplier;
 
-final readonly class AutoGeneratePoOnRequisitionApprovedListener implements ShouldQueue
+final readonly class AutoGeneratePoOnRequisitionApprovedListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,

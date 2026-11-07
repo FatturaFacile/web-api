@@ -7,11 +7,29 @@ namespace Modules\GeneralLedger\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\GeneralLedger\Services\JournalNumberSequence;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 
 final class JournalEntry extends BaseEnterpriseModel
 {
     protected $table = 'journal_entries';
+
+    /**
+     * An entry takes its progressive libro giornale number when it is posted, whichever path posts it.
+     */
+    protected static function booted(): void
+    {
+        parent::booted();
+
+        self::saving(static function (self $entry): void {
+            $becomesPosted = in_array($entry->getAttribute('status'), ['posted', 'reversed'], true)
+                && (! $entry->exists || $entry->isDirty('status'));
+
+            if ($becomesPosted) {
+                app(JournalNumberSequence::class)->assign($entry);
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -20,6 +38,7 @@ final class JournalEntry extends BaseEnterpriseModel
             'document_date' => 'date',
             'reversal_date' => 'date',
             'total_amount' => 'decimal:4',
+            'journal_number' => 'integer',
             'posted_at' => 'datetime',
             'reversed_at' => 'datetime',
         ];

@@ -26,12 +26,8 @@ Route::prefix('api/v1/subscriptions')
         Route::get('revenue-contracts/{id}', [RevenueRecognitionController::class, 'showContract'])->name('subscriptions.revenue-contracts.show');
         Route::post('revenue-recognition/recognize', [RevenueRecognitionController::class, 'recognizeBatch'])->name('subscriptions.revenue-recognition.recognize');
 
-        // Enterprise Subscription Lifecycle Actions
-        Route::post('{id}/activate', [SubscriptionController::class, 'activate'])->name('subscriptions.enterprise.activate');
-        Route::post('{id}/suspend', [SubscriptionController::class, 'suspend'])->name('subscriptions.enterprise.suspend');
-        Route::post('{id}/reactivate', [SubscriptionController::class, 'reactivate'])->name('subscriptions.enterprise.reactivate');
-        Route::post('{id}/upgrade', [SubscriptionController::class, 'upgrade'])->name('subscriptions.enterprise.upgrade');
-        Route::post('{id}/downgrade', [SubscriptionController::class, 'downgrade'])->name('subscriptions.enterprise.downgrade');
+        // Contract lifecycle actions live under /api/v1/sub/contracts/{id}/...: the bare
+        // /api/v1/subscriptions/{id}/... paths belong to the legacy recurring-billing subscriptions.
     });
 
 Route::prefix('api/v1/sub')

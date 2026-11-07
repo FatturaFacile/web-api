@@ -6,12 +6,12 @@ namespace Modules\Procurement\Listeners;
 
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseOrderCommittedEvent;
 use Modules\Procurement\Models\PurchaseOrder;
 
-final readonly class AuthorizeReceivingOnPurchaseOrderApprovedListener implements ShouldQueue
+final readonly class AuthorizeReceivingOnPurchaseOrderApprovedListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private EventDispatcherInterface $eventDispatcher,
