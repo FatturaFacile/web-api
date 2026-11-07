@@ -74,6 +74,7 @@ final readonly class LedgerBudgetService
                 ->where('fiscal_year_id', $budget->fiscal_year_id)
                 ->where('name', $budget->name)
                 ->lockForUpdate()
+                ->get(['id', 'version'])
                 ->max('version');
 
             $copy = LedgerBudget::create([

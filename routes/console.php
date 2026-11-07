@@ -9,6 +9,8 @@ use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
+use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
 use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
@@ -25,6 +27,7 @@ use Modules\SubscriptionBilling\Jobs\AggregateMeteredUsageJob;
 use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
 use Modules\Workflow\Jobs\ProcessBusinessCalendarTimeoutsJob;
 use Modules\Workflow\Jobs\PruneExpiredApprovalTokensJob;
+use Modules\WorkspaceSync\Jobs\SyncWorkspaceConnectionsJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -71,3 +74,7 @@ $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object
 $forEachTenant('manufacturing:mrp', static fn (Tenant $tenant): object => new ProcessMrpRunJob($tenant->id, now()->toDateString(), now()->addDays(90)->toDateString()))->dailyAt('02:15');
 $forEachTenant('manufacturing:capacity', static fn (Tenant $tenant): object => new ProcessWorkCenterCapacityJob($tenant->id, now()->toDateString()))->dailyAt('02:30');
 $forEachTenant('manufacturing:forecast', static fn (Tenant $tenant): object => new ProcessManufacturingForecastJob($tenant->id))->monthlyOn(1, '02:45');
+$forEachTenant('dms:retention', static fn (Tenant $tenant): object => new ApplyDocumentRetentionJob($tenant->id))->dailyAt('03:40');
+// Before procurement:expiring-contracts at 05:10, so a supplier contract that renews by itself is not marked expired.
+$forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
+$forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();

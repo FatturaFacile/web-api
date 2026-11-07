@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Treasury\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Modules\Treasury\Rules\ValidIban;
 
 final class StorePaymentBatchRequest extends FormRequest
 {
@@ -23,7 +24,7 @@ final class StorePaymentBatchRequest extends FormRequest
             'currency' => ['nullable', 'string', 'size:3'],
             'lines' => ['required', 'array', 'min:1'],
             'lines.*.recipient_name' => ['required', 'string', 'max:255'],
-            'lines.*.recipient_iban' => ['required', 'string', 'max:34'],
+            'lines.*.recipient_iban' => ['required', 'string', 'max:42', new ValidIban],
             'lines.*.recipient_bic' => ['nullable', 'string', 'max:11'],
             'lines.*.amount' => ['required', 'numeric', 'gt:0'],
             'lines.*.currency' => ['nullable', 'string', 'size:3'],
