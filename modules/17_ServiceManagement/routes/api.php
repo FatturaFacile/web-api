@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
@@ -30,6 +31,7 @@ Route::prefix('api/v1/esm')
         // Tickets & Helpdesk Routes
         Route::get('/tickets', [TicketController::class, 'index'])->name('api.v1.esm.tickets.index');
         Route::post('/tickets', [TicketController::class, 'store'])->name('api.v1.esm.tickets.store');
+        Route::post('/tickets/bulk', [HelpdeskTicketController::class, 'bulk'])->name('api.v1.esm.tickets.bulk');
         Route::get('/tickets/{ticket}', [TicketController::class, 'show'])->name('api.v1.esm.tickets.show');
         Route::post('/tickets/{ticket}/assign', [TicketController::class, 'assign'])->name('api.v1.esm.tickets.assign');
         Route::post('/tickets/{ticket}/resolve', [TicketController::class, 'resolve'])->name('api.v1.esm.tickets.resolve');
@@ -60,6 +62,22 @@ Route::prefix('api/v1/esm')
         Route::get('/helpdesk/settings', [HelpdeskAutomationController::class, 'settings'])->name('api.v1.esm.helpdesk.settings.show');
         Route::put('/helpdesk/settings', [HelpdeskAutomationController::class, 'updateSettings'])->name('api.v1.esm.helpdesk.settings.update');
         Route::put('/helpdesk/teams/{id}/assignment', [HelpdeskAutomationController::class, 'updateTeamAssignment'])->name('api.v1.esm.helpdesk.teams.assignment');
+
+        // Helpdesk: agent tools
+        Route::get('/helpdesk/canned-responses', [AgentToolsController::class, 'cannedResponses'])->name('api.v1.esm.helpdesk.canned-responses.index');
+        Route::post('/helpdesk/canned-responses', [AgentToolsController::class, 'storeCannedResponse'])->name('api.v1.esm.helpdesk.canned-responses.store');
+        Route::patch('/helpdesk/canned-responses/{id}', [AgentToolsController::class, 'updateCannedResponse'])->name('api.v1.esm.helpdesk.canned-responses.update');
+        Route::delete('/helpdesk/canned-responses/{id}', [AgentToolsController::class, 'destroyCannedResponse'])->name('api.v1.esm.helpdesk.canned-responses.destroy');
+        Route::post('/tickets/{ticket}/canned-responses/{id}/render', [AgentToolsController::class, 'renderCannedResponse'])->name('api.v1.esm.tickets.canned-responses.render');
+        Route::get('/helpdesk/macros', [AgentToolsController::class, 'macros'])->name('api.v1.esm.helpdesk.macros.index');
+        Route::post('/helpdesk/macros', [AgentToolsController::class, 'storeMacro'])->name('api.v1.esm.helpdesk.macros.store');
+        Route::patch('/helpdesk/macros/{id}', [AgentToolsController::class, 'updateMacro'])->name('api.v1.esm.helpdesk.macros.update');
+        Route::delete('/helpdesk/macros/{id}', [AgentToolsController::class, 'destroyMacro'])->name('api.v1.esm.helpdesk.macros.destroy');
+        Route::post('/tickets/{ticket}/macros/{id}/apply', [AgentToolsController::class, 'applyMacro'])->name('api.v1.esm.tickets.macros.apply');
+        Route::get('/helpdesk/views', [AgentToolsController::class, 'views'])->name('api.v1.esm.helpdesk.views.index');
+        Route::post('/helpdesk/views', [AgentToolsController::class, 'storeView'])->name('api.v1.esm.helpdesk.views.store');
+        Route::patch('/helpdesk/views/{id}', [AgentToolsController::class, 'updateView'])->name('api.v1.esm.helpdesk.views.update');
+        Route::delete('/helpdesk/views/{id}', [AgentToolsController::class, 'destroyView'])->name('api.v1.esm.helpdesk.views.destroy');
 
         // Helpdesk: support mailboxes
         Route::get('/helpdesk/mailboxes', [SupportMailboxController::class, 'index'])->name('api.v1.esm.helpdesk.mailboxes.index');

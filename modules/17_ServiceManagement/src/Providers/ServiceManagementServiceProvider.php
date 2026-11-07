@@ -53,14 +53,18 @@ use Modules\ServiceManagement\Listeners\ProjectESMListener;
 use Modules\ServiceManagement\Listeners\SendHelpdeskReplyEmailListener;
 use Modules\ServiceManagement\Listeners\WorkflowApprovalESMListener;
 use Modules\ServiceManagement\Models\BusinessHoursCalendar;
+use Modules\ServiceManagement\Models\CannedResponse;
 use Modules\ServiceManagement\Models\ChangeRequest;
 use Modules\ServiceManagement\Models\HelpdeskSetting;
 use Modules\ServiceManagement\Models\Incident;
+use Modules\ServiceManagement\Models\Macro;
 use Modules\ServiceManagement\Models\RoutingRule;
+use Modules\ServiceManagement\Models\SavedView;
 use Modules\ServiceManagement\Models\ServiceTeam;
 use Modules\ServiceManagement\Models\SupportMailbox;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\WorkOrder;
+use Modules\ServiceManagement\Policies\AgentToolPolicy;
 use Modules\ServiceManagement\Policies\ChangeRequestPolicy;
 use Modules\ServiceManagement\Policies\HelpdeskConfigurationPolicy;
 use Modules\ServiceManagement\Policies\IncidentPolicy;
@@ -98,6 +102,10 @@ final class ServiceManagementServiceProvider extends ServiceProvider
 
         foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class] as $configurationModel) {
             Gate::policy($configurationModel, HelpdeskConfigurationPolicy::class);
+        }
+
+        foreach ([CannedResponse::class, Macro::class, SavedView::class] as $agentTool) {
+            Gate::policy($agentTool, AgentToolPolicy::class);
         }
 
         Event::listen(HelpdeskTicketChanged::class, SendHelpdeskReplyEmailListener::class);

@@ -127,4 +127,36 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'csat_enabled', type: 'boolean'),
     new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
 ])]
+#[OA\Schema(schema: 'HelpdeskBulkResult', description: 'Outcome of a bulk action on one ticket', type: 'object', properties: [
+    new OA\Property(property: 'ticket_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'ok', type: 'boolean'),
+    new OA\Property(property: 'error', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'HelpdeskCannedResponseResource', description: 'JSON representation produced by CannedResponseResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'title', type: 'string'),
+    new OA\Property(property: 'category', type: 'string', nullable: true),
+    new OA\Property(property: 'body', type: 'string'),
+    new OA\Property(property: 'is_shared', type: 'boolean'),
+    new OA\Property(property: 'owner_user_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskMacroResource', description: 'JSON representation produced by MacroResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'description', type: 'string', nullable: true),
+    new OA\Property(property: 'actions', type: 'object'),
+    new OA\Property(property: 'is_shared', type: 'boolean'),
+    new OA\Property(property: 'owner_user_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskSavedViewResource', description: 'JSON representation produced by SavedViewResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'filters', type: 'object'),
+    new OA\Property(property: 'position', type: 'integer'),
+    new OA\Property(property: 'is_shared', type: 'boolean'),
+    new OA\Property(property: 'owner_user_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
 final class HelpdeskResponseSchemas {}

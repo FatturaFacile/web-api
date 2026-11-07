@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Modules\ServiceManagement\Enums\TicketStatus;
 use Modules\ServiceManagement\Http\Requests\AddTicketWatcherRequest;
 use Modules\ServiceManagement\Http\Requests\AutoAssignTicketRequest;
+use Modules\ServiceManagement\Http\Requests\BulkTicketActionRequest;
 use Modules\ServiceManagement\Http\Requests\ChangeTicketStatusRequest;
 use Modules\ServiceManagement\Http\Requests\MergeTicketRequest;
 use Modules\ServiceManagement\Http\Requests\SplitTicketRequest;
@@ -20,6 +21,7 @@ use Modules\ServiceManagement\Http\Resources\TicketResource;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\TicketActivity;
 use Modules\ServiceManagement\Models\TicketWatcher;
+use Modules\ServiceManagement\Services\Helpdesk\HelpdeskBulkService;
 use Modules\ServiceManagement\Services\Helpdesk\HelpdeskTicketService;
 use Modules\ServiceManagement\Services\Helpdesk\TicketPriorityMatrix;
 use OpenApi\Attributes as OA;
@@ -114,6 +116,23 @@ final class HelpdeskTicketController extends Controller
         $validated = $request->validated();
 
         return response()->json(['data' => new TicketResource($this->tickets->split($ticket, $validated['subject'], array_values($validated['message_ids']), $request->user()?->id))], 201);
+    }
+
+    /**
+     * Applies one action to many tickets.
+     */
+    #[OA\Post(path: '/api/v1/esm/tickets/bulk', operationId: 'bulkEsmTickets', description: 'Applies one action (status, priority, assign, add_tags, remove_tags, macro) to up to 100 tickets. Each ticket is changed on its own: the result lists which succeeded and why the others were refused.', summary: 'Bulk ticket action', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['ESM Tickets'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HelpdeskBulkTicketActionRequest')), responses: [
+        new OA\Response(response: 200, description: 'Outcome per ticket', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/HelpdeskBulkResult')), new OA\Property(property: 'meta', properties: [new OA\Property(property: 'succeeded', type: 'integer'), new OA\Property(property: 'failed', type: 'integer')], type: 'object')])),
+        new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+    ])]
+    public function bulk(BulkTicketActionRequest $request, HelpdeskBulkService $bulk): JsonResponse
+    {
+        $validated = $request->validated();
+        $results = $bulk->apply(array_values($validated['ticket_ids']), $validated['action'], $validated, $request->user());
+        $succeeded = count(array_filter($results, static fn (array $result): bool => $result['ok']));
+
+        return response()->json(['data' => $results, 'meta' => ['succeeded' => $succeeded, 'failed' => count($results) - $succeeded]]);
     }
 
     /**

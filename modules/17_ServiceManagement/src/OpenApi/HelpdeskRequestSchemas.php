@@ -110,4 +110,40 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true),
     new OA\Property(property: 'strategy', type: 'string', enum: ['round_robin', 'least_loaded']),
 ])]
+#[OA\Schema(schema: 'HelpdeskBulkTicketActionRequest', description: 'Request payload validated by BulkTicketActionRequest. The fields beside ticket_ids and action depend on the action.', required: ['ticket_ids', 'action'], type: 'object', properties: [
+    new OA\Property(property: 'ticket_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'), maxItems: 100),
+    new OA\Property(property: 'action', type: 'string', enum: ['status', 'priority', 'assign', 'add_tags', 'remove_tags', 'macro']),
+    new OA\Property(property: 'status', type: 'string', enum: ['new', 'open', 'pending_customer', 'on_hold', 'resolved', 'closed'], nullable: true),
+    new OA\Property(property: 'priority', type: 'string', enum: ['low', 'medium', 'high', 'critical'], nullable: true),
+    new OA\Property(property: 'assigned_team_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'assigned_technician_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
+    new OA\Property(property: 'macro_id', type: 'string', format: 'uuid', nullable: true),
+])]
+#[OA\Schema(schema: 'HelpdeskSaveCannedResponseRequest', description: 'Request payload validated by SaveAgentToolRequest for a canned response', type: 'object', properties: [
+    new OA\Property(property: 'title', type: 'string', maxLength: 150),
+    new OA\Property(property: 'category', type: 'string', maxLength: 80, nullable: true),
+    new OA\Property(property: 'body', type: 'string', maxLength: 20000, example: 'Dear {{requester.name}}, ticket {{ticket.number}} is being handled by {{agent.name}}.'),
+    new OA\Property(property: 'is_shared', type: 'boolean', description: 'Shared with every agent; needs a service manager'),
+])]
+#[OA\Schema(schema: 'HelpdeskSaveMacroRequest', description: 'Request payload validated by SaveAgentToolRequest for a macro', type: 'object', properties: [
+    new OA\Property(property: 'name', type: 'string', maxLength: 150),
+    new OA\Property(property: 'description', type: 'string', nullable: true),
+    new OA\Property(property: 'is_shared', type: 'boolean'),
+    new OA\Property(property: 'actions', properties: [
+        new OA\Property(property: 'set_status', type: 'string', enum: ['new', 'open', 'pending_customer', 'on_hold', 'resolved', 'closed']),
+        new OA\Property(property: 'set_priority', type: 'string', enum: ['low', 'medium', 'high', 'critical']),
+        new OA\Property(property: 'assign_team_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'assign_technician_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'add_tags', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'remove_tags', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'reply', properties: [new OA\Property(property: 'body', type: 'string'), new OA\Property(property: 'visibility', type: 'string', enum: ['public', 'internal'])], type: 'object'),
+    ], type: 'object'),
+])]
+#[OA\Schema(schema: 'HelpdeskSaveSavedViewRequest', description: 'Request payload validated by SaveAgentToolRequest for a saved view', type: 'object', properties: [
+    new OA\Property(property: 'name', type: 'string', maxLength: 150),
+    new OA\Property(property: 'position', type: 'integer'),
+    new OA\Property(property: 'is_shared', type: 'boolean'),
+    new OA\Property(property: 'filters', type: 'object', example: ['status' => 'open,pending_customer', 'sla_state' => 'breached', 'team_id' => '0190c1d2-0000-7000-8000-000000000000']),
+])]
 final class HelpdeskRequestSchemas {}
