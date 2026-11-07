@@ -40,7 +40,11 @@ final readonly class TicketService implements TicketServiceInterface
             $responseDue = $this->slaService->calculateDueDate($dto->slaPolicyId, $dto->priority, 'response');
             $resolutionDue = $this->slaService->calculateDueDate($dto->slaPolicyId, $dto->priority, 'resolution');
 
-            $customerId = $dto->customerId ?: (string) Str::uuid7();
+            $contactDetails = array_filter([
+                'contact_email' => $dto->contactEmail,
+                'contact_phone' => $dto->contactPhone,
+                'sla_policy_id' => $dto->slaPolicyId,
+            ], static fn (?string $value): bool => $value !== null && $value !== '');
 
             $ticket = Ticket::create([
                 'tenant_id' => $dto->tenantId,
@@ -48,7 +52,7 @@ final readonly class TicketService implements TicketServiceInterface
                 'ticket_number' => $ticketNumber,
                 'subject' => $dto->title,
                 'description' => $dto->description ?? $dto->title,
-                'customer_id' => $customerId,
+                'customer_id' => $dto->customerId ?: null,
                 'priority' => $dto->priority,
                 'status' => 'open',
                 'source' => $dto->channel,
@@ -58,7 +62,7 @@ final readonly class TicketService implements TicketServiceInterface
                 'assigned_team_id' => $dto->serviceTeamId,
                 'response_due_at' => $responseDue,
                 'resolution_due_at' => $resolutionDue,
-                'metadata' => $dto->metadata,
+                'metadata' => [...$dto->metadata, ...$contactDetails],
                 'requester_user_id' => $dto->requesterUserId,
                 'asset_id' => $dto->assetId,
             ]);

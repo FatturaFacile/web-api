@@ -314,10 +314,44 @@ final class DossierService
      */
     public function allocateConsolidation(CustomsConsolidation $consolidation): array
     {
-        if ($consolidation->allocated_at !== null) {
-            throw new CustomsException('The freight of this consolidation has already been shared out.');
-        }
+        return DB::transaction(function () use ($consolidation): array {
+            $consolidation = CustomsConsolidation::query()->lockForUpdate()->findOrFail($consolidation->id);
 
+            if ($consolidation->allocated_at !== null) {
+                throw new CustomsException('The freight of this consolidation has already been shared out.');
+            }
+
+            return $this->allocateLockedConsolidation($consolidation);
+        });
+    }
+
+    /**
+     * Puts a dossier on a consolidation. Both the target and any consolidation the dossier leaves are locked and must not
+     * be shared out yet: a dossier whose freight share was booked cannot carry it to another groupage.
+     */
+    public function attachToConsolidation(CustomsConsolidation $consolidation, CustomsDossier $dossier): CustomsDossier
+    {
+        return DB::transaction(function () use ($consolidation, $dossier): CustomsDossier {
+            $dossier = CustomsDossier::query()->lockForUpdate()->findOrFail($dossier->id);
+            $ids = array_values(array_unique(array_filter([(string) $consolidation->id, (string) $dossier->consolidation_id])));
+            sort($ids);
+            $locked = CustomsConsolidation::query()->whereKey($ids)->orderBy('id')->lockForUpdate()->get();
+
+            if ($locked->contains(static fn (CustomsConsolidation $held): bool => $held->allocated_at !== null)) {
+                throw new CustomsException('The freight of this consolidation has already been shared out.');
+            }
+
+            $dossier->update(['consolidation_id' => $consolidation->id]);
+
+            return $dossier;
+        });
+    }
+
+    /**
+     * @return list<array{dossier_id: string, share: string}>
+     */
+    private function allocateLockedConsolidation(CustomsConsolidation $consolidation): array
+    {
         $dossiers = $consolidation->dossiers()->orderBy('dossier_number')->get();
         $weight = $dossiers->reduce(static fn (string $total, CustomsDossier $dossier): string => Decimal::add($total, (string) $dossier->gross_weight_kg), '0');
 
@@ -329,34 +363,32 @@ final class DossierService
             throw new CustomsException('A dossier of the consolidation is in another currency.');
         }
 
-        return DB::transaction(function () use ($consolidation, $dossiers, $weight): array {
-            $freight = (string) $consolidation->freight_cost;
-            $remaining = $freight;
-            $shares = [];
+        $freight = (string) $consolidation->freight_cost;
+        $remaining = $freight;
+        $shares = [];
 
-            foreach ($dossiers->values() as $index => $dossier) {
-                $share = $index === $dossiers->count() - 1
-                    ? $remaining
-                    : Decimal::round2(Decimal::div(Decimal::mul($freight, (string) $dossier->gross_weight_kg), $weight));
-                $remaining = Decimal::sub($remaining, $share);
+        foreach ($dossiers->values() as $index => $dossier) {
+            $share = $index === $dossiers->count() - 1
+                ? $remaining
+                : Decimal::round2(Decimal::div(Decimal::mul($freight, (string) $dossier->gross_weight_kg), $weight));
+            $remaining = Decimal::sub($remaining, $share);
 
-                $dossier->charges()->create([
-                    'kind' => ChargeKind::Cost,
-                    'category' => ChargeCategory::Freight,
-                    'is_direct' => true,
-                    'description' => "Groupage {$consolidation->reference}",
-                    'amount' => Decimal::round2($share),
-                    'currency' => $consolidation->currency,
-                    'consolidation_id' => $consolidation->id,
-                ]);
+            $dossier->charges()->create([
+                'kind' => ChargeKind::Cost,
+                'category' => ChargeCategory::Freight,
+                'is_direct' => true,
+                'description' => "Groupage {$consolidation->reference}",
+                'amount' => Decimal::round2($share),
+                'currency' => $consolidation->currency,
+                'consolidation_id' => $consolidation->id,
+            ]);
 
-                $shares[] = ['dossier_id' => (string) $dossier->id, 'share' => Decimal::round2($share)];
-            }
+            $shares[] = ['dossier_id' => (string) $dossier->id, 'share' => Decimal::round2($share)];
+        }
 
-            $consolidation->update(['allocated_at' => now(), 'status' => 'allocated']);
+        $consolidation->update(['allocated_at' => now(), 'status' => 'allocated']);
 
-            return $shares;
-        });
+        return $shares;
     }
 
     private function assertChf(CustomsDossier $dossier): void

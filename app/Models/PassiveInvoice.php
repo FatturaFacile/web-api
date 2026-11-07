@@ -54,6 +54,7 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
         'exchange_rate',
         'withholding_tax_amount',
         'withholdings',
+        'stamp_duty_amount',
         'declaration_of_intent_id',
         'cost_account_id',
         'cost_account_source',
@@ -77,6 +78,7 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
             'exchange_rate' => 'decimal:6',
             'withholding_tax_amount' => 'decimal:2',
             'withholdings' => 'array',
+            'stamp_duty_amount' => 'decimal:2',
             'approval_decided_at' => 'datetime',
         ];
     }

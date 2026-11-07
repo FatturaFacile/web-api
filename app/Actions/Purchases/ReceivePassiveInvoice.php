@@ -80,6 +80,7 @@ class ReceivePassiveInvoice
                     'sdi_file_name' => $fileName,
                     'xml_payload' => $xml,
                     'withholdings' => $document['withholdings'] === [] ? null : $document['withholdings'],
+                    'stamp_duty_amount' => number_format((float) ($document['stamp_duty'] ?? 0), 2, '.', ''),
                     'withholding_tax_amount' => number_format(array_sum(array_map(static fn (array $withholding): float => (float) $withholding['amount'], $document['withholdings'])), 2, '.', ''),
                 ]);
 

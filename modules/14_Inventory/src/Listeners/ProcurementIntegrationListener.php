@@ -14,6 +14,7 @@ use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Inventory\Models\WarehouseBin;
+use Modules\Inventory\Services\PurchaseOrderLineStockItemResolver;
 use Modules\Procurement\Events\InventoryAdjustmentRequestEvent;
 use Modules\Procurement\Events\InventoryReceiptRequestedEvent;
 use Modules\Procurement\Events\InventoryReservationRequestedEvent;
@@ -23,7 +24,8 @@ final readonly class ProcurementIntegrationListener implements ShouldQueue
 {
     public function __construct(
         private DoubleEntryMovementServiceInterface $movementService,
-        private StockReservationServiceInterface $reservationService
+        private StockReservationServiceInterface $reservationService,
+        private PurchaseOrderLineStockItemResolver $stockItems,
     ) {}
 
     public function handleInventoryReceipt(InventoryReceiptRequestedEvent $event): void
@@ -47,10 +49,7 @@ final readonly class ProcurementIntegrationListener implements ShouldQueue
                 $stockItem = StockItem::find($item['product_id']);
             }
             if (! $stockItem && ! empty($item['purchase_order_line_id'])) {
-                $poLine = DB::table('purchase_order_lines')->where('id', $item['purchase_order_line_id'])->first();
-                if ($poLine && isset($poLine->product_id)) {
-                    $stockItem = StockItem::find($poLine->product_id);
-                }
+                $stockItem = $this->stockItems->resolve((string) $item['purchase_order_line_id'], $event->tenantId);
             }
             if (! $stockItem) {
                 Log::warning('Inventory receipt line without a stock item: no stock was moved.', ['receipt_id' => $event->receiptId, 'purchase_order_line_id' => $item['purchase_order_line_id'] ?? null]);

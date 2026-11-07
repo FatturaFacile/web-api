@@ -97,11 +97,15 @@ final class PayslipDeliveryService
         return $this->tenantContext->runWithTenant($tenant, function () use ($delivery, $birthDate, $tenant): array {
             $payslip = Payslip::query()->with('employee')->findOrFail($delivery->payslip_id);
 
-            if ($payslip->employee?->birth_date?->format('Y-m-d') !== $birthDate) {
-                $delivery->increment('failed_attempts');
-
+            if (! $this->reserveAttempt($delivery)) {
                 throw new NotFoundHttpException;
             }
+
+            if ($payslip->employee?->birth_date?->format('Y-m-d') !== $birthDate) {
+                throw new NotFoundHttpException;
+            }
+
+            PayslipDelivery::query()->withoutGlobalScopes()->whereKey($delivery->id)->where('failed_attempts', '>', 0)->decrement('failed_attempts');
 
             $delivery->update(['opened_at' => $delivery->opened_at ?? CarbonImmutable::now()]);
 
@@ -110,5 +114,17 @@ final class PayslipDeliveryService
                 'file_name' => sprintf('Busta_paga_%d-%02d.pdf', $payslip->year, $payslip->month),
             ];
         });
+    }
+
+    /**
+     * Counts the attempt as failed before the answer is compared, in one conditional UPDATE: parallel requests cannot all
+     * read the same counter and slip past the limit. A right answer gives the attempt back.
+     */
+    private function reserveAttempt(PayslipDelivery $delivery): bool
+    {
+        return PayslipDelivery::query()->withoutGlobalScopes()
+            ->whereKey($delivery->id)
+            ->where('failed_attempts', '<', self::MaximumAttempts)
+            ->increment('failed_attempts') === 1;
     }
 }

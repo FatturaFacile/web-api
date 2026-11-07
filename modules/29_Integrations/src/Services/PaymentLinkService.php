@@ -38,7 +38,7 @@ final readonly class PaymentLinkService
      */
     public function create(Invoice $invoice): PaymentLink
     {
-        $amount = bcsub((string) $invoice->total_gross, (string) $invoice->total_paid, 2);
+        $amount = bcadd($invoice->outstandingAmount(), '0', 2);
 
         if ($invoice->invoice_type === 'proforma' || bccomp($amount, '0', 2) <= 0 || ! in_array($invoice->currency, ['EUR', 'CHF'], true)) {
             throw ValidationException::withMessages(['invoice_id' => __('sales.payment_link_not_payable')]);

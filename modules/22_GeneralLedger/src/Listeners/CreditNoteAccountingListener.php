@@ -13,6 +13,7 @@ use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
@@ -24,6 +25,7 @@ final class CreditNoteAccountingListener
     public function __construct(
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly FiscalPeriodResolver $periods,
+        private readonly LedgerAccountResolver $accounts,
         private readonly ?AuditLedgerInterface $auditLedger = null
     ) {}
 
@@ -137,11 +139,13 @@ final class CreditNoteAccountingListener
             ];
         }
 
-        // Line 3: Credit Accounts Receivable (Gross Amount)
+        // Line 3: Credit Accounts Receivable, net of the withholding and the Enasarco the customer never paid
+        $withheld = $this->withheldShare($creditNote);
+        $receivableCredit = (float) Decimal::round2(Decimal::sub($isSplitPayment ? Decimal::sub((string) $creditedGross, (string) $vatCredited) : (string) $creditedGross, Decimal::add($withheld['withholding'], $withheld['enasarco'])));
         $lines[] = [
             'account_id' => $arAccount->id,
             'debit_amount' => 0.0,
-            'credit_amount' => $isSplitPayment ? round($creditedGross - $vatCredited, 2) : $creditedGross,
+            'credit_amount' => $receivableCredit,
             'currency' => $currency,
             'exchange_rate' => $exchangeRate,
             'partner_type' => 'customer',
@@ -157,6 +161,28 @@ final class CreditNoteAccountingListener
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'description' => "Split payment VAT: Credit Note {$event->creditNoteNumber}",
+            ];
+        }
+
+        if (Decimal::isPositive($withheld['withholding'])) {
+            $lines[] = [
+                'account_id' => $this->accounts->withholdingReceivable($event->tenantId)->id,
+                'debit_amount' => 0.0,
+                'credit_amount' => (float) $withheld['withholding'],
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+                'description' => "Withholding reversed: Credit Note {$event->creditNoteNumber}",
+            ];
+        }
+
+        if (Decimal::isPositive($withheld['enasarco'])) {
+            $lines[] = [
+                'account_id' => $this->accounts->enasarcoExpense($event->tenantId)->id,
+                'debit_amount' => 0.0,
+                'credit_amount' => (float) $withheld['enasarco'],
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+                'description' => "Enasarco reversed: Credit Note {$event->creditNoteNumber}",
             ];
         }
 
@@ -292,6 +318,19 @@ final class CreditNoteAccountingListener
             'net' => Decimal::round2($group['net']),
             'tax' => Decimal::round2($group['tax']),
         ], $groups);
+    }
+
+    /**
+     * The share of the withholding and of the Enasarco of the invoice that the credit note takes back.
+     *
+     * @return array{withholding: string, enasarco: string}
+     */
+    private function withheldShare(?SalesInvoice $creditNote): array
+    {
+        return [
+            'withholding' => $creditNote !== null && $creditNote->withholding_tax_enabled ? Decimal::round2((string) ($creditNote->withholding_tax_amount ?? '0')) : '0',
+            'enasarco' => $creditNote !== null && $creditNote->enasarco_enabled ? Decimal::round2((string) ($creditNote->enasarco_amount ?? '0')) : '0',
+        ];
     }
 
     private function originalInvoiceOf(CreditNoteIssuedEvent $event): ?SalesInvoice

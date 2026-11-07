@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Services\Tenancy\TenantContext;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
@@ -12,14 +13,17 @@ use Modules\HumanResources\Models\BusinessUnit;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\Payroll\Calculation\Dec;
+use Modules\Payroll\Exceptions\PayrollException;
 use Modules\Payroll\Mail\PayslipAvailableMail;
 use Modules\Payroll\Models\PayrollFamilyAllowanceRate;
 use Modules\Payroll\Models\PayrollRun;
 use Modules\Payroll\Models\Payslip;
 use Modules\Payroll\Models\PayslipDelivery;
+use Modules\Payroll\Services\Extras\PayrollPaymentFileService;
 use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Models\PaymentBatch;
 use Modules\Treasury\Models\PaymentLine;
+use Tests\Support\RowLocks;
 
 require_once __DIR__.'/Support.php';
 
@@ -158,6 +162,28 @@ test('the link opens with the date of birth, locks after wrong answers and expir
     $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
 });
 
+test('attempts that other requests used up after this one read the link are counted in the same UPDATE', function (): void {
+    $run = payrollClosedRun($this->tenant, $this->manager, 2026, 1);
+    extrasApi()->postJson("/api/v1/payroll/runs/{$run->id}/deliver-payslips")->assertOk();
+    $token = Str::afterLast(Mail::queued(PayslipAvailableMail::class)->first()->link, '/');
+    app(TenantContext::class)->clear();
+
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '2000-01-01'])->assertNotFound();
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertOk();
+    expect(PayslipDelivery::query()->withoutGlobalScopes()->sole()->failed_attempts)->toBe(1);
+
+    $raced = false;
+    DB::listen(function (QueryExecuted $query) use (&$raced): void {
+        if (! $raced && str_starts_with($query->sql, 'select * from "payroll_payslips"')) {
+            $raced = true;
+            DB::table('payroll_payslip_deliveries')->update(['failed_attempts' => 5]);
+        }
+    });
+
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
+    expect($raced)->toBeTrue()->and(PayslipDelivery::query()->withoutGlobalScopes()->sole()->failed_attempts)->toBe(5);
+});
+
 test('someone without a date of birth or a mail address is skipped with the reason', function (): void {
     $this->employee->update(['birth_date' => null]);
     $run = payrollClosedRun($this->tenant, $this->manager, 2026, 1);
@@ -189,6 +215,19 @@ test('a closed run becomes one Treasury batch per bank, which needs a second app
         ->and((string) $line->amount)->toBe((string) Payslip::query()->withoutGlobalScopes()->where('employee_id', $this->employee->id)->sole()->payout_amount);
 
     extrasApi()->postJson("/api/v1/payroll/runs/{$run->id}/payment-batches", ['allocations' => [['bank_account_id' => $office->id]]])->assertUnprocessable();
+});
+
+test('the payment file locks the run before it checks for an existing batch, so a second request is refused', function (): void {
+    $account = extrasBank($this->tenant->id, 'CH5604835012345678009');
+    $run = payrollClosedRun($this->tenant, $this->manager, 2026, 1);
+    app(TenantContext::class)->setTenant($this->tenant);
+    $service = app(PayrollPaymentFileService::class);
+
+    $locks = RowLocks::takenBy(fn () => $service->createBatches($run, $this->manager, 'CHF', [['bank_account_id' => $account->id]]));
+
+    expect($locks[0] ?? null)->toBe('payroll_runs')
+        ->and(fn () => $service->createBatches($run, $this->manager, 'CHF', [['bank_account_id' => $account->id]]))->toThrow(PayrollException::class)
+        ->and(PaymentBatch::query()->withoutGlobalScopes()->count())->toBe(1);
 });
 
 test('a payment file needs a closed run, every IBAN and the right currency', function (): void {

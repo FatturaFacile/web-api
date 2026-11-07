@@ -30,6 +30,8 @@ final readonly class PurchaseLiabilityReadyEvent implements DomainEventInterface
         public float $contributionAmount = 0.0,
         /** @var list<array{account_id: string, amount: float}> Share of the net amount that goes to specific cost accounts */
         public array $costAllocations = [],
+        /** Stamp duty the supplier charged in the document total, a cost outside the VAT base. */
+        public float $stampDutyAmount = 0.0,
     ) {}
 
     public function getEventId(): string

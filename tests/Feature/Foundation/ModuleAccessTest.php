@@ -88,6 +88,32 @@ test('employees keep their own time records without HR rights', function (): voi
     expect($this->getJson('/api/v1/hr/time/events')->status())->not->toBe(403);
 });
 
+test('the automotive, construction and professional routes declare their access rule', function (): void {
+    $unprotected = [];
+
+    foreach (app('router')->getRoutes() as $route) {
+        $segment = explode('/', $route->uri())[2] ?? '';
+
+        if (in_array($segment, ['automotive', 'construction', 'professionals'], true)
+            && ! collect($route->gatherMiddleware())->contains(fn (string $name): bool => $name === "module.access:{$segment}")) {
+            $unprotected[] = $route->uri();
+        }
+    }
+
+    expect($unprotected)->toBe([]);
+});
+
+test('the vertical modules let members of other areas read but not write', function (string $readUri, string $writeUri): void {
+    moduleUser('warehouse');
+
+    expect($this->getJson($readUri)->status())->not->toBe(403);
+    $this->postJson($writeUri, [])->assertForbidden();
+})->with([
+    ['/api/v1/automotive/vehicles', '/api/v1/automotive/tire-hotel/check-in'],
+    ['/api/v1/construction/sal', '/api/v1/construction/sal'],
+    ['/api/v1/professionals/fee-notes', '/api/v1/professionals/fee-notes'],
+]);
+
 test('backups are closed to everybody but owners and administrators', function (): void {
     moduleUser('accountant');
 

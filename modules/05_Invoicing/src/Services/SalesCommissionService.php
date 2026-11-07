@@ -7,6 +7,7 @@ namespace Modules\Invoicing\Services;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -80,14 +81,19 @@ final class SalesCommissionService
             $base = self::signedNet($invoice);
             $rate = (string) $representative->default_commission_rate;
 
-            SalesCommission::create([
-                'sales_representative_id' => $representative->id,
-                'invoice_id' => $invoice->id,
-                'base_amount' => $base,
-                'commission_rate' => $rate,
-                'commission_amount' => Dec::round(Dec::div(Dec::mul($base, $rate), '100')),
-                'status' => 'accrued',
-            ]);
+            try {
+                DB::transaction(static fn (): SalesCommission => SalesCommission::create([
+                    'sales_representative_id' => $representative->id,
+                    'invoice_id' => $invoice->id,
+                    'base_amount' => $base,
+                    'commission_rate' => $rate,
+                    'commission_amount' => Dec::round(Dec::div(Dec::mul($base, $rate), '100')),
+                    'status' => 'accrued',
+                ]));
+            } catch (UniqueConstraintViolationException) {
+                continue;
+            }
+
             $accrued++;
         }
 
@@ -133,11 +139,13 @@ final class SalesCommissionService
      */
     public function approve(SalesCommissionStatement $statement, User $actor): SalesCommissionStatement
     {
-        if ($statement->status !== SalesCommissionStatement::StatusDraft) {
-            throw new InvalidArgumentException('Si approva un conteggio in bozza.');
-        }
-
         DB::transaction(function () use ($statement, $actor): void {
+            $statement = SalesCommissionStatement::query()->lockForUpdate()->findOrFail($statement->id);
+
+            if ($statement->status !== SalesCommissionStatement::StatusDraft) {
+                throw new InvalidArgumentException('Si approva un conteggio in bozza.');
+            }
+
             $statement->update([
                 'status' => SalesCommissionStatement::StatusApproved,
                 'approved_by' => $actor->id,
@@ -146,6 +154,8 @@ final class SalesCommissionService
             ]);
             SalesCommission::query()->where('commission_statement_id', $statement->id)->update(['status' => 'approved']);
         });
+
+        $statement->refresh();
 
         try {
             $this->post($statement);
@@ -177,18 +187,20 @@ final class SalesCommissionService
 
     public function markPaid(SalesCommissionStatement $statement): SalesCommissionStatement
     {
-        if ($statement->status !== SalesCommissionStatement::StatusApproved) {
-            throw new InvalidArgumentException('Si paga un conteggio approvato.');
-        }
-
         $now = CarbonImmutable::now();
 
         DB::transaction(function () use ($statement, $now): void {
-            $statement->update(['status' => SalesCommissionStatement::StatusPaid, 'paid_at' => $now]);
+            $locked = SalesCommissionStatement::query()->lockForUpdate()->findOrFail($statement->id);
+
+            if ($locked->status !== SalesCommissionStatement::StatusApproved) {
+                throw new InvalidArgumentException('Si paga un conteggio approvato.');
+            }
+
+            $locked->update(['status' => SalesCommissionStatement::StatusPaid, 'paid_at' => $now]);
             SalesCommission::query()->where('commission_statement_id', $statement->id)->update(['status' => 'paid', 'paid_at' => $now]);
         });
 
-        return $statement;
+        return $statement->refresh();
     }
 
     /**
@@ -242,6 +254,12 @@ final class SalesCommissionService
         $label = 'Commissions '.$statement->period_start->format('Y-m-d').' / '.$date;
 
         return DB::transaction(function () use ($statement, $tenantId, $expense, $payable, $value, $isNegative, $date, $period, $label): SalesCommissionStatement {
+            $locked = SalesCommissionStatement::query()->lockForUpdate()->findOrFail($statement->id);
+
+            if ($locked->ledger_status !== SalesCommissionStatement::LedgerPending) {
+                return $statement->refresh();
+            }
+
             $entry = $this->postingService->createAndPost([
                 'tenant_id' => $tenantId,
                 'company_id' => $tenantId,

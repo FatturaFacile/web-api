@@ -103,9 +103,29 @@ final class DeclarationOfIntentService
             return;
         }
 
-        $remaining = Decimal::sub((string) $declaration->consumed_amount, (string) $creditNote->total_net);
+        $remaining = Decimal::sub((string) $declaration->consumed_amount, $this->releasedAmount($creditNote, $original));
 
         $declaration->update(['consumed_amount' => Decimal::isNegative($remaining) ? '0.00' : Decimal::round2($remaining)]);
+    }
+
+    /**
+     * What the credit note gives back, measured as consume() measured the sale: its net plus the matching share of the
+     * fund contribution of the original invoice, since a credit note carries no fund of its own.
+     */
+    private function releasedAmount(SalesInvoice $creditNote, SalesInvoice $original): string
+    {
+        $creditedNet = (string) $creditNote->total_net;
+        $originalNet = (string) $original->total_net;
+        $originalFund = (string) ($original->fund_amount ?? '0');
+
+        if (! Decimal::isPositive($originalNet) || ! Decimal::isPositive($originalFund)) {
+            return Decimal::add($creditedNet, (string) ($creditNote->fund_amount ?? '0'));
+        }
+
+        $share = Decimal::div($creditedNet, $originalNet);
+        $share = Decimal::compare($share, '1') > 0 ? '1' : $share;
+
+        return Decimal::add($creditedNet, Decimal::round2(Decimal::mul($originalFund, $share)));
     }
 
     /**

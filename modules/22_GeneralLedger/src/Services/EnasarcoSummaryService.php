@@ -47,15 +47,16 @@ final class EnasarcoSummaryService
             ->where('status', 'posted')
             ->whereDate('date', '>=', $from->toDateString())
             ->whereDate('date', '<=', $to->toDateString())
-            ->get(['id', 'contact_id', 'enasarco_base', 'enasarco_amount']);
+            ->get(['id', 'contact_id', 'invoice_type', 'enasarco_base', 'enasarco_amount']);
 
         $rows = [];
 
         foreach ($invoices as $invoice) {
             $row = $rows[$invoice->contact_id] ?? ['base' => '0', 'amount' => '0', 'documents' => 0];
+            $sign = $invoice->invoice_type === 'credit_note' ? '-1' : '1';
             $rows[$invoice->contact_id] = [
-                'base' => Decimal::add($row['base'], (string) ($invoice->enasarco_base ?? '0')),
-                'amount' => Decimal::add($row['amount'], (string) $invoice->enasarco_amount),
+                'base' => Decimal::add($row['base'], Decimal::mul((string) ($invoice->enasarco_base ?? '0'), $sign)),
+                'amount' => Decimal::add($row['amount'], Decimal::mul((string) ($invoice->enasarco_amount ?? '0'), $sign)),
                 'documents' => $row['documents'] + 1,
             ];
         }

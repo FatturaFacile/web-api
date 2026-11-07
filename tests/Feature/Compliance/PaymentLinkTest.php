@@ -68,6 +68,14 @@ test('the local driver makes a link for the open balance without calling anyone'
     Http::assertNothingSent();
 });
 
+test('a link on an invoice with withholding and split payment asks only for what the customer owes', function (): void {
+    $this->invoice->forceFill(['withholding_tax_enabled' => true, 'withholding_tax_amount' => '20.00', 'split_payment' => true])->save();
+
+    $link = $this->postJson('/api/v1/payment-links', ['invoice_id' => $this->invoice->id])->assertCreated()->json('data');
+
+    expect($link['amount'])->toBe('80.00');
+});
+
 test('the Stripe driver creates a Checkout Session in cents and stores no card data', function (): void {
     $link = stripeLink();
 

@@ -28,6 +28,9 @@ return [
         'projects' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'project_manager', 'technician', 'member']],
         'assets' => ['read' => $anyMember, 'write' => $finance],
         'service' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'service_manager', 'technician', 'member']],
+        'automotive' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'service_manager', 'technician', 'member']],
+        'construction' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'project_manager', 'technician', 'member']],
+        'professionals' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'project_manager', 'member']],
         'manufacturing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'treasury' => ['read' => $financeReaders, 'write' => $finance],
         // Backups hold every record of the company, and a restore replaces them.

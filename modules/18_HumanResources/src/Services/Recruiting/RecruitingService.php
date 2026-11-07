@@ -83,6 +83,7 @@ final class RecruitingService
         }
 
         return DB::transaction(function () use ($application, $stage, $actor): JobApplication {
+            $application = $this->lockActive($application);
             $application->update(['pipeline_stage_id' => $stage->id]);
             $this->recordStage($application, $stage, $actor);
 
@@ -95,6 +96,7 @@ final class RecruitingService
         $this->assertActive($application);
 
         return DB::transaction(function () use ($application, $actor): JobApplication {
+            $application = $this->lockActive($application);
             $this->close($application, JobApplication::StatusRejected, PipelineStage::OutcomeRejected, $actor);
 
             return $application;
@@ -147,6 +149,7 @@ final class RecruitingService
         $this->assertActive($application);
 
         return DB::transaction(function () use ($application, $terms, $actor): Employee {
+            $application = $this->lockActive($application);
             $tenant = $this->tenantContext->getTenant();
             $posting = $application->posting;
 
@@ -207,6 +210,17 @@ final class RecruitingService
         });
 
         return $task;
+    }
+
+    /**
+     * Reads the application again under a row lock, so that of two concurrent decisions the second sees the first.
+     */
+    private function lockActive(JobApplication $application): JobApplication
+    {
+        $locked = JobApplication::query()->lockForUpdate()->findOrFail($application->id);
+        $this->assertActive($locked);
+
+        return $locked;
     }
 
     private function close(JobApplication $application, string $status, string $outcome, User $actor): void

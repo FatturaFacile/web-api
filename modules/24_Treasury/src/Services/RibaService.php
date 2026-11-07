@@ -199,7 +199,7 @@ final readonly class RibaService
             throw new InvalidArgumentException("Invoice {$invoice->invoice_number} cannot be collected by Ri.Ba.");
         }
 
-        $outstanding = bcsub((string) $invoice->total_gross, (string) $invoice->total_paid, 2);
+        $outstanding = bcadd($invoice->outstandingAmount(), '0', 2);
         $committed = $this->committedAmount((string) $invoice->id);
         $amount = bcadd((string) ($receipt['amount'] ?? bcsub($outstanding, $committed, 2)), '0', 2);
 

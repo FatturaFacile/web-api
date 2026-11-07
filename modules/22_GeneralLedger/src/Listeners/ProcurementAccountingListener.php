@@ -205,6 +205,17 @@ final class ProcurementAccountingListener
             ];
         }
 
+        if ($event->stampDutyAmount > 0) {
+            $lines[] = [
+                'account_id' => $this->accounts->stampDutyExpense($event->tenantId)->id,
+                'debit_amount' => $event->stampDutyAmount,
+                'credit_amount' => 0.0,
+                'currency' => $currency,
+                'exchange_rate' => $event->exchangeRate,
+                'description' => "Stamp duty charged on Invoice {$event->vendorInvoiceNumber}",
+            ];
+        }
+
         $lines[] = [
             'account_id' => $apAcc->id,
             'debit_amount' => 0.0,

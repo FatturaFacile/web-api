@@ -200,3 +200,18 @@ test('the module roles apply to riba routes', function (): void {
     actingAsMember($this->tenant, 'accountant_readonly');
     $this->postJson('/api/v1/treasury/riba/batches', [])->assertForbidden();
 });
+
+test('an invoice with withholding is presented for the amount due, which the collection then settles', function (): void {
+    $this->invoice->forceFill(['withholding_tax_enabled' => true, 'withholding_tax_amount' => '20.00'])->save();
+
+    $id = ribaApproved([['invoice_id' => $this->invoice->id, 'due_date' => '2027-03-31']], $this->bank);
+    $receipt = $this->postJson("/api/v1/treasury/riba/batches/{$id}/export")->json('data.receipts.0');
+
+    expect((string) $receipt['amount'])->toBe('102.00');
+
+    $this->postJson("/api/v1/treasury/riba/receipts/{$receipt['id']}/paid", ['paid_at' => '2027-03-31'])->assertOk()->assertJsonPath('data.status', 'paid');
+    expect($this->invoice->fresh()->payment_status)->toBe('paid');
+
+    actingAsMember($this->tenant);
+    $this->postJson('/api/v1/treasury/riba/batches', ['bank_account_id' => $this->bank->id, 'sia_code' => 'A1B2C', 'receipts' => [['invoice_id' => $this->invoice->id, 'due_date' => '2027-05-31', 'amount' => '1.00']]])->assertUnprocessable();
+});

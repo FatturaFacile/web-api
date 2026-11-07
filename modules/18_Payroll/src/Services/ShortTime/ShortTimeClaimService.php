@@ -45,11 +45,7 @@ final class ShortTimeClaimService
     public function calculate(ShortTimeCase $case, int $year, int $month, array $entries): ShortTimeClaim
     {
         $set = $this->parameters->resolve($case->parameterTopic(), $year);
-        $existing = ShortTimeClaim::query()->where('short_time_case_id', $case->id)->where('year', $year)->where('month', $month)->first();
-
-        if ($existing !== null && $existing->status !== ShortTimeClaim::StatusDraft) {
-            throw new PayrollException('La richiesta è già stata inoltrata: non si ricalcola.');
-        }
+        self::assertRecalculable(ShortTimeClaim::query()->where('short_time_case_id', $case->id)->where('year', $year)->where('month', $month)->first());
 
         $employees = Employee::query()->whereIn('id', array_column($entries, 'employee_id'))->get()->keyBy('id');
         $profiles = PayrollEmployeeProfile::query()->whereIn('employee_id', $employees->keys())->get()->keyBy('employee_id');
@@ -63,7 +59,30 @@ final class ShortTimeClaimService
             }
         }
 
-        return DB::transaction(fn (): ShortTimeClaim => $this->store($case, $existing, $year, $month, $lines, $set));
+        return DB::transaction(function () use ($case, $year, $month, $lines, $set): ShortTimeClaim {
+            $existing = ShortTimeClaim::query()->where('short_time_case_id', $case->id)->where('year', $year)->where('month', $month)->lockForUpdate()->first();
+            self::assertRecalculable($existing);
+
+            return $this->store($case, $existing, $year, $month, $lines, $set);
+        });
+    }
+
+    /**
+     * Only a draft that never reached the payroll is calculated again.
+     */
+    private static function assertRecalculable(?ShortTimeClaim $existing): void
+    {
+        if ($existing === null) {
+            return;
+        }
+
+        if ($existing->applied_at !== null) {
+            throw new PayrollException('La richiesta è già stata riportata nelle paghe: non si ricalcola.');
+        }
+
+        if ($existing->status !== ShortTimeClaim::StatusDraft) {
+            throw new PayrollException('La richiesta è già stata inoltrata: non si ricalcola.');
+        }
     }
 
     /**
@@ -106,19 +125,25 @@ final class ShortTimeClaimService
      */
     public function applyToPayroll(ShortTimeClaim $claim): ShortTimeClaim
     {
-        if ($claim->applied_at !== null) {
-            throw new PayrollException('La richiesta è già stata riportata nelle paghe.');
-        }
+        DB::transaction(function () use ($claim): void {
+            $claim = ShortTimeClaim::query()->lockForUpdate()->findOrFail($claim->id);
 
-        if (! $claim->meets_minimum_loss) {
-            throw new PayrollException('La perdita di lavoro non raggiunge il minimo: nessuna indennità è dovuta per il periodo.');
-        }
+            if ($claim->applied_at !== null) {
+                throw new PayrollException('La richiesta è già stata riportata nelle paghe.');
+            }
 
-        $claim->loadMissing('lines', 'shortTimeCase');
-        $isBadWeather = $claim->shortTimeCase->kind === ShortTimeCase::BadWeather;
-        $compensationCode = $isBadWeather ? SwissWageTypeCatalog::BadWeatherCompensation : SwissWageTypeCatalog::ShortTimeCompensation;
+            if (! in_array($claim->status, [ShortTimeClaim::StatusSubmitted, ShortTimeClaim::StatusReimbursed], true)) {
+                throw new PayrollException('Si riporta nelle paghe una richiesta inoltrata alla cassa.');
+            }
 
-        DB::transaction(function () use ($claim, $compensationCode): void {
+            if (! $claim->meets_minimum_loss) {
+                throw new PayrollException('La perdita di lavoro non raggiunge il minimo: nessuna indennità è dovuta per il periodo.');
+            }
+
+            $claim->load('lines', 'shortTimeCase');
+            $isBadWeather = $claim->shortTimeCase->kind === ShortTimeCase::BadWeather;
+            $compensationCode = $isBadWeather ? SwissWageTypeCatalog::BadWeatherCompensation : SwissWageTypeCatalog::ShortTimeCompensation;
+
             $this->ensureWageTypes();
 
             foreach ($claim->lines->where('is_eligible', true) as $line) {
@@ -133,7 +158,7 @@ final class ShortTimeClaimService
             $claim->update(['applied_at' => CarbonImmutable::now()]);
         });
 
-        return $claim;
+        return $claim->refresh();
     }
 
     /**

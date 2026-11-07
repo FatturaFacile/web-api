@@ -13,7 +13,7 @@ final class BankConnection extends BaseEnterpriseModel
     protected function casts(): array
     {
         return [
-            'auth_credentials_json' => 'array',
+            'auth_credentials_json' => 'encrypted:array',
             'last_poll_at' => 'datetime',
         ];
     }

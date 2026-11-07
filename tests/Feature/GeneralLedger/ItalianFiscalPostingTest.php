@@ -355,6 +355,41 @@ XML;
         ->and(entryLines($invoice->id, 'vendor_invoice')['2230']['credit'])->toBe(200.0);
 });
 
+test('a received invoice with the stamp duty in its total posts the stamp to its cost and balances', function (): void {
+    $xml = <<<'XML'
+<p:FatturaElettronica xmlns:p="http://ivaservizi.agenziaentrate.gov.it/docs/xsd/fatture/v1.2" versione="FPR12">
+<FatturaElettronicaHeader><CedentePrestatore><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>01234567897</IdCodice></IdFiscaleIVA><Anagrafica><Denominazione>V</Denominazione></Anagrafica></DatiAnagrafici></CedentePrestatore><CessionarioCommittente><DatiAnagrafici><IdFiscaleIVA><IdPaese>IT</IdPaese><IdCodice>00811720580</IdCodice></IdFiscaleIVA></DatiAnagrafici></CessionarioCommittente></FatturaElettronicaHeader>
+<FatturaElettronicaBody><DatiGenerali><DatiGeneraliDocumento><TipoDocumento>TD01</TipoDocumento><Divisa>EUR</Divisa><Data>2027-03-01</Data><Numero>8</Numero><DatiBollo><BolloVirtuale>SI</BolloVirtuale><ImportoBollo>2.00</ImportoBollo></DatiBollo><ImportoTotaleDocumento>1002.00</ImportoTotaleDocumento></DatiGeneraliDocumento></DatiGenerali><DatiBeniServizi><DatiRiepilogo><AliquotaIVA>0.00</AliquotaIVA><Natura>N2.2</Natura><ImponibileImporto>1000.00</ImponibileImporto><Imposta>0.00</Imposta></DatiRiepilogo></DatiBeniServizi></FatturaElettronicaBody>
+</p:FatturaElettronica>
+XML;
+
+    $invoice = app(ReceivePassiveInvoice::class)->execute($xml)[0]['invoice']->refresh();
+    $lines = entryLines($invoice->id, 'vendor_invoice');
+
+    expect((string) $invoice->stamp_duty_amount)->toBe('2.00')
+        ->and($invoice->gl_journal_entry_id)->not->toBeNull()
+        ->and($lines['2000']['credit'])->toBe(1002.0)
+        ->and($lines['6000']['debit'])->toBe(1000.0)
+        ->and($lines['6810']['debit'])->toBe(2.0);
+});
+
+test('an invoice with a withholding amount but no detail stays in the settlement as an assumed RT01', function (): void {
+    $invoice = app(PostPassiveInvoiceAction::class)->register([
+        'tenant_id' => $this->tenant->id, 'supplier_id' => $this->supplier->id, 'invoice_number' => 'P-NODETAIL', 'date' => '2027-03-01',
+        'total_amount' => 1000, 'total_net' => 1000, 'total_tax' => 0, 'currency' => 'EUR', 'document_type' => 'TD06', 'payment_status' => 'unpaid',
+        'withholdings' => null, 'withholding_tax_amount' => 200,
+    ]);
+    app(RecordSupplierPayment::class)->execute($invoice, ['amount' => 800, 'paid_at' => '2027-03-20']);
+
+    $settlement = app(WithholdingSettlementService::class)->calculate($this->tenant->id, 2027, 3);
+    $line = $settlement->lines->sole();
+
+    expect((string) $settlement->total_f24)->toBe('200.00')
+        ->and($line->withholding_type)->toBe('RT01')
+        ->and($line->detail_assumed)->toBeTrue()
+        ->and((string) $line->withheld_amount)->toBe('200.00');
+});
+
 /**
  * @param  list<array{type: string, amount: string, rate: string, reason: string}>|null  $withholdings
  */
