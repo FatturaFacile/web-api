@@ -25,6 +25,7 @@ final class Receipt extends AssociationRecord
             'holder' => 'encrypted:array',
             'fiscal_year' => 'integer',
             'sequential_number' => 'integer',
+            'cancelled_at' => 'datetime',
         ];
     }
 

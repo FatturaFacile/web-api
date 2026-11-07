@@ -10,7 +10,10 @@ use Illuminate\Support\Str;
 final readonly class InvoicePostedEvent implements DomainEventInterface
 {
     /**
-     * @param  array<int, array<string, mixed>>  $revenueLines
+     * A revenue line may carry the cost centre of its invoice line: the ledger writes it on the revenue line of the entry.
+     * A line without one is posted as before.
+     *
+     * @param  array<int, array{line_id?: ?string, account_id?: ?string, amount: float|int|string, description?: ?string, cost_center_id?: ?string, profit_center_id?: ?string}>  $revenueLines
      * @param  array<int, array<string, mixed>>  $taxLines
      */
     public function __construct(

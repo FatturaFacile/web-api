@@ -118,6 +118,7 @@ Route::prefix('api/v1/associations')
         Route::get('/instalments', [FeeController::class, 'instalments'])->name('instalments.index');
         Route::post('/instalments/{id}/payments', [FeeController::class, 'pay'])->name('instalments.payments');
         Route::post('/instalments/{id}/payment-link', [FeeController::class, 'paymentLink'])->name('instalments.payment-link');
+        Route::post('/fee-payments/{id}/reverse', [FeeController::class, 'reversePayment'])->name('fee-payments.reverse');
         Route::get('/receipts', [FeeController::class, 'listReceipts'])->name('receipts.index');
         Route::get('/receipts/{id}/pdf', [FeeController::class, 'receiptPdf'])->name('receipts.pdf');
 

@@ -147,7 +147,7 @@ final class InvoiceAccountingListener
                     'credit_amount' => $amount > 0 ? $amount : 0.0,
                     'currency' => $currency,
                     'exchange_rate' => $exchangeRate,
-                    'cost_center_id' => $revLine['cost_center_id'] ?? null,
+                    'cost_center_id' => ! empty($revLine['cost_center_id']) ? (string) $revLine['cost_center_id'] : null,
                     'profit_center_id' => $revLine['profit_center_id'] ?? null,
                     'description' => $revLine['description'] ?? "Sales Revenue: Invoice {$event->invoiceNumber}",
                 ];

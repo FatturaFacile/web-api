@@ -247,6 +247,15 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'AssociationPaymentReversalRequest',
+    type: 'object',
+    required: ['reason'],
+    properties: [
+        new OA\Property(property: 'reason', type: 'string', maxLength: 255),
+        new OA\Property(property: 'reversed_on', description: 'Date of the reversal and of its credit note; today when omitted.', type: 'string', format: 'date', nullable: true),
+    ]
+)]
+#[OA\Schema(
     schema: 'AssociationCourseRequest',
     type: 'object',
     required: ['title', 'starts_on'],
@@ -392,12 +401,15 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'AssociationPaymentCallbackRequest',
+    description: 'Body of the local driver, whose raw JSON is signed with HMAC-SHA256 in the X-Local-Signature header. With the Stripe driver the body is the Stripe event, signed in Stripe-Signature.',
     type: 'object',
-    required: ['reference', 'amount', 'status'],
+    required: ['reference', 'amount'],
     properties: [
         new OA\Property(property: 'reference', type: 'string'),
         new OA\Property(property: 'amount', type: 'string'),
-        new OA\Property(property: 'status', type: 'string', enum: ['paid', 'failed']),
+        new OA\Property(property: 'status', type: 'string', enum: ['paid', 'failed'], nullable: true),
+        new OA\Property(property: 'event_id', type: 'string', nullable: true),
+        new OA\Property(property: 'currency', type: 'string', nullable: true),
     ]
 )]
 final class AssociationsRequestSchemas {}

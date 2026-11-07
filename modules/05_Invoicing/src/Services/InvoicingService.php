@@ -82,6 +82,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'jurisdiction' => $data['jurisdiction'] ?? 'IT',
             'split_payment' => (bool) ($data['split_payment'] ?? false),
             'reverse_charge' => (bool) ($data['reverse_charge'] ?? false),
+            'sdi_excluded' => (bool) ($data['sdi_excluded'] ?? false),
             'payment_method' => $data['payment_method'] ?? 'MP05',
             'payment_terms' => $data['payment_terms'] ?? 'TP02',
             'bank_name' => $data['bank_name'] ?? null,
@@ -120,6 +121,7 @@ final class InvoicingService implements InvoicingServiceInterface
                 'line_total' => $lineNet,
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
                 'tax_account_id' => $item['tax_account_id'] ?? null,
+                'cost_center_id' => $item['cost_center_id'] ?? null,
                 'product_charge_type_id' => $item['product_charge_type_id'] ?? null,
                 'uom' => $item['uom'] ?? 'EA',
                 'notes' => $item['notes'] ?? null,
@@ -358,12 +360,18 @@ final class InvoicingService implements InvoicingServiceInterface
         $taxLines = [];
 
         foreach ($invoice->items as $item) {
-            $revenueLines[] = [
+            $revenueLine = [
                 'line_id' => (string) $item->id,
                 'account_id' => $item->revenue_account_id,
                 'amount' => (float) $item->line_total,
                 'description' => $item->description,
             ];
+
+            if ($item->cost_center_id !== null) {
+                $revenueLine['cost_center_id'] = (string) $item->cost_center_id;
+            }
+
+            $revenueLines[] = $revenueLine;
 
             $taxAmount = round(((float) $item->line_total * (float) $item->tax_rate) / 100.0, 2);
             $taxLines[] = [
@@ -559,6 +567,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'related_invoice_id' => (string) $originalInvoice->id,
             'jurisdiction' => $originalInvoice->jurisdiction ?? 'IT',
             'split_payment' => (bool) $originalInvoice->split_payment,
+            'sdi_excluded' => (bool) ($data['sdi_excluded'] ?? $originalInvoice->sdi_excluded),
             'date' => $date,
             'due_date' => now()->toDateString(),
             'currency' => $originalInvoice->currency ?? 'EUR',
@@ -595,6 +604,8 @@ final class InvoicingService implements InvoicingServiceInterface
                 'tax_rate' => (float) $item['tax_rate'],
                 'discount_percentage' => $discount,
                 'line_total' => round($quantity * $unitPrice * (1 - $discount / 100.0), 2),
+                'revenue_account_id' => $item['revenue_account_id'] ?? null,
+                'cost_center_id' => $item['cost_center_id'] ?? null,
             ]);
         }
 

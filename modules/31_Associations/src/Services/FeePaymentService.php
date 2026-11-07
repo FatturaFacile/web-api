@@ -76,4 +76,53 @@ final class FeePaymentService
             return $payment->load('receipt');
         });
     }
+
+    /**
+     * Reverses a recorded payment: the receipt is cancelled, the instalment is open again for the amount, and when the
+     * payment reached the accounts its collection is reversed and a credit note on the internal receipt document takes
+     * back revenue and VAT. A payment is reversed once.
+     *
+     * @param  array{reason: string, reversed_on?: ?string}  $data
+     */
+    public function reverse(FeePayment $payment, array $data, ?string $actorId = null): FeePayment
+    {
+        return DB::transaction(function () use ($payment, $data, $actorId): FeePayment {
+            /** @var FeePayment $locked */
+            $locked = FeePayment::query()->whereKey($payment->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->reversed_at !== null) {
+                throw AssociationException::conflict(__('associations.payment_already_reversed'));
+            }
+
+            /** @var FeeInstalment $instalment */
+            $instalment = FeeInstalment::query()->whereKey($locked->fee_instalment_id)->lockForUpdate()->firstOrFail();
+            $receipt = $locked->receipt()->lockForUpdate()->first();
+            $reversedOn = CarbonImmutable::parse($data['reversed_on'] ?? now()->toDateString());
+            $creditNoteId = $locked->invoice_id !== null && $receipt !== null
+                ? $this->ledger->reverse($locked, $receipt, $reversedOn, $actorId)
+                : null;
+
+            $receipt?->update(['cancelled_at' => now(), 'cancellation_reason' => $data['reason']]);
+
+            $paid = Money::sub((string) $instalment->paid_amount, (string) $locked->amount);
+            $paid = Money::isPositive($paid) ? $paid : '0.00';
+            $instalment->update([
+                'paid_amount' => $paid,
+                'status' => match (true) {
+                    $instalment->status === InstalmentStatus::Cancelled => InstalmentStatus::Cancelled,
+                    Money::isPositive($paid) => InstalmentStatus::Partial,
+                    default => InstalmentStatus::Open,
+                },
+            ]);
+
+            $locked->update([
+                'reversed_at' => now(),
+                'reversal_reason' => $data['reason'],
+                'credit_note_id' => $creditNoteId,
+                'reversed_by' => $actorId,
+            ]);
+
+            return $locked->load('receipt');
+        });
+    }
 }

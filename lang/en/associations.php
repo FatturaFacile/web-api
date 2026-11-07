@@ -22,6 +22,7 @@ return [
     'fee_period_invalid' => 'The end of the fee is before its start.',
     'instalment_closed' => 'This instalment is already settled or cancelled.',
     'payment_exceeds_outstanding' => 'The amount must be positive and not above what is left to pay.',
+    'payment_already_reversed' => 'This payment has already been reversed.',
     'payment_amount_mismatch' => 'The amount confirmed differs from the amount requested.',
     'vat_not_reconcilable' => 'This amount cannot be split into net and VAT at the rate of the plan.',
     'area_not_a_person' => 'This contact is neither a person of the registry nor a guardian.',

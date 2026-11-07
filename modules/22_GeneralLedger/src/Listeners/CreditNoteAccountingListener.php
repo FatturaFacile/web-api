@@ -118,6 +118,7 @@ final class CreditNoteAccountingListener
                 'credit_amount' => 0.0,
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
+                'cost_center_id' => $this->commonCostCentre($creditNote),
                 'description' => "Revenue Reversal: Credit Note {$event->creditNoteNumber}",
             ],
         ];
@@ -361,6 +362,20 @@ final class CreditNoteAccountingListener
             'withholding' => $creditNote !== null && $creditNote->withholding_tax_enabled ? Decimal::round2((string) ($creditNote->withholding_tax_amount ?? '0')) : '0',
             'enasarco' => $creditNote !== null && $creditNote->enasarco_enabled ? Decimal::round2((string) ($creditNote->enasarco_amount ?? '0')) : '0',
         ];
+    }
+
+    /**
+     * The cost centre of the revenue reversal: the one every line of the credit note states, else none.
+     */
+    private function commonCostCentre(?SalesInvoice $creditNote): ?string
+    {
+        if ($creditNote === null) {
+            return null;
+        }
+
+        $centres = $creditNote->items()->withoutGlobalScope(TenantScope::class)->pluck('cost_center_id')->unique()->values();
+
+        return $centres->count() === 1 && $centres->first() !== null ? (string) $centres->first() : null;
     }
 
     /**
