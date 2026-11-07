@@ -42,30 +42,32 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
-Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping();
-Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping();
-Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping();
-Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping();
-Schedule::command('model:prune', ['--model' => [PasswordResetToken::class]])->dailyAt('04:15')->withoutOverlapping();
-Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping();
-Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping();
-Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping();
+// Every entry runs on one server only and never overlaps itself: both use atomic locks of the default cache store
+// (database or redis, shared by every server; see docs/deployment/PRODUCTION_CHECKLIST.md).
+Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
+Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
+Schedule::command('model:prune', ['--model' => [PasswordResetToken::class]])->dailyAt('04:15')->withoutOverlapping()->onOneServer();
+Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
+Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 
 // Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore
-Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverlapping();
+Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
 
 // Demo pubblica: database ricostruito da zero e storage svuotato ogni 30 minuti (solo con DEMO_RESET_ENABLED=true)
-Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->when(fn (): bool => (bool) config('app.demo_reset'));
+Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->onOneServer()->when(fn (): bool => (bool) config('app.demo_reset'));
 
 // Outbox of the domain events and the jobs of the modules. Jobs of a company run once per tenant, in its context.
 // Recurring billing, revenue recognition and depreciation stay manual: they write fiscal data and need the invoicing
 // consolidation (subscriptions:process above still issues the real invoices).
-Schedule::job(new RelayOutboxEventsJob)->everyMinute()->withoutOverlapping();
-Schedule::job(new MaintainOutboxLifecycleJob)->dailyAt('03:15')->withoutOverlapping();
+Schedule::job(new RelayOutboxEventsJob)->everyMinute()->withoutOverlapping()->onOneServer();
+Schedule::job(new MaintainOutboxLifecycleJob)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
 
 $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedule::call(
     static fn (): int => app(TenantJobDispatcher::class)->dispatchForEachTenant($job)
-)->name($name)->withoutOverlapping();
+)->name($name)->withoutOverlapping()->onOneServer();
 
 $forEachTenant('workflow:webhooks', static fn (): object => new DispatchOutboundWebhooksJob)->everyMinute();
 $forEachTenant('workflow:timeouts', static fn (): object => new ProcessBusinessCalendarTimeoutsJob)->everyFifteenMinutes();

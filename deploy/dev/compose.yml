@@ -36,7 +36,7 @@ services:
     image: ghcr.io/fatturafacile/web-api:${API_TAG:-dev}
     container_name: ffdev_queue_worker
     restart: always
-    command: php artisan queue:work --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work --sleep=3 --tries=3 --timeout=900 --max-time=3600
     env_file:
       - .env
     volumes:

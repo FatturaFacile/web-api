@@ -4,13 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Services;
 
+use Carbon\CarbonInterface;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
-use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\Treasury\Contracts\BankReconciliationServiceInterface;
+use Modules\Treasury\Contracts\ReceivableCollectionServiceInterface;
 use Modules\Treasury\Events\BankReconciliationCompletedEvent;
 use Modules\Treasury\Events\BankStatementImportedEvent;
 use Modules\Treasury\Models\BankAccount;
@@ -23,9 +26,30 @@ use Modules\Treasury\Models\ReconciliationMatch;
 
 final readonly class BankReconciliationService implements BankReconciliationServiceInterface
 {
+    /**
+     * A reference shorter than this only matches a remittance reference exactly: a short value such as "1" or "INV"
+     * would otherwise be found inside the reference of unrelated payments.
+     */
+    public const int MIN_PARTIAL_REFERENCE_LENGTH = 8;
+
+    /**
+     * Payment lines in these states have already been matched with a bank movement.
+     *
+     * @var list<string>
+     */
+    public const array SETTLED_PAYMENT_LINE_STATUSES = ['cleared', 'reconciled'];
+
+    /**
+     * Collections still waiting for money.
+     *
+     * @var list<string>
+     */
+    public const array OPEN_COLLECTION_STATUSES = ['pending', 'partial', 'overdue'];
+
     public function __construct(
         private AuditLedgerInterface $auditLedger,
-        private EventDispatcherInterface $dispatcher
+        private EventDispatcherInterface $dispatcher,
+        private ReceivableCollectionServiceInterface $collectionService
     ) {}
 
     public function importStatement(array $statementData, array $lines): BankStatement
@@ -33,6 +57,18 @@ final readonly class BankReconciliationService implements BankReconciliationServ
         return DB::transaction(function () use ($statementData, $lines) {
             $bankAccount = BankAccount::findOrFail($statementData['bank_account_id']);
             $statementNo = $statementData['statement_number'] ?? 'STMT-'.date('Ymd').'-'.strtoupper(Str::random(6));
+            $statementDate = (string) ($statementData['statement_date'] ?? now()->toDateString());
+            $contentHash = $this->statementFingerprint((string) $bankAccount->id, $lines, $statementDate);
+
+            // The unique index on (tenant_id, content_hash) also covers soft deleted statements, so they count too.
+            $alreadyImported = BankStatement::withoutGlobalScopes()
+                ->where('tenant_id', $statementData['tenant_id'])
+                ->where('content_hash', $contentHash)
+                ->exists();
+
+            if ($alreadyImported) {
+                throw ValidationException::withMessages(['lines' => __('banking.errors.duplicate_statement')]);
+            }
 
             $totalDebits = 0.0;
             $totalCredits = 0.0;
@@ -60,12 +96,12 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                 'account_iban' => $bankAccount->iban,
                 'currency' => $bankAccount->currency,
                 'total_entries' => count($lines),
-                'content_hash' => hash('sha256', json_encode($lines).$statementNo),
+                'content_hash' => $contentHash,
                 'status' => 'imported',
-                'statement_date' => $statementData['statement_date'] ?? now()->toDateString(),
+                'statement_date' => $statementDate,
                 'format' => $statementData['format'] ?? 'CAMT_053',
                 'raw_file_storage_path' => $statementData['raw_file_storage_path'] ?? 'statements/'.$statementNo.'.xml',
-                'file_sha256' => hash('sha256', json_encode($lines).$statementNo),
+                'file_sha256' => $contentHash,
                 'opening_balance' => $opening,
                 'closing_balance' => $closing,
                 'total_debits' => $totalDebits,
@@ -165,18 +201,25 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                 // match money coming in and are customer payments; every other batch pays out to suppliers.
                 $paymentLine = null;
                 $isIncoming = $line->direction === 'credit';
-                if (! empty($line->bank_reference) || ! empty($line->customer_reference)) {
-                    $ref = $line->bank_reference ?? $line->customer_reference;
+                $references = $this->lineReferences($line);
+                if ($references !== []) {
                     $paymentLine = PaymentLine::where('tenant_id', $statement->tenant_id)
-                        ->where(function ($q) use ($ref) {
-                            $q->where('instruction_id', $ref)
-                                ->orWhere('end_to_end_id', $ref)
-                                ->orWhere('remittance_reference', 'like', "%{$ref}%");
+                        ->where(function ($q) use ($references): void {
+                            $q->whereIn('instruction_id', $references)
+                                ->orWhereIn('end_to_end_id', $references)
+                                ->orWhereIn('remittance_reference', $references);
+
+                            foreach ($references as $reference) {
+                                if (mb_strlen($reference) >= self::MIN_PARTIAL_REFERENCE_LENGTH) {
+                                    $q->orWhere('remittance_reference', 'like', '%'.$this->escapeLike($reference).'%');
+                                }
+                            }
                         })
                         ->whereHas('paymentBatch', fn ($batch) => $isIncoming
                             ? $batch->where('payment_method', 'riba')
                             : $batch->where(fn ($method) => $method->whereNull('payment_method')->orWhere('payment_method', '!=', 'riba')))
-                        ->where('status', '!=', 'reconciled')
+                        ->whereNotIn('status', self::SETTLED_PAYMENT_LINE_STATUSES)
+                        ->orderBy('execution_date')
                         ->first();
                 }
 
@@ -205,14 +248,15 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                     continue;
                 }
 
-                // Pass 2: Exact Amount match against ReceivableCollection or JournalEntry
-                if ($line->direction === 'credit') {
-                    $collection = ReceivableCollection::where('tenant_id', $statement->tenant_id)
-                        ->where('status', 'pending')
-                        ->where('expected_amount', $lineAmount)
-                        ->first();
+                // Pass 2: an incoming amount settles an open collection only when the payer is recognised too, by the
+                // invoice reference in the remittance or by the IBAN of the customer. The collection service then books
+                // it, so the invoice is marked paid and the general ledger receives the payment.
+                if ($isIncoming) {
+                    $collectionMatch = $this->findCollectionForIncomingLine($line, $lineAmount, (string) $statement->tenant_id);
 
-                    if ($collection) {
+                    if ($collectionMatch !== null) {
+                        $collection = $collectionMatch['collection'];
+
                         ReconciliationMatch::create([
                             'id' => (string) Str::uuid7(),
                             'tenant_id' => $statement->tenant_id,
@@ -220,9 +264,9 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                             'bank_statement_line_id' => $line->id,
                             'matched_entity_type' => 'customer_payment',
                             'matched_entity_id' => $collection->id,
-                            'match_type' => 'exact_amount_date',
+                            'match_type' => $collectionMatch['match_type'],
                             'allocated_amount' => $lineAmount,
-                            'confidence_score' => 95.00,
+                            'confidence_score' => $collectionMatch['confidence'],
                             'reconciled_by' => $userUuid,
                         ]);
 
@@ -231,11 +275,12 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                             'reconciled_status' => 'matched',
                             'reconciled_amount' => $lineAmount,
                         ]);
-                        $collection->update([
-                            'status' => 'collected',
-                            'collected_amount' => $lineAmount,
-                            'collection_date' => $line->booking_date,
-                        ]);
+
+                        $bookingDate = $line->booking_date instanceof CarbonInterface
+                            ? $line->booking_date->toDateString()
+                            : (string) ($line->booking_date ?? $statement->statement_date);
+
+                        $this->collectionService->recordCollectionReceived((string) $collection->id, $lineAmount, $bookingDate);
                         $matchedCount++;
 
                         continue;
@@ -363,5 +408,142 @@ final readonly class BankReconciliationService implements BankReconciliationServ
 
             return $recon;
         });
+    }
+
+    /**
+     * Fingerprint of a statement built from the bank account, the period it covers and its movements. The statement
+     * number stays out on purpose: when the bank file has none it defaults to a random value, and the same file
+     * imported twice would get two different fingerprints.
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     */
+    private function statementFingerprint(string $bankAccountId, array $lines, string $statementDate): string
+    {
+        $normalizedLines = array_map(static fn (array $line): array => [
+            'booking_date' => (string) ($line['booking_date'] ?? $statementDate),
+            'value_date' => (string) ($line['value_date'] ?? $statementDate),
+            'amount' => number_format((float) ($line['amount'] ?? 0), 2, '.', ''),
+            'fee_amount' => number_format((float) ($line['fee_amount'] ?? 0), 2, '.', ''),
+            'bank_reference' => $line['bank_reference'] ?? null,
+            'customer_reference' => $line['customer_reference'] ?? null,
+            'counterparty_iban' => isset($line['counterparty_iban']) ? self::normalizeIban((string) $line['counterparty_iban']) : null,
+            'remittance_information' => $line['remittance_information'] ?? null,
+        ], array_values($lines));
+
+        $bookingDates = array_column($normalizedLines, 'booking_date');
+
+        return hash('sha256', (string) json_encode([
+            'bank_account_id' => $bankAccountId,
+            'period_start' => $bookingDates === [] ? $statementDate : min($bookingDates),
+            'period_end' => $bookingDates === [] ? $statementDate : max($bookingDates),
+            'lines' => $normalizedLines,
+        ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE));
+    }
+
+    /**
+     * The non-empty references a bank movement carries, without duplicates.
+     *
+     * @return list<string>
+     */
+    private function lineReferences(BankStatementLine $line): array
+    {
+        $references = array_map(
+            static fn (mixed $reference): string => trim((string) $reference),
+            [$line->bank_reference, $line->customer_reference]
+        );
+
+        return array_values(array_unique(array_filter($references, static fn (string $reference): bool => $reference !== '')));
+    }
+
+    /**
+     * Escapes the LIKE wildcards of a value, so it is searched literally.
+     */
+    private function escapeLike(string $value): string
+    {
+        return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+    }
+
+    private static function normalizeIban(string $iban): string
+    {
+        return strtoupper(str_replace(' ', '', $iban));
+    }
+
+    /**
+     * Finds the open collection an incoming movement pays. The amount must equal what is still open, and the payer
+     * must be recognised: by the number of the collection's invoice in the references of the movement (strongest), or
+     * by the IBAN of the customer. Among equal candidates the oldest due date wins.
+     *
+     * @return array{collection: ReceivableCollection, match_type: string, confidence: float}|null
+     */
+    private function findCollectionForIncomingLine(BankStatementLine $line, float $amount, string $tenantId): ?array
+    {
+        /** @var Collection<int, ReceivableCollection> $candidates */
+        $candidates = ReceivableCollection::where('tenant_id', $tenantId)
+            ->whereIn('status', self::OPEN_COLLECTION_STATUSES)
+            ->whereRaw('(expected_amount - collected_amount) = ?', [round($amount, 2)])
+            ->orderBy('due_date')
+            ->get();
+
+        if ($candidates->isEmpty()) {
+            return null;
+        }
+
+        $searchableText = strtoupper(implode(' ', array_filter([
+            (string) $line->remittance_information,
+            (string) $line->bank_reference,
+            (string) $line->customer_reference,
+        ])));
+
+        if ($searchableText !== '') {
+            $invoiceNumbers = DB::table('invoices')
+                ->whereIn('id', $candidates->pluck('invoice_id')->filter()->unique()->values()->all())
+                ->pluck('invoice_number', 'id');
+
+            foreach ($candidates as $candidate) {
+                $invoiceNumber = $candidate->invoice_id !== null ? (string) ($invoiceNumbers[$candidate->invoice_id] ?? '') : '';
+
+                if ($this->containsReference($searchableText, $invoiceNumber) || $this->containsReference($searchableText, (string) $candidate->id)) {
+                    return ['collection' => $candidate, 'match_type' => 'reference_amount', 'confidence' => 98.00];
+                }
+            }
+        }
+
+        $payerIban = $line->counterparty_iban !== null ? self::normalizeIban((string) $line->counterparty_iban) : '';
+
+        if ($payerIban === '') {
+            return null;
+        }
+
+        $customerIbans = DB::table('contacts')
+            ->whereIn('id', $candidates->pluck('customer_id')->filter()->unique()->values()->all())
+            ->get(['id', 'iban', 'qr_iban'])
+            ->mapWithKeys(static fn (object $contact): array => [
+                (string) $contact->id => array_map(
+                    static fn (?string $iban): string => self::normalizeIban((string) $iban),
+                    [$contact->iban, $contact->qr_iban]
+                ),
+            ]);
+
+        foreach ($candidates as $candidate) {
+            if (in_array($payerIban, $customerIbans[(string) $candidate->customer_id] ?? [], true)) {
+                return ['collection' => $candidate, 'match_type' => 'iban_amount', 'confidence' => 90.00];
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Whether the text contains the reference as a whole token, so "FT-12" is not found inside "FT-123".
+     */
+    private function containsReference(string $searchableText, string $reference): bool
+    {
+        $reference = strtoupper(trim($reference));
+
+        if (mb_strlen($reference) < 3) {
+            return false;
+        }
+
+        return preg_match('/(?<![A-Z0-9])'.preg_quote($reference, '/').'(?![A-Z0-9])/u', $searchableText) === 1;
     }
 }
