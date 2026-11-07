@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use Modules\Workflow\Http\Controllers\RemoteApprovalController;
 use Modules\Workflow\Http\Controllers\WorkflowDecisionController;
 use Modules\Workflow\Http\Controllers\WorkflowDefinitionController;
+use Modules\Workflow\Http\Controllers\WorkflowDefinitionGraphController;
 use Modules\Workflow\Http\Controllers\WorkflowDelegationController;
 use Modules\Workflow\Http\Controllers\WorkflowInstanceController;
 
@@ -31,6 +32,29 @@ Route::prefix('api/v1/workflows')
         Route::get('delegations', [WorkflowDelegationController::class, 'index'])->name('workflows.delegations.index');
         Route::post('delegations', [WorkflowDelegationController::class, 'store'])->name('workflows.delegations.store');
         Route::delete('delegations/{id}', [WorkflowDelegationController::class, 'destroy'])->name('workflows.delegations.destroy');
+    });
+
+// Definition management: everybody reads definitions above, only owners and admins write them (module key workflow_design;
+// the workflow key stays open to every member, who may be an approver).
+Route::prefix('api/v1/workflows/definitions')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:workflow_design'])
+    ->whereUuid(['id', 'nodeId', 'transitionId'])
+    ->group(function (): void {
+        Route::post('/', [WorkflowDefinitionController::class, 'store'])->name('workflows.definitions.store');
+        Route::put('{id}', [WorkflowDefinitionController::class, 'update'])->name('workflows.definitions.update');
+        Route::patch('{id}', [WorkflowDefinitionController::class, 'update'])->name('workflows.definitions.patch');
+        Route::delete('{id}', [WorkflowDefinitionController::class, 'destroy'])->name('workflows.definitions.destroy');
+        Route::post('{id}/publish', [WorkflowDefinitionController::class, 'publish'])->name('workflows.definitions.publish');
+
+        Route::post('{id}/nodes', [WorkflowDefinitionGraphController::class, 'storeNode'])->name('workflows.definitions.nodes.store');
+        Route::put('{id}/nodes/{nodeId}', [WorkflowDefinitionGraphController::class, 'updateNode'])->name('workflows.definitions.nodes.update');
+        Route::patch('{id}/nodes/{nodeId}', [WorkflowDefinitionGraphController::class, 'updateNode'])->name('workflows.definitions.nodes.patch');
+        Route::delete('{id}/nodes/{nodeId}', [WorkflowDefinitionGraphController::class, 'destroyNode'])->name('workflows.definitions.nodes.destroy');
+
+        Route::post('{id}/transitions', [WorkflowDefinitionGraphController::class, 'storeTransition'])->name('workflows.definitions.transitions.store');
+        Route::put('{id}/transitions/{transitionId}', [WorkflowDefinitionGraphController::class, 'updateTransition'])->name('workflows.definitions.transitions.update');
+        Route::patch('{id}/transitions/{transitionId}', [WorkflowDefinitionGraphController::class, 'updateTransition'])->name('workflows.definitions.transitions.patch');
+        Route::delete('{id}/transitions/{transitionId}', [WorkflowDefinitionGraphController::class, 'destroyTransition'])->name('workflows.definitions.transitions.destroy');
     });
 
 // Remote Action Token Endpoint (Signed single-use URL without user session requirement)

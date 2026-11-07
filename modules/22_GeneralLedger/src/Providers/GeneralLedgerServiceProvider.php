@@ -75,7 +75,6 @@ use Modules\Projects\Events\ProjectClosureReadyEvent;
 use Modules\Projects\Events\ProjectCostReadyEvent;
 use Modules\Projects\Events\ProjectExpensePostingReadyEvent;
 use Modules\Projects\Events\ProjectLabourCostReadyEvent;
-use Modules\Projects\Events\ProjectMarginCalculatedEvent;
 use Modules\Projects\Events\ProjectMaterialCostReadyEvent;
 use Modules\Projects\Events\ProjectRevenueReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognitionReadyEvent;
@@ -165,7 +164,6 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         Event::listen(ProjectRevenueReadyEvent::class, [ProjectsAccountingListener::class, 'handleRevenueReady']);
         Event::listen(ProjectWipReadyEvent::class, [ProjectsAccountingListener::class, 'handleWipReady']);
         Event::listen(ProjectAccrualReadyEvent::class, [ProjectsAccountingListener::class, 'handleAccrualReady']);
-        Event::listen(ProjectMarginCalculatedEvent::class, [ProjectsAccountingListener::class, 'handleMarginCalculated']);
         Event::listen(ProjectClosureReadyEvent::class, [ProjectsAccountingListener::class, 'handleClosureReady']);
         Event::listen(ProjectRevenueRecognitionReadyEvent::class, [ProjectsAccountingListener::class, 'handleRevenueRecognitionReady']);
         Event::listen(ProjectExpensePostingReadyEvent::class, [ProjectsAccountingListener::class, 'handleExpensePostingReady']);

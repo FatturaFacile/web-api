@@ -1,5 +1,6 @@
 <?php
 
+use App\Jobs\Appointments\QueueAppointmentRemindersJob;
 use App\Models\PasswordResetToken;
 use App\Models\Tenant;
 use Enterprise\EventBus\Jobs\MaintainOutboxLifecycleJob;
@@ -23,6 +24,7 @@ use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
 use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
 use Modules\Inventory\Jobs\ExpireStaleReservationsJob;
+use Modules\Inventory\Jobs\ExpireStockLotsJob;
 use Modules\Inventory\Jobs\RecalculateInventoryValuationJob;
 use Modules\Manufacturing\Jobs\ProcessManufacturingForecastJob;
 use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
@@ -33,6 +35,9 @@ use Modules\ServiceManagement\Jobs\PollSupportMailboxesJob;
 use Modules\ServiceManagement\Jobs\ProcessServiceContractRenewalsJob;
 use Modules\ServiceManagement\Jobs\ScanSLABreachesJob;
 use Modules\SubscriptionBilling\Jobs\AggregateMeteredUsageJob;
+use Modules\SubscriptionBilling\Jobs\ProcessRecurringBillingJob;
+use Modules\SubscriptionBilling\Jobs\ProcessSubscriptionRenewalsJob;
+use Modules\SubscriptionBilling\Jobs\RecognizeRevenueScheduleJob;
 use Modules\Visitors\Jobs\PurgeExpiredVisitorsJob;
 use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
 use Modules\Workflow\Jobs\ProcessBusinessCalendarTimeoutsJob;
@@ -102,3 +107,31 @@ $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new 
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
 $forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new PurgeExpiredVisitorsJob($tenant->id))->dailyAt('03:50');
 $forEachTenant('fiscal-retail:retry-transmissions', static fn (Tenant $tenant): object => new RetryCorrispettiviTransmissionsJob($tenant->id))->everyFiveMinutes();
+
+/*
+|--------------------------------------------------------------------------
+| Completeness fixes: tenant jobs that had no schedule
+|--------------------------------------------------------------------------
+|
+| Kept apart from the entries above. Every entry runs once per active tenant, in its context, on one server.
+| - subscriptions:renewals extends the module subscriptions that renew by themselves (no fiscal data).
+| - subscriptions:billing-run and subscriptions:revenue-recognition run only with SUBSCRIPTION_BILLING_SCHEDULED=true
+|   (config/subscription_billing.php): they write receivables and revenue for module invoices that are not issued
+|   fiscal documents, so they stay manual by default.
+| - inventory:expire-lots quarantines the lots past their expiration date (LotExpiredEvent).
+| - appointments:reminders queues the reminders of the appointments within appointments.reminder_lead_minutes.
+| Depreciation (ExecuteMonthly/Quarterly/YearlyDepreciationJob) stays manual: it posts fiscal entries and is closed by
+| the accountant. ExecuteAutomatedThreeWayMatchJob is per document (purchase order, receipt, supplier invoice), not
+| periodic: it is dispatched when the documents to match exist.
+*/
+$completenessTenantJob = static fn (string $name, Closure $job): CallbackEvent => Schedule::call(
+    static fn (): int => app(TenantJobDispatcher::class)->dispatchForEachTenant($job)
+)->name($name)->withoutOverlapping()->onOneServer();
+
+$completenessTenantJob('subscriptions:renewals', static fn (Tenant $tenant): object => new ProcessSubscriptionRenewalsJob($tenant->id))->dailyAt('01:50');
+$completenessTenantJob('subscriptions:billing-run', static fn (Tenant $tenant): object => new ProcessRecurringBillingJob($tenant->id))
+    ->dailyAt('02:05')->when(static fn (): bool => (bool) config('subscription_billing.scheduled_billing'));
+$completenessTenantJob('subscriptions:revenue-recognition', static fn (Tenant $tenant): object => new RecognizeRevenueScheduleJob($tenant->id))
+    ->monthlyOn(1, '02:20')->when(static fn (): bool => (bool) config('subscription_billing.scheduled_billing'));
+$completenessTenantJob('inventory:expire-lots', static fn (Tenant $tenant): object => new ExpireStockLotsJob($tenant->id))->dailyAt('00:45');
+$completenessTenantJob('appointments:reminders', static fn (Tenant $tenant): object => new QueueAppointmentRemindersJob($tenant->id))->everyFifteenMinutes();

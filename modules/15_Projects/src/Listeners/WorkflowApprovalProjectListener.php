@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Projects\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Projects\Contracts\ProjectBudgetServiceInterface;
 use Modules\Projects\Contracts\ProjectChangeOrderServiceInterface;
 use Modules\Projects\Events\ProjectClosedEvent;
@@ -16,7 +16,7 @@ use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Models\WorkflowInstance;
 
-final readonly class WorkflowApprovalProjectListener implements ShouldQueue
+final readonly class WorkflowApprovalProjectListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private ProjectBudgetServiceInterface $budgetService,

@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Procurement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use Enterprise\EventBus\Contracts\EventBusInterface;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Procurement\Actions\CreateSupplierAction;
 use Modules\Procurement\DTOs\CreateSupplierDTO;
+use Modules\Procurement\Events\SupplierSuspendedEvent;
 use Modules\Procurement\Http\Requests\StoreSupplierRequest;
 use Modules\Procurement\Http\Requests\UpdateSupplierRequest;
 use Modules\Procurement\Http\Resources\SupplierResource;
@@ -187,7 +189,18 @@ final class SupplierController extends Controller
         $supplier = Supplier::findOrFail($id);
         $this->authorize('update', $supplier);
 
-        $supplier->update($request->validated());
+        $supplier->update($request->safe()->except('suspension_reason'));
+
+        // Suspending or blocking a supplier stops its open purchasing (EnforceSupplierSuspensionListener).
+        if ($supplier->wasChanged('status') && in_array($supplier->status, ['suspended', 'blocked'], true)) {
+            app(EventBusInterface::class)->publishAndDispatch(new SupplierSuspendedEvent(
+                supplierId: (string) $supplier->id,
+                supplierCode: (string) $supplier->supplier_code,
+                reason: (string) ($request->input('suspension_reason') ?? "Supplier {$supplier->status}"),
+                tenantId: (string) $supplier->tenant_id,
+                companyId: (string) ($supplier->company_id ?? '')
+            ));
+        }
 
         return response()->json(new SupplierResource($supplier->fresh(['category', 'contacts'])));
     }

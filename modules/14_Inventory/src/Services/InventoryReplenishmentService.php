@@ -42,7 +42,7 @@ final class InventoryReplenishmentService implements InventoryReplenishmentServi
                 companyId: (string) ($rule->company_id ?? '')
             );
 
-            $this->dispatcher->publish($event);
+            $this->dispatcher->publishAndDispatch($event);
 
             return $event->getEventId();
         }

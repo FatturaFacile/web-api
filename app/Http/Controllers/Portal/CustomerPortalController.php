@@ -11,6 +11,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Portal\ApprovePortalQuoteRequest;
 use App\Http\Requests\Portal\RejectPortalQuoteRequest;
 use App\Http\Requests\Portal\ReplyPortalTicketRequest;
+use App\Http\Resources\Portal\PortalHelpdeskTicketResource;
 use App\Http\Resources\Portal\PortalInvoiceResource;
 use App\Http\Resources\Portal\PortalQuoteResource;
 use App\Http\Resources\Portal\PortalServiceReportResource;
@@ -84,6 +85,10 @@ class CustomerPortalController extends Controller
 
         $openTicketsCount = Ticket::where('client_id', $contact->id)
             ->whereIn('status', ['open', 'in_progress', 'pending'])
+            ->count() + HelpdeskTicket::query()
+            ->where('tenant_id', $contact->tenant_id)
+            ->where('customer_id', $contact->id)
+            ->whereNotIn('status', ['resolved', 'closed', 'cancelled', 'merged'])
             ->count();
 
         $upcomingAppointmentsCount = Appointment::where('contact_id', $contact->id)
@@ -482,7 +487,7 @@ class CustomerPortalController extends Controller
     #[OA\Get(
         path: '/api/v1/portal/tickets/{token}',
         operationId: 'listTicketsPortalTickets',
-        description: 'Returns the customer support tickets with their customer-facing messages.',
+        description: 'Returns the tickets of the customer, newest first, 20 per page (query page; meta carries current_page, per_page and total): the helpdesk tickets of the service module, with their public messages, and any ticket of the former tickets table. Every item has the PortalTicketResource shape; helpdesk items add ticket_number and have an empty attachments list (their files stay in the helpdesk).',
         summary: 'List portal tickets',
         security: [],
         tags: ['Customer Portal'],
@@ -500,14 +505,29 @@ class CustomerPortalController extends Controller
         $accessToken = $this->tokenService->resolveToken($token);
         $scopedId = $this->scopedRecordId($accessToken, Ticket::class);
 
-        $tickets = Ticket::with(['messages' => fn ($q) => $q->customerFacing(), 'attachments'])
+        // Tickets are written by the helpdesk of the service module (esm_tickets); tickets of the former tickets table
+        // still appear. Both kinds accept replies on /portal/tickets/{token}/reply/{ticketId}.
+        $helpdesk = HelpdeskTicket::query()
+            ->where('tenant_id', $accessToken->tenant_id)
+            ->where('customer_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
+            ->with(['messages' => fn ($query) => $query->public()->orderBy('created_at')])
+            ->get()
+            ->map(fn (HelpdeskTicket $ticket): array => (new PortalHelpdeskTicketResource($ticket))->resolve());
+
+        $legacy = Ticket::with(['messages' => fn ($q) => $q->customerFacing(), 'attachments'])
             ->where('client_id', $accessToken->contact_id)
             ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
-            ->latest()
-            ->paginate(20);
+            ->get()
+            ->map(fn (Ticket $ticket): array => (new PortalTicketResource($ticket))->resolve());
+
+        $perPage = 20;
+        $page = max(1, request()->integer('page', 1));
+        $tickets = $helpdesk->concat($legacy)->sortByDesc('created_at')->values();
 
         return $this->successResponse(
-            data: PortalTicketResource::collection($tickets),
+            data: $tickets->forPage($page, $perPage)->values()->all(),
+            meta: ['current_page' => $page, 'per_page' => $perPage, 'total' => $tickets->count()],
             message: 'Support tickets retrieved successfully'
         );
     }

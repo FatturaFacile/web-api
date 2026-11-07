@@ -288,3 +288,20 @@ test('dossiers, grids and consolidations of another company are out of reach', f
     $this->getJson('/api/v1/customs/dossiers')->assertJsonCount(1, 'data');
     $this->postJson('/api/v1/customs/dossiers', ['customer_contact_id' => $this->customer->id, 'service_type' => 'road', 'direction' => 'import', 'currency' => 'CHF'])->assertUnprocessable();
 });
+
+test('a manual status change follows the dossier flow and rejects skipped or final transitions', function (): void {
+    $dossier = ($this->dossier)();
+    $url = "/api/v1/customs/dossiers/{$dossier['id']}";
+
+    $this->putJson($url, ['status' => 'delivered'])->assertUnprocessable()->assertJsonValidationErrors('status');
+    $this->putJson($url, ['status' => 'invoiced'])->assertUnprocessable()->assertJsonValidationErrors('status');
+    $this->putJson($url, ['status' => 'open', 'notes' => 'same status is fine'])->assertOk();
+    $this->putJson($url, ['status' => 'in_transit'])->assertOk()->assertJsonPath('data.status', 'in_transit');
+    $this->putJson($url, ['status' => 'open'])->assertUnprocessable();
+    $this->putJson($url, ['status' => 'delivered'])->assertOk();
+    $this->putJson($url, ['status' => 'closed'])->assertOk();
+    $this->putJson($url, ['status' => 'open'])->assertUnprocessable();
+    $this->putJson($url, ['status' => 'cancelled'])->assertUnprocessable();
+
+    expect(CustomsDossier::query()->findOrFail($dossier['id'])->status->value)->toBe('closed');
+});

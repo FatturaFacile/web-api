@@ -7,6 +7,7 @@ namespace Modules\Workflow\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Workflow\Console\SeedDefaultWorkflowDefinitionsCommand;
 use Modules\Workflow\Contracts\ApprovalMatrixEvaluatorInterface;
 use Modules\Workflow\Contracts\BusinessCalendarCalculatorInterface;
 use Modules\Workflow\Contracts\ExternalActionTokenServiceInterface;
@@ -66,6 +67,10 @@ final class WorkflowServiceProvider extends ServiceProvider
     {
         // Load API Routes
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([SeedDefaultWorkflowDefinitionsCommand::class]);
+        }
 
         // Register Policies
         Gate::policy(WorkflowDefinition::class, WorkflowDefinitionPolicy::class);

@@ -57,6 +57,16 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'status', type: 'string', enum: ['in_stock', 'reserved']),
     new OA\Property(property: 'notes', type: 'string', nullable: true),
 ])]
+#[OA\Schema(schema: 'AutomotiveVehicleRequest', description: 'A customer vehicle. On PUT and PATCH every field is optional.', type: 'object', required: ['client_id', 'license_plate', 'make', 'model'], properties: [
+    new OA\Property(property: 'client_id', description: 'Owner contact', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'license_plate', description: 'Stored upper case, unique in the company', type: 'string', maxLength: 20),
+    new OA\Property(property: 'vin_chassis', type: 'string', maxLength: 30, nullable: true),
+    new OA\Property(property: 'make', type: 'string', maxLength: 50),
+    new OA\Property(property: 'model', type: 'string', maxLength: 50),
+    new OA\Property(property: 'year', type: 'integer', nullable: true),
+    new OA\Property(property: 'registration_date', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'mileage_km', type: 'integer', minimum: 0),
+])]
 #[OA\Schema(schema: 'WorkshopSellRequest', type: 'object', required: ['buyer_contact_id', 'sale_date', 'sale_price', 'tax_rate'], properties: [
     new OA\Property(property: 'buyer_contact_id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'sale_date', type: 'string', format: 'date'),

@@ -16,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
+use Modules\Workflow\Actions\SeedDefaultWorkflowDefinitionsAction;
 
 /**
  * The decision of a platform administrator on a registration: only here a user gets access to a tenant. A new company
@@ -130,6 +131,9 @@ class DecideTenantAccessRequest
 
         // Documents cannot be issued outside an open period: a new company starts with the current calendar year.
         app(OpenFiscalYearAction::class)->execute($tenant->id, (int) now()->format('Y'));
+
+        // The approval processes the modules start get a default single-step approval by the owner or an admin.
+        app(SeedDefaultWorkflowDefinitionsAction::class)->execute((string) $tenant->id);
 
         return $tenant;
     }

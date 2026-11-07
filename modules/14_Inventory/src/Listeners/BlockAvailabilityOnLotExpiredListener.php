@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Inventory\Events\LotExpiredEvent;
 use Modules\Inventory\Models\StockLot;
 
-final readonly class BlockAvailabilityOnLotExpiredListener implements ShouldQueue
+final readonly class BlockAvailabilityOnLotExpiredListener implements ShouldQueueAfterCommit
 {
     public function handle(LotExpiredEvent $event): void
     {

@@ -75,6 +75,11 @@ test('posts invoice from sales order, records customer ledger entry, and dispatc
             $this->events[] = $event;
         }
 
+        public function publishAndDispatch(DomainEventInterface $event): void
+        {
+            $this->events[] = $event;
+        }
+
         public function dispatchMultiple(array $events): void
         {
             foreach ($events as $event) {

@@ -68,7 +68,7 @@ final class ProjectRevenueRecognitionService implements ProjectRevenueRecognitio
             ]);
 
             // Publish Domain Events
-            $this->dispatcher->publish(new ProjectRevenueRecognizedEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectRevenueRecognizedEvent(
                 revenueRecognitionId: (string) $recognition->id,
                 projectId: (string) $project->id,
                 accountingPeriodDate: $dto->accountingPeriodDate,
@@ -80,7 +80,7 @@ final class ProjectRevenueRecognitionService implements ProjectRevenueRecognitio
                 companyId: (string) ($project->company_id ?? $project->tenant_id)
             ));
 
-            $this->dispatcher->publish(new ProjectRevenueReadyEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectRevenueReadyEvent(
                 recognitionId: (string) $recognition->id,
                 projectId: (string) $project->id,
                 recognizedAmount: $periodAdjustment,
@@ -93,7 +93,7 @@ final class ProjectRevenueRecognitionService implements ProjectRevenueRecognitio
 
             // WIP event (costs incurred vs billings)
             $wipBalance = round($actualCost - (float) $summary->total_invoiced_revenue, 2);
-            $this->dispatcher->publish(new ProjectWipReadyEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectWipReadyEvent(
                 projectId: (string) $project->id,
                 wipBalance: $wipBalance,
                 costsIncurred: $actualCost,

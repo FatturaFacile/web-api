@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
@@ -19,7 +19,7 @@ use Modules\Procurement\Events\GoodsReceivedEvent;
  * Books the accepted quantities of a goods receipt into the warehouse of the receipt. The stock item of each line comes
  * from its supplier catalog entry; a line without one moves nothing and is logged.
  */
-final readonly class ProcurementGoodsReceivedListener implements ShouldQueue
+final readonly class ProcurementGoodsReceivedListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private DoubleEntryMovementServiceInterface $movementService,

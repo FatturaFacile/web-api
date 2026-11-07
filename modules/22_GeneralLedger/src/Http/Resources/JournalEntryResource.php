@@ -20,6 +20,8 @@ final class JournalEntryResource extends JsonResource
             'fiscal_period_id' => (string) $this->fiscal_period_id,
             'batch_id' => $this->batch_id ? (string) $this->batch_id : null,
             'entry_number' => $this->entry_number,
+            'journal_number' => $this->journal_number,
+            'fiscal_year_id' => $this->fiscal_year_id,
             'posting_date' => $this->posting_date?->toDateString(),
             'document_date' => $this->document_date?->toDateString(),
             'ledger_type' => $this->ledger_type,

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Workshop\Http\Controllers\CustomerVehicleController;
 use Modules\Workshop\Http\Controllers\FolderController;
 use Modules\Workshop\Http\Controllers\RecurringServiceController;
 use Modules\Workshop\Http\Controllers\VehicleStockController;
@@ -32,4 +33,17 @@ Route::prefix('api/v1/workshop')
         Route::get('/recurring-services', [RecurringServiceController::class, 'index'])->name('recurring-services.index');
         Route::post('/recurring-services', [RecurringServiceController::class, 'store'])->name('recurring-services.store');
         Route::post('/recurring-services/{id}/stop', [RecurringServiceController::class, 'stop'])->name('recurring-services.stop');
+    });
+
+// Customer vehicles referenced by folders, recurring services and the tire hotel. The list is GET /api/v1/automotive/vehicles.
+Route::prefix('api/v1/automotive')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:automotive'])
+    ->name('api.v1.automotive.')
+    ->where(['id' => '[0-9a-fA-F-]{36}'])
+    ->group(function (): void {
+        Route::post('/vehicles', [CustomerVehicleController::class, 'store'])->name('vehicles.store');
+        Route::get('/vehicles/{id}', [CustomerVehicleController::class, 'show'])->name('vehicles.show');
+        Route::put('/vehicles/{id}', [CustomerVehicleController::class, 'update'])->name('vehicles.update');
+        Route::patch('/vehicles/{id}', [CustomerVehicleController::class, 'update'])->name('vehicles.patch');
+        Route::delete('/vehicles/{id}', [CustomerVehicleController::class, 'destroy'])->name('vehicles.destroy');
     });

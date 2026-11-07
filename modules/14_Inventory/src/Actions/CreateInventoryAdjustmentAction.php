@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\InventoryAdjustmentDTO;
 use Modules\Inventory\DTOs\StockTransferDTO;
+use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\StockAdjustedEvent;
 use Modules\Inventory\Models\InventoryAdjustment;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
@@ -58,8 +59,8 @@ final readonly class CreateInventoryAdjustmentAction
                         'adjustment_id' => $adjustment->id,
                         'lines' => $dto->lines,
                     ],
-                    tenantId: (string) ($adjustment->tenant_id ?? 'default'),
-                    companyId: (string) ($adjustment->company_id ?? 'default'),
+                    tenantId: (string) $adjustment->tenant_id,
+                    companyId: $adjustment->company_id !== null ? (string) $adjustment->company_id : null,
                     initiatorUserId: $dto->userId
                 ));
             } else {
@@ -88,6 +89,9 @@ final readonly class CreateInventoryAdjustmentAction
                         customUnitCost: (float) $line['unit_cost']
                     ));
                 }
+
+                // An adjustment within the approval threshold is posted at once: the ledger receives its cost impact.
+                $this->eventBus->publishAndDispatch(InventoryAdjustmentPostedEvent::forAdjustment($adjustment, $dto->lines));
             }
 
             $this->eventBus->dispatch(new StockAdjustedEvent(

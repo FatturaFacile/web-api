@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Projects\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Inventory\Events\ProjectInventoryIssueEvent;
 use Modules\Inventory\Events\ProjectInventoryReservationEvent;
 use Modules\Inventory\Events\ProjectMaterialConsumptionEvent;
@@ -12,7 +12,7 @@ use Modules\Projects\Contracts\JobCostingAccumulationServiceInterface;
 use Modules\Projects\DTOs\RecordJobCostDTO;
 use Modules\Projects\Models\Project;
 
-final readonly class InventoryIntegrationListener implements ShouldQueue
+final readonly class InventoryIntegrationListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private JobCostingAccumulationServiceInterface $costingService
@@ -54,7 +54,7 @@ final readonly class InventoryIntegrationListener implements ShouldQueue
             costSourceId: $event->issueId,
             quantity: $event->quantity,
             unitCost: $event->unitCost,
-            totalCost: $event->totalCost,
+            totalCost: round($event->quantity * $event->unitCost, 2),
             incurredDate: now()->toDateString(),
             taskId: $event->taskId,
             uom: 'PCE',

@@ -71,7 +71,7 @@ final readonly class ProjectForecastService implements ProjectForecastServiceInt
         $netCashFlow = round($totalInflow - ($ac + $totalOutflow), 2);
 
         // Dispatch domain events
-        $this->dispatcher->publish(new ProjectForecastUpdatedEvent(
+        $this->dispatcher->publishAndDispatch(new ProjectForecastUpdatedEvent(
             projectId: $project->id,
             forecastCostAtCompletion: $eac,
             forecastRevenueAtCompletion: $contractValue,
@@ -81,7 +81,7 @@ final readonly class ProjectForecastService implements ProjectForecastServiceInt
             companyId: (string) ($project->company_id ?? $project->tenant_id)
         ));
 
-        $this->dispatcher->publish(new ProjectCashFlowForecastEvent(
+        $this->dispatcher->publishAndDispatch(new ProjectCashFlowForecastEvent(
             projectId: $project->id,
             forecastDate: now()->toDateString(),
             projectedInflows: $totalInflow,

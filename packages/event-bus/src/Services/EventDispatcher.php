@@ -27,4 +27,22 @@ final class EventDispatcher implements EventBusInterface, EventDispatcherInterfa
         // Reliable asynchronous outbox recording
         $this->outboxService->record($event);
     }
+
+    /**
+     * The outbox relay re-dispatches only the string event name with an array payload,
+     * which no class-based listener receives; this helper therefore also dispatches the
+     * event object in-process (the InvoicingService pattern).
+     *
+     * Synchronous listeners (for example the General Ledger postings) run inside the
+     * caller's transaction, so a failed posting rolls back the state change instead of
+     * leaving it without its journal entry. Queued listeners that react to these events
+     * implement ShouldQueueAfterCommit, so their jobs are pushed only once the transaction
+     * commits. Outbox listeners receiving the same object are deduplicated by
+     * TransactionalOutboxService::record().
+     */
+    public function publishAndDispatch(DomainEventInterface $event): void
+    {
+        $this->outboxService->record($event);
+        $this->dispatch($event);
+    }
 }

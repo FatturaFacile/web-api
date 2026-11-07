@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Inventory\Actions\CreateInventoryAdjustmentAction;
 use Modules\Inventory\DTOs\InventoryAdjustmentDTO;
 use Modules\Inventory\Listeners\WorkflowApprovalInventoryListener;
@@ -39,6 +40,8 @@ beforeEach(function (): void {
     ]);
 
     app(TenantContext::class)->setTenant($this->tenant);
+    // A posted adjustment reaches the General Ledger, which needs an open fiscal year.
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->year);
 
     $this->user = User::first() ?? User::create([
         'id' => (string) Str::uuid7(),

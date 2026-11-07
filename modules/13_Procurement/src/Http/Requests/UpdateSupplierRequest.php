@@ -32,6 +32,7 @@ final class UpdateSupplierRequest extends FormRequest
             'rating' => ['nullable', 'string', 'in:A,B,C,D'],
             'is_approved_vendor' => ['sometimes', 'boolean'],
             'status' => ['sometimes', 'string', 'max:50'],
+            'suspension_reason' => ['sometimes', 'nullable', 'string', 'max:500'],
             'metadata' => ['nullable', 'array'],
         ];
     }

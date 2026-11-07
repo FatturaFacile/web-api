@@ -61,4 +61,26 @@ return [
         'no_open_items' => 'There are no open items.',
     ],
 
+    'appointment_reminder' => [
+        'subject' => 'Reminder: appointment :number on :date',
+        'body' => 'This is a reminder of the appointment <strong>:title</strong> (:number) scheduled on :date at :time.',
+        'address' => 'Address: :address',
+    ],
+
+    'portal_activity' => [
+        'quote_approved' => [
+            'subject' => 'Quote :number approved by the customer',
+            'body' => ':customer approved quote :number from the customer portal.',
+        ],
+        'quote_rejected' => [
+            'subject' => 'Quote :number rejected by the customer',
+            'body' => ':customer rejected quote :number from the customer portal.',
+            'reason' => 'Reason: :reason',
+        ],
+        'ticket_replied' => [
+            'subject' => 'New customer reply on ticket :number',
+            'body' => ':customer replied to ticket :number from the customer portal.',
+        ],
+    ],
+
 ];

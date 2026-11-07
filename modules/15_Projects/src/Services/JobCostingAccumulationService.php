@@ -92,7 +92,7 @@ final class JobCostingAccumulationService implements JobCostingAccumulationServi
             );
 
             // Accounting readiness event
-            $this->dispatcher->publish(new ProjectCostReadyEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectCostReadyEvent(
                 costEntryId: (string) $costEntry->id,
                 projectId: (string) $project->id,
                 costCategory: $dto->costCategory,
@@ -165,7 +165,7 @@ final class JobCostingAccumulationService implements JobCostingAccumulationServi
             if ($totalActualCost > $budgetCost) {
                 $variance = round($totalActualCost - $budgetCost, 2);
 
-                $this->dispatcher->publish(new ProjectBudgetExceededEvent(
+                $this->dispatcher->publishAndDispatch(new ProjectBudgetExceededEvent(
                     projectId: (string) $project->id,
                     projectNumber: (string) $project->project_number,
                     budgetCost: $budgetCost,
@@ -216,7 +216,7 @@ final class JobCostingAccumulationService implements JobCostingAccumulationServi
             $deltaPct = $planned > 0.0 ? round(($delta / $planned) * 100.0, 2) : 0.0;
 
             if ($delta > 0 && $deltaPct > 10.0) {
-                $this->dispatcher->publish(new ProjectCostVarianceDetectedEvent(
+                $this->dispatcher->publishAndDispatch(new ProjectCostVarianceDetectedEvent(
                     projectId: (string) $project->id,
                     costCategory: $cat,
                     plannedCost: $planned,

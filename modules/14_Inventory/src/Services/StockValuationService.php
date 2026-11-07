@@ -117,7 +117,7 @@ final class StockValuationService implements StockValuationServiceInterface
             tenantId: $item->tenant_id,
             companyId: (string) ($item->company_id ?? '')
         );
-        $this->dispatcher->publish($event);
+        $this->dispatcher->publishAndDispatch($event);
 
         return $snapshot;
     }

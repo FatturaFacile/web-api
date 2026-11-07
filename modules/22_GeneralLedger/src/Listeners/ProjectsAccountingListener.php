@@ -14,7 +14,6 @@ use Modules\Projects\Events\ProjectClosureReadyEvent;
 use Modules\Projects\Events\ProjectCostReadyEvent;
 use Modules\Projects\Events\ProjectExpensePostingReadyEvent;
 use Modules\Projects\Events\ProjectLabourCostReadyEvent;
-use Modules\Projects\Events\ProjectMarginCalculatedEvent;
 use Modules\Projects\Events\ProjectMaterialCostReadyEvent;
 use Modules\Projects\Events\ProjectRevenueReadyEvent;
 use Modules\Projects\Events\ProjectRevenueRecognitionReadyEvent;
@@ -89,7 +88,7 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $arAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->totalRevenue,
+                    'debit_amount' => (float) $event->recognizedAmount,
                     'credit_amount' => 0.0,
                     'description' => 'Accounts Receivable for Project Revenue',
                 ],
@@ -97,7 +96,7 @@ final class ProjectsAccountingListener
                     'account_id' => $revAcc->id,
                     'project_id' => $event->projectId,
                     'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalRevenue,
+                    'credit_amount' => (float) $event->recognizedAmount,
                     'description' => 'Project Contract Revenue',
                 ],
             ],
@@ -109,7 +108,7 @@ final class ProjectsAccountingListener
         $postingDate = $this->periods->dateOfEvent($event);
         $period = $this->periods->forDate($event->tenantId, $postingDate);
 
-        $wipAcc = $this->resolveAccount($event->tenantId, $event->wipAccountCode, 'Project Work In Progress (WIP)', 'asset', 'debit');
+        $wipAcc = $this->resolveAccount($event->tenantId, $event->wipAssetAccountCode, 'Project Work In Progress (WIP)', 'asset', 'debit');
         $capAcc = $this->resolveAccount($event->tenantId, '5900', 'Capitalized Project WIP Clearing', 'expense', 'credit');
 
         $this->postingService->createAndPost([
@@ -122,12 +121,12 @@ final class ProjectsAccountingListener
             'source_document_type' => 'project_wip',
             'source_document_id' => $event->projectId,
             'journal_type' => 'standard',
-            'description' => "Periodic WIP Capitalization ({$event->calculationMethod})",
+            'description' => "Periodic WIP Capitalization (as of {$event->asOfDate})",
             'lines' => [
                 [
                     'account_id' => $wipAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->wipAmount,
+                    'debit_amount' => (float) $event->wipBalance,
                     'credit_amount' => 0.0,
                     'description' => 'WIP Asset Capitalization',
                 ],
@@ -135,7 +134,7 @@ final class ProjectsAccountingListener
                     'account_id' => $capAcc->id,
                     'project_id' => $event->projectId,
                     'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->wipAmount,
+                    'credit_amount' => (float) $event->wipBalance,
                     'description' => 'WIP Offset Allocation',
                 ],
             ],
@@ -175,47 +174,6 @@ final class ProjectsAccountingListener
                     'debit_amount' => 0.0,
                     'credit_amount' => (float) $event->accrualAmount,
                     'description' => 'Accrued Liability',
-                ],
-            ],
-        ]);
-    }
-
-    public function handleMarginCalculated(ProjectMarginCalculatedEvent $event): void
-    {
-        // Margin analysis entry logging - informational balancing entry if profit recognized
-        $period = $this->resolveFiscalPeriod($event->tenantId);
-        if (! $period || (float) $event->grossMargin <= 0) {
-            return;
-        }
-
-        $marginAcc = $this->resolveAccount($event->tenantId, '4900', 'Project Margin Analysis Stat Account', 'statistical', 'debit');
-        $statClearing = $this->resolveAccount($event->tenantId, '4990', 'Statistical Clearing Account', 'statistical', 'credit');
-
-        $this->postingService->createAndPost([
-            'tenant_id' => $event->tenantId,
-            'company_id' => $event->companyId,
-            'fiscal_period_id' => $period->id,
-            'posting_date' => $postingDate,
-            'document_date' => $postingDate,
-            'entry_number' => 'PRJ-MRG-'.strtoupper(Str::random(6)),
-            'source_document_type' => 'project_margin',
-            'source_document_id' => $event->projectId,
-            'journal_type' => 'standard',
-            'description' => "Statistical Margin Logging: Margin Pct {$event->marginPercentage}%",
-            'lines' => [
-                [
-                    'account_id' => $marginAcc->id,
-                    'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->grossMargin,
-                    'credit_amount' => 0.0,
-                    'description' => 'Project Statistical Margin Debit',
-                ],
-                [
-                    'account_id' => $statClearing->id,
-                    'project_id' => $event->projectId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->grossMargin,
-                    'description' => 'Project Statistical Margin Credit',
                 ],
             ],
         ]);
@@ -317,7 +275,7 @@ final class ProjectsAccountingListener
             'document_date' => $postingDate,
             'entry_number' => 'PRJ-EXP-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_expense',
-            'source_document_id' => $event->expenseId,
+            'source_document_id' => $event->costEntryId,
             'journal_type' => 'standard',
             'description' => "Project Expense Posting: {$event->expenseCategory}",
             'lines' => [
@@ -357,14 +315,14 @@ final class ProjectsAccountingListener
             'source_document_type' => 'project_timesheet',
             'source_document_id' => $event->timesheetId,
             'journal_type' => 'standard',
-            'description' => "Direct Labor Hours Absorption ({$event->hours} hrs)",
+            'description' => "Direct Labor Hours Absorption ({$event->hoursWorked} hrs)",
             'lines' => [
                 [
                     'account_id' => $wipAcc->id,
                     'project_id' => $event->projectId,
                     'debit_amount' => (float) $event->totalCost,
                     'credit_amount' => 0.0,
-                    'description' => "WIP Direct Labor ({$event->hours} hrs)",
+                    'description' => "WIP Direct Labor ({$event->hoursWorked} hrs)",
                 ],
                 [
                     'account_id' => $payrollAcc->id,
@@ -393,7 +351,7 @@ final class ProjectsAccountingListener
             'document_date' => $postingDate,
             'entry_number' => 'PRJ-MAT-'.strtoupper(Str::random(6)),
             'source_document_type' => 'project_material',
-            'source_document_id' => $event->consumptionId,
+            'source_document_id' => $event->costEntryId,
             'journal_type' => 'standard',
             'description' => "Project Material Consumption ({$event->quantity} units)",
             'lines' => [

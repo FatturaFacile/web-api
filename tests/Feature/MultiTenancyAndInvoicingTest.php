@@ -209,8 +209,9 @@ test('it generates sdi xml for italian invoice', function (): void {
         ->and($xml)->toContain('<EsigibilitaIVA>S</EsigibilitaIVA>'); // Split Payment
 });
 
-test('it generates swiss qr-bill svg and scor reference', function (): void {
+test('the deprecated qr-bill endpoints serve the real read-only qr-bill', function (): void {
     app(TenantContext::class)->setTenant($this->tenantCh);
+    $this->tenantCh->update(['settings' => ['preferences' => ['company' => ['street' => 'Bahnhofstrasse', 'house_number' => '1', 'postal_code' => '6900', 'city' => 'Lugano', 'country' => 'CH']]]]);
     $contact = Contact::create([
         'tenant_id' => $this->tenantCh->id,
         'company_name' => 'Boutique Lugano SA',
@@ -245,10 +246,15 @@ test('it generates swiss qr-bill svg and scor reference', function (): void {
     $response->assertOk()
         ->assertJsonPath('success', true)
         ->assertJsonPath('data.currency', 'CHF')
-        ->assertJsonPath('data.qr_iban', 'CH4431999123000889012');
+        ->assertJsonPath('data.iban', 'CH4431999123000889012')
+        ->assertJsonPath('data.reference_type', 'QRR');
 
-    $scor = $response->json('data.scor_reference');
-    expect(strlen($scor))->toBe(27);
+    // Same payload as the replacement endpoint, and the invoice is left untouched.
+    $replacement = $this->withHeader('X-Tenant-Id', $this->tenantCh->id)
+        ->getJson("/api/v1/sales/invoices/{$invoice->id}/qr-bill");
+    expect($response->json('data.payload'))->toBe($replacement->json('data.payload'))
+        ->and((float) $invoice->fresh()->total_gross)->toBe(486.45)
+        ->and($invoice->fresh()->qrBillData)->toBeNull();
 
     // Download SVG
     $download = $this->withHeader('X-Tenant-Id', $this->tenantCh->id)

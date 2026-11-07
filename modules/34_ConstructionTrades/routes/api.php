@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\ConstructionTrades\Http\Controllers\BidController;
 use Modules\ConstructionTrades\Http\Controllers\BidProgressController;
+use Modules\ConstructionTrades\Http\Controllers\ConstructionSiteController;
 use Modules\ConstructionTrades\Http\Controllers\PriceListController;
 use Modules\ConstructionTrades\Http\Controllers\WorkCycleController;
 
@@ -41,4 +42,17 @@ Route::prefix('api/v1/construction-trades')
         Route::get('/bids/{id}/site-costs', [BidProgressController::class, 'siteCosts'])->name('bids.site-costs.index');
         Route::post('/bids/{id}/site-costs', [BidProgressController::class, 'storeSiteCost'])->name('bids.site-costs.store');
         Route::get('/bids/{id}/budget-control', [BidProgressController::class, 'budgetControl'])->name('bids.budget-control');
+    });
+
+// Construction sites referenced by progress billings (SAL) and bids. The list is GET /api/v1/construction/sites.
+Route::prefix('api/v1/construction')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:construction'])
+    ->name('api.v1.construction.')
+    ->where(['id' => '[0-9a-fA-F-]{36}'])
+    ->group(function (): void {
+        Route::post('/sites', [ConstructionSiteController::class, 'store'])->name('sites.store');
+        Route::get('/sites/{id}', [ConstructionSiteController::class, 'show'])->name('sites.show');
+        Route::put('/sites/{id}', [ConstructionSiteController::class, 'update'])->name('sites.update');
+        Route::patch('/sites/{id}', [ConstructionSiteController::class, 'update'])->name('sites.patch');
+        Route::delete('/sites/{id}', [ConstructionSiteController::class, 'destroy'])->name('sites.destroy');
     });

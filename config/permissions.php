@@ -34,6 +34,8 @@ return [
         'professionals' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'project_manager', 'member']],
         'manufacturing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'production', 'technician', 'member']],
         'treasury' => ['read' => $financeReaders, 'write' => $finance],
+        // Approval process definitions: every member reads them, owners and admins design them.
+        'workflow_design' => ['read' => $anyMember, 'write' => $managers],
         // Backups hold every record of the company, and a restore replaces them.
         'system' => ['read' => ['owner', 'admin'], 'write' => ['owner', 'admin']],
         // A granular grant opens only the access listed here: the policies of the module do not narrow it further.

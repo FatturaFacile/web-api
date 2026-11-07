@@ -95,7 +95,7 @@ final class ProjectTimesheetService implements ProjectTimesheetServiceInterface
             ));
 
             // Emit Domain Event
-            $this->dispatcher->publish(new ProjectTimesheetApprovedEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectTimesheetApprovedEvent(
                 timesheetId: (string) $timesheet->id,
                 projectId: (string) $project->id,
                 userId: (string) $timesheet->user_id,

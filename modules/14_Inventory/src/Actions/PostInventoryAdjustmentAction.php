@@ -7,11 +7,19 @@ namespace Modules\Inventory\Actions;
 use Enterprise\EventBus\Contracts\EventBusInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
+use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\StockAdjustedEvent;
 use Modules\Inventory\Models\InventoryAdjustment;
+use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * Approves an adjustment that waited for approval: moves the stock of its lines and announces the cost impact to the
+ * General Ledger (InventoryAdjustmentPostedEvent). Without lines in the call, the lines sent for approval (the context
+ * of its approval workflow) are used.
+ */
 final readonly class PostInventoryAdjustmentAction
 {
     public function __construct(
@@ -25,6 +33,14 @@ final readonly class PostInventoryAdjustmentAction
     public function execute(InventoryAdjustment $adjustment, array $lines, string $approvedBy): InventoryAdjustment
     {
         return DB::transaction(function () use ($adjustment, $lines, $approvedBy): InventoryAdjustment {
+            $adjustment = InventoryAdjustment::query()->whereKey($adjustment->getKey())->lockForUpdate()->firstOrFail();
+
+            if ($adjustment->status !== 'pending_approval') {
+                throw ValidationException::withMessages(['status' => "The adjustment is {$adjustment->status}: only a pending adjustment can be approved."]);
+            }
+
+            $lines = $lines !== [] ? $lines : $this->linesSentForApproval($adjustment);
+
             $adjustment->update([
                 'status' => 'approved',
                 'is_locked' => false,
@@ -39,23 +55,17 @@ final readonly class PostInventoryAdjustmentAction
                     continue;
                 }
 
-                $movementType = $delta > 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT';
-                $sourceBinId = $delta > 0 ? null : (string) $line['warehouse_bin_id'];
-                $destBinId = $delta > 0 ? (string) $line['warehouse_bin_id'] : null;
-
                 $this->movementService->executeTransfer(new StockTransferDTO(
                     stockItemId: (string) $line['stock_item_id'],
-                    warehouseId: (string) $adjustment->warehouse_id,
+                    sourceBinId: $delta > 0 ? null : (string) $line['warehouse_bin_id'],
+                    destinationBinId: $delta > 0 ? (string) $line['warehouse_bin_id'] : null,
                     quantity: $qty,
-                    movementType: $movementType,
-                    sourceBinId: $sourceBinId,
-                    destinationBinId: $destBinId,
-                    stockLotId: $line['lot_id'] ?? null,
-                    unitCost: (float) $line['unit_cost'],
-                    referenceType: 'inventory_adjustments',
-                    referenceId: (string) $adjustment->id,
+                    movementType: $delta > 0 ? 'ADJUSTMENT_IN' : 'ADJUSTMENT_OUT',
+                    lotId: $line['lot_id'] ?? null,
+                    originDocumentType: 'inventory_adjustments',
+                    originDocumentId: (string) $adjustment->id,
                     userId: $approvedBy,
-                    companyId: $adjustment->company_id
+                    customUnitCost: (float) $line['unit_cost']
                 ));
             }
 
@@ -65,10 +75,31 @@ final readonly class PostInventoryAdjustmentAction
                 netValuationChange: (float) $adjustment->net_valuation_change,
                 status: 'approved',
                 companyId: (string) ($adjustment->company_id ?? 'default'),
-                userId: $approvedBy
+                userId: $approvedBy,
+                tenantId: (string) $adjustment->tenant_id
             ));
+
+            if ($lines !== []) {
+                $this->eventBus->publishAndDispatch(InventoryAdjustmentPostedEvent::forAdjustment($adjustment, $lines));
+            }
 
             return $adjustment;
         });
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     */
+    private function linesSentForApproval(InventoryAdjustment $adjustment): array
+    {
+        $snapshot = WorkflowInstance::withoutGlobalScopes()
+            ->where('approvable_type', InventoryAdjustment::class)
+            ->where('approvable_id', (string) $adjustment->id)
+            ->latest('created_at')
+            ->value('context_snapshot');
+
+        $snapshot = is_string($snapshot) ? json_decode($snapshot, true) : $snapshot;
+
+        return is_array($snapshot['lines'] ?? null) ? array_values($snapshot['lines']) : [];
     }
 }

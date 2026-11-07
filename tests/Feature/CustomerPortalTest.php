@@ -11,11 +11,13 @@ use App\Models\Tenant;
 use App\Models\Ticket;
 use App\Models\TicketMessage;
 use App\Models\User;
+use App\Notifications\PortalCustomerActivityNotification;
 use App\Services\Portal\PortalTokenService;
 use App\Services\Tenancy\TenantContext;
 use Database\Seeders\ComprehensiveLookupMasterSeeder;
 use Database\Seeders\ServiceReportLookupSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -277,4 +279,39 @@ test('cross-customer access is completely blocked', function (): void {
     // Attempting to download Customer B's invoice fails with 404
     $this->get("/api/v1/portal/invoices/{$plaintext}/{$otherInvoice->id}/pdf")
         ->assertNotFound();
+});
+
+test('portal approvals, rejections and ticket replies notify the responsible staff in the database and by mail', function (): void {
+    Notification::fake();
+
+    $creator = User::create(['name' => 'Venditore', 'email' => 'venditore-'.Str::random(5).'@example.ch', 'password' => bcrypt('secret123')]);
+    $creator->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'sales']);
+    $this->quote->forceFill(['created_by' => $creator->id])->save();
+
+    $approval = $this->tokenService->createToken($this->customer, 'quote_approval', $this->quote, null, true)['token'];
+    $this->postJson("/api/v1/portal/quotes/{$approval}/approve", ['signer_name' => 'Gianluca Bianchi'])->assertOk();
+
+    Notification::assertSentTo($creator, PortalCustomerActivityNotification::class, function ($notification, array $channels) use ($creator): bool {
+        return $notification->activity === 'quote_approved'
+            && $notification->documentNumber === 'QT-2026-0042'
+            && $channels === ['database', 'mail']
+            && str_contains((string) $notification->toMail($creator)->subject, 'QT-2026-0042');
+    });
+    Notification::assertNotSentTo($this->user, PortalCustomerActivityNotification::class);
+
+    // A ticket without assignee: the administrators are told.
+    $dashboard = $this->tokenService->createToken($this->customer, 'dashboard')['token'];
+    $this->postJson("/api/v1/portal/tickets/{$dashboard}/reply/{$this->ticket->id}", ['message' => 'Any news?', 'author_name' => 'Gianluca'])->assertCreated();
+
+    Notification::assertSentTo($this->user, PortalCustomerActivityNotification::class, fn ($notification): bool => $notification->activity === 'ticket_replied');
+});
+
+test('a quote rejected in the portal is stored as a database notification of the admins', function (): void {
+    $token = $this->tokenService->createToken($this->customer, 'quote_approval', $this->quote)['token'];
+    $this->postJson("/api/v1/portal/quotes/{$token}/reject", ['reason' => 'Too expensive'])->assertOk();
+
+    $stored = $this->user->fresh()->notifications()->first();
+    expect($stored)->not->toBeNull()
+        ->and($stored->data['activity'])->toBe('quote_rejected')
+        ->and($stored->data['reason'])->toBe('Too expensive');
 });

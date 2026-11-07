@@ -109,7 +109,7 @@ final class ThreeWayMatchingService implements ThreeWayMatchingServiceInterface
     private function dispatchDomainEvent(object $event): void
     {
         if ($this->eventBus !== null && $event instanceof DomainEventInterface) {
-            $this->eventBus->publish($event);
+            $this->eventBus->publishAndDispatch($event);
         } else {
             event($event);
         }

@@ -5,11 +5,11 @@ declare(strict_types=1);
 namespace Modules\Procurement\Listeners;
 
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Procurement\Events\SupplierSuspendedEvent;
 use Modules\Procurement\Models\PurchaseOrder;
 
-final readonly class EnforceSupplierSuspensionListener implements ShouldQueue
+final readonly class EnforceSupplierSuspensionListener implements ShouldQueueAfterCommit
 {
     public function __construct(
         private ?AuditLedgerInterface $auditLedger = null

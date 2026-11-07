@@ -118,10 +118,16 @@ final class WorkflowInstanceController extends Controller
 
         abort_unless($moduleAccess->allows($request->user(), $tenantId, $module, 'write'), Response::HTTP_FORBIDDEN);
 
+        // A record waiting for approval is usually locked against edits, so `update` would refuse the very submission:
+        // the record's own `submitForApproval` ability decides when it exists, otherwise the user must at least see it.
         $policy = Gate::getPolicyFor($approvable);
 
-        if ($policy !== null && method_exists($policy, 'update')) {
-            $this->authorize('update', $approvable);
+        if ($policy !== null) {
+            $ability = method_exists($policy, 'submitForApproval') ? 'submitForApproval' : (method_exists($policy, 'view') ? 'view' : null);
+
+            if ($ability !== null) {
+                $this->authorize($ability, $approvable);
+            }
         }
 
         $dto = new StartWorkflowDTO(

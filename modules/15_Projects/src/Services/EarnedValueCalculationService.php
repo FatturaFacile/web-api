@@ -90,7 +90,7 @@ final class EarnedValueCalculationService implements EarnedValueCalculationServi
             $grossProfit = (float) $summary->gross_profit_amount;
             $marginPct = (float) $summary->gross_profit_percentage;
 
-            $this->dispatcher->publish(new ProjectMarginCalculatedEvent(
+            $this->dispatcher->publishAndDispatch(new ProjectMarginCalculatedEvent(
                 projectId: (string) $project->id,
                 contractRevenue: $contractRev,
                 totalActualCost: $ac,

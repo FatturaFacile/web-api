@@ -131,3 +131,18 @@ test('a customer opens a ticket on the portal and the unread count follows the r
     $this->postJson("/api/v1/esm/tickets/{$ticket->id}/read")->assertOk();
     $this->getJson("/api/v1/esm/tickets/{$ticket->id}/messages")->assertOk()->assertJsonPath('meta.unread', 0);
 });
+
+test('the portal ticket list shows the helpdesk tickets of the customer with public messages only', function (): void {
+    $this->postJson("/api/v1/esm/tickets/{$this->ticket->id}/messages", ['body' => 'We are on it', 'visibility' => 'public'])->assertCreated();
+    $this->postJson("/api/v1/esm/tickets/{$this->ticket->id}/messages", ['body' => 'Internal: escalate', 'visibility' => 'internal'])->assertCreated();
+    Ticket::factory()->create(['tenant_id' => $this->tenant->id, 'customer_id' => Contact::factory()->create(['tenant_id' => $this->tenant->id])->id]);
+
+    $list = $this->getJson("/api/v1/portal/tickets/{$this->portalToken}")->assertOk();
+
+    expect($list->json('data'))->toHaveCount(1)
+        ->and($list->json('data.0.id'))->toBe($this->ticket->id)
+        ->and($list->json('data.0.ticket_number'))->toBe($this->ticket->ticket_number)
+        ->and(collect($list->json('data.0.messages'))->pluck('message')->all())->toBe(['We are on it'])
+        ->and($list->json('data.0.attachments'))->toBe([])
+        ->and($list->json('meta.total'))->toBe(1);
+});

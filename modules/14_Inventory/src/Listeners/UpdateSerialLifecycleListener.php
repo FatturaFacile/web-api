@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Listeners;
 
-use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Inventory\Events\SerialAssignedEvent;
 use Modules\Inventory\Models\StockSerialNumber;
 
-final readonly class UpdateSerialLifecycleListener implements ShouldQueue
+final readonly class UpdateSerialLifecycleListener implements ShouldQueueAfterCommit
 {
     public function handle(SerialAssignedEvent $event): void
     {
