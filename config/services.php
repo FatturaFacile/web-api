@@ -53,4 +53,9 @@ return [
         'default_channel' => env('SDI_DEFAULT_CHANNEL'),
     ],
 
+    'bootstrap' => [
+        // Expected in the X-Bootstrap-Secret header of GET /api/v1/system/bootstrap-support. Empty closes the endpoint.
+        'secret' => env('BOOTSTRAP_SUPPORT_SECRET'),
+    ],
+
 ];

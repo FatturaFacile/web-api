@@ -10,7 +10,7 @@ use Modules\Workflow\Http\Controllers\WorkflowDelegationController;
 use Modules\Workflow\Http\Controllers\WorkflowInstanceController;
 
 Route::prefix('api/v1/workflows')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:workflow'])
     ->group(function (): void {
         // Workflow Definitions
         Route::get('definitions', [WorkflowDefinitionController::class, 'index'])->name('workflows.definitions.index');

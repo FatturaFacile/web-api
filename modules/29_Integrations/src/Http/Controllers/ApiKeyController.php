@@ -6,6 +6,9 @@ namespace Modules\Integrations\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Services\Tenancy\TenantContext;
+use Closure;
+use Enterprise\MultiTenant\Services\ModuleAccessGate;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -35,12 +38,23 @@ final class ApiKeyController extends Controller
         new OA\Response(response: 201, description: 'Key created, with its token', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
         new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
     ])]
-    public function store(Request $request): JsonResponse
+    public function store(Request $request, ModuleAccessGate $moduleAccess, TenantContext $tenantContext): JsonResponse
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'scopes' => ['required', 'array', 'min:1'],
-            'scopes.*' => ['string', Rule::in(config('permissions.api_key_scopes', []))],
+            'scopes.*' => [
+                'string',
+                Rule::in(config('permissions.api_key_scopes', [])),
+                // A key can never do more than the person who creates it.
+                function (string $attribute, mixed $scope, Closure $fail) use ($request, $moduleAccess, $tenantContext): void {
+                    [$module, $access] = array_pad(explode('.', (string) $scope, 2), 2, '');
+
+                    if (! in_array($access, ['read', 'write'], true) || config("permissions.modules.{$module}") === null || ! $moduleAccess->allows($request->user(), $tenantContext->getTenantId(), $module, $access)) {
+                        $fail(__('validation.in', ['attribute' => $attribute]));
+                    }
+                },
+            ],
             'expires_at' => ['nullable', 'date', 'after:now'],
         ]);
 

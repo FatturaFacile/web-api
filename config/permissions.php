@@ -50,6 +50,16 @@ return [
         'edocument_networks' => ['read' => $finance, 'write' => $finance],
         'workspace' => ['read' => $anyMember, 'write' => $anyMember],
         'hr' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],
+        // Pay data of every employee: owners and administrators, or a member granted payroll.* on the membership (the
+        // same rule as PayrollPolicy). Employees read their own payslips and certificates on routes without this check.
+        'payroll' => [
+            'read' => $managers,
+            'write' => $managers,
+            'grants' => ['read' => ['payroll.read', 'payroll.write', 'payroll.*'], 'write' => ['payroll.write', 'payroll.*']],
+        ],
+        // Anybody may be an approver, so every member starts, decides and follows approvals; the policies of the
+        // workflow (initiator, assignee, owner or administrator) decide each action.
+        'workflow' => ['read' => $anyMember, 'write' => $anyMember],
         'fiscal_retail' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         // Health data with fiscal codes: the read-only accountant role stays out.
         'health_expenses' => ['read' => $finance, 'write' => $finance],

@@ -26,7 +26,7 @@ final class ApprovalMatrixEvaluatorService implements ApprovalMatrixEvaluatorInt
             }
         }
 
-        $documentAmount = (string) ($context['amount'] ?? $entity->getAttribute('total_amount') ?? $entity->getAttribute('amount') ?? '0');
+        $documentAmount = (string) ($entity->getAttribute('total_amount') ?? $entity->getAttribute('amount') ?? $context['amount'] ?? '0');
 
         $matchingTiers = [];
         foreach ($matrix->tiers as $tier) {
@@ -79,14 +79,26 @@ final class ApprovalMatrixEvaluatorService implements ApprovalMatrixEvaluatorInt
     }
 
     /**
+     * The attribute of the record when it has a value; the snapshot only fills in fields the record lacks or leaves empty
+     * (a cost centre chosen at submission), so a snapshot sent
+     * by a client cannot lower the amount or change a cost centre the record already has.
+     *
+     * @param  array<string, mixed>  $context
+     */
+    private function fieldValue(Model $entity, array $context, string $field): mixed
+    {
+        return $entity->getAttribute($field) ?? $context[$field] ?? null;
+    }
+
+    /**
      * @param  array<string, mixed>  $context
      */
     private function evaluateRule(ApprovalMatrixRule $rule, Model $entity, array $context): bool
     {
-        $value = $context[$rule->field_name] ?? $entity->getAttribute($rule->field_name);
+        $value = $this->fieldValue($entity, $context, (string) $rule->field_name);
 
         if ($rule->cost_center_id !== null) {
-            $costCenterId = (string) ($context['cost_center_id'] ?? $entity->getAttribute('cost_center_id'));
+            $costCenterId = (string) $this->fieldValue($entity, $context, 'cost_center_id');
             if ($costCenterId !== (string) $rule->cost_center_id) {
                 return false;
             }

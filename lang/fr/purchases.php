@@ -14,6 +14,8 @@ return [
     'invalid_fatturapa' => 'Le fichier n\'est pas un document FatturaPA valide.',
     'recipient_mismatch' => 'La facture est adressée à un autre numéro de TVA.',
     'unknown_recipient' => 'Aucune entité ne correspond au destinataire de la facture.',
+    'ambiguous_recipient_title' => 'Destinataire ambigu',
+    'ambiguous_recipient' => 'Plusieurs entités ont le numéro de TVA du destinataire : la facture n\'a pas été livrée.',
     'credit_note_not_payable' => 'Les avoirs ne peuvent pas être payés directement.',
     'already_paid' => 'Cette facture fournisseur est déjà payée.',
 

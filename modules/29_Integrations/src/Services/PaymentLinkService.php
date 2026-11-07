@@ -45,7 +45,12 @@ final readonly class PaymentLinkService
         }
 
         $settings = $this->settings();
-        $gateway = $this->gateway($settings?->provider ?? 'local');
+
+        try {
+            $gateway = $this->gateway($settings?->provider ?? 'local');
+        } catch (PaymentGatewayException $e) {
+            throw ValidationException::withMessages(['gateway' => $e->getMessage()]);
+        }
 
         $link = PaymentLink::create([
             'invoice_id' => $invoice->id,

@@ -27,10 +27,12 @@ final class EnsureModuleAccess
 
     /**
      * @param  Closure(Request): (Response)  $next
+     * @param  string|null  $access  "read" for a POST that saves nothing (a simulation, a preview), as in
+     *                               module.access:payroll,read; by default the HTTP method decides
      */
-    public function handle(Request $request, Closure $next, string $module): Response
+    public function handle(Request $request, Closure $next, string $module, ?string $access = null): Response
     {
-        $access = $request->isMethodSafe() ? 'read' : 'write';
+        $access = in_array($access, ['read', 'write'], true) ? $access : ($request->isMethodSafe() ? 'read' : 'write');
 
         $apiKeyScopes = $request->attributes->get('api_key_scopes');
 

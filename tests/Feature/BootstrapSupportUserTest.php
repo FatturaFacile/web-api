@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\Mail;
 
 uses(RefreshDatabase::class);
 
+// The endpoint always requires the secret, sent in the X-Bootstrap-Secret header.
+beforeEach(function (): void {
+    config(['services.bootstrap.secret' => 'bootstrap-test-secret']);
+    $this->withHeader('X-Bootstrap-Secret', 'bootstrap-test-secret');
+});
+
 test('bootstraps support user when not present and dispatches credentials email', function (): void {
     Mail::fake();
 

@@ -27,6 +27,24 @@ final class WorkflowInstancePolicy
     }
 
     /**
+     * The audit trail shows every decision and comment: the initiator, the approvers of the instance and the owners and
+     * administrators of the tenant read it.
+     */
+    public function viewAuditTrail(User $user, WorkflowInstance $instance): bool
+    {
+        if ((string) $user->tenant_id !== (string) $instance->tenant_id) {
+            return false;
+        }
+
+        if ((string) $instance->created_by === (string) $user->id || $this->holdsRole($user, (string) $instance->tenant_id, 'admin')) {
+            return true;
+        }
+
+        return $instance->steps()->where('assigned_user_id', $user->id)->exists()
+            || $instance->steps()->whereHas('decisions', static fn ($query) => $query->where('user_id', $user->id)->orWhere('effective_user_id', $user->id))->exists();
+    }
+
+    /**
      * Roles live on the tenant membership. Owners and administrators hold every role, as in the engine.
      */
     private function holdsRole(User $user, string $tenantId, string $role): bool

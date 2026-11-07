@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\Workflow\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Services\Tenancy\TenantContext;
+use Enterprise\MultiTenant\Services\ModuleAccessGate;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Modules\Workflow\Actions\StartWorkflowAction;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
 use Modules\Workflow\Http\Requests\StartWorkflowRequest;
@@ -17,6 +20,7 @@ use Modules\Workflow\Http\Resources\WorkflowInstanceResource;
 use Modules\Workflow\Models\WorkflowInstance;
 use Modules\Workflow\Services\WorkflowEngineService;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\Response;
 
 final class WorkflowInstanceController extends Controller
 {
@@ -100,13 +104,25 @@ final class WorkflowInstanceController extends Controller
         ]
     )]
     #[EnterpriseEndpoint(summary: 'Initiate a new workflow instance for an approvable entity', tags: ['Workflow Engine'])]
-    public function store(StartWorkflowRequest $request, StartWorkflowAction $action): JsonResponse
+    public function store(StartWorkflowRequest $request, StartWorkflowAction $action, TenantContext $tenantContext, ModuleAccessGate $moduleAccess): JsonResponse
     {
-        $approvableClass = $request->string('approvable_type')->value();
-        $approvableId = $request->string('approvable_id')->value();
+        ['class' => $approvableClass, 'module' => $module] = $request->approvableDefinition();
+        $tenantId = $tenantContext->getTenantId();
 
+        // Only a record of the active tenant, and only from somebody who may change it.
         /** @var Model $approvable */
-        $approvable = $approvableClass::findOrFail($approvableId);
+        $approvable = $approvableClass::query()
+            ->whereKey($request->string('approvable_id')->value())
+            ->where((new $approvableClass)->qualifyColumn('tenant_id'), $tenantId)
+            ->firstOrFail();
+
+        abort_unless($moduleAccess->allows($request->user(), $tenantId, $module, 'write'), Response::HTTP_FORBIDDEN);
+
+        $policy = Gate::getPolicyFor($approvable);
+
+        if ($policy !== null && method_exists($policy, 'update')) {
+            $this->authorize('update', $approvable);
+        }
 
         $dto = new StartWorkflowDTO(
             workflowCode: $request->string('workflow_code')->value(),
@@ -144,6 +160,7 @@ final class WorkflowInstanceController extends Controller
     public function cancel(string $id, Request $request, WorkflowEngineService $engine): JsonResponse
     {
         $instance = WorkflowInstance::findOrFail($id);
+        $this->authorize('cancel', $instance);
         $engine->cancel($instance, $request->input('reason'));
 
         return response()->json(['message' => 'Workflow instance successfully cancelled.']);
@@ -172,6 +189,7 @@ final class WorkflowInstanceController extends Controller
     public function auditTrail(string $id): JsonResponse
     {
         $instance = WorkflowInstance::findOrFail($id);
+        $this->authorize('viewAuditTrail', $instance);
         $entries = $instance->auditEntries()->get();
 
         return response()->json(WorkflowAuditEntryResource::collection($entries));

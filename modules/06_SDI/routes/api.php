@@ -7,7 +7,7 @@ use Modules\SDI\Http\Controllers\SdiChannelController;
 use Modules\SDI\Http\Controllers\SdiGatewayWebhookController;
 
 Route::prefix('api/v1/settings/sdi-channel')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:system'])
     ->group(function (): void {
         Route::get('/', [SdiChannelController::class, 'show'])->name('sdi.channel.show');
         Route::put('/', [SdiChannelController::class, 'update'])->name('sdi.channel.update');

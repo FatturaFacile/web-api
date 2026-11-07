@@ -139,8 +139,12 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     Route::middleware(['auth:sanctum', 'tenant', 'locale'])->group(function (): void {
 
-        Route::post('/translations', [TranslationController::class, 'storeOrUpdate'])->name('translations.storeOrUpdate');
-        Route::post('/lookups/translations', [LookupController::class, 'saveTranslation'])->name('lookups.saveTranslation');
+        // Every route below declares its module (config/permissions.php), except the ones listed in
+        // tests/Feature/Foundation/RouteModuleAccessTest.php, which check the user themselves (own records, own profile).
+        Route::middleware('module.access:system')->group(function (): void {
+            Route::post('/translations', [TranslationController::class, 'storeOrUpdate'])->name('translations.storeOrUpdate');
+            Route::post('/lookups/translations', [LookupController::class, 'saveTranslation'])->name('lookups.saveTranslation');
+        });
 
         // 1. Authentication & Context
         Route::prefix('auth')->name('auth.')->group(function (): void {
@@ -158,7 +162,7 @@ Route::prefix('v1')->group(function (): void {
         // 2. Executive Dashboard & Financial Health
         Route::prefix('dashboard')->name('dashboard.')->group(function (): void {
             Route::get('/kpi-summary', [DashboardController::class, 'kpiSummary'])->name('kpi-summary');
-            Route::get('/cash-flow-forecast', [DashboardController::class, 'cashFlowForecast'])->name('cash-flow-forecast');
+            Route::get('/cash-flow-forecast', [DashboardController::class, 'cashFlowForecast'])->middleware('module.access:treasury')->name('cash-flow-forecast');
             Route::get('/tax-deadlines', [DashboardController::class, 'taxDeadlines'])->name('tax-deadlines');
             Route::get('/available-widgets', [DashboardBuilderController::class, 'availableWidgets'])->name('available-widgets');
             Route::get('/layout', [DashboardBuilderController::class, 'showLayout'])->name('layout');
@@ -168,7 +172,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 3. CRM & Contacts
-        Route::prefix('crm')->name('crm.')->group(function (): void {
+        Route::prefix('crm')->name('crm.')->middleware('module.access:crm')->group(function (): void {
             Route::get('/clients', [CrmController::class, 'clients'])->name('clients');
             Route::get('/suppliers', [CrmController::class, 'suppliers'])->name('suppliers');
             Route::get('/contacts/{id}/statistics', [ContactInsightsController::class, 'statistics'])->name('contacts.statistics');
@@ -178,7 +182,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 4. Sales, Invoicing & Cross-Border Billing
-        Route::prefix('sales')->name('sales.')->group(function (): void {
+        Route::prefix('sales')->name('sales.')->middleware('module.access:invoicing')->group(function (): void {
             Route::apiResource('invoices', InvoiceController::class)->parameters(['invoices' => 'id']);
             Route::post('/invoices/{id}/generate-sdi-xml', [InvoiceController::class, 'generateSdiXml'])->name('invoices.generate-sdi-xml');
             Route::post('/invoices/{id}/generate-qr-bill', [InvoiceController::class, 'generateQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.generate-qr-bill');
@@ -216,7 +220,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 4b. Catalog, Price Lists & Payment Terms
-        Route::prefix('catalog')->name('catalog.')->group(function (): void {
+        Route::prefix('catalog')->name('catalog.')->middleware('module.access:invoicing')->group(function (): void {
             Route::apiResource('categories', ProductCategoryController::class)->parameters(['categories' => 'id']);
             Route::apiResource('brands', ProductBrandController::class)->parameters(['brands' => 'id']);
             Route::apiResource('units', UnitOfMeasureController::class)->parameters(['units' => 'id']);
@@ -227,16 +231,28 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 4c. Subscriptions (recurring billing)
-        Route::prefix('subscriptions')->name('subscriptions.')->group(function (): void {
-            Route::post('/{id}/pause', [SubscriptionController::class, 'pause'])->name('pause');
-            Route::post('/{id}/resume', [SubscriptionController::class, 'resume'])->name('resume');
-            Route::post('/{id}/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
-            Route::post('/{id}/bill', [SubscriptionController::class, 'bill'])->name('bill');
-            Route::get('/{id}/runs', [SubscriptionController::class, 'runs'])->name('runs');
+        Route::middleware('module.access:subscriptions')->group(function (): void {
+            Route::prefix('subscriptions')->name('subscriptions.')->group(function (): void {
+                Route::post('/{id}/pause', [SubscriptionController::class, 'pause'])->name('pause');
+                Route::post('/{id}/resume', [SubscriptionController::class, 'resume'])->name('resume');
+                Route::post('/{id}/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
+                Route::post('/{id}/bill', [SubscriptionController::class, 'bill'])->name('bill');
+                Route::get('/{id}/runs', [SubscriptionController::class, 'runs'])->name('runs');
+            });
+            Route::apiResource('subscriptions', SubscriptionController::class)->parameters(['subscriptions' => 'id']);
         });
-        Route::apiResource('subscriptions', SubscriptionController::class)->parameters(['subscriptions' => 'id']);
         // 4d. Alerts & Loyalty cards
-        Route::get('/alerts/active', [AlertController::class, 'active'])->name('alerts.active');
+        // Alerts sit on contacts and sales documents; loyalty cards are part of the sales cycle.
+        Route::middleware('module.access:invoicing')->group(function (): void {
+            Route::get('/alerts/active', [AlertController::class, 'active'])->name('alerts.active');
+            Route::apiResource('alerts', AlertController::class)->parameters(['alerts' => 'id']);
+            Route::prefix('loyalty-cards')->name('loyalty-cards.')->group(function (): void {
+                Route::get('/{id}/transactions', [LoyaltyCardController::class, 'transactions'])->name('transactions.index');
+                Route::post('/{id}/transactions', [LoyaltyCardController::class, 'storeTransaction'])->name('transactions.store');
+            });
+            Route::apiResource('loyalty-cards', LoyaltyCardController::class)->parameters(['loyalty-cards' => 'id']);
+        });
+        // A document or an attachment belongs to several modules: the controllers check the module of the record.
         Route::post('/documents/{type}/{id}/email', [DocumentEmailController::class, 'store'])->name('documents.email.store');
         Route::get('/documents/{type}/{id}/emails', [DocumentEmailController::class, 'index'])->name('documents.email.index');
         Route::get('/documents/{type}/{id}/pdf', [DocumentPdfController::class, 'show'])->name('documents.pdf');
@@ -244,26 +260,21 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/attachments', [AttachmentController::class, 'store'])->name('attachments.store');
         Route::get('/attachments/{id}/download', [AttachmentController::class, 'download'])->name('attachments.download');
         Route::delete('/attachments/{id}', [AttachmentController::class, 'destroy'])->name('attachments.destroy');
-        Route::apiResource('alerts', AlertController::class)->parameters(['alerts' => 'id']);
-        Route::prefix('loyalty-cards')->name('loyalty-cards.')->group(function (): void {
-            Route::get('/{id}/transactions', [LoyaltyCardController::class, 'transactions'])->name('transactions.index');
-            Route::post('/{id}/transactions', [LoyaltyCardController::class, 'storeTransaction'])->name('transactions.store');
-        });
-        Route::apiResource('loyalty-cards', LoyaltyCardController::class)->parameters(['loyalty-cards' => 'id']);
         // 4e. E-commerce channels (WooCommerce, Shopify, PrestaShop)
-        Route::prefix('ecommerce')->name('ecommerce.')->group(function (): void {
+        Route::prefix('ecommerce')->name('ecommerce.')->middleware('module.access:integrations')->group(function (): void {
             Route::post('/channels/{id}/test-connection', [EcommerceChannelController::class, 'testConnection'])->name('channels.test-connection');
             Route::post('/channels/{id}/sync', [EcommerceChannelController::class, 'sync'])->name('channels.sync');
             Route::apiResource('channels', EcommerceChannelController::class)->parameters(['channels' => 'id']);
         });
         // 5. Purchasing & Accounts Payable (AP)
-        Route::prefix('purchases')->name('purchases.')->group(function (): void {
+        Route::prefix('purchases')->name('purchases.')->middleware('module.access:procurement')->group(function (): void {
             Route::get('/requests', [PurchasesController::class, 'requests'])->name('requests');
             Route::get('/orders', [PurchasesController::class, 'orders'])->name('orders');
             Route::get('/passive-invoices', [PurchasesController::class, 'passiveInvoices'])->name('passive-invoices');
             Route::post('/passive-invoices/import-sdi', [PurchasesController::class, 'importSdi'])->middleware('deprecated:/api/v1/purchases/passive-invoices/receive-xml')->name('passive-invoices.import-sdi');
             Route::post('/passive-invoices/scan-qr-bill', [PurchasesController::class, 'scanQrBill'])->name('passive-invoices.scan-qr-bill');
-            Route::post('/export-pain001', [PurchasesController::class, 'exportPain001'])->name('export-pain001');
+            // Paying suppliers moves money: the treasury roles too.
+            Route::post('/export-pain001', [PurchasesController::class, 'exportPain001'])->middleware('module.access:treasury')->name('export-pain001');
             Route::post('/orders', [PurchaseOrderController::class, 'store'])->name('orders.store');
             Route::get('/orders/{id}', [PurchaseOrderController::class, 'show'])->name('orders.show');
             Route::put('/orders/{id}', [PurchaseOrderController::class, 'update'])->name('orders.update');
@@ -281,13 +292,13 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/supplier-invoices/{id}/lines', [SupplierCostRuleController::class, 'lines'])->name('supplier-invoices.lines');
             Route::get('/supplier-invoices', [SupplierInvoiceController::class, 'index'])->name('supplier-invoices.index');
             Route::get('/supplier-invoices/{id}', [SupplierInvoiceController::class, 'show'])->name('supplier-invoices.show');
-            Route::post('/supplier-invoices/{id}/mark-paid', [SupplierInvoiceController::class, 'markPaid'])->name('supplier-invoices.mark-paid');
+            Route::post('/supplier-invoices/{id}/mark-paid', [SupplierInvoiceController::class, 'markPaid'])->middleware('module.access:treasury')->name('supplier-invoices.mark-paid');
             Route::post('/passive-invoices/receive-xml', [SupplierInvoiceController::class, 'receiveXml'])->name('passive-invoices.receive-xml');
             Route::post('/passive-invoices/{id}/self-invoice', [SupplierInvoiceController::class, 'selfInvoice'])->name('passive-invoices.self-invoice');
         });
 
         // 6. Treasury, Banking & Cash Management (Enterprise module mounted in modules/24_Treasury)
-        Route::prefix('treasury')->name('treasury.')->group(function (): void {
+        Route::prefix('treasury')->name('treasury.')->middleware('module.access:treasury')->group(function (): void {
             Route::get('/transactions', [TreasuryController::class, 'transactions'])->name('transactions');
             Route::post('/reconciliation/auto-match', [TreasuryController::class, 'autoMatch'])->name('reconciliation.auto-match');
             Route::post('/import-camt', [TreasuryController::class, 'importCamt'])->middleware('deprecated:/api/v1/sales/payment-imports')->name('import-camt');
@@ -295,7 +306,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 7. Inventory & Logistics
-        Route::prefix('inventory')->name('inventory.')->group(function (): void {
+        Route::prefix('inventory')->name('inventory.')->middleware('module.access:inventory')->group(function (): void {
             Route::get('/products', [InventoryController::class, 'products'])->name('products');
             Route::post('/products', [InventoryController::class, 'storeProduct'])->name('products.store');
             Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
@@ -314,7 +325,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 8. Service Tickets & Field Assistance (Rapportini)
-        Route::prefix('field-service')->name('field-service.')->group(function (): void {
+        Route::prefix('field-service')->name('field-service.')->middleware('module.access:service')->group(function (): void {
             Route::get('/tickets', [FieldServiceController::class, 'tickets'])->name('tickets');
             Route::get('/work-orders', [FieldServiceController::class, 'workOrders'])->name('work-orders');
             Route::post('/work-orders/{id}/sign', [FieldServiceController::class, 'signWorkOrder'])->middleware('deprecated:/api/v1/field-service/work-orders/{id}/signature')->name('work-orders.sign');
@@ -323,12 +334,13 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/work-orders/{id}', [WorkOrderController::class, 'update'])->name('work-orders.update');
             Route::post('/work-orders/{id}/complete', [WorkOrderController::class, 'complete'])->name('work-orders.complete');
             Route::post('/work-orders/{id}/signature', [WorkOrderController::class, 'signature'])->name('work-orders.signature');
-            Route::post('/work-orders/{id}/invoice', [WorkOrderController::class, 'invoice'])->name('work-orders.invoice');
+            // Billing a job is an invoicing action, whoever did the job.
+            Route::post('/work-orders/{id}/invoice', [WorkOrderController::class, 'invoice'])->middleware('module.access:invoicing')->name('work-orders.invoice');
         });
 
         // Module 01: Service Reports (Rapportini di Intervento)
-        Route::prefix('service-reports')->name('service-reports.')->group(function (): void {
-            Route::post('/generate-consolidated-invoice', [ServiceReportController::class, 'generateConsolidatedInvoice'])->name('generate-consolidated-invoice');
+        Route::prefix('service-reports')->name('service-reports.')->middleware('module.access:service')->group(function (): void {
+            Route::post('/generate-consolidated-invoice', [ServiceReportController::class, 'generateConsolidatedInvoice'])->middleware('module.access:invoicing')->name('generate-consolidated-invoice');
             Route::get('/', [ServiceReportController::class, 'index'])->name('index');
             Route::post('/', [ServiceReportController::class, 'store'])->name('store');
             Route::get('/{id}', [ServiceReportController::class, 'show'])->name('show');
@@ -336,13 +348,13 @@ Route::prefix('v1')->group(function (): void {
             Route::patch('/{id}', [ServiceReportController::class, 'update'])->name('patch');
             Route::delete('/{id}', [ServiceReportController::class, 'destroy'])->name('destroy');
             Route::post('/{id}/sign', [ServiceReportController::class, 'sign'])->name('sign');
-            Route::post('/{id}/generate-invoice', [ServiceReportController::class, 'generateInvoice'])->name('generate-invoice');
+            Route::post('/{id}/generate-invoice', [ServiceReportController::class, 'generateInvoice'])->middleware('module.access:invoicing')->name('generate-invoice');
             Route::post('/{id}/upload-photo', [ServiceReportController::class, 'uploadPhoto'])->name('upload-photo');
             Route::get('/{id}/pdf', [ServiceReportController::class, 'pdf'])->name('pdf');
         });
 
         // Module 10: Scheduling & Appointments
-        Route::prefix('appointments')->name('appointments.')->group(function (): void {
+        Route::prefix('appointments')->name('appointments.')->middleware('module.access:service')->group(function (): void {
             Route::get('/calendar', [AppointmentController::class, 'calendar'])->name('calendar');
             Route::post('/check-conflicts', [AppointmentController::class, 'checkConflicts'])->name('check-conflicts');
             Route::get('/', [AppointmentController::class, 'index'])->name('index');
@@ -366,7 +378,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 10. Fleet Rental
-        Route::prefix('rent')->name('rent.')->group(function (): void {
+        Route::prefix('rent')->name('rent.')->middleware('module.access:automotive')->group(function (): void {
             Route::get('/vehicles', [FleetRentalController::class, 'vehicles'])->name('vehicles');
             Route::get('/bookings', [FleetRentalController::class, 'bookings'])->name('bookings');
             Route::post('/check-in-inspection', [FleetRentalController::class, 'checkInInspection'])->name('check-in-inspection');
@@ -391,7 +403,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 14. Retail & POS
-        Route::prefix('retail')->name('retail.')->group(function (): void {
+        Route::prefix('retail')->name('retail.')->middleware('module.access:fiscal_retail')->group(function (): void {
             Route::get('/pos/sessions', [PosSessionController::class, 'index'])->name('pos.sessions');
             Route::get('/pos/terminals', [PosTerminalController::class, 'index'])->name('pos.terminals.index');
             Route::post('/pos/terminals', [PosTerminalController::class, 'store'])->name('pos.terminals.store');
@@ -414,7 +426,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 16. Cross-Border HR & Payroll
-        Route::prefix('hr')->name('hr.')->group(function (): void {
+        Route::prefix('hr')->name('hr.')->middleware('module.access:hr')->group(function (): void {
             Route::get('/frontalieri', [HrController::class, 'frontalieri'])->name('frontalieri');
             Route::get('/withholding-taxes', [HrController::class, 'withholdingTaxes'])->name('withholding-taxes');
         });
@@ -429,7 +441,7 @@ Route::prefix('v1')->group(function (): void {
         Route::apiResource('expenses', ExpenseController::class)->parameters(['expenses' => 'id']);
 
         // 17. Fiscal & Statutory Accounting
-        Route::prefix('accounting')->name('accounting.')->group(function (): void {
+        Route::prefix('accounting')->name('accounting.')->middleware('module.access:ledger')->group(function (): void {
             Route::get('/chart-of-accounts', [AccountingController::class, 'chartOfAccounts'])->name('chart-of-accounts');
             Route::get('/ledger-entries', [AccountingController::class, 'ledgerEntries'])->name('ledger-entries');
             Route::post('/ledger-entries', [AccountingController::class, 'storeLedgerEntry'])->name('ledger-entries.store');
@@ -441,7 +453,7 @@ Route::prefix('v1')->group(function (): void {
 
         // 18. Settings & Multi-Tenant Management
         // Banking: statement import and reconciliation
-        Route::prefix('banking')->name('banking.')->group(function (): void {
+        Route::prefix('banking')->name('banking.')->middleware('module.access:treasury')->group(function (): void {
             Route::get('/statements', [BankStatementController::class, 'index'])->name('statements.index');
             Route::post('/statements/import', [BankStatementController::class, 'import'])->name('statements.import');
             Route::post('/statements/lines/{lineId}/manual-match', [BankStatementController::class, 'manualMatch'])->name('statements.lines.manual-match');
@@ -463,18 +475,19 @@ Route::prefix('v1')->group(function (): void {
         });
 
         Route::prefix('settings')->name('settings.')->group(function (): void {
+            // Every member reads the company profile, its preferences and branches: the clients need them on every page.
             Route::get('/tenant', [SettingsController::class, 'tenant'])->name('tenant');
             Route::get('/preferences', [TenantPreferencesController::class, 'index'])->name('preferences');
-            Route::put('/preferences/{group}', [TenantPreferencesController::class, 'update'])->name('preferences.update');
-            Route::put('/tenant', [SettingsController::class, 'updateTenant'])->name('tenant.update');
             Route::get('/branches', [SettingsController::class, 'branches'])->name('branches');
-            Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->name('exchange-rates.sync');
-            Route::get('/users', [SettingsController::class, 'users'])->name('users');
-            Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
-            Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
             Route::get('/document-quota', [DocumentQuotaController::class, 'usage'])->name('document-quota');
 
             Route::middleware('module.access:system')->group(function (): void {
+                Route::put('/preferences/{group}', [TenantPreferencesController::class, 'update'])->name('preferences.update');
+                Route::put('/tenant', [SettingsController::class, 'updateTenant'])->name('tenant.update');
+                Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->name('exchange-rates.sync');
+                Route::get('/users', [SettingsController::class, 'users'])->name('users');
+                Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
+                Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');
                 Route::put('/security/two-factor', [TwoFactorController::class, 'updatePolicy'])->name('security.two-factor.update');
                 Route::post('/users/{userId}/two-factor/reset', [TwoFactorController::class, 'resetMember'])->whereUuid('userId')->name('users.two-factor.reset');

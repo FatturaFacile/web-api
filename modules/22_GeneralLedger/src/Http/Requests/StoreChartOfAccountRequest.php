@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\GeneralLedger\Enums\ReportingClass;
 
 final class StoreChartOfAccountRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -26,7 +29,7 @@ final class StoreChartOfAccountRequest extends FormRequest
             'account_class' => ['nullable', 'string', 'max:30'],
             'account_type' => ['required', 'string', 'in:asset,liability,equity,revenue,expense,cogs,wip,memo,statistical'],
             'normal_balance' => ['required', 'string', 'in:debit,credit'],
-            'parent_account_id' => ['nullable', 'uuid', 'exists:chart_of_accounts,id'],
+            'parent_account_id' => ['nullable', 'uuid', $this->tenantExists('chart_of_accounts')],
             'currency' => ['nullable', 'string', 'size:3'],
             'is_reconciliation_account' => ['nullable', 'boolean'],
             'reconciliation_type' => ['nullable', 'string', 'max:20'],

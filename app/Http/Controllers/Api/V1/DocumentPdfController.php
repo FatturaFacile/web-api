@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\DocumentEmail;
+use App\Services\Documents\RecordAccess;
 use App\Services\Pdf\DocumentPdfService;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\Request;
@@ -37,14 +38,14 @@ class DocumentPdfController extends Controller
             new OA\Response(response: 404, description: 'Document not found or unsupported type', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function show(Request $request, DocumentPdfService $pdf, string $type, string $id): Response
+    public function show(Request $request, DocumentPdfService $pdf, RecordAccess $recordAccess, string $type, string $id): Response
     {
         $class = DocumentEmail::TARGET_TYPES[$type] ?? null;
 
         abort_if($class === null, 404, __('pdf.messages.unsupported_type'));
 
         $document = $class::findOrFail($id);
-        $this->authorize('download', $document);
+        $recordAccess->authorize($request->user(), $document, 'read', 'download');
 
         $rendered = $pdf->render($document);
         $disposition = $request->boolean('inline') ? 'inline' : 'attachment';

@@ -9,7 +9,10 @@ use App\Http\Requests\Documents\StoreAttachmentRequest;
 use App\Http\Resources\CatalogResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Attachment;
+use App\Models\Expense;
+use App\Services\Documents\RecordAccess;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -24,7 +27,10 @@ class AttachmentController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(private readonly TenantContext $tenantContext) {}
+    public function __construct(
+        private readonly TenantContext $tenantContext,
+        private readonly RecordAccess $recordAccess,
+    ) {}
 
     /**
      * List the files of one record: `attachable_type` and `attachable_id` are required.
@@ -53,7 +59,10 @@ class AttachmentController extends Controller
             'attachable_id' => ['required', 'uuid'],
         ]);
 
-        $attachments = Attachment::where('attachable_type', Attachment::TARGET_TYPES[$request->query('attachable_type')])
+        $class = Attachment::TARGET_TYPES[$request->query('attachable_type')];
+        $this->recordAccess->authorize($request->user(), $class::findOrFail($request->query('attachable_id')), 'read');
+
+        $attachments = Attachment::where('attachable_type', $class)
             ->where('attachable_id', $request->query('attachable_id'))
             ->latest()
             ->get();
@@ -95,6 +104,7 @@ class AttachmentController extends Controller
     {
         $class = Attachment::TARGET_TYPES[$request->validated('attachable_type')];
         $target = $class::findOrFail($request->validated('attachable_id'));
+        $this->recordAccess->authorize($request->user(), $target, 'write', $this->writeAbility($target));
 
         $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
         $file = $request->file('file');
@@ -134,9 +144,10 @@ class AttachmentController extends Controller
             new OA\Response(response: 404, description: 'Attachment not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function download(string $id): StreamedResponse
+    public function download(Request $request, string $id): StreamedResponse
     {
         $attachment = Attachment::findOrFail($id);
+        $this->recordAccess->authorize($request->user(), $this->parentOf($attachment), 'read');
 
         return Storage::disk($attachment->getStorageDisk())->download($attachment->path, $attachment->original_name);
     }
@@ -158,9 +169,11 @@ class AttachmentController extends Controller
             new OA\Response(response: 409, description: 'A managed document references this file', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function destroy(string $id): JsonResponse
+    public function destroy(Request $request, string $id): JsonResponse
     {
         $attachment = Attachment::findOrFail($id);
+        $parent = $this->parentOf($attachment);
+        $this->recordAccess->authorize($request->user(), $parent, 'write', $this->writeAbility($parent));
 
         if (DmsDocumentVersion::query()->where('attachment_id', $attachment->id)->exists()) {
             return $this->problemDetailsResponse('Attachment in use', 'A managed document references this file: delete the document first.', Response::HTTP_CONFLICT);
@@ -170,5 +183,26 @@ class AttachmentController extends Controller
         $attachment->delete();
 
         return $this->successResponse(null, __('documents.messages.attachment_deleted'));
+    }
+
+    /**
+     * The record the attachment belongs to, in the active tenant; a file whose record is gone is not served.
+     */
+    private function parentOf(Attachment $attachment): Model
+    {
+        $parent = $attachment->attachable;
+
+        abort_unless($parent instanceof Model, Response::HTTP_NOT_FOUND);
+
+        return $parent;
+    }
+
+    /**
+     * Adding or removing a file changes the record: expenses have their own ability for it, which ignores the export
+     * lock; every other record only needs to be visible once the module grants write access.
+     */
+    private function writeAbility(Model $record): string
+    {
+        return $record instanceof Expense ? 'uploadAttachment' : 'view';
     }
 }

@@ -165,6 +165,17 @@ test('the incoming invoice webhook requires the secret, routes by recipient VAT 
         ->assertUnprocessable();
 });
 
+test('the incoming invoice webhook refuses a VAT number held by two tenants', function (): void {
+    config(['services.sdi.webhook_secret' => 'topsecret']);
+    Tenant::create(['name' => 'Omonimo SRL', 'legal_name' => 'Omonimo SRL', 'vat_number' => 'IT00811720580', 'country' => 'IT']);
+
+    $this->withHeaders(['X-Webhook-Secret' => 'topsecret'])
+        ->postJson('/api/v1/webhooks/sdi/incoming-invoice', ['provider' => 'local', 'xml' => fatturaPaXml(['number' => 'SI-AMB'])])
+        ->assertConflict();
+
+    expect(PassiveInvoice::withoutGlobalScopes()->where('invoice_number', 'SI-AMB')->exists())->toBeFalse();
+});
+
 // ------------------------------------------------------------ Purchase orders & goods receipts
 
 test('purchase orders require a supplier and compute totals', function (): void {

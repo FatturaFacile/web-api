@@ -7,6 +7,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Translations\StoreTranslationRequest;
 use App\Models\Translation;
+use App\Services\Tenancy\PublicTenantResolver;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -44,17 +46,9 @@ class TranslationController extends Controller
             ),
         ]
     )]
-    public function index(Request $request, string $locale): JsonResponse
+    public function index(Request $request, PublicTenantResolver $tenantResolver, string $locale): JsonResponse
     {
-        if ($request->has('tenant_id')) {
-            $tenantId = $request->input('tenant_id');
-        } else {
-            $tenantId = $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
-        }
-
-        if (is_string($tenantId) && in_array(strtolower(trim($tenantId)), ['null', 'undefined', 'default', ''], true)) {
-            $tenantId = null;
-        }
+        $tenantId = $tenantResolver->resolve($request);
 
         $cacheKey = $tenantId ? "translations_{$tenantId}_{$locale}" : "translations_global_{$locale}";
 
@@ -131,40 +125,21 @@ class TranslationController extends Controller
                     new OA\Property(property: 'locale', type: 'string', maxLength: 5, example: 'en'),
                     new OA\Property(property: 'key', type: 'string', maxLength: 255, example: 'buttons.save'),
                     new OA\Property(property: 'value', type: 'string', example: 'Save Changes'),
-                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true, description: 'Ignored: the translation belongs to the active tenant. Send null (platform administrators only) for a global translation.'),
                 ]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Translation saved successfully'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Not an owner or administrator, or a global write by a non platform administrator'),
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function storeOrUpdate(StoreTranslationRequest $request): JsonResponse
+    public function storeOrUpdate(StoreTranslationRequest $request, TenantContext $tenantContext): JsonResponse
     {
-        if ($request->has('tenant_id')) {
-            $tenantId = $request->input('tenant_id');
-        } else {
-            $tenantId = $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
-        }
-
-        if (is_string($tenantId) && in_array(strtolower(trim($tenantId)), ['null', 'undefined', 'default', ''], true)) {
-            $tenantId = null;
-        }
-
+        $tenantId = $request->wantsGlobal() ? null : $tenantContext->getTenantId();
         $validated = $request->validated();
-
-        if (array_key_exists('tenant_id', $validated)) {
-            $tenantVal = $validated['tenant_id'];
-            if (is_string($tenantVal) && in_array(strtolower(trim($tenantVal)), ['null', 'undefined', 'default', ''], true)) {
-                $tenantId = null;
-            } elseif ($tenantVal === null) {
-                $tenantId = null;
-            } elseif (! empty($tenantVal)) {
-                $tenantId = $tenantVal;
-            }
-        }
 
         $translation = Translation::updateOrCreate(
             [

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Http\Responses\ApiResponse;
 use App\Models\BankTransaction;
 use App\Models\Invoice;
@@ -17,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TreasuryController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, TenantScopedRules;
 
     #[OA\Get(
         path: '/api/v1/treasury/transactions',
@@ -76,9 +77,9 @@ class TreasuryController extends Controller
                 }
             }
 
+            // Only the exact invoice number: a partial match ("1" inside "INV-2026-001") would mark the wrong invoice paid.
             if (! $matchedInvoice && ! empty($tx->reference)) {
-                $matchedInvoice = Invoice::where('invoice_number', 'like', "%{$tx->reference}%")
-                    ->first();
+                $matchedInvoice = Invoice::where('invoice_number', trim((string) $tx->reference))->first();
             }
 
             if ($matchedInvoice !== null) {
@@ -138,7 +139,7 @@ class TreasuryController extends Controller
     {
         $request->validate([
             'camt_file' => ['required', 'file', 'mimes:xml,txt', 'max:10240'],
-            'bank_account_id' => ['required', 'uuid'],
+            'bank_account_id' => ['required', 'uuid', $this->tenantOwns('bank_accounts')],
         ]);
 
         $content = file_get_contents($request->file('camt_file')->getRealPath());
@@ -223,7 +224,7 @@ class TreasuryController extends Controller
     {
         $request->validate([
             'cbi_file' => ['required', 'file', 'max:10240'],
-            'bank_account_id' => ['required', 'uuid'],
+            'bank_account_id' => ['required', 'uuid', $this->tenantOwns('bank_accounts')],
         ]);
 
         return $this->successResponse(

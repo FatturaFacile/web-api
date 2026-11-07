@@ -11,10 +11,13 @@ use App\Models\ExchangeRate;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
+use App\Services\Auth\TaxIdentifier;
 use App\Services\Tenancy\TenantContext;
+use Closure;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
 use Modules\SDI\Enums\RegimeFiscale;
@@ -24,6 +27,13 @@ use Symfony\Component\HttpFoundation\Response;
 class SettingsController extends Controller
 {
     use ApiResponse;
+
+    /**
+     * Subtrees of tenants.settings written only by their own endpoints (preferences, two-factor policy).
+     *
+     * @var list<string>
+     */
+    private const array ReservedSettingsKeys = ['preferences', 'security'];
 
     public function __construct(
         private readonly TenantContext $tenantContext
@@ -119,7 +129,14 @@ class SettingsController extends Controller
             'name' => ['nullable', 'string', 'max:255'],
             'legal_name' => ['nullable', 'string', 'max:255'],
             'fiscal_code' => ['nullable', 'string', 'max:16'],
-            'vat_number' => ['nullable', 'string', 'max:30'],
+            'vat_number' => [
+                'nullable', 'string', 'max:30',
+                function (string $attribute, mixed $value, Closure $fail) use ($tenant): void {
+                    if (is_string($value) && TaxIdentifier::vatNumberTaken($value, (string) $tenant->id)) {
+                        $fail(__('validation.unique', ['attribute' => $attribute]));
+                    }
+                },
+            ],
             'uid_number' => ['nullable', 'string', 'max:20'],
             'default_currency' => ['nullable', 'string', 'size:3'],
             'iban' => ['nullable', 'string', 'max:34'],
@@ -130,6 +147,13 @@ class SettingsController extends Controller
             'settings.regime_fiscale' => ['nullable', Rule::enum(RegimeFiscale::class)],
             'settings.enasarco_agent_type' => ['nullable', Rule::in(EnasarcoParameter::AGENT_TYPES)],
         ]);
+
+        // The settings are merged, never replaced: the preferences and the security policy have their own endpoints, and
+        // a body that sent them here would wipe them (two-factor requirement included).
+        if (array_key_exists('settings', $validated)) {
+            $incoming = Arr::except((array) ($validated['settings'] ?? []), self::ReservedSettingsKeys);
+            $validated['settings'] = [...(array) $tenant->settings, ...$incoming];
+        }
 
         $tenant->update($validated);
 

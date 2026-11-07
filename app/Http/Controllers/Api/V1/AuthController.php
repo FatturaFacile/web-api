@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -34,6 +35,17 @@ class AuthController extends Controller
         private readonly TwoFactorAuthentication $twoFactor,
         private readonly RegistrationAudit $audit,
     ) {}
+
+    /**
+     * A hash of a random password with the current hashing options, made once per process: checking it costs the same
+     * as checking a real one.
+     */
+    private static function timingDummyHash(): string
+    {
+        static $hash = null;
+
+        return $hash ??= Hash::make(Str::random(40));
+    }
 
     /**
      * Authenticate user credentials and issue a Sanctum Bearer token.
@@ -89,7 +101,10 @@ class AuthController extends Controller
         /** @var User|null $user */
         $user = User::with('tenants')->where('email', $validated['email'])->first();
 
-        if ($user === null || ! Hash::check($validated['password'], $user->password)) {
+        // An unknown email still pays for one hash check, so the response time does not tell which emails exist.
+        $passwordMatches = Hash::check($validated['password'], $user?->password ?? self::timingDummyHash());
+
+        if ($user === null || ! $passwordMatches) {
             event(new Failed('sanctum', $user, ['email' => $validated['email']]));
 
             return $this->problemDetailsResponse(

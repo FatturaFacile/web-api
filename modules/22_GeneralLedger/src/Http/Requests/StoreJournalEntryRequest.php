@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class StoreJournalEntryRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     /**
      * Written only by the posting of the document itself: a manual entry must not take its place in the ledger.
      *
@@ -27,8 +30,8 @@ final class StoreJournalEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'fiscal_period_id' => ['required', 'uuid', 'exists:fiscal_periods,id'],
-            'batch_id' => ['nullable', 'uuid', 'exists:journal_batches,id'],
+            'fiscal_period_id' => ['required', 'uuid', $this->tenantExists('fiscal_periods')],
+            'batch_id' => ['nullable', 'uuid', $this->tenantExists('journal_batches')],
             'entry_number' => ['nullable', 'string', 'max:50'],
             'posting_date' => ['required', 'date'],
             'document_date' => ['nullable', 'date'],
@@ -39,12 +42,12 @@ final class StoreJournalEntryRequest extends FormRequest
             'source_document_id' => ['nullable', 'uuid'],
             'status' => ['nullable', 'string', 'in:draft,posted'],
             'lines' => ['required', 'array', 'min:2'],
-            'lines.*.account_id' => ['required', 'uuid', 'exists:chart_of_accounts,id'],
+            'lines.*.account_id' => ['required', 'uuid', $this->tenantExists('chart_of_accounts')],
             'lines.*.debit_amount' => ['required_without:lines.*.credit_amount', 'numeric', 'min:0'],
             'lines.*.credit_amount' => ['required_without:lines.*.debit_amount', 'numeric', 'min:0'],
             'lines.*.description' => ['nullable', 'string', 'max:255'],
-            'lines.*.cost_center_id' => ['nullable', 'uuid', 'exists:cost_centers,id'],
-            'lines.*.profit_center_id' => ['nullable', 'uuid', 'exists:profit_centers,id'],
+            'lines.*.cost_center_id' => ['nullable', 'uuid', $this->tenantExists('cost_centers')],
+            'lines.*.profit_center_id' => ['nullable', 'uuid', $this->tenantExists('profit_centers')],
             'lines.*.partner_type' => ['nullable', 'string', 'in:customer,supplier,employee'],
             'lines.*.partner_id' => ['nullable', 'uuid'],
         ];

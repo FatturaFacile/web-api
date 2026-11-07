@@ -92,8 +92,15 @@ class LookupTest extends TestCase
         $globalNr = collect($globalResponse->json())->firstWhere('code', 'NR');
         $this->assertSame('Numero', $globalNr['label']);
 
-        // Tenant query via header should return "Pezzi Custom"
-        $tenantResponse = $this->withHeader('X-Tenant-Id', $tenant->id)
+        // A guest naming the tenant still gets the global label
+        $guestResponse = $this->withHeader('X-Tenant-Id', $tenant->id)->getJson('/api/v1/lookups/unit_of_measure?locale=it');
+        $this->assertSame('Numero', collect($guestResponse->json())->firstWhere('code', 'NR')['label']);
+
+        // A signed-in member of the tenant gets "Pezzi Custom"
+        $member = User::create(['name' => 'Member', 'email' => Str::uuid().'@example.com', 'password' => 'secret123']);
+        $member->tenants()->attach($tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
+
+        $tenantResponse = $this->actingAs($member, 'sanctum')->withHeader('X-Tenant-Id', $tenant->id)
             ->getJson('/api/v1/lookups/unit_of_measure?locale=it');
         $tenantNr = collect($tenantResponse->json())->firstWhere('code', 'NR');
         $this->assertSame('Pezzi Custom', $tenantNr['label']);

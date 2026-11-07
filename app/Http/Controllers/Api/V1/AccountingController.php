@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Http\Responses\ApiResponse;
 use App\Models\ChartOfAccount;
 use App\Models\GeneralLedgerEntry;
@@ -16,7 +17,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class AccountingController extends Controller
 {
-    use ApiResponse;
+    use ApiResponse, TenantScopedRules;
 
     #[OA\Get(
         path: '/api/v1/accounting/chart-of-accounts',
@@ -103,7 +104,7 @@ class AccountingController extends Controller
             'date' => ['required', 'date'],
             'description' => ['required', 'string'],
             'lines' => ['required', 'array', 'min:2'],
-            'lines.*.account_id' => ['required', 'uuid'],
+            'lines.*.account_id' => ['required', 'uuid', $this->tenantExists('chart_of_accounts')],
             'lines.*.debit' => ['required', 'numeric', 'min:0'],
             'lines.*.credit' => ['required', 'numeric', 'min:0'],
             'lines.*.description' => ['nullable', 'string'],

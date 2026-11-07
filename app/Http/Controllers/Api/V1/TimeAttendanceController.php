@@ -244,8 +244,9 @@ class TimeAttendanceController extends Controller
         $currentUser = $request->user();
         $targetUserId = $request->input('user_id', $currentUser->id);
 
-        /** @var User $targetUser */
-        $targetUser = User::findOrFail($targetUserId);
+        $targetUser = User::query()->find($targetUserId);
+
+        abort_unless($targetUser instanceof User && $targetUser->belongsToTenant((string) $this->tenantContext->getTenantId()), Response::HTTP_NOT_FOUND);
 
         $year = (int) $request->input('year', now()->year);
         $month = (int) $request->input('month', now()->month);

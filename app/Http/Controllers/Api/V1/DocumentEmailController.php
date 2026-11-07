@@ -10,9 +10,11 @@ use App\Http\Requests\Documents\SendDocumentEmailRequest;
 use App\Http\Resources\CatalogResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\DocumentEmail;
+use App\Services\Documents\RecordAccess;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -49,10 +51,11 @@ class DocumentEmailController extends Controller
             new OA\Response(response: 404, description: 'Document not found or unsupported type', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function store(SendDocumentEmailRequest $request, QueueDocumentEmail $queueEmail, string $type, string $id): JsonResponse
+    public function store(SendDocumentEmailRequest $request, QueueDocumentEmail $queueEmail, RecordAccess $recordAccess, string $type, string $id): JsonResponse
     {
         $document = $this->resolve($type, $id);
-        $this->authorize('update', $document);
+        // Sending a document on behalf of the company needs the write role of its module.
+        $recordAccess->authorize($request->user(), $document, 'write', 'update');
 
         $email = $queueEmail->execute($document, $request->validated('to'), $request->validated('message'));
 
@@ -76,10 +79,10 @@ class DocumentEmailController extends Controller
             new OA\Response(response: 404, description: 'Document not found or unsupported type', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function index(string $type, string $id): JsonResponse
+    public function index(Request $request, RecordAccess $recordAccess, string $type, string $id): JsonResponse
     {
         $document = $this->resolve($type, $id);
-        $this->authorize('view', $document);
+        $recordAccess->authorize($request->user(), $document, 'read');
 
         $emails = DocumentEmail::where('emailable_type', $document->getMorphClass())
             ->where('emailable_id', $document->getKey())
