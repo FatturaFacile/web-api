@@ -10,6 +10,7 @@ use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
+use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
 use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
 use Modules\Inventory\Jobs\ExpireStaleReservationsJob;
@@ -67,6 +68,7 @@ $forEachTenant('procurement:expiring-contracts', static fn (Tenant $tenant): obj
 $forEachTenant('procurement:supplier-otif', static fn (Tenant $tenant): object => new EvaluateSupplierOtifScoresJob($tenant->id))->monthlyOn(1, '05:20');
 $forEachTenant('hr:expiring-certifications', static fn (Tenant $tenant): object => new ScanExpiringCertificationsJob($tenant->id))->dailyAt('05:30');
 $forEachTenant('hr:leave-accruals', static fn (Tenant $tenant): object => new ProcessMonthlyLeaveAccrualsJob($tenant->id, now()->year))->monthlyOn(1, '05:40');
+$forEachTenant('hr:purge-applications', static fn (Tenant $tenant): object => new PurgeExpiredApplicationsJob($tenant->id))->dailyAt('03:40');
 $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object => new AggregateMeteredUsageJob($tenant->id))->dailyAt('01:45');
 $forEachTenant('manufacturing:mrp', static fn (Tenant $tenant): object => new ProcessMrpRunJob($tenant->id, now()->toDateString(), now()->addDays(90)->toDateString()))->dailyAt('02:15');
 $forEachTenant('manufacturing:capacity', static fn (Tenant $tenant): object => new ProcessWorkCenterCapacityJob($tenant->id, now()->toDateString()))->dailyAt('02:30');
