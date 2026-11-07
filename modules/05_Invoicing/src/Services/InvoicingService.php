@@ -599,6 +599,7 @@ final class InvoicingService implements InvoicingServiceInterface
         }
 
         $this->fiscal->applyToCreditNote($creditNote, $originalInvoice);
+        $creditNote->total_paid = $creditNote->total_gross;
         $creditNote->save();
 
         $this->completeCreditNote($creditNote, $originalInvoice, $items, (string) ($data['created_by'] ?? 'system'));

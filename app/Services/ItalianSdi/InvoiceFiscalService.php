@@ -102,7 +102,9 @@ final class InvoiceFiscalService
     /**
      * A credit note takes back the share of the withholding and of the Enasarco of its invoice that matches the share of
      * the taxable amount it credits: the customer is credited only what it paid, and the withholding receivable and the
-     * Enasarco base go down by the same proportion. The fund is not supported on a credit note and stays refused.
+     * Enasarco base go down by the same proportion. The pension fund contribution follows the same share: the credit note
+     * carries the contribution and its VAT on the credited taxable amount, so its total, its DatiCassaPrevidenziale block
+     * and its ledger entry mirror the invoice.
      */
     public function applyToCreditNote(SalesInvoice $creditNote, ?SalesInvoice $original): void
     {
@@ -135,6 +137,40 @@ final class InvoiceFiscalService
             $creditNote->enasarco_base = $share($original->enasarco_base);
             $creditNote->enasarco_amount = $share($original->enasarco_amount);
         }
+
+        if ($original->fund_enabled && Decimal::isPositive((string) $original->fund_amount)) {
+            $this->applyFundShare($creditNote, $original, $share);
+        }
+    }
+
+    /**
+     * Takes the contribution of the invoice in the share the credit note credits, at the rate and VAT of the invoice, and
+     * adds it with its VAT to the totals of the credit note. A contribution already derived is taken out first, so running
+     * this twice leaves the same totals.
+     *
+     * @param  callable(mixed): string  $share
+     */
+    private function applyFundShare(SalesInvoice $creditNote, SalesInvoice $original, callable $share): void
+    {
+        $previousFund = $creditNote->fund_enabled ? (string) ($creditNote->fund_amount ?? '0') : '0';
+        $previousFundVat = $creditNote->fund_enabled ? (string) ($creditNote->fund_vat_amount ?? '0') : '0';
+        $rate = (string) ($original->fund_vat_rate ?? '0');
+        $amount = $share($original->fund_amount);
+        $vat = $this->percentOf($amount, $rate);
+
+        $creditNote->fund_enabled = true;
+        $creditNote->fund_type = $original->fund_type;
+        $creditNote->fund_percent = $original->fund_percent;
+        $creditNote->fund_vat_rate = $rate;
+        $creditNote->fund_subject_to_withholding = (bool) $original->fund_subject_to_withholding;
+        $creditNote->fund_amount = $amount;
+        $creditNote->fund_vat_amount = $vat;
+
+        $tax = Decimal::add(Decimal::sub((string) $creditNote->total_tax, $previousFundVat), $vat);
+        $gross = Decimal::add(Decimal::sub((string) $creditNote->total_gross, Decimal::add($previousFund, $previousFundVat)), Decimal::add($amount, $vat));
+
+        $creditNote->total_tax = Decimal::round2($tax);
+        $creditNote->total_gross = Decimal::round2($gross);
     }
 
     /**
@@ -285,11 +321,12 @@ final class InvoiceFiscalService
     }
 
     /**
-     * Withholding or Enasarco on a credit note stand only as the share of its invoice that applyToCreditNote() derives.
+     * Withholding, Enasarco or a pension fund contribution on a credit note stand only as the share of its invoice that
+     * applyToCreditNote() derives.
      */
     private function hasUnderivedAdjustment(SalesInvoice $creditNote): bool
     {
-        if (! $creditNote->withholding_tax_enabled && ! $creditNote->enasarco_enabled) {
+        if (! $creditNote->withholding_tax_enabled && ! $creditNote->enasarco_enabled && ! $creditNote->fund_enabled) {
             return false;
         }
 
@@ -298,7 +335,8 @@ final class InvoiceFiscalService
             : SalesInvoice::withoutGlobalScope(TenantScope::class)->where('tenant_id', $creditNote->tenant_id)->whereKey($creditNote->related_invoice_id)->first();
 
         return ($creditNote->withholding_tax_enabled && ($original === null || ! $original->withholding_tax_enabled))
-            || ($creditNote->enasarco_enabled && ($original === null || ! $original->enasarco_enabled));
+            || ($creditNote->enasarco_enabled && ($original === null || ! $original->enasarco_enabled))
+            || ($creditNote->fund_enabled && ($original === null || ! $original->fund_enabled));
     }
 
     private function applyStampDuty(SalesInvoice $invoice, string $vatFree, bool $isAutomatic): void
@@ -402,7 +440,7 @@ final class InvoiceFiscalService
         $errors = [];
 
         if ($invoice->isCreditNote()) {
-            return $invoice->fund_enabled || $this->hasUnderivedAdjustment($invoice)
+            return $this->hasUnderivedAdjustment($invoice)
                 ? [__('sdi.fiscal.credit_note_adjustments')]
                 : [];
         }

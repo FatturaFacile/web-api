@@ -19,6 +19,7 @@ use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Models\SalesInvoice;
+use Modules\SDI\Enums\TipoCassa;
 
 final class CreditNoteAccountingListener
 {
@@ -92,10 +93,12 @@ final class CreditNoteAccountingListener
         $exchangeRate = (float) ($creditNote?->exchange_rate ?: 1.0);
         $creditedGross = number_format($event->creditedAmount, 2, '.', '');
 
-        // 4. Split the credited amount by the real rate of its lines
-        $vatGroups = $this->creditedVatGroups($event, $creditNote, $creditedGross);
+        // 4. Split the credited amount by the real rate of its lines, once the pension fund share and its VAT are set apart
+        $fund = $this->fundShare($creditNote);
+        $linesGross = Decimal::round2(Decimal::sub($creditedGross, Decimal::add($fund['amount'], $fund['vat'])));
+        $vatGroups = $this->creditedVatGroups($event, $creditNote, $linesGross);
         $netCredited = '0';
-        $vatCredited = '0';
+        $vatCredited = $fund['vat'];
 
         foreach ($vatGroups as $group) {
             $netCredited = Decimal::add($netCredited, $group['net']);
@@ -136,6 +139,33 @@ final class CreditNoteAccountingListener
                 'vat_rate_percent' => $group['rate'],
                 'vat_treatment' => $isSplitPayment ? VatLedgerReader::TREATMENT_SPLIT_PAYMENT : null,
                 'description' => "VAT Reversal: Credit Note {$event->creditNoteNumber}",
+            ];
+        }
+
+        // The pension fund share leaves the account the invoice credited, and its VAT leaves the output VAT
+        if (Decimal::isPositive($fund['amount'])) {
+            $lines[] = [
+                'account_id' => $fund['account_id'],
+                'debit_amount' => (float) $fund['amount'],
+                'credit_amount' => 0.0,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+                'description' => "Pension fund contribution reversed: Credit Note {$event->creditNoteNumber}",
+            ];
+        }
+
+        if (Decimal::isPositive($fund['vat'])) {
+            $lines[] = [
+                'account_id' => $vatReversalAcc->id,
+                'debit_amount' => (float) $fund['vat'],
+                'credit_amount' => 0.0,
+                'currency' => $currency,
+                'exchange_rate' => $exchangeRate,
+                'vat_tax_amount' => (float) $fund['vat'],
+                'vat_base_amount' => (float) $fund['amount'],
+                'vat_rate_percent' => $fund['rate'],
+                'vat_treatment' => $isSplitPayment ? VatLedgerReader::TREATMENT_SPLIT_PAYMENT : null,
+                'description' => "Pension fund VAT reversal: Credit Note {$event->creditNoteNumber}",
             ];
         }
 
@@ -330,6 +360,31 @@ final class CreditNoteAccountingListener
         return [
             'withholding' => $creditNote !== null && $creditNote->withholding_tax_enabled ? Decimal::round2((string) ($creditNote->withholding_tax_amount ?? '0')) : '0',
             'enasarco' => $creditNote !== null && $creditNote->enasarco_enabled ? Decimal::round2((string) ($creditNote->enasarco_amount ?? '0')) : '0',
+        ];
+    }
+
+    /**
+     * The pension fund contribution the credit note takes back, with its VAT and the account the invoice credited it to:
+     * the INPS rivalsa is income, the other funds a payable.
+     *
+     * @return array{amount: string, vat: string, rate: string, account_id: ?string}
+     */
+    private function fundShare(?SalesInvoice $creditNote): array
+    {
+        if ($creditNote === null || ! $creditNote->fund_enabled || ! Decimal::isPositive((string) $creditNote->fund_amount)) {
+            return ['amount' => '0', 'vat' => '0', 'rate' => '0', 'account_id' => null];
+        }
+
+        $tenantId = (string) $creditNote->tenant_id;
+        $account = TipoCassa::tryFrom((string) $creditNote->fund_type)?->isRivalsaInps()
+            ? $this->accounts->pensionFundRecharge($tenantId)
+            : $this->accounts->pensionFundPayable($tenantId);
+
+        return [
+            'amount' => Decimal::round2((string) $creditNote->fund_amount),
+            'vat' => Decimal::round2((string) ($creditNote->fund_vat_amount ?? '0')),
+            'rate' => Decimal::round2((string) ($creditNote->fund_vat_rate ?? '0')),
+            'account_id' => (string) $account->id,
         ];
     }
 
