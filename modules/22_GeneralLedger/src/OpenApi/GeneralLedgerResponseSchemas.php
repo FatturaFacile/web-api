@@ -310,4 +310,52 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'vat_treatment', type: 'string', nullable: true),
     ]
 )]
+#[OA\Schema(
+    schema: 'GeneralLedgerEnasarcoPrincipalStatementRequest',
+    description: 'Quarter to compute and agent type of the agents',
+    required: ['year', 'quarter', 'agent_type'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'year', type: 'integer'),
+        new OA\Property(property: 'quarter', type: 'integer', maximum: 4, minimum: 1),
+        new OA\Property(property: 'agent_type', description: 'Agent type of the agents not listed in agent_types.', type: 'string', enum: ['single_mandate', 'multi_mandate']),
+        new OA\Property(property: 'agent_types', description: 'Agent type by agent contact id.', type: 'object', nullable: true, additionalProperties: new OA\AdditionalProperties(type: 'string', enum: ['single_mandate', 'multi_mandate'])),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerEnasarcoPrincipalStatementLine',
+    description: 'Line of an agent in the quarterly Enasarco statement of the tenant as a principal',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'year', type: 'integer'),
+        new OA\Property(property: 'quarter', type: 'integer'),
+        new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'agent_type', type: 'string', enum: ['single_mandate', 'multi_mandate']),
+        new OA\Property(property: 'documents', type: 'integer'),
+        new OA\Property(property: 'commissions', type: 'string', description: 'Taxable commissions of the quarter'),
+        new OA\Property(property: 'subject_before', type: 'string', description: 'Commissions of the year before the quarter counted against the ceiling'),
+        new OA\Property(property: 'subject_base', type: 'string', description: 'Commissions of the quarter below the annual ceiling'),
+        new OA\Property(property: 'annual_ceiling', type: 'string'),
+        new OA\Property(property: 'rate_percent', type: 'string'),
+        new OA\Property(property: 'agent_share_percent', type: 'string'),
+        new OA\Property(property: 'agent_withheld', type: 'string', description: 'Agent share withheld on the received invoices'),
+        new OA\Property(property: 'principal_amount', type: 'string', description: 'Principal share, posted to the ledger'),
+        new OA\Property(property: 'total_due', type: 'string'),
+        new OA\Property(property: 'journal_entry_id', type: 'string', format: 'uuid', nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerEnasarcoPrincipalStatementResponse',
+    description: 'Quarterly Enasarco statement of the tenant as a principal',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'data', type: 'object', properties: [
+            new OA\Property(property: 'lines', type: 'array', items: new OA\Items(ref: '#/components/schemas/GeneralLedgerEnasarcoPrincipalStatementLine')),
+            new OA\Property(property: 'total_agent_withheld', type: 'string'),
+            new OA\Property(property: 'total_principal_amount', type: 'string'),
+            new OA\Property(property: 'total_due', type: 'string'),
+        ]),
+    ]
+)]
 final class GeneralLedgerResponseSchemas {}

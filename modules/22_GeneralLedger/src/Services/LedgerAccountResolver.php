@@ -85,6 +85,14 @@ final class LedgerAccountResolver
         return $this->account($tenantId, '4095', 'Rivalsa INPS (INPS recharge income)', 'revenue', 'credit');
     }
 
+    /**
+     * The share of the Enasarco contribution the tenant pays as a principal on the commissions of its agents.
+     */
+    public function enasarcoPrincipalExpense(string $tenantId): ChartOfAccount
+    {
+        return $this->account($tenantId, '6475', 'Contributi Enasarco a carico mandante (Enasarco principal contributions)', 'expense', 'debit');
+    }
+
     public function enasarcoExpense(string $tenantId): ChartOfAccount
     {
         return $this->account($tenantId, '6470', 'Contributi Enasarco (Enasarco contributions)', 'expense', 'debit');
