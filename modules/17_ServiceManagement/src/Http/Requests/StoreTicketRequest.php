@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreTicketRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -28,6 +31,8 @@ final class StoreTicketRequest extends FormRequest
             'sla_policy_id' => ['nullable', 'uuid'],
             'assigned_to_id' => ['nullable', 'uuid'],
             'service_team_id' => ['nullable', 'uuid'],
+            'requester_user_id' => ['nullable', 'uuid', $this->tenantMember()],
+            'asset_id' => ['nullable', 'uuid', $this->tenantOwns('eam_fixed_assets')],
         ];
     }
 }

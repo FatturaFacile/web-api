@@ -27,6 +27,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'sla_policy_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'assigned_to_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'service_team_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'requester_user_id', description: 'Internal IT ticket: the colleague who asks for help', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'asset_id', description: 'Fixed asset concerned (device, workstation)', type: 'string', format: 'uuid', nullable: true),
     ]
 )]
 #[OA\Schema(

@@ -21,7 +21,9 @@ final readonly class CreateTicketDTO
         public string $channel = 'portal',
         public ?string $assignedToId = null,
         public ?string $serviceTeamId = null,
-        public array $metadata = []
+        public array $metadata = [],
+        public ?string $requesterUserId = null,
+        public ?string $assetId = null,
     ) {}
 
     public static function fromArray(array $data): self

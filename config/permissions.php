@@ -60,6 +60,29 @@ return [
         // Personal data of members, minors included: closed to ordinary members. The accountant writes fees and payments
         // only, which the module checks by capability. Instructors, guardians and members use the member area.
         'associations' => ['read' => ['owner', 'admin', 'secretary', 'accountant'], 'write' => ['owner', 'admin', 'secretary', 'accountant']],
+        // Workshop staff work the folders; invoices and vehicle sales are reserved by the policy to the invoicing roles.
+        'workshop' => [
+            'read' => [...$financeReaders, 'sales', 'technician', 'service_manager'],
+            'write' => [...$finance, 'sales', 'technician', 'service_manager'],
+        ],
+        // Site staff measure and book costs; billings are reserved by the policy to the invoicing roles.
+        'construction_trades' => [
+            'read' => [...$financeReaders, 'sales', 'project_manager', 'technician'],
+            'write' => [...$finance, 'sales', 'project_manager', 'technician'],
+        ],
+        // Children's data: closed to everybody else. The policy splits care (educators), records (management) and
+        // billing (management and accountant); the read-only accountant stays out.
+        'childcare' => [
+            'read' => ['owner', 'admin', 'childcare_manager', 'educator', 'accountant'],
+            'write' => ['owner', 'admin', 'childcare_manager', 'educator', 'accountant'],
+        ],
+        // Hours and amounts of every professional and client: partners and finance only.
+        'practice' => ['read' => $financeReaders, 'write' => $finance],
+        // Waiting and kitchen staff work orders; the room plan and voids are reserved by the policy to managers.
+        'hospitality' => [
+            'read' => [...$financeReaders, 'sales', 'member'],
+            'write' => ['owner', 'admin', 'sales', 'member'],
+        ],
     ],
 
     /*

@@ -26,6 +26,7 @@ class BillableActivity extends Model
         'fee_amount',
         'description',
         'is_billed',
+        'fee_note_id',
     ];
 
     protected function casts(): array

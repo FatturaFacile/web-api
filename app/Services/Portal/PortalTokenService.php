@@ -20,7 +20,7 @@ class PortalTokenService
      *
      * @var list<string>
      */
-    public const DEDICATED_TOKEN_TYPES = ['association_area'];
+    public const DEDICATED_TOKEN_TYPES = ['association_area', 'childcare_family'];
 
     public function __construct(private readonly TenantContext $tenantContext) {}
 

@@ -1,0 +1,157 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Childcare\Http\Controllers;
+
+use App\Exceptions\BusinessRuleException;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Modules\Childcare\Http\Requests\ChildcareBillingRequest;
+use Modules\Childcare\Http\Resources\ChildcareResource;
+use Modules\Childcare\Models\Child;
+use Modules\Childcare\Models\FeePlan;
+use Modules\Childcare\Models\MonthlyBill;
+use Modules\Childcare\Models\SubsidyRule;
+use Modules\Childcare\Services\ChildcareBillingService;
+use Modules\Childcare\Services\SubsidyCalculator;
+use OpenApi\Attributes as OA;
+
+/**
+ * Fee plans, cantonal subsidy rules (applied only once verified), monthly billing runs and the subsidy export.
+ */
+final class ChildcareBillingController extends Controller
+{
+    public function __construct(private readonly ChildcareBillingService $billing) {}
+
+    #[OA\Get(path: '/api/v1/childcare/fee-plans', operationId: 'listChildcareFeePlans', description: 'Return the fee plans.', summary: 'List fee plans', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
+        new OA\Response(response: 200, description: 'Fee plans', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+    ])]
+    public function feePlans(): AnonymousResourceCollection
+    {
+        $this->authorize('bill', Child::class);
+
+        return ChildcareResource::collection(FeePlan::query()->orderBy('name')->get());
+    }
+
+    #[OA\Post(path: '/api/v1/childcare/fee-plans', operationId: 'storeChildcareFeePlan', description: 'Create a fee plan: flat monthly or per attended day, plus a price per meal. Amounts and tax rate are entered by the kindergarten.', summary: 'Create fee plan', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareFeePlanRequest')), tags: ['Childcare'], responses: [
+        new OA\Response(response: 201, description: 'Fee plan created', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function storeFeePlan(ChildcareBillingRequest $request): JsonResponse
+    {
+        $this->authorize('bill', Child::class);
+
+        return (new ChildcareResource(FeePlan::query()->create($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    #[OA\Get(path: '/api/v1/childcare/subsidy-rules', operationId: 'listChildcareSubsidyRules', description: 'Return the cantonal subsidy rules and whether they are verified.', summary: 'List subsidy rules', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
+        new OA\Response(response: 200, description: 'Subsidy rules', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+    ])]
+    public function subsidyRules(): AnonymousResourceCollection
+    {
+        $this->authorize('bill', Child::class);
+
+        return ChildcareResource::collection(SubsidyRule::query()->orderBy('canton')->orderByDesc('valid_from')->get());
+    }
+
+    #[OA\Post(path: '/api/v1/childcare/subsidy-rules', operationId: 'storeChildcareSubsidyRule', description: 'Enter the parameters of a cantonal subsidy rule. It is not applied until verified against its official source.', summary: 'Enter subsidy rule', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareSubsidyRuleRequest')), tags: ['Childcare'], responses: [
+        new OA\Response(response: 201, description: 'Rule entered, unverified', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function storeSubsidyRule(ChildcareBillingRequest $request, SubsidyCalculator $calculator): JsonResponse
+    {
+        $this->authorize('manageRecords', Child::class);
+        $data = $request->validated();
+        $calculator->assertValidParameters((string) $data['method'], (array) $data['parameters']);
+
+        return (new ChildcareResource(SubsidyRule::query()->create($data)))->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    #[OA\Post(path: '/api/v1/childcare/subsidy-rules/{id}/verify', operationId: 'verifyChildcareSubsidyRule', description: 'Record that the rule was checked against its official source; from now on it is applied.', summary: 'Verify subsidy rule', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareVerifyRuleRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
+        new OA\Response(response: 200, description: 'Rule verified', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function verifySubsidyRule(ChildcareBillingRequest $request, string $id): ChildcareResource
+    {
+        $rule = SubsidyRule::query()->findOrFail($id);
+        $this->authorize('manageRecords', $rule);
+
+        if ($rule->isVerified()) {
+            throw new BusinessRuleException('The rule is already verified.');
+        }
+
+        $rule->update(['source_reference' => $request->validated('source_reference'), 'verified_at' => now(), 'verified_by' => $request->user()?->getKey()]);
+
+        return new ChildcareResource($rule);
+    }
+
+    #[OA\Post(path: '/api/v1/childcare/billing/runs', operationId: 'runChildcareBilling', description: 'Bill the fees of a month to every child, net of the subsidy, once per child; children that cannot be billed safely are listed with the reason.', summary: 'Run monthly billing', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareBillingRunRequest')), tags: ['Childcare'], responses: [
+        new OA\Response(response: 200, description: 'Run summary', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareDataResponse')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function run(ChildcareBillingRequest $request): JsonResponse
+    {
+        $this->authorize('bill', Child::class);
+
+        return response()->json(['data' => $this->billing->run((string) $request->validated('period'), (string) $request->validated('date'))]);
+    }
+
+    #[OA\Get(path: '/api/v1/childcare/billing/bills', operationId: 'listChildcareMonthlyBills', description: 'Return the monthly bills of a period.', summary: 'List monthly bills', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
+        new OA\Parameter(name: 'period', in: 'query', required: true, schema: new OA\Schema(type: 'string', example: '2026-11')),
+    ], responses: [
+        new OA\Response(response: 200, description: 'Bills', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function bills(ChildcareBillingRequest $request): AnonymousResourceCollection
+    {
+        $this->authorize('bill', Child::class);
+
+        return ChildcareResource::collection(MonthlyBill::query()->where('period', (string) $request->validated('period'))->get());
+    }
+
+    #[OA\Get(path: '/api/v1/childcare/billing/subsidies/export', operationId: 'exportChildcareSubsidies', description: 'Export the subsidies of a month as CSV, one line per child, for the cantonal office. Contains personal data: management only.', summary: 'Export subsidies', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
+        new OA\Parameter(name: 'period', in: 'query', required: true, schema: new OA\Schema(type: 'string', example: '2026-11')),
+        new OA\Parameter(name: 'canton', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'TI')),
+    ], responses: [
+        new OA\Response(response: 200, description: 'CSV', content: new OA\MediaType(mediaType: 'text/csv', schema: new OA\Schema(type: 'string'))),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function exportSubsidies(ChildcareBillingRequest $request): Response
+    {
+        $this->authorize('manageRecords', Child::class);
+        $rows = $this->billing->subsidyExport((string) $request->validated('period'), $request->validated('canton'));
+        $columns = ['reference_code', 'last_name', 'first_name', 'birth_date', 'canton', 'rule', 'source_reference', 'period', 'attended_days', 'gross_amount', 'subsidy_amount'];
+        $stream = fopen('php://temp', 'w+b');
+        fputcsv($stream, $columns, ';', '"', '');
+
+        foreach ($rows as $row) {
+            fputcsv($stream, array_map(static fn (string $column): string => (string) $row[$column], $columns), ';', '"', '');
+        }
+
+        rewind($stream);
+        $csv = (string) stream_get_contents($stream);
+        fclose($stream);
+
+        return response($csv, 200, ['Content-Type' => 'text/csv; charset=UTF-8', 'Content-Disposition' => 'attachment; filename="subsidies-'.$request->validated('period').'.csv"']);
+    }
+}

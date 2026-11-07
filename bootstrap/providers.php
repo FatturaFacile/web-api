@@ -12,7 +12,9 @@ use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
+use Modules\Childcare\Providers\ChildcareServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
+use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
@@ -23,12 +25,14 @@ use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
+use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
+use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
@@ -36,6 +40,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
+use Modules\Workshop\Providers\WorkshopServiceProvider;
 use Modules\WorkspaceSync\Providers\WorkspaceSyncServiceProvider;
 
 return [
@@ -76,4 +81,9 @@ return [
     AssistantServiceProvider::class,
     EDocumentNetworksServiceProvider::class,
     WorkspaceSyncServiceProvider::class,
+    WorkshopServiceProvider::class,
+    ConstructionTradesServiceProvider::class,
+    ChildcareServiceProvider::class,
+    PracticeManagementServiceProvider::class,
+    HospitalityServiceProvider::class,
 ];

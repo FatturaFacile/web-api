@@ -77,6 +77,11 @@
             "Modules\\Assistant\\": "modules/27_Assistant/src/",
             "Modules\\EDocumentNetworks\\": "modules/28_EDocumentNetworks/src/",
             "Modules\\WorkspaceSync\\": "modules/29_WorkspaceSync/src/",
+            "Modules\\Workshop\\": "modules/33_Workshop/src/",
+            "Modules\\ConstructionTrades\\": "modules/34_ConstructionTrades/src/",
+            "Modules\\Childcare\\": "modules/35_Childcare/src/",
+            "Modules\\PracticeManagement\\": "modules/36_PracticeManagement/src/",
+            "Modules\\Hospitality\\": "modules/37_Hospitality/src/",
             "Modules\\": "modules/"
         }
     },
