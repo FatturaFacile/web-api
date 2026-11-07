@@ -51,7 +51,7 @@ class TenantBackupService
      *
      * @var list<string>
      */
-    public const APPEND_ONLY_TABLES = ['time_audit_entries', 'payroll_run_events', 'customs_assessment_decisions', 'assoc_access_logs'];
+    public const APPEND_ONLY_TABLES = ['time_audit_entries', 'payroll_run_events', 'customs_assessment_decisions', 'assoc_access_logs', 'assoc_ballot_voters', 'assoc_ballot_votes', 'assoc_minutes', 'assoc_donation_receipts', 'assoc_lex398_entries'];
 
     public const EXCLUDED_TABLES = [
         'migrations', 'cache', 'cache_locks', 'jobs', 'job_batches', 'failed_jobs', 'sessions', 'password_reset_tokens',

@@ -14,6 +14,7 @@ use InvalidArgumentException;
 use Modules\Associations\Contracts\BoardDecisionGateway;
 use Modules\Associations\Contracts\FeePaymentGateway;
 use Modules\Associations\Gateways\LocalFeePaymentGateway;
+use Modules\Associations\Models;
 use Modules\Associations\Models\AccessArea;
 use Modules\Associations\Models\AccessDevice;
 use Modules\Associations\Models\AssociativeYear;
@@ -47,17 +48,31 @@ use Modules\Associations\Models\SocialRole;
 use Modules\Associations\Models\TicketType;
 use Modules\Associations\Policies\AssociationRecordPolicy;
 use Modules\Associations\Services\AssociationAccess;
-use Modules\Associations\Services\BoardDecisionsByStaff;
+use Modules\Associations\Services\MeetingBoardDecisionGateway;
 use Modules\Associations\Support\AssociationCapability;
 
 final class AssociationsServiceProvider extends ServiceProvider
 {
     /**
+     * Records of governance, books, volunteers, privacy, fundraising, statements and sports work, under the same policy.
+     */
+    private const array GovernanceModels = [
+        Models\Meeting::class, Models\MeetingAgendaItem::class, Models\MeetingAttachment::class, Models\MeetingParticipant::class,
+        Models\Ballot::class, Models\Minutes::class, Models\ProtocolEntry::class, Models\Volunteer::class, Models\VolunteerTraining::class,
+        Models\Shift::class, Models\ShiftAssignment::class, Models\Campaign::class, Models\Reimbursement::class, Models\ReimbursementAttachment::class,
+        Models\LegalParameter::class, Models\PrivacySubject::class, Models\ProcessingActivity::class, Models\DataSubjectRequest::class, Models\DataAsset::class,
+        Models\Donor::class, Models\Donation::class, Models\CampaignExpense::class, Models\ExpenseCategory::class, Models\FivePerMilleAllocation::class,
+        Models\FivePerMilleExpense::class, Models\Sponsor::class, Models\SponsorContract::class,
+        Models\StatementMapping::class, Models\GeneralInterestActivity::class, Models\MissionReport::class, Models\StatementFiling::class,
+        Models\SportCollaborator::class, Models\SportContract::class, Models\SportCompensation::class, Models\Section::class,
+    ];
+
+    /**
      * The contract of the governance module and the online payment driver.
      */
     public function register(): void
     {
-        $this->app->bindIf(BoardDecisionGateway::class, BoardDecisionsByStaff::class);
+        $this->app->bind(BoardDecisionGateway::class, MeetingBoardDecisionGateway::class);
 
         $this->app->bind(FeePaymentGateway::class, static function (): FeePaymentGateway {
             $driver = (string) config('associations.payment_driver');
@@ -84,6 +99,7 @@ final class AssociationsServiceProvider extends ServiceProvider
             FeeInstalment::class, FeePayment::class, FeePlan::class, ImportBatch::class, MedicalCertificate::class,
             Member::class, MemberDocument::class, Membership::class, MembershipType::class, NetworkLink::class,
             Receipt::class, RegistryType::class, ResourceBooking::class, SocialRole::class, TicketType::class,
+            ...self::GovernanceModels,
         ] as $model) {
             Gate::policy($model, AssociationRecordPolicy::class);
         }

@@ -24,7 +24,7 @@ final class OperationArguments
      * @param  list<string>  $query  names of the optional query parameters
      * @return array<string, mixed>
      */
-    public static function for(string $path, string $operationId, string $summary, string $audience, ?string $body, array $query, bool $multipart, bool $file): array
+    public static function for(string $path, string $operationId, string $summary, string $audience, ?string $body, array $query, bool $multipart, bool $file, ?string $response = null): array
     {
         return [
             'path' => $path,
@@ -35,7 +35,7 @@ final class OperationArguments
             'requestBody' => self::requestBody($body, $multipart),
             'tags' => ['Associations'],
             'parameters' => self::parameters($path, $query),
-            'responses' => self::responses($audience, $file),
+            'responses' => self::responses($audience, $file, $response),
         ];
     }
 
@@ -85,11 +85,16 @@ final class OperationArguments
     /**
      * @return list<OA\Response>
      */
-    private static function responses(string $audience, bool $file): array
+    private static function responses(string $audience, bool $file, ?string $response = null): array
     {
-        $success = $file
-            ? new OA\Response(response: 200, description: 'The file', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary')))
-            : new OA\Response(response: 200, description: 'Request completed', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse'));
+        $success = match (true) {
+            $file => new OA\Response(response: 200, description: 'The file', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            $response !== null => new OA\Response(response: 200, description: 'Request completed', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', ref: "#/components/schemas/{$response}"),
+                new OA\Property(property: 'meta', type: 'object', nullable: true, additionalProperties: true),
+            ], type: 'object')),
+            default => new OA\Response(response: 200, description: 'Request completed', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+        };
 
         $errors = [
             new OA\Response(ref: '#/components/responses/AssociationNotFound', response: 404),

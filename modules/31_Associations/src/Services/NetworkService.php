@@ -15,9 +15,14 @@ use Modules\Associations\Exceptions\AssociationException;
 use Modules\Associations\Models\AssociationSetting;
 use Modules\Associations\Models\Course;
 use Modules\Associations\Models\CourseEnrolment;
+use Modules\Associations\Models\DataSubjectRequest;
 use Modules\Associations\Models\Member;
 use Modules\Associations\Models\Membership;
+use Modules\Associations\Models\MissionReport;
 use Modules\Associations\Models\NetworkLink;
+use Modules\Associations\Models\ProcessingActivity;
+use Modules\Associations\Models\StatementFiling;
+use Modules\Associations\Support\Money;
 
 /**
  * The view of a parent body over its affiliates. Every company stays a tenant of its own: the parent never queries the
@@ -117,6 +122,51 @@ final class NetworkService
         }
 
         return ['affiliates' => $affiliates, 'totals' => $totals];
+    }
+
+    /**
+     * Aggregated statements and compliance flags of the affiliates that gave consent, computed inside the tenant of each
+     * affiliate. Amounts and yes/no flags only: no person, no account, no document leaves the affiliate.
+     *
+     * @return array{year: int, affiliates: list<array<string, mixed>>, totals: array{revenues: string, costs: string, result: string}}
+     */
+    public function statements(int $year): array
+    {
+        $affiliates = [];
+        $totals = ['revenues' => '0.00', 'costs' => '0.00', 'result' => '0.00'];
+
+        foreach ($this->consentingAffiliates() as $tenant) {
+            $figures = $this->tenantContext->runWithTenant($tenant, fn (): array => $this->statementOfCurrentTenant($year));
+            $affiliates[] = ['tenant_id' => $tenant->id, 'name' => $tenant->name, ...$figures];
+
+            foreach (array_keys($totals) as $key) {
+                $totals[$key] = Money::add($totals[$key], $figures['statement'][$key]);
+            }
+        }
+
+        return ['year' => $year, 'affiliates' => $affiliates, 'totals' => $totals];
+    }
+
+    /**
+     * @return array{statement: array{revenues: string, costs: string, result: string}, compliance: array<string, mixed>}
+     */
+    private function statementOfCurrentTenant(int $year): array
+    {
+        $report = app(ThirdSectorStatementService::class)->managementReport($year);
+        $lex398 = app(Lex398Service::class)->monitor($year);
+
+        return [
+            'statement' => ['revenues' => $report['totals']['revenues'], 'costs' => $report['totals']['costs'], 'result' => $report['totals']['result']],
+            'compliance' => [
+                'unmapped_accounts' => count($report['unmapped']),
+                'previous_year_statements_filed' => StatementFiling::query()->where('year', $year - 1)->where('status', 'filed')->exists(),
+                'previous_year_mission_report' => (MissionReport::query()->where('year', $year - 1)->first()?->answers ?? []) !== [],
+                'processing_register_kept' => ProcessingActivity::query()->where('status', ProcessingActivity::Final)->exists(),
+                'overdue_privacy_requests' => DataSubjectRequest::query()->whereIn('status', DataSubjectRequest::OpenStatuses)->whereRaw('coalesce(extended_due_on, due_on) < ?', [now()->toDateString()])->count(),
+                'lex398_enabled' => $lex398['enabled'],
+                'lex398_status' => $lex398['enabled'] ? $lex398['status'] : null,
+            ],
+        ];
     }
 
     /**

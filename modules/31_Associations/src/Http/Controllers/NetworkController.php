@@ -70,4 +70,12 @@ final class NetworkController extends AssociationController
 
         return response()->json(['data' => $this->network->figures()]);
     }
+
+    #[AssociationGet('/api/v1/associations/network/statements/{year}', 'showAssociationNetworkStatements', 'As a parent body, read the aggregated statements and the compliance flags of the affiliates that gave consent; never personal data', response: 'AssociationNetworkStatements')]
+    public function statements(string $year): JsonResponse
+    {
+        $this->allow(AssociationCapability::Network);
+
+        return response()->json(['data' => $this->network->statements((int) $year)]);
+    }
 }

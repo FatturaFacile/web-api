@@ -143,7 +143,10 @@ test('the accountant sees what fees and receipts need, not the notes and documen
 });
 
 test('the secretary is a role the platform can assign', function (): void {
-    expect((new DecideTenantAccessRequest)->rules()['role'])->toContain('in:owner,admin,accountant,secretary,technician,member')
+    $assignable = collect((new DecideTenantAccessRequest)->rules()['role'])
+        ->first(fn (mixed $rule): bool => is_string($rule) && str_starts_with($rule, 'in:'));
+
+    expect(explode(',', substr((string) $assignable, 3)))->toContain('secretary')
         ->and(config('permissions.modules.associations.write'))->toContain('secretary');
 });
 

@@ -16,8 +16,8 @@ final class AssociationGet extends OA\Get
     /**
      * @param  list<string>  $query
      */
-    public function __construct(string $path, string $id, string $summary, string $audience = OperationArguments::Staff, array $query = [], bool $file = false)
+    public function __construct(string $path, string $id, string $summary, string $audience = OperationArguments::Staff, array $query = [], bool $file = false, ?string $response = null)
     {
-        parent::__construct(...OperationArguments::for($path, $id, $summary, $audience, null, $query, false, $file));
+        parent::__construct(...OperationArguments::for($path, $id, $summary, $audience, null, $query, false, $file, $response));
     }
 }
