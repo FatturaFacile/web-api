@@ -42,6 +42,7 @@ use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesQuote;
 use Modules\Invoicing\Policies\CustomerCreditProfilePolicy;
+use Modules\Invoicing\Policies\SalesCommissionPolicy;
 use Modules\Invoicing\Policies\SalesDeliveryNotePolicy;
 use Modules\Invoicing\Policies\SalesInvoicePolicy;
 use Modules\Invoicing\Policies\SalesOrderPolicy;
@@ -76,10 +77,12 @@ final class InvoicingServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerEventConsumers();
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/commissions.php');
     }
 
     private function registerPolicies(): void
     {
+        Gate::define('manage-sales-commissions', [SalesCommissionPolicy::class, 'manage']);
         Gate::policy(SalesQuote::class, SalesQuotePolicy::class);
         Gate::policy(SalesOrder::class, SalesOrderPolicy::class);
         Gate::policy(SalesDeliveryNote::class, SalesDeliveryNotePolicy::class);
