@@ -214,4 +214,23 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'can_answer', type: 'boolean'),
     new OA\Property(property: 'expires_at', type: 'string', format: 'date-time', nullable: true),
 ])]
+#[OA\Schema(schema: 'HelpdeskDurationStats', description: 'Count, mean, median and 90th percentile, in minutes', type: 'object', properties: [
+    new OA\Property(property: 'count', type: 'integer'),
+    new OA\Property(property: 'mean', type: 'number', nullable: true),
+    new OA\Property(property: 'p50', type: 'number', nullable: true),
+    new OA\Property(property: 'p90', type: 'number', nullable: true),
+])]
+#[OA\Schema(schema: 'HelpdeskReport', description: 'Helpdesk figures of a tenant for a period', type: 'object', properties: [
+    new OA\Property(property: 'period', properties: [new OA\Property(property: 'from', type: 'string', format: 'date'), new OA\Property(property: 'to', type: 'string', format: 'date')], type: 'object'),
+    new OA\Property(property: 'sla', properties: [
+        new OA\Property(property: 'first_response', properties: [new OA\Property(property: 'tickets', type: 'integer'), new OA\Property(property: 'met', type: 'integer'), new OA\Property(property: 'breached', type: 'integer'), new OA\Property(property: 'compliance_percent', type: 'number', nullable: true)], type: 'object'),
+        new OA\Property(property: 'resolution', properties: [new OA\Property(property: 'tickets', type: 'integer'), new OA\Property(property: 'met', type: 'integer'), new OA\Property(property: 'breached', type: 'integer'), new OA\Property(property: 'compliance_percent', type: 'number', nullable: true)], type: 'object'),
+    ], type: 'object'),
+    new OA\Property(property: 'first_response_minutes', ref: '#/components/schemas/HelpdeskDurationStats'),
+    new OA\Property(property: 'resolution_minutes', ref: '#/components/schemas/HelpdeskDurationStats'),
+    new OA\Property(property: 'backlog', properties: [new OA\Property(property: 'by_status', type: 'object'), new OA\Property(property: 'by_age', type: 'object', example: ['under_1_day' => 3, '1_to_3_days' => 1, '3_to_7_days' => 0, '7_to_30_days' => 2, 'over_30_days' => 0]), new OA\Property(property: 'total', type: 'integer')], type: 'object'),
+    new OA\Property(property: 'volume', properties: [new OA\Property(property: 'by_channel', type: 'object'), new OA\Property(property: 'by_category', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'category_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'name', type: 'string', nullable: true), new OA\Property(property: 'tickets', type: 'integer')], type: 'object')), new OA\Property(property: 'total', type: 'integer')], type: 'object'),
+    new OA\Property(property: 'agent_workload', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'technician_id', type: 'string', format: 'uuid'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'open_tickets', type: 'integer'), new OA\Property(property: 'resolved_in_period', type: 'integer'), new OA\Property(property: 'mean_resolution_minutes', type: 'number', nullable: true)], type: 'object')),
+    new OA\Property(property: 'csat_by_team', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'name', type: 'string', nullable: true), new OA\Property(property: 'responses', type: 'integer'), new OA\Property(property: 'mean_score', type: 'number', nullable: true), new OA\Property(property: 'satisfied_percent', type: 'number', nullable: true)], type: 'object')),
+])]
 final class HelpdeskResponseSchemas {}

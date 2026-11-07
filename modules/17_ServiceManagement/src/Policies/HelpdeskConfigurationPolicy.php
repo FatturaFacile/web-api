@@ -39,6 +39,14 @@ final class HelpdeskConfigurationPolicy
         return $this->isOwnRecord($record) && $this->hasRoleOrPermission($user, self::ManagerRoles, ['service.manage']);
     }
 
+    /**
+     * Helpdesk reports show the workload of each agent: service managers only.
+     */
+    public function viewReports(User $user): bool
+    {
+        return $this->hasRoleOrPermission($user, self::ManagerRoles, ['service.manage', 'service.reports']);
+    }
+
     public function delete(User $user, Model $record): bool
     {
         return $this->update($user, $record);

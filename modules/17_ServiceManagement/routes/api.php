@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
+use Modules\ServiceManagement\Http\Controllers\HelpdeskReportController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
 use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
@@ -97,6 +98,9 @@ Route::prefix('api/v1/esm')
         Route::post('/helpdesk/views', [AgentToolsController::class, 'storeView'])->name('api.v1.esm.helpdesk.views.store');
         Route::patch('/helpdesk/views/{id}', [AgentToolsController::class, 'updateView'])->name('api.v1.esm.helpdesk.views.update');
         Route::delete('/helpdesk/views/{id}', [AgentToolsController::class, 'destroyView'])->name('api.v1.esm.helpdesk.views.destroy');
+
+        // Helpdesk: reports
+        Route::get('/helpdesk/reports', [HelpdeskReportController::class, 'show'])->name('api.v1.esm.helpdesk.reports');
 
         // Helpdesk: knowledge base
         Route::get('/kb/categories', [KnowledgeBaseController::class, 'categories'])->name('api.v1.esm.kb.categories.index');
