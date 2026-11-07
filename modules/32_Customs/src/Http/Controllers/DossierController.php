@@ -9,6 +9,8 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Gate;
 use Modules\Customs\Http\Requests\InvoiceDossierRequest;
 use Modules\Customs\Http\Requests\MonthlySummaryRequest;
 use Modules\Customs\Http\Requests\SaveChargeRequest;
@@ -72,7 +74,7 @@ final class DossierController extends CustomsController
     /**
      * Monthly summary of a customer.
      */
-    #[OA\Get(path: '/api/v1/customs/dossiers/monthly-summary', operationId: 'customsDossierMonthlySummary', description: 'Return the dossiers of a customer opened in a month, with revenue, costs and result.', summary: 'Dossier monthly summary', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [
+    #[OA\Get(path: '/api/v1/customs/dossiers/monthly-summary', operationId: 'customsDossierMonthlySummary', description: 'Return the dossiers of a customer opened in a month, with revenue, costs and result. `direct_costs` and `result` are returned only to finance and customs roles (or the customs.profitability permission).', summary: 'Dossier monthly summary', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [
         new OA\Parameter(name: 'contact_id', description: 'The customer', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         new OA\Parameter(name: 'year', description: 'The year', in: 'query', required: true, schema: new OA\Schema(type: 'integer')),
         new OA\Parameter(name: 'month', description: 'The month', in: 'query', required: true, schema: new OA\Schema(type: 'integer', maximum: 12, minimum: 1)),
@@ -87,8 +89,13 @@ final class DossierController extends CustomsController
         $this->authorize('viewAny', CustomsDossier::class);
 
         $data = $request->validated();
+        $summary = $this->dossiers->monthlySummary(Contact::query()->findOrFail($data['contact_id']), (int) $data['year'], (int) $data['month']);
 
-        return response()->json(['data' => $this->dossiers->monthlySummary(Contact::query()->findOrFail($data['contact_id']), (int) $data['year'], (int) $data['month'])]);
+        if (Gate::denies('viewProfitability', CustomsDossier::class)) {
+            $summary['dossiers'] = array_map(static fn (array $row): array => Arr::except($row, ['direct_costs', 'result']), $summary['dossiers']);
+        }
+
+        return response()->json(['data' => $summary]);
     }
 
     /**
@@ -167,7 +174,7 @@ final class DossierController extends CustomsController
     /**
      * Dossier profitability.
      */
-    #[OA\Get(path: '/api/v1/customs/dossiers/{id}/profitability', operationId: 'customsDossierProfitability', description: 'Return revenue, direct and indirect costs, contribution margin and result of a dossier.', summary: 'Dossier profitability', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [new OA\Parameter(ref: '#/components/parameters/CustomsRecordId')], responses: [
+    #[OA\Get(path: '/api/v1/customs/dossiers/{id}/profitability', operationId: 'customsDossierProfitability', description: 'Return revenue, direct and indirect costs, contribution margin and result of a dossier. Reserved to the owner, admin, accountant and customs roles (or the customs.profitability permission): sales and warehouse staff get 403.', summary: 'Dossier profitability', security: [['bearerAuth' => []]], tags: ['Customs'], parameters: [new OA\Parameter(ref: '#/components/parameters/CustomsRecordId')], responses: [
         new OA\Response(response: 200, description: 'Profitability', content: new OA\JsonContent(ref: '#/components/schemas/CustomsProfitabilityResponse')),
         new OA\Response(ref: '#/components/responses/CustomsUnauthenticated', response: 401),
         new OA\Response(ref: '#/components/responses/CustomsForbidden', response: 403),
@@ -177,6 +184,7 @@ final class DossierController extends CustomsController
     {
         $dossier = $this->find($id);
         $this->authorize('view', $dossier);
+        $this->authorize('viewProfitability', $dossier);
 
         return response()->json(['data' => $this->dossiers->profitability($dossier)]);
     }

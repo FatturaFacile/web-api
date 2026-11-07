@@ -21,6 +21,12 @@ class CustomsPolicy
     /** @var list<string> */
     private const array FinancePermissions = ['*', 'gl.*', 'customs.ledger'];
 
+    /** @var list<string> */
+    private const array ProfitabilityRoles = ['owner', 'admin', 'accountant', 'customs'];
+
+    /** @var list<string> */
+    private const array ProfitabilityPermissions = ['*', 'gl.*', 'customs.ledger', 'customs.profitability'];
+
     public function __construct(private readonly TenantContext $tenantContext) {}
 
     public function viewAny(User $user): bool
@@ -59,6 +65,26 @@ class CustomsPolicy
     public function reconcile(User $user): bool
     {
         return $this->isFinance($user);
+    }
+
+    /**
+     * Costs, contribution margin and result of a dossier are for finance and the customs desk, not for the sales and
+     * warehouse staff who may read the module. The `customs.profitability` permission opens them to a single user.
+     */
+    public function viewProfitability(User $user, ?Model $record = null): bool
+    {
+        if ($record !== null && ! $this->isOwn($record)) {
+            return false;
+        }
+
+        $pivot = $this->pivotOf($user);
+
+        if ($pivot === null) {
+            return false;
+        }
+
+        return in_array($pivot->getAttribute('role'), self::ProfitabilityRoles, true)
+            || array_intersect(self::ProfitabilityPermissions, $this->decodePermissions($pivot->getAttribute('permissions'))) !== [];
     }
 
     private function isMember(User $user): bool

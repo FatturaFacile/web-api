@@ -153,6 +153,7 @@ final class PayrollExtrasController extends PayrollController
         new OA\Response(response: 200, description: 'PDF document', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
         new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
         new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
+        new OA\Response(response: 503, description: 'The company is being restored from a backup; retry later', content: new OA\JsonContent(ref: '#/components/schemas/ApiProblemDetailsResponse')),
     ])]
     public function openPayslipLink(OpenPayslipLinkRequest $request, string $token): HttpResponse
     {

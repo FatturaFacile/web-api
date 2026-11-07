@@ -162,6 +162,37 @@ test('the link opens with the date of birth, locks after wrong answers and expir
     $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
 });
 
+test('sending the payslips again revokes the earlier links and only the newest one opens', function (): void {
+    $run = payrollClosedRun($this->tenant, $this->manager, 2026, 1);
+    extrasApi()->postJson("/api/v1/payroll/runs/{$run->id}/deliver-payslips")->assertOk();
+    extrasApi()->postJson("/api/v1/payroll/runs/{$run->id}/deliver-payslips")->assertOk();
+
+    [$first, $second] = Mail::queued(PayslipAvailableMail::class)->map(static fn (PayslipAvailableMail $mail): string => Str::afterLast($mail->link, '/'))->values()->all();
+    $deliveries = PayslipDelivery::query()->withoutGlobalScopes()->orderBy('created_at')->get();
+    app(TenantContext::class)->clear();
+
+    expect($deliveries)->toHaveCount(2)
+        ->and($deliveries->whereNotNull('revoked_at'))->toHaveCount(1)
+        ->and($deliveries->firstWhere('token_hash', hash('sha256', $first))->revoked_at)->not->toBeNull()
+        ->and($deliveries->firstWhere('token_hash', hash('sha256', $second))->revoked_at)->toBeNull();
+
+    $this->postJson("/api/v1/portal/payslips/{$first}", ['birth_date' => '1986-05-10'])->assertNotFound();
+    $this->postJson("/api/v1/portal/payslips/{$second}", ['birth_date' => '1986-05-10'])->assertOk();
+});
+
+test('during a restore the payslip link answers 503 and records nothing', function (): void {
+    $run = payrollClosedRun($this->tenant, $this->manager, 2026, 1);
+    extrasApi()->postJson("/api/v1/payroll/runs/{$run->id}/deliver-payslips")->assertOk();
+    $token = Str::afterLast(Mail::queued(PayslipAvailableMail::class)->first()->link, '/');
+    $this->tenant->forceFill(['is_maintenance' => true])->save();
+    app(TenantContext::class)->clear();
+
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertStatus(503)->assertHeader('Retry-After', '60');
+
+    $delivery = PayslipDelivery::query()->withoutGlobalScopes()->sole();
+    expect($delivery->failed_attempts)->toBe(0)->and($delivery->opened_at)->toBeNull();
+});
+
 test('attempts that other requests used up after this one read the link are counted in the same UPDATE', function (): void {
     $run = payrollClosedRun($this->tenant, $this->manager, 2026, 1);
     extrasApi()->postJson("/api/v1/payroll/runs/{$run->id}/deliver-payslips")->assertOk();
