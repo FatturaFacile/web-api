@@ -19,7 +19,8 @@ class SyncPosSaleToRt
     ) {}
 
     /**
-     * Transmit a completed sale to the fiscal printer once and store the fiscal identifiers.
+     * Transmit a completed sale to the fiscal printer once and store the fiscal identifiers. With a simulated printer
+     * the receipt is `simulated` and has no transmission time: nothing reached the Agenzia delle Entrate.
      */
     public function execute(PosSale $sale): RtFiscalReceipt
     {
@@ -36,14 +37,15 @@ class SyncPosSaleToRt
 
             $result = $this->gateway->transmit($sale);
             $this->commercialDocuments->fromPosSale($sale);
+            $simulated = $this->gateway->isSimulated();
 
             return RtFiscalReceipt::create([
                 'pos_sale_id' => $sale->id,
                 'z_report_number' => $result['z_report_number'],
                 'fiscal_document_number' => $result['fiscal_document_number'],
                 'xml_lot_id' => $result['xml_lot_id'],
-                'rt_status' => 'transmitted',
-                'transmitted_at' => now(),
+                'rt_status' => $simulated ? RtFiscalReceipt::StatusSimulated : RtFiscalReceipt::StatusTransmitted,
+                'transmitted_at' => $simulated ? null : now(),
             ]);
         });
     }
