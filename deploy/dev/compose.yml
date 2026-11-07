@@ -63,6 +63,8 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: ffdev_postgres
+    # About 3600 relations: migrate:fresh (demo:reset) and tenant backups need more lock slots than the default 64.
+    command: ["postgres", "-c", "max_locks_per_transaction=256"]
     restart: always
     environment:
       POSTGRES_DB: ${DB_DATABASE:?}

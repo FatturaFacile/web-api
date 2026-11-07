@@ -28,6 +28,7 @@ services:
             - mailpit
     pgsql:
         image: 'postgres:16-alpine'
+        command: ["postgres", "-c", "max_locks_per_transaction=256"]
         ports:
             - '${FORWARD_DB_PORT:-5432}:5432'
         environment:
