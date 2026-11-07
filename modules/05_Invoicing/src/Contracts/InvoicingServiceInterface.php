@@ -41,5 +41,5 @@ interface InvoicingServiceInterface
      */
     public function issueCreditNote(SalesInvoice $originalInvoice, array $data, array $items): SalesInvoice;
 
-    public function applyCreditNote(SalesInvoice $creditNote, SalesInvoice $targetInvoice, float $amount, string $userId): InvoiceCreditApplication;
+    public function applyCreditNote(SalesInvoice $creditNote, SalesInvoice $targetInvoice, string|float $amount, string $userId): InvoiceCreditApplication;
 }

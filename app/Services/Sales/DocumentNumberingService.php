@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Sales;
 
 use App\Models\DocumentSequence;
+use App\Models\Tenant;
+use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -34,22 +36,27 @@ class DocumentNumberingService
         'expense' => 'EXP-',
     ];
 
-    public function __construct(private readonly TenantContext $tenantContext) {}
+    public function __construct(
+        private readonly TenantContext $tenantContext,
+        private readonly ?TenantClock $clock = null
+    ) {}
 
     /**
      * Atomically reserve the next gapless number for the document type and fiscal year.
      * Prevents race conditions and duplicate key exceptions using atomic upsert and row locking.
+     * Without a fiscal year, the year is the current one on the wall clock of the company, not in UTC.
      *
      * @return array{number: string, sequential_number: int, fiscal_year: int}
      */
     public function next(string $documentType, ?int $fiscalYear = null, ?string $tenantId = null): array
     {
-        $fiscalYear ??= (int) now()->format('Y');
         $tenantId ??= $this->tenantContext->getTenantId();
 
         if (empty($tenantId)) {
             throw new InvalidArgumentException('Active tenant context is required to generate sequential document numbers.');
         }
+
+        $fiscalYear ??= (int) ($this->clock ?? app(TenantClock::class))->now(Tenant::query()->find($tenantId))->format('Y');
 
         return DB::transaction(function () use ($documentType, $fiscalYear, $tenantId): array {
             // Atomically ensure the sequence record exists without crashing on concurrent calls

@@ -24,7 +24,6 @@ final class CreateInvoiceRequest extends FormRequest
     {
         return [
             'contact_id' => ['required', 'uuid'],
-            'invoice_number' => ['nullable', 'string', 'max:50'],
             'invoice_type' => ['nullable', 'string', 'in:standard,credit_note,proforma'],
             'date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],

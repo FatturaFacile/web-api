@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Modules\Invoicing\Actions\CreateInvoiceFromOrderAction;
 use Modules\Invoicing\Actions\PostInvoiceAction;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
+use Modules\Invoicing\Http\Requests\CreateInvoiceFromSourceRequest;
 use Modules\Invoicing\Http\Requests\CreateInvoiceRequest;
 use Modules\Invoicing\Http\Resources\SalesInvoiceResource;
 use Modules\Invoicing\Models\SalesDeliveryNote;
@@ -115,19 +116,21 @@ final class InvoiceController extends Controller
         parameters: [
             new OA\Parameter(name: 'orderId', in: 'path', required: true, description: 'Identifier of the order', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/InvoicingCreateInvoiceFromSourceRequest')),
         responses: [
             new OA\Response(response: 201, description: 'From order created', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingSalesInvoiceResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Order cancelled, already invoiced or with nothing left to invoice', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function fromOrder(
         string $orderId,
         CreateInvoiceFromOrderAction $action,
-        Request $request
+        CreateInvoiceFromSourceRequest $request
     ): JsonResponse {
         $order = SalesOrder::findOrFail($orderId);
-        $invoice = $action->execute($order, $request->except(['items']));
+        $invoice = $action->execute($order, [...$request->validated(), 'created_by' => $request->user()?->id]);
 
         return response()->json(new SalesInvoiceResource($invoice), 201);
     }
@@ -145,19 +148,21 @@ final class InvoiceController extends Controller
         parameters: [
             new OA\Parameter(name: 'deliveryNoteId', in: 'path', required: true, description: 'Identifier of the delivery note', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/InvoicingCreateInvoiceFromSourceRequest')),
         responses: [
             new OA\Response(response: 201, description: 'From delivery created', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingSalesInvoiceResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Delivery note already invoiced or without lines', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function fromDeliveryNote(
         string $deliveryNoteId,
         InvoicingServiceInterface $service,
-        Request $request
+        CreateInvoiceFromSourceRequest $request
     ): JsonResponse {
         $deliveryNote = SalesDeliveryNote::findOrFail($deliveryNoteId);
-        $invoice = $service->createInvoiceFromDeliveryNote($deliveryNote, $request->except(['items']));
+        $invoice = $service->createInvoiceFromDeliveryNote($deliveryNote, [...$request->validated(), 'created_by' => $request->user()?->id]);
 
         return response()->json(new SalesInvoiceResource($invoice), 201);
     }

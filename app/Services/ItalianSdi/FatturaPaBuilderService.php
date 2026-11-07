@@ -7,6 +7,7 @@ namespace App\Services\ItalianSdi;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Tenant;
+use App\Services\Sales\VatSummaryCalculator;
 use Carbon\Carbon;
 use DOMDocument;
 use DOMElement;
@@ -22,6 +23,8 @@ use Modules\SDI\Services\SdiPreflight;
 
 class FatturaPaBuilderService
 {
+    public function __construct(private readonly VatSummaryCalculator $vat = new VatSummaryCalculator) {}
+
     /**
      * Validate an Italian Partita IVA (11 digits with Luhn algorithm variant).
      */
@@ -640,7 +643,7 @@ class FatturaPaBuilderService
     private function vatSummary(DOMDocument $dom, Invoice $invoice, array $aggregate): DOMElement
     {
         $rate = number_format($aggregate['rate'], 2, '.', '');
-        $tax = Decimal::round2(Decimal::div(Decimal::mul($aggregate['taxable'], $rate), '100'));
+        $tax = $this->vat->taxOn($aggregate['taxable'], $rate);
         $reference = config('fiscal_it.legal_references')[$aggregate['nature'] ?? ''] ?? null;
 
         $datiRiepilogo = $dom->createElement('DatiRiepilogo');

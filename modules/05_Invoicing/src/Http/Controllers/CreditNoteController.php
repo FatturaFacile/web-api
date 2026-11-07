@@ -6,9 +6,9 @@ namespace Modules\Invoicing\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Modules\Invoicing\Actions\IssueCreditNoteAction;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
+use Modules\Invoicing\Http\Requests\ApplyCreditNoteRequest;
 use Modules\Invoicing\Http\Requests\IssueCreditNoteRequest;
 use Modules\Invoicing\Http\Resources\SalesInvoiceResource;
 use Modules\Invoicing\Models\SalesInvoice;
@@ -64,25 +64,24 @@ final class CreditNoteController extends Controller
         parameters: [
             new OA\Parameter(name: 'creditNoteId', in: 'path', required: true, description: 'Identifier of the credit note', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'target_invoice_id', type: 'string'), new OA\Property(property: 'amount', type: 'number')])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['target_invoice_id', 'amount'], properties: [new OA\Property(property: 'target_invoice_id', type: 'string', format: 'uuid'), new OA\Property(property: 'amount', type: 'number', minimum: 0.01, description: 'Amount to apply, at most two decimals; it cannot exceed what is left on the credit note nor the outstanding amount of the invoice.')])),
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'application_id', type: 'string', format: 'uuid'), new OA\Property(property: 'applied_amount', type: 'string', nullable: true, description: 'Decimal value serialized as a string.'), new OA\Property(property: 'target_invoice_status')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function apply(
         string $creditNoteId,
-        Request $request,
+        ApplyCreditNoteRequest $request,
         InvoicingServiceInterface $service
     ): JsonResponse {
         $creditNote = SalesInvoice::findOrFail($creditNoteId);
-        $targetId = (string) $request->input('target_invoice_id');
-        $targetInvoice = SalesInvoice::findOrFail($targetId);
-        $amount = (float) $request->input('amount');
+        $targetInvoice = SalesInvoice::findOrFail((string) $request->validated('target_invoice_id'));
         $userId = (string) ($request->user()?->id ?? 'system');
 
-        $application = $service->applyCreditNote($creditNote, $targetInvoice, $amount, $userId);
+        $application = $service->applyCreditNote($creditNote, $targetInvoice, $request->amount(), $userId);
 
         return response()->json([
             'message' => 'Credit note applied successfully',

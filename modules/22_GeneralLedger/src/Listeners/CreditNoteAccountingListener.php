@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Listeners;
 
+use App\Services\Sales\VatSummaryCalculator;
 use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\MultiTenant\Scopes\TenantScope;
@@ -27,7 +28,8 @@ final class CreditNoteAccountingListener
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly FiscalPeriodResolver $periods,
         private readonly LedgerAccountResolver $accounts,
-        private readonly ?AuditLedgerInterface $auditLedger = null
+        private readonly ?AuditLedgerInterface $auditLedger = null,
+        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator
     ) {}
 
     public function handle(CreditNoteIssuedEvent $event): void
@@ -312,13 +314,13 @@ final class CreditNoteAccountingListener
             $unitPrice = number_format((float) ($line['unit_price'] ?? 0.0), 4, '.', '');
             $discount = number_format((float) ($line['discount_percentage'] ?? 0.0), 2, '.', '');
             $net = Decimal::round2(Decimal::div(Decimal::mul(Decimal::mul($quantity, $unitPrice), Decimal::sub('100', $discount)), '100'));
-            $tax = Decimal::round2(Decimal::div(Decimal::mul($net, $rate), '100'));
             $current = $byRate[$rate] ?? ['rate' => $rate, 'net' => '0', 'tax' => '0'];
 
-            $byRate[$rate] = ['rate' => $rate, 'net' => Decimal::add($current['net'], $net), 'tax' => Decimal::add($current['tax'], $tax)];
+            $byRate[$rate] = ['rate' => $rate, 'net' => Decimal::add($current['net'], $net), 'tax' => '0'];
         }
 
-        $groups = array_values($byRate);
+        // The tax of each rate is computed on its summed net, like the totals and the summary of the document.
+        $groups = array_map(fn (array $group): array => [...$group, 'tax' => $this->vat->taxOn($group['net'], $group['rate'])], array_values($byRate));
         $total = array_reduce($groups, static fn (string $sum, array $group): string => Decimal::add($sum, $group['net']), '0');
 
         return Decimal::isPositive($total) ? $groups : [];
