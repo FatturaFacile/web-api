@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Payroll\Http\Controllers\PayrollComplianceController;
+use Modules\Payroll\Http\Controllers\ShortTimeController;
 
 Route::prefix('api/v1/payroll')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
@@ -26,4 +27,21 @@ Route::prefix('api/v1/payroll')
         Route::get('/frontier-workers', [PayrollComplianceController::class, 'frontierWorkers'])->name('frontier-workers.index');
         Route::put('/frontier-workers/{employeeId}/nights', [PayrollComplianceController::class, 'saveFrontierNights'])->name('frontier-workers.nights');
         Route::get('/exports/frontier-exchange', [PayrollComplianceController::class, 'exportFrontierExchange'])->name('exports.frontier-exchange');
+
+        // Short-time work and bad weather
+        Route::get('/short-time/cases', [ShortTimeController::class, 'cases'])->name('short-time.cases.index');
+        Route::post('/short-time/cases', [ShortTimeController::class, 'storeCase'])->name('short-time.cases.store');
+        Route::post('/short-time/cases/{id}/claims', [ShortTimeController::class, 'calculateClaim'])->name('short-time.claims.calculate');
+        Route::get('/short-time/claims/{id}', [ShortTimeController::class, 'showClaim'])->name('short-time.claims.show');
+        Route::post('/short-time/claims/{id}/submit', [ShortTimeController::class, 'submitClaim'])->name('short-time.claims.submit');
+        Route::post('/short-time/claims/{id}/apply', [ShortTimeController::class, 'applyClaim'])->name('short-time.claims.apply');
+        Route::post('/short-time/claims/{id}/reimbursement', [ShortTimeController::class, 'recordReimbursement'])->name('short-time.claims.reimbursement');
+        Route::get('/short-time/claims/{id}/export', [ShortTimeController::class, 'exportClaim'])->name('short-time.claims.export');
+
+        // Construction wages under a collective agreement
+        Route::post('/construction/parameters', [ShortTimeController::class, 'storeConstructionParameters'])->name('construction.parameters.store');
+        Route::put('/construction/calendar', [ShortTimeController::class, 'saveCalendar'])->name('construction.calendar.save');
+        Route::get('/construction/hours', [ShortTimeController::class, 'constructionHours'])->name('construction.hours');
+        Route::get('/construction/joint-commission-report', [ShortTimeController::class, 'jointCommissionReport'])->name('construction.joint-commission-report');
+        Route::get('/exports/joint-commission-report', [ShortTimeController::class, 'exportJointCommissionReport'])->name('exports.joint-commission-report');
     });
