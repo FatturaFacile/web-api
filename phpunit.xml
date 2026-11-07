@@ -28,17 +28,12 @@
     </exclude>
 </source>
 
-<coverage>
-    <report>
-        <!-- Genera il report Clover per SonarCloud e HTML per ispezione locale -->
-        <clover outputFile="build/logs/clover.xml"/>
-        <html outputDirectory="build/coverage"/>
-    </report>
-</coverage>
-
-<logging>
-    <junit outputFile="build/logs/junit.xml"/>
-</logging>
+<!--
+    No <coverage><report> and no <logging> here: configured reports switch coverage on for every run, and without a
+    coverage driver (local PHP, CI with coverage: none) the run stopped with no output and exit code 1, also for a single
+    file. Reports are requested explicitly where they are needed: sonar.yml passes the coverage-clover and log-junit
+    options (build/logs/clover.xml, build/logs/junit.xml); locally add the coverage-html option with a coverage driver.
+-->
 
 <php>
     <!-- Rendering PDFs (dompdf) in the Feature suite needs more than PHP's default 128M;

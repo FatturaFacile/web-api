@@ -6,7 +6,6 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
-use App\Models\BankAccount;
 use App\Models\BankTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceQrBillData;
@@ -19,25 +18,6 @@ use Symfony\Component\HttpFoundation\Response;
 class TreasuryController extends Controller
 {
     use ApiResponse;
-
-    #[OA\Get(
-        path: '/api/v1/treasury/bank-accounts',
-        operationId: 'getBankAccounts',
-        description: 'List tenant active bank accounts and IBANs.',
-        summary: 'List bank accounts',
-        security: [['bearerAuth' => []]],
-        tags: ['Treasury', 'Banking'],
-        responses: [
-            new OA\Response(response: 200, description: 'Bank accounts retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function bankAccounts(): JsonResponse
-    {
-        $accounts = BankAccount::all();
-
-        return $this->successResponse(data: $accounts, message: 'Bank accounts retrieved');
-    }
 
     #[OA\Get(
         path: '/api/v1/treasury/transactions',
