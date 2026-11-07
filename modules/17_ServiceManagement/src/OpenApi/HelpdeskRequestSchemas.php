@@ -166,4 +166,8 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(schema: 'HelpdeskLinkKnowledgeArticleRequest', description: 'Request payload validated by LinkKnowledgeArticleRequest', required: ['article_id'], type: 'object', properties: [
     new OA\Property(property: 'article_id', type: 'string', format: 'uuid'),
 ])]
+#[OA\Schema(schema: 'HelpdeskAnswerCsatSurveyRequest', description: 'Request payload validated by AnswerCsatSurveyRequest', required: ['score'], type: 'object', properties: [
+    new OA\Property(property: 'score', type: 'integer', minimum: 1, maximum: 5),
+    new OA\Property(property: 'feedback', type: 'string', maxLength: 5000, nullable: true),
+])]
 final class HelpdeskRequestSchemas {}

@@ -207,4 +207,11 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true),
     new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
 ])]
+#[OA\Schema(schema: 'HelpdeskPortalCsatSurvey', description: 'A satisfaction survey as its link shows it', type: 'object', properties: [
+    new OA\Property(property: 'ticket_number', type: 'string'),
+    new OA\Property(property: 'subject', type: 'string'),
+    new OA\Property(property: 'status', type: 'string', enum: ['pending', 'completed']),
+    new OA\Property(property: 'can_answer', type: 'boolean'),
+    new OA\Property(property: 'expires_at', type: 'string', format: 'date-time', nullable: true),
+])]
 final class HelpdeskResponseSchemas {}

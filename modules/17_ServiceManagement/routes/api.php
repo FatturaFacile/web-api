@@ -8,6 +8,7 @@ use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
 use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
+use Modules\ServiceManagement\Http\Controllers\PortalCsatController;
 use Modules\ServiceManagement\Http\Controllers\PortalHelpdeskController;
 use Modules\ServiceManagement\Http\Controllers\PortalKnowledgeBaseController;
 use Modules\ServiceManagement\Http\Controllers\ServiceContractController;
@@ -25,6 +26,14 @@ Route::prefix('api/v1/portal/helpdesk')
         Route::get('/{token}/tickets/{ticket}', [PortalHelpdeskController::class, 'show'])->name('api.v1.portal.helpdesk.tickets.show');
         Route::post('/{token}/tickets/{ticket}/reply', [PortalHelpdeskController::class, 'reply'])->name('api.v1.portal.helpdesk.tickets.reply');
         Route::get('/{token}/tickets/{ticket}/attachments/{attachment}', [PortalHelpdeskController::class, 'downloadAttachment'])->name('api.v1.portal.helpdesk.attachments.show');
+    });
+
+// Satisfaction survey link: the secret token resolves the survey and its tenant.
+Route::prefix('api/v1/portal/csat')
+    ->middleware(['api', 'throttle:30,1'])
+    ->group(function (): void {
+        Route::get('/{token}', [PortalCsatController::class, 'show'])->name('api.v1.portal.csat.show');
+        Route::post('/{token}', [PortalCsatController::class, 'answer'])->name('api.v1.portal.csat.answer');
     });
 
 Route::prefix('api/v1/portal/kb')

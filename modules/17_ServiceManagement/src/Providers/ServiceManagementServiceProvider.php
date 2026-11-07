@@ -50,6 +50,7 @@ use Modules\ServiceManagement\Listeners\CRMCustomerServiceListener;
 use Modules\ServiceManagement\Listeners\DispatchOutboxOnESMEventListener;
 use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
 use Modules\ServiceManagement\Listeners\ProjectESMListener;
+use Modules\ServiceManagement\Listeners\SendCsatSurveyListener;
 use Modules\ServiceManagement\Listeners\SendHelpdeskReplyEmailListener;
 use Modules\ServiceManagement\Listeners\WorkflowApprovalESMListener;
 use Modules\ServiceManagement\Models\BusinessHoursCalendar;
@@ -114,6 +115,7 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         }
 
         Event::listen(HelpdeskTicketChanged::class, SendHelpdeskReplyEmailListener::class);
+        Event::listen(HelpdeskTicketChanged::class, SendCsatSurveyListener::class);
 
         $domainEvents = [
             TicketCreatedEvent::class,
