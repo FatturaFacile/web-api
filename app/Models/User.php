@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -44,13 +45,13 @@ class User extends Authenticatable
     ];
 
     /**
-     * A deactivated user loses every API token at once, so a token issued before the deactivation stops working.
+     * A deactivated user loses every API token and browser session at once, so nothing opened before stops working.
      */
     protected static function booted(): void
     {
         static::updated(static function (User $user): void {
             if ($user->wasChanged('is_active') && $user->is_active === false) {
-                $user->tokens()->delete();
+                app(UserSessions::class)->revokeAll($user);
             }
         });
     }

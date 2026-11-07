@@ -49,6 +49,8 @@ Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping(
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
+// Expired Bearer tokens stop working at once; this only removes their rows.
+Schedule::command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('04:05')->withoutOverlapping()->onOneServer();
 Schedule::command('model:prune', ['--model' => [PasswordResetToken::class]])->dailyAt('04:15')->withoutOverlapping()->onOneServer();
 Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping()->onOneServer();

@@ -15,6 +15,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
 use App\Services\Auth\TwoFactorAuthentication;
+use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class TwoFactorController extends Controller
         private readonly TwoFactorAuthentication $twoFactor,
         private readonly RegistrationAudit $audit,
         private readonly TenantContext $tenantContext,
+        private readonly UserSessions $sessions,
     ) {}
 
     #[OA\Get(
@@ -131,6 +133,8 @@ class TwoFactorController extends Controller
         }
 
         $this->audit->record(RegistrationAudit::TWO_FACTOR_ENABLED, (string) $user->id);
+        // Accesses opened with the password alone end: from now on every login needs the second factor.
+        $this->revokeOtherAccesses($request, $user);
 
         return $this->successResponse(
             data: ['recovery_codes' => $recoveryCodes],
@@ -213,6 +217,7 @@ class TwoFactorController extends Controller
 
         $this->twoFactor->disable($user);
         $this->audit->record(RegistrationAudit::TWO_FACTOR_DISABLED, (string) $user->id);
+        $this->revokeOtherAccesses($request, $user);
 
         return $this->successResponse(data: $this->statusOf($user), message: __('two_factor.messages.disabled'));
     }
@@ -323,7 +328,7 @@ class TwoFactorController extends Controller
 
         $this->twoFactor->disable($member);
         // The member's open sessions were opened with the lost factor.
-        $member->tokens()->delete();
+        $this->sessions->revokeAll($member);
         $this->audit->record(RegistrationAudit::TWO_FACTOR_RESET_BY_ADMIN, (string) $member->id, ['reset_by' => (string) $admin->id], (string) $tenant->id);
 
         return $this->successResponse(data: ['user_id' => $member->id, 'two_factor_enabled' => false], message: __('two_factor.messages.member_reset'));
@@ -370,6 +375,15 @@ class TwoFactorController extends Controller
         abort_if($tenant === null, Response::HTTP_BAD_REQUEST, 'Missing tenant context.');
 
         return $tenant;
+    }
+
+    private function revokeOtherAccesses(Request $request, User $user): void
+    {
+        $this->sessions->revokeOthers(
+            $user,
+            UserSessions::currentTokenId($user),
+            $request->hasSession() ? $request->session()->getId() : null,
+        );
     }
 
     private function notEnabledResponse(): JsonResponse

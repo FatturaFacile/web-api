@@ -30,6 +30,8 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/auth/two-factor/confirm' => 'own second factor',
         'POST api/v1/auth/two-factor/disable' => 'own second factor',
         'POST api/v1/auth/two-factor/recovery-codes' => 'own second factor',
+        'POST api/v1/auth/sessions/revoke-others' => 'own sessions',
+        'DELETE api/v1/auth/sessions/{kind}/{id}' => 'own sessions',
         // Personal dashboard layout, stored per user.
         'PUT api/v1/dashboard/layout' => 'own layout',
         'POST api/v1/dashboard/layout/reset' => 'own layout',

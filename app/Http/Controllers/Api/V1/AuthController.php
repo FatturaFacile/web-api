@@ -53,7 +53,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/api/v1/auth/login',
         operationId: 'login',
-        description: 'Authenticate user credentials and issue a Sanctum Bearer token.',
+        description: 'Two authentication modes. Cookie mode: a first-party SPA on a Sanctum stateful domain first calls GET /sanctum/csrf-cookie, then logs in with credentials included; the response sets an HttpOnly session cookie and carries no token (auth_mode=cookie). Token mode: any other client receives an expiring Bearer token (auth_mode=token, expires_at). With two-factor authentication the response carries a challenge_token instead, exchanged at /auth/two-factor-challenge in the same mode.',
         summary: 'User login',
         tags: ['Authentication'],
         requestBody: new OA\RequestBody(
@@ -281,20 +281,28 @@ class AuthController extends Controller
      */
     private function authenticatedResponse(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants): JsonResponse
     {
-        if ($request->hasSession()) {
+        // Cookie mode: the request comes from a first-party SPA (Sanctum stateful domain), so it carries a session. The
+        // session cookie is HttpOnly and CSRF-protected, and no token is put in the body, where a script could read it.
+        // Token mode: every other client gets an expiring Bearer token.
+        $cookieMode = $request->hasSession();
+        $token = null;
+        $expiresAt = null;
+
+        if ($cookieMode) {
             Auth::guard('web')->login($user);
             $request->session()->regenerate();
+        } else {
+            [$token, $expiresAt] = $this->issueToken($request, $user);
         }
-
-        $tokenName = 'auth-token-'.now()->timestamp;
-        $token = $user->createToken($tokenName, ['*'])->plainTextToken;
 
         event(new Login('sanctum', $user, false));
 
         return $this->successResponse(
             data: [
+                'auth_mode' => $cookieMode ? 'cookie' : 'token',
                 'token' => $token,
-                'token_type' => 'Bearer',
+                'token_type' => $cookieMode ? null : 'Bearer',
+                'expires_at' => $expiresAt,
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -540,23 +548,47 @@ class AuthController extends Controller
         $user = $request->user();
         $token = $user->currentAccessToken();
 
-        if ($token instanceof PersonalAccessToken) {
-            $token->delete();
+        // A cookie session is renewed in place: a new session id, and still no token in the body.
+        if (! $token instanceof PersonalAccessToken) {
+            if ($request->hasSession()) {
+                $request->session()->regenerate();
+            }
+
+            return $this->successResponse(
+                data: ['auth_mode' => 'cookie', 'token' => null, 'token_type' => null, 'expires_at' => null],
+                message: 'Session refreshed successfully'
+            );
         }
 
-        if ($request->hasSession()) {
-            $request->session()->regenerate();
-        }
-
-        $tokenName = 'auth-token-'.now()->timestamp;
-        $newToken = $user->createToken($tokenName, ['*'])->plainTextToken;
+        // A token is rotated: the old one stops working as soon as the new one is issued.
+        $token->delete();
+        [$newToken, $expiresAt] = $this->issueToken($request, $user);
 
         return $this->successResponse(
             data: [
+                'auth_mode' => 'token',
                 'token' => $newToken,
                 'token_type' => 'Bearer',
+                'expires_at' => $expiresAt,
             ],
             message: 'Token refreshed successfully'
         );
+    }
+
+    /**
+     * A Bearer token with an explicit expiry, named after the client so the user can recognise it among the sessions.
+     *
+     * @return array{0: string, 1: string|null} the plain token and its expiry
+     */
+    private function issueToken(Request $request, User $user): array
+    {
+        $minutes = config('sanctum.expiration');
+        $expiresAt = $minutes === null ? null : now()->addMinutes((int) $minutes);
+        $client = mb_substr(trim((string) $request->userAgent()), 0, 120);
+        $name = $client === '' ? 'api-token' : $client;
+
+        $token = $user->createToken($name, ['*'], $expiresAt)->plainTextToken;
+
+        return [$token, $expiresAt?->toIso8601String()];
     }
 }

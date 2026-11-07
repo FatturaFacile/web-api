@@ -67,6 +67,10 @@ final class RegistrationAudit
 
     public const TWO_FACTOR_REQUIREMENT_CHANGED = 'TWO_FACTOR_REQUIREMENT_CHANGED';
 
+    public const SESSION_REVOKED = 'SESSION_REVOKED';
+
+    public const OTHER_SESSIONS_REVOKED = 'OTHER_SESSIONS_REVOKED';
+
     public function __construct(private readonly AuditLedgerInterface $ledger) {}
 
     /**

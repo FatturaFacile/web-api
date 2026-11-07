@@ -59,6 +59,7 @@ use App\Http\Controllers\Api\V1\SalesOrderController;
 use App\Http\Controllers\Api\V1\SalesOrderLineController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use App\Http\Controllers\Api\V1\ServiceReportController;
+use App\Http\Controllers\Api\V1\SessionController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
@@ -153,6 +154,9 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
             Route::post('/switch-tenant', [AuthController::class, 'switchTenant'])->name('switch-tenant');
             Route::get('/two-factor', [TwoFactorController::class, 'status'])->name('two-factor.status');
+            Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');
+            Route::post('/sessions/revoke-others', [SessionController::class, 'revokeOthers'])->middleware('throttle:6,1')->name('sessions.revoke-others');
+            Route::delete('/sessions/{kind}/{id}', [SessionController::class, 'destroy'])->whereIn('kind', ['token', 'session'])->where('id', '[A-Za-z0-9]{1,64}')->name('sessions.destroy');
             Route::post('/two-factor/enable', [TwoFactorController::class, 'enable'])->middleware('throttle:6,1')->name('two-factor.enable');
             Route::post('/two-factor/confirm', [TwoFactorController::class, 'confirm'])->middleware('throttle:6,1')->name('two-factor.confirm');
             Route::post('/two-factor/recovery-codes', [TwoFactorController::class, 'regenerateRecoveryCodes'])->middleware('throttle:6,1')->name('two-factor.recovery-codes');
