@@ -9,6 +9,7 @@ use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
 use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
@@ -71,3 +72,4 @@ $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object
 $forEachTenant('manufacturing:mrp', static fn (Tenant $tenant): object => new ProcessMrpRunJob($tenant->id, now()->toDateString(), now()->addDays(90)->toDateString()))->dailyAt('02:15');
 $forEachTenant('manufacturing:capacity', static fn (Tenant $tenant): object => new ProcessWorkCenterCapacityJob($tenant->id, now()->toDateString()))->dailyAt('02:30');
 $forEachTenant('manufacturing:forecast', static fn (Tenant $tenant): object => new ProcessManufacturingForecastJob($tenant->id))->monthlyOn(1, '02:45');
+$forEachTenant('customs:assessment-decisions', static fn (Tenant $tenant): object => new RetrieveAssessmentDecisionsJob($tenant->id))->dailyAt('04:30');

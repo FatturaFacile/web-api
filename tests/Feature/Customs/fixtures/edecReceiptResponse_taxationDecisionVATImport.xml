@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<receiptRequestResponse
+	xmlns="http://www.e-dec.ch/xml/schema/edecReceiptResponse/v3" xsi:schemaLocation="http://www.e-dec.ch/xml/schema/edecReceiptResponse/v3 http://www.ezv.admin.ch/pdf_linker.php?doc=edecReceiptResponse_v_3_0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" schemaVersion="3.0">
+	 <requestorTraderIdentificationNumber>1000054</requestorTraderIdentificationNumber>
+	 <requestorCorrelationID>abc123</requestorCorrelationID>
+	 <taxationDecisionVAT>
+		<documentInformation>
+			<documentType>taxationDecisionVAT</documentType>
+			<documentTitle>PROVISORISCHE VERANLAGUNG MWST</documentTitle>
+			<documentDate>2015-07-07</documentDate>
+			<documentTime>16:20:54</documentTime>
+			<documentNumber>15CHEI000005571286</documentNumber>
+			<documentVersion>1</documentVersion>
+			<documentLanguage>de</documentLanguage>
+		</documentInformation>
+		<traderDeclarationNumber>1436278845561</traderDeclarationNumber>
+		<bordereauNumber>49534</bordereauNumber>
+		<accessCode>CHCHvajds4ea99j+</accessCode>
+		<acceptanceDate>2015-07-07</acceptanceDate>
+		<acceptanceTime>16:20:46</acceptanceTime>
+		<declarationType>2</declarationType>
+		<correctionCode>1</correctionCode>
+		<reason>17</reason>
+		<dispatchCountry>IN</dispatchCountry>
+		<transportMeans>
+			<transportMode>3</transportMode>
+			<transportationType>2</transportationType>
+			<transportationCountry>DE</transportationCountry>
+			<transportationNumber>WT-A-4711</transportationNumber>
+		</transportMeans>
+		<transportInContainer>1</transportInContainer>
+		<container>
+			<containerNumber>ct abc-111</containerNumber>
+		</container>
+		<container>
+			<containerNumber>ct fds-222</containerNumber>
+		</container>
+		<specialMention>
+			<sequenceNumber>1</sequenceNumber>
+			<text>zz</text>
+		</specialMention>
+		<specialMention>
+			<sequenceNumber>2</sequenceNumber>
+			<text>zz</text>
+		</specialMention>
+		<specialMention>
+			<sequenceNumber>3</sequenceNumber>
+			<text>aa</text>
+		</specialMention>
+		<customsOffice>
+			<customsOfficeNumber>CH001251</customsOfficeNumber>
+			<name>Basel St. Jakob DA Wolf EVO</name>
+			<street>St. Jakobs-Strasse 226</street>
+			<postalCode>4052</postalCode>
+			<city>BASEL</city>
+			<country>CH</country>
+		</customsOffice>
+		<consignor>
+			<name>Swens Import und so keAG</name>
+			<street>Vordemwald 12</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>5453</postalCode>
+			<city>Albbruck</city>
+			<country>DE</country>
+		</consignor>
+		<importer>
+			<name>Irgendoeper</name>
+			<street>Holzikofenweg 36</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>3000</postalCode>
+			<city>Bern</city>
+			<country>CH</country>
+		</importer>
+		<consignee>
+			<name>Fleischerei</name>
+			<street>Metzgerei</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>4565</postalCode>
+			<city>Recherswil</city>
+			<country>CH</country>
+		</consignee>
+		<declarant>
+			<traderIdentificationNumber>1000054</traderIdentificationNumber>
+			<declarantNumber>123456</declarantNumber>
+			<name>Federal Express</name>
+			<street>P.O Box 225</street>
+			<postalCode>4030</postalCode>
+			<city>Basel-Rheinhafen</city>
+			<country>CH</country>
+		</declarant>
+		<authorizedConsignee>
+			<name>Transporteur Bebi</name>
+			<addressSupplement1>Adresszusatz 1</addressSupplement1>
+			<addressSupplement2>Adresszusatz 2</addressSupplement2>
+			<street>Holzikofenweg 36</street>
+			<addressSupplement3>Adresszusatz 3</addressSupplement3>
+			<postalCode>3003</postalCode>
+			<city>Bern</city>
+			<country>CH</country>
+			<traderIdentificationNumber>CH12345678</traderIdentificationNumber>
+			<authorizedConsigneeReference>asdfasdf123</authorizedConsigneeReference>
+		</authorizedConsignee>
+		<valuationSummary>
+			<VAT>
+				<VATAccount>
+					<accountType>1</accountType>
+					<accountNumber>10000</accountNumber>
+					<accountName>Imel AG Wetzikon</accountName>
+				</VATAccount>
+				<VATNumber>123123</VATNumber>
+				<totalAmount>17.30</totalAmount>
+				<amountNotCharged>0</amountNotCharged>
+			</VAT>
+		</valuationSummary>
+		<incoterms>EXW</incoterms>
+		<invoiceCurrencyType>2</invoiceCurrencyType>
+		<numberOfGoodsItems>2</numberOfGoodsItems>
+		<goodsItem>
+			<customsItemNumber>1</customsItemNumber>
+			<description>Evian oder St. Pelegrino</description>
+			<commodityCode>2201.1000</commodityCode>
+			<customsFavourCode>0</customsFavourCode>
+			<statisticalCode>801</statisticalCode>
+			<grossMass>5000</grossMass>
+			<customsNetWeight>4000</customsNetWeight>
+			<additionalUnit>330</additionalUnit>
+			<permitObligation>0</permitObligation>
+			<nonCustomsLawObligation>0</nonCustomsLawObligation>
+			<statistic>
+				<customsClearanceType>1</customsClearanceType>
+				<commercialGood>1</commercialGood>
+				<statisticalValue>300</statisticalValue>
+			</statistic>
+			<origin>
+				<originCountry>NO</originCountry>
+				<preference>0</preference>
+			</origin>
+			<packaging>
+				<packagingType>CA</packagingType>
+				<quantity>1000</quantity>
+				<packagingReferenceNumber>Karton</packagingReferenceNumber>
+			</packaging>
+			<valuationDetails>
+				<VAT>
+					<VATValue>301.00</VATValue>
+					<duties>44.00</duties>
+					<basisForAssessment>345.00</basisForAssessment>
+					<rate>2.5</rate>
+					<amount>8.65</amount>
+					<amountNotCharged>0</amountNotCharged>
+				</VAT>
+			</valuationDetails>
+			<specialMention>
+				<sequenceNumber>1</sequenceNumber>
+				<text>c</text>
+			</specialMention>
+			<specialMention>
+				<sequenceNumber>2</sequenceNumber>
+				<text>b</text>
+			</specialMention>
+			<specialMention>
+				<sequenceNumber>3</sequenceNumber>
+				<text>a</text>
+			</specialMention>
+			<producedDocument>
+				<documentType>380</documentType>
+				<documentReferenceNumber>283749123</documentReferenceNumber>
+				<issueDate>2004-06-10</issueDate>
+				<additionalInformation>Handelsrechnung</additionalInformation>
+			</producedDocument>
+			<permit>
+				<permitType>4</permitType>
+				<permitAuthority>6</permitAuthority>
+				<permitNumber>66</permitNumber>
+			</permit>
+		</goodsItem>
+		<goodsItem>
+			<customsItemNumber>2</customsItemNumber>
+			<description>Evian oder St. Pelegrino</description>
+			<commodityCode>2201.1000</commodityCode>
+			<customsFavourCode>0</customsFavourCode>
+			<statisticalCode>801</statisticalCode>
+			<grossMass>5000</grossMass>
+			<customsNetWeight>4000</customsNetWeight>
+			<additionalUnit>330</additionalUnit>
+			<permitObligation>0</permitObligation>
+			<nonCustomsLawObligation>0</nonCustomsLawObligation>
+			<statistic>
+				<customsClearanceType>1</customsClearanceType>
+				<commercialGood>1</commercialGood>
+				<statisticalValue>300</statisticalValue>
+				<repair>YES</repair>
+			</statistic>
+			<origin>
+				<originCountry>NO</originCountry>
+				<preference>0</preference>
+			</origin>
+			<repairAndRefinement>
+				<direction>1</direction>
+				<repairReason>Vergolden von Schlüssel</repairReason>
+			</repairAndRefinement>
+			<packaging>
+				<packagingType>CA</packagingType>
+				<quantity>1000</quantity>
+				<packagingReferenceNumber>Karton</packagingReferenceNumber>
+			</packaging>
+			<valuationDetails>
+				<VAT>
+					<VATValue>301.00</VATValue>
+					<duties>44.00</duties>
+					<basisForAssessment>345.00</basisForAssessment>
+					<rate>2.5</rate>
+					<amount>8.65</amount>
+					<amountNotCharged>0</amountNotCharged>
+				</VAT>
+			</valuationDetails>
+			<specialMention>
+				<sequenceNumber>1</sequenceNumber>
+				<text>c</text>
+			</specialMention>
+			<specialMention>
+				<sequenceNumber>2</sequenceNumber>
+				<text>b</text>
+			</specialMention>
+			<specialMention>
+				<sequenceNumber>3</sequenceNumber>
+				<text>a</text>
+			</specialMention>
+			<producedDocument>
+				<documentType>380</documentType>
+				<documentReferenceNumber>283749123</documentReferenceNumber>
+				<issueDate>2004-06-10</issueDate>
+				<additionalInformation>Handelsrechnung</additionalInformation>
+			</producedDocument>
+			<permit>
+				<permitType>4</permitType>
+				<permitAuthority>6</permitAuthority>
+				<permitNumber>66</permitNumber>
+			</permit>
+		</goodsItem>
+		<legalAdvisory>
+			<sequenceNumber>1</sequenceNumber>
+			<title>Hinweis:</title>
+			<text>Diese Veranlagung wurde auf einem Testsystem erstellt und ist rechtlich nicht verbindlich.</text>
+		</legalAdvisory>
+		<legalAdvisory>
+			<sequenceNumber>2</sequenceNumber>
+			<title>Hinweis:</title>
+			<text>Die anmeldepflichtige Person muss bis am 07.09.2015 die erforderlichen Begleitdokumente bei der zuständigen Zollstelle einreichen. Sollte diese Frist unbenutzt verstreichen, so wird die provisorische Veranlagung definitiv. Eine allfällige Fristverlängerung hat die anmeldepflichtige Person vor Ablauf der festgesetzten Frist schriftlich zu beantragen.
+Gegen diese provisorische Veranlagung kann keine Verwaltungsbeschwerde erhoben werden. Dies ist erst möglich, wenn die definitive Veranlagungsverfügung ausgestellt ist.</text>
+		</legalAdvisory>
+		<legalAdvisory>
+			<sequenceNumber>3</sequenceNumber>
+			<title>Hinweis:</title>
+			<text>Hinweis für Steuerpflichtige, welche berechtigt sind, die MWST auf Einfuhren ganz oder teilweise als Vorsteuer geltend zu machen: Die provisorisch veranlagte MWST berechtigt nicht zum Vorsteuerabzug. Dieser kann nur mit der definitiven Verfügung geltend gemacht werden.</text>
+		</legalAdvisory>
+		<legalAdvisory>
+			<sequenceNumber>4</sequenceNumber>
+			<title>Hinweis elektronische Veranlagungsverfügung MWST (eVVM):</title>
+			<text>Diese Veranlagungsverfügung wurde elektronisch eröffnet und ist mit einer digitalen Signatur versehen. Sie dient als Nachweis für die ordnungsgemässe Zollveranlagung der darin erwähnten Waren.
+Unter dem Link https://e-dec-web-a.ezv.admin.ch/edecZugangscodeGui/ können Sie die elektronische Veranlagungsverfügung herunterladen. Sie benötigen dazu die vorstehend erwähnte Zollanmeldungsnummer und den Zugangscode.
+Veranlagungsverfügungen müssen aufbewahrt werden.
+Der Nachweis steuerentlastender Tatsachen (Vorsteuer) gegenüber der Eidgenössischen Steuerverwaltung obliegt der steuerpflichtigen Person. Eindeutige Belege eignen sich am besten für den Nachweis. Eindeutig sind unversehrt elektronisch archivierte eVV.
+Weiterführende Informationen zur eVV finden Sie im Internet unter www.ezv.admin.ch (eVV Allgemein) und www.estv.admin.ch (elektronische Archivierung).
+langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer langer Zusatztext</text>
+		</legalAdvisory>
+	</taxationDecisionVAT>
+</receiptRequestResponse>

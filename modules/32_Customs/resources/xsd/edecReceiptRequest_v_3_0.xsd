@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSpy v2013 sp1 (http://www.altova.com) by BIT (Bundesamt für Informatik und Telekommunikation BIT) -->
+<!-- edecReceiptRequest XML Schema -->
+<!-- Name of schema: edecReceiptRequest -->
+<!-- Name of corresponding response schema: edecReceiptResponse -->
+<!-- Scope of schema: Request for receipts of customs administration-->
+<!-- Organization: Swiss Customs Administration -->
+<!-- Author: Dr. Stefan Huesemann, Patrick Schweizer -->
+<!-- Documentation: http://www.e-dec.ch/ -->
+<xs:schema xmlns:edecReceiptRequest="http://www.e-dec.ch/xml/schema/edecReceiptRequest/v3" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.e-dec.ch/xml/schema/edecReceiptRequest/v3" elementFormDefault="qualified" attributeFormDefault="unqualified" version="3.0">
+	<xs:element name="receiptRequest" type="edecReceiptRequest:ReceiptRequestType">
+		<xs:annotation>
+			<xs:documentation>Root Element zum Abrufen von Veranlagungsverfügungen (VV) bzw. Quittungen. 
+			
+Das Schema dient dem Beziehen von Veranlagungsverfügungen eines Zollkunden. Es gibt verschiedene Abfragemöglichkeiten:
+- Bezug einer einzelnen Veranlagungsverfügung
+- Abfrage einer Liste von Veranlagungsverfügungen
+
+Die VV können nur von Zollkunden abgerufen werden, die als Zollanmelder, Kontoinhaber oder Versender (Exporteur) in der Original-Zollanmeldung angegeben sind.
+
+Falls bei der Abfrage (einzelne Veranlagungsverfügung) keine Versionsangabe gemacht wird, wird immer die aktuelle Version der VV zurückgegeben. Für Export Dokumente kann immer nur die neueste Version bezogen werden. Für Import Dokumente können alle Versionen der Dokumente abgerufen werden. 
+
+Das Root Element enthält ein zwingendes Attribut schemaVersion, in dem angegeben wird, welcher edecReceipt Schema Version die XML Instanz entspricht.
+
+Anhand des Attributs schemaVersion wird mitgeteilt, welche Version des edecReceipt Schemas zum Validieren benutzt werden soll.</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="ReceiptRequestType">
+		<xs:annotation>
+			<xs:documentation>Complex Type zum Abrufen von Veranlagungsverfügungen / Quittungen</xs:documentation>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="requestorTraderIdentificationNumber" type="edecReceiptRequest:TraderIdentificationNumber">
+				<xs:annotation>
+					<xs:documentation>Trader Identification Number (Spediteurnummer, TIN oder UID) des Bezügers (Stammdaten).
+
+Ein Bezüger kann nur Veranlagungsverfügungen zu Zollanmeldungen abrufen, die von ihm deklariert wurden oder bei denen er als Beteiligter (Kontoinhaber oder Versender (Exporteur)) aufgeführt ist. 
+  - Im ersten Fall muss die requestorTraderIdentificationNumber gleich declarant/traderIdentificationNumber in der Original-Zollanmeldung sein.
+  - Im zweiten Fall muss die requestorTraderIdentificationNumber gleich dem Kontoinhaber des ZAZ-Kontos (business/customsAccount bzw. business/VATAccount) in der Original-Zollanmeldung sein.
+  - Im dritten Fall muss die requestorTraderIdentificationNumber gleich der consignor/traderIdentificationNumber in der Original-Zollanmeldung sein.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="requestorCorrelationID" type="edecReceiptRequest:Reference" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Optionale Referenz um auch bei asynchronen (Mail) oder mandantenfähigen Systemen eine eindeutige Zuordnung zwischen Request und Response zu ermöglichen. Falls dieses Element gefüllt ist, so wird es auch in der Response enthalten sein.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:choice>
+				<xs:element name="receiptList">
+					<xs:annotation>
+						<xs:documentation>Abruf einer Liste von Veranlagungsverfügungsnummern (entspricht der customsDeclarationNumber). Es muss die Rolle des Bezügers, ein Dokumenttyp oder eine Dokumenttyp Gruppe und eine Datumsspanne (von max. 10 Tagen) angegeben werden. Es können zusätzliche Einschränkungen abhängig von der Rolle gemacht werden. Es werden Deklarationsnummern vom Zoll zurückgegeben, bei denen der Zollanmelder der Original-Zollanmeldung der originalTraderDeclarationNumber entspricht oder die requestorTraderDeclarationNumber einem der Beteiligten (Kontoinhaber oder Versender) der Original-Zollanmeldung entspricht.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="role" minOccurs="1">
+								<xs:annotation>
+									<xs:documentation>Rolle des Dokument Bezügers, Zollanmelder (0), Kontoinhaber (1), Versender (2), Kasse (3) (nur fuer internen Gebrauch) (Stammdaten: edecDomains.xml/domains/domain[@name="role"]/entry/@value)</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:integer">
+										<xs:enumeration value="0"/>
+										<xs:enumeration value="1"/>
+										<xs:enumeration value="2"/>
+										<xs:enumeration value="3"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="accountNumber" minOccurs="0" maxOccurs="1">
+								<xs:annotation>
+									<xs:documentation>ZAZ-Kontonummer des Kontoinhabers. Die Kontonummer muss angegeben werden, wenn in der Rolle des Kontoinhabers (role = 1) Dokumente bezogen werden möchten. Bei anderen Rollen darf die Kontonummer nicht angegeben werden.</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:minLength value="1"/>
+										<xs:maxLength value="8"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="dateRange">
+								<xs:annotation>
+									<xs:documentation>Datumsspanne für Einschränkung der Abfrage der Liste der Veranlagungsverfügungen (max. 10 Tage). Das Datum bezieht sich auf das Erstellungsdatum der gesuchten Dokumente.</xs:documentation>
+								</xs:annotation>
+								<xs:complexType>
+									<xs:sequence>
+										<xs:element name="startDate" type="edecReceiptRequest:DateWithoutTimezone">
+											<xs:annotation>
+												<xs:documentation>Datum ab wann gesucht werden soll</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+										<xs:element name="endDate" type="edecReceiptRequest:DateWithoutTimezone">
+											<xs:annotation>
+												<xs:documentation>Datum bis und mit wann gesucht werden soll</xs:documentation>
+											</xs:annotation>
+										</xs:element>
+									</xs:sequence>
+								</xs:complexType>
+							</xs:element>
+							<xs:element name="customsOfficeNumber" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation>Zollstellennummer (nur fuer internen Gebrauch) (Stammdaten: edecCustomsOffices.xml/customsOffices/customsOffice/@number)</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:minLength value="1"/>
+										<xs:maxLength value="8"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="documentTypeList" type="edecReceiptRequest:DocumentTypeTypeList" minOccurs="1">
+								<xs:annotation>
+									<xs:documentation>Dokumenttypen und Dokumenttyp Gruppen, welche bei der Listenabfrage erlaubt sind. Mögliche Werte: Veranlagungsverfügung Zoll VVZ (taxationDecisionCustomsDuties), Veranlagungsverfügung Mehrwertsteuer VVM (taxationDecitionVAT), Veranlagungsverfügung Export eVV (taxationDecisionExport), Rückerstattung Zoll (refundCustomsDuties), Rückerstattung Mwst (refundVat), alle Import Dokumente (allImportTaxationDecisionsAndRefunds).</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="exporteurTraderIdentificationNumber" type="edecReceiptRequest:TraderIdentificationNumber" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation>Nur für Export Dokumente: Trader Identification Number (Spediteurnummer, TIN oder UID) des Versenders / Exporteurs (consignor). Dieses Element schränkt die Suche ein auf Zollanmeldungen, bei denen das Element consignor/traderIdentificationNumer mit dem Suchwert übereinstimmt.</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="receipt">
+					<xs:annotation>
+						<xs:documentation>Abruf einer Veranlagungsverfügung mit Hilfe einer customsDeclarationNumber. Die Original-Zollanmeldung muss als Zollanmelder die originalTraderDeclarationNumber enthalten. Zudem muss in der Original-Zollanmeldung einer der Beteiligten (Kontoinhaber oder Versender) der requestorTraderDeclarationNumber entsprechen.</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="customsDeclarationNumber">
+								<xs:annotation>
+									<xs:documentation>Zollanmeldungsnummer (früher Deklarationsnummer) Zoll</xs:documentation>
+								</xs:annotation>
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:maxLength value="21"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:element>
+							<xs:element name="customsDeclarationVersion" type="edecReceiptRequest:CustomsDeclarationVersion" minOccurs="0">
+								<xs:annotation>
+									<xs:documentation>Zoll-Versionsnummer des Dokuments, das abgerufen werden soll. 
+Für Export Dokumente kann nur die neueste Version bezogen werden. Es ist nicht möglich, Vorversionen abzurufen (Regel v13). Fehlt die Versionsangabe, so wird die neueste Version zurückgegeben.
+Für Import Dokumente können alle Versionen der Dokumente abgerufen werden. Fehlt die Versions-Angabe, so wird die neueste Version zurückgegeben.</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+							<xs:element name="documentType" type="edecReceiptRequest:DocumentTypeType">
+								<xs:annotation>
+									<xs:documentation>Dokumenttyp; Art der Quittung; Mögliche Werte: Veranlagungsverfügung Zoll VVZ (taxationDecisionCustomsDuties), Veranlagungsverfügung Mehrwertsteuer VVM (taxationDecisionVAT), Veranlagungsverfügung Export eVV (taxationDecisionExport), Rückerstattung Zoll (refundCustomsDuties) und Rückerstattung Mwst (refundVAT).</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:choice>
+		</xs:sequence>
+		<xs:attribute name="schemaVersion" use="required">
+			<xs:annotation>
+				<xs:documentation>Attribut zur Angabe der benutzten edecReceiptRequest Schema Version. Aktuelle Schema Version ist 2.0</xs:documentation>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:pattern value="[1-9]{0,1}[0-9]{1}\.[0-9]{1,2}"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:simpleType name="DocumentTypeType">
+		<xs:annotation>
+			<xs:documentation>Simple Type für Dokumenttyp für den Bezug einer einzelnen Veranlagungsverfügung.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="taxationDecisionCustomsDuties"/>
+			<xs:enumeration value="taxationDecisionVAT"/>
+			<xs:enumeration value="taxationDecisionExport"/>
+			<xs:enumeration value="refundCustomsDuties"/>
+			<xs:enumeration value="refundVAT"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DocumentTypeTypeList">
+		<xs:annotation>
+			<xs:documentation>Simple Type für Dokumenttyp und DokumentTyp Gruppen, welche bei der Abfrage einer Liste von Veranlagungsverfügungen verwendet werden können.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="taxationDecisionCustomsDuties"/>
+			<xs:enumeration value="taxationDecisionVAT"/>
+			<xs:enumeration value="taxationDecisionExport"/>
+			<xs:enumeration value="refundCustomsDuties"/>
+			<xs:enumeration value="refundVAT"/>
+			<xs:enumeration value="allImportTaxationDecisionsAndRefunds"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="DateWithoutTimezone">
+		<xs:annotation>
+			<xs:documentation>Simple Type mit Datum ohne Zeitzonenangabe (Format yyyy-mm-dd)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:date">
+			<xs:pattern value="[0-9]{4}-[0-9]{2}-[0-9]{2}"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TraderIdentificationNumber">
+		<xs:annotation>
+			<xs:documentation>Simple Type für TraderIdentificationNumber (Spediteurnummer, TIN oder UID)</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="17"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="CustomsDeclarationVersion">
+		<xs:annotation>
+			<xs:documentation>Versionsnummer der Zollanmeldung. Wird von e-dec vergeben.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:integer">
+			<xs:totalDigits value="2"/>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="Reference">
+		<xs:annotation>
+			<xs:documentation>Simple Type für Referenzen</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:minLength value="1"/>
+			<xs:maxLength value="35"/>
+		</xs:restriction>
+	</xs:simpleType>
+</xs:schema>

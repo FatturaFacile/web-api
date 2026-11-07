@@ -70,6 +70,7 @@
             "Modules\\Integrations\\": "modules/29_Integrations/src/",
             "Modules\\DocumentTrust\\": "modules/32_DocumentTrust/src/",
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
+            "Modules\\Customs\\": "modules/32_Customs/src/",
             "Modules\\": "modules/"
         }
     },

@@ -12,6 +12,7 @@ use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
+use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
@@ -55,6 +56,7 @@ return [
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,
     SdiServiceProvider::class,
+    CustomsServiceProvider::class,
     FiscalRetailServiceProvider::class,
     HealthExpensesServiceProvider::class,
     DataExportServiceProvider::class,
