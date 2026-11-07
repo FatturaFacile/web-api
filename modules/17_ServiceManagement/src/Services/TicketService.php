@@ -15,6 +15,7 @@ use Modules\ServiceManagement\DTOs\AssignTicketDTO;
 use Modules\ServiceManagement\DTOs\CreateTicketDTO;
 use Modules\ServiceManagement\DTOs\EscalateTicketDTO;
 use Modules\ServiceManagement\DTOs\ResolveTicketDTO;
+use Modules\ServiceManagement\Events\HelpdeskTicketChanged;
 use Modules\ServiceManagement\Events\TicketAssignedEvent;
 use Modules\ServiceManagement\Events\TicketClosedEvent;
 use Modules\ServiceManagement\Events\TicketCreatedEvent;
@@ -34,7 +35,7 @@ final readonly class TicketService implements TicketServiceInterface
 
     public function createTicket(CreateTicketDTO $dto, ?string $actorUserId = null): Ticket
     {
-        return DB::transaction(function () use ($dto) {
+        return DB::transaction(function () use ($dto, $actorUserId) {
             $ticketNumber = 'TCK-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
             $responseDue = $this->slaService->calculateDueDate($dto->slaPolicyId, $dto->priority, 'response');
@@ -54,7 +55,11 @@ final readonly class TicketService implements TicketServiceInterface
                 'description' => $dto->description ?? $dto->title,
                 'customer_id' => $dto->customerId ?: null,
                 'priority' => $dto->priority,
-                'status' => 'open',
+                'impact' => $dto->impact,
+                'urgency' => $dto->urgency,
+                'tags' => $dto->tags === [] ? null : $dto->tags,
+                'status_changed_at' => now(),
+                'status' => $dto->status,
                 'source' => $dto->channel,
                 'category_id' => $dto->serviceCategoryId,
                 'service_contract_id' => $dto->serviceContractId,
@@ -85,6 +90,8 @@ final readonly class TicketService implements TicketServiceInterface
                 tenantId: $ticket->tenant_id,
                 companyId: $ticket->company_id
             ));
+
+            event(new HelpdeskTicketChanged($ticket->id, $ticket->tenant_id, HelpdeskTicketChanged::Created, $actorUserId));
 
             return $ticket;
         });

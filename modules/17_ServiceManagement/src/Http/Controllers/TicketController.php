@@ -17,13 +17,17 @@ use Modules\ServiceManagement\Http\Requests\ResolveTicketRequest;
 use Modules\ServiceManagement\Http\Requests\StoreTicketRequest;
 use Modules\ServiceManagement\Http\Resources\TicketResource;
 use Modules\ServiceManagement\Models\Ticket;
+use Modules\ServiceManagement\Services\Helpdesk\HelpdeskTicketService;
+use Modules\ServiceManagement\Services\Helpdesk\TicketPriorityMatrix;
 use OpenApi\Attributes as OA;
 
 final class TicketController extends Controller
 {
     public function __construct(
         private readonly TicketServiceInterface $ticketService,
-        private readonly TenantContext $tenantContext
+        private readonly TenantContext $tenantContext,
+        private readonly TicketPriorityMatrix $priorityMatrix,
+        private readonly HelpdeskTicketService $helpdeskTickets,
     ) {}
 
     /**
@@ -100,7 +104,7 @@ final class TicketController extends Controller
             customerId: $validated['customer_id'] ?? null,
             contactEmail: $validated['contact_email'] ?? null,
             contactPhone: $validated['contact_phone'] ?? null,
-            priority: $validated['priority'] ?? 'medium',
+            priority: $validated['priority'] ?? $this->priorityMatrix->priorityFor($validated['impact'] ?? null, $validated['urgency'] ?? null) ?? 'medium',
             serviceCategoryId: $validated['service_category_id'] ?? null,
             serviceContractId: $validated['service_contract_id'] ?? null,
             slaPolicyId: $validated['sla_policy_id'] ?? null,
@@ -109,6 +113,9 @@ final class TicketController extends Controller
             serviceTeamId: $validated['service_team_id'] ?? null,
             requesterUserId: $validated['requester_user_id'] ?? null,
             assetId: $validated['asset_id'] ?? null,
+            impact: $validated['impact'] ?? null,
+            urgency: $validated['urgency'] ?? null,
+            tags: $this->helpdeskTickets->normalizeTags($validated['tags'] ?? []),
         );
 
         $ticket = $this->ticketService->createTicket($dto, $request->user()?->id);

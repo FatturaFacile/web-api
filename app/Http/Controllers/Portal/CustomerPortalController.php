@@ -28,6 +28,8 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
 use Illuminate\Support\Facades\Storage;
+use Modules\ServiceManagement\Models\Ticket as HelpdeskTicket;
+use Modules\ServiceManagement\Services\Helpdesk\HelpdeskThreadService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -41,6 +43,7 @@ class CustomerPortalController extends Controller
         private readonly RejectQuoteAction $rejectQuoteAction,
         private readonly ReplyToTicketAction $replyToTicketAction,
         private readonly DocumentPdfService $pdfService,
+        private readonly HelpdeskThreadService $helpdeskThread,
     ) {}
 
     /**
@@ -522,7 +525,37 @@ class CustomerPortalController extends Controller
     {
         $accessToken = $this->tokenService->resolveToken($token);
 
-        $ticket = Ticket::where('client_id', $accessToken->contact_id)->findOrFail($ticketId);
+        $ticket = Ticket::where('client_id', $accessToken->contact_id)->find($ticketId);
+
+        if ($ticket === null) {
+            // A helpdesk ticket of the service module: the reply joins its conversation.
+            $helpdeskTicket = HelpdeskTicket::query()
+                ->where('tenant_id', $accessToken->tenant_id)
+                ->where('customer_id', $accessToken->contact_id)
+                ->findOrFail($ticketId);
+
+            $helpdeskMessage = $this->helpdeskThread->addCustomerMessage(
+                ticket: $helpdeskTicket,
+                body: $request->validated('message'),
+                contact: $accessToken->contact,
+                authorName: $request->validated('author_name'),
+                channel: 'portal',
+                attachments: array_values($request->file('attachments', [])),
+            );
+
+            $this->tokenService->logActivity($accessToken, 'ticket_replied', 'esm_ticket', $helpdeskTicket->id);
+
+            return $this->successResponse(
+                data: [
+                    'id' => $helpdeskMessage->id,
+                    'author_name' => $helpdeskMessage->author_name,
+                    'message' => $helpdeskMessage->body,
+                    'created_at' => $helpdeskMessage->created_at?->toISOString(),
+                ],
+                message: 'Reply posted successfully',
+                statusCode: Response::HTTP_CREATED
+            );
+        }
 
         $message = $this->replyToTicketAction->execute(
             ticket: $ticket,

@@ -39,6 +39,10 @@ final class StoreTicketRequest extends FormRequest
             'service_team_id' => ['nullable', 'uuid', $this->ofTenant('esm_service_teams')],
             'requester_user_id' => ['nullable', 'uuid', $this->tenantMember()],
             'asset_id' => ['nullable', 'uuid', $this->tenantOwns('eam_fixed_assets')],
+            'impact' => ['nullable', 'string', 'in:low,medium,high'],
+            'urgency' => ['nullable', 'string', 'in:low,medium,high'],
+            'tags' => ['nullable', 'array', 'max:30'],
+            'tags.*' => ['string', 'max:50'],
         ];
     }
 

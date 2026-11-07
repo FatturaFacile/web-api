@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
+use Modules\ServiceManagement\Enums\TicketStatus;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
@@ -32,6 +33,12 @@ final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInte
             'csat_score' => 'integer',
             'custom_fields' => 'array',
             'metadata' => 'array',
+            'tags' => 'array',
+            'reopened_count' => 'integer',
+            'status_changed_at' => 'datetime',
+            'sla_paused_at' => 'datetime',
+            'sla_paused_minutes' => 'integer',
+            'customer_last_read_at' => 'datetime',
         ];
     }
 
@@ -187,5 +194,73 @@ final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInte
     public function csatSurveys(): HasMany
     {
         return $this->hasMany(CSATSurvey::class, 'ticket_id');
+    }
+
+    /**
+     * @return HasMany<TicketWatcher, $this>
+     */
+    public function watchers(): HasMany
+    {
+        return $this->hasMany(TicketWatcher::class, 'ticket_id');
+    }
+
+    /**
+     * @return HasMany<TicketActivity, $this>
+     */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(TicketActivity::class, 'ticket_id');
+    }
+
+    /**
+     * @return HasMany<TicketMessage, $this>
+     */
+    public function messages(): HasMany
+    {
+        return $this->hasMany(TicketMessage::class, 'ticket_id');
+    }
+
+    /**
+     * @return BelongsTo<Ticket, $this>
+     */
+    public function mergedInto(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'merged_into_ticket_id');
+    }
+
+    /**
+     * @return HasMany<Ticket, $this>
+     */
+    public function mergedTickets(): HasMany
+    {
+        return $this->hasMany(self::class, 'merged_into_ticket_id');
+    }
+
+    /**
+     * The address replies to the requester go to: the one the ticket was opened with, else the customer's.
+     */
+    public function requesterEmail(): ?string
+    {
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
+        $email = $metadata['contact_email'] ?? $this->customer?->email;
+
+        return is_string($email) && $email !== '' ? $email : null;
+    }
+
+    /**
+     * The requester's name for greetings and placeholders.
+     */
+    public function requesterName(): string
+    {
+        $metadata = is_array($this->metadata) ? $this->metadata : [];
+        $contact = $this->customer;
+        $contactName = $contact === null ? '' : trim((string) ($contact->company_name ?: trim(($contact->first_name ?? '').' '.($contact->last_name ?? ''))));
+
+        return (string) ($metadata['contact_name'] ?? ($contactName !== '' ? $contactName : ($this->requesterEmail() ?? 'Customer')));
+    }
+
+    public function statusEnum(): TicketStatus
+    {
+        return TicketStatus::fromStored($this->status);
     }
 }

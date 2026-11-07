@@ -44,6 +44,27 @@ final class TicketPolicy
         return $this->belongsToTenant($user, (string) $ticket->tenant_id) && ! $ticket->is_locked;
     }
 
+    /**
+     * Replies and internal notes on the conversation.
+     */
+    public function reply(User $user, Ticket $ticket): bool
+    {
+        return $this->update($user, $ticket);
+    }
+
+    /**
+     * Merge, split and watchers change more than one ticket or the people notified.
+     */
+    public function merge(User $user, Ticket $ticket): bool
+    {
+        return $this->update($user, $ticket);
+    }
+
+    public function manageWatchers(User $user, Ticket $ticket): bool
+    {
+        return $this->belongsToTenant($user, (string) $ticket->tenant_id);
+    }
+
     public function delete(User $user, Ticket $ticket): bool
     {
         return $this->belongsToTenant($user, (string) $ticket->tenant_id) && ! $ticket->is_locked;
