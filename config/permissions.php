@@ -89,6 +89,12 @@ return [
         // Every member announces their own guests; the policy reserves the register of visitors, check-in, the list of
         // who is on site and the kiosks to reception (owner, admin, receptionist). Read-only roles never write.
         'visitors' => ['read' => $anyMember, 'write' => $anyMember],
+        // INTRA lists of goods and services with other member states: finance and customs staff. The read-only
+        // accountant reads them; read-only roles never write.
+        'intrastat' => [
+            'read' => [...$financeReaders, 'customs'],
+            'write' => [...$finance, 'customs'],
+        ],
     ],
 
     /*
