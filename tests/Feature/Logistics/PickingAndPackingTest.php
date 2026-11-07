@@ -254,8 +254,8 @@ test('the terminal moves stock between bins', function (): void {
 });
 
 test('terminal counts feed the session, including goods nobody expected', function (): void {
-    $item = logisticsItem(['tracking_type' => 'none']);
-    $found = logisticsItem(['tracking_type' => 'none']);
+    $item = logisticsItem(['tracking_type' => 'none', 'current_moving_average_cost' => 1]);
+    $found = logisticsItem(['tracking_type' => 'none', 'current_moving_average_cost' => 1]);
     $bin = logisticsBin($this->warehouse);
     $quant = logisticsQuant($bin, $item, '10');
 

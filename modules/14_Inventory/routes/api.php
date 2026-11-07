@@ -72,17 +72,17 @@ Route::prefix('api/v1/inventory')
         Route::post('pick-lists/{id}/cancel', [StockPickListController::class, 'cancel'])->name('inventory.pick-lists.cancel');
         Route::post('pick-lists/{id}/packing-list', [StockPackingController::class, 'store'])->name('inventory.pick-lists.packing-list');
 
-        // 13. Packing Lists, Cartons and Pallets
+        // 8b. Packing Lists, Cartons and Pallets
         Route::post('packing/calculate', [StockPackingController::class, 'calculate'])->name('inventory.packing.calculate');
         Route::get('packing-lists/{id}', [StockPackingController::class, 'show'])->name('inventory.packing-lists.show');
 
-        // 14. Handheld Barcode Terminal
+        // 8c. Handheld Barcode Terminal
         Route::post('terminal/receipt', [WarehouseTerminalController::class, 'receipt'])->name('inventory.terminal.receipt');
         Route::post('terminal/pick', [WarehouseTerminalController::class, 'pick'])->name('inventory.terminal.pick');
         Route::post('terminal/transfer', [WarehouseTerminalController::class, 'transfer'])->name('inventory.terminal.transfer');
         Route::post('terminal/count', [WarehouseTerminalController::class, 'count'])->name('inventory.terminal.count');
 
-        // 16. Carriers, Shipments and Tracking
+        // 8d. Carriers, Shipments and Tracking
         Route::get('carriers', [ShippingController::class, 'carriers'])->name('inventory.carriers.index');
         Route::post('carriers', [ShippingController::class, 'storeCarrier'])->name('inventory.carriers.store');
         Route::post('shipments', [ShippingController::class, 'storeShipment'])->name('inventory.shipments.store');
@@ -91,7 +91,7 @@ Route::prefix('api/v1/inventory')
         Route::post('shipments/{id}/tracking', [ShippingController::class, 'addTrackingEvent'])->name('inventory.shipments.tracking');
         Route::post('shipments/{id}/refresh', [ShippingController::class, 'refresh'])->name('inventory.shipments.refresh');
 
-        // 17. Safety Data Sheets
+        // 8e. Safety Data Sheets
         Route::get('safety-sheets', [SafetyDataSheetController::class, 'index'])->name('inventory.safety-sheets.index');
         Route::post('safety-sheets', [SafetyDataSheetController::class, 'store'])->name('inventory.safety-sheets.store');
         Route::get('safety-sheets/versions/{versionId}/file', [SafetyDataSheetController::class, 'download'])->name('inventory.safety-sheets.versions.file');
@@ -100,7 +100,7 @@ Route::prefix('api/v1/inventory')
         Route::get('safety-sheets/{id}/versions', [SafetyDataSheetController::class, 'versions'])->name('inventory.safety-sheets.versions.index');
         Route::post('safety-sheets/{id}/versions', [SafetyDataSheetController::class, 'addVersion'])->name('inventory.safety-sheets.versions.store');
 
-        // 18. Weighbridge
+        // 8f. Weighbridge
         Route::get('weighbridge/vehicles', [WeighbridgeController::class, 'vehicles'])->name('inventory.weighbridge.vehicles.index');
         Route::post('weighbridge/vehicles', [WeighbridgeController::class, 'storeVehicle'])->name('inventory.weighbridge.vehicles.store');
         Route::post('weighbridge/readings', [WeighbridgeController::class, 'storeReading'])->name('inventory.weighbridge.readings.store');
@@ -110,12 +110,12 @@ Route::prefix('api/v1/inventory')
         Route::post('weighbridge/tickets/{id}/second-weighing', [WeighbridgeController::class, 'secondWeighing'])->name('inventory.weighbridge.tickets.second-weighing');
         Route::post('weighbridge/tickets/{id}/bill', [WeighbridgeController::class, 'bill'])->name('inventory.weighbridge.tickets.bill');
 
-        // 19. Customer Portal Requests
+        // 8g. Customer Portal Requests
         Route::get('portal-requests', [PortalMovementRequestController::class, 'index'])->name('inventory.portal-requests.index');
         Route::post('portal-requests/{id}/approve', [PortalMovementRequestController::class, 'approve'])->name('inventory.portal-requests.approve');
         Route::post('portal-requests/{id}/reject', [PortalMovementRequestController::class, 'reject'])->name('inventory.portal-requests.reject');
 
-        // 20. Warranties and Repairs
+        // 8h. Warranties and Repairs
         Route::get('warranties/lookup', [RepairOrderController::class, 'lookup'])->name('inventory.warranties.lookup');
         Route::put('serials/{id}/warranty', [RepairOrderController::class, 'recordWarranty'])->name('inventory.serials.warranty');
         Route::get('repair-orders', [RepairOrderController::class, 'index'])->name('inventory.repair-orders.index');
@@ -124,16 +124,16 @@ Route::prefix('api/v1/inventory')
         Route::post('repair-orders/{id}/status', [RepairOrderController::class, 'advance'])->name('inventory.repair-orders.status');
         Route::post('repair-orders/{id}/parts', [RepairOrderController::class, 'addPart'])->name('inventory.repair-orders.parts');
 
-        // 15. Barcode Labels
+        // 8i. Barcode Labels
         Route::post('labels/barcode', [StockLabelController::class, 'barcode'])->name('inventory.labels.barcode');
 
         // 9. Barcode Scanning (GS1-128 / EAN-13 / Serials / Bins)
         Route::post('barcode/scan', [BarcodeController::class, 'scan'])->name('inventory.barcode.scan');
 
-        // 11. Warehouse Locations
+        // 9b. Warehouse Locations
         Route::post('warehouses/{id}/locations', [WarehouseLocationController::class, 'store'])->name('inventory.warehouses.locations.store');
 
-        // 12. Lots: Expiry, Quarantine, Genealogy and Batch Stock
+        // 9c. Lots: Expiry, Quarantine, Genealogy and Batch Stock
         Route::get('lots', [StockLotController::class, 'index'])->name('inventory.lots.index');
         Route::post('lots', [StockLotController::class, 'store'])->name('inventory.lots.store');
         Route::get('lots/stock', [StockLotController::class, 'stock'])->name('inventory.lots.stock');
