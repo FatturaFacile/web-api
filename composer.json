@@ -73,6 +73,10 @@
             "Modules\\Associations\\": "modules/31_Associations/src/",
             "Modules\\Customs\\": "modules/32_Customs/src/",
             "Modules\\Workshop\\": "modules/33_Workshop/src/",
+            "Modules\\ConstructionTrades\\": "modules/34_ConstructionTrades/src/",
+            "Modules\\Childcare\\": "modules/35_Childcare/src/",
+            "Modules\\PracticeManagement\\": "modules/36_PracticeManagement/src/",
+            "Modules\\Hospitality\\": "modules/37_Hospitality/src/",
             "Modules\\": "modules/"
         }
     },

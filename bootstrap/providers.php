@@ -11,7 +11,9 @@ use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
+use Modules\Childcare\Providers\ChildcareServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
+use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
@@ -19,12 +21,14 @@ use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
+use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
+use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
@@ -68,4 +72,8 @@ return [
     AnalyticsServiceProvider::class,
     DocumentTrustServiceProvider::class,
     WorkshopServiceProvider::class,
+    ConstructionTradesServiceProvider::class,
+    ChildcareServiceProvider::class,
+    PracticeManagementServiceProvider::class,
+    HospitalityServiceProvider::class,
 ];

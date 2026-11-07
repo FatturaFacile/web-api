@@ -85,6 +85,8 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/association-area',
         'api/v1/association-access/verify',
         'api/v1/association-payments/callback',
+        // Family portal of the kindergartens: authenticated by the personal token of a guardian, see Verticals\ChildcareTest.
+        'api/v1/childcare-family',
         'docs',
         'sanctum/csrf-cookie',
         'up',
