@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Modules\FiscalRetail\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\DailyCorrispettivoFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[UseFactory(DailyCorrispettivoFactory::class)]
 class DailyCorrispettivo extends Model
 {
-    use BelongsToTenant, HasUuids;
+    /** @use HasFactory<DailyCorrispettivoFactory> */
+    use BelongsToTenant, HasFactory, HasUuids;
 
     protected $table = 'daily_corrispettivi';
 

@@ -1,0 +1,213 @@
+<?php
+
+declare(strict_types=1);
+
+use App\Models\DocumentTemplate;
+use App\Models\PassiveInvoiceLine;
+use App\Models\SupplierCostRule;
+use Database\Factories\ApiKeyFactory;
+use Database\Factories\CommercialDocumentFactory;
+use Database\Factories\CommercialDocumentLineFactory;
+use Database\Factories\CommunicationChannelFactory;
+use Database\Factories\DailyCorrispettivoFactory;
+use Database\Factories\DeclarationOfIntentFactory;
+use Database\Factories\DeliveryLogFactory;
+use Database\Factories\DocumentSignatureFactory;
+use Database\Factories\DocumentSigningSettingFactory;
+use Database\Factories\DocumentTemplateFactory;
+use Database\Factories\EnasarcoParameterFactory;
+use Database\Factories\HealthExpenseFactory;
+use Database\Factories\HealthExpenseSettingFactory;
+use Database\Factories\IntegrationsPaymentLinkFactory;
+use Database\Factories\PassiveInvoiceLineFactory;
+use Database\Factories\PaymentGatewaySettingFactory;
+use Database\Factories\PaymentWebhookEventFactory;
+use Database\Factories\PayrollLedgerPostingFactory;
+use Database\Factories\PayrollLedgerSettingFactory;
+use Database\Factories\PeriodClosingFactory;
+use Database\Factories\PortalMovementRequestFactory;
+use Database\Factories\PreservationRecordFactory;
+use Database\Factories\ProductChargeAssignmentFactory;
+use Database\Factories\ProductChargeRateFactory;
+use Database\Factories\ProductChargeTypeFactory;
+use Database\Factories\RepairOrderFactory;
+use Database\Factories\RepairOrderLineFactory;
+use Database\Factories\RibaPresentationFactory;
+use Database\Factories\RibaReceiptFactory;
+use Database\Factories\SafetyDataSheetDeliveryFactory;
+use Database\Factories\SafetyDataSheetFactory;
+use Database\Factories\SafetyDataSheetVersionFactory;
+use Database\Factories\SalesCommissionSettingFactory;
+use Database\Factories\SalesCommissionStatementFactory;
+use Database\Factories\SalesTargetFactory;
+use Database\Factories\SalesTeamFactory;
+use Database\Factories\ShipmentFactory;
+use Database\Factories\ShipmentTrackingEventFactory;
+use Database\Factories\ShippingCarrierFactory;
+use Database\Factories\StockLotLinkFactory;
+use Database\Factories\StockPackageFactory;
+use Database\Factories\StockPackageItemFactory;
+use Database\Factories\StockReservationAllocationFactory;
+use Database\Factories\SupplierCostRuleFactory;
+use Database\Factories\VatRegisterEntryFactory;
+use Database\Factories\VatTaxSettingFactory;
+use Database\Factories\WeighbridgeReadingFactory;
+use Database\Factories\WeighbridgeTicketFactory;
+use Database\Factories\WeighbridgeVehicleFactory;
+use Database\Factories\WithholdingSettlementFactory;
+use Database\Factories\WithholdingSettlementLineFactory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Communication\Models\CommunicationChannel;
+use Modules\Communication\Models\DeliveryLog;
+use Modules\DocumentTrust\Models\DocumentSignature;
+use Modules\DocumentTrust\Models\DocumentSigningSetting;
+use Modules\DocumentTrust\Models\PreservationRecord;
+use Modules\FiscalRetail\Models\CommercialDocument;
+use Modules\FiscalRetail\Models\CommercialDocumentLine;
+use Modules\FiscalRetail\Models\DailyCorrispettivo;
+use Modules\GeneralLedger\Models\EnasarcoParameter;
+use Modules\GeneralLedger\Models\PayrollLedgerPosting;
+use Modules\GeneralLedger\Models\PayrollLedgerSetting;
+use Modules\GeneralLedger\Models\VatRegisterEntry;
+use Modules\GeneralLedger\Models\VatTaxSetting;
+use Modules\GeneralLedger\Models\WithholdingSettlement;
+use Modules\GeneralLedger\Models\WithholdingSettlementLine;
+use Modules\HealthExpenses\Models\HealthExpense;
+use Modules\HealthExpenses\Models\HealthExpenseSetting;
+use Modules\Integrations\Models\ApiKey;
+use Modules\Integrations\Models\PaymentGatewaySetting;
+use Modules\Integrations\Models\PaymentLink;
+use Modules\Integrations\Models\PaymentWebhookEvent;
+use Modules\Inventory\Models\PortalMovementRequest;
+use Modules\Inventory\Models\ProductChargeAssignment;
+use Modules\Inventory\Models\ProductChargeRate;
+use Modules\Inventory\Models\ProductChargeType;
+use Modules\Inventory\Models\RepairOrder;
+use Modules\Inventory\Models\RepairOrderLine;
+use Modules\Inventory\Models\SafetyDataSheet;
+use Modules\Inventory\Models\SafetyDataSheetDelivery;
+use Modules\Inventory\Models\SafetyDataSheetVersion;
+use Modules\Inventory\Models\Shipment;
+use Modules\Inventory\Models\ShipmentTrackingEvent;
+use Modules\Inventory\Models\ShippingCarrier;
+use Modules\Inventory\Models\StockLotLink;
+use Modules\Inventory\Models\StockPackage;
+use Modules\Inventory\Models\StockPackageItem;
+use Modules\Inventory\Models\StockReservationAllocation;
+use Modules\Inventory\Models\WeighbridgeReading;
+use Modules\Inventory\Models\WeighbridgeTicket;
+use Modules\Inventory\Models\WeighbridgeVehicle;
+use Modules\Invoicing\Models\DeclarationOfIntent;
+use Modules\Invoicing\Models\SalesCommissionSetting;
+use Modules\Invoicing\Models\SalesCommissionStatement;
+use Modules\Invoicing\Models\SalesTarget;
+use Modules\Invoicing\Models\SalesTeam;
+use Modules\PracticeManagement\Models\PeriodClosing;
+use Modules\Treasury\Models\RibaPresentation;
+use Modules\Treasury\Models\RibaReceipt;
+
+uses(RefreshDatabase::class);
+
+test('every model of the group has a working factory', function (string $model, string $factory): void {
+    $record = $factory::new()->create();
+
+    expect($record)->toBeInstanceOf($model)->and($record->exists)->toBeTrue();
+})->with([
+    [DocumentTemplate::class, DocumentTemplateFactory::class],
+    [PassiveInvoiceLine::class, PassiveInvoiceLineFactory::class],
+    [SupplierCostRule::class, SupplierCostRuleFactory::class],
+    [DeclarationOfIntent::class, DeclarationOfIntentFactory::class],
+    [SalesCommissionSetting::class, SalesCommissionSettingFactory::class],
+    [SalesCommissionStatement::class, SalesCommissionStatementFactory::class],
+    [SalesTarget::class, SalesTargetFactory::class],
+    [SalesTeam::class, SalesTeamFactory::class],
+    [PortalMovementRequest::class, PortalMovementRequestFactory::class],
+    [ProductChargeAssignment::class, ProductChargeAssignmentFactory::class],
+    [ProductChargeRate::class, ProductChargeRateFactory::class],
+    [ProductChargeType::class, ProductChargeTypeFactory::class],
+    [RepairOrder::class, RepairOrderFactory::class],
+    [RepairOrderLine::class, RepairOrderLineFactory::class],
+    [SafetyDataSheet::class, SafetyDataSheetFactory::class],
+    [SafetyDataSheetDelivery::class, SafetyDataSheetDeliveryFactory::class],
+    [SafetyDataSheetVersion::class, SafetyDataSheetVersionFactory::class],
+    [Shipment::class, ShipmentFactory::class],
+    [ShipmentTrackingEvent::class, ShipmentTrackingEventFactory::class],
+    [ShippingCarrier::class, ShippingCarrierFactory::class],
+    [StockLotLink::class, StockLotLinkFactory::class],
+    [StockPackage::class, StockPackageFactory::class],
+    [StockPackageItem::class, StockPackageItemFactory::class],
+    [StockReservationAllocation::class, StockReservationAllocationFactory::class],
+    [WeighbridgeReading::class, WeighbridgeReadingFactory::class],
+    [WeighbridgeTicket::class, WeighbridgeTicketFactory::class],
+    [WeighbridgeVehicle::class, WeighbridgeVehicleFactory::class],
+    [EnasarcoParameter::class, EnasarcoParameterFactory::class],
+    [WithholdingSettlement::class, WithholdingSettlementFactory::class],
+    [WithholdingSettlementLine::class, WithholdingSettlementLineFactory::class],
+    [CommunicationChannel::class, CommunicationChannelFactory::class],
+    [DeliveryLog::class, DeliveryLogFactory::class],
+    [RibaPresentation::class, RibaPresentationFactory::class],
+    [RibaReceipt::class, RibaReceiptFactory::class],
+    [CommercialDocument::class, CommercialDocumentFactory::class],
+    [CommercialDocumentLine::class, CommercialDocumentLineFactory::class],
+    [DailyCorrispettivo::class, DailyCorrispettivoFactory::class],
+    [HealthExpense::class, HealthExpenseFactory::class],
+    [HealthExpenseSetting::class, HealthExpenseSettingFactory::class],
+    [ApiKey::class, ApiKeyFactory::class],
+    [PaymentGatewaySetting::class, PaymentGatewaySettingFactory::class],
+    [PaymentLink::class, IntegrationsPaymentLinkFactory::class],
+    [PaymentWebhookEvent::class, PaymentWebhookEventFactory::class],
+    [DocumentSignature::class, DocumentSignatureFactory::class],
+    [DocumentSigningSetting::class, DocumentSigningSettingFactory::class],
+    [PreservationRecord::class, PreservationRecordFactory::class],
+    [PeriodClosing::class, PeriodClosingFactory::class],
+    [PayrollLedgerPosting::class, PayrollLedgerPostingFactory::class],
+    [PayrollLedgerSetting::class, PayrollLedgerSettingFactory::class],
+    [VatRegisterEntry::class, VatRegisterEntryFactory::class],
+    [VatTaxSetting::class, VatTaxSettingFactory::class],
+]);
+
+test('every wired model resolves its own factory', function (string $model, string $factory): void {
+    expect($model::factory())->toBeInstanceOf($factory);
+})->with([
+    [DocumentTemplate::class, DocumentTemplateFactory::class],
+    [PassiveInvoiceLine::class, PassiveInvoiceLineFactory::class],
+    [SupplierCostRule::class, SupplierCostRuleFactory::class],
+    [DeclarationOfIntent::class, DeclarationOfIntentFactory::class],
+    [SalesCommissionSetting::class, SalesCommissionSettingFactory::class],
+    [SalesCommissionStatement::class, SalesCommissionStatementFactory::class],
+    [SalesTarget::class, SalesTargetFactory::class],
+    [SalesTeam::class, SalesTeamFactory::class],
+    [PortalMovementRequest::class, PortalMovementRequestFactory::class],
+    [ProductChargeAssignment::class, ProductChargeAssignmentFactory::class],
+    [ProductChargeRate::class, ProductChargeRateFactory::class],
+    [ProductChargeType::class, ProductChargeTypeFactory::class],
+    [SafetyDataSheet::class, SafetyDataSheetFactory::class],
+    [SafetyDataSheetDelivery::class, SafetyDataSheetDeliveryFactory::class],
+    [SafetyDataSheetVersion::class, SafetyDataSheetVersionFactory::class],
+    [Shipment::class, ShipmentFactory::class],
+    [ShipmentTrackingEvent::class, ShipmentTrackingEventFactory::class],
+    [ShippingCarrier::class, ShippingCarrierFactory::class],
+    [StockLotLink::class, StockLotLinkFactory::class],
+    [StockPackage::class, StockPackageFactory::class],
+    [StockPackageItem::class, StockPackageItemFactory::class],
+    [StockReservationAllocation::class, StockReservationAllocationFactory::class],
+    [WeighbridgeReading::class, WeighbridgeReadingFactory::class],
+    [WeighbridgeTicket::class, WeighbridgeTicketFactory::class],
+    [WeighbridgeVehicle::class, WeighbridgeVehicleFactory::class],
+    [CommunicationChannel::class, CommunicationChannelFactory::class],
+    [DeliveryLog::class, DeliveryLogFactory::class],
+    [CommercialDocument::class, CommercialDocumentFactory::class],
+    [CommercialDocumentLine::class, CommercialDocumentLineFactory::class],
+    [DailyCorrispettivo::class, DailyCorrispettivoFactory::class],
+    [HealthExpense::class, HealthExpenseFactory::class],
+    [HealthExpenseSetting::class, HealthExpenseSettingFactory::class],
+    [ApiKey::class, ApiKeyFactory::class],
+    [DocumentSignature::class, DocumentSignatureFactory::class],
+    [DocumentSigningSetting::class, DocumentSigningSettingFactory::class],
+    [PreservationRecord::class, PreservationRecordFactory::class],
+    [PeriodClosing::class, PeriodClosingFactory::class],
+    [PayrollLedgerPosting::class, PayrollLedgerPostingFactory::class],
+    [PayrollLedgerSetting::class, PayrollLedgerSettingFactory::class],
+    [VatRegisterEntry::class, VatRegisterEntryFactory::class],
+    [VatTaxSetting::class, VatTaxSettingFactory::class],
+]);

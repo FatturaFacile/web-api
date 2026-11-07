@@ -63,14 +63,30 @@ abstract class BaseEnterpriseModel extends Model
     /**
      * Create a new factory instance for the enterprise model.
      *
+     * A `#[UseFactory]` attribute or a `$factory` property wins. Otherwise the factory named after the class basename is
+     * used, but only when it builds this very model: modules reuse short names (`Shift`, `Attendance`, `FeePlan`), and a
+     * factory of a namesake in another module must not be picked up.
+     *
      * @return Factory<static>|null
      */
     protected static function newFactory()
     {
+        if (isset(static::$factory)) {
+            return static::$factory::new();
+        }
+
+        $declared = static::getUseFactoryAttribute();
+
+        if ($declared !== null) {
+            return $declared;
+        }
+
         $factoryName = 'Database\\Factories\\'.class_basename(static::class).'Factory';
         if (class_exists($factoryName)) {
-            /** @var class-string<Factory<static>> $factoryName */
-            return $factoryName::new();
+            /** @var Factory<static> $factory */
+            $factory = $factoryName::new();
+
+            return $factory->modelName() === static::class ? $factory : null;
         }
 
         return null;

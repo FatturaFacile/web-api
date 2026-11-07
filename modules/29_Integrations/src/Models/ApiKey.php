@@ -6,13 +6,18 @@ namespace Modules\Integrations\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Tenant;
+use Database\Factories\ApiKeyFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[UseFactory(ApiKeyFactory::class)]
 class ApiKey extends Model
 {
-    use BelongsToTenant, HasUuids;
+    /** @use HasFactory<ApiKeyFactory> */
+    use BelongsToTenant, HasFactory, HasUuids;
 
     public const string TokenPrefix = 'ffk_';
 

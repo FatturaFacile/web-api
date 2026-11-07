@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Models;
 
 use Carbon\CarbonImmutable;
+use Database\Factories\HumanResourcesShiftFactory;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\HumanResources\Casts\UtcInstant;
@@ -16,6 +18,7 @@ use Modules\HumanResources\Casts\UtcInstant;
  * @property CarbonImmutable|null $starts_at
  * @property CarbonImmutable|null $ends_at
  */
+#[UseFactory(HumanResourcesShiftFactory::class)]
 final class Shift extends BaseEnterpriseModel
 {
     public const string StatusDraft = 'draft';

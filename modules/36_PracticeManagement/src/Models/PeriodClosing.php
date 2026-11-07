@@ -6,8 +6,10 @@ namespace Modules\PracticeManagement\Models;
 
 use App\Models\Contact;
 use Carbon\CarbonImmutable;
+use Database\Factories\PeriodClosingFactory;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,8 +26,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property list<array{key: string, label: string, done: bool}> $checklist
  * @property ?string $notes
  */
+#[UseFactory(PeriodClosingFactory::class)]
 final class PeriodClosing extends Model
 {
+    /** @use HasFactory<PeriodClosingFactory> */
     use BelongsToTenant, HasFactory, HasUuidV7;
 
     public $incrementing = false;

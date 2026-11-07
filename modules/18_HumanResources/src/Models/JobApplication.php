@@ -4,14 +4,21 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Models;
 
+use Database\Factories\JobApplicationFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
  * An application. Its personal data are encrypted, and it disappears for good when its retention ends.
  */
+#[UseFactory(JobApplicationFactory::class)]
 final class JobApplication extends CandidateRecord
 {
+    /** @use HasFactory<JobApplicationFactory> */
+    use HasFactory;
+
     public const string StatusActive = 'active';
 
     public const string StatusHired = 'hired';

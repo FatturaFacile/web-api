@@ -5,12 +5,17 @@ declare(strict_types=1);
 namespace Modules\FiscalRetail\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\CommercialDocumentLineFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+#[UseFactory(CommercialDocumentLineFactory::class)]
 class CommercialDocumentLine extends Model
 {
-    use BelongsToTenant, HasUuids;
+    /** @use HasFactory<CommercialDocumentLineFactory> */
+    use BelongsToTenant, HasFactory, HasUuids;
 
     protected $fillable = [
         'tenant_id', 'commercial_document_id', 'source_line_id', 'description', 'quantity', 'unit_price', 'tax_rate',

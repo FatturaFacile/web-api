@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Models;
 
+use Database\Factories\AssociationsShiftFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -13,6 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property int $required_volunteers
  * @property string $status
  */
+#[UseFactory(AssociationsShiftFactory::class)]
 final class Shift extends AssociationRecord
 {
     public const string Planned = 'planned';
