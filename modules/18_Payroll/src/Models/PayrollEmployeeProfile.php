@@ -18,6 +18,11 @@ final class PayrollEmployeeProfile extends PayrollRecord
     {
         return [
             'social_security_number' => 'encrypted',
+            'birth_place' => 'encrypted',
+            'italian_tax_code' => 'encrypted',
+            'frontier_status_valid_from' => 'date:Y-m-d',
+            'frontier_commune_in_zone' => 'boolean',
+            'frontier_returns_daily' => 'boolean',
             'iban' => 'encrypted',
             'street' => 'encrypted',
             'house_number' => 'encrypted',

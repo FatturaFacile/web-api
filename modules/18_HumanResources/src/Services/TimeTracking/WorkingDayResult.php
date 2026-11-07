@@ -40,6 +40,12 @@ final class WorkingDayResult
     /** @var array<int, string> */
     public array $issues = [];
 
+    /** Working minutes of the published shifts of the day: null without a plan. It never enters the balance. */
+    public ?int $plannedMinutes = null;
+
+    /** @var array<int, string> The codes of the published shifts of the day. */
+    public array $plannedShifts = [];
+
     public function __construct(public CarbonImmutable $date) {}
 
     /**
@@ -55,7 +61,9 @@ final class WorkingDayResult
      */
     public function toArray(): array
     {
-        return [
+        $planned = $this->plannedMinutes === null ? [] : ['planned_minutes' => $this->plannedMinutes, 'planned_shifts' => $this->plannedShifts];
+
+        return $planned + [
             'date' => $this->date->format('Y-m-d'),
             'first_in' => $this->firstIn?->toIso8601String(),
             'last_out' => $this->lastOut?->toIso8601String(),

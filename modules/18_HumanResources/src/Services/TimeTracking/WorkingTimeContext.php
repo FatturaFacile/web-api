@@ -18,6 +18,7 @@ final class WorkingTimeContext
      * @param  array<int, HolidayEntry>  $holidays
      * @param  int  $statutoryOvertimeBeforeMinutes  The statutory overtime of the same year before the period.
      * @param  CarbonImmutable  $now  The current time: an open entry of today is not reported as a missing exit.
+     * @param  array<int, PlannedShiftEntry>  $plannedShifts  The published shifts of the period.
      */
     public function __construct(
         public EmployeeTimeProfile $profile,
@@ -29,5 +30,6 @@ final class WorkingTimeContext
         public array $absences = [],
         public array $holidays = [],
         public int $statutoryOvertimeBeforeMinutes = 0,
+        public array $plannedShifts = [],
     ) {}
 }

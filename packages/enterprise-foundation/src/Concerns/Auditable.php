@@ -16,7 +16,7 @@ trait Auditable
                     action: 'CREATED',
                     model: $model,
                     payloadBefore: null,
-                    payloadAfter: $model->getAttributes()
+                    payloadAfter: $model->auditPayload($model->getAttributes())
                 );
             }
         });
@@ -26,8 +26,8 @@ trait Auditable
                 app(AuditLedgerService::class)->record(
                     action: 'UPDATED',
                     model: $model,
-                    payloadBefore: $model->getRawOriginal(),
-                    payloadAfter: $model->getChanges()
+                    payloadBefore: $model->auditPayload($model->getRawOriginal()),
+                    payloadAfter: $model->auditPayload($model->getChanges())
                 );
             }
         });
@@ -37,10 +37,21 @@ trait Auditable
                 app(AuditLedgerService::class)->record(
                     action: 'DELETED',
                     model: $model,
-                    payloadBefore: $model->getRawOriginal(),
+                    payloadBefore: $model->auditPayload($model->getRawOriginal()),
                     payloadAfter: null
                 );
             }
         });
+    }
+
+    /**
+     * What of the attributes enters the immutable ledger. A model holding personal data overrides this to leave it out.
+     *
+     * @param  array<string, mixed>  $attributes
+     * @return array<string, mixed>
+     */
+    public function auditPayload(array $attributes): array
+    {
+        return $attributes;
     }
 }

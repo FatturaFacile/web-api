@@ -18,6 +18,7 @@ final class SwissPayrollSettings extends PayrollRecord
     protected function casts(): array
     {
         return [
+            'withholding_debtor_numbers' => 'array',
             'ahv_employee_rate_percent' => 'decimal:4',
             'ahv_employer_rate_percent' => 'decimal:4',
             'ahv_administration_cost_percent' => 'decimal:4',

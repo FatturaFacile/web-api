@@ -163,20 +163,11 @@ final class SwissPayrollCalculation
         $education = 0;
 
         foreach ($this->context->children as $child) {
-            if (! $child->allowanceEligible) {
-                continue;
-            }
+            $kind = SwissPayrollRules::familyAllowanceKind($child, $this->periodStart, $this->periodEnd);
 
-            $age = PayrollDates::ageAt($child->dateOfBirth, $this->periodStart);
-            $inEducation = $child->inEducation && ($child->educationEndDate === null || $child->educationEndDate >= $this->periodStart);
-
-            if ($child->dateOfBirth > $this->periodEnd) {
-                continue;
-            }
-
-            if ($inEducation && $age >= 15 && $age < 25) {
+            if ($kind === SwissPayrollRules::EducationAllowanceKind) {
                 $education++;
-            } elseif ($age < 16) {
+            } elseif ($kind === SwissPayrollRules::ChildAllowanceKind) {
                 $children++;
             }
         }

@@ -41,6 +41,8 @@ final class SaveSwissSettingsRequest extends FormRequest
             'ahv_member_number' => ['sometimes', 'nullable', 'string', 'max:50'],
             'uvg_insurer' => ['sometimes', 'nullable', 'string', 'max:255'],
             'bvg_insurer' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'withholding_debtor_numbers' => ['sometimes', 'nullable', 'array'],
+            'withholding_debtor_numbers.*' => ['string', 'max:50'],
         ];
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payroll\Calculation\Swiss;
 
 use DateTimeImmutable;
+use Modules\Payroll\Calculation\ChildData;
 use Modules\Payroll\Calculation\Dec;
 use Modules\Payroll\Calculation\PayrollDates;
 
@@ -13,8 +14,31 @@ use Modules\Payroll\Calculation\PayrollDates;
  */
 final class SwissPayrollRules
 {
+    public const string ChildAllowanceKind = 'child';
+
+    public const string EducationAllowanceKind = 'education';
+
     /** @var list<string> */
     private const array AnnualModelCantons = ['FR', 'GE', 'TI', 'VD', 'VS'];
+
+    /**
+     * The family allowance a child gives in a month, if any: education from 15 to 24 while in education, child under 16.
+     */
+    public static function familyAllowanceKind(ChildData $child, DateTimeImmutable $periodStart, DateTimeImmutable $periodEnd): ?string
+    {
+        if (! $child->allowanceEligible || $child->dateOfBirth > $periodEnd) {
+            return null;
+        }
+
+        $age = PayrollDates::ageAt($child->dateOfBirth, $periodStart);
+        $inEducation = $child->inEducation && ($child->educationEndDate === null || $child->educationEndDate >= $periodStart);
+
+        return match (true) {
+            $inEducation && $age >= 15 && $age < 25 => self::EducationAllowanceKind,
+            $age < 16 => self::ChildAllowanceKind,
+            default => null,
+        };
+    }
 
     /**
      * The AHV reference age date (AHV 21 reform: 65 for men; for women born 1961-1963 a transitional age).

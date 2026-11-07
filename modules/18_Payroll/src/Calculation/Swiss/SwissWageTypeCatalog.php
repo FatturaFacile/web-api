@@ -12,6 +12,12 @@ use Modules\Payroll\Calculation\WageTypeKind;
  */
 final class SwissWageTypeCatalog
 {
+    public const string ShortTimeReduction = '1910';
+
+    public const string ShortTimeCompensation = '2030';
+
+    public const string BadWeatherCompensation = '2040';
+
     /**
      * @return list<WageTypeData>
      */
@@ -53,6 +59,30 @@ final class SwissWageTypeCatalog
             self::employer(SwissWageTypeCodes::KtgEmployer, 'IGM datore di lavoro', 1030),
             self::employer(SwissWageTypeCodes::BvgEmployer, 'LPP datore di lavoro', 1040),
             self::employer(SwissWageTypeCodes::FakEmployer, 'Cassa assegni familiari (CAF)', 1050),
+        ];
+    }
+
+    /**
+     * The wage types of short-time work and bad weather, created when a company first applies a claim. The reduction stays
+     * out of the social bases because contributions run on the full salary during short-time work (SECO 716.400, question
+     * 13); the withholding tax follows what is really paid. The certificate box 7 follows the other replacement incomes of
+     * this catalog and is not confirmed by a source.
+     *
+     * @return list<WageTypeData>
+     */
+    public static function shortTimeTypes(): array
+    {
+        return [
+            new WageTypeData(
+                code: self::ShortTimeReduction,
+                name: 'Riduzione per lavoro ridotto / intemperie',
+                kind: WageTypeKind::Earning,
+                subjectToWithholdingTax: true,
+                certificateBox: '1',
+                sortOrder: self::order(self::ShortTimeReduction),
+            ),
+            self::allowance(self::ShortTimeCompensation, 'Indennità per lavoro ridotto'),
+            self::allowance(self::BadWeatherCompensation, 'Indennità per intemperie'),
         ];
     }
 

@@ -36,6 +36,7 @@ final class SwissWorkingTimeEngine
                 ? self::evaluateSimplifiedDay($day, $context->dailyRecords)
                 : self::evaluateDetailedDay($day, $intervals, $issues);
             self::applyTarget($result, $context);
+            self::applyPlan($result, $context);
             $report->days[] = $result;
         }
 
@@ -46,10 +47,12 @@ final class SwissWorkingTimeEngine
     }
 
     /**
+     * The working periods between the events, and the anomalies by local day.
+     *
      * @param  array<int, ClockEntry>  $events
      * @return array{0: array<int, WorkInterval>, 1: array<string, array<int, string>>}
      */
-    private static function buildIntervals(array $events, CarbonImmutable $now): array
+    public static function buildIntervals(array $events, CarbonImmutable $now): array
     {
         $valid = array_values(array_filter($events, static fn (ClockEntry $event): bool => ! $event->isDeleted));
         usort($valid, static fn (ClockEntry $left, ClockEntry $right): int => $left->occurredAt <=> $right->occurredAt);
@@ -241,6 +244,21 @@ final class SwissWorkingTimeEngine
         }
 
         $result->targetMinutes = $target;
+    }
+
+    /**
+     * The published plan of the day, next to what was recorded: the balance stays on the contractual target.
+     */
+    private static function applyPlan(WorkingDayResult $result, WorkingTimeContext $context): void
+    {
+        $date = $result->date->format('Y-m-d');
+
+        foreach ($context->plannedShifts as $shift) {
+            if ($shift->workDate === $date) {
+                $result->plannedMinutes = ($result->plannedMinutes ?? 0) + $shift->plannedMinutes;
+                $result->plannedShifts[] = $shift->code;
+            }
+        }
     }
 
     private static function addWeeks(WorkingTimeReport $report, float|int|string $legalMaximumHours, int $workDaysPerWeek): void
