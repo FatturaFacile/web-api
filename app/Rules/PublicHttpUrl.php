@@ -4,34 +4,38 @@ declare(strict_types=1);
 
 namespace App\Rules;
 
+use App\Exceptions\UnsafeOutboundUrlException;
+use App\Services\Security\OutboundUrlGuard;
 use Closure;
 use Illuminate\Contracts\Validation\ValidationRule;
 
 /**
- * An http(s) URL that does not point at the local machine or a private network, because the server calls it on
- * behalf of a tenant. Only literal hosts are checked; names are not resolved.
+ * An http(s) URL whose host resolves to public addresses only, because the server calls it on behalf of a tenant.
+ * The check is repeated (and the addresses pinned) on every request by {@see OutboundUrlGuard::protect()}: this rule
+ * only rejects a bad address early, with a validation message.
  */
 class PublicHttpUrl implements ValidationRule
 {
+    /**
+     * @param  list<string>  $schemes
+     */
+    public function __construct(private readonly array $schemes = ['http', 'https'], private readonly ?string $message = null) {}
+
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
-        $parts = is_string($value) ? parse_url($value) : false;
-        $host = strtolower((string) ($parts['host'] ?? ''));
-
-        if ($parts === false || ! in_array($parts['scheme'] ?? '', ['http', 'https'], true) || $host === '' || $this->isInternal($host)) {
-            $fail(__('ecommerce.errors.invalid_url'));
+        if (! is_string($value) || ! $this->inspect($value)) {
+            $fail($this->message ?? __('ecommerce.errors.invalid_url'));
         }
     }
 
-    private function isInternal(string $host): bool
+    private function inspect(string $url): bool
     {
-        $host = trim($host, '[]');
+        try {
+            app(OutboundUrlGuard::class)->inspectUrl($url, $this->schemes);
 
-        if ($host === 'localhost' || str_ends_with($host, '.local') || str_ends_with($host, '.internal') || str_ends_with($host, '.localhost')) {
             return true;
+        } catch (UnsafeOutboundUrlException) {
+            return false;
         }
-
-        return filter_var($host, FILTER_VALIDATE_IP) !== false
-            && filter_var($host, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false;
     }
 }

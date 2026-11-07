@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
 use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
+use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
 use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Auth\Middleware\Authenticate;
@@ -29,6 +30,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trustProxies(at: '*');
 
         $middleware->prepend(NormalizeTenantInput::class);
+
+        // Hardening headers (nosniff, no framing, no referrer, CSP, HSTS over HTTPS) on every response.
+        $middleware->append(SecurityHeaders::class);
 
         $middleware->statefulApi();
         $middleware->throttleApi();

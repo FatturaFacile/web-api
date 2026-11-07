@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Security\HostResolver;
 use App\Exceptions\EcommerceException;
 use App\Jobs\PushStockToEcommerceJob;
 use App\Models\Contact;
@@ -24,6 +25,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\StaticHostResolver;
 
 uses(RefreshDatabase::class);
 
@@ -469,7 +471,8 @@ test('woocommerce webhooks are verified, imported once and can cancel an order r
     $headers = ['X-WC-Webhook-Topic' => 'order.created', 'X-WC-Webhook-Signature' => base64_encode(hash_hmac('sha256', $body, EC_SECRET, true))];
 
     ecSignedPost($channel, $body, $headers)->assertOk()->assertJsonPath('data.imported', 1);
-    ecSignedPost($channel, $body, $headers)->assertOk()->assertJsonPath('data.duplicates', 1);
+    // A replay of the same signed delivery is acknowledged without being processed again.
+    ecSignedPost($channel, $body, $headers)->assertOk()->assertJsonPath('data.replayed', true);
     expect(SalesOrder::count())->toBe(1)->and(ecStock($this->mug))->toBe(8.0);
 
     $cancelled = json_encode(ecWooOrder(4001, [ecWooItem('MUG-1', 800, 0, 2)], 'cancelled'));
@@ -478,7 +481,8 @@ test('woocommerce webhooks are verified, imported once and can cancel an order r
 
     expect(SalesOrder::first()->status)->toBe('cancelled')->and(ecStock($this->mug))->toBe(10.0);
 
-    $reactivated = json_encode(ecWooOrder(4001, [ecWooItem('MUG-1', 800, 0, 2)], 'processing'));
+    // WooCommerce stamps every update with date_modified: a byte-identical body would be a replay.
+    $reactivated = json_encode(['date_modified' => '2026-10-21T10:00:00'] + ecWooOrder(4001, [ecWooItem('MUG-1', 800, 0, 2)], 'processing'));
     ecSignedPost($channel, $reactivated, ['X-WC-Webhook-Topic' => 'order.updated', 'X-WC-Webhook-Signature' => base64_encode(hash_hmac('sha256', $reactivated, EC_SECRET, true))])->assertOk();
 
     expect(ecStock($this->mug))->toBe(8.0);
@@ -599,4 +603,91 @@ test('the manager resolves built-in drivers, accepts custom ones and rejects unk
 
     $unknown = ecChannel('woocommerce', ['name' => 'Unknown', 'driver' => 'magento']);
     expect(fn () => $manager->driver($unknown))->toThrow(EcommerceException::class);
+});
+
+// ---------------------------------------------------------------------------------------------------------------
+// Outbound guard (SSRF) and webhook replays
+// ---------------------------------------------------------------------------------------------------------------
+
+test('channel urls and shopify domains that reach internal addresses are rejected', function (): void {
+    app()->instance(HostResolver::class, new StaticHostResolver(['169.254.169.254.nip.io' => ['169.254.169.254'], 'internal.example.com' => ['10.0.0.8']]));
+    $woo = fn (string $url): array => ['name' => 'X', 'driver' => 'woocommerce', 'api_url' => $url, 'credentials' => ['consumer_key' => 'ck', 'consumer_secret' => 'cs']];
+    $shopify = fn (string $domain, string $name = 'S'): array => ['name' => $name, 'driver' => 'shopify', 'credentials' => ['shop_domain' => $domain, 'access_token' => 'shpat']];
+
+    foreach (['http://2130706433/', 'http://0x7f.1/', 'http://127.1/', 'http://169.254.169.254.nip.io/', 'http://[::ffff:127.0.0.1]/', 'https://internal.example.com/', 'gopher://woo.example.com/'] as $url) {
+        ecApi()->postJson('/api/v1/ecommerce/channels', $woo($url))->assertUnprocessable()->assertJsonValidationErrors('api_url');
+    }
+
+    foreach (['evil.example.com/admin?', 'user@127.0.0.1', '127.0.0.1', 'internal.example.com', 'shop.example.com:8080'] as $domain) {
+        ecApi()->postJson('/api/v1/ecommerce/channels', $shopify($domain))->assertUnprocessable()->assertJsonValidationErrors('credentials.shop_domain');
+    }
+
+    ecApi()->postJson('/api/v1/ecommerce/channels', $shopify('demo.myshopify.com'))->assertCreated();
+    ecApi()->postJson('/api/v1/ecommerce/channels', $shopify('shop.example.com', 'S2'))->assertCreated();
+});
+
+test('a stored shop address that now resolves to a private network is never called', function (): void {
+    Http::fake(['*' => Http::response(['orders' => []], 200)]);
+    $channel = ecChannel('woocommerce', ['api_url' => 'https://rebound.example.com']);
+    $shopify = ecChannel('shopify', ['name' => 'Bad shopify', 'credentials' => ['shop_domain' => 'evil.example.com/x?', 'access_token' => 'shpat']]);
+    app()->instance(HostResolver::class, new StaticHostResolver(['rebound.example.com' => ['192.168.1.10']]));
+
+    ecApi()->postJson("/api/v1/ecommerce/channels/{$channel->id}/test-connection")->assertOk()->assertJsonPath('data.connected', false);
+    ecApi()->postJson("/api/v1/ecommerce/channels/{$channel->id}/sync", ['filters' => ['orders']])->assertStatus(502);
+    ecApi()->postJson("/api/v1/ecommerce/channels/{$shopify->id}/test-connection")->assertOk()->assertJsonPath('data.connected', false);
+
+    Http::assertNothingSent();
+});
+
+test('shopify pagination links to internal hosts are not followed and redirects are disabled', function (): void {
+    $channel = ecChannel('shopify');
+    $requests = [];
+
+    Http::fake(function ($request, array $options) use (&$requests) {
+        $requests[] = ['url' => $request->url(), 'redirects' => $options['allow_redirects'] ?? null];
+
+        return Http::response(['orders' => []], 200, ['Link' => '<http://169.254.169.254/latest/meta-data/>; rel="next"']);
+    });
+
+    ecApi()->postJson("/api/v1/ecommerce/channels/{$channel->id}/sync", ['filters' => ['orders']])->assertStatus(502);
+
+    expect($requests)->toHaveCount(1)
+        ->and($requests[0]['url'])->toContain('demo.myshopify.com')
+        ->and($requests[0]['redirects'])->toBeFalse();
+});
+
+test('a replayed webhook is acknowledged and never processed twice', function (): void {
+    $channel = ecChannel('woocommerce');
+    ecMap($channel, $this->mug, 'product', '800');
+    $body = json_encode(ecWooOrder(4101, [ecWooItem('MUG-1', 800, 0, 1)]));
+    $signature = base64_encode(hash_hmac('sha256', $body, EC_SECRET, true));
+
+    ecSignedPost($channel, $body, ['X-WC-Webhook-Topic' => 'order.created', 'X-WC-Webhook-Signature' => $signature, 'X-WC-Webhook-Delivery-ID' => 'd-1'])->assertOk()->assertJsonPath('data.imported', 1);
+
+    // The same signed body with a fresh delivery id (headers are not signed), then the same delivery id with another body.
+    ecSignedPost($channel, $body, ['X-WC-Webhook-Topic' => 'order.created', 'X-WC-Webhook-Signature' => $signature, 'X-WC-Webhook-Delivery-ID' => 'd-2'])->assertOk()->assertJsonPath('data.replayed', true);
+
+    $other = json_encode(ecWooOrder(4102, [ecWooItem('MUG-1', 800, 0, 1)]));
+    ecSignedPost($channel, $other, ['X-WC-Webhook-Topic' => 'order.created', 'X-WC-Webhook-Signature' => base64_encode(hash_hmac('sha256', $other, EC_SECRET, true)), 'X-WC-Webhook-Delivery-ID' => 'd-1'])
+        ->assertOk()->assertJsonPath('data.replayed', true);
+
+    expect(SalesOrder::count())->toBe(1)->and(ecStock($this->mug))->toBe(9.0);
+});
+
+test('shopify webhooks older than the tolerance are refused and failed deliveries can be retried', function (): void {
+    $channel = ecChannel('shopify');
+    $body = json_encode(['id' => 6101, 'name' => '#6101', 'currency' => 'EUR', 'created_at' => '2026-10-20T10:00:00+02:00', 'line_items' => []]);
+    $headers = ['X-Shopify-Topic' => 'orders/create', 'X-Shopify-Hmac-Sha256' => base64_encode(hash_hmac('sha256', $body, EC_SECRET, true)), 'X-Shopify-Triggered-At' => now()->subDays(3)->toIso8601String(), 'X-Shopify-Webhook-Id' => 'w-1'];
+
+    ecSignedPost($channel, $body, $headers)->assertUnauthorized()->assertJsonPath('detail', 'The webhook delivery is too old to be accepted.');
+
+    // A delivery that fails is released, so the platform's retry is processed again instead of being taken for a replay.
+    $presta = ecChannel('prestashop', ['name' => 'Presta']);
+    $relay = json_encode(['event' => 'order.created', 'id_order' => 9]);
+    Http::fake(['presta.example.com/*' => Http::response('boom', 500)]);
+
+    ecSignedPost($presta, $relay, ['X-Presta-Signature' => hash_hmac('sha256', $relay, EC_SECRET)])->assertStatus(502);
+    ecSignedPost($presta, $relay, ['X-Presta-Signature' => hash_hmac('sha256', $relay, EC_SECRET)])->assertStatus(502);
+
+    Http::assertSentCount(2);
 });

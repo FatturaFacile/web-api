@@ -477,7 +477,7 @@ class ServiceReportController extends Controller
 
         $file = $request->file('photo');
         $stage = $request->input('stage', 'general');
-        $extension = $file->getClientOriginalExtension();
+        $extension = $file->guessExtension() ?: 'jpg';
         $filename = "photo_{$stage}_".time().'_'.bin2hex(random_bytes(4)).".{$extension}";
         $path = "tenants/{$report->tenant_id}/photos/service-reports/{$report->id}/{$filename}";
 

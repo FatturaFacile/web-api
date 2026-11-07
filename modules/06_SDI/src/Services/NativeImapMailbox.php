@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\SDI\Services;
 
 use App\Exceptions\SdiProviderException;
+use Illuminate\Support\Facades\Log;
 use Modules\SDI\Contracts\ImapMailbox;
 
 /**
@@ -28,7 +29,10 @@ final class NativeImapMailbox implements ImapMailbox
         $stream = @stream_socket_client("ssl://{$host}:{$port}", $code, $error, 20);
 
         if ($stream === false) {
-            throw new SdiProviderException("IMAP connection to {$host} failed: {$error}");
+            // The socket error stays in the log: shown to API users it would describe the network seen by the server.
+            Log::warning('IMAP connection failed', ['host' => $host, 'port' => $port, 'code' => $code, 'error' => $error]);
+
+            throw new SdiProviderException('The IMAP server could not be reached.');
         }
 
         stream_set_timeout($stream, 30);
@@ -154,7 +158,8 @@ final class NativeImapMailbox implements ImapMailbox
     private function assertOk(string $line): void
     {
         if (preg_match('/^\S+ OK\b/', $line) !== 1) {
-            throw new SdiProviderException('IMAP server refused the command: '.trim($line));
+            // Only a short, printable excerpt of the answer: whatever answered on that port must not be echoed in full.
+            throw new SdiProviderException('IMAP server refused the command: '.mb_substr(trim((string) preg_replace('/[^\x20-\x7e]+/', ' ', $line)), 0, 120));
         }
     }
 

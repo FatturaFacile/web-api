@@ -16,6 +16,7 @@ use App\Http\Requests\Expenses\UploadExpenseAttachmentRequest;
 use App\Http\Resources\ExpenseAttachmentResource;
 use App\Http\Resources\ExpenseResource;
 use App\Http\Responses\ApiResponse;
+use App\Http\Responses\StoredFileHeaders;
 use App\Models\Expense;
 use App\Models\ExpenseAttachment;
 use App\Services\Expenses\ExpenseReportingService;
@@ -306,11 +307,9 @@ class ExpenseController extends Controller
         abort_unless(Storage::disk($disk)->exists($attachment->path), 404, 'Receipt file not found on disk.');
 
         $content = Storage::disk($disk)->get($attachment->path);
-        $disposition = $request->boolean('inline') ? 'inline' : 'attachment';
 
-        return response($content, 200, [
-            'Content-Type' => $attachment->mime_type,
-            'Content-Disposition' => "{$disposition}; filename=\"{$attachment->original_name}\"",
+        // Inline only for PDF and raster images; older rows may still carry the MIME type the client claimed.
+        return response($content, 200, StoredFileHeaders::for($attachment->mime_type, (string) $attachment->original_name, $request->boolean('inline')) + [
             'Content-Length' => (string) strlen($content),
         ]);
     }

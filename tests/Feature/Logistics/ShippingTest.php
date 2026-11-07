@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Contracts\Security\HostResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\Http;
@@ -12,6 +13,7 @@ use Modules\Inventory\Exceptions\CarrierException;
 use Modules\Inventory\Models\Shipment;
 use Modules\Inventory\Models\ShippingCarrier;
 use Modules\Inventory\Services\Shipping\LocalCarrierDriver;
+use Tests\Support\StaticHostResolver;
 
 require_once __DIR__.'/fixtures.php';
 
@@ -204,6 +206,42 @@ test('dpd refusals become a 502 and international shipments are refused before c
     $this->postJson('/api/v1/inventory/shipments', ['shipping_carrier_id' => $carrier->id, 'recipient' => ['country' => 'DE'] + $this->recipient])->assertStatus(422);
 
     expect(Shipment::query()->count())->toBe(0);
+});
+
+test('dpd carrier credentials accept only known keys and a public https base url', function (): void {
+    app()->instance(HostResolver::class, new StaticHostResolver(['dpd.internal-staging.com' => ['10.20.0.5']]));
+    $carrier = fn (array $credentials): array => ['code' => 'DPD', 'name' => 'DPD', 'driver' => 'dpd_ch', 'contract_number' => '1', 'credentials' => $credentials];
+    $valid = ['username' => 'u', 'password' => 'p', 'sender' => ['name' => 'Alfa SA', 'street' => 'Via Lago 2', 'zip_code' => '6900', 'city' => 'Lugano', 'country_code' => 'CH']];
+
+    foreach (['http://dpd.test', 'https://127.0.0.1', 'https://2130706433', 'https://dpd.internal-staging.com', 'https://[::1]', 'file:///etc/passwd'] as $url) {
+        $this->postJson('/api/v1/inventory/carriers', $carrier($valid + ['base_url' => $url]))->assertUnprocessable()->assertJsonValidationErrors('credentials.base_url');
+    }
+
+    $this->postJson('/api/v1/inventory/carriers', $carrier($valid + ['proxy' => 'http://10.0.0.1']))->assertUnprocessable()->assertJsonValidationErrors('credentials');
+    $this->postJson('/api/v1/inventory/carriers', $carrier(['sender' => ['name' => 'A', 'header' => 'x']] + $valid))->assertUnprocessable()->assertJsonValidationErrors('credentials.sender');
+    $this->postJson('/api/v1/inventory/carriers', $carrier($valid + ['base_url' => 'https://dpd.test']))->assertCreated();
+});
+
+test('a stored dpd base url on a private network is never called and remote reasons are cut short', function (): void {
+    Http::fake([
+        'dpd.test/api/v1/login' => Http::response(['token' => 'jwt']),
+        'dpd.test/api/v1/shipments' => Http::response(['success' => [], 'failed' => [['reason' => "<html>\u{0007}".str_repeat('internal stack trace ', 40).'</html>']]], 400),
+    ]);
+    $carrier = dpdCarrier();
+
+    $message = $this->postJson('/api/v1/inventory/shipments', ['shipping_carrier_id' => $carrier->id, 'recipient' => $this->recipient])->assertStatus(502)->json('message');
+
+    expect($message)->toStartWith('DPD refused the shipment: html internal stack trace')
+        ->and($message)->not->toContain('<')
+        ->and(mb_strlen($message))->toBeLessThanOrEqual(160);
+
+    $carrier->forceFill(['credentials' => array_merge($carrier->credentials, ['base_url' => 'https://metadata.dpd.test'])])->save();
+    app()->instance(HostResolver::class, new StaticHostResolver(['metadata.dpd.test' => ['169.254.169.254']]));
+
+    $this->postJson('/api/v1/inventory/shipments', ['shipping_carrier_id' => $carrier->id, 'recipient' => $this->recipient])->assertStatus(502)
+        ->assertJsonPath('message', 'The DPD base URL of carrier [DPD] is not a public https address.');
+
+    Http::assertSentCount(2);
 });
 
 test('another tenant sees neither carriers nor shipments, and a read-only role cannot book', function (): void {

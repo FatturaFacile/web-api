@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Http\Requests;
 
 use App\Http\Requests\Concerns\TenantScopedRules;
+use App\Rules\PublicHost;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -15,6 +16,14 @@ use Illuminate\Validation\Rule;
 final class SaveSupportMailboxRequest extends FormRequest
 {
     use TenantScopedRules;
+
+    /**
+     * The mailbox is read over implicit TLS: the IMAPS port, and the plain IMAP port for servers that also offer TLS
+     * there. Other ports would let the mailbox settings probe arbitrary services.
+     *
+     * @var list<int>
+     */
+    public const array IMAP_PORTS = [993, 143];
 
     public function authorize(): bool
     {
@@ -32,8 +41,8 @@ final class SaveSupportMailboxRequest extends FormRequest
         return [
             'name' => [$required, 'string', 'max:150'],
             'email_address' => [$required, 'email', 'max:180', Rule::unique('esm_support_mailboxes', 'email_address')->where('tenant_id', app(TenantContext::class)->getTenantId())->whereNull('deleted_at')->ignore($mailboxId)],
-            'imap_host' => [$required, 'string', 'max:180'],
-            'imap_port' => ['sometimes', 'integer', 'between:1,65535'],
+            'imap_host' => [$required, 'string', 'max:180', new PublicHost],
+            'imap_port' => ['sometimes', 'integer', Rule::in(self::IMAP_PORTS)],
             'imap_username' => [$required, 'string', 'max:255'],
             'imap_password' => [$required, 'string', 'max:255'],
             'default_team_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('esm_service_teams')],

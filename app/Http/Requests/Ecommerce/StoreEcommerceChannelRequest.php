@@ -6,8 +6,11 @@ namespace App\Http\Requests\Ecommerce;
 
 use App\Models\EcommerceChannel;
 use App\Rules\PublicHttpUrl;
+use App\Services\Ecommerce\Drivers\ShopifyDriver;
 use App\Services\Ecommerce\EcommerceManager;
+use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\TenantContext;
+use Closure;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -43,6 +46,14 @@ class StoreEcommerceChannelRequest extends FormRequest
             'api_url' => ['nullable', 'string', 'max:255', new PublicHttpUrl],
             'credentials' => [$presence, 'array'],
             'credentials.*' => ['nullable', 'string', 'max:500'],
+            // A bare host: the Shopify address of the shop, or another domain of the shop resolving to public addresses.
+            'credentials.shop_domain' => ['nullable', 'string', 'max:255', function (string $attribute, mixed $value, Closure $fail): void {
+                $domain = strtolower((string) $value);
+
+                if (! ShopifyDriver::isBareHost($domain) || (! ShopifyDriver::isMyShopifyDomain($domain) && ! app(OutboundUrlGuard::class)->isPublicHost($domain))) {
+                    $fail(__('ecommerce.errors.invalid_url'));
+                }
+            }],
             'webhook_secret' => ['nullable', 'string', 'min:16', 'max:128'],
             'is_active' => ['sometimes', 'boolean'],
             'sync_stock_enabled' => ['sometimes', 'boolean'],

@@ -16,6 +16,7 @@ use App\Http\Resources\Portal\PortalQuoteResource;
 use App\Http\Resources\Portal\PortalServiceReportResource;
 use App\Http\Resources\Portal\PortalTicketResource;
 use App\Http\Responses\ApiResponse;
+use App\Http\Responses\StoredFileHeaders;
 use App\Models\Appointment;
 use App\Models\Attachment;
 use App\Models\Invoice;
@@ -693,9 +694,6 @@ class CustomerPortalController extends Controller
             abort(Response::HTTP_NOT_FOUND, 'File not found on storage.');
         }
 
-        return response(Storage::disk($disk)->get($attachment->path), Response::HTTP_OK, [
-            'Content-Type' => $attachment->mime_type,
-            'Content-Disposition' => "inline; filename=\"{$attachment->original_name}\"",
-        ]);
+        return response(Storage::disk($disk)->get($attachment->path), Response::HTTP_OK, StoredFileHeaders::for($attachment->mime_type, (string) $attachment->original_name, true));
     }
 }

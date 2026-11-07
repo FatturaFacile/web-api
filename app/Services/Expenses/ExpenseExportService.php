@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Expenses;
 
 use App\Models\Expense;
+use App\Services\Security\CsvFormulaNeutralizer;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -78,7 +79,7 @@ class ExpenseExportService
                 ?? ($expense->contact ? $expense->contact->first_name.' '.$expense->contact->last_name : $expense->merchant_name)
                 ?? '';
 
-            fputcsv($handle, [
+            fputcsv($handle, CsvFormulaNeutralizer::row([
                 $expense->expense_number,
                 $expense->date?->format('Y-m-d') ?? '',
                 $expense->category?->code ?? '',
@@ -101,7 +102,7 @@ class ExpenseExportService
                 $expense->user?->name ?? '',
                 $expense->notes ?? '',
                 now()->toIso8601String(),
-            ]);
+            ]));
         }
 
         rewind($handle);

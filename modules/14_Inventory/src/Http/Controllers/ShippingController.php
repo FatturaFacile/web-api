@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Rules\PublicHttpUrl;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,9 +65,21 @@ final class ShippingController extends Controller
             'name' => ['required', 'string', 'max:150'],
             'driver' => ['required', 'string', Rule::in(ShippingManager::driverNames())],
             'contract_number' => ['nullable', 'string', 'max:100'],
-            'credentials' => ['nullable', 'array'],
+            // DPD accepts only the keys it reads; `base_url` (its staging host) must be a public https address for any driver.
+            'credentials' => ['nullable', $request->input('driver') === 'dpd_ch' ? 'array:username,password,sender,service_code,base_url' : 'array'],
+            'credentials.username' => ['nullable', 'string', 'max:255'],
+            'credentials.password' => ['nullable', 'string', 'max:255'],
+            'credentials.service_code' => ['nullable', 'string', 'max:20', 'alpha_dash'],
+            'credentials.base_url' => ['nullable', 'string', 'max:255', new PublicHttpUrl(['https'], __('The carrier base URL must be a public https address.'))],
+            'credentials.sender' => ['nullable', 'array:name,street,zip_code,city,country_code,phone,email'],
+            'credentials.sender.*' => ['nullable', 'string', 'max:255'],
             'tracking_url_template' => ['nullable', 'string', 'max:255'],
         ]);
+
+        // The nested rules only check known keys: the credentials are stored as sent (DPD is limited to its keys above).
+        if ($request->has('credentials')) {
+            $validated['credentials'] = $request->input('credentials');
+        }
 
         return response()->json(ShippingCarrier::create($validated), 201);
     }

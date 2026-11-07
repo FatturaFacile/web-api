@@ -20,6 +20,8 @@ class EcommerceException extends RuntimeException
 
     public const INVALID_RESPONSE = 'invalid_response';
 
+    public const INVALID_URL = 'invalid_url';
+
     /**
      * @param  array<string, scalar|null>  $context
      */

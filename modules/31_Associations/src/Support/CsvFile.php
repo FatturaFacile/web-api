@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Support;
 
+use App\Services\Security\CsvFormulaNeutralizer;
+
 /**
  * CSV reading and writing for the registry.
  */
@@ -75,9 +77,7 @@ final class CsvFile
      */
     private static function neutralizeFormula(mixed $value): string
     {
-        $text = (string) $value;
-
-        return $text !== '' && in_array($text[0], ['=', '+', '-', '@', "\t", "\r"], true) ? "'".$text : $text;
+        return CsvFormulaNeutralizer::neutralize($value);
     }
 
     private static function toUtf8(string $value): string

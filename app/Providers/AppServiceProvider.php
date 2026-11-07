@@ -6,6 +6,7 @@ use App\Contracts\ExchangeRateProviderInterface;
 use App\Contracts\FiscalPrinterGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
+use App\Contracts\Security\HostResolver;
 use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\DeliveryNote;
@@ -32,6 +33,8 @@ use App\Services\Ecommerce\EcommerceManager;
 use App\Services\ExchangeRate\EuropeanCentralBankProvider;
 use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
+use App\Services\Security\DnsHostResolver;
+use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use Dedoc\Scramble\Scramble;
@@ -57,6 +60,12 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(FiscalPrinterGateway::class, LocalFiscalPrinterGateway::class);
         $this->app->bind(PdfGenerator::class, DompdfPdfGenerator::class);
         $this->app->singleton(EcommerceManager::class);
+        $this->app->bind(HostResolver::class, DnsHostResolver::class);
+        // The allow-list of outbound hosts is a local development convenience: ignored in every other environment.
+        $this->app->bind(OutboundUrlGuard::class, fn ($app): OutboundUrlGuard => new OutboundUrlGuard(
+            $app->make(HostResolver::class),
+            $app->environment('local') ? (array) config('security.outbound.allowed_hosts', []) : [],
+        ));
         $this->app->singleton(WidgetRegistry::class);
     }
 

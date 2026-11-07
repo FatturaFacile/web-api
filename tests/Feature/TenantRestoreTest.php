@@ -14,6 +14,7 @@ use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\TenantBackup;
 use App\Models\User;
+use App\Services\Backup\BackupArchiveSigner;
 use App\Services\Backup\TenantBackupService;
 use App\Services\Backup\TenantRestoreService;
 use Enterprise\AuditLedger\Models\AuditLedgerArchiveEntry;
@@ -111,6 +112,18 @@ function trManifest(TenantBackup $backup): array
     $zip->close();
 
     return $manifest;
+}
+
+/**
+ * Write a manifest and sign it with the server key, as the backup service does.
+ *
+ * @param  array<string, mixed>  $manifest
+ */
+function trWriteManifest(ZipArchive $zip, array $manifest): void
+{
+    $json = (string) json_encode($manifest);
+    $zip->addFromString('manifest.json', $json);
+    $zip->addFromString(BackupArchiveSigner::SIGNATURE_ENTRY, app(BackupArchiveSigner::class)->sign($json));
 }
 
 function trRestoreUpload(UploadedFile $file, ?string $tenantId = null)
@@ -300,7 +313,8 @@ test('missing, incomplete or altered manifests and data are refused before anyth
     $before = Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count();
     $manifest = trManifest($backup);
 
-    $rewrite = fn (array $changes) => fn (ZipArchive $zip) => $zip->addFromString('manifest.json', (string) json_encode(array_merge($manifest, $changes)));
+    // Rewritten manifests are signed again, so each check behind the signature is exercised on its own.
+    $rewrite = fn (array $changes) => fn (ZipArchive $zip) => trWriteManifest($zip, array_merge($manifest, $changes));
 
     $cases = [
         'no manifest' => [fn (ZipArchive $zip) => $zip->deleteName('manifest.json'), 'no manifest.json'],
@@ -316,6 +330,11 @@ test('missing, incomplete or altered manifests and data are refused before anyth
         'listed file missing' => [$rewrite(['files' => array_merge($manifest['files'], ['files/attachments/ghost.txt'])]), 'missing the file'],
         'row counts' => [$rewrite(['tables' => array_merge($manifest['tables'], ['contacts' => 99])]), 'does not match the manifest'],
         'table unknown' => [$rewrite(['tables' => array_merge($manifest['tables'], ['nope' => 0])]), 'does not match the manifest'],
+        'unsigned (format 2)' => [fn (ZipArchive $zip) => $zip->deleteName('manifest.sig'), 'does not carry the signature of this server'],
+        'manifest changed without the key' => [fn (ZipArchive $zip) => $zip->addFromString('manifest.json', (string) json_encode(array_merge($manifest, ['data_sha256' => str_repeat('b', 64)]))), 'signature of the archive is invalid'],
+        'forged signature' => [fn (ZipArchive $zip) => $zip->addFromString('manifest.sig', hash_hmac('sha256', (string) $zip->getFromName('manifest.json'), 'guessed-key')), 'signature of the archive is invalid'],
+        'altered file' => [fn (ZipArchive $zip) => $zip->addFromString('files/attachments/Alpha.txt', '<script>alert(1)</script>'), 'does not match the checksum'],
+        'file checksums removed' => [$rewrite(['files_sha256' => []]), 'does not match the checksum'],
     ];
 
     foreach ($cases as $name => [$change, $message]) {
@@ -324,6 +343,65 @@ test('missing, incomplete or altered manifests and data are refused before anyth
 
     expect(Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count())->toBe($before)
         ->and(Storage::disk('local')->get("tenants/{$this->tenant->id}/attachments/Alpha.txt"))->toBe('Alpha attachment');
+});
+
+test('a signed archive whose rows point to another tenant is refused before anything is touched', function (): void {
+    $alpha = trSeed($this->tenant, 'Alpha');
+    $beta = trSeed($this->otherTenant, 'Beta');
+    $backup = trBackup($this->tenant);
+    $manifest = trManifest($backup);
+
+    // The invoice of the archive now belongs to the contact of the other tenant; checksum and signature are consistent.
+    $upload = trTamperedUpload($backup, function (ZipArchive $zip) use ($manifest, $alpha, $beta): void {
+        $data = str_replace('"contact_id":"'.$alpha['contact']->id.'"', '"contact_id":"'.$beta['contact']->id.'"', (string) $zip->getFromName('data.json'));
+        $zip->addFromString('data.json', $data);
+        trWriteManifest($zip, array_merge($manifest, ['data_sha256' => hash('sha256', $data)]));
+    });
+
+    Contact::withoutGlobalScopes()->whereKey($alpha['contact']->id)->update(['company_name' => 'Edited since the backup']);
+
+    trRestoreUpload($upload)->assertUnprocessable()->assertJsonPath('detail', fn (string $detail): bool => str_contains($detail, 'outside the organization (invoices.contact_id)'));
+
+    expect(Contact::withoutGlobalScopes()->whereKey($alpha['contact']->id)->value('company_name'))->toBe('Edited since the backup')
+        ->and(Invoice::withoutGlobalScopes()->whereKey($alpha['invoice']->id)->value('contact_id'))->toBe($alpha['contact']->id)
+        ->and(TenantBackup::withoutGlobalScopes()->where('filename', 'like', 'pre-restore-safety-%')->count())->toBe(0)
+        ->and(Tenant::find($this->tenant->id)->is_maintenance)->toBeFalse();
+});
+
+test('a child row without tenant column pointing to a parent of another tenant is refused', function (): void {
+    $alpha = trSeed($this->tenant, 'Alpha');
+    $beta = trSeed($this->otherTenant, 'Beta');
+    $backup = trBackup($this->tenant);
+    $manifest = trManifest($backup);
+
+    // Invoice items reach the tenant through their invoice: one is moved under the invoice of the other tenant.
+    $upload = trTamperedUpload($backup, function (ZipArchive $zip) use ($manifest, $alpha, $beta): void {
+        $data = str_replace('"invoice_id":"'.$alpha['invoice']->id.'"', '"invoice_id":"'.$beta['invoice']->id.'"', (string) $zip->getFromName('data.json'));
+        $zip->addFromString('data.json', $data);
+        trWriteManifest($zip, array_merge($manifest, ['data_sha256' => hash('sha256', $data)]));
+    });
+
+    trRestoreUpload($upload)->assertUnprocessable()->assertJsonPath('detail', fn (string $detail): bool => str_contains($detail, 'outside the organization'));
+
+    expect(InvoiceItem::query()->where('invoice_id', $beta['invoice']->id)->count())->toBe(1);
+});
+
+test('backups are signed archives of format 3 with a checksum for every file', function (): void {
+    trSeed($this->tenant, 'Alpha');
+    $backup = trBackup($this->tenant);
+    $manifest = trManifest($backup);
+
+    $zip = new ZipArchive;
+    $zip->open(Storage::disk($backup->disk)->path($backup->storagePath()));
+    $signature = (string) $zip->getFromName('manifest.sig');
+    $raw = (string) $zip->getFromName('manifest.json');
+    $zip->close();
+
+    expect($manifest['format_version'])->toBe(3)
+        ->and(array_keys($manifest['files_sha256']))->toEqualCanonicalizing($manifest['files'])
+        ->and($manifest['files_sha256']['files/attachments/Alpha.txt'])->toBe(hash('sha256', 'Alpha attachment'))
+        ->and(app(BackupArchiveSigner::class)->verify($raw, $signature))->toBeTrue()
+        ->and(app(BackupArchiveSigner::class)->verify($raw.' ', $signature))->toBeFalse();
 });
 
 test('an archive naming a table that does not exist is refused', function (): void {
@@ -335,7 +413,7 @@ test('an archive naming a table that does not exist is refused', function (): vo
         $data = (string) $zip->getFromName('data.json');
         $data = str_replace("\"contacts\":[\n", "\"unknown_things\":[\n{\"id\":\"1\"}\n]\n,\"contacts\":[\n", $data);
         $zip->addFromString('data.json', $data);
-        $zip->addFromString('manifest.json', (string) json_encode(array_merge($manifest, ['data_sha256' => hash('sha256', $data)])));
+        trWriteManifest($zip, array_merge($manifest, ['data_sha256' => hash('sha256', $data)]));
     });
 
     trRestoreUpload($upload)->assertUnprocessable()->assertJsonPath('detail', fn (string $detail): bool => str_contains($detail, 'unknown table (unknown_things)'));
@@ -351,7 +429,7 @@ test('a failure while restoring rolls everything back', function (): void {
         $data = (string) $zip->getFromName('data.json');
         $data = str_replace('"type":"customer"', '"type":null', $data);
         $zip->addFromString('data.json', $data);
-        $zip->addFromString('manifest.json', (string) json_encode(array_merge($manifest, ['data_sha256' => hash('sha256', $data)])));
+        trWriteManifest($zip, array_merge($manifest, ['data_sha256' => hash('sha256', $data)]));
     });
 
     Contact::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('email', 'alpha-supplier@example.com')->update(['company_name' => 'Edited since the backup']);

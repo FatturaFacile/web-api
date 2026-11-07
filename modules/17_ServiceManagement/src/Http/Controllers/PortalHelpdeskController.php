@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\StoredFileHeaders;
 use App\Models\PortalAccessToken;
 use App\Services\Portal\PortalTokenService;
 use Illuminate\Database\Eloquent\Builder;
@@ -152,7 +153,7 @@ final class PortalHelpdeskController extends Controller
 
         abort_unless(Storage::disk($file->disk)->exists($file->path), 404);
 
-        return Storage::disk($file->disk)->download($file->path, $file->original_name, ['Content-Type' => $file->mime_type]);
+        return Storage::disk($file->disk)->download($file->path, $file->original_name, ['Content-Type' => StoredFileHeaders::for($file->mime_type, (string) $file->original_name, false)['Content-Type'], 'X-Content-Type-Options' => 'nosniff']);
     }
 
     /**

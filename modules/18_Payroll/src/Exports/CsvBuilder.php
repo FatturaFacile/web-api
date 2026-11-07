@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Exports;
 
+use App\Services\Security\CsvFormulaNeutralizer;
 use DateTimeInterface;
 
 /**
- * Semicolon separated values with CRLF line ends, as written by the desktop exports.
+ * Semicolon separated values with CRLF line ends, as written by the desktop exports. Text that a spreadsheet would
+ * run as a formula is neutralised.
  */
 final class CsvBuilder
 {
@@ -31,7 +33,7 @@ final class CsvBuilder
             $value === null => '',
             $value instanceof DateTimeInterface => $value->format('Y-m-d'),
             is_bool($value) => $value ? '1' : '0',
-            default => (string) $value,
+            default => CsvFormulaNeutralizer::neutralize($value),
         };
     }
 

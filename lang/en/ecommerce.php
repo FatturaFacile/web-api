@@ -15,6 +15,7 @@ return [
         'sync_failed' => 'The synchronisation with the shop failed.',
         'unknown_channel' => 'The channel does not exist or is not active.',
         'invalid_signature' => 'The webhook signature is invalid.',
+        'webhook_expired' => 'The webhook delivery is too old to be accepted.',
     ],
 
     'order' => [
@@ -39,6 +40,7 @@ return [
         'connection_failed' => 'The shop did not accept the connection. Check the URL and the credentials.',
         'sync_done' => 'Synchronisation completed',
         'webhook_processed' => 'Webhook processed',
+        'webhook_replayed' => 'Webhook already received: ignored',
     ],
 
 ];
