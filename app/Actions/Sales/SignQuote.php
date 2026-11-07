@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Enums\QuoteStatus;
 use App\Models\Quote;
 use App\Services\Sales\DocumentEventRecorder;
 use Illuminate\Support\Facades\DB;
@@ -25,7 +26,7 @@ class SignQuote
                 throw ValidationException::withMessages(['quote' => __('sales.quote_already_signed')]);
             }
 
-            if (in_array($quote->status, ['rejected', 'expired'], true)) {
+            if (! QuoteStatus::allows($quote->status, QuoteStatus::Accepted)) {
                 throw ValidationException::withMessages(['quote' => __('sales.quote_not_signable')]);
             }
 
@@ -33,7 +34,7 @@ class SignQuote
                 'signature_data' => $signatureBase64,
                 'signed_by' => $signedBy,
                 'signed_at' => now(),
-                'status' => 'accepted',
+                'status' => QuoteStatus::Accepted->value,
             ]);
 
             $this->events->record($quote, 'signed', ['signed_by' => $signedBy]);

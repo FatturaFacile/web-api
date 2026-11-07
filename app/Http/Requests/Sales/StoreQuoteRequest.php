@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Sales;
 
+use App\Enums\QuoteStatus;
 use Illuminate\Validation\Rule;
 
 class StoreQuoteRequest extends SalesDocumentRequest
@@ -15,7 +16,7 @@ class StoreQuoteRequest extends SalesDocumentRequest
     {
         return array_merge($this->commonRules(), [
             'valid_until' => ['nullable', 'date', 'after_or_equal:date'],
-            'status' => ['sometimes', Rule::in(['draft', 'sent', 'accepted', 'rejected', 'expired'])],
+            'status' => ['sometimes', Rule::in(QuoteStatus::manualValues())],
             'custom_text' => ['nullable', 'string', 'max:5000'],
         ]);
     }

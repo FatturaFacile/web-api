@@ -4,8 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Enums\SalesOrderStatus;
+use App\Models\Tenant;
+use App\Services\Sales\DocumentNumberingService;
+use App\Services\Tenancy\TenantClock;
+use Carbon\CarbonImmutable;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
@@ -23,7 +29,9 @@ final class SalesOrderService implements SalesOrderServiceInterface
     public function __construct(
         private readonly PricingAndDiscountServiceInterface $pricingService,
         private readonly CustomerCreditServiceInterface $creditService,
-        private readonly EventDispatcherInterface $eventDispatcher
+        private readonly EventDispatcherInterface $eventDispatcher,
+        private readonly DocumentNumberingService $numbering,
+        private readonly ?TenantClock $clock = null
     ) {}
 
     /**
@@ -61,8 +69,22 @@ final class SalesOrderService implements SalesOrderServiceInterface
         }
 
         $totals = $this->pricingService->calculateOrderTotals($calculatedItems, $data['discount_policy_id'] ?? null);
+        $date = CarbonImmutable::parse($data['date'] ?? ($this->clock ?? app(TenantClock::class))->today(Tenant::query()->find($tenantId)));
 
-        $orderNumber = $data['order_number'] ?? 'SO-'.date('Y').'-'.strtoupper(Str::random(6));
+        return DB::transaction(fn (): SalesOrder => $this->insertOrder($orderId, $tenantId, $data, $calculatedItems, $totals, $date));
+    }
+
+    /**
+     * Inserts the order numbered on the `sales_order` series of the tenant, the same gapless series the sales API of the
+     * app uses, inside the transaction of the caller so that a failed insert does not burn the number.
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $calculatedItems
+     * @param  array<string, float>  $totals
+     */
+    private function insertOrder(string $orderId, string $tenantId, array $data, array $calculatedItems, array $totals, CarbonImmutable $date): SalesOrder
+    {
+        $orderNumber = $this->numbering->next('sales_order', $date->year, $tenantId)['number'];
 
         $order = SalesOrder::create([
             'id' => $orderId,
@@ -74,15 +96,15 @@ final class SalesOrderService implements SalesOrderServiceInterface
             'discount_policy_id' => $data['discount_policy_id'] ?? null,
             'sales_rep_id' => $data['sales_rep_id'] ?? null,
             'order_number' => $orderNumber,
-            'date' => $data['date'] ?? now()->toDateString(),
-            'due_date' => $data['due_date'] ?? now()->addDays(30)->toDateString(),
+            'date' => $date->toDateString(),
+            'due_date' => $data['due_date'] ?? $date->addDays(30)->toDateString(),
             'currency' => $data['currency'] ?? 'EUR',
             'subtotal' => $totals['subtotal'],
             'discount_amount' => $totals['discount_total'],
             'total_net' => $totals['net_total'],
             'total_tax' => $totals['tax_total'],
             'total_gross' => $totals['gross_total'],
-            'status' => 'draft',
+            'status' => SalesOrderStatus::Draft->value,
             'credit_status' => 'pending_check',
             'inventory_status' => 'pending',
             'fulfillment_status' => 'unfulfilled',
@@ -155,8 +177,10 @@ final class SalesOrderService implements SalesOrderServiceInterface
             return $order->fresh(['items', 'holds']);
         }
 
+        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::Confirmed);
+
         $order->update([
-            'status' => 'confirmed',
+            'status' => SalesOrderStatus::Confirmed->value,
             'confirmed_at' => now(),
         ]);
 
@@ -165,10 +189,11 @@ final class SalesOrderService implements SalesOrderServiceInterface
 
     public function approveOrder(SalesOrder $order, string $userId): SalesOrder
     {
+        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::Approved);
         $quoteUserId = Str::isUuid($userId) ? $userId : (string) Str::uuid7();
 
         $order->update([
-            'status' => 'approved',
+            'status' => SalesOrderStatus::Approved->value,
             'approved_by' => $quoteUserId,
             'approved_at' => now(),
         ]);
@@ -223,6 +248,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
 
     public function cancelOrder(SalesOrder $order, string $reason, string $userId): SalesOrder
     {
+        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::Cancelled);
         $order->load('items');
 
         // Release any reservations
@@ -231,7 +257,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
         }
 
         $order->update([
-            'status' => 'cancelled',
+            'status' => SalesOrderStatus::Cancelled->value,
             'inventory_status' => 'pending',
             'notes' => trim(($order->notes ?? '')."\nCancellation reason: ".$reason),
         ]);

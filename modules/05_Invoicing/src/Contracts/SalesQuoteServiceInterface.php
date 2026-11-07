@@ -19,6 +19,14 @@ interface SalesQuoteServiceInterface
 
     public function approveQuote(SalesQuote $quote, string $userId): SalesQuote;
 
+    public function rejectQuote(SalesQuote $quote, string $userId, ?string $reason = null): SalesQuote;
+
+    public function hasActiveApprovalWorkflow(SalesQuote $quote): bool;
+
+    public function approveWithoutWorkflow(SalesQuote $quote, string $userId): SalesQuote;
+
+    public function rejectWithoutWorkflow(SalesQuote $quote, string $userId, ?string $reason = null): SalesQuote;
+
     public function acceptQuote(SalesQuote $quote): SalesQuote;
 
     public function convertToOrder(SalesQuote $quote, string $userId): SalesOrder;

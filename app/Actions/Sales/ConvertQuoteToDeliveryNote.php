@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Enums\DeliveryNoteStatus;
+use App\Enums\QuoteStatus;
 use App\Models\DeliveryNote;
 use App\Models\Quote;
 use App\Services\Inventory\StockService;
@@ -28,7 +30,7 @@ class ConvertQuoteToDeliveryNote
         return DB::transaction(function () use ($quote): DeliveryNote {
             $lockedQuote = Quote::where('id', $quote->id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($lockedQuote->status, ['rejected', 'expired'], true)) {
+            if (! QuoteStatus::allows($lockedQuote->status, QuoteStatus::Accepted)) {
                 throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
             }
 
@@ -37,7 +39,7 @@ class ConvertQuoteToDeliveryNote
                 'contact_id' => $lockedQuote->contact_id,
                 'ddt_number' => $this->numbering->next('delivery_note')['number'],
                 'date' => now()->toDateString(),
-                'status' => 'issued',
+                'status' => DeliveryNoteStatus::Issued->value,
                 'notes' => $lockedQuote->notes,
             ]);
 
@@ -52,7 +54,7 @@ class ConvertQuoteToDeliveryNote
             }
 
             $this->stock->recordForLines('out', $note, $note->items()->get());
-            $lockedQuote->update(['status' => 'accepted']);
+            $lockedQuote->update(['status' => QuoteStatus::Accepted->value]);
             $this->events->record($lockedQuote, 'converted_to_delivery_note', ['delivery_note_id' => $note->id]);
 
             return $note->load('items');

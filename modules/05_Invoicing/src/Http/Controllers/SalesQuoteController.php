@@ -11,7 +11,9 @@ use Illuminate\Http\Request;
 use Modules\Invoicing\Actions\AcceptSalesQuoteAction;
 use Modules\Invoicing\Actions\ConvertQuoteToOrderAction;
 use Modules\Invoicing\Actions\CreateSalesQuoteAction;
+use Modules\Invoicing\Contracts\SalesQuoteServiceInterface;
 use Modules\Invoicing\Http\Requests\CreateSalesQuoteRequest;
+use Modules\Invoicing\Http\Requests\RejectSalesQuoteRequest;
 use Modules\Invoicing\Http\Resources\SalesOrderResource;
 use Modules\Invoicing\Http\Resources\SalesQuoteResource;
 use Modules\Invoicing\Models\SalesQuote;
@@ -144,6 +146,94 @@ final class SalesQuoteController extends Controller
         $accepted = $action->execute($quote);
 
         return response()->json(new SalesQuoteResource($accepted));
+    }
+
+    /**
+     * Puts a draft quote up for internal approval.
+     */
+    #[OA\Post(
+        path: '/api/v1/invoicing/quotes/{id}/submit-for-approval',
+        operationId: 'submitInvoicingQuoteForApproval',
+        description: 'Puts a draft quote up for internal approval. When the company has an active SALES_QUOTE_APPROVAL workflow (or HIGH_VALUE_SALES_QUOTE_APPROVAL above 25,000 of gross total) an instance is started and decides; otherwise an owner, administrator or sales manager approves or rejects the quote directly.',
+        summary: 'Submit quote for approval',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Invoicing Quotes'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/InvoicingQuoteId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Quote waiting for approval', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingQuoteApprovalSubmission')),
+            new OA\Response(response: 401, ref: '#/components/responses/InvoicingQuoteUnauthenticated'),
+            new OA\Response(response: 404, ref: '#/components/responses/InvoicingQuoteNotFound'),
+            new OA\Response(response: 422, ref: '#/components/responses/InvoicingQuoteUnprocessable'),
+        ]
+    )]
+    public function submitForApproval(string $id, SalesQuoteServiceInterface $quoteService, Request $request): JsonResponse
+    {
+        $quote = $quoteService->submitForApproval(SalesQuote::findOrFail($id), (string) $request->user()?->id);
+
+        return response()->json([
+            'quote' => new SalesQuoteResource($quote->load('items')),
+            'approval_mode' => $quote->workflow_instance_id !== null ? 'workflow' : 'manual',
+            'workflow_instance_id' => $quote->workflow_instance_id,
+        ]);
+    }
+
+    /**
+     * Approves a quote waiting for approval when no workflow takes the decision.
+     */
+    #[OA\Post(
+        path: '/api/v1/invoicing/quotes/{id}/approve',
+        operationId: 'approveInvoicingQuote',
+        description: 'Approves a quote waiting for approval. Allowed to owners, administrators and sales managers of the company, and only while no approval workflow instance is running for the quote: then the decision is taken in the workflow. The decision is written to the audit ledger.',
+        summary: 'Approve quote',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Invoicing Quotes'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/InvoicingQuoteId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Quote approved', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingSalesQuoteResource')),
+            new OA\Response(response: 401, ref: '#/components/responses/InvoicingQuoteUnauthenticated'),
+            new OA\Response(response: 403, ref: '#/components/responses/InvoicingQuoteForbidden'),
+            new OA\Response(response: 404, ref: '#/components/responses/InvoicingQuoteNotFound'),
+            new OA\Response(response: 422, ref: '#/components/responses/InvoicingQuoteUnprocessable'),
+        ]
+    )]
+    public function approve(string $id, SalesQuoteServiceInterface $quoteService, Request $request): JsonResponse
+    {
+        $quote = SalesQuote::findOrFail($id);
+        $this->authorize('approve', $quote);
+
+        $approved = $quoteService->approveWithoutWorkflow($quote, (string) $request->user()?->id);
+
+        return response()->json(new SalesQuoteResource($approved->load('items')));
+    }
+
+    /**
+     * Rejects a quote waiting for approval when no workflow takes the decision.
+     */
+    #[OA\Post(
+        path: '/api/v1/invoicing/quotes/{id}/reject',
+        operationId: 'rejectInvoicingQuote',
+        description: 'Rejects a quote waiting for approval, with an optional reason appended to its notes. Allowed to owners, administrators and sales managers of the company, and only while no approval workflow instance is running for the quote. The decision is written to the audit ledger.',
+        summary: 'Reject quote',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Invoicing Quotes'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/InvoicingQuoteId')],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/InvoicingRejectSalesQuoteRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Quote rejected', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingSalesQuoteResource')),
+            new OA\Response(response: 401, ref: '#/components/responses/InvoicingQuoteUnauthenticated'),
+            new OA\Response(response: 403, ref: '#/components/responses/InvoicingQuoteForbidden'),
+            new OA\Response(response: 404, ref: '#/components/responses/InvoicingQuoteNotFound'),
+            new OA\Response(response: 422, ref: '#/components/responses/InvoicingQuoteUnprocessable'),
+        ]
+    )]
+    public function reject(string $id, RejectSalesQuoteRequest $request, SalesQuoteServiceInterface $quoteService): JsonResponse
+    {
+        $quote = SalesQuote::findOrFail($id);
+        $this->authorize('approve', $quote);
+
+        $rejected = $quoteService->rejectWithoutWorkflow($quote, (string) $request->user()?->id, $request->validated('reason'));
+
+        return response()->json(new SalesQuoteResource($rejected->load('items')));
     }
 
     /**

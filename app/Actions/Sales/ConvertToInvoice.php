@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Enums\DeliveryNoteStatus;
+use App\Enums\QuoteStatus;
 use App\Models\DeliveryNote;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -112,7 +114,7 @@ class ConvertToInvoice
         return DB::transaction(function () use ($quote): Invoice {
             $lockedQuote = Quote::where('id', $quote->id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($lockedQuote->status, ['rejected', 'expired'], true)) {
+            if (! QuoteStatus::allows($lockedQuote->status, QuoteStatus::Accepted)) {
                 throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
             }
 
@@ -121,7 +123,7 @@ class ConvertToInvoice
             }
 
             $invoice = $this->build($lockedQuote, $lockedQuote->items->all(), ['quote_id' => $lockedQuote->id], 'invoiced_from_quote');
-            $lockedQuote->update(['status' => 'accepted']);
+            $lockedQuote->update(['status' => QuoteStatus::Accepted->value]);
 
             return $invoice;
         });
@@ -132,7 +134,7 @@ class ConvertToInvoice
         return DB::transaction(function () use ($note): Invoice {
             $lockedNote = DeliveryNote::where('id', $note->id)->lockForUpdate()->firstOrFail();
 
-            if ($lockedNote->status === 'invoiced') {
+            if ($lockedNote->status === DeliveryNoteStatus::Invoiced->value) {
                 throw ValidationException::withMessages(['delivery_note' => __('sales.delivery_note_already_invoiced')]);
             }
 
@@ -141,7 +143,7 @@ class ConvertToInvoice
                 'delivery_note_id' => $lockedNote->id,
             ], 'invoiced_from_delivery_note');
 
-            $lockedNote->update(['status' => 'invoiced']);
+            $lockedNote->update(['status' => DeliveryNoteStatus::Invoiced->value]);
 
             return $invoice;
         });

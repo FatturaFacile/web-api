@@ -21,7 +21,6 @@ final class CreateDeliveryNoteRequest extends FormRequest
         return [
             'sales_order_id' => ['required', 'uuid'],
             'warehouse_id' => ['nullable', 'uuid'],
-            'ddt_number' => ['nullable', 'string', 'max:50'],
             'date' => ['nullable', 'date'],
             'transport_reason' => ['nullable', 'string', 'max:100'],
             'goods_appearance' => ['nullable', 'string', 'max:100'],

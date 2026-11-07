@@ -16,6 +16,10 @@ return [
     'quote_not_signable' => 'Ein abgelehnter oder abgelaufener Kostenvoranschlag kann nicht unterzeichnet werden.',
 
     'quote_already_converted' => 'Dieser Kostenvoranschlag wurde bereits in einen Auftrag umgewandelt.',
+    'invalid_status_transition' => 'Ein Dokument im Status :from kann nicht in den Status :to wechseln.',
+    'quote_not_pending_approval' => 'Nur ein Kostenvoranschlag, der auf Genehmigung wartet, kann genehmigt oder abgelehnt werden.',
+    'quote_approval_in_workflow' => 'Für diesen Kostenvoranschlag läuft ein Genehmigungsworkflow: entscheiden Sie im Workflow.',
+    'delivery_note_already_dispatched' => 'Dieser Lieferschein wurde bereits versandt.',
     'order_not_deliverable' => 'Nur bestätigte Aufträge können geliefert werden.',
     'nothing_to_deliver' => 'Keine verbleibenden Positionen zur Lieferung.',
     'proforma_only' => 'Nur Proforma-Rechnungen können umgewandelt werden.',

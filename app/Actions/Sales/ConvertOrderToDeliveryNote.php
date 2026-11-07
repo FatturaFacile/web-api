@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Enums\DeliveryNoteStatus;
+use App\Enums\SalesOrderStatus;
 use App\Models\DeliveryNote;
 use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
@@ -30,7 +32,7 @@ class ConvertOrderToDeliveryNote
      */
     public function execute(SalesOrder $order, array $lines = [], array $attributes = []): DeliveryNote
     {
-        if (in_array($order->status, ['cancelled', 'draft'], true)) {
+        if ($order->status === SalesOrderStatus::Draft->value || ! SalesOrderStatus::allows($order->status, SalesOrderStatus::InFulfillment) && ! SalesOrderStatus::allows($order->status, SalesOrderStatus::Shipped)) {
             throw ValidationException::withMessages(['order' => __('sales.order_not_deliverable')]);
         }
 
@@ -68,7 +70,7 @@ class ConvertOrderToDeliveryNote
                 'sales_order_id' => $order->id,
                 'ddt_number' => $number['number'],
                 'date' => now()->toDateString(),
-                'status' => 'issued',
+                'status' => DeliveryNoteStatus::Issued->value,
             ]));
 
             foreach ($toShip as [$item, $quantity, $delivered]) {
@@ -86,7 +88,9 @@ class ConvertOrderToDeliveryNote
             $this->stock->recordForLines('out', $note, $note->items()->get());
 
             $fullyDelivered = ! $order->items()->whereColumn('quantity_delivered', '<', 'quantity')->exists();
-            $order->update(['status' => $fullyDelivered ? 'shipped' : 'confirmed']);
+            $orderStatus = $fullyDelivered ? SalesOrderStatus::Shipped : SalesOrderStatus::InFulfillment;
+            SalesOrderStatus::assertTransition($order->status, $orderStatus);
+            $order->update(['status' => $orderStatus->value]);
             $this->events->record($order, 'delivery_note_created', ['delivery_note_id' => $note->id]);
 
             return $note->load(['items' => fn ($query) => $query->orderBy('id')]);

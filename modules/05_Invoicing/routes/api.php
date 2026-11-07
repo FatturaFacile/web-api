@@ -17,6 +17,9 @@ Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 
     Route::get('quotes', [SalesQuoteController::class, 'index'])->name('invoicing.quotes.index');
     Route::post('quotes', [SalesQuoteController::class, 'store'])->name('invoicing.quotes.store');
     Route::get('quotes/{id}', [SalesQuoteController::class, 'show'])->name('invoicing.quotes.show');
+    Route::post('quotes/{id}/submit-for-approval', [SalesQuoteController::class, 'submitForApproval'])->name('invoicing.quotes.submit-for-approval');
+    Route::post('quotes/{id}/approve', [SalesQuoteController::class, 'approve'])->name('invoicing.quotes.approve');
+    Route::post('quotes/{id}/reject', [SalesQuoteController::class, 'reject'])->name('invoicing.quotes.reject');
     Route::post('quotes/{id}/accept', [SalesQuoteController::class, 'accept'])->name('invoicing.quotes.accept');
     Route::post('quotes/{id}/convert', [SalesQuoteController::class, 'convert'])->name('invoicing.quotes.convert');
 

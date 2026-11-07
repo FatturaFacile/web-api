@@ -20,7 +20,6 @@ final class CreateSalesQuoteRequest extends FormRequest
     {
         return [
             'contact_id' => ['required', 'uuid'],
-            'quote_number' => ['nullable', 'string', 'max:50'],
             'date' => ['nullable', 'date'],
             'valid_until' => ['nullable', 'date'],
             'currency' => ['nullable', 'string', 'size:3'],

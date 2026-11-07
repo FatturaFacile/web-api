@@ -29,7 +29,6 @@ final class CreateSalesOrderRequest extends FormRequest
             'price_list_id' => ['nullable', 'uuid', Rule::exists('price_lists', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'discount_policy_id' => ['nullable', 'uuid'],
             'sales_rep_id' => ['nullable', 'uuid', Rule::exists('sales_representatives', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
-            'order_number' => ['nullable', 'string', 'max:50'],
             'date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
             'currency' => ['nullable', 'string', 'size:3'],

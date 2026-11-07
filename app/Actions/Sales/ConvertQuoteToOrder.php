@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
+use App\Enums\QuoteStatus;
+use App\Enums\SalesOrderStatus;
 use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Services\Sales\DocumentEventRecorder;
@@ -23,7 +25,7 @@ class ConvertQuoteToOrder
         return DB::transaction(function () use ($quote): SalesOrder {
             $lockedQuote = Quote::where('id', $quote->id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($lockedQuote->status, ['rejected', 'expired'], true)) {
+            if (! QuoteStatus::allows($lockedQuote->status, QuoteStatus::Accepted)) {
                 throw ValidationException::withMessages(['quote' => __('sales.quote_not_convertible')]);
             }
 
@@ -43,7 +45,7 @@ class ConvertQuoteToOrder
                 'total_net' => $lockedQuote->total_net,
                 'total_tax' => $lockedQuote->total_tax,
                 'total_gross' => $lockedQuote->total_gross,
-                'status' => 'confirmed',
+                'status' => SalesOrderStatus::Confirmed->value,
                 'notes' => $lockedQuote->notes,
             ]);
 
@@ -53,7 +55,7 @@ class ConvertQuoteToOrder
                 ]));
             }
 
-            $lockedQuote->update(['status' => 'accepted']);
+            $lockedQuote->update(['status' => QuoteStatus::Accepted->value]);
             $this->events->record($lockedQuote, 'converted_to_order', ['sales_order_id' => $order->id]);
 
             return $order->load('items');

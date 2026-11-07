@@ -16,7 +16,6 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'quote_number', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'valid_until', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'currency', type: 'string', minLength: 3, maxLength: 3, nullable: true),
@@ -40,7 +39,6 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'price_list_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'discount_policy_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'sales_rep_id', type: 'string', format: 'uuid', nullable: true),
-        new OA\Property(property: 'order_number', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'currency', type: 'string', minLength: 3, maxLength: 3, nullable: true),
@@ -61,7 +59,6 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'sales_order_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid', nullable: true),
-        new OA\Property(property: 'ddt_number', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'transport_reason', type: 'string', maxLength: 100, nullable: true),
         new OA\Property(property: 'goods_appearance', type: 'string', maxLength: 100, nullable: true),

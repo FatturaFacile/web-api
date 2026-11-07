@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Enums\SalesOrderStatus;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
@@ -50,10 +51,10 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
             ->selectRaw('SUM(total_gross - total_paid) as outstanding')
             ->value('outstanding') ?? 0.0;
 
-        // 2. Pending orders = confirmed or in fulfillment orders not yet billed
+        // 2. Pending orders = committed orders (confirmed up to in fulfillment) not yet billed
         $pendingOrders = (float) SalesOrder::where('tenant_id', $tenantId)
             ->where('contact_id', $customerId)
-            ->whereIn('status', ['confirmed', 'in_fulfillment', 'partially_delivered'])
+            ->whereIn('status', [SalesOrderStatus::Confirmed->value, SalesOrderStatus::Approved->value, SalesOrderStatus::InProduction->value, SalesOrderStatus::InFulfillment->value])
             ->where('billing_status', '!=', 'billed')
             ->sum('total_gross') ?? 0.0;
 
@@ -198,6 +199,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
 
     public function placeHold(SalesOrder $order, string $holdType, string $reason, string $userId): SalesOrderHold
     {
+        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::OnHold);
         $tenantId = (string) $order->tenant_id;
 
         $hold = SalesOrderHold::create([
@@ -212,7 +214,7 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
         ]);
 
         $order->update([
-            'status' => 'on_hold',
+            'status' => SalesOrderStatus::OnHold->value,
             'credit_status' => 'on_hold',
             'credit_hold_reason' => $reason,
         ]);
@@ -246,11 +248,11 @@ final class CustomerCreditService implements CustomerCreditServiceInterface
                 ->count();
 
             if ($remainingHolds === 0) {
-                $order->update([
-                    'status' => 'confirmed',
-                    'credit_status' => 'approved',
-                    'credit_hold_reason' => null,
-                ]);
+                // Only an order still on hold goes back to confirmed; one cancelled meanwhile stays cancelled.
+                $order->update(array_merge(
+                    $order->status === SalesOrderStatus::OnHold->value ? ['status' => SalesOrderStatus::Confirmed->value] : [],
+                    ['credit_status' => 'approved', 'credit_hold_reason' => null]
+                ));
             }
 
             $this->dispatchDomainEvent(new SalesOrderHoldReleasedEvent(

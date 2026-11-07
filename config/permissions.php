@@ -23,7 +23,8 @@ $contractManagers = ['owner', 'admin', 'accountant', 'sales_manager', 'procureme
 return [
     'modules' => [
         'crm' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
-        'invoicing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales']],
+        // Sales managers approve or reject quotes when no approval workflow decides (SalesQuotePolicy::approve).
+        'invoicing' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager']],
         'subscriptions' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         'projects' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'project_manager', 'technician', 'member']],
         'assets' => ['read' => $anyMember, 'write' => $finance],
