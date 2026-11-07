@@ -29,6 +29,15 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'presence_max_hours', type: 'integer', example: 12),
         new OA\Property(property: 'ledger_enabled', type: 'boolean'),
         new OA\Property(property: 'default_revenue_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'max_proxies_per_holder', description: 'From the statute; empty refuses proxies', type: 'integer', nullable: true),
+        new OA\Property(property: 'reimbursement_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'shift_alert_days', type: 'integer', example: 3),
+        new OA\Property(property: 'volunteer_expiry_alert_days', type: 'integer', example: 30),
+        new OA\Property(property: 'donation_receipt_prefix', type: 'string', example: 'DON-'),
+        new OA\Property(property: 'donation_revenue_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'five_per_mille_revenue_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'lex398_enabled', description: 'The company opted for the regime of Law 398/1991', type: 'boolean'),
+        new OA\Property(property: 'lex398_since', type: 'string', format: 'date', nullable: true),
     ]
 )]
 #[OA\Schema(

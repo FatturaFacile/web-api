@@ -58,7 +58,13 @@ final class AssociationsServiceProvider extends ServiceProvider
      */
     private const array GovernanceModels = [
         Models\Meeting::class, Models\MeetingAgendaItem::class, Models\MeetingAttachment::class, Models\MeetingParticipant::class,
-        Models\Ballot::class, Models\Minutes::class,
+        Models\Ballot::class, Models\Minutes::class, Models\ProtocolEntry::class, Models\Volunteer::class, Models\VolunteerTraining::class,
+        Models\Shift::class, Models\ShiftAssignment::class, Models\Campaign::class, Models\Reimbursement::class, Models\ReimbursementAttachment::class,
+        Models\LegalParameter::class, Models\PrivacySubject::class, Models\ProcessingActivity::class, Models\DataSubjectRequest::class, Models\DataAsset::class,
+        Models\Donor::class, Models\Donation::class, Models\CampaignExpense::class, Models\ExpenseCategory::class, Models\FivePerMilleAllocation::class,
+        Models\FivePerMilleExpense::class, Models\Sponsor::class, Models\SponsorContract::class,
+        Models\StatementMapping::class, Models\GeneralInterestActivity::class, Models\MissionReport::class, Models\StatementFiling::class,
+        Models\SportCollaborator::class, Models\SportContract::class, Models\SportCompensation::class, Models\Section::class,
     ];
 
     /**

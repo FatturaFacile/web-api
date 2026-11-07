@@ -14,7 +14,6 @@ use Modules\Associations\OpenApi\AssociationGet;
 use Modules\Associations\OpenApi\AssociationPost;
 use Modules\Associations\OpenApi\AssociationPut;
 use Modules\Associations\Services\CatalogRegistry;
-use Modules\Associations\Support\AssociationCapability;
 
 /**
  * The configuration records of the module: years, types, roles, fee plans, disciplines, resources, areas and the rest.
@@ -26,7 +25,7 @@ final class CatalogController extends AssociationController
     #[AssociationGet('/api/v1/associations/catalogs/{catalog}', 'listAssociationCatalog', 'List the entries of a catalog')]
     public function index(Request $request, string $catalog): AnonymousResourceCollection
     {
-        $this->allow(AssociationCapability::Read);
+        $this->allow($this->catalogs->readCapability($catalog));
         $model = $this->catalogs->model($catalog);
 
         return AssociationRecordResource::collection($model::query()->paginate($this->perPage($request)));
@@ -44,7 +43,7 @@ final class CatalogController extends AssociationController
     #[AssociationGet('/api/v1/associations/catalogs/{catalog}/{id}', 'showAssociationCatalogEntry', 'Show an entry of a catalog')]
     public function show(string $catalog, string $id): AssociationRecordResource
     {
-        $this->allow(AssociationCapability::Read);
+        $this->allow($this->catalogs->readCapability($catalog));
         $model = $this->catalogs->model($catalog);
 
         return new AssociationRecordResource($model::query()->findOrFail($id));

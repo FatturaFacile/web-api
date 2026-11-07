@@ -23,6 +23,10 @@ final class AssociationSetting extends AssociationRecord
         'certificate_alert_days' => 30,
         'presence_max_hours' => 12,
         'ledger_enabled' => true,
+        'shift_alert_days' => 3,
+        'volunteer_expiry_alert_days' => 30,
+        'donation_receipt_prefix' => 'DON-',
+        'lex398_enabled' => false,
     ];
 
     protected function casts(): array
@@ -34,6 +38,11 @@ final class AssociationSetting extends AssociationRecord
             'presence_max_hours' => 'integer',
             'card_padding' => 'integer',
             'ledger_enabled' => 'boolean',
+            'max_proxies_per_holder' => 'integer',
+            'shift_alert_days' => 'integer',
+            'volunteer_expiry_alert_days' => 'integer',
+            'lex398_enabled' => 'boolean',
+            'lex398_since' => 'date',
         ];
     }
 

@@ -34,6 +34,15 @@ final class UpdateSettingsRequest extends FormRequest
             'presence_max_hours' => ['sometimes', 'integer', 'min:1', 'max:72'],
             'ledger_enabled' => ['sometimes', 'boolean'],
             'default_revenue_account_id' => ['sometimes', 'nullable', 'uuid', TenantRules::exists('chart_of_accounts')],
+            'max_proxies_per_holder' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:100'],
+            'reimbursement_account_id' => ['sometimes', 'nullable', 'uuid', TenantRules::exists('chart_of_accounts')],
+            'shift_alert_days' => ['sometimes', 'integer', 'min:0', 'max:60'],
+            'volunteer_expiry_alert_days' => ['sometimes', 'integer', 'min:1', 'max:365'],
+            'donation_receipt_prefix' => ['sometimes', 'string', 'max:20'],
+            'donation_revenue_account_id' => ['sometimes', 'nullable', 'uuid', TenantRules::exists('chart_of_accounts')],
+            'five_per_mille_revenue_account_id' => ['sometimes', 'nullable', 'uuid', TenantRules::exists('chart_of_accounts')],
+            'lex398_enabled' => ['sometimes', 'boolean'],
+            'lex398_since' => ['sometimes', 'nullable', 'date'],
         ];
     }
 

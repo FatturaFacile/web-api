@@ -13,7 +13,10 @@ use Modules\Associations\Http\Controllers\CourseController;
 use Modules\Associations\Http\Controllers\EnrolmentAdminController;
 use Modules\Associations\Http\Controllers\EventController;
 use Modules\Associations\Http\Controllers\FeeController;
+use Modules\Associations\Http\Controllers\FundraisingController;
 use Modules\Associations\Http\Controllers\GuardianController;
+use Modules\Associations\Http\Controllers\LegalBookController;
+use Modules\Associations\Http\Controllers\Lex398Controller;
 use Modules\Associations\Http\Controllers\MeetingController;
 use Modules\Associations\Http\Controllers\MemberAreaController;
 use Modules\Associations\Http\Controllers\MemberController;
@@ -22,12 +25,19 @@ use Modules\Associations\Http\Controllers\MembershipController;
 use Modules\Associations\Http\Controllers\MinutesController;
 use Modules\Associations\Http\Controllers\NetworkController;
 use Modules\Associations\Http\Controllers\PaymentCallbackController;
+use Modules\Associations\Http\Controllers\PrivacyController;
 use Modules\Associations\Http\Controllers\PublicEnrolmentController;
 use Modules\Associations\Http\Controllers\RegistryImportController;
+use Modules\Associations\Http\Controllers\ReimbursementController;
+use Modules\Associations\Http\Controllers\SectionController;
 use Modules\Associations\Http\Controllers\SettingsController;
+use Modules\Associations\Http\Controllers\SportWorkController;
+use Modules\Associations\Http\Controllers\StatementController;
+use Modules\Associations\Http\Controllers\VolunteerController;
 use Modules\Associations\Http\Middleware\AuthenticateAccessDevice;
 use Modules\Associations\Http\Middleware\AuthenticateMemberArea;
 use Modules\Associations\Http\Middleware\ResolveEnrolmentForm;
+use Modules\Associations\Services\LegalBookService;
 
 $uuid = '[0-9a-fA-F-]{36}';
 
@@ -200,6 +210,112 @@ Route::prefix('api/v1/associations')
         Route::get('/minutes/{id}/pdf', [MinutesController::class, 'printable'])->name('minutes.pdf');
         Route::post('/minutes/{id}/distribute', [MinutesController::class, 'distribute'])->name('minutes.distribute');
         Route::get('/minutes/{id}/deliveries', [MinutesController::class, 'deliveries'])->name('minutes.deliveries');
+
+        // Books, protocol and archive
+        Route::get('/books/{book}', [LegalBookController::class, 'show'])->whereIn('book', LegalBookService::Books)->name('books.show');
+        Route::get('/books/{book}/csv', [LegalBookController::class, 'csv'])->whereIn('book', LegalBookService::Books)->name('books.csv');
+        Route::get('/books/{book}/pdf', [LegalBookController::class, 'printable'])->whereIn('book', LegalBookService::Books)->name('books.pdf');
+        Route::get('/archive', [LegalBookController::class, 'archive'])->name('archive');
+        Route::get('/protocol', [LegalBookController::class, 'protocol'])->name('protocol.index');
+        Route::post('/protocol', [LegalBookController::class, 'register'])->name('protocol.store');
+        Route::post('/protocol/{id}/cancel', [LegalBookController::class, 'cancel'])->name('protocol.cancel');
+        Route::get('/protocol/{id}/download', [LegalBookController::class, 'download'])->name('protocol.download');
+
+        // Volunteers, shifts and reimbursements
+        Route::get('/volunteers/year/{year}', [VolunteerController::class, 'ofYear'])->where('year', '[0-9]{4}')->name('volunteers.year');
+        Route::get('/volunteers/expiries', [VolunteerController::class, 'expiries'])->name('volunteers.expiries');
+        Route::get('/shifts/attention', [VolunteerController::class, 'attention'])->name('shifts.attention');
+        Route::post('/shifts/{id}/availability', [VolunteerController::class, 'availability'])->name('shifts.availability');
+        Route::post('/shifts/{id}/assignments', [VolunteerController::class, 'assign'])->name('shifts.assignments.store');
+        Route::get('/shifts/{id}/coverage', [VolunteerController::class, 'coverage'])->name('shifts.coverage');
+        Route::post('/shift-assignments/{id}/substitution-request', [VolunteerController::class, 'requestSubstitution'])->name('shift-assignments.substitution-request');
+        Route::post('/shift-assignments/{id}/substitute', [VolunteerController::class, 'substitute'])->name('shift-assignments.substitute');
+        Route::get('/reimbursements', [ReimbursementController::class, 'index'])->name('reimbursements.index');
+        Route::post('/reimbursements', [ReimbursementController::class, 'store'])->name('reimbursements.store');
+        Route::post('/reimbursements/{id}/attachments', [ReimbursementController::class, 'attach'])->name('reimbursements.attachments.store');
+        Route::get('/reimbursement-attachments/{id}/download', [ReimbursementController::class, 'download'])->name('reimbursement-attachments.download');
+        Route::post('/reimbursements/{id}/decision', [ReimbursementController::class, 'decide'])->name('reimbursements.decision');
+        Route::post('/reimbursements/{id}/pay', [ReimbursementController::class, 'pay'])->name('reimbursements.pay');
+
+        // Data protection
+        Route::get('/privacy/activities', [PrivacyController::class, 'activities'])->name('privacy.activities.index');
+        Route::post('/privacy/activities', [PrivacyController::class, 'storeActivity'])->name('privacy.activities.store');
+        Route::put('/privacy/activities/{id}', [PrivacyController::class, 'updateActivity'])->name('privacy.activities.update');
+        Route::post('/privacy/activities/{id}/finalize', [PrivacyController::class, 'finalize'])->name('privacy.activities.finalize');
+        Route::post('/privacy/activities/{id}/versions', [PrivacyController::class, 'newVersion'])->name('privacy.activities.versions');
+        Route::get('/privacy/activities/{id}/notice', [PrivacyController::class, 'notice'])->name('privacy.activities.notice');
+        Route::get('/privacy/activities/{id}/notice/pdf', [PrivacyController::class, 'noticePdf'])->name('privacy.activities.notice.pdf');
+        Route::get('/privacy/register', [PrivacyController::class, 'register'])->name('privacy.register');
+        Route::get('/privacy/register/csv', [PrivacyController::class, 'registerCsv'])->name('privacy.register.csv');
+        Route::get('/privacy/register/pdf', [PrivacyController::class, 'registerPdf'])->name('privacy.register.pdf');
+        Route::get('/privacy/subjects/{id}/appointment', [PrivacyController::class, 'appointment'])->name('privacy.subjects.appointment');
+        Route::get('/privacy/consents', [PrivacyController::class, 'consents'])->name('privacy.consents.index');
+        Route::post('/privacy/consents', [PrivacyController::class, 'recordConsent'])->name('privacy.consents.store');
+        Route::post('/privacy/consents/{id}/withdraw', [PrivacyController::class, 'withdrawConsent'])->name('privacy.consents.withdraw');
+        Route::get('/privacy/requests', [PrivacyController::class, 'requests'])->name('privacy.requests.index');
+        Route::post('/privacy/requests', [PrivacyController::class, 'receive'])->name('privacy.requests.store');
+        Route::post('/privacy/requests/{id}/extend', [PrivacyController::class, 'extend'])->name('privacy.requests.extend');
+        Route::get('/privacy/requests/{id}/erasure-preview', [PrivacyController::class, 'erasurePreview'])->name('privacy.requests.erasure-preview');
+        Route::post('/privacy/requests/{id}/complete', [PrivacyController::class, 'complete'])->name('privacy.requests.complete');
+        Route::post('/privacy/requests/{id}/reject', [PrivacyController::class, 'reject'])->name('privacy.requests.reject');
+        Route::get('/privacy/requests/{id}/export', [PrivacyController::class, 'export'])->name('privacy.requests.export');
+
+        // Donations, campaigns, 5x1000 and sponsors
+        Route::get('/donations', [FundraisingController::class, 'donations'])->name('donations.index');
+        Route::post('/donations', [FundraisingController::class, 'recordDonation'])->name('donations.store');
+        Route::post('/donations/{id}/receipt', [FundraisingController::class, 'issueReceipt'])->name('donations.receipt');
+        Route::post('/donation-receipts/{id}/cancel', [FundraisingController::class, 'cancelReceipt'])->name('donation-receipts.cancel');
+        Route::get('/donation-receipts/{id}/pdf', [FundraisingController::class, 'receiptPdf'])->name('donation-receipts.pdf');
+        Route::post('/campaigns/{id}/expenses', [FundraisingController::class, 'campaignExpense'])->name('campaigns.expenses.store');
+        Route::get('/campaigns/{id}/report', [FundraisingController::class, 'campaignReport'])->name('campaigns.report');
+        Route::get('/five-per-mille', [FundraisingController::class, 'fivePerMille'])->name('five-per-mille.index');
+        Route::post('/five-per-mille', [FundraisingController::class, 'recordFivePerMille'])->name('five-per-mille.store');
+        Route::post('/five-per-mille/{id}/expenses', [FundraisingController::class, 'fivePerMilleExpense'])->name('five-per-mille.expenses.store');
+        Route::get('/five-per-mille/{id}/report', [FundraisingController::class, 'fivePerMilleReport'])->name('five-per-mille.report');
+        Route::get('/five-per-mille/{id}/csv', [FundraisingController::class, 'fivePerMilleCsv'])->name('five-per-mille.csv');
+        Route::post('/sponsor-contracts/{id}/document', [FundraisingController::class, 'attachContract'])->name('sponsor-contracts.document.store');
+        Route::get('/sponsor-contracts/{id}/document', [FundraisingController::class, 'downloadContract'])->name('sponsor-contracts.document');
+
+        // Third-sector statements
+        Route::get('/statements/schemes', [StatementController::class, 'schemes'])->name('statements.schemes');
+        Route::get('/statements/mappings', [StatementController::class, 'mappings'])->name('statements.mappings.index');
+        Route::post('/statements/mappings', [StatementController::class, 'storeMapping'])->name('statements.mappings.store');
+        Route::put('/statements/mappings/{id}', [StatementController::class, 'updateMapping'])->name('statements.mappings.update');
+        Route::delete('/statements/mappings/{id}', [StatementController::class, 'destroyMapping'])->name('statements.mappings.destroy');
+        Route::get('/statements/filings', [StatementController::class, 'filingsIndex'])->name('statements.filings.index');
+        Route::get('/statements/{year}/management-report', [StatementController::class, 'managementReport'])->where('year', '[0-9]{4}')->name('statements.management-report');
+        Route::get('/statements/{year}/balance-sheet', [StatementController::class, 'balanceSheet'])->where('year', '[0-9]{4}')->name('statements.balance-sheet');
+        Route::get('/statements/{year}/cash-report', [StatementController::class, 'cashReport'])->where('year', '[0-9]{4}')->name('statements.cash-report');
+        Route::get('/statements/{year}/checks', [StatementController::class, 'checks'])->where('year', '[0-9]{4}')->name('statements.checks');
+        Route::get('/statements/{year}/mission-report', [StatementController::class, 'missionReport'])->where('year', '[0-9]{4}')->name('statements.mission-report');
+        Route::put('/statements/{year}/mission-report', [StatementController::class, 'saveMissionReport'])->where('year', '[0-9]{4}')->name('statements.mission-report.save');
+        Route::post('/statements/{year}/filings', [StatementController::class, 'prepare'])->where('year', '[0-9]{4}')->name('statements.filings.store');
+        Route::post('/statement-filings/{id}/filed', [StatementController::class, 'markFiled'])->name('statement-filings.filed');
+        Route::get('/statement-filings/{id}/csv', [StatementController::class, 'csv'])->name('statement-filings.csv');
+        Route::get('/statement-filings/{id}/pdf', [StatementController::class, 'printable'])->name('statement-filings.pdf');
+
+        // Law 398/1991
+        Route::get('/lex398/{year}/monitor', [Lex398Controller::class, 'monitor'])->where('year', '[0-9]{4}')->name('lex398.monitor');
+        Route::get('/lex398/{year}/register', [Lex398Controller::class, 'register'])->where('year', '[0-9]{4}')->name('lex398.register');
+        Route::get('/lex398/{year}/register/csv', [Lex398Controller::class, 'csv'])->where('year', '[0-9]{4}')->name('lex398.register.csv');
+        Route::post('/lex398/entries', [Lex398Controller::class, 'record'])->name('lex398.entries.store');
+        Route::post('/lex398/{year}/sync-invoices', [Lex398Controller::class, 'sync'])->where('year', '[0-9]{4}')->name('lex398.sync');
+
+        // Sports work
+        Route::get('/sport/compensations', [SportWorkController::class, 'compensations'])->name('sport.compensations.index');
+        Route::post('/sport/compensations', [SportWorkController::class, 'record'])->name('sport.compensations.store');
+        Route::get('/sport/expiries', [SportWorkController::class, 'expiries'])->name('sport.expiries');
+        Route::get('/sport/{year}/thresholds', [SportWorkController::class, 'thresholds'])->where('year', '[0-9]{4}')->name('sport.thresholds');
+        Route::get('/sport/{year}/single-book', [SportWorkController::class, 'singleBook'])->where('year', '[0-9]{4}')->name('sport.single-book');
+        Route::get('/sport/{year}/single-book/csv', [SportWorkController::class, 'singleBookCsv'])->where('year', '[0-9]{4}')->name('sport.single-book.csv');
+        Route::get('/sport/{year}/accountant-csv', [SportWorkController::class, 'accountantCsv'])->where('year', '[0-9]{4}')->name('sport.accountant-csv');
+        Route::get('/sport/{year}/registry-csv', [SportWorkController::class, 'registryCsv'])->where('year', '[0-9]{4}')->name('sport.registry-csv');
+        Route::post('/sport-contracts/{id}/document', [SportWorkController::class, 'attach'])->name('sport-contracts.document.store');
+        Route::get('/sport-contracts/{id}/document', [SportWorkController::class, 'download'])->name('sport-contracts.document');
+
+        // Sections and the network of affiliates
+        Route::get('/sections/{year}/report', [SectionController::class, 'report'])->where('year', '[0-9]{4}')->name('sections.report');
+        Route::get('/network/statements/{year}', [NetworkController::class, 'statements'])->where('year', '[0-9]{4}')->name('network.statements');
     });
 
 // Public online enrolment: the token of the link selects the tenant.

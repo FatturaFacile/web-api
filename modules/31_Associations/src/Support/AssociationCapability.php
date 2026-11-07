@@ -17,6 +17,11 @@ enum AssociationCapability: string
     case Network = 'associations.network';
 
     /**
+     * The data protection records: register, notices, requests of the data subjects, erasure.
+     */
+    case Privacy = 'associations.privacy';
+
+    /**
      * @return list<string>
      */
     public function roles(): array
@@ -25,7 +30,7 @@ enum AssociationCapability: string
             self::Read => ['owner', 'admin', 'secretary', 'accountant'],
             self::Manage, self::Health => ['owner', 'admin', 'secretary'],
             self::Finance => ['owner', 'admin', 'secretary', 'accountant'],
-            self::Network => ['owner', 'admin'],
+            self::Network, self::Privacy => ['owner', 'admin'],
         };
     }
 
@@ -40,6 +45,7 @@ enum AssociationCapability: string
             self::Read => ['*', 'associations.read', 'associations.write'],
             self::Manage, self::Finance => ['*', 'associations.write'],
             self::Health => ['*', 'associations.health'],
+            self::Privacy => ['*', 'associations.privacy'],
             self::Network => ['*'],
         };
     }

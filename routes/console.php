@@ -13,6 +13,7 @@ use Modules\Associations\Jobs\ExpireMembershipsJob;
 use Modules\Associations\Jobs\SendCertificateAlertsJob;
 use Modules\Associations\Jobs\SendFeeRemindersJob;
 use Modules\Associations\Jobs\SendRenewalRemindersJob;
+use Modules\Associations\Jobs\SendVolunteerAlertsJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
@@ -80,4 +81,5 @@ $forEachTenant('associations:expire-memberships', static fn (Tenant $tenant): ob
 $forEachTenant('associations:fee-reminders', static fn (Tenant $tenant): object => new SendFeeRemindersJob($tenant->id))->dailyAt('08:15');
 $forEachTenant('associations:renewal-reminders', static fn (Tenant $tenant): object => new SendRenewalRemindersJob($tenant->id))->dailyAt('08:30');
 $forEachTenant('associations:certificate-alerts', static fn (Tenant $tenant): object => new SendCertificateAlertsJob($tenant->id))->dailyAt('08:45');
+$forEachTenant('associations:volunteer-alerts', static fn (Tenant $tenant): object => new SendVolunteerAlertsJob($tenant->id))->dailyAt('07:45');
 $forEachTenant('customs:assessment-decisions', static fn (Tenant $tenant): object => new RetrieveAssessmentDecisionsJob($tenant->id))->dailyAt('04:30');
