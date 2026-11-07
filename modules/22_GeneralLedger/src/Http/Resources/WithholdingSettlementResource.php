@@ -38,6 +38,7 @@ final class WithholdingSettlementResource extends JsonResource
                 'taxable_amount' => (string) $line->taxable_amount,
                 'rate_percent' => $line->rate_percent !== null ? (string) $line->rate_percent : null,
                 'withheld_amount' => (string) $line->withheld_amount,
+                'detail_assumed' => (bool) $line->detail_assumed,
             ])->all()),
         ];
     }

@@ -20,12 +20,14 @@ final class WithholdingSettlementLine extends Model
     protected $fillable = [
         'tenant_id', 'withholding_settlement_id', 'passive_invoice_id', 'supplier_payment_id', 'supplier_id', 'invoice_number',
         'paid_at', 'withholding_type', 'reason', 'f24_code', 'gross_paid', 'taxable_amount', 'rate_percent', 'withheld_amount',
+        'detail_assumed',
     ];
 
     protected function casts(): array
     {
         return [
             'paid_at' => 'date',
+            'detail_assumed' => 'boolean',
             'gross_paid' => 'decimal:2',
             'taxable_amount' => 'decimal:2',
             'rate_percent' => 'decimal:2',

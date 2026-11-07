@@ -59,6 +59,7 @@ class FatturaPaParser
                 'tax' => round($tax, 2),
                 'due_date' => $this->value($body, 'DatiPagamento/DettaglioPagamento/DataScadenzaPagamento'),
                 'withholdings' => $this->withholdings($body),
+                'stamp_duty' => round((float) ($this->value($body, 'DatiGenerali/DatiGeneraliDocumento/DatiBollo/ImportoBollo') ?? 0), 2),
                 'lines' => $this->lines($body),
             ];
         }

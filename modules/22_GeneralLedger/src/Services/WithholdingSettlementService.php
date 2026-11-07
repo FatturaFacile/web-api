@@ -285,6 +285,7 @@ final class WithholdingSettlementService
                 'taxable_amount' => $rate !== null && Decimal::isPositive($rate) ? Decimal::round2(Decimal::div(Decimal::mul($withheld, '100'), $rate)) : Decimal::round2($grossPaid),
                 'rate_percent' => $rate,
                 'withheld_amount' => Decimal::round2($withheld),
+                'detail_assumed' => $withholding['assumed'],
             ];
         }
 
@@ -292,11 +293,19 @@ final class WithholdingSettlementService
     }
 
     /**
-     * @return array<string, array{amount: string, rate: ?string, reason: ?string}>
+     * The withholdings of the document by type. A document with a withholding amount but no DatiRitenuta detail (entered
+     * by hand, or received before the detail was kept) counts as one RT01 of that amount, flagged as assumed, so that it
+     * stays in the F24 and the CU instead of vanishing.
+     *
+     * @return array<string, array{amount: string, rate: ?string, reason: ?string, assumed: bool}>
      */
     private function withholdingsByType(PassiveInvoice $invoice): array
     {
         $byType = [];
+
+        if (($invoice->withholdings ?? []) === [] && Decimal::isPositive((string) $invoice->withholding_tax_amount)) {
+            return [TipoRitenuta::Rt01->value => ['amount' => (string) $invoice->withholding_tax_amount, 'rate' => null, 'reason' => null, 'assumed' => true]];
+        }
 
         foreach ($invoice->withholdings ?? [] as $withholding) {
             $type = (string) $withholding['type'];
@@ -304,6 +313,7 @@ final class WithholdingSettlementService
                 'amount' => Decimal::add($byType[$type]['amount'] ?? '0', (string) $withholding['amount']),
                 'rate' => $withholding['rate'] ?? null,
                 'reason' => $withholding['reason'] ?? null,
+                'assumed' => false,
             ];
         }
 

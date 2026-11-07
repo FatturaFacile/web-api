@@ -92,6 +92,7 @@ final readonly class PostPassiveInvoiceAction
             withholdingTaxAmount: $withholdingTax,
             contributionAmount: $contributions,
             costAllocations: $this->costAllocations($invoice, $net),
+            stampDutyAmount: $this->chargedStampDuty($invoice, $gross, $net, $tax),
         );
 
         $this->dispatcher->publish($event);
@@ -100,6 +101,18 @@ final readonly class PostPassiveInvoiceAction
         $invoice->refresh();
         $this->declarations->trackPurchase($invoice);
         $this->payments->postWaitingSupplierPayments((string) $invoice->id);
+    }
+
+    /**
+     * The stamp duty of DatiBollo, when the document total carries it on top of net and VAT. A stamp the supplier paid
+     * without charging it leaves the total as it is and is not posted.
+     */
+    private function chargedStampDuty(PassiveInvoice $invoice, float $gross, float $net, float $tax): float
+    {
+        $stamp = bcadd((string) abs((float) $invoice->stamp_duty_amount), '0', 2);
+        $beyondNetAndTax = bcsub(bcadd((string) $gross, '0', 2), bcadd(bcadd((string) $net, '0', 2), bcadd((string) $tax, '0', 2), 2), 2);
+
+        return bccomp($stamp, '0', 2) === 1 && bccomp($stamp, $beyondNetAndTax, 2) === 0 ? (float) $stamp : 0.0;
     }
 
     /**
