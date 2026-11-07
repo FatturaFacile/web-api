@@ -13,8 +13,8 @@ use OpenApi\Attributes as OA;
 #[Attribute(Attribute::TARGET_METHOD)]
 final class AssociationDelete extends OA\Delete
 {
-    public function __construct(string $path, string $id, string $summary, string $audience = OperationArguments::Staff)
+    public function __construct(string $path, string $id, string $summary, string $audience = OperationArguments::Staff, ?string $response = null)
     {
-        parent::__construct(...OperationArguments::for($path, $id, $summary, $audience, null, [], false, false));
+        parent::__construct(...OperationArguments::for($path, $id, $summary, $audience, null, [], false, false, $response));
     }
 }
