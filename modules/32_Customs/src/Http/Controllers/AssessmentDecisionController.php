@@ -128,6 +128,7 @@ final class AssessmentDecisionController extends CustomsController
         $this->authorize('create', CustomsAssessmentDecision::class);
 
         $run = $this->retrieval->run($this->tenant(), CarbonImmutable::parse($request->validated('date_from')), CarbonImmutable::parse($request->validated('date_to')));
+        $run->wasRecentlyCreated = false;
 
         return new CustomsRecordResource($run);
     }

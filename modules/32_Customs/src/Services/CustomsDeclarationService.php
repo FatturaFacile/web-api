@@ -176,7 +176,7 @@ final class CustomsDeclarationService
     public function tariffHistory(array $filters, int $perPage): LengthAwarePaginator
     {
         $query = CustomsDeclarationItem::query()
-            ->join('customs_declarations as d', 'd.id', '=', 'customs_declaration_items.declaration_id')
+            ->join('customs_goods_declarations as d', 'd.id', '=', 'customs_declaration_items.declaration_id')
             ->whereNull('d.deleted_at')
             ->where('d.status', '<>', DeclarationStatus::Cancelled->value)
             ->selectRaw('customs_declaration_items.commodity_code, customs_declaration_items.statistical_code, customs_declaration_items.origin_country, customs_declaration_items.description, customs_declaration_items.packaging_type, max(customs_declaration_items.id::text) as last_item_id, count(*) as times_used, max(d.created_at) as last_used_at')
@@ -211,7 +211,7 @@ final class CustomsDeclarationService
 
         $declaration->items()->create([
             'line_number' => (int) $declaration->items()->max('line_number') + 1,
-            ...$source->only(['product_id', 'trader_item_id', 'description', 'commodity_code', 'statistical_code', 'customs_clearance_type', 'commercial_good', 'vat_code', 'duty_rate', 'origin_country', 'preference', 'packaging_type']),
+            ...$source->only(['product_id', 'trader_item_id', 'description', 'commodity_code', 'statistical_code', 'permit_obligation', 'non_customs_law_obligation', 'customs_clearance_type', 'commercial_good', 'vat_code', 'duty_rate', 'origin_country', 'preference', 'packaging_type']),
         ]);
 
         $declaration->update(['status' => DeclarationStatus::Draft]);

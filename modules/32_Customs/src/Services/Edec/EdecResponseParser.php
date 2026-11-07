@@ -13,7 +13,8 @@ use Modules\Customs\Enums\AssessmentDocumentType;
 use Modules\Customs\Exceptions\CustomsGatewayException;
 
 /**
- * Reads the answers of e-dec. Each answer is checked against its BAZG schema first.
+ * Reads the answers of e-dec. Answers are not refused on the schema, because the samples published by BAZG do not pass
+ * it; the parser requires the elements it reads, so an answer it cannot use is a channel error.
  */
 final class EdecResponseParser
 {
@@ -21,22 +22,29 @@ final class EdecResponseParser
 
     private const string RECEIPT_NAMESPACE = 'http://www.e-dec.ch/xml/schema/edecReceiptResponse/v3';
 
-    public function __construct(private readonly EdecSchemaValidator $validator) {}
-
     public function declaration(string $xml): SubmissionResult
     {
-        $this->assertValid($xml, EdecSchemaValidator::DECLARATION_RESPONSE);
         $xpath = $this->xpath($xml, self::DECLARATION_NAMESPACE);
 
         $acceptance = $xpath->query('/e:goodsDeclarationsResponse/e:goodsDeclarationAcceptance')->item(0);
 
         if ($acceptance !== null) {
+            $mrn = trim((string) $xpath->evaluate('string(e:customsDeclarationNumber)', $acceptance));
+
+            if ($mrn === '') {
+                throw new CustomsGatewayException('The acceptance of customs holds no declaration number.');
+            }
+
             return new SubmissionResult(
                 isAccepted: true,
                 response: $xml,
-                mrn: trim((string) $xpath->evaluate('string(e:customsDeclarationNumber)', $acceptance)),
+                mrn: $mrn,
                 version: (int) $xpath->evaluate('string(e:customsDeclarationVersion)', $acceptance),
             );
+        }
+
+        if ($xpath->query('/e:goodsDeclarationsResponse/e:goodsDeclarationRejection')->length === 0) {
+            throw new CustomsGatewayException('The answer of customs is neither an acceptance nor a rejection.');
         }
 
         $texts = [];
@@ -57,9 +65,12 @@ final class EdecResponseParser
      */
     public function receiptList(string $xml): array
     {
-        $this->assertValid($xml, EdecSchemaValidator::RECEIPT_RESPONSE);
         $xpath = $this->xpath($xml, self::RECEIPT_NAMESPACE);
         $this->assertNotRejected($xpath);
+
+        if ($xpath->query('/e:receiptRequestResponse/e:receiptList')->length === 0) {
+            throw new CustomsGatewayException('The answer of customs holds no list of documents.');
+        }
 
         $references = [];
 
@@ -98,15 +109,6 @@ final class EdecResponseParser
         }
 
         throw new CustomsGatewayException('The customs system refused the request: '.implode(' | ', array_values(array_filter($texts))));
-    }
-
-    private function assertValid(string $xml, string $schema): void
-    {
-        $errors = $this->validator->errors($xml, $schema);
-
-        if ($errors !== []) {
-            throw new CustomsGatewayException('The answer of the customs system does not match its schema: '.$errors[0]);
-        }
     }
 
     private function xpath(string $xml, string $namespace): DOMXPath

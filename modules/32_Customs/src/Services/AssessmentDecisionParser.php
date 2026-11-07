@@ -15,6 +15,10 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 
 /**
  * Reads a receiptRequestResponse of the edecReceipt schema v3.0 holding one assessment decision.
+ *
+ * A departure from the schema is reported, not refused: the sample decisions BAZG publishes do not pass its own XSD,
+ * and the recipient must keep the decision it received. What the module cannot do without is required: the identity of
+ * the document and readable amounts. A document type declaration is refused, as customs messages have no use for one.
  */
 final class AssessmentDecisionParser
 {
@@ -27,14 +31,7 @@ final class AssessmentDecisionParser
      */
     public function parse(string $xml): ParsedAssessment
     {
-        $errors = $this->validator->errors($xml, EdecSchemaValidator::RECEIPT_RESPONSE);
-
-        if ($errors !== []) {
-            throw new CustomsException('The file does not match the BAZG schema: '.$errors[0]);
-        }
-
-        $document = new DOMDocument;
-        $document->loadXML($xml, LIBXML_NONET);
+        $document = $this->load($xml);
         $xpath = new DOMXPath($document);
         $xpath->registerNamespace('e', self::NAMESPACE_URI);
 
@@ -49,12 +46,19 @@ final class AssessmentDecisionParser
         $vatGroups = $this->vatByRate($xpath, $node);
         $vatBase = array_reduce($vatGroups, static fn (string $total, array $group): string => Decimal::add($total, $group['base']), '0');
         $number = $read('e:traderDeclarationNumber');
+        $mrn = $read('e:documentInformation/e:documentNumber');
+        $version = $read('e:documentInformation/e:documentVersion');
+        $date = $read('e:documentInformation/e:documentDate');
+
+        if ($mrn === '' || preg_match('/^\d+$/', $version) !== 1 || preg_match('/^\d{4}-\d{2}-\d{2}/', $date) !== 1) {
+            throw new CustomsException('The decision lacks its number, version or date.');
+        }
 
         return new ParsedAssessment(
             documentType: AssessmentDocumentType::from($node->localName),
-            mrn: $read('e:documentInformation/e:documentNumber'),
-            version: (int) $read('e:documentInformation/e:documentVersion'),
-            documentDate: $read('e:documentInformation/e:documentDate'),
+            mrn: $mrn,
+            version: (int) $version,
+            documentDate: substr($date, 0, 10),
             traderDeclarationNumber: $number === '' ? null : $number,
             dutyAmount: $this->amount($read('e:valuationSummary/e:dutyAndAdditionalTaxes/e:totalAmount')),
             vatAmount: $this->amount($read('e:valuationSummary/e:VAT/e:totalAmount')),
@@ -62,7 +66,29 @@ final class AssessmentDecisionParser
             vatRate: count($vatGroups) === 1 ? $vatGroups[0]['rate'] : null,
             amountNotCharged: $read('e:valuationSummary/e:VAT/e:amountNotCharged') === '1',
             vatByRate: $vatGroups,
+            schemaErrors: $this->validator->errors($xml, EdecSchemaValidator::RECEIPT_RESPONSE),
         );
+    }
+
+    /**
+     * @throws CustomsException when the file is not well-formed XML or declares a document type
+     */
+    private function load(string $xml): DOMDocument
+    {
+        $previous = libxml_use_internal_errors(true);
+
+        try {
+            $document = new DOMDocument;
+
+            if (! $document->loadXML($xml, LIBXML_NONET) || $document->doctype !== null) {
+                throw new CustomsException('The file is not a valid XML message.');
+            }
+
+            return $document;
+        } finally {
+            libxml_clear_errors();
+            libxml_use_internal_errors($previous);
+        }
     }
 
     /**
@@ -89,6 +115,14 @@ final class AssessmentDecisionParser
 
     private function amount(string $value): string
     {
-        return $value === '' ? '0' : $value;
+        if ($value === '') {
+            return '0';
+        }
+
+        if (preg_match('/^-?\d+(\.\d+)?$/', $value) !== 1) {
+            throw new CustomsException("The amount {$value} of the decision cannot be read.");
+        }
+
+        return $value;
     }
 }

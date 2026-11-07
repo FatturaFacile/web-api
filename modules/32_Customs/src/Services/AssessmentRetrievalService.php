@@ -66,7 +66,7 @@ final class AssessmentRetrievalService
             }
         }
 
-        return $this->finish($run, $errors === [] ? 'completed' : 'completed_with_errors', count($references), $stored, $duplicates, $errors);
+        return $this->finish($run, $errors === [] ? 'completed' : 'partial', count($references), $stored, $duplicates, $errors);
     }
 
     private function isArchived(Tenant $tenant, AssessmentReference $reference): bool

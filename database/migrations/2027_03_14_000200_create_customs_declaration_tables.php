@@ -10,11 +10,12 @@ return new class extends Migration
 {
     /**
      * Column sizes follow the e-dec schema v4.0 published by BAZG. The numeric codes (declaration time, transport mode
-     * and the like) stay nullable: they come from the BAZG domains and are never defaulted here.
+     * and the like) stay nullable: they come from the BAZG domains and are never defaulted here. The older table
+     * `customs_declarations` of the inventory migration is used by no code and is left alone.
      */
     public function up(): void
     {
-        Schema::create('customs_declarations', function (Blueprint $table): void {
+        Schema::create('customs_goods_declarations', function (Blueprint $table): void {
             $table->uuid('id')->primary();
             $table->uuid('tenant_id');
             $table->string('declaration_type', 10);
@@ -57,7 +58,7 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->unique(['tenant_id', 'trader_declaration_number'], 'customs_declarations_number_unique');
+            $table->unique(['tenant_id', 'trader_declaration_number'], 'customs_goods_declarations_number_unique');
             $table->index(['tenant_id', 'status']);
             $table->index(['tenant_id', 'mrn']);
             $table->index(['tenant_id', 'dossier_id']);
@@ -80,6 +81,9 @@ return new class extends Migration
             $table->decimal('gross_mass', 12, 3)->default(0);
             $table->decimal('net_mass', 12, 3)->default(0);
             $table->decimal('additional_unit', 10, 1)->nullable();
+            $table->unsignedTinyInteger('permit_obligation')->nullable();
+            $table->unsignedTinyInteger('non_customs_law_obligation')->nullable();
+            $table->boolean('is_repair')->default(false);
             $table->unsignedTinyInteger('customs_clearance_type')->nullable();
             $table->unsignedTinyInteger('commercial_good')->nullable();
             $table->decimal('statistical_value', 12, 2)->default(0);
@@ -96,7 +100,7 @@ return new class extends Migration
 
             $table->unique(['declaration_id', 'line_number']);
             $table->index(['tenant_id', 'commodity_code']);
-            $table->foreign('declaration_id')->references('id')->on('customs_declarations')->cascadeOnDelete();
+            $table->foreign('declaration_id')->references('id')->on('customs_goods_declarations')->cascadeOnDelete();
             $table->foreign('product_id')->references('id')->on('products')->nullOnDelete();
         });
 
@@ -113,7 +117,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->index(['tenant_id', 'declaration_id']);
-            $table->foreign('declaration_id')->references('id')->on('customs_declarations')->nullOnDelete();
+            $table->foreign('declaration_id')->references('id')->on('customs_goods_declarations')->nullOnDelete();
         });
     }
 
@@ -121,6 +125,6 @@ return new class extends Migration
     {
         Schema::dropIfExists('customs_gateway_messages');
         Schema::dropIfExists('customs_declaration_items');
-        Schema::dropIfExists('customs_declarations');
+        Schema::dropIfExists('customs_goods_declarations');
     }
 };

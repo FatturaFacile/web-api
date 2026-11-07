@@ -61,6 +61,9 @@ final class SaveDeclarationRequest extends FormRequest
             'items.*.gross_mass' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
             'items.*.net_mass' => ['nullable', 'numeric', 'min:0', 'max:999999999.999'],
             'items.*.additional_unit' => ['nullable', 'numeric', 'min:0', 'max:999999999.9'],
+            'items.*.permit_obligation' => ['nullable', 'integer', 'between:0,9'],
+            'items.*.non_customs_law_obligation' => ['nullable', 'integer', 'between:0,9'],
+            'items.*.is_repair' => ['nullable', 'boolean'],
             'items.*.customs_clearance_type' => ['nullable', 'integer', 'between:0,99'],
             'items.*.commercial_good' => ['nullable', 'integer', 'in:1,2'],
             'items.*.statistical_value' => ['nullable', 'numeric', 'min:0', 'max:9999999999'],
@@ -87,7 +90,7 @@ final class SaveDeclarationRequest extends FormRequest
         $data = $this->validated();
 
         foreach ($data['items'] ?? [] as $index => $item) {
-            foreach (['gross_mass', 'net_mass', 'statistical_value', 'preference', 'package_quantity'] as $field) {
+            foreach (['gross_mass', 'net_mass', 'statistical_value', 'preference', 'is_repair', 'package_quantity'] as $field) {
                 if (! isset($item[$field])) {
                     unset($data['items'][$index][$field]);
                 }

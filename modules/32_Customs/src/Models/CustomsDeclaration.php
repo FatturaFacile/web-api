@@ -16,6 +16,8 @@ final class CustomsDeclaration extends CustomsRecord
 {
     use SoftDeletes;
 
+    protected $table = 'customs_goods_declarations';
+
     protected function casts(): array
     {
         return [

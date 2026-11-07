@@ -72,7 +72,7 @@ final class AssessmentArchive
             'envelope_path' => $envelopePath,
             'envelope_sha256' => $assessment->signedEnvelope === null ? null : hash('sha256', $assessment->signedEnvelope),
             'signature_status' => $check->status,
-            'signature_report' => $check->report,
+            'signature_report' => [...$check->report, 'schema_errors' => array_slice($parsed->schemaErrors, 0, 20)],
             'gateway' => $gateway,
             'retrieved_at' => now(),
         ]);

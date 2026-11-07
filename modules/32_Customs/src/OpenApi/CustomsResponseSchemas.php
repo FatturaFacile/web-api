@@ -66,7 +66,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'summary', type: 'object'),
         new OA\Property(property: 'decisions', type: 'array', items: new OA\Items(type: 'object', properties: [
             new OA\Property(property: 'mrn', type: 'string'),
-            new OA\Property(property: 'flags', type: 'array', items: new OA\Items(type: 'string', enum: ['signature_invalid', 'signature_unchecked', 'file_altered', 'no_declaration', 'not_posted'])),
+            new OA\Property(property: 'flags', type: 'array', items: new OA\Items(type: 'string', enum: ['signature_invalid', 'signature_unchecked', 'file_altered', 'schema_mismatch', 'no_declaration', 'not_posted'])),
         ])),
         new OA\Property(property: 'runs', type: 'array', items: new OA\Items(type: 'object')),
     ]),

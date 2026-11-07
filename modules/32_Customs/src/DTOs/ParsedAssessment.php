@@ -13,6 +13,7 @@ final readonly class ParsedAssessment
 {
     /**
      * @param  list<array{rate: string, base: string, amount: string}>  $vatByRate
+     * @param  list<string>  $schemaErrors  where the document departs from the published schema
      */
     public function __construct(
         public AssessmentDocumentType $documentType,
@@ -26,5 +27,6 @@ final readonly class ParsedAssessment
         public ?string $vatRate,
         public bool $amountNotCharged,
         public array $vatByRate,
+        public array $schemaErrors = [],
     ) {}
 }

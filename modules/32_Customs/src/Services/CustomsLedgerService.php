@@ -38,6 +38,9 @@ final class CustomsLedgerService
 
     private const string CURRENCY = 'CHF';
 
+    /** A refund of VAT holds no goods items, so it states no rate. */
+    private const string UNRATED = 'unrated';
+
     public function __construct(
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly FiscalPeriodResolver $periods,
@@ -177,7 +180,7 @@ final class CustomsLedgerService
             $lines = [...$lines, ...$this->pair($inputVatId, $group['amount'], [
                 'vat_base_amount' => Decimal::round2(Decimal::abs($group['base'])),
                 'vat_tax_amount' => Decimal::round2(Decimal::abs($group['amount'])),
-                'vat_rate_percent' => (string) $rate,
+                'vat_rate_percent' => $rate === self::UNRATED ? null : (string) $rate,
             ])];
         }
 
@@ -203,6 +206,10 @@ final class CustomsLedgerService
         }
 
         $total = Decimal::round2((string) $decision->vat_amount);
+
+        if ($groups === []) {
+            return [self::UNRATED => ['base' => '0', 'amount' => Decimal::mul($total, $sign)]];
+        }
 
         if (Decimal::compare($sum, $total) !== 0) {
             if (count($groups) !== 1) {

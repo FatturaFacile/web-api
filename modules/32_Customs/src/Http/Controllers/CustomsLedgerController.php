@@ -42,7 +42,10 @@ final class CustomsLedgerController extends CustomsController
         $decision = CustomsAssessmentDecision::query()->findOrFail($id);
         $this->authorize('post', $decision);
 
-        return new CustomsRecordResource($this->ledger->post($decision, $this->actorId($request)));
+        $posting = $this->ledger->post($decision, $this->actorId($request));
+        $posting->wasRecentlyCreated = false;
+
+        return new CustomsRecordResource($posting);
     }
 
     /**

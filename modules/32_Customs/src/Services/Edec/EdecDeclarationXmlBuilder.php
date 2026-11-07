@@ -118,18 +118,21 @@ final class EdecDeclarationXmlBuilder
     private function item(DOMElement $parent, CustomsDeclarationItem $item): void
     {
         $node = $this->add($parent, 'goodsItem');
-        $this->text($node, 'traderItemID', $item->trader_item_id);
+        $this->text($node, 'traderItemID', $item->trader_item_id ?? $item->line_number);
         $this->text($node, 'description', $item->description);
         $this->text($node, 'commodityCode', $item->commodity_code);
         $this->text($node, 'statisticalCode', $item->statistical_code);
         $this->text($node, 'grossMass', $item->gross_mass);
         $this->text($node, 'netMass', $item->net_mass);
         $this->text($node, 'additionalUnit', $item->additional_unit);
+        $this->text($node, 'permitObligation', $item->permit_obligation);
+        $this->text($node, 'nonCustomsLawObligation', $item->non_customs_law_obligation);
 
         $statistic = $this->add($node, 'statistic');
         $this->text($statistic, 'customsClearanceType', $item->customs_clearance_type);
         $this->text($statistic, 'commercialGood', $item->commercial_good);
         $this->text($statistic, 'statisticalValue', $this->wholeFrancs((string) $item->statistical_value));
+        $this->text($statistic, 'repair', $item->is_repair ? 1 : 0);
 
         if ($item->origin_country !== null) {
             $origin = $this->add($node, 'origin');

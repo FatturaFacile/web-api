@@ -23,6 +23,8 @@ final class AssessmentReportingService
 
     public const string FLAG_FILE_ALTERED = 'file_altered';
 
+    public const string FLAG_SCHEMA_MISMATCH = 'schema_mismatch';
+
     public const string FLAG_NO_DECLARATION = 'no_declaration';
 
     public const string FLAG_NOT_POSTED = 'not_posted';
@@ -117,6 +119,10 @@ final class AssessmentReportingService
 
         if (! $this->archive->verifyIntegrity($decision)['is_intact']) {
             $flags[] = self::FLAG_FILE_ALTERED;
+        }
+
+        if (($decision->signature_report['schema_errors'] ?? []) !== []) {
+            $flags[] = self::FLAG_SCHEMA_MISMATCH;
         }
 
         if ($declaration === null) {

@@ -19,6 +19,7 @@ final class CustomsDeclarationItem extends CustomsRecord
             'vat_value' => 'decimal:2',
             'duty_rate' => 'decimal:2',
             'preference' => 'boolean',
+            'is_repair' => 'boolean',
             'produced_documents' => 'array',
         ];
     }
