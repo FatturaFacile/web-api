@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites>
-  <testsuite name="Tests\Feature\Foundation\OpenApiRouteCoverageTest" file="tests\Feature\Foundation\OpenApiRouteCoverageTest.php" tests="1" assertions="11" errors="0" failures="0" skipped="0" time="3.586207">
-    <testcase name="every API route of every module declares its OpenAPI operation" file="tests\Feature\Foundation\OpenApiRouteCoverageTest.php::every API route of every module declares its OpenAPI operation" class="Tests\Feature\Foundation\OpenApiRouteCoverageTest" classname="Tests.Feature.Foundation.OpenApiRouteCoverageTest" assertions="11" time="3.586207"/>
+  <testsuite name="Tests\Feature\OpenAPICoverageTest" file="tests\Feature\OpenAPICoverageTest.php" tests="2" assertions="27" errors="0" failures="0" skipped="0" time="1.036472">
+    <testcase name="OpenAPI: Specification endpoint serves valid OpenAPI schema covering enterprise domains" file="tests\Feature\OpenAPICoverageTest.php::OpenAPI: Specification endpoint serves valid OpenAPI schema covering enterprise domains" class="Tests\Feature\OpenAPICoverageTest" classname="Tests.Feature.OpenAPICoverageTest" assertions="22" time="0.783953"/>
+    <testcase name="OpenAPI: Specification includes standard components, schemas and security definitions" file="tests\Feature\OpenAPICoverageTest.php::OpenAPI: Specification includes standard components, schemas and security definitions" class="Tests\Feature\OpenAPICoverageTest" classname="Tests.Feature.OpenAPICoverageTest" assertions="5" time="0.252520"/>
   </testsuite>
 </testsuites>
