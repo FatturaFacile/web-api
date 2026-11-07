@@ -349,7 +349,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 9. Automotive & Tire Center (Gommista)
-        Route::prefix('automotive')->name('automotive.')->group(function (): void {
+        Route::prefix('automotive')->name('automotive.')->middleware('module.access:automotive')->group(function (): void {
             Route::get('/vehicles', [AutomotiveController::class, 'vehicles'])->name('vehicles');
             Route::post('/tire-hotel/check-in', [AutomotiveController::class, 'tireHotelCheckIn'])->name('tire-hotel.check-in');
             Route::post('/tire-hotel/{id}/check-out', [AutomotiveController::class, 'tireHotelCheckOut'])->name('tire-hotel.check-out');
@@ -367,7 +367,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 11. Construction & Craftsmen (Cantieri)
-        Route::prefix('construction')->name('construction.')->group(function (): void {
+        Route::prefix('construction')->name('construction.')->middleware('module.access:construction')->group(function (): void {
             Route::get('/sites', [ConstructionController::class, 'sites'])->name('sites');
             Route::get('/sal', [ConstructionController::class, 'sal'])->name('sal');
             Route::post('/sal', [ConstructionController::class, 'storeSal'])->name('sal.store');
@@ -375,7 +375,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 12. Professional Practices (Fascicoli)
-        Route::prefix('professionals')->name('professionals.')->group(function (): void {
+        Route::prefix('professionals')->name('professionals.')->middleware('module.access:professionals')->group(function (): void {
             Route::get('/cases', [ProfessionalsController::class, 'cases'])->name('cases');
             Route::get('/time-logs', [ProfessionalsController::class, 'timeLogs'])->name('time-logs');
             Route::post('/time-logs', [ProfessionalsController::class, 'logActivity'])->name('time-logs.store');
