@@ -25,6 +25,9 @@ use Modules\Integrations\Models\PaymentWebhookEvent;
  */
 final readonly class PaymentLinkService
 {
+    /** ModalitaPagamento of the FatturaPA schema (carta di pagamento): payments store this code. */
+    private const string FatturaPaCardCode = 'MP08';
+
     public function __construct(
         private RecordPayment $payments,
         private TenantContext $tenantContext,
@@ -108,7 +111,7 @@ final readonly class PaymentLinkService
             $payment = $this->payments->execute($link->invoice, [
                 'amount' => (string) $link->amount,
                 'paid_at' => now()->toDateString(),
-                'payment_method' => $provider,
+                'payment_method' => self::FatturaPaCardCode,
                 'reference' => mb_substr($event->reference, 0, 100),
             ]);
         } catch (ValidationException $e) {

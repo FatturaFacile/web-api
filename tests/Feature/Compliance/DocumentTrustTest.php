@@ -32,10 +32,10 @@ function selfSignedPair(int $days = 30): array
     return ['certificate' => $certificatePem, 'private_key' => $keyPem];
 }
 
-function trustInvoice(Tenant $tenant, ?string $xml = '<xml>fattura</xml>'): Invoice
+function trustInvoice(Tenant $tenant, ?string $xml = '<xml>fattura</xml>', string $number = 'FT-1'): Invoice
 {
     $contact = Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => 'Cliente']);
-    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'invoice', 'invoice_number' => 'FT-1', 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
+    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => $number, 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
     $invoice->tenant_id = $tenant->id;
     $invoice->save();
 
@@ -108,7 +108,7 @@ test('preservation is a fingerprint locally, and the accredited driver refuses t
 });
 
 test('a document without XML cannot be signed', function (): void {
-    $this->postJson('/api/v1/document-trust/signatures', ['document_type' => 'invoice', 'document_id' => trustInvoice($this->tenant, null)->id])->assertUnprocessable();
+    $this->postJson('/api/v1/document-trust/signatures', ['document_type' => 'invoice', 'document_id' => trustInvoice($this->tenant, null, 'FT-2')->id])->assertUnprocessable();
 });
 
 test('tenants and roles are enforced', function (): void {

@@ -6,6 +6,8 @@ use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\FiscalYear;
 
 /**
  * Creates a tenant with a fixed VAT number, unique per test.
@@ -27,4 +29,10 @@ function actingAsMember(Tenant $tenant, string $role = 'admin'): User
     test()->withHeader('X-Tenant-Id', $tenant->id);
 
     return $user;
+}
+
+function openPeriod(Tenant $tenant): void
+{
+    $year = FiscalYear::withoutGlobalScopes()->create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'company_id' => $tenant->id, 'year_code' => 'FY2027', 'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'status' => 'open']);
+    FiscalPeriod::withoutGlobalScopes()->create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'company_id' => $tenant->id, 'fiscal_year_id' => $year->id, 'period_number' => 1, 'period_name' => '2027', 'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'status' => 'open']);
 }

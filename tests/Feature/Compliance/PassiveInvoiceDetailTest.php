@@ -9,8 +9,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Models\ChartOfAccount;
-use Modules\GeneralLedger\Models\FiscalPeriod;
-use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
 
@@ -46,12 +44,6 @@ function costAccount(Tenant $tenant, string $code): ChartOfAccount
         'id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'account_code' => $code, 'name' => "Cost {$code}",
         'account_class' => 'expense', 'account_type' => 'expense', 'normal_balance' => 'debit', 'currency' => 'EUR', 'is_active' => true,
     ]);
-}
-
-function openPeriod(Tenant $tenant): void
-{
-    $year = FiscalYear::withoutGlobalScopes()->create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'company_id' => $tenant->id, 'year_code' => 'FY2027', 'name' => 'FY2027', 'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'status' => 'open']);
-    FiscalPeriod::withoutGlobalScopes()->create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'company_id' => $tenant->id, 'fiscal_year_id' => $year->id, 'period_number' => 1, 'period_code' => '2027-01', 'name' => '2027', 'start_date' => '2027-01-01', 'end_date' => '2027-12-31', 'status' => 'open']);
 }
 
 function receivePassive(string $xml = ''): PassiveInvoice

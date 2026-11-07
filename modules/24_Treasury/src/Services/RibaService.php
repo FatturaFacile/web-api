@@ -26,6 +26,9 @@ use Modules\Treasury\Models\RibaReceipt;
  */
 final readonly class RibaService
 {
+    /** ModalitaPagamento of the FatturaPA schema: payments store this code. */
+    private const string FatturaPaRibaCode = 'MP12';
+
     public function __construct(
         private PaymentFactoryServiceInterface $paymentFactory,
         private RibaFlatFileBuilder $builder,
@@ -137,7 +140,7 @@ final readonly class RibaService
             $payment = $this->payments->execute($receipt->invoice, [
                 'amount' => (string) $receipt->amount,
                 'paid_at' => $paidAt,
-                'payment_method' => 'riba',
+                'payment_method' => self::FatturaPaRibaCode,
                 'reference' => 'RIBA-'.$receipt->receipt_number,
             ]);
 

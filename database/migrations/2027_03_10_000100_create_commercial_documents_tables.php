@@ -14,7 +14,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('pos_sale_id')->nullable()->constrained('pos_sales')->nullOnDelete();
-            $table->foreignUuid('related_document_id')->nullable()->constrained('commercial_documents')->nullOnDelete();
+            $table->uuid('related_document_id')->nullable();
             $table->string('document_type', 20);
             $table->integer('fiscal_year');
             $table->integer('sequential_number');
@@ -37,7 +37,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->foreignUuid('tenant_id')->constrained('tenants')->cascadeOnDelete();
             $table->foreignUuid('commercial_document_id')->constrained('commercial_documents')->cascadeOnDelete();
-            $table->foreignUuid('source_line_id')->nullable()->constrained('commercial_document_lines')->nullOnDelete();
+            $table->uuid('source_line_id')->nullable();
             $table->string('description', 255);
             $table->decimal('quantity', 15, 4);
             $table->decimal('unit_price', 15, 4);
@@ -47,6 +47,17 @@ return new class extends Migration
             $table->decimal('tax_amount', 15, 2);
             $table->decimal('gross_amount', 15, 2);
             $table->timestamps();
+
+            $table->index(['tenant_id', 'commercial_document_id']);
+        });
+
+        // A self reference needs the primary key of the table, so it can only be added once the table exists.
+        Schema::table('commercial_documents', function (Blueprint $table): void {
+            $table->foreign('related_document_id')->references('id')->on('commercial_documents')->nullOnDelete();
+        });
+
+        Schema::table('commercial_document_lines', function (Blueprint $table): void {
+            $table->foreign('source_line_id')->references('id')->on('commercial_document_lines')->nullOnDelete();
         });
 
         Schema::create('daily_corrispettivi', function (Blueprint $table): void {

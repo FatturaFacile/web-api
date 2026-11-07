@@ -21,7 +21,7 @@ function renderedLayout(string $tenantId): string
 {
     $branding = DocumentTemplate::brandingFor($tenantId, 'invoice');
 
-    return view('documents.layout', ['type' => 'invoice', 'number' => 'FT-1', 'tenant' => Tenant::find($tenantId), 'tenant_address_lines' => [], 'contact_name' => '', 'address_lines' => [], 'branding' => $branding])->render();
+    return view('documents.layout', ['type' => 'invoice', 'number' => 'FT-1', 'tenant' => Tenant::find($tenantId), 'tenant_address_lines' => [], 'contact' => null, 'contact_name' => '', 'address_lines' => [], 'branding' => $branding])->render();
 }
 
 beforeEach(function (): void {
@@ -70,7 +70,7 @@ test('a real PDF renders with the branding', function (): void {
     $this->putJson('/api/v1/settings/document-templates/default', ['primary_color' => '#112233', 'footer_text' => 'Grazie', 'logo_base64' => templatePng()])->assertOk();
 
     $contact = Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => 'Cliente']);
-    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'invoice', 'invoice_number' => 'FT-1', 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
+    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => 'FT-1', 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
     $invoice->tenant_id = $this->tenant->id;
     $invoice->save();
 

@@ -51,6 +51,29 @@ test('the Agenzia delle Entrate driver refuses to run and nothing is issued', fu
     expect(CommercialDocument::count())->toBe(0);
 });
 
+test('a POS sale gets one commercial document, also when sent to the fiscal printer', function (): void {
+    $terminal = $this->postJson('/api/v1/retail/pos/terminals', ['terminal_code' => 'T-01', 'name' => 'Banco'])->assertCreated()->json('data.id');
+    $session = $this->postJson('/api/v1/retail/pos/sessions', ['pos_terminal_id' => $terminal, 'opening_float' => 0])->assertCreated()->json('data.id');
+    $sale = $this->postJson('/api/v1/retail/pos/sales', [
+        'pos_session_id' => $session, 'payment_method' => 'card',
+        'items' => [['description' => 'Pane', 'quantity' => 2, 'unit_price' => 10, 'tax_rate' => 22]],
+    ])->assertCreated()->json('data');
+
+    $this->postJson("/api/v1/retail/pos/sales/{$sale['id']}/rt-transmit")->assertSuccessful();
+    $this->postJson('/api/v1/fiscal-retail/commercial-documents', ['pos_sale_id' => $sale['id']])->assertCreated();
+
+    $document = CommercialDocument::where('pos_sale_id', $sale['id'])->sole();
+
+    expect((string) $document->total_gross)->toBe((string) $sale['total_gross'])
+        ->and($document->gateway_status)->toBe('simulated');
+});
+
+test('a POS sale of another tenant is refused', function (): void {
+    actingAsMember(complianceTenant('Beta'));
+
+    $this->postJson('/api/v1/fiscal-retail/commercial-documents', ['pos_sale_id' => '00000000-0000-0000-0000-000000000000'])->assertUnprocessable()->assertJsonValidationErrors('pos_sale_id');
+});
+
 test('a void reverses the whole document and cannot be repeated', function (): void {
     $document = issueDocument();
 

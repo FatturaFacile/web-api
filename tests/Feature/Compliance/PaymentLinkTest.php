@@ -20,14 +20,14 @@ uses(RefreshDatabase::class);
 function linkInvoice(Tenant $tenant): Invoice
 {
     $contact = Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => 'Cliente']);
-    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'invoice', 'invoice_number' => 'FT-'.Str::random(4), 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => '22.00', 'payment_status' => 'partially_paid']);
+    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => 'FT-'.Str::random(4), 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
     $invoice->tenant_id = $tenant->id;
     $invoice->save();
 
     return $invoice;
 }
 
-function stripeEvent(string $sessionId, int $amount = 10000, string $eventId = 'evt_1', string $type = 'checkout.session.completed'): string
+function stripeEvent(string $sessionId, int $amount = 12200, string $eventId = 'evt_1', string $type = 'checkout.session.completed'): string
 {
     return (string) json_encode(['id' => $eventId, 'type' => $type, 'data' => ['object' => ['id' => $sessionId, 'amount_total' => $amount, 'currency' => 'eur', 'payment_status' => 'paid']]]);
 }
@@ -42,6 +42,7 @@ function stripeWebhook(string $tenantId, string $payload, ?string $signature = n
 
 beforeEach(function (): void {
     $this->tenant = complianceTenant();
+    openPeriod($this->tenant);
     actingAsMember($this->tenant);
     $this->invoice = linkInvoice($this->tenant);
     Http::preventStrayRequests();
@@ -63,7 +64,7 @@ function stripeLink(): array
 test('the local driver makes a link for the open balance without calling anyone', function (): void {
     $link = $this->postJson('/api/v1/payment-links', ['invoice_id' => $this->invoice->id])->assertCreated()->json('data');
 
-    expect($link)->toMatchArray(['provider' => 'local', 'amount' => '100.00', 'status' => 'open']);
+    expect($link)->toMatchArray(['provider' => 'local', 'amount' => '122.00', 'status' => 'open']);
     Http::assertNothingSent();
 });
 
@@ -74,7 +75,7 @@ test('the Stripe driver creates a Checkout Session in cents and stores no card d
 
     Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.stripe.com/v1/checkout/sessions'
         && $request['mode'] === 'payment'
-        && $request['line_items'][0]['price_data']['unit_amount'] === 10000
+        && $request['line_items'][0]['price_data']['unit_amount'] === 12200
         && $request['line_items'][0]['price_data']['currency'] === 'eur'
         && $request->hasHeader('Authorization', 'Basic '.base64_encode('sk_test_1:')));
 });
@@ -114,7 +115,7 @@ test('a payment of another amount waits for a person', function (): void {
 test('other events are acknowledged and ignored', function (): void {
     stripeLink();
 
-    stripeWebhook($this->tenant->id, stripeEvent('cs_test_1', 10000, 'evt_2', 'payment_intent.created'))->assertOk();
+    stripeWebhook($this->tenant->id, stripeEvent('cs_test_1', 12200, 'evt_2', 'payment_intent.created'))->assertOk();
 
     expect(PaymentLink::withoutGlobalScopes()->first()->status)->toBe('open');
 });

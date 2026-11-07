@@ -36,6 +36,8 @@ return new class extends Migration
             $table->uuid('cost_account_id')->nullable();
             $table->string('cost_account_source', 10)->nullable();
             $table->timestamps();
+
+            $table->index(['tenant_id', 'passive_invoice_id']);
         });
 
         Schema::table('passive_invoices', function (Blueprint $table): void {

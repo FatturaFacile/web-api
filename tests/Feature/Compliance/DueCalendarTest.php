@@ -16,7 +16,7 @@ uses(RefreshDatabase::class);
 function dueInvoice(Tenant $tenant, array $attributes): Invoice
 {
     $contact = Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => 'Cliente']);
-    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'invoice', 'invoice_number' => Str::random(6), 'date' => '2027-01-01', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid', ...$attributes]);
+    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => Str::random(6), 'date' => '2027-01-01', 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid', ...$attributes]);
     $invoice->tenant_id = $tenant->id;
     $invoice->save();
 

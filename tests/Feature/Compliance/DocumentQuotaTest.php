@@ -18,7 +18,7 @@ function invoicePayload(Tenant $tenant): array
 {
     $contact = Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => 'Cliente', 'vat_number' => '12345678901']);
 
-    return ['contact_id' => $contact->id, 'date' => '2027-03-01', 'due_date' => '2027-04-01', 'currency' => 'EUR', 'items' => [['description' => 'Servizio', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]]];
+    return ['contact_id' => $contact->id, 'invoice_type' => 'standard', 'jurisdiction' => 'IT', 'date' => '2027-03-01', 'due_date' => '2027-04-01', 'currency' => 'EUR', 'items' => [['description' => 'Servizio', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22]]];
 }
 
 function commercialDocument()
@@ -29,6 +29,7 @@ function commercialDocument()
 beforeEach(function (): void {
     $this->travelTo('2027-03-02 10:00:00');
     $this->tenant = complianceTenant();
+    openPeriod($this->tenant);
     actingAsMember($this->tenant);
 });
 

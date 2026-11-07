@@ -14,7 +14,7 @@ require_once __DIR__.'/ComplianceHelpers.php';
 
 uses(RefreshDatabase::class);
 
-function salesFact(Tenant $tenant, string $date, string $net, array $contact = [], string $type = 'invoice'): Invoice
+function salesFact(Tenant $tenant, string $date, string $net, array $contact = [], string $type = 'standard'): Invoice
 {
     $customer = Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => 'Cliente', ...$contact]);
     $invoice = new Invoice(['contact_id' => $customer->id, 'invoice_type' => $type, 'invoice_number' => Str::random(8), 'date' => $date, 'due_date' => $date, 'currency' => 'EUR', 'total_net' => $net, 'total_tax' => 0, 'total_gross' => $net, 'total_paid' => 0, 'payment_status' => 'unpaid']);

@@ -8,7 +8,9 @@ use App\Models\Invoice;
 use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\Treasury\Contracts\CashForecastServiceInterface;
 use Modules\Treasury\Models\BankAccount;
+use Modules\Treasury\Models\CashForecastLine;
 use Modules\Treasury\Models\PaymentBatch;
 
 require_once __DIR__.'/ComplianceHelpers.php';
@@ -32,7 +34,7 @@ function ribaInvoice(Tenant $tenant, string $gross = '122.00', string $number = 
     ]);
     ContactAddress::create(['contact_id' => $contact->id, 'type' => 'billing', 'street' => 'Via Roma', 'house_number' => '1', 'postal_code' => '20100', 'city' => 'Milano', 'state_canton' => 'MI', 'country' => 'IT']);
 
-    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'invoice', 'invoice_number' => $number, 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => '100.00', 'total_tax' => '22.00', 'total_gross' => $gross, 'total_paid' => 0, 'payment_status' => 'unpaid']);
+    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => $number, 'date' => '2027-01-15', 'due_date' => '2027-02-15', 'currency' => 'EUR', 'total_net' => '100.00', 'total_tax' => '22.00', 'total_gross' => $gross, 'total_paid' => 0, 'payment_status' => 'unpaid']);
     $invoice->tenant_id = $tenant->id;
     $invoice->save();
 
@@ -118,11 +120,19 @@ test('a batch reaches the export only through the approval flow', function (): v
 test('a riba batch never takes the outflow path', function (): void {
     $id = ribaApproved([['invoice_id' => $this->invoice->id, 'due_date' => '2027-03-31']], $this->bank);
 
-    expect($this->postJson("/api/v1/treasury/payment-batches/{$id}/export")->status())->toBeGreaterThanOrEqual(400);
+    $this->postJson("/api/v1/treasury/payment-batches/{$id}/export")->assertUnprocessable();
 
     $this->postJson("/api/v1/treasury/riba/batches/{$id}/export")->assertOk();
     $this->postJson("/api/v1/treasury/payment-batches/{$id}/confirm", ['bank_reference' => 'X'])->assertUnprocessable();
     expect((float) $this->bank->fresh()->current_balance)->toBe(0.0);
+});
+
+test('an open riba batch is not forecast as an outflow', function (): void {
+    ribaApproved([['invoice_id' => $this->invoice->id, 'due_date' => '2027-03-31']], $this->bank);
+
+    $forecast = app(CashForecastServiceInterface::class)->generateForecast((string) $this->tenant->id, 'BASELINE-TEST', 90, '2027-02-01');
+
+    expect(CashForecastLine::where('cash_forecast_id', $forecast->id)->where('source_reference', 'BATCH-RIBA-2027-001')->exists())->toBeFalse();
 });
 
 test('a collected receipt registers the invoice payment and closes the batch', function (): void {

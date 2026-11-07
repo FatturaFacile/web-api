@@ -17,7 +17,7 @@ uses(RefreshDatabase::class);
 function reportingInvoice(Tenant $tenant, string $number, string $date = '2027-02-10'): Invoice
 {
     $contact = Contact::create(['tenant_id' => $tenant->id, 'type' => 'customer', 'company_name' => '=HYPERLINK("x")', 'email' => 'a@example.com']);
-    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'invoice', 'invoice_number' => $number, 'date' => $date, 'due_date' => $date, 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
+    $invoice = new Invoice(['contact_id' => $contact->id, 'invoice_type' => 'standard', 'invoice_number' => $number, 'date' => $date, 'due_date' => $date, 'currency' => 'EUR', 'total_net' => 100, 'total_tax' => 22, 'total_gross' => 122, 'total_paid' => 0, 'payment_status' => 'unpaid']);
     $invoice->tenant_id = $tenant->id;
     $invoice->save();
 
@@ -78,8 +78,8 @@ test('the feed pages with top and skip and exposes only the allowed columns', fu
         ->and(array_keys($first['value'][0]))->not->toContain('tenant_id');
 
     expect(feed($token, '/api/v1/reporting/feed/invoices?$top=1&$skip=1')->json())->not->toHaveKey('@odata.nextLink');
-    expect(feed($token, '/api/v1/reporting/feed/contacts')->assertOk()->json('@odata.count'))->toBe(2);
-    expect(feed($token, '/api/v1/reporting/feed/purchases')->assertOk()->json('@odata.count'))->toBe(0);
+    expect(feed($token, '/api/v1/reporting/feed/contacts')->assertOk()->json()['@odata.count'])->toBe(2);
+    expect(feed($token, '/api/v1/reporting/feed/purchases')->assertOk()->json()['@odata.count'])->toBe(0);
 });
 
 test('last use is tracked', function (): void {
