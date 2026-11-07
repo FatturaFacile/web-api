@@ -314,6 +314,27 @@ final readonly class HelpdeskTicketService
         });
     }
 
+    /**
+     * Hands the ticket to an agent of a team chosen by round robin or least load. The ticket row and the team row are
+     * locked, so two concurrent requests never pick on stale state.
+     */
+    public function autoAssign(Ticket $ticket, ?string $teamId, string $strategy, ?string $actorUserId = null): Ticket
+    {
+        return DB::transaction(function () use ($ticket, $teamId, $strategy, $actorUserId): Ticket {
+            $ticket = $this->lock($ticket->id);
+            $this->assertNotMerged($ticket);
+            $teamId ??= $ticket->assigned_team_id ?? throw new HelpdeskRuleViolation('The ticket has no team to choose an agent from.');
+
+            $this->assignment->assign($ticket, $teamId, null, $actorUserId, $strategy, 'auto');
+
+            if ($ticket->assigned_technician_id === null) {
+                throw new HelpdeskRuleViolation('No agent of the team is available.');
+            }
+
+            return $ticket->refresh();
+        });
+    }
+
     public function addWatcher(Ticket $ticket, string $userId, ?string $actorUserId = null): TicketWatcher
     {
         return DB::transaction(function () use ($ticket, $userId, $actorUserId): TicketWatcher {

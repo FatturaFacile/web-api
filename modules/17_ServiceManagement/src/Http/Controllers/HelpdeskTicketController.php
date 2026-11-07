@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\ServiceManagement\Enums\TicketStatus;
 use Modules\ServiceManagement\Http\Requests\AddTicketWatcherRequest;
+use Modules\ServiceManagement\Http\Requests\AutoAssignTicketRequest;
 use Modules\ServiceManagement\Http\Requests\ChangeTicketStatusRequest;
 use Modules\ServiceManagement\Http\Requests\MergeTicketRequest;
 use Modules\ServiceManagement\Http\Requests\SplitTicketRequest;
@@ -113,6 +114,22 @@ final class HelpdeskTicketController extends Controller
         $validated = $request->validated();
 
         return response()->json(['data' => new TicketResource($this->tickets->split($ticket, $validated['subject'], array_values($validated['message_ids']), $request->user()?->id))], 201);
+    }
+
+    /**
+     * Hands the ticket to an agent chosen automatically.
+     */
+    #[OA\Post(path: '/api/v1/esm/tickets/{ticket}/auto-assign', operationId: 'autoAssignEsmTicket', description: 'Hands the ticket to an available agent of the given team, or of its current team, by round robin or least load.', summary: 'Auto-assign ticket', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['ESM Tickets'], parameters: [new OA\Parameter(ref: '#/components/parameters/HelpdeskTicketPath')], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HelpdeskAutoAssignTicketRequest')), responses: [
+        new OA\Response(response: 200, description: 'Ticket assigned', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementTicketResource')])),
+        new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        new OA\Response(response: 422, description: 'No team or no agent available', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+    ])]
+    public function autoAssign(AutoAssignTicketRequest $request, Ticket $ticket): JsonResponse
+    {
+        $this->authorize('assign', $ticket);
+
+        return response()->json(['data' => new TicketResource($this->tickets->autoAssign($ticket, $request->validated('team_id'), $request->validated('strategy'), $request->user()?->id))]);
     }
 
     /**

@@ -52,8 +52,12 @@ use Modules\ServiceManagement\Listeners\HRAvailabilityListener;
 use Modules\ServiceManagement\Listeners\ProjectESMListener;
 use Modules\ServiceManagement\Listeners\SendHelpdeskReplyEmailListener;
 use Modules\ServiceManagement\Listeners\WorkflowApprovalESMListener;
+use Modules\ServiceManagement\Models\BusinessHoursCalendar;
 use Modules\ServiceManagement\Models\ChangeRequest;
+use Modules\ServiceManagement\Models\HelpdeskSetting;
 use Modules\ServiceManagement\Models\Incident;
+use Modules\ServiceManagement\Models\RoutingRule;
+use Modules\ServiceManagement\Models\ServiceTeam;
 use Modules\ServiceManagement\Models\SupportMailbox;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\WorkOrder;
@@ -91,7 +95,10 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Gate::policy(Incident::class, IncidentPolicy::class);
         Gate::policy(ChangeRequest::class, ChangeRequestPolicy::class);
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
-        Gate::policy(SupportMailbox::class, HelpdeskConfigurationPolicy::class);
+
+        foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class] as $configurationModel) {
+            Gate::policy($configurationModel, HelpdeskConfigurationPolicy::class);
+        }
 
         Event::listen(HelpdeskTicketChanged::class, SendHelpdeskReplyEmailListener::class);
 

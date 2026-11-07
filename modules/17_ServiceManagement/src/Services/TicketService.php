@@ -24,13 +24,15 @@ use Modules\ServiceManagement\Events\TicketResolvedEvent;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\TicketTimeEntry;
+use Modules\ServiceManagement\Services\Helpdesk\TicketRoutingEngine;
 
 final readonly class TicketService implements TicketServiceInterface
 {
     public function __construct(
         private EventDispatcher $dispatcher,
         private AuditLedgerInterface $auditLedger,
-        private SLAManagementServiceInterface $slaService
+        private SLAManagementServiceInterface $slaService,
+        private TicketRoutingEngine $routingEngine,
     ) {}
 
     public function createTicket(CreateTicketDTO $dto, ?string $actorUserId = null): Ticket
@@ -71,6 +73,11 @@ final readonly class TicketService implements TicketServiceInterface
                 'requester_user_id' => $dto->requesterUserId,
                 'asset_id' => $dto->assetId,
             ]);
+
+            if ($dto->applyRoutingRules && $ticket->assigned_technician_id === null) {
+                $this->routingEngine->route($ticket, $actorUserId);
+                $ticket->refresh();
+            }
 
             $this->auditLedger->record(
                 'TICKET_CREATED',

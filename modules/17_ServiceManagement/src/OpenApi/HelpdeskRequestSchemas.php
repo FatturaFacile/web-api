@@ -68,4 +68,46 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'default_priority', type: 'string', enum: ['low', 'medium', 'high', 'critical']),
     new OA\Property(property: 'is_active', type: 'boolean'),
 ])]
+#[OA\Schema(schema: 'HelpdeskSaveRoutingRuleRequest', description: 'Request payload validated by SaveRoutingRuleRequest. Empty or missing conditions match every ticket.', type: 'object', properties: [
+    new OA\Property(property: 'name', type: 'string', maxLength: 150),
+    new OA\Property(property: 'position', type: 'integer', description: 'Rules run from the lowest position'),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'stop_processing', type: 'boolean', description: 'No further rule runs once this one matched'),
+    new OA\Property(property: 'conditions', properties: [
+        new OA\Property(property: 'category_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+        new OA\Property(property: 'sources', type: 'array', items: new OA\Items(type: 'string', enum: ['portal', 'email', 'phone', 'chat', 'api', 'field', 'monitoring'])),
+        new OA\Property(property: 'customer_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+        new OA\Property(property: 'keywords', type: 'array', items: new OA\Items(type: 'string'), description: 'Any of them in the subject or description'),
+        new OA\Property(property: 'priorities', type: 'array', items: new OA\Items(type: 'string', enum: ['low', 'medium', 'high', 'critical'])),
+    ], type: 'object', nullable: true),
+    new OA\Property(property: 'actions', properties: [
+        new OA\Property(property: 'assign_team_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'assign_technician_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'assignment_strategy', type: 'string', enum: ['manual', 'round_robin', 'least_loaded'], nullable: true),
+        new OA\Property(property: 'set_priority', type: 'string', enum: ['low', 'medium', 'high', 'critical'], nullable: true),
+        new OA\Property(property: 'add_tags', type: 'array', items: new OA\Items(type: 'string')),
+    ], type: 'object'),
+])]
+#[OA\Schema(schema: 'HelpdeskSaveBusinessHoursCalendarRequest', description: 'Request payload validated by SaveBusinessHoursCalendarRequest', type: 'object', properties: [
+    new OA\Property(property: 'code', type: 'string', maxLength: 60),
+    new OA\Property(property: 'name', type: 'string', maxLength: 150),
+    new OA\Property(property: 'timezone', type: 'string', example: 'Europe/Rome'),
+    new OA\Property(property: 'weekly_schedule', type: 'object', example: ['mon' => [['08:00', '12:00'], ['13:00', '17:00']], 'fri' => [['08:00', '16:00']]]),
+    new OA\Property(property: 'holidays', type: 'array', items: new OA\Items(type: 'string', example: '2027-12-25')),
+    new OA\Property(property: 'hr_holiday_calendar_id', type: 'string', format: 'uuid', nullable: true, description: 'HR holiday calendar whose holidays also stop the SLA clock'),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+])]
+#[OA\Schema(schema: 'HelpdeskUpdateSettingsRequest', description: 'Request payload validated by UpdateHelpdeskSettingsRequest', type: 'object', properties: [
+    new OA\Property(property: 'reopen_window_days', type: 'integer', minimum: 0, maximum: 365),
+    new OA\Property(property: 'business_hours_calendar_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'sla_warning_percent', type: 'integer', minimum: 1, maximum: 99),
+    new OA\Property(property: 'csat_enabled', type: 'boolean'),
+])]
+#[OA\Schema(schema: 'HelpdeskUpdateTeamAssignmentRequest', description: 'Request payload validated by UpdateTeamAssignmentRequest', required: ['assignment_strategy'], type: 'object', properties: [
+    new OA\Property(property: 'assignment_strategy', type: 'string', enum: ['manual', 'round_robin', 'least_loaded']),
+])]
+#[OA\Schema(schema: 'HelpdeskAutoAssignTicketRequest', description: 'Request payload validated by AutoAssignTicketRequest', required: ['strategy'], type: 'object', properties: [
+    new OA\Property(property: 'team_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'strategy', type: 'string', enum: ['round_robin', 'least_loaded']),
+])]
 final class HelpdeskRequestSchemas {}

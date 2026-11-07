@@ -39,6 +39,10 @@ final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInte
             'sla_paused_at' => 'datetime',
             'sla_paused_minutes' => 'integer',
             'customer_last_read_at' => 'datetime',
+            'response_warning_sent_at' => 'datetime',
+            'resolution_warning_sent_at' => 'datetime',
+            'response_breached_at' => 'datetime',
+            'resolution_breached_at' => 'datetime',
         ];
     }
 

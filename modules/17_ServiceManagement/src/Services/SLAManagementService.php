@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Services;
 
+use App\Services\Tenancy\TenantContext;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Carbon;
@@ -11,17 +12,25 @@ use Modules\ServiceManagement\Contracts\SLAManagementServiceInterface;
 use Modules\ServiceManagement\Events\TicketEscalatedEvent;
 use Modules\ServiceManagement\Models\SLAPolicy;
 use Modules\ServiceManagement\Models\Ticket;
+use Modules\ServiceManagement\Services\Helpdesk\TicketSlaClock;
 
 final readonly class SLAManagementService implements SLAManagementServiceInterface
 {
     public function __construct(
         private EventDispatcher $dispatcher,
-        private AuditLedgerInterface $auditLedger
+        private AuditLedgerInterface $auditLedger,
+        private TicketSlaClock $slaClock,
+        private TenantContext $tenantContext,
     ) {}
 
+    /**
+     * Due date of a response or resolution target. The minutes of the policy run on the tenant's business hours when
+     * the policy counts business hours only and the helpdesk settings name a calendar; otherwise around the clock.
+     */
     public function calculateDueDate(?string $slaPolicyId, string $priority, string $type = 'resolution'): ?string
     {
         $minutes = null;
+        $policy = null;
 
         if ($slaPolicyId !== null) {
             $policy = SLAPolicy::find($slaPolicyId);
@@ -46,7 +55,9 @@ final readonly class SLAManagementService implements SLAManagementServiceInterfa
             };
         }
 
-        return Carbon::now()->addMinutes((int) $minutes)->toIso8601String();
+        $calendar = $this->slaClock->calendarFor($policy, $this->tenantContext->getTenantId());
+
+        return $this->slaClock->dueDate(Carbon::now(), (int) $minutes, $calendar)->toIso8601String();
     }
 
     public function checkAndRecordBreaches(): int

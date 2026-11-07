@@ -99,4 +99,32 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'reason', type: 'string', nullable: true),
     new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 ])]
+#[OA\Schema(schema: 'HelpdeskRoutingRuleResource', description: 'JSON representation produced by RoutingRuleResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'position', type: 'integer'),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'stop_processing', type: 'boolean'),
+    new OA\Property(property: 'conditions', type: 'object'),
+    new OA\Property(property: 'actions', type: 'object'),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskBusinessHoursCalendarResource', description: 'JSON representation produced by BusinessHoursCalendarResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'code', type: 'string'),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'timezone', type: 'string'),
+    new OA\Property(property: 'weekly_schedule', type: 'object'),
+    new OA\Property(property: 'holidays', type: 'array', items: new OA\Items(type: 'string')),
+    new OA\Property(property: 'hr_holiday_calendar_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskSettingResource', description: 'JSON representation produced by HelpdeskSettingResource', type: 'object', properties: [
+    new OA\Property(property: 'reopen_window_days', type: 'integer'),
+    new OA\Property(property: 'business_hours_calendar_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'sla_warning_percent', type: 'integer'),
+    new OA\Property(property: 'csat_enabled', type: 'boolean'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
+])]
 final class HelpdeskResponseSchemas {}
