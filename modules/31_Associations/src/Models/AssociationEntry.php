@@ -25,12 +25,28 @@ abstract class AssociationEntry extends Model
     protected $guarded = ['id', 'created_at', 'updated_at'];
 
     /**
+     * Same resolution as the enterprise base model: `#[UseFactory]` first, then the factory named after the basename, only
+     * when it builds this very model (`Attendance` exists in more than one module).
+     *
      * @return Factory<static>|null
      */
     protected static function newFactory()
     {
+        $declared = static::getUseFactoryAttribute();
+
+        if ($declared !== null) {
+            return $declared;
+        }
+
         $factoryName = 'Database\\Factories\\'.class_basename(static::class).'Factory';
 
-        return class_exists($factoryName) ? $factoryName::new() : null;
+        if (! class_exists($factoryName)) {
+            return null;
+        }
+
+        /** @var Factory<static> $factory */
+        $factory = $factoryName::new();
+
+        return $factory->modelName() === static::class ? $factory : null;
     }
 }

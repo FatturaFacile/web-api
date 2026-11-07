@@ -25,6 +25,6 @@ final class PayslipDelivery extends PayrollRecord
 
     protected function casts(): array
     {
-        return ['expires_at' => 'datetime', 'opened_at' => 'datetime', 'failed_attempts' => 'integer'];
+        return ['expires_at' => 'datetime', 'opened_at' => 'datetime', 'revoked_at' => 'datetime', 'failed_attempts' => 'integer'];
     }
 }

@@ -16,6 +16,7 @@ return [
     'refund_session_closed' => 'Sales of a closed session cannot be refunded.',
     'rt_already_transmitted' => 'This sale has already been transmitted to the fiscal printer.',
     'rt_refunded_sale' => 'A refunded sale cannot be transmitted.',
+    'rt_simulated_notice' => 'Simulated fiscal printer: nothing was sent to the Agenzia delle Entrate.',
     'refund_note' => 'Refund of receipt :number',
     'earn_note' => 'Points for receipt :number',
     'redeem_note' => 'Payment of receipt :number',
@@ -29,6 +30,7 @@ return [
         'sale_retrieved' => 'Sale retrieved successfully',
         'sale_refunded' => 'Sale refunded successfully',
         'rt_transmitted' => 'Sale transmitted to the fiscal printer',
+        'rt_simulated' => 'Sale recorded by the simulated fiscal printer: nothing was sent to the Agenzia delle Entrate',
     ],
 
 ];

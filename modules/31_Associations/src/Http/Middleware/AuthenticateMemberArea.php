@@ -13,7 +13,8 @@ use Symfony\Component\HttpFoundation\Response;
 
 /**
  * Member area endpoints: the personal token in the X-Area-Token header identifies the person and the tenant. It travels
- * in a header so that it stays out of URLs and access logs.
+ * in a header so that it stays out of URLs and access logs. While a restore replaces the data of the tenant, reads still
+ * work and writes answer 503, as on the rest of the API.
  */
 final class AuthenticateMemberArea
 {
@@ -39,6 +40,11 @@ final class AuthenticateMemberArea
 
         try {
             $request->attributes->set('areaAccess', $this->tokens->access($token));
+
+            if ($this->tenantContext->getTenant()?->is_maintenance && ! $request->isMethodSafe()) {
+                return $this->problemDetailsResponse(title: __('backup.maintenance.title'), detail: __('backup.maintenance.detail'), status: Response::HTTP_SERVICE_UNAVAILABLE)
+                    ->header('Retry-After', '60');
+            }
 
             return $next($request);
         } finally {

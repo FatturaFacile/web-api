@@ -16,6 +16,30 @@ use OpenApi\Attributes as OA;
 
 final class BankAccountController extends Controller
 {
+    /**
+     * Lists the bank accounts of the active tenant, paginated.
+     */
+    #[OA\Get(
+        path: '/api/v1/treasury/bank-accounts',
+        operationId: 'listTreasuryBankAccounts',
+        description: 'Lists the bank accounts of the active tenant, paginated, optionally by currency and active flag.',
+        summary: 'List bank accounts',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Treasury Bank Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'currency', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'CHF')),
+            new OA\Parameter(name: 'is_active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Bank accounts', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryBankAccountResource')),
+                new OA\Property(property: 'meta', type: 'object'),
+                new OA\Property(property: 'links', type: 'object'),
+            ])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
     public function index(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();

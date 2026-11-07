@@ -13,6 +13,16 @@ class RtFiscalReceipt extends Model
 {
     use HasFactory, HasUuids;
 
+    /**
+     * Accepted by a real RT service and sent on to the Agenzia delle Entrate.
+     */
+    public const StatusTransmitted = 'transmitted';
+
+    /**
+     * Produced by the offline stand-in printer: the identifiers are local and nothing reached the tax authority.
+     */
+    public const StatusSimulated = 'simulated';
+
     protected $fillable = [
         'pos_sale_id',
         'z_report_number',
@@ -27,6 +37,19 @@ class RtFiscalReceipt extends Model
         return [
             'transmitted_at' => 'datetime',
         ];
+    }
+
+    public function isSimulated(): bool
+    {
+        return $this->rt_status === self::StatusSimulated;
+    }
+
+    /**
+     * True only when the receipt was really handed to the Agenzia delle Entrate.
+     */
+    public function reachedTaxAuthority(): bool
+    {
+        return $this->rt_status === self::StatusTransmitted && $this->transmitted_at !== null;
     }
 
     /**

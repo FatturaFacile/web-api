@@ -8,6 +8,7 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CompleteWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\CreateWorkOrderDTO;
@@ -38,7 +39,7 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
         return DB::transaction(function () use ($dto) {
             $woNumber = 'WO-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
-            $customerId = $dto->customerId ?: (string) Str::uuid7();
+            $customerId = $dto->customerId ?: null;
 
             $workOrder = WorkOrder::create([
                 'tenant_id' => $dto->tenantId,
@@ -332,6 +333,10 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
     public function markInvoiceReady(string $workOrderId, ?string $actorUserId = null): void
     {
         $workOrder = WorkOrder::findOrFail($workOrderId);
+
+        if ($workOrder->customer_id === null) {
+            throw ValidationException::withMessages(['customer_id' => __('work_orders.internal_not_invoiceable')]);
+        }
 
         if (! $workOrder->is_invoice_ready) {
             $workOrder->is_invoice_ready = true;

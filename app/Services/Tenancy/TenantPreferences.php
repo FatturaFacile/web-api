@@ -16,7 +16,7 @@ use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
  */
 class TenantPreferences
 {
-    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking'];
+    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking', 'visitors'];
 
     /**
      * Preference keys that hold a group of options, merged option by option when updated.
@@ -69,6 +69,8 @@ class TenantPreferences
                 'country' => ['nullable', 'string', 'regex:/^[A-Z]{2}$/'],
                 'address_line_1' => ['nullable', 'string', 'max:70'],
                 'address_line_2' => ['nullable', 'string', 'max:70'],
+                // Business-day time zone; when empty it follows the country of the company (see TenantClock).
+                'timezone' => ['nullable', 'string', 'timezone:all'],
             ],
             'labels' => array_merge(
                 [
@@ -119,6 +121,9 @@ class TenantPreferences
             ],
             'time_tracking' => [
                 'retention_years' => ['nullable', 'integer', 'min:'.DataRetentionPolicy::MINIMUM_YEARS, 'max:'.DataRetentionPolicy::MAXIMUM_YEARS],
+            ],
+            'visitors' => [
+                'retention_days' => ['nullable', 'integer', 'min:'.config('visitors.retention_min_days'), 'max:'.config('visitors.retention_max_days')],
             ],
             'work_orders' => [
                 'auto_invoice' => ['nullable', 'boolean'],

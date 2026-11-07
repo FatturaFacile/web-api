@@ -8,12 +8,14 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Modules\AssetManagement\Events\AssetMaintenanceCreatedEvent;
 use Modules\AssetManagement\Events\MaintenanceCompletedEvent;
 use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\HumanResources\Events\EmployeeHiredEvent;
 use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\HumanResources\Events\LeaveApprovedEvent;
+use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\Models\ChangeRequest;
 use Modules\ServiceManagement\Models\ServiceContract;
 use Modules\ServiceManagement\Models\ServiceTechnician;
@@ -139,7 +141,11 @@ test('EAM asset management listener synchronizes work orders on maintenance crea
     $workOrder = WorkOrder::where('asset_id', $assetId)->first();
     expect($workOrder)->not->toBeNull()
         ->and($workOrder->work_type)->toBe('preventive')
-        ->and($workOrder->status)->toBe('draft');
+        ->and($workOrder->status)->toBe('draft')
+        ->and($workOrder->customer_id)->toBeNull();
+
+    expect(fn () => app(WorkOrderAndFieldServiceInterface::class)->markInvoiceReady($workOrder->id))
+        ->toThrow(ValidationException::class);
 
     // Maintenance completed
     $completedEvent = new MaintenanceCompletedEvent(

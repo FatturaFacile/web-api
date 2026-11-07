@@ -4,8 +4,11 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Models;
 
+use Database\Factories\BallotVoterFactory;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use LogicException;
@@ -16,9 +19,13 @@ use LogicException;
  *
  * @property string $participant_id
  */
+#[UseFactory(BallotVoterFactory::class)]
 final class BallotVoter extends Model
 {
     use BelongsToTenant, HasUuids;
+
+    /** @use HasFactory<BallotVoterFactory> */
+    use HasFactory;
 
     public $timestamps = false;
 

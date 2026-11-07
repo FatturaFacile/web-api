@@ -10,6 +10,7 @@ return [
     'not_invoiceable' => 'Only completed or signed work reports can be invoiced.',
     'no_lines' => 'A work report without lines cannot be invoiced.',
     'not_completable' => 'Only draft work reports can be completed.',
+    'internal_not_invoiceable' => 'An internal work order has no customer and cannot be invoiced.',
 
     'messages' => [
         'created' => 'Work report created successfully',

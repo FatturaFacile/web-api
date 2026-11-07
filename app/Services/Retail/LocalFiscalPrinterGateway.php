@@ -20,4 +20,9 @@ class LocalFiscalPrinterGateway implements FiscalPrinterGateway
             'z_report_number' => 'Z-'.$sale->created_at->format('Ymd'),
         ];
     }
+
+    public function isSimulated(): bool
+    {
+        return true;
+    }
 }

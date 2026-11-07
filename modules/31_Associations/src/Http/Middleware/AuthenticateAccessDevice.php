@@ -13,7 +13,8 @@ use Modules\Associations\Services\AccessDeviceService;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Reader endpoints: the device authenticates itself, and its row decides the tenant.
+ * Reader endpoints: the device authenticates itself, and its row decides the tenant. While a restore replaces the data of
+ * the tenant, check-ins and other writes answer 503 with Retry-After, as on the rest of the API.
  */
 final class AuthenticateAccessDevice
 {
@@ -34,6 +35,11 @@ final class AuthenticateAccessDevice
 
         if ($device === null || $tenant === null) {
             return $this->problemDetailsResponse(title: 'Unauthenticated', detail: 'Unknown device or wrong secret.', status: Response::HTTP_UNAUTHORIZED);
+        }
+
+        if ($tenant->is_maintenance && ! $request->isMethodSafe()) {
+            return $this->problemDetailsResponse(title: __('backup.maintenance.title'), detail: __('backup.maintenance.detail'), status: Response::HTTP_SERVICE_UNAVAILABLE)
+                ->header('Retry-After', '60');
         }
 
         $previous = $this->tenantContext->isExplicit() ? $this->tenantContext->getTenant() : null;

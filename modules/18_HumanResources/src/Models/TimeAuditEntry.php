@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Models;
 
+use Database\Factories\TimeAuditEntryFactory;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use LogicException;
@@ -17,9 +20,13 @@ use Modules\HumanResources\Casts\UtcInstant;
  * BaseEnterpriseModel: an append-only row has no soft delete, and it would only be copied to the audit ledger.
  * The database refuses changes too (trigger on PostgreSQL); the only deletion is the retention purge, by query.
  */
+#[UseFactory(TimeAuditEntryFactory::class)]
 final class TimeAuditEntry extends Model
 {
     use BelongsToTenant, HasUuidV7;
+
+    /** @use HasFactory<TimeAuditEntryFactory> */
+    use HasFactory;
 
     public const UPDATED_AT = null;
 

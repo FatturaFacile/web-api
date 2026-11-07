@@ -10,6 +10,7 @@ use App\Actions\Retail\SyncPosSaleToRt;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Retail\StorePosSaleRequest;
 use App\Http\Resources\CatalogResource;
+use App\Http\Resources\RtFiscalReceiptResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\PosSale;
 use App\Models\PosSession;
@@ -115,7 +116,7 @@ class PosSaleController extends Controller
     #[OA\Post(
         path: '/api/v1/retail/pos/sales/{id}/rt-transmit',
         operationId: 'transmitPosSaleToRt',
-        description: 'Transmit digital commercial document (Registratore Telematico) to Agenzia delle Entrate.',
+        description: 'Hands the sale to the fiscal printer (Registratore Telematico). The built-in printer is simulated: the receipt gets `rt_status` `simulated`, no `transmitted_at` and `reached_tax_authority` false, because nothing is sent to the Agenzia delle Entrate. `transmitted` is used only by a real RT service.',
         summary: 'Transmit sale to RT',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Retail & POS'],
@@ -123,13 +124,17 @@ class PosSaleController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 201, description: 'Sale transmitted to RT', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Fiscal receipt recorded (simulated or transmitted)', content: new OA\JsonContent(allOf: [new OA\Schema(ref: '#/components/schemas/ApiSuccessResponse'), new OA\Schema(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/RtFiscalReceiptResource')])])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Sale not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Already transmitted or refunded', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function rtTransmit(SyncPosSaleToRt $sync, string $id): JsonResponse
     {
-        return $this->successResponse(new CatalogResource($sync->execute(PosSale::findOrFail($id))), __('pos.messages.rt_transmitted'), Response::HTTP_CREATED);
+        $receipt = $sync->execute(PosSale::findOrFail($id));
+        $message = $receipt->isSimulated() ? __('pos.messages.rt_simulated') : __('pos.messages.rt_transmitted');
+
+        return $this->successResponse(new RtFiscalReceiptResource($receipt), $message, Response::HTTP_CREATED);
     }
 }

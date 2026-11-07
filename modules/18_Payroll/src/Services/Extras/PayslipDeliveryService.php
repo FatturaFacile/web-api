@@ -16,6 +16,7 @@ use Modules\Payroll\Models\Payslip;
 use Modules\Payroll\Models\PayslipDelivery;
 use Modules\Payroll\Services\PayrollDocumentService;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 /**
  * Tells the employees of a closed run that their payslip is ready. The mail holds no salary figure and no attachment: only
@@ -34,6 +35,8 @@ final class PayslipDeliveryService
     ) {}
 
     /**
+     * Sending again replaces the earlier links of each payslip: they are revoked, and only the newest mail opens it.
+     *
      * @return array{sent: int, skipped: list<array{employee_id: string, reason: string}>}
      */
     public function deliver(PayrollRun $run): array
@@ -57,11 +60,18 @@ final class PayslipDeliveryService
             }
 
             $token = Str::random(64);
+            $now = CarbonImmutable::now();
+
+            PayslipDelivery::query()
+                ->where('payslip_id', $payslip->id)
+                ->whereNull('revoked_at')
+                ->update(['revoked_at' => $now]);
+
             PayslipDelivery::query()->create([
                 'payslip_id' => $payslip->id,
                 'employee_id' => $payslip->employee_id,
                 'token_hash' => hash('sha256', $token),
-                'expires_at' => CarbonImmutable::now()->addDays(self::ValidityDays),
+                'expires_at' => $now->addDays(self::ValidityDays),
             ]);
 
             Mail::to($address)
@@ -81,6 +91,7 @@ final class PayslipDeliveryService
 
     /**
      * The PDF of a link, for whoever knows the date of birth. Every failure answers the same, so a link cannot be probed.
+     * Opening records the attempt, a write: while a restore replaces the data of the tenant it answers 503.
      *
      * @return array{content: string, file_name: string}
      */
@@ -88,11 +99,15 @@ final class PayslipDeliveryService
     {
         $delivery = PayslipDelivery::query()->withoutGlobalScopes()->where('token_hash', hash('sha256', $token))->first();
 
-        if ($delivery === null || $delivery->expires_at->isPast() || $delivery->failed_attempts >= self::MaximumAttempts) {
+        if ($delivery === null || $delivery->revoked_at !== null || $delivery->expires_at->isPast() || $delivery->failed_attempts >= self::MaximumAttempts) {
             throw new NotFoundHttpException;
         }
 
         $tenant = Tenant::query()->findOrFail($delivery->tenant_id);
+
+        if ($tenant->is_maintenance) {
+            throw new ServiceUnavailableHttpException(60, __('backup.maintenance.detail'));
+        }
 
         return $this->tenantContext->runWithTenant($tenant, function () use ($delivery, $birthDate, $tenant): array {
             $payslip = Payslip::query()->with('employee')->findOrFail($delivery->payslip_id);

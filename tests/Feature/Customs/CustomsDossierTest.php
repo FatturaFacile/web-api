@@ -110,6 +110,36 @@ test('profitability separates direct and indirect costs, with exact decimals', f
         ->assertJsonPath('data.margin_percent', '20.00');
 });
 
+test('costs and margin are reserved to finance and customs roles', function (string $role, bool $sees): void {
+    $dossier = ($this->dossier)();
+    $this->postJson("/api/v1/customs/dossiers/{$dossier['id']}/charges", ['kind' => 'revenue', 'category' => 'freight', 'description' => 'Trasporto', 'amount' => '500.00'])->assertCreated();
+    $this->postJson("/api/v1/customs/dossiers/{$dossier['id']}/charges", ['kind' => 'cost', 'category' => 'freight', 'description' => 'Vettore', 'amount' => '300.00'])->assertCreated();
+
+    customsApi(customsMember($this->tenant, $role), $this->tenant);
+    $profitability = $this->getJson("/api/v1/customs/dossiers/{$dossier['id']}/profitability");
+    $summary = $this->getJson("/api/v1/customs/dossiers/monthly-summary?contact_id={$this->customer->id}&year=2026&month=11")->assertOk();
+
+    $this->getJson("/api/v1/customs/dossiers/{$dossier['id']}")->assertOk();
+    expect($profitability->status())->toBe($sees ? 200 : 403)
+        ->and($summary->json('data.dossiers.0.revenue'))->toBe('500.00')
+        ->and(array_key_exists('direct_costs', $summary->json('data.dossiers.0')))->toBe($sees)
+        ->and(array_key_exists('result', $summary->json('data.dossiers.0')))->toBe($sees);
+})->with([
+    'owner' => ['owner', true],
+    'accountant' => ['accountant', true],
+    'customs' => ['customs', true],
+    'sales' => ['sales', false],
+    'warehouse' => ['warehouse', false],
+]);
+
+test('the customs.profitability permission opens the figures to a single warehouse user', function (): void {
+    $dossier = ($this->dossier)();
+
+    customsApi(customsMember($this->tenant, 'warehouse', ['customs.profitability']), $this->tenant);
+
+    $this->getJson("/api/v1/customs/dossiers/{$dossier['id']}/profitability")->assertOk();
+});
+
 test('duty and VAT come from the decisions, once, and a correction updates them', function (): void {
     $dossier = ($this->dossier)();
     $declaration = customsDeclaration($this->tenant, $this->user);

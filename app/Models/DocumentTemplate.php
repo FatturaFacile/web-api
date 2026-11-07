@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Database\Factories\DocumentTemplateFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -14,7 +16,8 @@ use Illuminate\Database\Eloquent\Model;
  */
 class DocumentTemplate extends Model
 {
-    use BelongsToTenant, HasUuids;
+    /** @use HasFactory<DocumentTemplateFactory> */
+    use BelongsToTenant, HasFactory, HasUuids;
 
     public const string DefaultType = 'default';
 

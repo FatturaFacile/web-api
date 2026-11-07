@@ -2,9 +2,12 @@
 
 declare(strict_types=1);
 
+use App\Contracts\FiscalPrinterGateway;
 use App\Models\Contact;
+use App\Models\PosSale;
 use App\Models\PosSession;
 use App\Models\Product;
+use App\Models\RtFiscalReceipt;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -155,10 +158,41 @@ test('fiscal transmission happens once and blocks refunds', function (): void {
     $sale = posApi()->postJson('/api/v1/retail/pos/sales', saleBody($session))->json('data.id');
 
     $receipt = posApi()->postJson("/api/v1/retail/pos/sales/{$sale}/rt-transmit")->assertCreated();
-    expect($receipt->json('data.rt_status'))->toBe('transmitted')->and($receipt->json('data.fiscal_document_number'))->toBe('DOC-20260001');
+    expect($receipt->json('data.rt_status'))->toBe('simulated')
+        ->and($receipt->json('data.fiscal_document_number'))->toBe('DOC-20260001')
+        ->and($receipt->json('data.transmitted_at'))->toBeNull()
+        ->and($receipt->json('data.simulated'))->toBeTrue()
+        ->and($receipt->json('data.reached_tax_authority'))->toBeFalse()
+        ->and($receipt->json('data.notice'))->toContain('nothing was sent')
+        ->and($receipt->json('message'))->toContain('simulated');
 
     posApi()->postJson("/api/v1/retail/pos/sales/{$sale}/rt-transmit")->assertUnprocessable();
     posApi()->postJson("/api/v1/retail/pos/sales/{$sale}/refund")->assertUnprocessable();
+});
+
+test('only a real RT service marks the receipt as transmitted', function (): void {
+    app()->bind(FiscalPrinterGateway::class, fn (): FiscalPrinterGateway => new class implements FiscalPrinterGateway
+    {
+        public function transmit(PosSale $sale): array
+        {
+            return ['fiscal_document_number' => 'RT-1', 'xml_lot_id' => 'LOT-1', 'z_report_number' => 'Z-1'];
+        }
+
+        public function isSimulated(): bool
+        {
+            return false;
+        }
+    });
+
+    $session = openSession();
+    $sale = posApi()->postJson('/api/v1/retail/pos/sales', saleBody($session))->json('data.id');
+    $receipt = posApi()->postJson("/api/v1/retail/pos/sales/{$sale}/rt-transmit")->assertCreated();
+
+    expect($receipt->json('data.rt_status'))->toBe(RtFiscalReceipt::StatusTransmitted)
+        ->and($receipt->json('data.transmitted_at'))->not->toBeNull()
+        ->and($receipt->json('data.simulated'))->toBeFalse()
+        ->and($receipt->json('data.reached_tax_authority'))->toBeTrue()
+        ->and($receipt->json('data.notice'))->toBeNull();
 });
 
 test('closing a session computes the expected cash and difference, and the report summarises takings', function (): void {

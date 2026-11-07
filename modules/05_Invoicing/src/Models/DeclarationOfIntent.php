@@ -6,7 +6,10 @@ namespace Modules\Invoicing\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Contact;
+use Database\Factories\DeclarationOfIntentFactory;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -15,9 +18,11 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 /**
  * A declaration of intent (lettera di intento): `received` from a customer, or `issued` to a supplier.
  */
+#[UseFactory(DeclarationOfIntentFactory::class)]
 final class DeclarationOfIntent extends Model
 {
-    use BelongsToTenant, HasUuids, SoftDeletes;
+    /** @use HasFactory<DeclarationOfIntentFactory> */
+    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     public const string RECEIVED = 'received';
 

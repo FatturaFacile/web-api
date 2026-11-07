@@ -8,6 +8,7 @@ use App\Models\PosSale;
 use App\Models\Tenant;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\DocumentQuotaService;
+use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -30,6 +31,7 @@ final readonly class IssueCommercialDocument
         private DocumentQuotaService $quota,
         private TenantContext $tenantContext,
         private CorrispettiviDayLock $dayLock,
+        private TenantClock $clock,
     ) {}
 
     /**
@@ -140,7 +142,8 @@ final readonly class IssueCommercialDocument
      */
     private function store(string $type, array $lines, ?string $paymentMethod, ?string $posSaleId, ?string $relatedId = null): CommercialDocument
     {
-        $today = now()->toDateString();
+        $businessDay = $this->clock->today($this->tenant());
+        $today = $businessDay->toDateString();
         $this->dayLock->acquire((string) $this->tenant()->id, $today);
 
         if (DailyCorrispettivo::where('business_date', $today)->exists()) {
@@ -148,7 +151,7 @@ final readonly class IssueCommercialDocument
         }
 
         $sum = static fn (string $field): string => array_reduce($lines, static fn (string $total, array $line): string => bcadd($total, $line[$field], 2), '0.00');
-        $year = (int) now()->format('Y');
+        $year = (int) $businessDay->format('Y');
         $number = $this->numbering->next('commercial_document', $year);
         $gateway = $this->gateways->gateway();
         $tenant = $this->tenant();

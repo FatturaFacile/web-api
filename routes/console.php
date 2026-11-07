@@ -31,6 +31,7 @@ use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
 use Modules\ServiceManagement\Jobs\ProcessServiceContractRenewalsJob;
 use Modules\ServiceManagement\Jobs\ScanSLABreachesJob;
 use Modules\SubscriptionBilling\Jobs\AggregateMeteredUsageJob;
+use Modules\Visitors\Jobs\PurgeExpiredVisitorsJob;
 use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
 use Modules\Workflow\Jobs\ProcessBusinessCalendarTimeoutsJob;
 use Modules\Workflow\Jobs\PruneExpiredApprovalTokensJob;
@@ -92,3 +93,4 @@ $forEachTenant('dms:retention', static fn (Tenant $tenant): object => new ApplyD
 // Before procurement:expiring-contracts at 05:10, so a supplier contract that renews by itself is not marked expired.
 $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
+$forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new PurgeExpiredVisitorsJob($tenant->id))->dailyAt('03:50');
