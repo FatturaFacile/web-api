@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Facades\Date;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
 use Modules\GeneralLedger\Services\Tax\Decimal;
@@ -300,6 +301,8 @@ final class InvoiceFiscalService
             return;
         }
 
+        $this->serializeCeiling((string) $invoice->tenant_id, (string) $invoice->contact_id, $year);
+
         $alreadySubject = (string) (SalesInvoice::withoutGlobalScope(TenantScope::class)
             ->where('tenant_id', $invoice->tenant_id)
             ->where('contact_id', $invoice->contact_id)
@@ -318,6 +321,21 @@ final class InvoiceFiscalService
         $invoice->enasarco_base = Decimal::round2($base);
         $invoice->enasarco_percent = $agentRate;
         $invoice->enasarco_amount = $this->percentOf($base, $agentRate);
+    }
+
+    /**
+     * The room left below the annual ceiling is read from the documents already issued to the same principal in the
+     * year: two emissions reading it at once would both find the same room. A transaction-scoped advisory lock per
+     * tenant, principal and year makes the second emission wait until the first has committed, so it reads the base
+     * the first one took. Outside a transaction (a draft) the lock is released at once and changes nothing.
+     */
+    private function serializeCeiling(string $tenantId, string $contactId, int $year): void
+    {
+        if (DB::getDriverName() !== 'pgsql' || DB::transactionLevel() === 0) {
+            return;
+        }
+
+        DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ["enasarco-ceiling:{$tenantId}:{$contactId}:{$year}"]);
     }
 
     /**
