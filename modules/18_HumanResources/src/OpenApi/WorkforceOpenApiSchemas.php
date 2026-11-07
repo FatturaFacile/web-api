@@ -9,8 +9,6 @@ use OpenApi\Attributes as OA;
 /**
  * Parameters, requests and records of shift planning and time clock details.
  */
-#[OA\Parameter(parameter: 'HumanResourcesFrom', name: 'from', description: 'First local day', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date'))]
-#[OA\Parameter(parameter: 'HumanResourcesTo', name: 'to', description: 'Last local day', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date'))]
 #[OA\Schema(schema: 'HumanResourcesSaveShiftTypeRequest', description: 'Request payload validated by SaveShiftTypeRequest', required: ['code', 'name', 'category'], type: 'object', properties: [
     new OA\Property(property: 'code', type: 'string', maxLength: 20),
     new OA\Property(property: 'name', type: 'string', maxLength: 120),
