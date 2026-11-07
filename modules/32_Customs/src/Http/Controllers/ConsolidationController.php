@@ -8,7 +8,6 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Modules\Customs\Exceptions\CustomsException;
 use Modules\Customs\Http\Requests\SaveConsolidationRequest;
 use Modules\Customs\Http\Resources\CustomsRecordResource;
 use Modules\Customs\Models\CustomsConsolidation;
@@ -74,13 +73,7 @@ final class ConsolidationController extends CustomsController
         $this->authorize('update', $consolidation);
         $this->authorize('update', $dossier);
 
-        if ($consolidation->allocated_at !== null) {
-            throw new CustomsException('The freight of this consolidation has already been shared out.');
-        }
-
-        $dossier->update(['consolidation_id' => $consolidation->id]);
-
-        return new CustomsRecordResource($dossier);
+        return new CustomsRecordResource($this->dossiers->attachToConsolidation($consolidation, $dossier));
     }
 
     /**

@@ -2,8 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Modules\FiscalRetail\Models\CommercialDocument;
 
 require_once __DIR__.'/ComplianceHelpers.php';
@@ -164,4 +166,45 @@ test('roles are enforced on the module', function (): void {
 
     actingAsMember($this->tenant, 'sales');
     $this->postJson('/api/v1/fiscal-retail/commercial-documents', [])->assertUnprocessable();
+});
+
+/**
+ * Whether another database session could take the day lock now. The test transaction is still open, so a lock taken by
+ * the request is still held.
+ */
+function corrispettiviDayIsFree(string $tenantId, string $day): bool
+{
+    Config::set('database.connections.lock_probe', config('database.connections.'.config('database.default')));
+
+    try {
+        return DB::connection('lock_probe')->transaction(static fn (): bool => (bool) DB::connection('lock_probe')
+            ->selectOne('SELECT pg_try_advisory_xact_lock(hashtextextended(?, 0)) AS taken', ["corrispettivi:{$tenantId}:{$day}"])->taken);
+    } finally {
+        DB::purge('lock_probe');
+    }
+}
+
+test('issuing a document takes the lock of its day, the one the closure takes, so it cannot commit after the aggregation', function (): void {
+    expect(corrispettiviDayIsFree($this->tenant->id, '2027-04-15'))->toBeTrue();
+
+    issueDocument();
+
+    expect(corrispettiviDayIsFree($this->tenant->id, '2027-04-15'))->toBeFalse()
+        ->and(corrispettiviDayIsFree($this->tenant->id, '2027-04-14'))->toBeTrue();
+});
+
+test('closing a day takes the lock of that day', function (): void {
+    $this->travelTo('2027-04-14 10:00:00');
+    issueDocument();
+    $this->travelTo('2027-04-15 10:00:00');
+    $keys = [];
+    DB::listen(function (QueryExecuted $query) use (&$keys): void {
+        if (str_contains($query->sql, 'pg_advisory_xact_lock')) {
+            $keys[] = $query->bindings[0];
+        }
+    });
+
+    $this->postJson('/api/v1/fiscal-retail/corrispettivi/daily/2027-04-14/close')->assertCreated();
+
+    expect($keys)->toBe(["corrispettivi:{$this->tenant->id}:2027-04-14"]);
 });

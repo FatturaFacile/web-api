@@ -15,6 +15,7 @@ use Modules\FiscalRetail\Exceptions\CorrispettiviGatewayException;
 use Modules\FiscalRetail\Models\CommercialDocument;
 use Modules\FiscalRetail\Models\CommercialDocumentLine;
 use Modules\FiscalRetail\Models\DailyCorrispettivo;
+use Modules\FiscalRetail\Services\CorrispettiviDayLock;
 use Modules\FiscalRetail\Services\CorrispettiviGatewayManager;
 
 /**
@@ -28,6 +29,7 @@ final readonly class IssueCommercialDocument
         private CorrispettiviGatewayManager $gateways,
         private DocumentQuotaService $quota,
         private TenantContext $tenantContext,
+        private CorrispettiviDayLock $dayLock,
     ) {}
 
     /**
@@ -139,6 +141,7 @@ final readonly class IssueCommercialDocument
     private function store(string $type, array $lines, ?string $paymentMethod, ?string $posSaleId, ?string $relatedId = null): CommercialDocument
     {
         $today = now()->toDateString();
+        $this->dayLock->acquire((string) $this->tenant()->id, $today);
 
         if (DailyCorrispettivo::where('business_date', $today)->exists()) {
             throw ValidationException::withMessages(['document' => __('sales.corrispettivi_day_closed')]);

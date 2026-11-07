@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\FiscalRetail\Exceptions\CorrispettiviGatewayException;
 use Modules\FiscalRetail\Models\DailyCorrispettivo;
 use Modules\FiscalRetail\Services\CorrispettiviAggregator;
+use Modules\FiscalRetail\Services\CorrispettiviDayLock;
 use Modules\FiscalRetail\Services\CorrispettiviGatewayManager;
 
 /**
@@ -23,6 +24,7 @@ final readonly class CloseCorrispettiviDay
         private CorrispettiviAggregator $aggregator,
         private CorrispettiviGatewayManager $gateways,
         private TenantContext $tenantContext,
+        private CorrispettiviDayLock $dayLock,
     ) {}
 
     /**
@@ -35,6 +37,8 @@ final readonly class CloseCorrispettiviDay
         }
 
         return DB::transaction(function () use ($day): Collection {
+            $this->dayLock->acquire((string) $this->tenantContext->getTenantId(), $day->toDateString());
+
             if (DailyCorrispettivo::where('business_date', $day->toDateString())->exists()) {
                 throw ValidationException::withMessages(['date' => __('sales.corrispettivi_day_closed')]);
             }

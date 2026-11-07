@@ -7,7 +7,11 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Modules\Customs\Exceptions\CustomsException;
+use Modules\Customs\Models\CustomsConsolidation;
+use Modules\Customs\Models\CustomsDossier;
 use Modules\Customs\Models\CustomsDossierCharge;
+use Modules\Customs\Services\DossierService;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 
 require_once __DIR__.'/Support.php';
@@ -185,6 +189,22 @@ test('a groupage shares the freight by weight, to the cent, once', function (): 
     $this->postJson("/api/v1/customs/consolidations/{$id}/allocate")->assertUnprocessable();
     $late = ($this->dossier)();
     $this->postJson("/api/v1/customs/consolidations/{$id}/dossiers/{$late['id']}")->assertUnprocessable();
+});
+
+test('a dossier of a shared-out groupage cannot move to another one, and a stale copy cannot share the freight twice', function (): void {
+    $dossier = ($this->dossier)(['gross_weight_kg' => 100]);
+    $first = $this->postJson('/api/v1/customs/consolidations', ['reference' => 'GRP-1', 'freight_cost' => '100.00', 'currency' => 'CHF'])->assertCreated()->json('data.id');
+    $second = $this->postJson('/api/v1/customs/consolidations', ['reference' => 'GRP-2', 'freight_cost' => '80.00', 'currency' => 'CHF'])->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/customs/consolidations/{$first}/dossiers/{$dossier['id']}")->assertOk();
+    app(TenantContext::class)->setTenant($this->tenant);
+    $stale = CustomsConsolidation::query()->findOrFail($first);
+
+    $this->postJson("/api/v1/customs/consolidations/{$first}/allocate")->assertOk();
+
+    $this->postJson("/api/v1/customs/consolidations/{$second}/dossiers/{$dossier['id']}")->assertUnprocessable();
+    expect(CustomsDossier::query()->findOrFail($dossier['id'])->consolidation_id)->toBe($first)
+        ->and(fn () => app(DossierService::class)->allocateConsolidation($stale))->toThrow(CustomsException::class)
+        ->and(CustomsDossierCharge::query()->count())->toBe(1);
 });
 
 test('a split delivery closes the dossier on its last part and cannot exceed it', function (): void {
