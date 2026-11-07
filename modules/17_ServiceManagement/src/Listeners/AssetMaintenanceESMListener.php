@@ -18,6 +18,9 @@ final readonly class AssetMaintenanceESMListener
         private AuditLedgerInterface $auditLedger
     ) {}
 
+    /**
+     * Maintenance of a company asset is internal work: the work order has no customer.
+     */
     public function handleAssetMaintenanceCreated(AssetMaintenanceCreatedEvent $event): void
     {
         if (! $this->recordInboxIfNew($event, 'AssetMaintenanceESMListener::handleAssetMaintenanceCreated')) {
@@ -35,7 +38,7 @@ final readonly class AssetMaintenanceESMListener
             'work_type' => $event->maintenanceType,
             'priority' => $event->priority,
             'status' => 'draft',
-            'customer_id' => (string) Str::uuid7(),
+            'customer_id' => null,
             'asset_id' => $event->assetId,
             'scheduled_start' => $event->scheduledDate,
             'total_cost' => $event->totalCost,

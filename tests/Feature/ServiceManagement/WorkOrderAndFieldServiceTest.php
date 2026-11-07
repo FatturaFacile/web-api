@@ -6,6 +6,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
+use Illuminate\Support\Str;
 use Modules\ServiceManagement\Actions\DispatchWorkOrderAction;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CompleteWorkOrderDTO;
@@ -41,6 +42,7 @@ test('work order lifecycle handles items, dispatch, appointment scheduling, on-s
         description: 'Overhaul cooling pump and replace alternator brushes',
         workType: 'corrective',
         priority: 'high',
+        customerId: (string) Str::uuid7(),
         locationAddress: 'Via Nazionale 120, Roma',
         items: [
             [

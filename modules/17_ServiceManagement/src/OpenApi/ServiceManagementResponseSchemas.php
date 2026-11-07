@@ -128,7 +128,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'work_type'),
         new OA\Property(property: 'priority'),
         new OA\Property(property: 'status'),
-        new OA\Property(property: 'customer_id', type: 'string'),
+        new OA\Property(property: 'customer_id', description: 'Null for internal work orders, such as those dispatched by asset maintenance.', type: 'string', nullable: true),
         new OA\Property(property: 'service_contract_id', type: 'string'),
         new OA\Property(property: 'asset_id', type: 'string'),
         new OA\Property(property: 'ticket_id', type: 'string'),
