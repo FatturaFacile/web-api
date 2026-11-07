@@ -25,6 +25,7 @@ final class AllocateStockReservationRequest extends FormRequest
             'source_type' => ['required', 'string', 'max:100'],
             'source_id' => ['required', 'uuid'],
             'warehouse_bin_id' => ['nullable', 'uuid'],
+            'lot_id' => ['nullable', 'uuid'],
             'expires_at' => ['nullable', 'date', 'after:now'],
         ];
     }

@@ -27,7 +27,7 @@ final readonly class CreateStockItemAction
             'barcode_custom' => $dto->barcodeCustom,
             'tracking_type' => $dto->trackingType,
             'standard_cost' => $dto->standardCost,
-            'moving_average_cost' => $dto->movingAverageCost,
+            'current_moving_average_cost' => $dto->movingAverageCost,
             'weight_kg' => $dto->weightKg,
             'is_active' => $dto->isActive,
             'company_id' => $dto->companyId,

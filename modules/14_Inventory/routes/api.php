@@ -7,12 +7,14 @@ use Modules\Inventory\Http\Controllers\BarcodeController;
 use Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
 use Modules\Inventory\Http\Controllers\InventoryCountController;
 use Modules\Inventory\Http\Controllers\StockItemController;
+use Modules\Inventory\Http\Controllers\StockLotController;
 use Modules\Inventory\Http\Controllers\StockMovementController;
 use Modules\Inventory\Http\Controllers\StockPickListController;
 use Modules\Inventory\Http\Controllers\StockQuantController;
 use Modules\Inventory\Http\Controllers\StockReservationController;
 use Modules\Inventory\Http\Controllers\StockValuationController;
 use Modules\Inventory\Http\Controllers\WarehouseController;
+use Modules\Inventory\Http\Controllers\WarehouseLocationController;
 
 Route::prefix('api/v1/inventory')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:inventory'])
@@ -56,6 +58,21 @@ Route::prefix('api/v1/inventory')
 
         // 9. Barcode Scanning (GS1-128 / EAN-13 / Serials / Bins)
         Route::post('barcode/scan', [BarcodeController::class, 'scan'])->name('inventory.barcode.scan');
+
+        // 11. Warehouse Locations
+        Route::post('warehouses/{id}/locations', [WarehouseLocationController::class, 'store'])->name('inventory.warehouses.locations.store');
+
+        // 12. Lots: Expiry, Quarantine, Genealogy and Batch Stock
+        Route::get('lots', [StockLotController::class, 'index'])->name('inventory.lots.index');
+        Route::post('lots', [StockLotController::class, 'store'])->name('inventory.lots.store');
+        Route::get('lots/stock', [StockLotController::class, 'stock'])->name('inventory.lots.stock');
+        Route::get('lots/{id}', [StockLotController::class, 'show'])->name('inventory.lots.show');
+        Route::patch('lots/{id}', [StockLotController::class, 'update'])->name('inventory.lots.update');
+        Route::post('lots/{id}/components', [StockLotController::class, 'addComponent'])->name('inventory.lots.components.store');
+        Route::get('lots/{id}/traceability', [StockLotController::class, 'traceability'])->name('inventory.lots.traceability');
+        Route::post('lots/{id}/quarantine', [StockLotController::class, 'quarantine'])->name('inventory.lots.quarantine');
+        Route::post('lots/{id}/release', [StockLotController::class, 'release'])->name('inventory.lots.release');
+        Route::get('availability', [StockLotController::class, 'availability'])->name('inventory.availability');
 
         // 10. Valuation (FIFO / AVCO / Standard Costing)
         Route::get('valuation/summary', [StockValuationController::class, 'summary'])->name('inventory.valuation.summary');

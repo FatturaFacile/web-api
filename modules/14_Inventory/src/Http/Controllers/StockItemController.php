@@ -19,6 +19,9 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Inventory Stock Items', description: 'Product catalog, SKU master data, standard costs, and stock levels')]
 final class StockItemController extends Controller
 {
+    /** The master data of stock handling, set on the item after its creation. */
+    private const array LOGISTICS_FIELDS = ['product_id', 'picking_strategy', 'shelf_life_days', 'min_remaining_shelf_life_days', 'net_weight_kg', 'volume_m3', 'units_per_carton', 'cartons_per_pallet', 'carton_tare_kg', 'pallet_tare_kg'];
+
     #[OA\Get(
         path: '/api/v1/inventory/items',
         summary: 'List stock items',
@@ -115,6 +118,7 @@ final class StockItemController extends Controller
         );
 
         $item = $action->execute($dto);
+        $item->update($request->safe()->only(self::LOGISTICS_FIELDS));
 
         return response()->json(new StockItemResource($item->load('category')), 201);
     }
@@ -135,7 +139,7 @@ final class StockItemController extends Controller
     #[EnterpriseEndpoint(summary: 'Get stock item details', tags: ['Inventory'])]
     public function show(string $id): JsonResponse
     {
-        $item = StockItem::with(['category', 'quants.warehouse', 'quants.bin', 'reorderRules'])->findOrFail($id);
+        $item = StockItem::with(['category', 'quants.bin', 'reorderRules'])->findOrFail($id);
         $this->authorize('view', $item);
 
         return response()->json(new StockItemResource($item));

@@ -37,11 +37,11 @@ final class StockQuantController extends Controller
     #[EnterpriseEndpoint(summary: 'List stock quants', tags: ['Inventory'])]
     public function index(Request $request): JsonResponse
     {
-        $query = StockQuant::with(['warehouse', 'bin', 'item', 'lot', 'serialNumber'])
+        $query = StockQuant::with(['bin', 'item', 'lot'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('warehouse_id')) {
-            $query->where('warehouse_id', $request->query('warehouse_id'));
+            $query->whereHas('bin.rack.aisle.zone', static fn ($zone) => $zone->where('warehouse_id', $request->query('warehouse_id')));
         }
 
         if ($request->filled('warehouse_bin_id')) {
@@ -57,7 +57,7 @@ final class StockQuantController extends Controller
         }
 
         if ($request->boolean('available_only')) {
-            $query->where('available_quantity', '>', 0);
+            $query->whereColumn('quantity_on_hand', '>', 'quantity_reserved');
         }
 
         $quants = $query->paginate((int) $request->query('per_page', 25));
@@ -81,7 +81,7 @@ final class StockQuantController extends Controller
     #[EnterpriseEndpoint(summary: 'Get stock quant details', tags: ['Inventory'])]
     public function show(string $id): JsonResponse
     {
-        $quant = StockQuant::with(['warehouse', 'bin', 'item', 'lot', 'serialNumber'])->findOrFail($id);
+        $quant = StockQuant::with(['bin', 'item', 'lot'])->findOrFail($id);
 
         return response()->json(new StockQuantResource($quant));
     }

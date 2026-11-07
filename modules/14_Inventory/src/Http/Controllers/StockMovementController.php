@@ -92,22 +92,21 @@ final class StockMovementController extends Controller
 
         $dto = new StockTransferDTO(
             stockItemId: $request->string('stock_item_id')->value(),
-            warehouseId: $request->string('warehouse_id')->value(),
-            quantity: (float) $request->input('quantity'),
-            movementType: $request->string('movement_type')->value(),
             sourceBinId: $request->input('source_bin_id'),
             destinationBinId: $request->input('destination_bin_id'),
-            stockLotId: $request->input('stock_lot_id'),
-            stockSerialNumberId: $request->input('stock_serial_number_id'),
-            unitCost: (float) $request->input('unit_cost'),
-            referenceType: $request->input('reference_type'),
-            referenceId: $request->input('reference_id'),
-            notes: $request->input('notes'),
-            userId: (string) auth()->id()
+            quantity: (float) $request->input('quantity'),
+            movementType: $request->string('movement_type')->value(),
+            lotId: $request->input('stock_lot_id'),
+            serialNumberId: $request->input('stock_serial_number_id'),
+            originDocumentType: $request->input('reference_type'),
+            originDocumentId: $request->input('reference_id'),
+            userId: (string) auth()->id(),
+            customUnitCost: (float) $request->input('unit_cost'),
+            notes: $request->input('notes')
         );
 
         $movement = $action->execute($dto);
 
-        return response()->json(new StockMovementResource($movement->load(['item', 'warehouse'])), 201);
+        return response()->json(new StockMovementResource($movement->load(['item', 'sourceBin', 'destinationBin'])), 201);
     }
 }

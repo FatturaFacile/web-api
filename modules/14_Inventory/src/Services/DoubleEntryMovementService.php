@@ -13,6 +13,7 @@ use InvalidArgumentException;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Events\StockTransferredEvent;
+use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\InventoryAuditEntry;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
@@ -55,7 +56,7 @@ final class DoubleEntryMovementService implements DoubleEntryMovementServiceInte
 
                 if (! $sourceQuant || $sourceQuant->quantity_available < $dto->quantity) {
                     $available = $sourceQuant ? $sourceQuant->quantity_available : 0.0;
-                    throw new InvalidArgumentException("Insufficient available stock in bin [{$sourceBin->barcode}]. Required: {$dto->quantity}, Available: {$available}.");
+                    throw new StockRuleViolation("Insufficient available stock in bin [{$sourceBin->barcode}]. Required: {$dto->quantity}, Available: {$available}.");
                 }
 
                 $sourceQuant->decrement('quantity_on_hand', $dto->quantity);

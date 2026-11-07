@@ -6,6 +6,7 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 final class StockReservation extends BaseEnterpriseModel
@@ -28,6 +29,11 @@ final class StockReservation extends BaseEnterpriseModel
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
+    }
+
+    public function allocations(): HasMany
+    {
+        return $this->hasMany(StockReservationAllocation::class, 'stock_reservation_id');
     }
 
     public function reservedFor(): MorphTo

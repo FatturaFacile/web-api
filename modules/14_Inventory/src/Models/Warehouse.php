@@ -18,6 +18,7 @@ final class Warehouse extends BaseEnterpriseModel implements LockableByWorkflowI
         return [
             'is_primary' => 'boolean',
             'is_active' => 'boolean',
+            'is_virtual' => 'boolean',
             'address' => 'array',
         ];
     }

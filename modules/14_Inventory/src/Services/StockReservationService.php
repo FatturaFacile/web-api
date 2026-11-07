@@ -7,7 +7,6 @@ namespace Modules\Inventory\Services;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use InvalidArgumentException;
 use Modules\Inventory\Contracts\StockReservationServiceInterface;
 use Modules\Inventory\DTOs\StockReservationDTO;
 use Modules\Inventory\Events\StockReleasedEvent;
@@ -15,12 +14,14 @@ use Modules\Inventory\Events\StockReservedEvent;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\StockReservation;
+use Modules\Inventory\Models\StockReservationAllocation;
 use Modules\Inventory\Models\Warehouse;
 
 final class StockReservationService implements StockReservationServiceInterface
 {
     public function __construct(
-        private readonly EventDispatcher $dispatcher
+        private readonly EventDispatcher $dispatcher,
+        private readonly StockAllocationPlanner $planner
     ) {}
 
     public function allocate(StockReservationDTO $dto): StockReservation
@@ -31,32 +32,8 @@ final class StockReservationService implements StockReservationServiceInterface
             /** @var Warehouse $warehouse */
             $warehouse = Warehouse::findOrFail($dto->warehouseId);
 
-            // Find all quants in this warehouse for the item with available stock
-            $quants = StockQuant::query()
-                ->whereHas('bin.rack.aisle.zone', fn ($q) => $q->where('warehouse_id', $warehouse->id))
-                ->where('stock_item_id', $item->id)
-                ->lockForUpdate()
-                ->get();
-
-            $totalAvailable = $quants->sum(fn (StockQuant $q) => $q->quantity_available);
-
-            if ($totalAvailable < $dto->quantity) {
-                throw new InvalidArgumentException("Insufficient available stock in warehouse [{$warehouse->name}]. Requested: {$dto->quantity}, Available: {$totalAvailable}.");
-            }
-
-            // Distribute reservation across quants
-            $remainingToReserve = $dto->quantity;
-            foreach ($quants as $quant) {
-                if ($remainingToReserve <= 0.0) {
-                    break;
-                }
-
-                $canReserve = min($quant->quantity_available, $remainingToReserve);
-                if ($canReserve > 0.0) {
-                    $quant->increment('quantity_reserved', $canReserve);
-                    $remainingToReserve -= $canReserve;
-                }
-            }
+            $quants = $this->planner->lockEligibleQuants($item, $warehouse, $dto->lotId, $dto->warehouseBinId);
+            $shares = $this->planner->split($quants, bcadd((string) $dto->quantity, '0', 4), (string) $warehouse->name);
 
             $reservation = StockReservation::create([
                 'tenant_id' => $item->tenant_id,
@@ -70,6 +47,21 @@ final class StockReservationService implements StockReservationServiceInterface
                 'expires_at' => $dto->expiresAt ? Carbon::parse($dto->expiresAt) : Carbon::now()->addDays(7),
                 'created_by' => $dto->userId ?? auth()->id(),
             ]);
+
+            foreach ($shares as $share) {
+                $quant = $share['quant'];
+                $quant->quantity_reserved = bcadd((string) $quant->quantity_reserved, $share['quantity'], 4);
+                $quant->save();
+
+                StockReservationAllocation::create([
+                    'tenant_id' => $reservation->tenant_id,
+                    'stock_reservation_id' => $reservation->id,
+                    'stock_quant_id' => $quant->id,
+                    'lot_id' => $quant->lot_id,
+                    'warehouse_bin_id' => $quant->warehouse_bin_id,
+                    'quantity' => bcadd($share['quantity'], '0', 4),
+                ]);
+            }
 
             $event = new StockReservedEvent(
                 reservationId: $reservation->id,
@@ -92,24 +84,24 @@ final class StockReservationService implements StockReservationServiceInterface
         }
 
         DB::transaction(function () use ($reservation): void {
-            $quants = StockQuant::query()
-                ->whereHas('bin.rack.aisle.zone', fn ($q) => $q->where('warehouse_id', $reservation->warehouse_id))
-                ->where('stock_item_id', $reservation->stock_item_id)
-                ->where('quantity_reserved', '>', 0)
-                ->lockForUpdate()
-                ->get();
+            $allocations = StockReservationAllocation::query()->where('stock_reservation_id', $reservation->id)->get();
 
-            $remainingToRelease = (float) $reservation->quantity_reserved;
-            foreach ($quants as $quant) {
-                if ($remainingToRelease <= 0.0) {
-                    break;
+            if ($allocations->isEmpty()) {
+                $this->releaseWithoutAllocations($reservation);
+            }
+
+            $quants = StockQuant::query()->whereIn('id', $allocations->pluck('stock_quant_id'))->orderBy('id')->lockForUpdate()->get()->keyBy('id');
+
+            foreach ($allocations as $allocation) {
+                $quant = $quants->get($allocation->stock_quant_id);
+
+                if ($quant !== null) {
+                    $reserved = bcsub((string) $quant->quantity_reserved, (string) $allocation->quantity, 4);
+                    $quant->quantity_reserved = bccomp($reserved, '0', 4) < 0 ? '0.0000' : $reserved;
+                    $quant->save();
                 }
 
-                $canRelease = min((float) $quant->quantity_reserved, $remainingToRelease);
-                if ($canRelease > 0.0) {
-                    $quant->decrement('quantity_reserved', $canRelease);
-                    $remainingToRelease -= $canRelease;
-                }
+                $allocation->delete();
             }
 
             $reservation->update(['status' => 'released']);
@@ -124,6 +116,34 @@ final class StockReservationService implements StockReservationServiceInterface
             );
             $this->dispatcher->publish($event);
         });
+    }
+
+    /**
+     * Reservations made before allocations were recorded say nothing about their quants: the units go back to any
+     * quant of the item in the warehouse, as they always did.
+     */
+    private function releaseWithoutAllocations(StockReservation $reservation): void
+    {
+        $quants = StockQuant::query()
+            ->whereHas('bin.rack.aisle.zone', fn ($q) => $q->where('warehouse_id', $reservation->warehouse_id))
+            ->where('stock_item_id', $reservation->stock_item_id)
+            ->where('quantity_reserved', '>', 0)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
+        $remaining = (string) $reservation->quantity_reserved;
+
+        foreach ($quants as $quant) {
+            if (bccomp($remaining, '0', 4) <= 0) {
+                break;
+            }
+
+            $share = bccomp((string) $quant->quantity_reserved, $remaining, 4) < 0 ? (string) $quant->quantity_reserved : $remaining;
+            $quant->quantity_reserved = bcsub((string) $quant->quantity_reserved, $share, 4);
+            $quant->save();
+            $remaining = bcsub($remaining, $share, 4);
+        }
     }
 
     public function expireStaleReservations(): int
