@@ -6,6 +6,7 @@ namespace Modules\FiscalRetail\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -32,13 +33,14 @@ final class CorrispettiviController extends Controller
             new OA\Response(response: 422, description: 'Invalid date', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function daily(Request $request, string $date, CorrispettiviAggregator $aggregator): JsonResponse
+    public function daily(Request $request, string $date, CorrispettiviAggregator $aggregator, TenantClock $clock): JsonResponse
     {
         $day = $this->parsedDate($request, $date);
         $closed = DailyCorrispettivo::where('business_date', $day->toDateString())->orderBy('tax_rate')->get();
 
         return $this->successResponse([
             'business_date' => $day->toDateString(),
+            'timezone' => $clock->timezone(),
             'closed' => $closed->isNotEmpty(),
             'rows' => $closed->isNotEmpty() ? $closed : $aggregator->between($day, $day),
         ], 'Daily corrispettivi retrieved');
@@ -78,7 +80,7 @@ final class CorrispettiviController extends Controller
             new OA\Response(response: 422, description: 'Invalid period', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function register(Request $request, CorrispettiviAggregator $aggregator): JsonResponse
+    public function register(Request $request, CorrispettiviAggregator $aggregator, TenantClock $clock): JsonResponse
     {
         $validated = $request->validate(['year' => ['required', 'integer', 'min:2000', 'max:2100'], 'month' => ['required', 'integer', 'between:1,12']]);
         $from = CarbonImmutable::create((int) $validated['year'], (int) $validated['month'], 1);
@@ -88,6 +90,7 @@ final class CorrispettiviController extends Controller
         return $this->successResponse([
             'year' => (int) $validated['year'],
             'month' => (int) $validated['month'],
+            'timezone' => $clock->timezone(),
             'rows' => $rows,
             'totals' => ['total_net' => $sum('total_net'), 'total_tax' => $sum('total_tax'), 'total_gross' => $sum('total_gross')],
         ], 'Corrispettivi register retrieved');

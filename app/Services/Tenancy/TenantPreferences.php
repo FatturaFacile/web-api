@@ -69,6 +69,8 @@ class TenantPreferences
                 'country' => ['nullable', 'string', 'regex:/^[A-Z]{2}$/'],
                 'address_line_1' => ['nullable', 'string', 'max:70'],
                 'address_line_2' => ['nullable', 'string', 'max:70'],
+                // Business-day time zone; when empty it follows the country of the company (see TenantClock).
+                'timezone' => ['nullable', 'string', 'timezone:all'],
             ],
             'labels' => array_merge(
                 [

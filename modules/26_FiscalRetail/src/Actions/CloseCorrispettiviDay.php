@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\FiscalRetail\Actions;
 
+use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -25,14 +26,17 @@ final readonly class CloseCorrispettiviDay
         private CorrispettiviGatewayManager $gateways,
         private TenantContext $tenantContext,
         private CorrispettiviDayLock $dayLock,
+        private TenantClock $clock,
     ) {}
 
     /**
+     * A day is in the future when it has not started yet on the wall clock of the company, not in UTC.
+     *
      * @return Collection<int, DailyCorrispettivo>
      */
     public function execute(CarbonImmutable $day): Collection
     {
-        if ($day->isFuture()) {
+        if ($day->toDateString() > $this->clock->today()->toDateString()) {
             throw ValidationException::withMessages(['date' => __('sales.corrispettivi_future_day')]);
         }
 
