@@ -12,9 +12,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\Integrations\Contracts\PaymentLinkGateway;
 use Modules\Integrations\DTOs\PaymentEvent;
+use Modules\Integrations\DTOs\PaymentLinkRequest;
 use Modules\Integrations\Exceptions\PaymentGatewayException;
-use Modules\Integrations\Gateways\LocalPaymentLinkGateway;
-use Modules\Integrations\Gateways\StripePaymentLinkGateway;
 use Modules\Integrations\Models\PaymentGatewaySetting;
 use Modules\Integrations\Models\PaymentLink;
 use Modules\Integrations\Models\PaymentWebhookEvent;
@@ -31,6 +30,7 @@ final readonly class PaymentLinkService
     public function __construct(
         private RecordPayment $payments,
         private TenantContext $tenantContext,
+        private PaymentGatewayResolver $gateways,
     ) {}
 
     /**
@@ -56,14 +56,19 @@ final readonly class PaymentLinkService
         ]);
 
         try {
-            $created = $gateway->createLink($link, __('sales.payment_link_description', ['number' => $invoice->invoice_number]), $settings->credentials ?? []);
+            $created = $gateway->createLink(new PaymentLinkRequest(
+                reference: (string) $link->id,
+                amount: $amount,
+                currency: (string) $invoice->currency,
+                description: __('sales.payment_link_description', ['number' => $invoice->invoice_number]),
+            ), $settings->credentials ?? []);
         } catch (PaymentGatewayException $e) {
             $link->update(['status' => 'failed']);
 
             throw ValidationException::withMessages(['gateway' => $e->getMessage()]);
         }
 
-        $link->update(['provider_reference' => $created['reference'], 'url' => $created['url'], 'status' => 'open']);
+        $link->update(['provider_reference' => $created->reference, 'url' => $created->url, 'status' => 'open']);
 
         return $link;
     }
@@ -77,7 +82,7 @@ final readonly class PaymentLinkService
         $gateway = $this->gateway($settings?->provider ?? 'local');
         $event = $gateway->parseWebhook($request, $settings->credentials ?? []);
 
-        if ($event === null) {
+        if ($event === null || ! $event->paid) {
             return;
         }
 
@@ -130,6 +135,6 @@ final readonly class PaymentLinkService
 
     private function gateway(string $provider): PaymentLinkGateway
     {
-        return app($provider === 'stripe' ? StripePaymentLinkGateway::class : LocalPaymentLinkGateway::class);
+        return $this->gateways->driver(in_array($provider, PaymentGatewayResolver::providers(), true) ? $provider : 'local');
     }
 }

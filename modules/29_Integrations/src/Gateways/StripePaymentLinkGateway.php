@@ -9,8 +9,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Modules\Integrations\Contracts\PaymentLinkGateway;
 use Modules\Integrations\DTOs\PaymentEvent;
+use Modules\Integrations\DTOs\PaymentLinkCreated;
+use Modules\Integrations\DTOs\PaymentLinkRequest;
 use Modules\Integrations\Exceptions\PaymentGatewayException;
-use Modules\Integrations\Models\PaymentLink;
 
 /**
  * Stripe Checkout Sessions (https://docs.stripe.com/api/checkout/sessions/create): the customer pays on the page hosted
@@ -25,21 +26,21 @@ final class StripePaymentLinkGateway implements PaymentLinkGateway
         return 'stripe';
     }
 
-    public function createLink(PaymentLink $link, string $description, array $credentials): array
+    public function createLink(PaymentLinkRequest $request, array $credentials): PaymentLinkCreated
     {
         $secretKey = $credentials['secret_key'] ?? throw new PaymentGatewayException('The Stripe secret key is not configured.');
 
         try {
             $response = Http::timeout(20)->asForm()->withBasicAuth($secretKey, '')->post('https://api.stripe.com/v1/checkout/sessions', [
                 'mode' => 'payment',
-                'client_reference_id' => (string) $link->id,
+                'client_reference_id' => $request->reference,
                 'success_url' => url('/payment-link/completed'),
                 'line_items' => [[
                     'quantity' => 1,
                     'price_data' => [
-                        'currency' => strtolower((string) $link->currency),
-                        'unit_amount' => (int) bcmul((string) $link->amount, '100', 0),
-                        'product_data' => ['name' => $description],
+                        'currency' => strtolower($request->currency),
+                        'unit_amount' => (int) bcmul($request->amount, '100', 0),
+                        'product_data' => ['name' => $request->description],
                     ],
                 ]],
             ]);
@@ -51,7 +52,7 @@ final class StripePaymentLinkGateway implements PaymentLinkGateway
             throw new PaymentGatewayException((string) ($response->json('error.message') ?? 'Stripe refused the payment link.'));
         }
 
-        return ['reference' => (string) $response->json('id'), 'url' => (string) $response->json('url')];
+        return new PaymentLinkCreated((string) $response->json('id'), (string) $response->json('url'));
     }
 
     public function parseWebhook(Request $request, array $credentials): ?PaymentEvent

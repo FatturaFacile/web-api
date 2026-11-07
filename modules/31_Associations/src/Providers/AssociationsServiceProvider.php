@@ -10,10 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
-use InvalidArgumentException;
 use Modules\Associations\Contracts\BoardDecisionGateway;
-use Modules\Associations\Contracts\FeePaymentGateway;
-use Modules\Associations\Gateways\LocalFeePaymentGateway;
 use Modules\Associations\Models;
 use Modules\Associations\Models\AccessArea;
 use Modules\Associations\Models\AccessDevice;
@@ -68,20 +65,11 @@ final class AssociationsServiceProvider extends ServiceProvider
     ];
 
     /**
-     * The contract of the governance module and the online payment driver.
+     * The contract of the governance module. The online payment drivers are those of the Integrations module.
      */
     public function register(): void
     {
         $this->app->bind(BoardDecisionGateway::class, MeetingBoardDecisionGateway::class);
-
-        $this->app->bind(FeePaymentGateway::class, static function (): FeePaymentGateway {
-            $driver = (string) config('associations.payment_driver');
-
-            return match ($driver) {
-                'local' => new LocalFeePaymentGateway,
-                default => throw new InvalidArgumentException("Unknown association payment driver [{$driver}]."),
-            };
-        });
     }
 
     public function boot(): void

@@ -12,7 +12,6 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Modules\Associations\Enums\FeeFrequency;
 use Modules\Associations\Enums\InstalmentStatus;
-use Modules\Associations\Gateways\LocalFeePaymentGateway;
 use Modules\Associations\Mail\AssociationNoticeMail;
 use Modules\Associations\Models\AssociationSetting;
 use Modules\Associations\Models\Family;
@@ -26,10 +25,12 @@ use Modules\Associations\Models\Member;
 use Modules\Associations\Models\Receipt;
 use Modules\Associations\Services\FeeService;
 use Modules\Associations\Services\FeeStandingService;
+use Modules\Associations\Services\PaymentLinkService;
 use Modules\Associations\Services\ReminderService;
 use Modules\Associations\Support\Money;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
+use Modules\Integrations\Gateways\LocalPaymentLinkGateway;
 
 require_once __DIR__.'/Support.php';
 
@@ -214,15 +215,16 @@ test('an online payment is confirmed by a signed callback, once, for the stored 
     openFiscalPeriod($this->tenant);
     $instalment = assignFee(Member::factory()->create(), feePlan(FeeFrequency::OneOff, '45.50'))->instalments->first();
     $link = $this->postJson("/api/v1/associations/instalments/{$instalment->id}/payment-link")->assertCreated()->json('data');
-    $sign = fn (string $amount, string $status): string => LocalFeePaymentGateway::signature($link['reference'], $amount, $status);
+    $body = fn (string $amount, string $status): array => ['reference' => $link['reference'], 'amount' => $amount, 'status' => $status];
+    $sign = fn (string $amount, string $status): string => LocalPaymentLinkGateway::sign((string) json_encode($body($amount, $status)), PaymentLinkService::credentials()['webhook_secret']);
 
-    $this->postJson('/api/v1/association-payments/callback', ['reference' => $link['reference'], 'amount' => '45.50', 'status' => 'paid'], [LocalFeePaymentGateway::SignatureHeader => 'forged'])->assertForbidden();
-    $this->postJson('/api/v1/association-payments/callback', ['reference' => $link['reference'], 'amount' => '1.00', 'status' => 'paid'], [LocalFeePaymentGateway::SignatureHeader => $sign('1.00', 'paid')])->assertUnprocessable();
+    $this->postJson('/api/v1/association-payments/callback', $body('45.50', 'paid'), [LocalPaymentLinkGateway::SignatureHeader => 'forged'])->assertForbidden();
+    $this->postJson('/api/v1/association-payments/callback', $body('1.00', 'paid'), [LocalPaymentLinkGateway::SignatureHeader => $sign('1.00', 'paid')])->assertUnprocessable();
 
     expect(FeePayment::query()->count())->toBe(0);
 
     foreach ([1, 2] as $delivery) {
-        $this->postJson('/api/v1/association-payments/callback', ['reference' => $link['reference'], 'amount' => '45.50', 'status' => 'paid'], [LocalFeePaymentGateway::SignatureHeader => $sign('45.50', 'paid')])
+        $this->postJson('/api/v1/association-payments/callback', $body('45.50', 'paid'), [LocalPaymentLinkGateway::SignatureHeader => $sign('45.50', 'paid')])
             ->assertOk()->assertJsonPath('data.status', 'paid');
     }
 

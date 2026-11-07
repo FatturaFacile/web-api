@@ -6,9 +6,15 @@ namespace Modules\Integrations\Contracts;
 
 use Illuminate\Http\Request;
 use Modules\Integrations\DTOs\PaymentEvent;
+use Modules\Integrations\DTOs\PaymentLinkCreated;
+use Modules\Integrations\DTOs\PaymentLinkRequest;
 use Modules\Integrations\Exceptions\PaymentGatewayException;
-use Modules\Integrations\Models\PaymentLink;
 
+/**
+ * The single contract of the online payment providers, shared by the payment links of the invoices and by the fees of
+ * the associations. A driver knows nothing of the document being paid: it opens a hosted payment page for an amount
+ * and reads the provider's confirmation.
+ */
 interface PaymentLinkGateway
 {
     public function name(): string;
@@ -17,17 +23,16 @@ interface PaymentLinkGateway
      * Asks the provider for a hosted payment page. No card data ever reaches this application.
      *
      * @param  array<string, string>  $credentials
-     * @return array{reference: string, url: string}
      *
      * @throws PaymentGatewayException when the provider refuses
      */
-    public function createLink(PaymentLink $link, string $description, array $credentials): array;
+    public function createLink(PaymentLinkRequest $request, array $credentials): PaymentLinkCreated;
 
     /**
      * Reads a webhook call, after checking that it really comes from the provider.
      *
      * @param  array<string, string>  $credentials
-     * @return PaymentEvent|null null for events that do not concern a completed payment
+     * @return PaymentEvent|null null for events that do not concern the outcome of a payment
      *
      * @throws PaymentGatewayException when the signature is missing or wrong
      */
