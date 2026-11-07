@@ -7,7 +7,9 @@ use Modules\ServiceManagement\Http\Controllers\AgentToolsController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskAutomationController;
 use Modules\ServiceManagement\Http\Controllers\HelpdeskTicketController;
 use Modules\ServiceManagement\Http\Controllers\ITSMController;
+use Modules\ServiceManagement\Http\Controllers\KnowledgeBaseController;
 use Modules\ServiceManagement\Http\Controllers\PortalHelpdeskController;
+use Modules\ServiceManagement\Http\Controllers\PortalKnowledgeBaseController;
 use Modules\ServiceManagement\Http\Controllers\ServiceContractController;
 use Modules\ServiceManagement\Http\Controllers\SupportMailboxController;
 use Modules\ServiceManagement\Http\Controllers\TicketController;
@@ -23,6 +25,14 @@ Route::prefix('api/v1/portal/helpdesk')
         Route::get('/{token}/tickets/{ticket}', [PortalHelpdeskController::class, 'show'])->name('api.v1.portal.helpdesk.tickets.show');
         Route::post('/{token}/tickets/{ticket}/reply', [PortalHelpdeskController::class, 'reply'])->name('api.v1.portal.helpdesk.tickets.reply');
         Route::get('/{token}/tickets/{ticket}/attachments/{attachment}', [PortalHelpdeskController::class, 'downloadAttachment'])->name('api.v1.portal.helpdesk.attachments.show');
+    });
+
+Route::prefix('api/v1/portal/kb')
+    ->middleware(['api', 'throttle:60,1'])
+    ->group(function (): void {
+        Route::get('/{token}/categories', [PortalKnowledgeBaseController::class, 'categories'])->name('api.v1.portal.kb.categories');
+        Route::get('/{token}/articles', [PortalKnowledgeBaseController::class, 'articles'])->name('api.v1.portal.kb.articles.index');
+        Route::get('/{token}/articles/{id}', [PortalKnowledgeBaseController::class, 'show'])->name('api.v1.portal.kb.articles.show');
     });
 
 Route::prefix('api/v1/esm')
@@ -78,6 +88,22 @@ Route::prefix('api/v1/esm')
         Route::post('/helpdesk/views', [AgentToolsController::class, 'storeView'])->name('api.v1.esm.helpdesk.views.store');
         Route::patch('/helpdesk/views/{id}', [AgentToolsController::class, 'updateView'])->name('api.v1.esm.helpdesk.views.update');
         Route::delete('/helpdesk/views/{id}', [AgentToolsController::class, 'destroyView'])->name('api.v1.esm.helpdesk.views.destroy');
+
+        // Helpdesk: knowledge base
+        Route::get('/kb/categories', [KnowledgeBaseController::class, 'categories'])->name('api.v1.esm.kb.categories.index');
+        Route::post('/kb/categories', [KnowledgeBaseController::class, 'storeCategory'])->name('api.v1.esm.kb.categories.store');
+        Route::patch('/kb/categories/{id}', [KnowledgeBaseController::class, 'updateCategory'])->name('api.v1.esm.kb.categories.update');
+        Route::delete('/kb/categories/{id}', [KnowledgeBaseController::class, 'destroyCategory'])->name('api.v1.esm.kb.categories.destroy');
+        Route::get('/kb/articles', [KnowledgeBaseController::class, 'articles'])->name('api.v1.esm.kb.articles.index');
+        Route::post('/kb/articles', [KnowledgeBaseController::class, 'storeArticle'])->name('api.v1.esm.kb.articles.store');
+        Route::get('/kb/articles/{id}', [KnowledgeBaseController::class, 'showArticle'])->name('api.v1.esm.kb.articles.show');
+        Route::patch('/kb/articles/{id}', [KnowledgeBaseController::class, 'updateArticle'])->name('api.v1.esm.kb.articles.update');
+        Route::delete('/kb/articles/{id}', [KnowledgeBaseController::class, 'destroyArticle'])->name('api.v1.esm.kb.articles.destroy');
+        Route::get('/kb/articles/{id}/versions', [KnowledgeBaseController::class, 'versions'])->name('api.v1.esm.kb.articles.versions');
+        Route::post('/kb/articles/{id}/versions/{version}/restore', [KnowledgeBaseController::class, 'restoreVersion'])->whereNumber('version')->name('api.v1.esm.kb.articles.versions.restore');
+        Route::get('/tickets/{ticket}/knowledge-links', [KnowledgeBaseController::class, 'ticketLinks'])->name('api.v1.esm.tickets.knowledge-links.index');
+        Route::post('/tickets/{ticket}/knowledge-links', [KnowledgeBaseController::class, 'linkTicket'])->name('api.v1.esm.tickets.knowledge-links.store');
+        Route::delete('/tickets/{ticket}/knowledge-links/{id}', [KnowledgeBaseController::class, 'unlinkTicket'])->name('api.v1.esm.tickets.knowledge-links.destroy');
 
         // Helpdesk: support mailboxes
         Route::get('/helpdesk/mailboxes', [SupportMailboxController::class, 'index'])->name('api.v1.esm.helpdesk.mailboxes.index');

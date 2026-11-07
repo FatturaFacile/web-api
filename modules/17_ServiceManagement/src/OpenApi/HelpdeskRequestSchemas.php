@@ -146,4 +146,24 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'is_shared', type: 'boolean'),
     new OA\Property(property: 'filters', type: 'object', example: ['status' => 'open,pending_customer', 'sla_state' => 'breached', 'team_id' => '0190c1d2-0000-7000-8000-000000000000']),
 ])]
+#[OA\Schema(schema: 'HelpdeskSaveKnowledgeCategoryRequest', description: 'Request payload validated by SaveKnowledgeCategoryRequest', type: 'object', properties: [
+    new OA\Property(property: 'name', type: 'string', maxLength: 150),
+    new OA\Property(property: 'parent_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'visibility', type: 'string', enum: ['internal', 'public']),
+    new OA\Property(property: 'position', type: 'integer'),
+])]
+#[OA\Schema(schema: 'HelpdeskSaveKnowledgeArticleRequest', description: 'Request payload validated by SaveKnowledgeArticleRequest. Publishing a public article needs a service manager.', type: 'object', properties: [
+    new OA\Property(property: 'title', type: 'string', maxLength: 200),
+    new OA\Property(property: 'summary', type: 'string', nullable: true),
+    new OA\Property(property: 'content', type: 'string'),
+    new OA\Property(property: 'knowledge_category_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'category_id', type: 'string', format: 'uuid', nullable: true, description: 'Service category the article helps with'),
+    new OA\Property(property: 'visibility', type: 'string', enum: ['internal', 'public']),
+    new OA\Property(property: 'is_published', type: 'boolean'),
+    new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
+    new OA\Property(property: 'change_note', type: 'string', maxLength: 500, nullable: true),
+])]
+#[OA\Schema(schema: 'HelpdeskLinkKnowledgeArticleRequest', description: 'Request payload validated by LinkKnowledgeArticleRequest', required: ['article_id'], type: 'object', properties: [
+    new OA\Property(property: 'article_id', type: 'string', format: 'uuid'),
+])]
 final class HelpdeskRequestSchemas {}

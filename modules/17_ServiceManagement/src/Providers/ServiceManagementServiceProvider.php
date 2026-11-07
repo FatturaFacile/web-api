@@ -57,6 +57,8 @@ use Modules\ServiceManagement\Models\CannedResponse;
 use Modules\ServiceManagement\Models\ChangeRequest;
 use Modules\ServiceManagement\Models\HelpdeskSetting;
 use Modules\ServiceManagement\Models\Incident;
+use Modules\ServiceManagement\Models\KnowledgeArticle;
+use Modules\ServiceManagement\Models\KnowledgeCategory;
 use Modules\ServiceManagement\Models\Macro;
 use Modules\ServiceManagement\Models\RoutingRule;
 use Modules\ServiceManagement\Models\SavedView;
@@ -68,6 +70,7 @@ use Modules\ServiceManagement\Policies\AgentToolPolicy;
 use Modules\ServiceManagement\Policies\ChangeRequestPolicy;
 use Modules\ServiceManagement\Policies\HelpdeskConfigurationPolicy;
 use Modules\ServiceManagement\Policies\IncidentPolicy;
+use Modules\ServiceManagement\Policies\KnowledgeArticlePolicy;
 use Modules\ServiceManagement\Policies\TicketPolicy;
 use Modules\ServiceManagement\Policies\WorkOrderPolicy;
 use Modules\ServiceManagement\Services\IncidentManagementService;
@@ -100,7 +103,9 @@ final class ServiceManagementServiceProvider extends ServiceProvider
         Gate::policy(ChangeRequest::class, ChangeRequestPolicy::class);
         Gate::policy(WorkOrder::class, WorkOrderPolicy::class);
 
-        foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class] as $configurationModel) {
+        Gate::policy(KnowledgeArticle::class, KnowledgeArticlePolicy::class);
+
+        foreach ([SupportMailbox::class, RoutingRule::class, BusinessHoursCalendar::class, HelpdeskSetting::class, ServiceTeam::class, KnowledgeCategory::class] as $configurationModel) {
             Gate::policy($configurationModel, HelpdeskConfigurationPolicy::class);
         }
 

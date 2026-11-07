@@ -159,4 +159,52 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'owner_user_id', type: 'string', format: 'uuid', nullable: true),
     new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 ])]
+#[OA\Schema(schema: 'HelpdeskKnowledgeCategoryResource', description: 'JSON representation produced by KnowledgeCategoryResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'parent_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'visibility', type: 'string', enum: ['internal', 'public']),
+    new OA\Property(property: 'position', type: 'integer'),
+])]
+#[OA\Schema(schema: 'HelpdeskKnowledgeArticleResource', description: 'JSON representation produced by KnowledgeArticleResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'article_number', type: 'string'),
+    new OA\Property(property: 'title', type: 'string'),
+    new OA\Property(property: 'summary', type: 'string', nullable: true),
+    new OA\Property(property: 'content', type: 'string'),
+    new OA\Property(property: 'knowledge_category_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'category_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'visibility', type: 'string', enum: ['internal', 'public']),
+    new OA\Property(property: 'is_published', type: 'boolean'),
+    new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'current_version', type: 'integer'),
+    new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
+    new OA\Property(property: 'views_count', type: 'integer'),
+    new OA\Property(property: 'helpful_count', type: 'integer'),
+    new OA\Property(property: 'author_user_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskKnowledgeArticleVersionResource', description: 'JSON representation produced by KnowledgeArticleVersionResource', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'article_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'version', type: 'integer'),
+    new OA\Property(property: 'title', type: 'string'),
+    new OA\Property(property: 'summary', type: 'string', nullable: true),
+    new OA\Property(property: 'content', type: 'string'),
+    new OA\Property(property: 'author_user_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'change_note', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'HelpdeskPortalKnowledgeArticleResource', description: 'JSON representation produced by PortalKnowledgeArticleResource; content only when a single article is read', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'article_number', type: 'string'),
+    new OA\Property(property: 'title', type: 'string'),
+    new OA\Property(property: 'summary', type: 'string', nullable: true),
+    new OA\Property(property: 'content', type: 'string'),
+    new OA\Property(property: 'knowledge_category_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'string')),
+    new OA\Property(property: 'published_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
 final class HelpdeskResponseSchemas {}

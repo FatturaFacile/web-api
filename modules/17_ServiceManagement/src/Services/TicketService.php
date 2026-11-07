@@ -21,9 +21,12 @@ use Modules\ServiceManagement\Events\TicketClosedEvent;
 use Modules\ServiceManagement\Events\TicketCreatedEvent;
 use Modules\ServiceManagement\Events\TicketEscalatedEvent;
 use Modules\ServiceManagement\Events\TicketResolvedEvent;
+use Modules\ServiceManagement\Exceptions\HelpdeskRuleViolation;
+use Modules\ServiceManagement\Models\KnowledgeArticle;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\Ticket;
 use Modules\ServiceManagement\Models\TicketTimeEntry;
+use Modules\ServiceManagement\Services\Helpdesk\KnowledgeBaseService;
 use Modules\ServiceManagement\Services\Helpdesk\TicketRoutingEngine;
 
 final readonly class TicketService implements TicketServiceInterface
@@ -33,6 +36,7 @@ final readonly class TicketService implements TicketServiceInterface
         private AuditLedgerInterface $auditLedger,
         private SLAManagementServiceInterface $slaService,
         private TicketRoutingEngine $routingEngine,
+        private KnowledgeBaseService $knowledgeBase,
     ) {}
 
     public function createTicket(CreateTicketDTO $dto, ?string $actorUserId = null): Ticket
@@ -95,7 +99,7 @@ final readonly class TicketService implements TicketServiceInterface
                 status: $ticket->status,
                 customerId: $ticket->customer_id,
                 tenantId: $ticket->tenant_id,
-                companyId: $ticket->company_id
+                companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
 
             event(new HelpdeskTicketChanged($ticket->id, $ticket->tenant_id, HelpdeskTicketChanged::Created, $actorUserId));
@@ -135,7 +139,7 @@ final readonly class TicketService implements TicketServiceInterface
                 assignedToId: $dto->assignedToId,
                 serviceTeamId: $ticket->assigned_team_id,
                 tenantId: $ticket->tenant_id,
-                companyId: $ticket->company_id
+                companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
 
             return $ticket;
@@ -173,7 +177,7 @@ final readonly class TicketService implements TicketServiceInterface
                 reason: $dto->reason,
                 escalationLevel: $dto->escalationLevel,
                 tenantId: $ticket->tenant_id,
-                companyId: $ticket->company_id
+                companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
 
             return $ticket;
@@ -182,11 +186,15 @@ final readonly class TicketService implements TicketServiceInterface
 
     public function resolveTicket(ResolveTicketDTO $dto, ?string $actorUserId = null): Ticket
     {
-        return DB::transaction(function () use ($dto) {
-            $ticket = Ticket::findOrFail($dto->ticketId);
+        return DB::transaction(function () use ($dto, $actorUserId) {
+            $ticket = Ticket::query()->whereKey($dto->ticketId)->lockForUpdate()->firstOrFail();
 
             if (in_array($ticket->status, ['resolved', 'closed'], true)) {
-                throw new InvalidArgumentException("Ticket {$ticket->ticket_number} is already {$ticket->status}.");
+                throw new HelpdeskRuleViolation("Ticket {$ticket->ticket_number} is already {$ticket->status}.");
+            }
+
+            if ($ticket->merged_into_ticket_id !== null) {
+                throw new HelpdeskRuleViolation("Ticket {$ticket->ticket_number} was merged into another ticket.");
             }
 
             $oldValues = ['status' => $ticket->status];
@@ -197,7 +205,17 @@ final readonly class TicketService implements TicketServiceInterface
                 'root_cause' => $dto->rootCause,
                 'knowledge_article_id' => $dto->knowledgeArticleId,
                 'resolved_at' => now(),
+                'status_changed_at' => now(),
+                'sla_paused_at' => null,
             ]);
+
+            if ($dto->knowledgeArticleId !== null) {
+                $article = KnowledgeArticle::query()->where('tenant_id', $ticket->tenant_id)->find($dto->knowledgeArticleId)
+                    ?? throw new HelpdeskRuleViolation('The knowledge base article belongs to another company.');
+                $this->knowledgeBase->link($ticket, $article, $actorUserId ?? $dto->resolvedBy);
+            }
+
+            event(new HelpdeskTicketChanged($ticket->id, $ticket->tenant_id, HelpdeskTicketChanged::StatusChanged, $actorUserId, ['from' => $oldValues['status'], 'to' => 'resolved']));
 
             $this->auditLedger->record(
                 'TICKET_RESOLVED',
@@ -213,7 +231,7 @@ final readonly class TicketService implements TicketServiceInterface
                 resolutionNotes: $dto->resolutionNotes,
                 rootCause: $dto->rootCause,
                 tenantId: $ticket->tenant_id,
-                companyId: $ticket->company_id
+                companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
 
             return $ticket;
@@ -222,8 +240,8 @@ final readonly class TicketService implements TicketServiceInterface
 
     public function closeTicket(string $ticketId, string $closedBy, ?string $actorUserId = null): Ticket
     {
-        return DB::transaction(function () use ($ticketId, $closedBy) {
-            $ticket = Ticket::findOrFail($ticketId);
+        return DB::transaction(function () use ($ticketId, $closedBy, $actorUserId) {
+            $ticket = Ticket::query()->whereKey($ticketId)->lockForUpdate()->firstOrFail();
 
             if ($ticket->status === 'closed') {
                 return $ticket;
@@ -234,7 +252,12 @@ final readonly class TicketService implements TicketServiceInterface
             $ticket->update([
                 'status' => 'closed',
                 'closed_at' => now(),
+                'resolved_at' => $ticket->resolved_at ?? now(),
+                'status_changed_at' => now(),
+                'sla_paused_at' => null,
             ]);
+
+            event(new HelpdeskTicketChanged($ticket->id, $ticket->tenant_id, HelpdeskTicketChanged::StatusChanged, $actorUserId, ['from' => $oldValues['status'], 'to' => 'closed']));
 
             $this->auditLedger->record(
                 'TICKET_CLOSED',
@@ -249,7 +272,7 @@ final readonly class TicketService implements TicketServiceInterface
                 ticketNumber: $ticket->ticket_number,
                 closedBy: $closedBy,
                 tenantId: $ticket->tenant_id,
-                companyId: $ticket->company_id
+                companyId: $ticket->company_id ?? $ticket->tenant_id
             ));
 
             return $ticket;
