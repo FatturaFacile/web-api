@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Listeners;
 
 use App\Actions\Purchases\RecordSupplierPayment;
+use App\Models\Invoice;
 use App\Models\PassiveInvoice;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
@@ -20,6 +21,7 @@ use Modules\Treasury\Events\PaymentExecutedEvent;
 use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Models\PaymentBatch;
 use Modules\Treasury\Models\PaymentLine;
+use Ramsey\Uuid\Uuid;
 
 /**
  * Posts what the bank confirmed. PaymentExecutedEvent exists only after a pain.002 or a manual confirmation, and names
@@ -46,9 +48,30 @@ final readonly class TreasuryAccountingListener
         }
     }
 
+    /**
+     * A collection of an invoice becomes a payment of that invoice (see the Invoicing collection listener), and the
+     * payment ledger posts it against the receivable of the invoice: posting it here too would collect it twice. Only a
+     * collection without an invoice is posted here, once per receipt.
+     */
     public function handleCollectionReceived(CollectionReceivedEvent $event): void
     {
-        $sourceId = (string) Str::uuid5(Str::NAMESPACE_OID ?? '6ba7b812-9dad-11d1-80b4-00c04fd430c8', $event->getEventId());
+        $settlesInvoice = $event->invoiceId !== null
+            && Invoice::withoutGlobalScopes()->where('tenant_id', $event->tenantId)->whereKey($event->invoiceId)->exists();
+
+        if ($settlesInvoice) {
+            return;
+        }
+
+        $sourceId = Uuid::uuid5(Uuid::NAMESPACE_OID, $event->getEventId())->toString();
+        $alreadyPosted = JournalEntry::withoutGlobalScopes()->where('tenant_id', $event->tenantId)
+            ->where('source_document_type', 'treasury_collection')
+            ->where('source_document_id', $sourceId)
+            ->exists();
+
+        if ($alreadyPosted) {
+            return;
+        }
+
         $date = CarbonImmutable::parse($event->collectionDate)->toDateString();
         $period = $this->periods->forDate($event->tenantId, $date);
         $amount = number_format($event->collectedAmount, 2, '.', '');

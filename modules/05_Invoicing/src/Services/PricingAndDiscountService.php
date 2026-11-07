@@ -6,6 +6,7 @@ namespace Modules\Invoicing\Services;
 
 use App\Models\Product;
 use App\Services\Catalog\PriceResolver;
+use App\Services\Sales\VatSummaryCalculator;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Models\CustomerGroup;
 use Modules\Invoicing\Models\DiscountPolicy;
@@ -13,7 +14,8 @@ use Modules\Invoicing\Models\DiscountPolicy;
 final class PricingAndDiscountService implements PricingAndDiscountServiceInterface
 {
     public function __construct(
-        private readonly PriceResolver $prices = new PriceResolver
+        private readonly PriceResolver $prices = new PriceResolver,
+        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator
     ) {}
 
     /**
@@ -89,6 +91,9 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
     }
 
     /**
+     * The tax is computed per VAT rate on the summed net of its lines (see VatSummaryCalculator), never as a sum of
+     * rounded line taxes, so it matches the summary of the electronic invoice.
+     *
      * @param  array<int, array<string, mixed>>  $items
      * @return array{subtotal: float, discount_total: float, net_total: float, tax_total: float, gross_total: float}
      */
@@ -96,7 +101,7 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
     {
         $subtotal = 0.0;
         $discountTotal = 0.0;
-        $taxTotal = 0.0;
+        $vatEntries = [];
 
         foreach ($items as $item) {
             $qty = (float) ($item['quantity'] ?? 1.0);
@@ -107,12 +112,13 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
             $lineRaw = $qty * $unitPrice;
             $lineDiscount = round(($lineRaw * $discountPct) / 100.0, 2);
             $lineNet = round($lineRaw - $lineDiscount, 2);
-            $lineTax = round(($lineNet * $taxRate) / 100.0, 2);
+            $vatEntries[] = ['rate' => $taxRate, 'taxable' => $lineNet];
 
             $subtotal += $lineRaw;
             $discountTotal += $lineDiscount;
-            $taxTotal += $lineTax;
         }
+
+        $taxTotal = (float) $this->vat->totalTax($vatEntries);
 
         $netTotal = round($subtotal - $discountTotal, 2);
         $grossTotal = round($netTotal + $taxTotal, 2);

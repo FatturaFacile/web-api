@@ -12,6 +12,7 @@ use InvalidArgumentException;
 use Modules\Treasury\Contracts\ReceivableCollectionServiceInterface;
 use Modules\Treasury\Events\CollectionReceivedEvent;
 use Modules\Treasury\Models\ReceivableCollection;
+use Ramsey\Uuid\Uuid;
 
 final readonly class ReceivableCollectionService implements ReceivableCollectionServiceInterface
 {
@@ -109,9 +110,18 @@ final readonly class ReceivableCollectionService implements ReceivableCollection
                 throw new InvalidArgumentException('Collected amount must be positive.');
             }
 
+            $received = number_format($amount, 2, '.', '');
             $before = $collection->toArray();
-            $newCollected = (float) $collection->collected_amount + $amount;
-            $status = $newCollected >= (float) $collection->expected_amount ? 'collected' : 'partial';
+            $newCollected = bcadd(number_format((float) $collection->collected_amount, 2, '.', ''), $received, 2);
+            $expected = number_format((float) $collection->expected_amount, 2, '.', '');
+
+            // The invoice side (RecordPayment) refuses more than the invoice still owes; the collection refuses more
+            // than it expects, so an over-collection never reaches either ledger.
+            if (bccomp($newCollected, $expected, 2) > 0) {
+                throw new InvalidArgumentException('Collected amount exceeds the expected amount of the collection.');
+            }
+
+            $status = bccomp($newCollected, $expected, 2) >= 0 ? 'collected' : 'partial';
 
             $collection->update([
                 'collected_amount' => $newCollected,
@@ -123,10 +133,12 @@ final readonly class ReceivableCollectionService implements ReceivableCollection
                 collectionId: (string) $collection->id,
                 customerId: (string) $collection->customer_id,
                 invoiceId: $collection->invoice_id ? (string) $collection->invoice_id : null,
-                collectedAmount: $amount,
+                collectedAmount: (float) $received,
                 collectionDate: $collectionDate,
                 tenantId: (string) $collection->tenant_id,
-                companyId: (string) ($collection->company_id ?? '')
+                companyId: (string) ($collection->company_id ?? ''),
+                // One id per receipt (the collected total only grows), so consumers can recognise a redelivery.
+                eventId: Uuid::uuid5(Uuid::NAMESPACE_OID, 'treasury-collection:'.$collection->id.':'.$newCollected)->toString()
             );
             $this->dispatcher->publish($event);
             event($event);

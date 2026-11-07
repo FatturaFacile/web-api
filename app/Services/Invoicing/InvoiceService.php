@@ -6,6 +6,7 @@ namespace App\Services\Invoicing;
 
 use App\Models\Invoice;
 use App\Services\Sales\DocumentNumberingService;
+use App\Services\Sales\VatSummaryCalculator;
 use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -18,7 +19,8 @@ class InvoiceService
         private readonly TenantContext $tenantContext,
         private readonly QrBillGeneratorService $qrBillGenerator,
         private readonly DocumentNumberingService $numbering,
-        private readonly PostInvoiceAction $postInvoice
+        private readonly PostInvoiceAction $postInvoice,
+        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator
     ) {}
 
     /**
@@ -38,7 +40,7 @@ class InvoiceService
             unset($data['items']);
 
             $totalNet = 0.0;
-            $totalTax = 0.0;
+            $vatEntries = [];
 
             $computedItems = [];
             foreach ($itemsData as $item) {
@@ -52,10 +54,9 @@ class InvoiceService
                     $lineSubtotal -= ($lineSubtotal * ($discount / 100.0));
                 }
                 $lineSubtotal = round($lineSubtotal, 2);
-                $lineTax = round($lineSubtotal * ($taxRate / 100.0), 2);
 
                 $totalNet += $lineSubtotal;
-                $totalTax += $lineTax;
+                $vatEntries[] = ['rate' => $taxRate, 'taxable' => $lineSubtotal];
 
                 $computedItems[] = [
                     'product_id' => $item['product_id'] ?? null,
@@ -68,6 +69,8 @@ class InvoiceService
                 ];
             }
 
+            // VAT per rate on the summed net, like the summary of the electronic invoice
+            $totalTax = (float) $this->vat->totalTax($vatEntries);
             $unroundedGross = $totalNet + $totalTax;
             $roundingAmount = 0.0;
             $totalGross = $unroundedGross;

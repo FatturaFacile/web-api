@@ -5,23 +5,32 @@ declare(strict_types=1);
 namespace Modules\Invoicing\Services;
 
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Models\CustomerLedgerEntry;
 use Modules\Invoicing\Models\SalesInvoice;
 
+/**
+ * The running balance of a customer. Each entry carries the balance after it, read from the previous entry: the entries
+ * of one customer are written one at a time (a transaction-scoped advisory lock on tenant and customer), and the previous
+ * entry is the last by creation time and then by id, so two concurrent postings never read the same previous balance.
+ */
 final class CustomerLedgerService implements CustomerLedgerServiceInterface
 {
     public function recordInvoiceEntry(SalesInvoice $invoice, string $userId): CustomerLedgerEntry
+    {
+        return DB::transaction(fn (): CustomerLedgerEntry => $this->writeInvoiceEntry($invoice, $userId));
+    }
+
+    private function writeInvoiceEntry(SalesInvoice $invoice, string $userId): CustomerLedgerEntry
     {
         $tenantId = (string) $invoice->tenant_id;
         $customerId = (string) $invoice->contact_id;
         $gross = (float) $invoice->amountDue();
 
-        $previousBalance = (float) CustomerLedgerEntry::where('tenant_id', $tenantId)
-            ->where('customer_id', $customerId)
-            ->orderBy('created_at', 'desc')
-            ->value('balance_after') ?? 0.0;
+        $this->lockCustomer($tenantId, $customerId);
+        $previousBalance = $this->previousBalance($tenantId, $customerId);
 
         $newBalance = round($previousBalance + $gross, 2);
 
@@ -44,20 +53,23 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
             'cleared_amount' => 0.0,
             'gl_journal_entry_id' => $invoice->gl_journal_entry_id,
             'notes' => 'Customer invoice posted: '.$invoice->invoice_number,
-            'created_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
+            'created_by' => Str::isUuid($userId) ? $userId : null,
         ]);
     }
 
     public function recordCreditNoteEntry(SalesInvoice $creditNote, string $userId): CustomerLedgerEntry
     {
+        return DB::transaction(fn (): CustomerLedgerEntry => $this->writeCreditNoteEntry($creditNote, $userId));
+    }
+
+    private function writeCreditNoteEntry(SalesInvoice $creditNote, string $userId): CustomerLedgerEntry
+    {
         $tenantId = (string) $creditNote->tenant_id;
         $customerId = (string) $creditNote->contact_id;
         $gross = (float) $creditNote->amountDue();
 
-        $previousBalance = (float) CustomerLedgerEntry::where('tenant_id', $tenantId)
-            ->where('customer_id', $customerId)
-            ->orderBy('created_at', 'desc')
-            ->value('balance_after') ?? 0.0;
+        $this->lockCustomer($tenantId, $customerId);
+        $previousBalance = $this->previousBalance($tenantId, $customerId);
 
         $newBalance = round($previousBalance - $gross, 2);
 
@@ -81,7 +93,7 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
             'cleared_at' => now(),
             'gl_journal_entry_id' => $creditNote->gl_journal_entry_id,
             'notes' => 'Credit note issued: '.$creditNote->invoice_number,
-            'created_by' => Str::isUuid($userId) ? $userId : (string) Str::uuid7(),
+            'created_by' => Str::isUuid($userId) ? $userId : null,
         ]);
     }
 
@@ -92,10 +104,13 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
         string $tenantId,
         ?string $invoiceId = null
     ): CustomerLedgerEntry {
-        $previousBalance = (float) CustomerLedgerEntry::where('tenant_id', $tenantId)
-            ->where('customer_id', $customerId)
-            ->orderBy('created_at', 'desc')
-            ->value('balance_after') ?? 0.0;
+        return DB::transaction(fn (): CustomerLedgerEntry => $this->writePaymentEntry($customerId, $amount, $paymentReference, $tenantId, $invoiceId));
+    }
+
+    private function writePaymentEntry(string $customerId, float $amount, string $paymentReference, string $tenantId, ?string $invoiceId): CustomerLedgerEntry
+    {
+        $this->lockCustomer($tenantId, $customerId);
+        $previousBalance = $this->previousBalance($tenantId, $customerId);
 
         $newBalance = round($previousBalance - $amount, 2);
 
@@ -104,6 +119,7 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
             $openEntry = CustomerLedgerEntry::where('tenant_id', $tenantId)
                 ->where('invoice_id', $invoiceId)
                 ->where('entry_type', 'invoice')
+                ->lockForUpdate()
                 ->first();
 
             if ($openEntry !== null) {
@@ -136,6 +152,28 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
             'cleared_at' => now(),
             'notes' => 'Customer payment received: '.$paymentReference,
         ]);
+    }
+
+    /**
+     * Serializes the entries of one customer until the surrounding transaction ends. PostgreSQL only: other drivers
+     * (SQLite in tests) already write one transaction at a time.
+     */
+    private function lockCustomer(string $tenantId, string $customerId): void
+    {
+        if (DB::connection()->getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['customer_ledger:'.$tenantId.':'.$customerId]);
+    }
+
+    private function previousBalance(string $tenantId, string $customerId): float
+    {
+        return (float) (CustomerLedgerEntry::where('tenant_id', $tenantId)
+            ->where('customer_id', $customerId)
+            ->orderBy('created_at', 'desc')
+            ->orderBy('id', 'desc')
+            ->value('balance_after') ?? 0.0);
     }
 
     /**

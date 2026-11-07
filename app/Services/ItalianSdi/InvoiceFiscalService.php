@@ -6,6 +6,7 @@ namespace App\Services\ItalianSdi;
 
 use App\Models\Contact;
 use App\Models\Tenant;
+use App\Services\Sales\VatSummaryCalculator;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Facades\Date;
@@ -37,7 +38,10 @@ final class InvoiceFiscalService
         'enasarco_enabled', 'enasarco_agent_type',
     ];
 
-    public function __construct(private readonly DeclarationOfIntentService $declarations) {}
+    public function __construct(
+        private readonly DeclarationOfIntentService $declarations,
+        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator
+    ) {}
 
     /**
      * @param  bool  $atIssue  A declaration of intent takes the VAT off the lines only at emission, inside its transaction: a
@@ -67,19 +71,25 @@ final class InvoiceFiscalService
         }
 
         $net = '0';
-        $tax = '0';
+        $vatEntries = [];
         $vatFree = '0';
         $highestRate = '0';
 
         foreach ($invoice->items as $item) {
             $net = Decimal::add($net, (string) $item->line_total);
-            $tax = Decimal::add($tax, $this->percentOf((string) $item->line_total, (string) $item->tax_rate));
+            $vatEntries[] = ['rate' => (string) $item->tax_rate, 'taxable' => (string) $item->line_total];
             $vatFree = Decimal::isZero((string) $item->tax_rate) ? Decimal::add($vatFree, (string) $item->line_total) : $vatFree;
             $highestRate = Decimal::compare((string) $item->tax_rate, $highestRate) > 0 ? (string) $item->tax_rate : $highestRate;
         }
 
         $fund = $this->applyFund($invoice, $net, $highestRate, $regime->isForfettario() || $hasDeclaration);
-        $tax = Decimal::add($tax, (string) $invoice->fund_vat_amount);
+
+        if (Decimal::isPositive($fund)) {
+            $vatEntries[] = ['rate' => (string) $invoice->fund_vat_rate, 'taxable' => $fund];
+        }
+
+        // The summary of the XML adds the contribution to the taxable amount of its rate: the tax follows the same groups.
+        $tax = $this->vat->totalTax($vatEntries);
 
         if ($invoice->fund_vat_rate !== null && Decimal::isZero((string) $invoice->fund_vat_rate)) {
             $vatFree = Decimal::add($vatFree, $fund);

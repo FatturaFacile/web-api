@@ -20,7 +20,6 @@ final class IssueCreditNoteRequest extends FormRequest
     {
         return [
             'original_invoice_id' => ['required', 'uuid'],
-            'invoice_number' => ['nullable', 'string', 'max:50'],
             'date' => ['nullable', 'date'],
             'notes' => ['nullable', 'string'],
             'items' => ['required', 'array', 'min:1'],

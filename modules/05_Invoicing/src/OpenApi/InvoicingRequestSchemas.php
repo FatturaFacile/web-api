@@ -83,7 +83,6 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'invoice_number', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'invoice_type', type: 'string', nullable: true, enum: ['standard', 'credit_note', 'proforma']),
         new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
@@ -143,13 +142,26 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'InvoicingCreateInvoiceFromSourceRequest',
+    description: 'Request payload validated by CreateInvoiceFromSourceRequest: the only fields a caller may state when an invoice is generated from a sales order or a delivery note. Customer, lines and number come from the source document and the numbering service.',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'notes', type: 'string', nullable: true),
+        new OA\Property(property: 'payment_method', type: 'string', maxLength: 4, nullable: true),
+        new OA\Property(property: 'payment_terms', type: 'string', maxLength: 4, nullable: true),
+        new OA\Property(property: 'bank_name', type: 'string', nullable: true),
+        new OA\Property(property: 'bank_iban', type: 'string', maxLength: 34, nullable: true),
+    ]
+)]
+#[OA\Schema(
     schema: 'InvoicingIssueCreditNoteRequest',
     description: 'Request payload validated by IssueCreditNoteRequest',
     required: ['original_invoice_id', 'items'],
     type: 'object',
     properties: [
         new OA\Property(property: 'original_invoice_id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'invoice_number', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'date', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
         new OA\Property(property: 'items', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['description', 'quantity', 'unit_price'], properties: [new OA\Property(property: 'product_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'description', type: 'string', maxLength: 255), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'unit_price', type: 'number', minimum: 0), new OA\Property(property: 'tax_rate', type: 'number', minimum: 0, nullable: true), new OA\Property(property: 'discount_percentage', type: 'number', minimum: 0, maximum: 100, nullable: true)])),

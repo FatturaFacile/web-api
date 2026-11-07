@@ -10,10 +10,12 @@ use App\Models\InvoiceItem;
 use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\Subscription;
+use App\Models\Tenant;
 use App\Models\WorkOrder;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
+use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +31,7 @@ class ConvertToInvoice
         private readonly DocumentEventRecorder $events,
         private readonly PostInvoiceAction $postInvoice,
         private readonly ProductChargeCalculator $charges,
+        private readonly TenantClock $clock,
     ) {}
 
     /**
@@ -190,7 +193,7 @@ class ConvertToInvoice
     private function build(Model $source, array $lines, array $links, string $event, array $extra = []): Invoice
     {
         return DB::transaction(function () use ($source, $lines, $links, $event, $extra): Invoice {
-            $date = (string) ($extra['date'] ?? now()->toDateString());
+            $date = (string) ($extra['date'] ?? $this->clock->today(Tenant::query()->find($source->tenant_id))->toDateString());
             $payload = array_map(
                 fn (Model $line): array => $line->only(['product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage']),
                 $lines

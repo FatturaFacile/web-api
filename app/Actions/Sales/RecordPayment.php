@@ -21,14 +21,24 @@ class RecordPayment
     /**
      * Register a (partial) payment and re-derive the invoice's paid total and payment status.
      *
-     * A `bank_account_id` states that the caller moved the balance of that Treasury account itself.
+     * A `bank_account_id` states that the caller moved the balance of that Treasury account itself. With
+     * `unique_reference` the reference identifies the payment: when the invoice already has a payment with that reference
+     * (a collection delivered twice, say) that payment is returned and nothing is recorded again.
      *
-     * @param  array{amount: float|int|string, paid_at: string, payment_method?: ?string, reference?: ?string, notes?: ?string, type?: string, bank_statement_line_id?: ?string, bank_account_id?: ?string, ledger_options?: array{iban?: ?string, bank_balance_managed?: bool}}  $data
+     * @param  array{amount: float|int|string, paid_at: string, payment_method?: ?string, reference?: ?string, notes?: ?string, type?: string, bank_statement_line_id?: ?string, bank_account_id?: ?string, unique_reference?: bool, ledger_options?: array{iban?: ?string, bank_balance_managed?: bool}}  $data
      */
     public function execute(Invoice $invoice, array $data): Payment
     {
         return DB::transaction(function () use ($invoice, $data): Payment {
             $invoice = Invoice::lockForUpdate()->findOrFail($invoice->id);
+
+            if (! empty($data['unique_reference']) && ! empty($data['reference'])) {
+                $existing = $invoice->payments()->where('reference', $data['reference'])->first();
+
+                if ($existing !== null) {
+                    return $existing;
+                }
+            }
 
             if ($invoice->invoice_type === 'proforma') {
                 throw ValidationException::withMessages(['invoice' => __('sales.payment_on_proforma')]);
