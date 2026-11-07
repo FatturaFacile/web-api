@@ -28,9 +28,16 @@ use Modules\Payroll\Models\SalaryCertificate;
 use Modules\Payroll\Models\SwissPayrollSettings;
 use Modules\Payroll\Policies\EmployeeDocumentPolicy;
 use Modules\Payroll\Policies\PayrollPolicy;
+use Modules\Payroll\Swissdec\SalaryDeclarationTransmitter;
+use Modules\Payroll\Swissdec\UncertifiedTransmitterStub;
 
 final class PayrollServiceProvider extends ServiceProvider
 {
+    public function register(): void
+    {
+        $this->app->bind(SalaryDeclarationTransmitter::class, UncertifiedTransmitterStub::class);
+    }
+
     public function boot(): void
     {
         $this->app->booted(function (): void {

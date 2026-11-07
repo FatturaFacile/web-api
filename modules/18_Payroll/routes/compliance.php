@@ -4,7 +4,14 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Payroll\Http\Controllers\PayrollComplianceController;
+use Modules\Payroll\Http\Controllers\PayrollExtrasController;
 use Modules\Payroll\Http\Controllers\ShortTimeController;
+
+// The link of a payslip mail: public, limited, and it answers only with the date of birth of the employee.
+Route::post('api/v1/public/payslips/{token}', [PayrollExtrasController::class, 'openPayslipLink'])
+    ->middleware(['api', 'locale', 'throttle:20,1'])
+    ->where('token', '[A-Za-z0-9]{1,128}')
+    ->name('api.v1.public.payslips.open');
 
 Route::prefix('api/v1/payroll')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
@@ -44,4 +51,17 @@ Route::prefix('api/v1/payroll')
         Route::get('/construction/hours', [ShortTimeController::class, 'constructionHours'])->name('construction.hours');
         Route::get('/construction/joint-commission-report', [ShortTimeController::class, 'jointCommissionReport'])->name('construction.joint-commission-report');
         Route::get('/exports/joint-commission-report', [ShortTimeController::class, 'exportJointCommissionReport'])->name('exports.joint-commission-report');
+
+        // Salary declaration in ELM structure. Not certified: the transmission is a stub that sends nothing.
+        Route::get('/swissdec/status', [PayrollExtrasController::class, 'swissdecStatus'])->name('swissdec.status');
+        Route::get('/swissdec/declaration', [PayrollExtrasController::class, 'swissdecDeclaration'])->name('swissdec.declaration');
+        Route::get('/swissdec/readiness', [PayrollExtrasController::class, 'swissdecReadiness'])->name('swissdec.readiness');
+        Route::post('/swissdec/transmissions', [PayrollExtrasController::class, 'swissdecTransmit'])->name('swissdec.transmissions.store');
+
+        // Simulation, payslip delivery, payment files, reports
+        Route::post('/hiring-simulations', [PayrollExtrasController::class, 'simulateHiring'])->name('hiring-simulations.store');
+        Route::post('/runs/{id}/deliver-payslips', [PayrollExtrasController::class, 'deliverPayslips'])->name('runs.deliver-payslips');
+        Route::post('/runs/{id}/payment-batches', [PayrollExtrasController::class, 'createPaymentBatches'])->name('runs.payment-batches');
+        Route::get('/reports/labour-cost', [PayrollExtrasController::class, 'labourCost'])->name('reports.labour-cost');
+        Route::get('/children/allowances', [PayrollExtrasController::class, 'childAllowances'])->name('children.allowances');
     });
