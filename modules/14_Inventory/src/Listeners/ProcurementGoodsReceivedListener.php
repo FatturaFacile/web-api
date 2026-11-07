@@ -6,6 +6,7 @@ namespace Modules\Inventory\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Models\StockItem;
@@ -56,10 +57,8 @@ final readonly class ProcurementGoodsReceivedListener implements ShouldQueue
                 $item = StockItem::find($poLine->product_id);
             }
             if (! $item) {
-                $item = StockItem::first();
-            }
+                Log::warning('Goods receipt line without a stock item: no stock was moved.', ['purchase_order_line_id' => $line['purchase_order_line_id'] ?? null]);
 
-            if (! $item) {
                 continue;
             }
 

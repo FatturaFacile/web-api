@@ -6,6 +6,7 @@ namespace Modules\Inventory\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\Contracts\StockReservationServiceInterface;
 use Modules\Inventory\DTOs\StockReservationDTO;
@@ -52,10 +53,12 @@ final readonly class ProcurementIntegrationListener implements ShouldQueue
                 }
             }
             if (! $stockItem) {
-                $stockItem = StockItem::first();
+                Log::warning('Inventory receipt line without a stock item: no stock was moved.', ['receipt_id' => $event->receiptId, 'purchase_order_line_id' => $item['purchase_order_line_id'] ?? null]);
+
+                continue;
             }
 
-            if (! $stockItem || ($item['quantity'] ?? 0) <= 0) {
+            if (($item['quantity'] ?? 0) <= 0) {
                 continue;
             }
 
