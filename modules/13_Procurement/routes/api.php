@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Procurement\Http\Controllers\InvoiceApprovalController;
 use Modules\Procurement\Http\Controllers\PurchaseOrderController;
 use Modules\Procurement\Http\Controllers\PurchasePriceCheckController;
 use Modules\Procurement\Http\Controllers\PurchaseReceiptController;
@@ -55,4 +56,17 @@ Route::prefix('api/v1/procurement')
         Route::get('three-way-match', [ThreeWayMatchController::class, 'index'])->name('procurement.three-way-match.index');
         Route::post('price-checks', PurchasePriceCheckController::class)->name('procurement.price-checks');
         Route::post('three-way-match/execute', [ThreeWayMatchController::class, 'execute'])->name('procurement.three-way-match.execute');
+
+        // 8. Supplier Invoice Approval
+        Route::get('supplier-invoices/{id}/approval', [InvoiceApprovalController::class, 'show'])->whereUuid('id')->name('procurement.invoice-approval.show');
+        Route::post('supplier-invoices/{id}/submit-approval', [InvoiceApprovalController::class, 'submit'])->whereUuid('id')->name('procurement.invoice-approval.submit');
+    });
+
+// The rules decide who can release a payment, so they belong to the finance roles.
+Route::prefix('api/v1/invoice-approvals')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:ledger'])
+    ->group(function (): void {
+        Route::get('matrices', [InvoiceApprovalController::class, 'matrices'])->name('invoice-approvals.matrices.index');
+        Route::post('matrices', [InvoiceApprovalController::class, 'storeMatrix'])->name('invoice-approvals.matrices.store');
+        Route::delete('matrices/{id}', [InvoiceApprovalController::class, 'destroyMatrix'])->whereUuid('id')->name('invoice-approvals.matrices.destroy');
     });

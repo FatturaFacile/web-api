@@ -464,7 +464,7 @@ class BankReconciliationService
     private function isPayable(Invoice|PassiveInvoice $document): bool
     {
         return $document instanceof PassiveInvoice
-            ? $document->document_type !== 'TD04'
+            ? $document->document_type !== 'TD04' && ! $document->isPaymentBlocked()
             : ! in_array($document->invoice_type, ['proforma', 'credit_note'], true);
     }
 
@@ -494,7 +494,8 @@ class BankReconciliationService
         return PassiveInvoice::query()
             ->where('tenant_id', $statement->tenant_id)
             ->where('payment_status', '!=', 'paid')
-            ->where('document_type', '!=', 'TD04');
+            ->where('document_type', '!=', 'TD04')
+            ->whereNotIn('approval_status', PassiveInvoice::PaymentBlockingStatuses);
     }
 
     private function findByQrReference(BankStatementLine $line, BankStatement $statement): ?Invoice

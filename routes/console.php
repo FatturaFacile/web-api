@@ -13,7 +13,9 @@ use Modules\Associations\Jobs\ExpireMembershipsJob;
 use Modules\Associations\Jobs\SendCertificateAlertsJob;
 use Modules\Associations\Jobs\SendFeeRemindersJob;
 use Modules\Associations\Jobs\SendRenewalRemindersJob;
+use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
+use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
@@ -31,6 +33,7 @@ use Modules\SubscriptionBilling\Jobs\AggregateMeteredUsageJob;
 use Modules\Workflow\Jobs\DispatchOutboundWebhooksJob;
 use Modules\Workflow\Jobs\ProcessBusinessCalendarTimeoutsJob;
 use Modules\Workflow\Jobs\PruneExpiredApprovalTokensJob;
+use Modules\WorkspaceSync\Jobs\SyncWorkspaceConnectionsJob;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -83,3 +86,7 @@ $forEachTenant('associations:fee-reminders', static fn (Tenant $tenant): object 
 $forEachTenant('associations:renewal-reminders', static fn (Tenant $tenant): object => new SendRenewalRemindersJob($tenant->id))->dailyAt('08:30');
 $forEachTenant('associations:certificate-alerts', static fn (Tenant $tenant): object => new SendCertificateAlertsJob($tenant->id))->dailyAt('08:45');
 $forEachTenant('customs:assessment-decisions', static fn (Tenant $tenant): object => new RetrieveAssessmentDecisionsJob($tenant->id))->dailyAt('04:30');
+$forEachTenant('dms:retention', static fn (Tenant $tenant): object => new ApplyDocumentRetentionJob($tenant->id))->dailyAt('03:40');
+// Before procurement:expiring-contracts at 05:10, so a supplier contract that renews by itself is not marked expired.
+$forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
+$forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();

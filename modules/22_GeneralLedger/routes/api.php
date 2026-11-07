@@ -5,12 +5,15 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\GeneralLedger\Http\Controllers\ChartOfAccountController;
 use Modules\GeneralLedger\Http\Controllers\EnasarcoController;
+use Modules\GeneralLedger\Http\Controllers\FinancialAnalysisController;
 use Modules\GeneralLedger\Http\Controllers\FinancialStatementController;
 use Modules\GeneralLedger\Http\Controllers\FiscalPeriodController;
 use Modules\GeneralLedger\Http\Controllers\FiscalYearController;
 use Modules\GeneralLedger\Http\Controllers\JournalEntryController;
+use Modules\GeneralLedger\Http\Controllers\LedgerBudgetController;
 use Modules\GeneralLedger\Http\Controllers\PayrollLedgerController;
 use Modules\GeneralLedger\Http\Controllers\ReconciliationController;
+use Modules\GeneralLedger\Http\Controllers\StatementSchemeController;
 use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
 use Modules\GeneralLedger\Http\Controllers\VatRegisterController;
@@ -27,6 +30,7 @@ Route::prefix('api/v1/general-ledger')
         // Fiscal Calendar
         Route::apiResource('fiscal-years', FiscalYearController::class)->except(['update', 'destroy']);
         Route::post('fiscal-years/{id}/close', [FiscalYearController::class, 'closeYear']);
+        Route::post('fiscal-years/{id}/carry-forward', [FinancialAnalysisController::class, 'carryForward'])->whereUuid('id');
 
         Route::apiResource('fiscal-periods', FiscalPeriodController::class)->except(['update', 'destroy']);
         Route::post('fiscal-periods/{id}/close', [FiscalPeriodController::class, 'closePeriod']);
@@ -43,6 +47,23 @@ Route::prefix('api/v1/general-ledger')
         Route::get('financial-statements/balance-sheet', [FinancialStatementController::class, 'balanceSheet']);
         Route::get('financial-statements/income-statement', [FinancialStatementController::class, 'incomeStatement']);
         Route::get('financial-statements/cash-flow', [FinancialStatementController::class, 'cashFlow']);
+        Route::get('financial-statements/comparative', [FinancialAnalysisController::class, 'comparative']);
+        Route::get('financial-statements/reclassified', [FinancialAnalysisController::class, 'reclassified']);
+        Route::get('financial-statements/cash-flow-statement', [FinancialAnalysisController::class, 'cashFlow']);
+        Route::get('financial-statements/ratios', [FinancialAnalysisController::class, 'ratios']);
+        Route::get('statement-schemes', [StatementSchemeController::class, 'index']);
+        Route::post('statement-schemes', [StatementSchemeController::class, 'store']);
+        Route::delete('statement-schemes/{id}', [StatementSchemeController::class, 'destroy'])->whereUuid('id');
+
+        // Company Budgets (project budgets are in modules/15_Projects)
+        Route::get('budgets', [LedgerBudgetController::class, 'index']);
+        Route::post('budgets', [LedgerBudgetController::class, 'store']);
+        Route::get('budgets/{id}', [LedgerBudgetController::class, 'show'])->whereUuid('id');
+        Route::put('budgets/{id}/lines', [LedgerBudgetController::class, 'setLines'])->whereUuid('id');
+        Route::post('budgets/{id}/new-version', [LedgerBudgetController::class, 'newVersion'])->whereUuid('id');
+        Route::post('budgets/{id}/approve', [LedgerBudgetController::class, 'approve'])->whereUuid('id');
+        Route::get('budgets/{id}/variance', [LedgerBudgetController::class, 'variance'])->whereUuid('id');
+        Route::get('budgets/{id}/rolling-forecast', [LedgerBudgetController::class, 'rollingForecast'])->whereUuid('id');
 
         // Subledgers & Reconciliations
         Route::apiResource('reconciliations', ReconciliationController::class)->except(['update', 'destroy']);

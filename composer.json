@@ -72,6 +72,11 @@
             "Modules\\Payroll\\": "modules/18_Payroll/src/",
             "Modules\\Associations\\": "modules/31_Associations/src/",
             "Modules\\Customs\\": "modules/32_Customs/src/",
+            "Modules\\Documents\\": "modules/25_Documents/src/",
+            "Modules\\Contracts\\": "modules/26_Contracts/src/",
+            "Modules\\Assistant\\": "modules/27_Assistant/src/",
+            "Modules\\EDocumentNetworks\\": "modules/28_EDocumentNetworks/src/",
+            "Modules\\WorkspaceSync\\": "modules/29_WorkspaceSync/src/",
             "Modules\\": "modules/"
         }
     },

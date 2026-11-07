@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
+use Modules\Workflow\Contracts\ReactsToWorkflowOutcome;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\RecordDecisionDTO;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
@@ -23,7 +24,6 @@ use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Events\WorkflowInstanceStartedEvent;
 use Modules\Workflow\Events\WorkflowStepAssignedEvent;
 use Modules\Workflow\Models\ApprovalDecision;
-use Modules\Workflow\Models\ApprovalMatrix;
 use Modules\Workflow\Models\WorkflowDefinition;
 use Modules\Workflow\Models\WorkflowDelegation;
 use Modules\Workflow\Models\WorkflowInstance;
@@ -153,6 +153,8 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 }
             }
 
+            $this->assertFourEyes($instance, $userId, $effectiveUserId);
+
             ApprovalDecision::create([
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $instance->tenant_id,
@@ -200,11 +202,96 @@ final class WorkflowEngineService implements WorkflowEngineInterface
             $eval = $this->votingEvaluator->evaluate($step->node, $nodeSteps);
 
             if ($eval['completed']) {
+                if ($eval['outcome'] === 'approved' && $this->openNextTier($instance, $step)) {
+                    return $step;
+                }
+
                 $this->advance($instance, $eval['outcome']);
             }
 
             return $step;
         });
+    }
+
+    /**
+     * Four-eyes rule of an instance started with `four_eyes` in its context: whoever prepared the document cannot
+     * approve it, and nobody approves it twice. It binds administrators too.
+     *
+     * @throws AuthorizationException
+     */
+    private function assertFourEyes(WorkflowInstance $instance, string $userId, string $effectiveUserId): void
+    {
+        $context = $instance->context_snapshot ?? [];
+
+        if (($context['four_eyes'] ?? false) !== true) {
+            return;
+        }
+
+        $makers = array_filter([(string) $instance->created_by, ...($context['maker_user_ids'] ?? [])]);
+
+        if (array_intersect([$userId, $effectiveUserId], $makers) !== []) {
+            throw new AuthorizationException('Four-eyes rule: who prepared this document cannot approve it.');
+        }
+
+        $alreadyDecided = ApprovalDecision::whereIn('workflow_instance_step_id', $instance->steps()->pluck('id'))
+            ->where(fn ($query) => $query->whereIn('user_id', [$userId, $effectiveUserId])->orWhereIn('effective_user_id', [$userId, $effectiveUserId]))
+            ->exists();
+
+        if ($alreadyDecided) {
+            throw new AuthorizationException('Four-eyes rule: an approver can decide only once on a document.');
+        }
+    }
+
+    /**
+     * On a `matrix_sequential` node the tiers run one level at a time: the next level opens once the current one is
+     * approved.
+     */
+    private function openNextTier(WorkflowInstance $instance, WorkflowInstanceStep $step): bool
+    {
+        $node = $step->node;
+
+        if ($node->assignee_type !== 'matrix_sequential') {
+            return false;
+        }
+
+        $tiers = collect($this->matrixEvaluator->tiersFor((string) $instance->tenant_id, (string) $instance->approvable_type, $instance->approvable, $instance->context_snapshot) ?? [])
+            ->where('tier_level', '>', (int) $step->tier_level);
+
+        if ($tiers->isEmpty()) {
+            return false;
+        }
+
+        $this->createTierSteps($instance, $node, $tiers->where('tier_level', $tiers->min('tier_level'))->values()->all());
+
+        return true;
+    }
+
+    /**
+     * @param  array<int, array{tier_level: int, approver_type: string, approver_value: string, approval_type: string}>  $tiers
+     */
+    private function createTierSteps(WorkflowInstance $instance, WorkflowNode $node, array $tiers): void
+    {
+        $dueAt = $this->calendarCalculator->calculateDeadline(now(), $node->timeout_hours ?? 48, $node->calendar);
+
+        foreach ($tiers as $tier) {
+            $this->createStep(
+                instance: $instance,
+                node: $node,
+                userId: $tier['approver_type'] === 'user' ? $tier['approver_value'] : null,
+                role: $tier['approver_type'] === 'role' ? $tier['approver_value'] : null,
+                tierLevel: $tier['tier_level'],
+                dueAt: $dueAt
+            );
+        }
+    }
+
+    private function notifyApprovable(WorkflowInstance $instance, string $outcome): void
+    {
+        $approvable = $instance->approvable;
+
+        if ($approvable instanceof ReactsToWorkflowOutcome) {
+            $approvable->onWorkflowOutcome($instance, $outcome);
+        }
     }
 
     public function advance(WorkflowInstance $instance, string $actionTrigger): void
@@ -235,6 +322,7 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         if ($selectedTransition === null) {
             if ($actionTrigger === 'rejected') {
                 $instance->update(['status' => 'rejected', 'completed_at' => now()]);
+                $this->notifyApprovable($instance, 'rejected');
                 $this->dispatchDomainEvent(new WorkflowInstanceRejectedEvent(
                     instanceId: $instance->id,
                     tenantId: $instance->tenant_id,
@@ -254,6 +342,8 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 'status' => $isApproved ? 'approved' : 'rejected',
                 'completed_at' => now(),
             ]);
+
+            $this->notifyApprovable($instance, $isApproved ? 'approved' : 'rejected');
 
             if ($isApproved) {
                 // Fiscal locking if configured
@@ -332,6 +422,8 @@ final class WorkflowEngineService implements WorkflowEngineInterface
             eventType: 'instance_cancelled',
             payload: ['reason' => $reason]
         );
+
+        $this->notifyApprovable($instance, 'cancelled');
     }
 
     private function createStepsForNode(WorkflowInstance $instance, WorkflowNode $node): void
@@ -339,25 +431,16 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         $timeoutHours = $node->timeout_hours ?? 48;
         $dueAt = $this->calendarCalculator->calculateDeadline(now(), $timeoutHours, $node->calendar);
 
-        if ($node->assignee_type === 'matrix_lookup') {
-            $matrix = ApprovalMatrix::where('tenant_id', $instance->tenant_id)
-                ->where('target_entity_type', $instance->approvable_type)
-                ->where('is_active', true)
-                ->with(['rules', 'tiers'])
-                ->first();
+        if (in_array($node->assignee_type, ['matrix_lookup', 'matrix_sequential'], true)) {
+            $tiers = $this->matrixEvaluator->tiersFor((string) $instance->tenant_id, (string) $instance->approvable_type, $instance->approvable, $instance->context_snapshot);
 
-            if ($matrix !== null) {
-                $tiers = $this->matrixEvaluator->evaluate($matrix, $instance->approvable, $instance->context_snapshot);
-                foreach ($tiers as $tier) {
-                    $this->createStep(
-                        instance: $instance,
-                        node: $node,
-                        userId: $tier['approver_type'] === 'user' ? $tier['approver_value'] : null,
-                        role: $tier['approver_type'] === 'role' ? $tier['approver_value'] : null,
-                        tierLevel: $tier['tier_level'],
-                        dueAt: $dueAt
-                    );
+            if ($tiers !== null) {
+                if ($node->assignee_type === 'matrix_sequential') {
+                    $firstLevel = collect($tiers)->min('tier_level');
+                    $tiers = collect($tiers)->where('tier_level', $firstLevel)->values()->all();
                 }
+
+                $this->createTierSteps($instance, $node, $tiers);
 
                 return;
             }

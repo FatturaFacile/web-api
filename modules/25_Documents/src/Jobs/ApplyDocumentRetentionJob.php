@@ -1,0 +1,27 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Documents\Jobs;
+
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Modules\Documents\Services\DocumentRetention;
+
+final class ApplyDocumentRetentionJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function __construct(public readonly string $tenantId)
+    {
+        $this->afterCommit();
+    }
+
+    public function handle(DocumentRetention $retention): void
+    {
+        $retention->applyDuePolicies($this->tenantId);
+    }
+}

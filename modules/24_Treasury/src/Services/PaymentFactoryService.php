@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Services;
 
+use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use DOMDocument;
 use DOMElement;
@@ -41,6 +42,8 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
         if (empty($lines)) {
             throw new InvalidArgumentException('Payment batch must contain at least one payment line.');
         }
+
+        $this->assertInvoicesCleared((string) $batchData['tenant_id'], array_filter(array_column($lines, 'invoice_id')));
 
         $creatorUuid = ! empty($creatorUserId) && Str::isUuid($creatorUserId) ? $creatorUserId : (string) Str::uuid7();
 
@@ -225,6 +228,26 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
         }
     }
 
+    /**
+     * A supplier invoice still waiting for approval, or rejected, cannot enter a payment file.
+     *
+     * @param  array<int, string>  $invoiceIds
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertInvoicesCleared(string $tenantId, array $invoiceIds): void
+    {
+        $blocked = PassiveInvoice::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('id', $invoiceIds)
+            ->whereIn('approval_status', PassiveInvoice::PaymentBlockingStatuses)
+            ->pluck('invoice_number');
+
+        if ($blocked->isNotEmpty()) {
+            throw new InvalidArgumentException('Supplier invoices not approved for payment: '.$blocked->implode(', '));
+        }
+    }
+
     public function submitForApproval(string $paymentBatchId, ?string $userId = null): PaymentBatch
     {
         return DB::transaction(function () use ($paymentBatchId) {
@@ -234,6 +257,8 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
             if (strtolower((string) $batch->status) !== 'draft') {
                 throw new InvalidArgumentException("Payment batch [{$batch->batch_reference}] must be in 'draft' status to submit for approval.");
             }
+
+            $this->assertInvoicesCleared((string) $batch->tenant_id, $batch->lines()->whereNotNull('invoice_id')->pluck('invoice_id')->all());
 
             $before = $batch->toArray();
             $batch->update(['status' => 'pending_approval']);

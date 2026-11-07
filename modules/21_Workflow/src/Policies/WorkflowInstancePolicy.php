@@ -23,7 +23,15 @@ final class WorkflowInstancePolicy
     public function cancel(User $user, WorkflowInstance $instance): bool
     {
         return (string) $user->tenant_id === (string) $instance->tenant_id
-            && ((string) $instance->created_by === (string) $user->id || $user->hasRole('admin'));
+            && ((string) $instance->created_by === (string) $user->id || $this->holdsRole($user, (string) $instance->tenant_id, 'admin'));
+    }
+
+    /**
+     * Roles live on the tenant membership. Owners and administrators hold every role, as in the engine.
+     */
+    private function holdsRole(User $user, string $tenantId, string $role): bool
+    {
+        return in_array($user->getRoleInTenant($tenantId), [$role, 'owner', 'admin'], true);
     }
 
     public function decide(User $user, WorkflowInstanceStep $step): bool
@@ -38,7 +46,7 @@ final class WorkflowInstancePolicy
         }
 
         // Assigned role
-        if ($step->assigned_role !== null && $user->hasRole($step->assigned_role)) {
+        if ($step->assigned_role !== null && $this->holdsRole($user, (string) $step->tenant_id, (string) $step->assigned_role)) {
             return true;
         }
 

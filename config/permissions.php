@@ -18,6 +18,7 @@ $anyMember = ['*'];
 $finance = ['owner', 'admin', 'accountant'];
 $financeReaders = [...$finance, 'accountant_readonly'];
 $managers = ['owner', 'admin'];
+$contractManagers = ['owner', 'admin', 'accountant', 'sales_manager', 'procurement_manager', 'service_manager'];
 
 return [
     'modules' => [
@@ -40,6 +41,11 @@ return [
         'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'member']],
         'inventory' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'technician', 'member']],
         'customs' => ['read' => ['owner', 'admin', 'accountant', 'customs', 'warehouse', 'sales'], 'write' => ['owner', 'admin', 'accountant', 'customs']],
+        'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'purchasing', 'hr', 'member']],
+        'contracts' => ['read' => $contractManagers, 'write' => $contractManagers],
+        'assistant' => ['read' => $anyMember, 'write' => $anyMember],
+        'edocument_networks' => ['read' => $finance, 'write' => $finance],
+        'workspace' => ['read' => $anyMember, 'write' => $anyMember],
         'hr' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],
         'fiscal_retail' => ['read' => $financeReaders, 'write' => ['owner', 'admin', 'accountant', 'sales']],
         // Health data with fiscal codes: the read-only accountant role stays out.

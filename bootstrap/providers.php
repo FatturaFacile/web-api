@@ -10,12 +10,16 @@ use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
+use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
+use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
+use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
+use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
@@ -32,6 +36,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
+use Modules\WorkspaceSync\Providers\WorkspaceSyncServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -66,4 +71,9 @@ return [
     CommunicationServiceProvider::class,
     AnalyticsServiceProvider::class,
     DocumentTrustServiceProvider::class,
+    DocumentsServiceProvider::class,
+    ContractsServiceProvider::class,
+    AssistantServiceProvider::class,
+    EDocumentNetworksServiceProvider::class,
+    WorkspaceSyncServiceProvider::class,
 ];

@@ -8,8 +8,8 @@ use App\Http\Responses\ApiResponse;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Closure;
+use Enterprise\MultiTenant\Services\ModuleAccessGate;
 use Illuminate\Http\Request;
-use InvalidArgumentException;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -20,7 +20,10 @@ final class EnsureModuleAccess
 {
     use ApiResponse;
 
-    public function __construct(private readonly TenantContext $tenantContext) {}
+    public function __construct(
+        private readonly TenantContext $tenantContext,
+        private readonly ModuleAccessGate $gate,
+    ) {}
 
     /**
      * @param  Closure(Request): (Response)  $next
@@ -28,11 +31,6 @@ final class EnsureModuleAccess
     public function handle(Request $request, Closure $next, string $module): Response
     {
         $access = $request->isMethodSafe() ? 'read' : 'write';
-        $allowedRoles = config("permissions.modules.{$module}.{$access}");
-
-        if (! is_array($allowedRoles)) {
-            throw new InvalidArgumentException("Unknown module [{$module}] in the access configuration.");
-        }
 
         $apiKeyScopes = $request->attributes->get('api_key_scopes');
 
@@ -46,12 +44,8 @@ final class EnsureModuleAccess
 
         /** @var User|null $user */
         $user = $request->user();
-        $tenantId = $this->tenantContext->getTenantId();
-        $membership = $user !== null && $tenantId !== null ? $user->tenants()->where('tenants.id', $tenantId)->first()?->pivot : null;
 
-        $acceptedPermissions = ["{$module}.{$access}", '*', ...config("permissions.modules.{$module}.grants.{$access}", [])];
-
-        if ($membership !== null && $this->isAllowed((string) $membership->role, $membership->permissions, $allowedRoles, $acceptedPermissions)) {
+        if ($this->gate->allows($user, $this->tenantContext->getTenantId(), $module, $access)) {
             return $next($request);
         }
 
@@ -60,20 +54,5 @@ final class EnsureModuleAccess
             detail: "Your role does not allow {$access} access to the {$module} module.",
             status: Response::HTTP_FORBIDDEN,
         );
-    }
-
-    /**
-     * @param  array<int, string>  $allowedRoles
-     * @param  array<int, string>  $acceptedPermissions
-     */
-    private function isAllowed(string $role, mixed $permissions, array $allowedRoles, array $acceptedPermissions): bool
-    {
-        if (in_array('*', $allowedRoles, true) || in_array($role, $allowedRoles, true)) {
-            return true;
-        }
-
-        $granted = is_string($permissions) ? json_decode($permissions, true) : $permissions;
-
-        return is_array($granted) && array_intersect($acceptedPermissions, $granted) !== [];
     }
 }

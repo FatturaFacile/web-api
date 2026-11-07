@@ -15,6 +15,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Modules\Documents\Models\DmsDocumentVersion;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -154,11 +155,17 @@ class AttachmentController extends Controller
             new OA\Response(response: 200, description: 'Attachment deleted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Attachment not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'A managed document references this file', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function destroy(string $id): JsonResponse
     {
         $attachment = Attachment::findOrFail($id);
+
+        if (DmsDocumentVersion::query()->where('attachment_id', $attachment->id)->exists()) {
+            return $this->problemDetailsResponse('Attachment in use', 'A managed document references this file: delete the document first.', Response::HTTP_CONFLICT);
+        }
+
         Storage::disk($attachment->getStorageDisk())->delete($attachment->path);
         $attachment->delete();
 

@@ -4,15 +4,22 @@ declare(strict_types=1);
 
 namespace Enterprise\AiGateway\Providers;
 
+use Enterprise\AiGateway\Contracts\DocumentExtractorInterface;
 use Enterprise\AiGateway\Contracts\EnterpriseAiGatewayInterface;
+use Enterprise\AiGateway\Contracts\TenantAiConsentInterface;
+use Enterprise\AiGateway\Contracts\TextRecognizerInterface;
 use Enterprise\AiGateway\Drivers\AzureOpenAiDriver;
 use Enterprise\AiGateway\Drivers\ClaudeDriver;
 use Enterprise\AiGateway\Drivers\GeminiDriver;
+use Enterprise\AiGateway\Drivers\LocalFakeDriver;
 use Enterprise\AiGateway\Drivers\MistralDriver;
 use Enterprise\AiGateway\Drivers\OllamaDriver;
 use Enterprise\AiGateway\Drivers\OpenAiDriver;
 use Enterprise\AiGateway\Services\AiDriverRegistry;
+use Enterprise\AiGateway\Services\DenyExternalAiConsent;
 use Enterprise\AiGateway\Services\EnterpriseAiGateway;
+use Enterprise\AiGateway\Services\GuardedDocumentExtractor;
+use Enterprise\AiGateway\Services\PlainTextRecognizer;
 use Illuminate\Support\ServiceProvider;
 
 final class AiGatewayServiceProvider extends ServiceProvider
@@ -22,8 +29,10 @@ final class AiGatewayServiceProvider extends ServiceProvider
         $this->app->singleton(AiDriverRegistry::class, function () {
             $registry = new AiDriverRegistry;
 
+            $registry->register('local', new LocalFakeDriver);
+
             $registry->register('ollama', new OllamaDriver(
-                baseUrl: (string) config('ai.drivers.ollama.base_url', 'http://localhost:11434'),
+                host: (string) config('ai.drivers.ollama.base_url', 'http://localhost:11434'),
                 defaultModel: (string) config('ai.drivers.ollama.model', 'llama3.2')
             ));
 
@@ -61,5 +70,8 @@ final class AiGatewayServiceProvider extends ServiceProvider
 
         $this->app->singleton(EnterpriseAiGatewayInterface::class, EnterpriseAiGateway::class);
         $this->app->singleton(EnterpriseAiGateway::class);
+        $this->app->singleton(DocumentExtractorInterface::class, GuardedDocumentExtractor::class);
+        $this->app->singleton(TextRecognizerInterface::class, PlainTextRecognizer::class);
+        $this->app->singletonIf(TenantAiConsentInterface::class, DenyExternalAiConsent::class);
     }
 }
