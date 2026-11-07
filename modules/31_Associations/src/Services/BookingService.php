@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Associations\Services;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Database\DeadlockException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Modules\Associations\Exceptions\AssociationException;
@@ -20,6 +21,15 @@ final class BookingService
 {
     /** PostgreSQL exclusion_violation. */
     private const string ExclusionViolation = '23P01';
+
+    /**
+     * PostgreSQL deadlock_detected. Concurrent overlapping inserts each wait for the other under an exclusion constraint,
+     * and the database aborts one of them: the outcome is the same as a refused overlap.
+     */
+    private const string DeadlockDetected = '40P01';
+
+    /** A session aborted by a deadlock retries, to get the real verdict of the constraint. */
+    private const int Attempts = 3;
 
     public function __construct(private readonly CourseCalendar $calendar) {}
 
@@ -41,9 +51,11 @@ final class BookingService
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
                 'status' => ResourceBooking::Confirmed,
-            ]));
+            ]), self::Attempts);
+        } catch (DeadlockException) {
+            throw AssociationException::conflict(__('associations.resource_already_booked'));
         } catch (QueryException $exception) {
-            if ($exception->getCode() === self::ExclusionViolation) {
+            if (in_array($exception->getCode(), [self::ExclusionViolation, self::DeadlockDetected], true)) {
                 throw AssociationException::conflict(__('associations.resource_already_booked'));
             }
 
