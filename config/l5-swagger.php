@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\ProtectApiDocumentation;
 use App\OpenApi\Processors\DocumentRequestContext;
 use L5Swagger\CustomBuilderInterface;
 use L5Swagger\CustomGeneratorInterface;
@@ -70,12 +71,13 @@ return [
             'oauth2_callback' => 'api/oauth2-callback',
 
             /*
-             * Publicly accessible routes (empty middleware arrays)
+             * The UI and the specification answer signed-in readers only when docs.require_auth is on (the default in
+             * production, see config/docs.php); the static assets of the UI stay public.
              */
             'middleware' => [
-                'api' => [],
+                'api' => [ProtectApiDocumentation::class],
                 'asset' => [],
-                'docs' => [],
+                'docs' => [ProtectApiDocumentation::class],
                 'oauth2_callback' => [],
             ],
 

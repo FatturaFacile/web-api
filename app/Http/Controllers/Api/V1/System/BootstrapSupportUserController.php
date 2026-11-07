@@ -49,17 +49,17 @@ class BootstrapSupportUserController extends Controller
     )]
     public function __invoke(): JsonResponse
     {
-        if (app()->isProduction()) {
-            $secret = config('services.bootstrap.secret', env('BOOTSTRAP_SUPPORT_SECRET'));
-            $header = request()->header('X-Bootstrap-Secret') ?? request()->query('secret');
+        // Every environment, staging and demo included: the secret travels only in a header, so it never lands in access
+        // logs or browser history the way a query string does. Without a configured secret the endpoint stays closed.
+        $secret = config('services.bootstrap.secret');
+        $provided = request()->header('X-Bootstrap-Secret');
 
-            if (empty($secret) || ! is_string($secret) || ! hash_equals($secret, (string) $header)) {
-                return $this->problemDetailsResponse(
-                    title: 'Forbidden',
-                    detail: 'Support bootstrap is restricted in production environments.',
-                    status: Response::HTTP_FORBIDDEN,
-                );
-            }
+        if (! is_string($secret) || $secret === '' || ! is_string($provided) || ! hash_equals($secret, $provided)) {
+            return $this->problemDetailsResponse(
+                title: 'Forbidden',
+                detail: 'Support bootstrap requires the X-Bootstrap-Secret header.',
+                status: Response::HTTP_FORBIDDEN,
+            );
         }
 
         try {

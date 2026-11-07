@@ -19,6 +19,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\Appointment;
 use App\Models\Attachment;
 use App\Models\Invoice;
+use App\Models\PortalAccessToken;
 use App\Models\Quote;
 use App\Models\ServiceReport;
 use App\Models\Ticket;
@@ -330,9 +331,11 @@ class CustomerPortalController extends Controller
     public function listInvoices(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
+        $scopedId = $this->scopedRecordId($accessToken, Invoice::class);
 
         $invoices = Invoice::with('items')
             ->where('contact_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->latest('date')
             ->paginate(20);
 
@@ -367,7 +370,10 @@ class CustomerPortalController extends Controller
     {
         $accessToken = $this->tokenService->resolveToken($token);
 
-        $invoice = Invoice::where('contact_id', $accessToken->contact_id)->findOrFail($invoiceId);
+        $scopedId = $this->scopedRecordId($accessToken, Invoice::class);
+        $invoice = Invoice::where('contact_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
+            ->findOrFail($invoiceId);
 
         $this->tokenService->logActivity(
             token: $accessToken,
@@ -407,9 +413,11 @@ class CustomerPortalController extends Controller
     public function listServiceReports(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
+        $scopedId = $this->scopedRecordId($accessToken, ServiceReport::class);
 
         $reports = ServiceReport::with(['lines', 'attachments'])
             ->where('contact_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->portalVisible()
             ->latest('report_date')
             ->paginate(20);
@@ -445,7 +453,9 @@ class CustomerPortalController extends Controller
     {
         $accessToken = $this->tokenService->resolveToken($token);
 
+        $scopedId = $this->scopedRecordId($accessToken, ServiceReport::class);
         $report = ServiceReport::where('contact_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->portalVisible()
             ->findOrFail($reportId);
 
@@ -487,9 +497,11 @@ class CustomerPortalController extends Controller
     public function listTickets(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
+        $scopedId = $this->scopedRecordId($accessToken, Ticket::class);
 
         $tickets = Ticket::with(['messages' => fn ($q) => $q->customerFacing(), 'attachments'])
             ->where('client_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->latest()
             ->paginate(20);
 
@@ -525,7 +537,10 @@ class CustomerPortalController extends Controller
     {
         $accessToken = $this->tokenService->resolveToken($token);
 
-        $ticket = Ticket::where('client_id', $accessToken->contact_id)->find($ticketId);
+        $scopedId = $this->scopedRecordId($accessToken, Ticket::class);
+        $ticket = Ticket::where('client_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
+            ->find($ticketId);
 
         if ($ticket === null) {
             // A helpdesk ticket of the service module: the reply joins its conversation.
@@ -599,6 +614,7 @@ class CustomerPortalController extends Controller
     public function listAppointments(string $token): JsonResponse
     {
         $accessToken = $this->tokenService->resolveToken($token);
+        $scopedId = $this->scopedRecordId($accessToken, Appointment::class);
 
         $this->tokenService->logActivity(
             token: $accessToken,
@@ -610,6 +626,7 @@ class CustomerPortalController extends Controller
         $appointments = Appointment::with(['status', 'attendees.user'])
             ->where('tenant_id', $accessToken->tenant_id)
             ->where('contact_id', $accessToken->contact_id)
+            ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->portalVisible()
             ->orderBy('starts_at', 'asc')
             ->get()
@@ -676,7 +693,11 @@ class CustomerPortalController extends Controller
             default => false,
         };
 
-        if (! $authorized) {
+        // A link for one record serves only the files of that record.
+        $coveredByScope = $accessToken->scope_type === null
+            || ($attachable !== null && $accessToken->scope_type === $attachable::class && (string) $accessToken->scope_id === (string) $attachable->getKey());
+
+        if (! $authorized || ! $coveredByScope) {
             abort(Response::HTTP_FORBIDDEN, 'Unauthorized attachment access.');
         }
 
@@ -697,5 +718,22 @@ class CustomerPortalController extends Controller
             'Content-Type' => $attachment->mime_type,
             'Content-Disposition' => "inline; filename=\"{$attachment->original_name}\"",
         ]);
+    }
+
+    /**
+     * A link issued for the whole customer (no scope) opens every list; a link issued for one record opens only that
+     * record, and only in the list of its own type: a quote link never lists the invoices of the customer.
+     *
+     * @param  class-string  $modelClass
+     */
+    private function scopedRecordId(PortalAccessToken $accessToken, string $modelClass): ?string
+    {
+        if ($accessToken->scope_type === null) {
+            return null;
+        }
+
+        abort_unless($accessToken->scope_type === $modelClass && $accessToken->scope_id !== null, Response::HTTP_FORBIDDEN, 'This portal link does not give access to these records.');
+
+        return (string) $accessToken->scope_id;
     }
 }

@@ -18,24 +18,37 @@ Route::prefix('api/v1/payroll')
     ->name('api.v1.payroll.')
     ->where(['id' => '[0-9a-fA-F-]{36}', 'levelId' => '[0-9a-fA-F-]{36}', 'employeeId' => '[0-9a-fA-F-]{36}'])
     ->group(function (): void {
+        // Employee self-service: every employee reads their own payslips and certificates; EmployeeDocumentPolicy limits
+        // the answer to the own records of a user without payroll access.
+        Route::get('/payslips', [PayslipController::class, 'index'])->name('payslips.index');
+        Route::get('/payslips/{id}', [PayslipController::class, 'show'])->name('payslips.show');
+        Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf'])->name('payslips.pdf');
+        Route::get('/salary-certificates', [SalaryCertificateController::class, 'index'])->name('salary-certificates.index');
+        Route::get('/salary-certificates/{id}', [SalaryCertificateController::class, 'show'])->name('salary-certificates.show');
+        Route::get('/salary-certificates/{id}/pdf', [SalaryCertificateController::class, 'pdf'])->name('salary-certificates.pdf');
+
+        // Simulations save nothing: payroll read access is enough.
+        Route::middleware('module.access:payroll,read')->group(function (): void {
+            Route::post('/runs/simulate', [PayrollRunController::class, 'simulate'])->name('runs.simulate');
+            Route::post('/runs/preview', [PayrollRunController::class, 'preview'])->name('runs.preview');
+        });
+    });
+
+Route::prefix('api/v1/payroll')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:payroll'])
+    ->name('api.v1.payroll.')
+    ->where(['id' => '[0-9a-fA-F-]{36}', 'levelId' => '[0-9a-fA-F-]{36}', 'employeeId' => '[0-9a-fA-F-]{36}'])
+    ->group(function (): void {
         // Monthly runs
         Route::get('/runs', [PayrollRunController::class, 'index'])->name('runs.index');
         Route::post('/runs/calculate', [PayrollRunController::class, 'calculate'])->name('runs.calculate');
-        Route::post('/runs/simulate', [PayrollRunController::class, 'simulate'])->name('runs.simulate');
-        Route::post('/runs/preview', [PayrollRunController::class, 'preview'])->name('runs.preview');
         Route::get('/runs/{id}', [PayrollRunController::class, 'show'])->name('runs.show');
         Route::post('/runs/{id}/finalize', [PayrollRunController::class, 'finalize'])->name('runs.finalize');
         Route::post('/runs/{id}/reopen', [PayrollRunController::class, 'reopen'])->name('runs.reopen');
         Route::get('/runs/{id}/labour-book', [PayrollRunController::class, 'labourBook'])->name('runs.labour-book');
 
-        // Payslips and salary certificates
-        Route::get('/payslips', [PayslipController::class, 'index'])->name('payslips.index');
-        Route::get('/payslips/{id}', [PayslipController::class, 'show'])->name('payslips.show');
-        Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf'])->name('payslips.pdf');
-        Route::get('/salary-certificates', [SalaryCertificateController::class, 'index'])->name('salary-certificates.index');
+        // Salary certificates of the whole company
         Route::post('/salary-certificates/generate', [SalaryCertificateController::class, 'generate'])->name('salary-certificates.generate');
-        Route::get('/salary-certificates/{id}', [SalaryCertificateController::class, 'show'])->name('salary-certificates.show');
-        Route::get('/salary-certificates/{id}/pdf', [SalaryCertificateController::class, 'pdf'])->name('salary-certificates.pdf');
 
         // Filing exports
         Route::get('/exports/salary-declaration', [PayrollExportController::class, 'salaryDeclaration'])->name('exports.salary-declaration');

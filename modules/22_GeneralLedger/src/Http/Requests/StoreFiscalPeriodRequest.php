@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreFiscalPeriodRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -19,7 +22,7 @@ final class StoreFiscalPeriodRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'fiscal_year_id' => ['required', 'uuid', 'exists:fiscal_years,id'],
+            'fiscal_year_id' => ['required', 'uuid', $this->tenantExists('fiscal_years')],
             'period_number' => ['required', 'integer', 'between:1,13'],
             'period_name' => ['required', 'string', 'max:100'],
             'start_date' => ['required', 'date'],

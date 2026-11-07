@@ -35,7 +35,17 @@ class HrController extends Controller
     {
         $frontalieri = EmployeeProfile::join('users', 'users.id', '=', 'employee_profiles.user_id')
             ->where('employee_profiles.is_cross_border_commuter', true)
-            ->select('employee_profiles.*', 'users.name', 'users.email')
+            ->select([
+                'employee_profiles.id',
+                'employee_profiles.user_id',
+                'employee_profiles.is_cross_border_commuter',
+                'employee_profiles.job_title',
+                'employee_profiles.department',
+                'employee_profiles.hire_date',
+                'employee_profiles.termination_date',
+                'users.name',
+                'users.email',
+            ])
             ->get();
 
         return $this->successResponse(data: $frontalieri, message: 'Cross-border commuters (Frontalieri IT-CH) retrieved');

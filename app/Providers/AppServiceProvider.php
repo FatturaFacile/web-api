@@ -16,6 +16,7 @@ use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\ServiceReport;
 use App\Models\Tenant;
+use App\Models\User;
 use App\Models\WorkOrder;
 use App\Policies\AppointmentPolicy;
 use App\Policies\ContactPolicy;
@@ -134,8 +135,8 @@ class AppServiceProvider extends ServiceProvider
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 
-        Gate::define('viewApiDocs', function ($user) {
-            return in_array($user->email, ['tuamela@example.com']);
-        });
+        // Platform administrators, or the addresses listed in config/docs.php (DOCS_ALLOWED_EMAILS).
+        Gate::define('viewApiDocs', static fn (User $user): bool => $user->is_platform_admin
+            || in_array(strtolower((string) $user->email), (array) config('docs.allowed_emails', []), true));
     }
 }

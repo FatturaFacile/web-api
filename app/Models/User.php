@@ -43,6 +43,18 @@ class User extends Authenticatable
         'two_factor_last_used_step',
     ];
 
+    /**
+     * A deactivated user loses every API token at once, so a token issued before the deactivation stops working.
+     */
+    protected static function booted(): void
+    {
+        static::updated(static function (User $user): void {
+            if ($user->wasChanged('is_active') && $user->is_active === false) {
+                $user->tokens()->delete();
+            }
+        });
+    }
+
     protected function casts(): array
     {
         return [

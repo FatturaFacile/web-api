@@ -29,8 +29,9 @@ class UpdateExpenseRequest extends FormRequest
                 'sometimes',
                 'required',
                 'uuid',
-                Rule::exists('lookup_items', 'id')->where(function ($query) use ($expenseCategoryIds): void {
-                    $query->whereIn('category_id', $expenseCategoryIds);
+                Rule::exists('lookup_items', 'id')->where(function ($query) use ($expenseCategoryIds, $tenantId): void {
+                    $query->whereIn('category_id', $expenseCategoryIds)
+                        ->where(fn ($scope) => $scope->where('tenant_id', $tenantId)->orWhereNull('tenant_id'));
                 }),
             ],
             'date' => ['sometimes', 'required', 'date'],
@@ -52,7 +53,8 @@ class UpdateExpenseRequest extends FormRequest
             'user_id' => [
                 'nullable',
                 'uuid',
-                Rule::exists('users', 'id'),
+                // A member of the active tenant, never a user of another company.
+                Rule::exists('tenant_user', 'user_id')->where('tenant_id', $tenantId),
             ],
             'project_id' => ['nullable', 'uuid'],
             'ticket_id' => [

@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Appointments;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class StoreAppointmentRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -35,7 +38,7 @@ class StoreAppointmentRequest extends FormRequest
                 'uuid',
                 Rule::exists('tickets', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id')),
             ],
-            'status_id' => ['nullable', 'uuid', 'exists:lookup_items,id'],
+            'status_id' => ['nullable', 'uuid', $this->tenantExists('lookup_items')],
             'title' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string'],
             'starts_at' => ['required', 'date'],

@@ -15,6 +15,8 @@ return [
     'invalid_fatturapa' => 'The file is not a valid FatturaPA document.',
     'recipient_mismatch' => 'The invoice is addressed to a different VAT number.',
     'unknown_recipient' => 'No tenant matches the invoice recipient.',
+    'ambiguous_recipient_title' => 'Ambiguous recipient',
+    'ambiguous_recipient' => 'More than one tenant has the VAT number of the invoice recipient: the invoice was not delivered.',
     'credit_note_not_payable' => 'Credit notes cannot be paid.',
     'already_paid' => 'This supplier invoice is already paid.',
 

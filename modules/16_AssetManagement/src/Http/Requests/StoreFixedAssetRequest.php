@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\AssetManagement\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreFixedAssetRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -20,11 +23,11 @@ final class StoreFixedAssetRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'category_id' => ['required', 'uuid', 'exists:eam_asset_categories,id'],
-            'asset_class_id' => ['nullable', 'uuid', 'exists:eam_asset_classes,id'],
-            'location_id' => ['nullable', 'uuid', 'exists:eam_asset_locations,id'],
-            'parent_asset_id' => ['nullable', 'uuid', 'exists:eam_fixed_assets,id'],
-            'custodian_user_id' => ['nullable', 'uuid', 'exists:users,id'],
+            'category_id' => ['required', 'uuid', $this->tenantExists('eam_asset_categories')],
+            'asset_class_id' => ['nullable', 'uuid', $this->tenantExists('eam_asset_classes')],
+            'location_id' => ['nullable', 'uuid', $this->tenantExists('eam_asset_locations')],
+            'parent_asset_id' => ['nullable', 'uuid', $this->tenantExists('eam_fixed_assets')],
+            'custodian_user_id' => ['nullable', 'uuid', $this->tenantMember()],
             'project_id' => ['nullable', 'uuid'],
             'acquisition_cost' => ['required', 'numeric', 'min:0'],
             'salvage_value' => ['nullable', 'numeric', 'min:0'],

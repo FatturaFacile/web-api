@@ -517,7 +517,10 @@ final class WorkflowEngineService implements WorkflowEngineInterface
                 continue;
             }
 
-            $val = $context[$field] ?? $instance->approvable->getAttribute($field);
+            // The record decides: the snapshot only fills in fields the record does not have, so a client cannot steer the
+            // route of its own approval by sending a lower amount.
+            $approvable = $instance->approvable;
+            $val = $approvable?->getAttribute($field) ?? $context[$field] ?? null;
 
             $matched = match ($op) {
                 '=' => (string) $val === (string) $expected,
@@ -575,33 +578,18 @@ final class WorkflowEngineService implements WorkflowEngineInterface
         throw new AuthorizationException("Acting user [{$actingUserId}] is not authorized to decide on step [{$step->id}].");
     }
 
+    /**
+     * Roles live only on the membership of the tenant: a global (Spatie) role would let the admin of one company decide
+     * the approvals of every other company.
+     */
     private function userHasRole(string $userId, string $tenantId, string $role): bool
     {
-        // Check tenant_user membership role
-        if (DB::getSchemaBuilder()->hasTable('tenant_user')) {
-            $membership = DB::table('tenant_user')
-                ->where('user_id', $userId)
-                ->where('tenant_id', $tenantId)
-                ->first();
+        $membership = DB::table('tenant_user')
+            ->where('user_id', $userId)
+            ->where('tenant_id', $tenantId)
+            ->first();
 
-            if ($membership !== null && ($membership->role === $role || $membership->role === 'admin' || $membership->role === 'owner')) {
-                return true;
-            }
-        }
-
-        // Fallback to Spatie if tables exist
-        if (DB::getSchemaBuilder()->hasTable('roles')) {
-            try {
-                $user = User::find($userId);
-                if ($user !== null && method_exists($user, 'hasRole') && $user->hasRole($role)) {
-                    return true;
-                }
-            } catch (\Throwable) {
-                // Table unmigrated or relation unavailable
-            }
-        }
-
-        return false;
+        return $membership !== null && in_array($membership->role, [$role, 'admin', 'owner'], true);
     }
 
     private function dispatchDomainEvent(object $event): void

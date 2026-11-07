@@ -182,8 +182,8 @@
                                         "nullable": true
                                     },
                                     "tenant_id": {
+                                        "description": "Ignored: the label belongs to the active tenant. Send \"global\" (platform administrators only) for a global label.",
                                         "type": "string",
-                                        "format": "uuid",
                                         "nullable": true
                                     }
                                 },
@@ -203,7 +203,7 @@
                         "description": "Unauthenticated"
                     },
                     "403": {
-                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                        "description": "Not an owner or administrator, or a global write by a non platform administrator. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant."
                     },
                     "422": {
                         "description": "Validation error"
@@ -339,6 +339,7 @@
                                         "example": "Save Changes"
                                     },
                                     "tenant_id": {
+                                        "description": "Ignored: the translation belongs to the active tenant. Send null (platform administrators only) for a global translation.",
                                         "type": "string",
                                         "format": "uuid",
                                         "nullable": true
@@ -360,7 +361,7 @@
                         "description": "Unauthenticated"
                     },
                     "403": {
-                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                        "description": "Not an owner or administrator, or a global write by a non platform administrator. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant."
                     },
                     "422": {
                         "description": "Validation error"
@@ -3050,6 +3051,100 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
+        "/api/v1/auth/two-factor-challenge": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Complete a login with two factors",
+                "description": "Second step of a login with two-factor authentication: the challenge_token returned by the login is exchanged for an access token with a code of the authenticator app or a recovery code. A challenge expires after a few minutes and after repeated wrong codes; the user then logs in again.",
+                "operationId": "twoFactorChallenge",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "challenge_token"
+                                ],
+                                "properties": {
+                                    "challenge_token": {
+                                        "type": "string",
+                                        "example": "wq3...64 chars"
+                                    },
+                                    "code": {
+                                        "description": "Six-digit code of the authenticator app. Required without recovery_code.",
+                                        "type": "string",
+                                        "example": "123456",
+                                        "nullable": true
+                                    },
+                                    "recovery_code": {
+                                        "description": "Single-use recovery code. Required without code.",
+                                        "type": "string",
+                                        "example": "abcde-fghjk",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Authenticated successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Challenge expired or unknown, or wrong code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Account disabled or no longer a member of the tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many attempts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
                                 }
                             }
                         }
@@ -23304,6 +23399,705 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/two-factor": {
+            "get": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Two-factor status",
+                "description": "Whether the signed-in user has two-factor authentication, whether a setup is pending, how many recovery codes are left and whether the active tenant requires two factors.",
+                "operationId": "twoFactorStatus",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/two-factor/enable": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Start two-factor setup",
+                "description": "Starts the setup: returns a new secret and its otpauth:// URI for the QR code of the authenticator app. Two factors are active only after the confirm call with a first code. Restarting replaces a pending secret; an active setup must be disabled first.",
+                "operationId": "twoFactorEnable",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TwoFactorPasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Secret and otpauth URI",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "409": {
+                        "description": "Two factors already active",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Wrong password",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/two-factor/confirm": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Confirm two-factor setup",
+                "description": "Activates two factors with a first code of the app and returns the recovery codes. They are shown only in this response: the client must ask the user to store them.",
+                "operationId": "twoFactorConfirm",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "code"
+                                ],
+                                "properties": {
+                                    "code": {
+                                        "type": "string",
+                                        "example": "123456"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Two factors active; recovery codes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "409": {
+                        "description": "No pending setup",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Wrong code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/two-factor/recovery-codes": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Regenerate recovery codes",
+                "description": "Replaces every recovery code with new ones, returned only in this response.",
+                "operationId": "twoFactorRegenerateRecoveryCodes",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TwoFactorPasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "New recovery codes",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "409": {
+                        "description": "Two factors not active",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Wrong password",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/auth/two-factor/disable": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Disable two-factor authentication",
+                "description": "Turns two factors off. Needs the password and a code of the app or a recovery code. When the tenant requires two factors, the user must set them up again before using the other routes.",
+                "operationId": "twoFactorDisable",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "current_password"
+                                ],
+                                "properties": {
+                                    "current_password": {
+                                        "type": "string",
+                                        "format": "password"
+                                    },
+                                    "code": {
+                                        "type": "string",
+                                        "example": "123456",
+                                        "nullable": true
+                                    },
+                                    "recovery_code": {
+                                        "type": "string",
+                                        "example": "abcde-fghjk",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Two factors disabled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "409": {
+                        "description": "Two factors not active",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Wrong password or code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/settings/security/two-factor": {
+            "get": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Tenant two-factor policy",
+                "description": "Whether the active tenant requires two-factor authentication, and which members have it.",
+                "operationId": "getTwoFactorPolicy",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Policy and member status",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not an administrator of the tenant. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Update tenant two-factor policy",
+                "description": "Requires (or stops requiring) two-factor authentication for every member of the active tenant. Members without two factors can still log in, but only the authentication routes answer until they complete the setup.",
+                "operationId": "updateTwoFactorPolicy",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "require_two_factor"
+                                ],
+                                "properties": {
+                                    "require_two_factor": {
+                                        "type": "boolean",
+                                        "example": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Policy updated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not an administrator of the tenant. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The administrator has no two factors yet",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/settings/users/{userId}/two-factor/reset": {
+            "post": {
+                "tags": [
+                    "Settings"
+                ],
+                "summary": "Reset the two factors of a member",
+                "description": "Turns off the two factors of a member who lost the phone and the recovery codes. Only for members of this tenant alone: a user who also belongs to other tenants must be reset by the platform support, so an administrator cannot weaken the account of another organisation.",
+                "operationId": "resetUserTwoFactor",
+                "parameters": [
+                    {
+                        "name": "userId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Two factors reset",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Not an administrator of the tenant. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not a member of the tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "Own account, platform administrator, or member of other tenants",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
                                 }
                             }
                         }
@@ -125698,6 +126492,19 @@
                         "type": "string",
                         "format": "date-time",
                         "example": "2026-10-25T12:00:00Z"
+                    }
+                },
+                "type": "object"
+            },
+            "TwoFactorPasswordRequest": {
+                "description": "The current password, asked again before a change to the two-factor setup.",
+                "required": [
+                    "current_password"
+                ],
+                "properties": {
+                    "current_password": {
+                        "type": "string",
+                        "format": "password"
                     }
                 },
                 "type": "object"

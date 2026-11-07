@@ -17,7 +17,7 @@ Route::post('api/v1/portal/payslips/{token}', [PayrollExtrasController::class, '
 // Read access is checked here too, before validation: a user without payroll rights learns nothing from a 422. The
 // controllers then ask for the ability of each action.
 Route::prefix('api/v1/payroll')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'can:viewAny,'.PayrollRun::class])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:payroll', 'can:viewAny,'.PayrollRun::class])
     ->name('api.v1.payroll.')
     ->where(['id' => '[0-9a-fA-F-]{36}', 'employeeId' => '[0-9a-fA-F-]{36}'])
     ->group(function (): void {
@@ -60,10 +60,14 @@ Route::prefix('api/v1/payroll')
         Route::get('/swissdec/readiness', [PayrollExtrasController::class, 'swissdecReadiness'])->name('swissdec.readiness');
         Route::post('/swissdec/transmissions', [PayrollExtrasController::class, 'swissdecTransmit'])->name('swissdec.transmissions.store');
 
-        // Simulation, payslip delivery, payment files, reports
-        Route::post('/hiring-simulations', [PayrollExtrasController::class, 'simulateHiring'])->name('hiring-simulations.store');
+        // Payslip delivery, payment files, reports
         Route::post('/runs/{id}/deliver-payslips', [PayrollExtrasController::class, 'deliverPayslips'])->name('runs.deliver-payslips');
         Route::post('/runs/{id}/payment-batches', [PayrollExtrasController::class, 'createPaymentBatches'])->name('runs.payment-batches');
         Route::get('/reports/labour-cost', [PayrollExtrasController::class, 'labourCost'])->name('reports.labour-cost');
         Route::get('/children/allowances', [PayrollExtrasController::class, 'childAllowances'])->name('children.allowances');
     });
+
+// A hiring simulation saves nothing: payroll read access is enough.
+Route::post('api/v1/payroll/hiring-simulations', [PayrollExtrasController::class, 'simulateHiring'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:payroll,read', 'can:viewAny,'.PayrollRun::class])
+    ->name('api.v1.payroll.hiring-simulations.store');

@@ -100,7 +100,14 @@ class IncomingInvoiceWebhookController extends Controller
             return $this->problemDetailsResponse(__('purchases.invalid_fatturapa_title'), $e->getMessage(), Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $tenant = $vat !== null ? Tenant::whereIn('vat_number', [$vat, 'IT'.$vat])->first() : null;
+        $candidates = $vat !== null ? Tenant::whereIn('vat_number', [$vat, 'IT'.$vat])->limit(2)->get() : collect();
+
+        // Two companies with the same VAT number: delivering to either could hand an invoice to the wrong one.
+        if ($candidates->count() > 1) {
+            return $this->problemDetailsResponse(__('purchases.ambiguous_recipient_title'), __('purchases.ambiguous_recipient'), Response::HTTP_CONFLICT);
+        }
+
+        $tenant = $candidates->first();
 
         if ($tenant === null) {
             return $this->problemDetailsResponse(__('purchases.unknown_recipient_title'), __('purchases.unknown_recipient'), Response::HTTP_UNPROCESSABLE_ENTITY);

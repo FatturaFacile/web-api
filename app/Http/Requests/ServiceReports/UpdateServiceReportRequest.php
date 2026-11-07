@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\ServiceReports;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 class UpdateServiceReportRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -44,7 +47,7 @@ class UpdateServiceReportRequest extends FormRequest
             ],
             'project_id' => ['nullable', 'uuid'],
             'report_date' => ['sometimes', 'required', 'date'],
-            'status_id' => ['nullable', 'uuid', 'exists:lookup_items,id'],
+            'status_id' => ['nullable', 'uuid', $this->tenantExists('lookup_items')],
             'time_start' => ['nullable', 'date_format:H:i'],
             'time_end' => ['nullable', 'date_format:H:i'],
             'travel_distance_km' => ['nullable', 'numeric', 'min:0'],
@@ -53,7 +56,7 @@ class UpdateServiceReportRequest extends FormRequest
             'internal_notes' => ['nullable', 'string'],
             'is_portal_visible' => ['nullable', 'boolean'],
             'lines' => ['nullable', 'array'],
-            'lines.*.line_type_id' => ['required_with:lines', 'uuid', 'exists:lookup_items,id'],
+            'lines.*.line_type_id' => ['required_with:lines', 'uuid', $this->tenantExists('lookup_items')],
             'lines.*.item_id' => [
                 'nullable',
                 'uuid',

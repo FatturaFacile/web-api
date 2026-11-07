@@ -129,7 +129,14 @@ test('query with specific tenant ID uses null tenant as fallback and tenant spec
         'value' => 'Other Tenant Value',
     ]);
 
-    $response = $this->getJson("/api/v1/translations/en?tenant_id={$this->tenant->id}");
+    // The overrides of a tenant are served to its signed-in members only; a guest naming the tenant gets the global ones.
+    $member = User::factory()->create();
+    $member->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
+
+    $this->getJson("/api/v1/translations/en?tenant_id={$this->tenant->id}")->assertOk()->assertJson(['tenant_id' => null]);
+    Cache::flush();
+
+    $response = $this->actingAs($member, 'sanctum')->getJson("/api/v1/translations/en?tenant_id={$this->tenant->id}");
 
     $response->assertOk()
         ->assertJson([
@@ -179,7 +186,9 @@ test('NormalizeTenantInput middleware normalizes tenant_id from header and query
 test('NormalizeTenantInput normalizes tenant_id in authenticated storeOrUpdate request', function (): void {
     Cache::flush();
 
+    // Writing the global dictionary is reserved to platform administrators.
     $user = User::factory()->create();
+    $user->forceFill(['is_platform_admin' => true])->save();
     $user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
 
     Sanctum::actingAs($user);

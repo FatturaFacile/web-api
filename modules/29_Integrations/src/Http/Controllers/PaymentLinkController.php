@@ -10,8 +10,10 @@ use App\Models\Invoice;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Modules\Integrations\Models\PaymentGatewaySetting;
 use Modules\Integrations\Models\PaymentLink;
+use Modules\Integrations\Services\PaymentGatewayResolver;
 use Modules\Integrations\Services\PaymentLinkService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -65,7 +67,7 @@ final class PaymentLinkController extends Controller
     public function updateSettings(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $data = $request->validate([
-            'provider' => ['required', 'in:local,stripe'],
+            'provider' => ['required', Rule::in(PaymentGatewayResolver::providers())],
             'credentials' => ['nullable', 'array'],
             'credentials.secret_key' => ['nullable', 'string', 'max:255'],
             'credentials.webhook_secret' => ['nullable', 'string', 'max:255'],

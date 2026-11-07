@@ -14,6 +14,8 @@ return [
     'invalid_fatturapa' => 'Die Datei ist kein gültiges FatturaPA-Dokument.',
     'recipient_mismatch' => 'Die Rechnung ist an eine abweichende USt-IdNr. adressiert.',
     'unknown_recipient' => 'Kein Mandant stimmt mit dem Rechnungsempfänger überein.',
+    'ambiguous_recipient_title' => 'Mehrdeutiger Empfänger',
+    'ambiguous_recipient' => 'Mehrere Mandanten haben die USt-IdNr. des Rechnungsempfängers: Die Rechnung wurde nicht zugestellt.',
     'credit_note_not_payable' => 'Gutschriften können nicht direkt bezahlt werden.',
     'already_paid' => 'Diese Eingangsrechnung ist bereits vollständig beglichen.',
 

@@ -9,6 +9,8 @@ use App\Http\Requests\Lookups\SaveLookupTranslationRequest;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
+use App\Services\Tenancy\PublicTenantResolver;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -53,7 +55,7 @@ class LookupController extends Controller
             new OA\Response(response: 404, description: 'Lookup category not found'),
         ]
     )]
-    public function getByCategory(Request $request, string $category_code): JsonResponse
+    public function getByCategory(Request $request, PublicTenantResolver $tenantResolver, string $category_code): JsonResponse
     {
         $category = LookupCategory::where('code', $category_code)->first();
 
@@ -64,11 +66,7 @@ class LookupController extends Controller
         }
 
         $locale = (string) $request->query('locale', 'it');
-        $tenantId = $request->query('tenant_id') ?? $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
-
-        if (in_array($tenantId, ['null', 'undefined', 'default', ''], true)) {
-            $tenantId = null;
-        }
+        $tenantId = $tenantResolver->resolve($request);
 
         $cacheKey = $tenantId
             ? "lookups_{$category_code}_{$tenantId}_{$locale}"
@@ -165,28 +163,21 @@ class LookupController extends Controller
                     new OA\Property(property: 'label', type: 'string', maxLength: 255, example: 'Piece'),
                     new OA\Property(property: 'short_label', type: 'string', maxLength: 15, nullable: true, example: 'pc'),
                     new OA\Property(property: 'description', type: 'string', nullable: true),
-                    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'tenant_id', type: 'string', nullable: true, description: 'Ignored: the label belongs to the active tenant. Send "global" (platform administrators only) for a global label.'),
                 ]
             )
         ),
         responses: [
             new OA\Response(response: 200, description: 'Lookup translation saved successfully'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Not an owner or administrator, or a global write by a non platform administrator'),
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
-    public function saveTranslation(SaveLookupTranslationRequest $request): JsonResponse
+    public function saveTranslation(SaveLookupTranslationRequest $request, TenantContext $tenantContext): JsonResponse
     {
-        $tenantId = $request->input('tenant_id') ?? $request->header('X-Tenant-Id') ?? $request->header('X-Tenant-ID');
-        if (in_array($tenantId, ['null', 'undefined', 'default', ''], true)) {
-            $tenantId = null;
-        }
-
+        $tenantId = $request->wantsGlobal() ? null : $tenantContext->getTenantId();
         $validated = $request->validated();
-
-        if (array_key_exists('tenant_id', $validated) && ! empty($validated['tenant_id'])) {
-            $tenantId = $validated['tenant_id'];
-        }
 
         $translation = LookupItemTranslation::updateOrCreate(
             [

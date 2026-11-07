@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Projects\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class UpdateProjectRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -26,7 +29,7 @@ final class UpdateProjectRequest extends FormRequest
             'contract_value' => ['sometimes', 'numeric', 'gte:0'],
             'progress_percentage' => ['sometimes', 'numeric', 'between:0,100'],
             'health_status' => ['sometimes', 'string', 'in:green,yellow,red'],
-            'project_manager_user_id' => ['sometimes', 'uuid', 'exists:users,id'],
+            'project_manager_user_id' => ['sometimes', 'uuid', $this->tenantMember()],
         ];
     }
 }

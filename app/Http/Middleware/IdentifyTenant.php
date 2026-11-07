@@ -30,6 +30,15 @@ class IdentifyTenant
         /** @var User|null $user */
         $user = $request->user();
 
+        // A deactivated account keeps no access, whatever token or session it still holds.
+        if ($user !== null && $user->is_active === false) {
+            return $this->problemDetailsResponse(
+                title: 'Account Disabled',
+                detail: 'This account has been deactivated.',
+                status: Response::HTTP_FORBIDDEN,
+            );
+        }
+
         $tenantId = $request->header('X-Tenant-Id') ?: $request->query('tenant_id');
         $declaredUserId = $this->declaredUserId($request);
 
@@ -75,6 +84,15 @@ class IdentifyTenant
             return $this->problemDetailsResponse(
                 title: 'Forbidden Tenant Access',
                 detail: 'Authenticated user is not authorized to access records belonging to this tenant.',
+                status: Response::HTTP_FORBIDDEN,
+            );
+        }
+
+        // A suspended or disabled company is closed to its members until the platform reactivates it.
+        if ($user !== null && ! in_array($tenant->status, [null, 'active'], true)) {
+            return $this->problemDetailsResponse(
+                title: 'Tenant Suspended',
+                detail: 'This organization is not active.',
                 status: Response::HTTP_FORBIDDEN,
             );
         }

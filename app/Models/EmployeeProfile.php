@@ -32,6 +32,18 @@ class EmployeeProfile extends Model
         'currency',
     ];
 
+    /**
+     * Social security number, tax rate and pay never leave the server in a plain serialization.
+     *
+     * @var list<string>
+     */
+    protected $hidden = [
+        'social_security_number',
+        'swiss_cantonal_tax_rate',
+        'inps_code',
+        'base_salary',
+    ];
+
     protected function casts(): array
     {
         return [

@@ -114,9 +114,10 @@ test('CRIT-05: invoices transmitted to SDI cannot be updated or deleted', functi
 });
 
 test('CRIT-06: bootstrap support endpoint is protected in production environment', function (): void {
-    // In local / testing, endpoint is accessible
-    $response = $this->getJson('/api/v1/system/bootstrap-support');
-    $response->assertSuccessful();
+    // Outside production too, the endpoint needs the secret in the header
+    config(['services.bootstrap.secret' => 'testing-secret']);
+    $this->getJson('/api/v1/system/bootstrap-support')->assertForbidden();
+    $this->withHeaders(['X-Bootstrap-Secret' => 'testing-secret'])->getJson('/api/v1/system/bootstrap-support')->assertSuccessful();
 
     // Simulate production environment
     app()->detectEnvironment(fn () => 'production');

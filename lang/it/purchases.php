@@ -14,6 +14,8 @@ return [
     'invalid_fatturapa' => 'Il file non è un documento FatturaPA valido.',
     'recipient_mismatch' => 'La fattura è intestata a una partita IVA differente.',
     'unknown_recipient' => 'Nessun tenant corrisponde al destinatario della fattura.',
+    'ambiguous_recipient_title' => 'Destinatario ambiguo',
+    'ambiguous_recipient' => 'Più di un tenant ha la partita IVA del destinatario: la fattura non è stata consegnata.',
     'credit_note_not_payable' => 'Le note di credito non possono essere pagate direttamente.',
     'already_paid' => 'Questa fattura fornitore risulta già saldata.',
 

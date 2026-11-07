@@ -66,6 +66,32 @@ final class TaxIdentifier
     }
 
     /**
+     * Whether another tenant of the installation already holds this VAT number, compared without spaces, dots, dashes and
+     * the IT prefix, so "IT 123" and "123" are the same number.
+     */
+    public static function vatNumberTaken(string $value, ?string $exceptTenantId = null): bool
+    {
+        $compact = self::compactVatNumber($value);
+
+        if ($compact === '') {
+            return false;
+        }
+
+        return Tenant::query()
+            ->whereNotNull('vat_number')
+            ->when($exceptTenantId !== null, static fn (Builder $query) => $query->whereKeyNot($exceptTenantId))
+            ->whereRaw("UPPER(REPLACE(REPLACE(REPLACE(vat_number, ' ', ''), '.', ''), '-', '')) IN (?, ?)", [$compact, 'IT'.$compact])
+            ->exists();
+    }
+
+    private static function compactVatNumber(string $value): string
+    {
+        $compact = (string) preg_replace('/[\s.\-]/', '', strtoupper($value));
+
+        return str_starts_with($compact, 'IT') ? substr($compact, 2) : $compact;
+    }
+
+    /**
      * LIKE only narrows the search (a Swiss UID may carry a MWST suffix): the comparison happens on the canonical form.
      */
     private static function matches(Tenant $tenant, string $canonical): bool
