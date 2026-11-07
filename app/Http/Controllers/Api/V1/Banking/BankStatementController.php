@@ -84,7 +84,8 @@ class BankStatementController extends Controller
     }
 
     /**
-     * Statements, newest first; filter with `status`, `source_format` and `iban`.
+     * Statements, newest first, 25 per page (`per_page` up to 100); filter with `status`, `source_format` and `iban`.
+     * `data` stays the list of statements, the page counters are in `meta`.
      */
     #[OA\Get(
         path: '/api/v1/banking/statements',
@@ -97,6 +98,8 @@ class BankStatementController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'partially_reconciled', 'reconciled'])),
             new OA\Parameter(name: 'source_format', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['cbi', 'camt053', 'camt054'])),
             new OA\Parameter(name: 'iban', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1, minimum: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, minimum: 5, maximum: 100)),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Statements listed successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
@@ -109,6 +112,7 @@ class BankStatementController extends Controller
             'status' => ['sometimes', Rule::in([BankStatement::DRAFT, BankStatement::PARTIALLY_RECONCILED, BankStatement::RECONCILED])],
             'source_format' => ['sometimes', Rule::in(['cbi', 'camt053', 'camt054'])],
             'iban' => ['sometimes', 'string', 'max:34'],
+            'per_page' => ['sometimes', 'integer', 'min:5', 'max:100'],
         ]);
 
         $statements = BankStatement::query()
@@ -120,9 +124,14 @@ class BankStatementController extends Controller
                     |> (fn ($x) => $query->where('account_iban', $x)))
             ->orderByDesc('statement_date')
             ->orderByDesc('created_at')
-            ->get();
+            ->orderByDesc('id')
+            ->paginate((int) ($filters['per_page'] ?? 25));
 
-        return $this->successResponse(BankStatementResource::collection($statements), __('banking.messages.listed'));
+        return $this->successResponse(
+            data: BankStatementResource::collection($statements->getCollection()),
+            message: __('banking.messages.listed'),
+            meta: ['current_page' => $statements->currentPage(), 'last_page' => $statements->lastPage(), 'per_page' => $statements->perPage(), 'total' => $statements->total()],
+        );
     }
 
     #[OA\Get(

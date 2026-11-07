@@ -420,6 +420,30 @@ test('statements are listed with filters and shown with their lines', function (
     expect($shown->json('data.lines'))->toHaveCount(1)->and($shown->json('data.lines.0.reconciled'))->toBeFalse();
 });
 
+test('statements are listed one page at a time with the page counters in meta', function (): void {
+    foreach (range(1, 7) as $day) {
+        BankStatement::create([
+            'tenant_id' => $this->tenant->id,
+            'source_format' => 'camt053',
+            'account_iban' => 'IT60X0542811101000000123456',
+            'statement_date' => now()->subDays($day)->toDateString(),
+            'currency' => 'EUR',
+            'status' => BankStatement::DRAFT,
+            'content_hash' => hash('sha256', "paged-statement-{$day}"),
+        ]);
+    }
+
+    $firstPage = bsApi()->getJson('/api/v1/banking/statements?per_page=5')->assertOk();
+    expect($firstPage->json('data'))->toHaveCount(5)
+        ->and($firstPage->json('data.0.statement_date'))->toStartWith(now()->subDay()->toDateString())
+        ->and($firstPage->json('meta'))->toBe(['current_page' => 1, 'last_page' => 2, 'per_page' => 5, 'total' => 7]);
+
+    expect(bsApi()->getJson('/api/v1/banking/statements?per_page=5&page=2')->json('data'))->toHaveCount(2)
+        ->and(bsApi()->getJson('/api/v1/banking/statements')->json('meta.per_page'))->toBe(25);
+
+    bsApi()->getJson('/api/v1/banking/statements?per_page=500')->assertUnprocessable();
+});
+
 // ---------------------------------------------------------------------------------------------------------------
 // Reconciliation
 // ---------------------------------------------------------------------------------------------------------------

@@ -5,16 +5,37 @@ declare(strict_types=1);
 namespace Modules\Manufacturing\Jobs;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Log;
 use Modules\Manufacturing\Contracts\MrpServiceInterface;
 use Modules\Manufacturing\DTOs\RunMrpDTO;
+use Throwable;
 
-final class ProcessMrpRunJob implements ShouldQueue
+/**
+ * Runs MRP for one tenant. Two concurrent runs would plan the same demand twice, so the job is unique per tenant. A run
+ * is a single transaction, so a failed one leaves nothing behind and can be retried.
+ */
+final class ProcessMrpRunJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $timeout = 900;
+
+    public int $tries = 2;
+
+    /**
+     * Seconds before the retry.
+     */
+    public int $backoff = 300;
+
+    /**
+     * Released by the end of the run; this only bounds a lock left behind by a worker that died.
+     */
+    public int $uniqueFor = 3600;
 
     public function __construct(
         public string $tenantId,
@@ -23,6 +44,11 @@ final class ProcessMrpRunJob implements ShouldQueue
         public string $runType = 'regenerative',
         public ?string $executedBy = null
     ) {}
+
+    public function uniqueId(): string
+    {
+        return $this->tenantId;
+    }
 
     public function handle(MrpServiceInterface $mrpService): void
     {
@@ -35,5 +61,16 @@ final class ProcessMrpRunJob implements ShouldQueue
         );
 
         $mrpService->executeMrpRun($dto);
+    }
+
+    public function failed(?Throwable $exception): void
+    {
+        Log::error('MRP run failed.', [
+            'tenant_id' => $this->tenantId,
+            'horizon_start_date' => $this->horizonStartDate,
+            'horizon_end_date' => $this->horizonEndDate,
+            'run_type' => $this->runType,
+            'error' => $exception?->getMessage(),
+        ]);
     }
 }

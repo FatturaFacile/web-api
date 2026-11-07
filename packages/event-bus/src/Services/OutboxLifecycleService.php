@@ -17,7 +17,8 @@ final class OutboxLifecycleService
     ) {}
 
     /**
-     * Archive processed outbox messages older than specified days.
+     * Archive dispatched outbox messages older than specified days. The relay marks them completed; rows written before
+     * that carry the older processed status, so both are archived.
      * Non-destructive: copies to archive table before removing from active table.
      *
      * @return array{archived_count: int, older_than_days: int}
@@ -27,7 +28,7 @@ final class OutboxLifecycleService
         $cutoffDate = now()->subDays($olderThanDays);
 
         $archivedCount = DB::transaction(function () use ($cutoffDate, $batchSize) {
-            $messages = TransactionalOutbox::where('status', 'processed')
+            $messages = TransactionalOutbox::whereIn('status', TransactionalOutbox::DISPATCHED_STATUSES)
                 ->where('processed_at', '<=', $cutoffDate)
                 ->orderBy('processed_at')
                 ->limit($batchSize)
@@ -132,10 +133,10 @@ final class OutboxLifecycleService
     public function getMetrics(): array
     {
         return [
-            'pending_count' => TransactionalOutbox::where('status', 'pending')->count(),
-            'processing_count' => TransactionalOutbox::where('status', 'processing')->count(),
-            'processed_count' => TransactionalOutbox::where('status', 'processed')->count(),
-            'failed_count' => TransactionalOutbox::where('status', 'failed')->count(),
+            'pending_count' => TransactionalOutbox::where('status', TransactionalOutbox::STATUS_PENDING)->count(),
+            'processing_count' => TransactionalOutbox::where('status', TransactionalOutbox::STATUS_PROCESSING)->count(),
+            'processed_count' => TransactionalOutbox::whereIn('status', TransactionalOutbox::DISPATCHED_STATUSES)->count(),
+            'failed_count' => TransactionalOutbox::where('status', TransactionalOutbox::STATUS_FAILED)->count(),
             'archived_count' => TransactionalOutboxArchive::count(),
         ];
     }

@@ -53,7 +53,7 @@ services:
     container_name: erp_queue_worker
     restart: always
     working_dir: /var/www/html
-    command: php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+    command: php artisan queue:work redis --sleep=3 --tries=3 --timeout=900 --max-time=3600
     env_file:
       - .env
     volumes:
