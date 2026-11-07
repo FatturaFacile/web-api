@@ -20,18 +20,15 @@ class StockReservationFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid();
-
         return [
             'id' => (string) Str::uuid(),
-            'tenant_id' => $tenantId,
-            'stock_item_id' => StockItem::factory(),
-            'warehouse_id' => Warehouse::factory(),
-            'source_document_type' => 'sales_order',
-            'source_document_id' => (string) Str::uuid(),
+            'tenant_id' => Tenant::factory(),
+            'stock_item_id' => fn (array $attributes): string => StockItem::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
+            'warehouse_id' => fn (array $attributes): string => Warehouse::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
+            'reserved_for_type' => 'sales_order',
+            'reserved_for_id' => (string) Str::uuid(),
             'quantity_reserved' => fake()->randomFloat(2, 1, 20),
             'status' => 'active',
-            'allocated_by' => (string) Str::uuid(),
         ];
     }
 

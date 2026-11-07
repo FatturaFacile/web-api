@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
-use Modules\Treasury\Models\BankAccount;
 use Modules\Treasury\Models\PaymentBatch;
 
 /**
@@ -18,22 +18,18 @@ final class PaymentBatchFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = (string) Str::uuid7();
-        $account = BankAccount::first() ?? BankAccountFactory::new()->create(['tenant_id' => $tenantId]);
-
         return [
             'id' => (string) Str::uuid7(),
-            'tenant_id' => $tenantId,
-            'company_id' => (string) Str::uuid7(),
-            'bank_account_id' => $account->id,
+            'tenant_id' => Tenant::factory(),
+            'bank_account_id' => fn (array $attributes): string => BankAccountFactory::new()->create(['tenant_id' => $attributes['tenant_id']])->id,
+            'format' => 'sepa_pain_001_it',
             'batch_reference' => 'BATCH-'.date('Ymd').'-'.strtoupper(Str::random(6)),
-            'payment_method' => 'SEPA_CREDIT_TRANSFER',
+            'payment_method' => 'sepa_credit_transfer',
             'execution_date' => date('Y-m-d'),
             'currency' => 'EUR',
             'total_amount' => 5000.00,
             'item_count' => 1,
-            'status' => 'DRAFT',
-            'created_by' => (string) Str::uuid7(),
+            'status' => 'draft',
         ];
     }
 

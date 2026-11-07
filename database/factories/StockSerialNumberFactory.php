@@ -9,7 +9,6 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockSerialNumber;
-use Modules\Inventory\Models\Warehouse;
 
 /**
  * @extends Factory<StockSerialNumber>
@@ -20,15 +19,12 @@ class StockSerialNumberFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid();
-
         return [
             'id' => (string) Str::uuid(),
-            'tenant_id' => $tenantId,
-            'stock_item_id' => StockItem::factory(),
+            'tenant_id' => Tenant::factory(),
+            'stock_item_id' => fn (array $attributes): string => StockItem::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
             'serial_number' => 'SN-'.strtoupper(fake()->unique()->bothify('??####??')),
             'status' => 'in_stock',
-            'current_warehouse_id' => Warehouse::factory(),
         ];
     }
 }

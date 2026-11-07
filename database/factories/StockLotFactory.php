@@ -19,19 +19,16 @@ class StockLotFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = Tenant::first()?->id ?? (string) Str::uuid();
-
         return [
             'id' => (string) Str::uuid(),
-            'tenant_id' => $tenantId,
-            'stock_item_id' => StockItem::factory(),
+            'tenant_id' => Tenant::factory(),
+            'stock_item_id' => fn (array $attributes): string => StockItem::factory()->create(['tenant_id' => $attributes['tenant_id']])->id,
             'lot_number' => 'LOT-'.now()->format('Y').'-'.strtoupper(fake()->unique()->bothify('?###')),
-            'manufacture_date' => now()->subMonths(2)->toDateString(),
+            'manufacturing_date' => now()->subMonths(2)->toDateString(),
             'expiration_date' => now()->addYears(2)->toDateString(),
-            'received_at' => now()->subMonths(1),
-            'initial_quantity' => 100.0,
-            'current_quantity' => 100.0,
-            'status' => 'active',
+            'received_at' => now()->subMonth()->toDateString(),
+            'is_quarantined' => false,
+            'lot_level' => 'raw_material',
         ];
     }
 
