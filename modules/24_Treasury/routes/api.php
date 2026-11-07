@@ -9,6 +9,7 @@ use Modules\Treasury\Http\Controllers\CashForecastController;
 use Modules\Treasury\Http\Controllers\CashPositionController;
 use Modules\Treasury\Http\Controllers\FxRiskController;
 use Modules\Treasury\Http\Controllers\LiquidityController;
+use Modules\Treasury\Http\Controllers\OpenBankingController;
 use Modules\Treasury\Http\Controllers\PaymentBatchController;
 use Modules\Treasury\Http\Controllers\ReceivableCollectionController;
 
@@ -39,6 +40,13 @@ Route::prefix('api/v1/treasury')
         Route::post('reconciliations/auto-reconcile', [BankReconciliationController::class, 'runAutoReconciliation']);
         Route::post('reconciliations/lines/{lineId}/match', [BankReconciliationController::class, 'matchManually']);
         Route::post('reconciliations/{id}/approve', [BankReconciliationController::class, 'approve']);
+
+        // IBAN Check & Open Banking (PSD2)
+        Route::post('iban/check', [OpenBankingController::class, 'checkIban']);
+        Route::post('open-banking/consents', [OpenBankingController::class, 'storeConsent']);
+        Route::get('open-banking/consents/{id}/account', [OpenBankingController::class, 'account'])->whereUuid('id');
+        Route::post('open-banking/payments', [OpenBankingController::class, 'initiatePayment']);
+        Route::get('open-banking/payments/{id}', [OpenBankingController::class, 'showPayment'])->whereUuid('id');
 
         // Cash Forecasts
         Route::get('cash-forecasts', [CashForecastController::class, 'index']);

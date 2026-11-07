@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
+use Modules\GeneralLedger\Enums\ReportingClass;
 
 final class StoreChartOfAccountRequest extends FormRequest
 {
@@ -31,6 +33,7 @@ final class StoreChartOfAccountRequest extends FormRequest
             'allows_manual_posting' => ['nullable', 'boolean'],
             'is_cost_center_mandatory' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'reporting_class' => ['nullable', Rule::enum(ReportingClass::class)],
         ];
     }
 }

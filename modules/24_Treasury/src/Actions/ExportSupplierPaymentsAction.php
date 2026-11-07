@@ -96,6 +96,10 @@ final readonly class ExportSupplierPaymentsAction
             throw ValidationException::withMessages(['invoice_ids' => "Invoice {$invoice->invoice_number} has nothing to pay."]);
         }
 
+        if ($invoice->isPaymentBlocked()) {
+            throw ValidationException::withMessages(['invoice_ids' => "Invoice {$invoice->invoice_number} is not approved for payment."]);
+        }
+
         $qrLines = $invoice->qr_raw_payload !== null ? preg_split('/\r\n|\r|\n/', trim((string) $invoice->qr_raw_payload)) : [];
         $supplier = $invoice->supplier;
         $iban = ($qrLines[3] ?? '') ?: ($supplier?->iban ?: $supplier?->qr_iban);

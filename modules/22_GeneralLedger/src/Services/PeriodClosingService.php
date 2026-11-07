@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Services;
 
+use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
 use Modules\GeneralLedger\Events\PeriodClosedEvent;
@@ -24,10 +26,13 @@ use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
 final class PeriodClosingService implements PeriodClosingServiceInterface
 {
+    public const string OpeningBalanceSource = 'opening_balance';
+
     public function __construct(
         private readonly EventDispatcher $dispatcher,
         private readonly AuditLedgerInterface $auditLedger,
-        private readonly DoubleEntryPostingServiceInterface $postingService
+        private readonly DoubleEntryPostingServiceInterface $postingService,
+        private readonly LedgerBalanceReader $balances,
     ) {}
 
     public function closePeriod(string $fiscalPeriodId, string $closedBy): FiscalPeriod
@@ -338,7 +343,106 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
             $this->dispatcher->publish($event);
             event($event);
 
+            $this->carryForwardOpeningBalances((string) $fy->id, $closedByUuid);
+
             return $closingRun;
         });
+    }
+
+    /**
+     * The next year is the one starting the day after. A calendar year opens it if needed; any other year must have it
+     * in place first, and then null comes back. Lines carry no partner, so no open item is created twice, and the bank
+     * balance stays as it is because the money did not move.
+     *
+     * @throws InvalidArgumentException when the year is not closed or its balances do not square
+     */
+    public function carryForwardOpeningBalances(string $fiscalYearId, string $actorId): ?JournalEntry
+    {
+        return DB::transaction(function () use ($fiscalYearId, $actorId): ?JournalEntry {
+            /** @var FiscalYear $fy */
+            $fy = FiscalYear::where('id', $fiscalYearId)->lockForUpdate()->firstOrFail();
+
+            if ($fy->status !== 'closed') {
+                throw new InvalidArgumentException("Fiscal year [{$fy->year_code}] must be closed before carrying its balances forward.");
+            }
+
+            $existing = JournalEntry::where('tenant_id', $fy->tenant_id)
+                ->where('source_document_type', self::OpeningBalanceSource)
+                ->where('source_document_id', $fy->id)
+                ->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            $nextYear = $this->nextYear($fy);
+
+            if ($nextYear === null) {
+                return null;
+            }
+
+            $lines = $this->openingLines($fy);
+
+            if ($lines === []) {
+                return null;
+            }
+
+            $firstPeriod = FiscalPeriod::where('fiscal_year_id', $nextYear->id)->orderBy('start_date')->orderBy('period_number')->firstOrFail();
+
+            return $this->postingService->createAndPost([
+                'tenant_id' => $fy->tenant_id,
+                'company_id' => $fy->company_id,
+                'fiscal_period_id' => $firstPeriod->id,
+                'entry_number' => 'OPEN-'.$nextYear->year_code,
+                'journal_type' => 'opening',
+                'posting_date' => CarbonImmutable::parse($nextYear->start_date)->toDateString(),
+                'document_date' => CarbonImmutable::parse($nextYear->start_date)->toDateString(),
+                'description' => "Opening balances carried forward from {$fy->year_code}",
+                'source_document_type' => self::OpeningBalanceSource,
+                'source_document_id' => $fy->id,
+                'bank_balance_managed' => true,
+                'lines' => $lines,
+            ], $actorId);
+        });
+    }
+
+    private function nextYear(FiscalYear $fy): ?FiscalYear
+    {
+        $end = CarbonImmutable::parse($fy->end_date);
+        $next = FiscalYear::where('tenant_id', $fy->tenant_id)->whereDate('start_date', $end->addDay()->toDateString())->first();
+
+        if ($next !== null) {
+            return $next;
+        }
+
+        $isCalendarYear = CarbonImmutable::parse($fy->start_date)->dayOfYear === 1 && $end->isSameDay($end->endOfYear());
+
+        return $isCalendarYear ? (new OpenFiscalYearAction)->execute((string) $fy->tenant_id, $end->year + 1) : null;
+    }
+
+    /**
+     * @return list<array{account_id: string, debit_amount: string, credit_amount: string, description: string}>
+     */
+    private function openingLines(FiscalYear $fy): array
+    {
+        $lines = [];
+
+        foreach ($this->balances->closedBalances((string) $fy->tenant_id, CarbonImmutable::parse($fy->end_date)) as $account) {
+            $net = bcsub((string) $account->debit, (string) $account->credit, 4);
+
+            if (bccomp($net, '0', 4) === 0) {
+                continue;
+            }
+
+            $isDebit = bccomp($net, '0', 4) > 0;
+            $lines[] = [
+                'account_id' => (string) $account->account_id,
+                'debit_amount' => $isDebit ? $net : '0',
+                'credit_amount' => $isDebit ? '0' : ltrim($net, '-'),
+                'description' => "Opening balance from {$fy->year_code}",
+            ];
+        }
+
+        return $lines;
     }
 }

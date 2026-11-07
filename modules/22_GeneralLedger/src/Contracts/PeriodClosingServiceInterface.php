@@ -6,6 +6,7 @@ namespace Modules\GeneralLedger\Contracts;
 
 use Modules\GeneralLedger\Models\FinancialClosingRun;
 use Modules\GeneralLedger\Models\FiscalPeriod;
+use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\PeriodLock;
 
 interface PeriodClosingServiceInterface
@@ -17,4 +18,9 @@ interface PeriodClosingServiceInterface
     public function lockSubledger(string $fiscalPeriodId, string $subledger, string $lockedBy): PeriodLock;
 
     public function closeFiscalYear(string $fiscalYearId, string $closedBy): FinancialClosingRun;
+
+    /**
+     * Posts the balances of a closed year as the opening entry of the next one. Repeating it returns the same entry.
+     */
+    public function carryForwardOpeningBalances(string $fiscalYearId, string $actorId): ?JournalEntry;
 }

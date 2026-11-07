@@ -16,6 +16,7 @@ declare(strict_types=1);
 
 $anyMember = ['*'];
 $finance = ['owner', 'admin', 'accountant'];
+$contractManagers = ['owner', 'admin', 'accountant', 'sales_manager', 'procurement_manager', 'service_manager'];
 
 return [
     'modules' => [
@@ -37,6 +38,11 @@ return [
         ],
         'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'member']],
         'inventory' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'technician', 'member']],
+        'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'purchasing', 'hr', 'member']],
+        'contracts' => ['read' => $contractManagers, 'write' => $contractManagers],
+        'assistant' => ['read' => $anyMember, 'write' => $anyMember],
+        'edocument_networks' => ['read' => $finance, 'write' => $finance],
+        'workspace' => ['read' => $anyMember, 'write' => $anyMember],
         'hr' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],
     ],
 ];

@@ -27,6 +27,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'allows_manual_posting', type: 'boolean'),
         new OA\Property(property: 'is_cost_center_mandatory', type: 'boolean'),
         new OA\Property(property: 'is_active', type: 'boolean'),
+        new OA\Property(property: 'reporting_class', type: 'string', nullable: true),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
     ]
 )]

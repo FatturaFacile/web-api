@@ -27,6 +27,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'allows_manual_posting', type: 'boolean', nullable: true),
         new OA\Property(property: 'is_cost_center_mandatory', type: 'boolean', nullable: true),
         new OA\Property(property: 'is_active', type: 'boolean', nullable: true),
+        new OA\Property(property: 'reporting_class', type: 'string', nullable: true, enum: ['cash', 'receivable', 'inventory', 'other_current_asset', 'non_current_asset', 'current_liability', 'non_current_liability', 'equity', 'non_cash_expense'], description: 'Drives the cash flow statement and the ratios'),
     ]
 )]
 #[OA\Schema(

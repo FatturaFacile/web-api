@@ -11,10 +11,19 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Workflow\Contracts\ReactsToWorkflowOutcome;
+use Modules\Workflow\Models\WorkflowInstance;
 
-class PassiveInvoice extends Model
+class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
+
+    /**
+     * Approval states in which the invoice cannot be paid: on the way to approval, or refused.
+     *
+     * @var list<string>
+     */
+    public const PaymentBlockingStatuses = ['pending', 'in_approval', 'rejected'];
 
     /**
      * @var list<string>
@@ -42,6 +51,11 @@ class PassiveInvoice extends Model
         'total_paid',
         'gl_journal_entry_id',
         'exchange_rate',
+        'approval_status',
+        'cost_center_id',
+        'approval_workflow_instance_id',
+        'approval_submitted_by',
+        'approval_decided_at',
     ];
 
     protected function casts(): array
@@ -55,7 +69,29 @@ class PassiveInvoice extends Model
             'total_tax' => 'decimal:2',
             'total_paid' => 'decimal:2',
             'exchange_rate' => 'decimal:6',
+            'approval_decided_at' => 'datetime',
         ];
+    }
+
+    public function isPaymentBlocked(): bool
+    {
+        return in_array($this->approval_status, self::PaymentBlockingStatuses, true);
+    }
+
+    /**
+     * Runs inside the transaction of the decision, so the payment block can never lag behind the workflow. A cancelled
+     * workflow leaves the invoice waiting for a new submission: cancelling must not open the payment.
+     */
+    public function onWorkflowOutcome(WorkflowInstance $instance, string $outcome): void
+    {
+        $this->update([
+            'approval_status' => match ($outcome) {
+                'approved' => 'approved',
+                'rejected' => 'rejected',
+                default => 'pending',
+            },
+            'approval_decided_at' => $outcome === 'cancelled' ? null : now(),
+        ]);
     }
 
     /**

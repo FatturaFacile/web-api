@@ -28,6 +28,7 @@ final class ChartOfAccountResource extends JsonResource
             'allows_manual_posting' => (bool) $this->allows_manual_posting,
             'is_cost_center_mandatory' => (bool) $this->is_cost_center_mandatory,
             'is_active' => (bool) $this->is_active,
+            'reporting_class' => $this->reporting_class,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

@@ -26,17 +26,14 @@ final class ApprovalMatrixEvaluatorService implements ApprovalMatrixEvaluatorInt
             }
         }
 
-        $documentAmount = (float) ($context['amount'] ?? $entity->getAttribute('total_amount') ?? $entity->getAttribute('amount') ?? 0.0);
+        $documentAmount = (string) ($context['amount'] ?? $entity->getAttribute('total_amount') ?? $entity->getAttribute('amount') ?? '0');
 
         $matchingTiers = [];
         foreach ($matrix->tiers as $tier) {
-            $min = $tier->threshold_min !== null ? (float) $tier->threshold_min : null;
-            $max = $tier->threshold_max !== null ? (float) $tier->threshold_max : null;
-
-            if ($min !== null && $documentAmount < $min) {
+            if ($tier->threshold_min !== null && bccomp($documentAmount, (string) $tier->threshold_min, 4) < 0) {
                 continue;
             }
-            if ($max !== null && $documentAmount > $max) {
+            if ($tier->threshold_max !== null && bccomp($documentAmount, (string) $tier->threshold_max, 4) > 0) {
                 continue;
             }
 
@@ -49,6 +46,36 @@ final class ApprovalMatrixEvaluatorService implements ApprovalMatrixEvaluatorInt
         }
 
         return $matchingTiers;
+    }
+
+    /**
+     * @param  array<string, mixed>  $context
+     * @return array<int, array{tier_level: int, approver_type: string, approver_value: string, approval_type: string}>|null
+     */
+    public function tiersFor(string $tenantId, string $entityType, Model $entity, array $context): ?array
+    {
+        $matrices = ApprovalMatrix::where('tenant_id', $tenantId)
+            ->where('target_entity_type', $entityType)
+            ->where('is_active', true)
+            ->with(['rules', 'tiers'])
+            ->orderBy('code')
+            ->get();
+
+        if ($matrices->isEmpty()) {
+            return null;
+        }
+
+        $costCentreFirst = $matrices->sortByDesc(static fn (ApprovalMatrix $matrix): bool => $matrix->rules->whereNotNull('cost_center_id')->isNotEmpty());
+
+        foreach ($costCentreFirst as $matrix) {
+            $tiers = $this->evaluate($matrix, $entity, $context);
+
+            if ($tiers !== []) {
+                return $tiers;
+            }
+        }
+
+        return [];
     }
 
     /**

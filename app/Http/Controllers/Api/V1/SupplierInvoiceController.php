@@ -164,6 +164,10 @@ class SupplierInvoiceController extends Controller
             throw ValidationException::withMessages(['invoice' => __('purchases.already_paid')]);
         }
 
+        if ($invoice->isPaymentBlocked()) {
+            throw ValidationException::withMessages(['invoice' => "Invoice {$invoice->invoice_number} is not approved for payment."]);
+        }
+
         $invoice->update(['payment_status' => 'paid']);
         $this->events->record($invoice, 'marked_paid');
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Providers;
 
+use App\Models\PassiveInvoice;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -54,6 +55,7 @@ use Modules\Procurement\Policies\PurchaseRequisitionPolicy;
 use Modules\Procurement\Policies\SupplierContractPolicy;
 use Modules\Procurement\Policies\SupplierPolicy;
 use Modules\Procurement\Services\InventoryReceivingBridgeService;
+use Modules\Procurement\Services\PassiveInvoiceApprovalService;
 use Modules\Procurement\Services\ProcurementAuditLedgerService;
 use Modules\Procurement\Services\ProcurementService;
 use Modules\Procurement\Services\PurchaseBudgetCommitmentService;
@@ -88,6 +90,10 @@ final class ProcurementServiceProvider extends ServiceProvider
     {
         // Load API Routes
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+
+        PassiveInvoice::creating(function (PassiveInvoice $invoice): void {
+            $this->app->make(PassiveInvoiceApprovalService::class)->flagNewInvoice($invoice);
+        });
 
         // Register Policies
         Gate::policy(Supplier::class, SupplierPolicy::class);

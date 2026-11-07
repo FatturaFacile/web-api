@@ -9,7 +9,11 @@ use Enterprise\Foundation\Providers\EnterpriseFoundationServiceProvider;
 use Enterprise\MultiTenant\Providers\MultiTenantServiceProvider;
 use Enterprise\OpenApi\Providers\OpenApiServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
+use Modules\Assistant\Providers\AssistantServiceProvider;
+use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
+use Modules\Documents\Providers\DocumentsServiceProvider;
+use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
@@ -23,6 +27,7 @@ use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
+use Modules\WorkspaceSync\Providers\WorkspaceSyncServiceProvider;
 
 return [
     AppServiceProvider::class,
@@ -48,4 +53,9 @@ return [
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,
     SdiServiceProvider::class,
+    DocumentsServiceProvider::class,
+    ContractsServiceProvider::class,
+    AssistantServiceProvider::class,
+    EDocumentNetworksServiceProvider::class,
+    WorkspaceSyncServiceProvider::class,
 ];
