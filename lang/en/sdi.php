@@ -6,6 +6,9 @@ return [
     'unknown_uuid' => 'Unknown SDI UUID.',
     'unsupported_event' => 'Unsupported event type.',
     'status_final' => 'The invoice SDI status is already final.',
+    'not_current_transmission' => 'The notification concerns a transmission that is not the current one of the invoice.',
+    'status_superseded' => 'The notification would move the invoice back from status :status.',
+    'quarantine_not_retryable' => 'This inbound message is not in quarantine or its channel cannot read it again.',
     'invalid_fatturapa_xml' => 'The document is not a valid FatturaPA XML.',
 
     'messages' => [
@@ -16,6 +19,8 @@ return [
         'notification_received' => 'Notification received',
         'channel_updated' => 'SDI channel updated',
         'poll_queued' => 'SDI channel read queued',
+        'quarantine' => 'Inbound SDI messages in quarantine retrieved',
+        'quarantine_retried' => 'Quarantined SDI message read again',
     ],
     'send_failed_title' => 'SDI transmission failed',
     'sending_disabled' => 'SDI transmission is disabled for this tenant.',

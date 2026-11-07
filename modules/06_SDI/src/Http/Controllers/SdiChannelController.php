@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\SDI\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\CatalogResource;
 use App\Http\Responses\ApiResponse;
+use App\Models\EiInboundLog;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -14,6 +16,7 @@ use Illuminate\Support\Str;
 use Modules\SDI\Enums\SdiChannel;
 use Modules\SDI\Http\Requests\UpdateSdiChannelRequest;
 use Modules\SDI\Jobs\PollSdiChannelJob;
+use Modules\SDI\Services\SdiInboundProcessor;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -154,6 +157,69 @@ final class SdiChannelController extends Controller
         PollSdiChannelJob::dispatch($this->manageableTenant($request)->id);
 
         return $this->successResponse(null, __('sdi.messages.poll_queued'), Response::HTTP_ACCEPTED);
+    }
+
+    /**
+     * Inbound messages kept aside because they could not be read or trusted.
+     */
+    #[OA\Get(
+        path: '/api/v1/settings/sdi-channel/quarantine',
+        operationId: 'listSdiInboundQuarantine',
+        description: 'List the inbound messages of the active tenant kept in quarantine: certified messages that do not come from SDI, files that cannot be read and signed files whose signature does not verify. The original message is stored but never returned.',
+        summary: 'List quarantined SDI messages',
+        security: [['bearerAuth' => []]],
+        tags: ['SDI'],
+        responses: [
+            new OA\Response(response: 200, description: 'Quarantined messages', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Only owners and administrators can manage the channel', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function quarantine(Request $request): JsonResponse
+    {
+        $tenant = $this->manageableTenant($request);
+
+        $logs = EiInboundLog::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('status', SdiInboundProcessor::QuarantineStatus)
+            ->latest()
+            ->limit(200)
+            ->get();
+
+        return $this->successResponse(CatalogResource::collection($logs), __('sdi.messages.quarantine'));
+    }
+
+    /**
+     * Read a quarantined message again.
+     */
+    #[OA\Post(
+        path: '/api/v1/settings/sdi-channel/quarantine/{log}/retry',
+        operationId: 'retrySdiInboundQuarantine',
+        description: 'Read a quarantined message again with the current rules. When nothing in it fails any more its receipts and invoices are applied, each only once, and the message leaves the quarantine; otherwise it stays with the new reasons.',
+        summary: 'Retry a quarantined SDI message',
+        security: [['bearerAuth' => []]],
+        tags: ['SDI'],
+        parameters: [
+            new OA\Parameter(name: 'log', in: 'path', required: true, description: 'Inbound log UUID', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Message read again', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Only owners and administrators can manage the channel', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Not a quarantined message of this tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'The channel cannot read the message again', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    public function retryQuarantined(Request $request, string $log, SdiInboundProcessor $processor): JsonResponse
+    {
+        $tenant = $this->manageableTenant($request);
+
+        $quarantined = EiInboundLog::query()
+            ->where('tenant_id', $tenant->id)
+            ->where('status', SdiInboundProcessor::QuarantineStatus)
+            ->findOrFail($log);
+
+        return $this->successResponse(new CatalogResource($processor->retryQuarantined($tenant, $quarantined)), __('sdi.messages.quarantine_retried'));
     }
 
     private function manageableTenant(Request $request): Tenant

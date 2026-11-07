@@ -18,23 +18,28 @@ final class PecMessageParser
     private const array EnvelopeFiles = ['daticert.xml', 'smime.p7s', 'postacert.eml'];
 
     /**
-     * @return array{headers: array<string, string>, text: string, attachments: list<array{name: string, content: string}>}
+     * The envelope part holds the files the PEC provider itself added at the top level of the message: daticert.xml
+     * and the headers of postacert.eml, the message as its sender wrote it. Files with the same names nested deeper were
+     * written by the sender and are not part of the envelope.
+     *
+     * @return array{headers: array<string, string>, text: string, attachments: list<array{name: string, content: string}>, envelope: array{daticert: ?string, inner_headers: ?array<string, string>}}
      */
     public function parse(string $raw): array
     {
-        $result = ['headers' => [], 'text' => '', 'attachments' => []];
+        $result = ['headers' => [], 'text' => '', 'attachments' => [], 'envelope' => ['daticert' => null, 'inner_headers' => null]];
         [$headers] = $this->split($raw);
         $result['headers'] = $headers;
 
-        $this->walk($raw, $result);
+        $this->walk($raw, $result, 0);
 
         return $result;
     }
 
     /**
-     * @param  array{headers: array<string, string>, text: string, attachments: list<array{name: string, content: string}>}  $result
+     * @param  array{headers: array<string, string>, text: string, attachments: list<array{name: string, content: string}>, envelope: array{daticert: ?string, inner_headers: ?array<string, string>}}  $result
+     * @param  int  $depth  Number of nested messages around this part
      */
-    private function walk(string $raw, array &$result): void
+    private function walk(string $raw, array &$result, int $depth): void
     {
         [$headers, $body] = $this->split($raw);
         $contentType = $headers['content-type'] ?? 'text/plain';
@@ -42,7 +47,7 @@ final class PecMessageParser
 
         if (str_starts_with($type, 'multipart/')) {
             foreach ($this->parts($body, $this->parameter($contentType, 'boundary')) as $part) {
-                $this->walk($part, $result);
+                $this->walk($part, $result, $depth);
             }
 
             return;
@@ -51,8 +56,14 @@ final class PecMessageParser
         $content = $this->decode($body, strtolower(trim($headers['content-transfer-encoding'] ?? '')));
 
         if ($type === 'message/rfc822') {
-            $result['text'] .= "\n".implode("\n", $this->split($content)[0]);
-            $this->walk($content, $result);
+            $innerHeaders = $this->split($content)[0];
+
+            if ($depth === 0 && $result['envelope']['inner_headers'] === null && strtolower((string) $this->fileName($headers)) === 'postacert.eml') {
+                $result['envelope']['inner_headers'] = $innerHeaders;
+            }
+
+            $result['text'] .= "\n".implode("\n", $innerHeaders);
+            $this->walk($content, $result, $depth + 1);
 
             return;
         }
@@ -65,6 +76,10 @@ final class PecMessageParser
             }
 
             return;
+        }
+
+        if ($depth === 0 && strtolower($name) === 'daticert.xml' && $result['envelope']['daticert'] === null) {
+            $result['envelope']['daticert'] = $content;
         }
 
         if (! in_array(strtolower($name), self::EnvelopeFiles, true)) {

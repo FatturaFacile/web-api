@@ -3,7 +3,12 @@
 declare(strict_types=1);
 
 return [
+    'not_current_transmission' => 'La notifica riguarda una trasmissione che non è quella corrente della fattura.',
+    'status_superseded' => 'La notifica riporterebbe indietro la fattura dallo stato :status.',
+    'quarantine_not_retryable' => 'Questo messaggio in arrivo non è in quarantena o il suo canale non può rileggerlo.',
     'messages' => [
+        'quarantine' => 'Messaggi SDI in quarantena recuperati',
+        'quarantine_retried' => 'Messaggio SDI in quarantena riletto',
         'bulk_sent' => 'Invio massivo a SDI elaborato',
         'self_invoice_created' => 'Autofattura emessa',
     ],
