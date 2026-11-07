@@ -22,7 +22,7 @@ class DailyCorrispettivo extends Model
     protected $fillable = [
         'tenant_id', 'business_date', 'tax_rate', 'vat_nature', 'sales_net', 'sales_tax', 'sales_gross', 'voided_gross',
         'returned_gross', 'total_net', 'total_tax', 'total_gross', 'document_count', 'gateway', 'gateway_status',
-        'gateway_reference', 'closed_at',
+        'gateway_reference', 'closed_at', 'transmission_key', 'gateway_error',
     ];
 
     protected function casts(): array

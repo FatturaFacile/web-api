@@ -14,6 +14,9 @@ use App\Models\Payment;
 use App\Models\SupplierPayment;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Generator;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -51,59 +54,105 @@ class GeneralLedgerExportService
     public function __construct(private readonly TenantContext $tenantContext) {}
 
     /**
+     * Whether a period fits in one preview or export: `to` is at most one year minus a day after `from`, so a calendar
+     * (or fiscal) year fits.
+     */
+    public static function periodFits(CarbonImmutable $from, CarbonImmutable $to): bool
+    {
+        return $to->lessThan($from->addYear());
+    }
+
+    /**
      * The numbered entries of the period, in date order. `$accountCode` keeps the entries that touch that account.
      *
      * @return array<int, LedgerEntry>
      */
     public function entries(CarbonImmutable $from, CarbonImmutable $to, string $source = self::SOURCE_ALL, ?string $accountCode = null): array
     {
+        return iterator_to_array($this->stream($from, $to, $source, $accountCode), false);
+    }
+
+    /**
+     * The numbered entries of the period, produced one calendar month at a time.
+     *
+     * Each month is read from the database in date order and sorted on the ledger order (date, source, document), then
+     * numbered with a counter that runs over the whole period. Since the date leads the order, the months follow each
+     * other and an entry gets the same number as if the whole period had been sorted at once: the numbering is stable
+     * across pages, filters by account (applied after numbering) and the export. Memory holds one month, not the period.
+     *
+     * @return Generator<int, LedgerEntry>
+     */
+    public function stream(CarbonImmutable $from, CarbonImmutable $to, string $source = self::SOURCE_ALL, ?string $accountCode = null): Generator
+    {
         $accounts = LedgerAccounts::forTenant((string) $this->tenantContext->getTenantId());
+        $position = 0;
+
+        for ($windowFrom = $from; $windowFrom->lessThanOrEqualTo($to); $windowFrom = $windowFrom->addMonthNoOverflow()->startOfMonth()) {
+            $windowTo = $windowFrom->endOfMonth()->startOfDay()->min($to);
+            $entries = [];
+
+            if (in_array($source, [self::SOURCE_ALL, self::SOURCE_INVOICES], true)) {
+                array_push($entries, ...$this->salesInvoices($windowFrom, $windowTo, $accounts), ...$this->supplierInvoices($windowFrom, $windowTo, $accounts));
+            }
+
+            if (in_array($source, [self::SOURCE_ALL, self::SOURCE_PAYMENTS], true)) {
+                array_push($entries, ...$this->customerPayments($windowFrom, $windowTo, $from, $to, $accounts), ...$this->supplierPayments($windowFrom, $windowTo, $from, $to, $accounts));
+            }
+
+            if (in_array($source, [self::SOURCE_ALL, self::SOURCE_BANKING], true)) {
+                array_push($entries, ...$this->bankLines($windowFrom, $windowTo, $accounts));
+            }
+
+            usort($entries, fn (LedgerEntry $a, LedgerEntry $b): int => [$a->date->toDateString(), self::SOURCE_RANK[$a->source], $a->sortKey] <=> [$b->date->toDateString(), self::SOURCE_RANK[$b->source], $b->sortKey]);
+
+            foreach ($entries as $entry) {
+                $entry->number = sprintf('%06d', ++$position);
+
+                if ($accountCode === null || $accountCode === '' || collect($entry->lines)->contains(fn (LedgerLine $line): bool => $line->accountCode === $accountCode)) {
+                    yield $entry;
+                }
+            }
+        }
+    }
+
+    /**
+     * One page of the entries and the totals of the whole period, in a single pass over the stream: only the entries of
+     * the page are kept.
+     *
+     * @return array{entries: array<int, LedgerEntry>, totals: array{entries: int, lines: int, total_debit: float, total_credit: float, balanced: bool, unbalanced_entries: array<int, string>}}
+     */
+    public function page(CarbonImmutable $from, CarbonImmutable $to, string $source, ?string $accountCode, int $page, int $perPage): array
+    {
+        $offset = ($page - 1) * $perPage;
+        $totals = new LedgerTotals;
         $entries = [];
 
-        if (in_array($source, [self::SOURCE_ALL, self::SOURCE_INVOICES], true)) {
-            array_push($entries, ...$this->salesInvoices($from, $to, $accounts), ...$this->supplierInvoices($from, $to, $accounts));
+        foreach ($this->stream($from, $to, $source, $accountCode) as $index => $entry) {
+            $totals->add($entry);
+
+            if ($index >= $offset && $index < $offset + $perPage) {
+                $entries[] = $entry;
+            }
         }
 
-        if (in_array($source, [self::SOURCE_ALL, self::SOURCE_PAYMENTS], true)) {
-            array_push($entries, ...$this->customerPayments($from, $to, $accounts), ...$this->supplierPayments($from, $to, $accounts));
-        }
-
-        if (in_array($source, [self::SOURCE_ALL, self::SOURCE_BANKING], true)) {
-            array_push($entries, ...$this->bankLines($from, $to, $accounts));
-        }
-
-        usort($entries, fn (LedgerEntry $a, LedgerEntry $b): int => [$a->date->toDateString(), self::SOURCE_RANK[$a->source], $a->sortKey] <=> [$b->date->toDateString(), self::SOURCE_RANK[$b->source], $b->sortKey]);
-
-        foreach ($entries as $index => $entry) {
-            $entry->number = sprintf('%06d', $index + 1);
-        }
-
-        if ($accountCode !== null && $accountCode !== '') {
-            $entries = array_values(array_filter($entries, fn (LedgerEntry $entry): bool => collect($entry->lines)->contains(fn (LedgerLine $line): bool => $line->accountCode === $accountCode)));
-        }
-
-        return $entries;
+        return ['entries' => $entries, 'totals' => $totals->toArray()];
     }
 
     /**
      * Totals of a set of entries, with the balance check of the whole period and of every entry.
      *
-     * @param  array<int, LedgerEntry>  $entries
+     * @param  iterable<int, LedgerEntry>  $entries
      * @return array{entries: int, lines: int, total_debit: float, total_credit: float, balanced: bool, unbalanced_entries: array<int, string>}
      */
-    public function totals(array $entries): array
+    public function totals(iterable $entries): array
     {
-        $debit = array_sum(array_map(fn (LedgerEntry $entry): int => $entry->totalDebit(), $entries));
-        $credit = array_sum(array_map(fn (LedgerEntry $entry): int => $entry->totalCredit(), $entries));
+        $totals = new LedgerTotals;
 
-        return [
-            'entries' => count($entries),
-            'lines' => array_sum(array_map(fn (LedgerEntry $entry): int => count($entry->lines), $entries)),
-            'total_debit' => $debit / 100,
-            'total_credit' => $credit / 100,
-            'balanced' => $debit === $credit,
-            'unbalanced_entries' => array_values(array_map(fn (LedgerEntry $entry): string => $entry->number, array_filter($entries, fn (LedgerEntry $entry): bool => ! $entry->isBalanced()))),
-        ];
+        foreach ($entries as $entry) {
+            $totals->add($entry);
+        }
+
+        return $totals->toArray();
     }
 
     /**
@@ -139,10 +188,10 @@ class GeneralLedgerExportService
      * Write the CSV of the entries through `$write`: UTF-8 with a byte order mark (so Excel opens it correctly),
      * `;` as delimiter, `,` as decimal separator with two decimals, and the standard header.
      *
-     * @param  array<int, LedgerEntry>  $entries
+     * @param  iterable<int, LedgerEntry>  $entries
      * @param  callable(string): void  $write
      */
-    public function writeCsv(array $entries, string $dateFormat, callable $write): void
+    public function writeCsv(iterable $entries, string $dateFormat, callable $write): void
     {
         $write("\xEF\xBB\xBF".implode(';', self::HEADER)."\r\n");
 
@@ -276,15 +325,19 @@ class GeneralLedgerExportService
      *
      * @return array<int, LedgerEntry>
      */
-    private function customerPayments(CarbonImmutable $from, CarbonImmutable $to, LedgerAccounts $accounts): array
+    private function customerPayments(CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $periodFrom, CarbonImmutable $periodTo, LedgerAccounts $accounts): array
     {
-        $payments = Payment::query()->with('invoice.contact')->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])->orderBy('paid_at')->orderBy('created_at')->get();
+        $payments = $this->paymentsOfWindow(Payment::query()->with('invoice.contact'), $from, $to, $periodFrom, $periodTo);
         $ibans = $this->ibansByBankLine($payments->pluck('bank_statement_line_id')->filter()->unique()->all());
         $entries = [];
 
         foreach ($payments->groupBy(fn (Payment $payment): string => $payment->bank_statement_line_id ?? 'payment-'.$payment->id) as $group) {
             /** @var Payment $first */
             $first = $group->first();
+
+            if (! $this->startsInWindow($first, $from, $to)) {
+                continue;
+            }
             $invoice = $first->invoice;
             $number = (string) $invoice?->invoice_number;
             $byType = $this->sumByType($group);
@@ -326,15 +379,19 @@ class GeneralLedgerExportService
      *
      * @return array<int, LedgerEntry>
      */
-    private function supplierPayments(CarbonImmutable $from, CarbonImmutable $to, LedgerAccounts $accounts): array
+    private function supplierPayments(CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $periodFrom, CarbonImmutable $periodTo, LedgerAccounts $accounts): array
     {
-        $payments = SupplierPayment::query()->with('passiveInvoice.supplier')->whereBetween('paid_at', [$from->toDateString(), $to->toDateString()])->orderBy('paid_at')->orderBy('created_at')->get();
+        $payments = $this->paymentsOfWindow(SupplierPayment::query()->with('passiveInvoice.supplier'), $from, $to, $periodFrom, $periodTo);
         $ibans = $this->ibansByBankLine($payments->pluck('bank_statement_line_id')->filter()->unique()->all());
         $entries = [];
 
         foreach ($payments->groupBy(fn (SupplierPayment $payment): string => $payment->bank_statement_line_id ?? 'payment-'.$payment->id) as $group) {
             /** @var SupplierPayment $first */
             $first = $group->first();
+
+            if (! $this->startsInWindow($first, $from, $to)) {
+                continue;
+            }
             $invoice = $first->passiveInvoice;
             $number = (string) $invoice?->invoice_number;
             $byType = $this->sumByType($group);
@@ -408,6 +465,38 @@ class GeneralLedgerExportService
         }
 
         return $entries;
+    }
+
+    /**
+     * The payments paid in a window, plus the other payments of the period that share a bank line with them: the
+     * payments of one bank line form one entry, dated on the first of them, even when they fall in different months.
+     *
+     * @template TPayment of Payment|SupplierPayment
+     *
+     * @param  Builder<TPayment>  $query
+     * @return EloquentCollection<int, TPayment>
+     */
+    private function paymentsOfWindow(Builder $query, CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $periodFrom, CarbonImmutable $periodTo): EloquentCollection
+    {
+        $window = [$from->toDateString(), $to->toDateString()];
+        $sharedLines = $query->getModel()->newQuery()->select('bank_statement_line_id')->whereNotNull('bank_statement_line_id')->whereBetween('paid_at', $window);
+
+        return $query
+            ->whereBetween('paid_at', [$periodFrom->toDateString(), $periodTo->toDateString()])
+            ->where(static fn (Builder $inWindow) => $inWindow->whereBetween('paid_at', $window)->orWhereIn('bank_statement_line_id', $sharedLines))
+            ->orderBy('paid_at')
+            ->orderBy('created_at')
+            ->get();
+    }
+
+    /**
+     * Whether the entry of a group of payments, dated on its first payment, belongs to the window.
+     */
+    private function startsInWindow(Payment|SupplierPayment $first, CarbonImmutable $from, CarbonImmutable $to): bool
+    {
+        $date = CarbonImmutable::parse($first->paid_at)->toDateString();
+
+        return $date >= $from->toDateString() && $date <= $to->toDateString();
     }
 
     /**

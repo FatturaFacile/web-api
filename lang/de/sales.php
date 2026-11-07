@@ -54,6 +54,8 @@ return [
     'commercial_document_not_a_sale' => 'Nur ein Verkaufsdokument kann berichtigt werden.',
     'commercial_document_return_exceeds' => 'Die Menge übersteigt die noch offene Menge der Position.',
     'commercial_document_return_empty' => 'Auf diesen Positionen gibt es nichts zurückzugeben.',
+    'commercial_document_refunded_sale' => 'Für einen erstatteten Verkauf kann kein Handelsdokument ausgestellt werden.',
+    'commercial_document_refund_blocked' => 'Der Verkauf kann nicht erstattet werden, weil sein Handelsdokument :number nicht storniert werden kann: :reason',
     'corrispettivi_day_closed' => 'Dieser Tag ist bereits abgeschlossen.',
     'corrispettivi_day_empty' => 'Dieser Tag hat keine Dokumente zum Abschließen.',
     'corrispettivi_future_day' => 'Ein zukünftiger Tag kann nicht abgeschlossen werden.',

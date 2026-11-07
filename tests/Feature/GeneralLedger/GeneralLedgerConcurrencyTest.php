@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -124,4 +125,30 @@ test('pessimistic lock on period close prevents race conditions', function () {
     });
 
     expect($p->status)->toBe('closed');
+});
+
+test('postings read their fiscal period FOR SHARE, so they wait for a closing in progress and then see it closed', function () {
+    $periodReads = [];
+    DB::listen(function (QueryExecuted $query) use (&$periodReads): void {
+        if (str_contains($query->sql, 'from "fiscal_periods"')) {
+            $periodReads[] = $query->sql;
+        }
+    });
+    $lines = [
+        ['account_id' => $this->cash->id, 'debit_amount' => 100.0, 'credit_amount' => 0.0],
+        ['account_id' => $this->revenue->id, 'debit_amount' => 0.0, 'credit_amount' => 100.0],
+    ];
+
+    $posted = $this->postingService->createAndPost(['tenant_id' => $this->tenantId, 'fiscal_period_id' => $this->period->id, 'posting_date' => '2026-01-10', 'lines' => $lines]);
+    $draft = $this->postingService->createAndPost(['tenant_id' => $this->tenantId, 'fiscal_period_id' => $this->period->id, 'posting_date' => '2026-01-11', 'status' => 'draft', 'lines' => $lines]);
+    $this->postingService->postDraft((string) $draft->id);
+
+    expect($posted->status)->toBe('posted')
+        ->and($periodReads)->toHaveCount(3)
+        ->and(collect($periodReads)->every(fn (string $sql): bool => str_ends_with($sql, 'for share')))->toBeTrue();
+
+    $this->closingService->closePeriod((string) $this->period->id, 'admin');
+
+    expect(fn () => $this->postingService->createAndPost(['tenant_id' => $this->tenantId, 'fiscal_period_id' => $this->period->id, 'posting_date' => '2026-01-12', 'lines' => $lines]))
+        ->toThrow(InvalidArgumentException::class);
 });

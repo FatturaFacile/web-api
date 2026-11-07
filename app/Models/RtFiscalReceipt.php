@@ -23,6 +23,21 @@ class RtFiscalReceipt extends Model
      */
     public const StatusSimulated = 'simulated';
 
+    /**
+     * Recorded and committed, not handed to the printer yet.
+     */
+    public const StatusPending = 'pending';
+
+    /**
+     * Being handed to the printer by one worker right now.
+     */
+    public const StatusTransmitting = 'transmitting';
+
+    /**
+     * The printer refused or could not be reached: the receipt can be sent again.
+     */
+    public const StatusError = 'error';
+
     protected $fillable = [
         'pos_sale_id',
         'z_report_number',
@@ -30,6 +45,7 @@ class RtFiscalReceipt extends Model
         'xml_lot_id',
         'rt_status',
         'transmitted_at',
+        'transmission_error',
     ];
 
     protected function casts(): array

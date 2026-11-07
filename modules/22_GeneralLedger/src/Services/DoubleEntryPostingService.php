@@ -88,7 +88,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 throw new InvalidArgumentException('Journal entry lines must balance with positive debit/credit values.');
             }
 
-            $fiscalPeriod = FiscalPeriod::findOrFail($data['fiscal_period_id']);
+            $fiscalPeriod = $this->sharedLockedPeriod((string) $data['fiscal_period_id']);
 
             if ((string) $fiscalPeriod->tenant_id !== (string) $data['tenant_id']) {
                 throw FiscalPeriodException::foreignPeriod((string) $fiscalPeriod->period_name);
@@ -220,7 +220,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 throw new InvalidArgumentException('Cannot post an already reversed journal entry.');
             }
 
-            $fiscalPeriod = FiscalPeriod::findOrFail($entry->fiscal_period_id);
+            $fiscalPeriod = $this->sharedLockedPeriod((string) $entry->fiscal_period_id);
             $this->assertDateInPeriod(CarbonImmutable::parse($entry->posting_date)->toDateString(), $fiscalPeriod);
 
             if ($fiscalPeriod->isLockedFor('GL')) {
@@ -293,6 +293,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             $targetPeriod = FiscalPeriod::where('tenant_id', $original->tenant_id)
                 ->where('start_date', '<=', $reversalDate)
                 ->where('end_date', '>=', $reversalDate)
+                ->sharedLock()
                 ->first();
 
             if (! $targetPeriod) {
@@ -420,6 +421,16 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         $end = CarbonImmutable::parse($period->end_date)->toDateString();
 
         return max($start, min($today, $end));
+    }
+
+    /**
+     * The period of a posting, read FOR SHARE. The closing takes the period FOR UPDATE, so a posting waits for a closing
+     * in progress and then reads the committed status (and locks), and a closing waits for the postings in progress:
+     * a posting can no longer land in a period that is being closed. Postings of the same period do not block each other.
+     */
+    private function sharedLockedPeriod(string $fiscalPeriodId): FiscalPeriod
+    {
+        return FiscalPeriod::whereKey($fiscalPeriodId)->sharedLock()->firstOrFail();
     }
 
     private function assertDateInPeriod(string $postingDate, FiscalPeriod $period): void

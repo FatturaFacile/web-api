@@ -7,6 +7,7 @@ namespace Modules\AssetManagement\Services;
 use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -107,26 +108,34 @@ final readonly class DepreciationEngineService implements DepreciationEngineServ
                 ->lockForUpdate()
                 ->first();
 
+            $alreadyExecuted = new InvalidArgumentException("Depreciation run already executed for period [{$dto->periodCode}] and ledger [{$dto->ledgerType}].");
+
             if ($existingRun !== null) {
-                throw new InvalidArgumentException("Depreciation run already executed for period [{$dto->periodCode}] and ledger [{$dto->ledgerType}].");
+                throw $alreadyExecuted;
             }
 
             $actorUuid = (! empty($actorUserId) && Str::isUuid($actorUserId) && User::where('id', $actorUserId)->exists()) ? $actorUserId : null;
 
-            $run = DepreciationRun::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $dto->tenantId,
-                'company_id' => $dto->companyId,
-                'run_number' => 'DEPR-RUN-'.date('Ymd').'-'.strtoupper(Str::random(5)),
-                'period_code' => $dto->periodCode,
-                'period_type' => $dto->periodType,
-                'ledger_type' => $dto->ledgerType,
-                'assets_processed_count' => 0,
-                'total_depreciation_amount' => 0.00,
-                'status' => 'running',
-                'executed_by_user_id' => $actorUuid,
-                'executed_at' => now(),
-            ]);
+            // The lock above cannot cover a row that does not exist yet: two concurrent runs of the same period both get
+            // here, and the unique index on (tenant, period, period type, ledger) lets only one insert through.
+            try {
+                $run = DepreciationRun::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $dto->tenantId,
+                    'company_id' => $dto->companyId,
+                    'run_number' => 'DEPR-RUN-'.date('Ymd').'-'.strtoupper(Str::random(5)),
+                    'period_code' => $dto->periodCode,
+                    'period_type' => $dto->periodType,
+                    'ledger_type' => $dto->ledgerType,
+                    'assets_processed_count' => 0,
+                    'total_depreciation_amount' => 0.00,
+                    'status' => 'running',
+                    'executed_by_user_id' => $actorUuid,
+                    'executed_at' => now(),
+                ]);
+            } catch (UniqueConstraintViolationException) {
+                throw $alreadyExecuted;
+            }
 
             $query = FixedAsset::where('tenant_id', $dto->tenantId)
                 ->whereIn('status', ['capitalized', 'commissioned', 'in_service', 'active', 'revalued', 'impaired'])

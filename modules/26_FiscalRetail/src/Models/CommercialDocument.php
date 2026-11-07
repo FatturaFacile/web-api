@@ -22,7 +22,7 @@ class CommercialDocument extends Model
     protected $fillable = [
         'tenant_id', 'pos_sale_id', 'related_document_id', 'document_type', 'fiscal_year', 'sequential_number',
         'document_number', 'issue_date', 'payment_method', 'total_net', 'total_tax', 'total_gross', 'gateway',
-        'gateway_status', 'gateway_reference',
+        'gateway_status', 'gateway_reference', 'transmission_key', 'gateway_error',
     ];
 
     protected function casts(): array

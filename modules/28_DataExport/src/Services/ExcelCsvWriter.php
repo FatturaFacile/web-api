@@ -26,6 +26,22 @@ final class ExcelCsvWriter
     }
 
     /**
+     * More lines of a file started by {@see write()}, for files written a page at a time.
+     *
+     * @param  iterable<array<int, mixed>>  $rows
+     */
+    public function rows(iterable $rows): string
+    {
+        $text = '';
+
+        foreach ($rows as $row) {
+            $text .= $this->line($row)."\r\n";
+        }
+
+        return $text;
+    }
+
+    /**
      * @param  array<int, mixed>  $cells
      */
     private function line(array $cells): string

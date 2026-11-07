@@ -14,6 +14,7 @@ use App\Http\Resources\RtFiscalReceiptResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\PosSale;
 use App\Models\PosSession;
+use App\Models\RtFiscalReceipt;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -116,7 +117,7 @@ class PosSaleController extends Controller
     #[OA\Post(
         path: '/api/v1/retail/pos/sales/{id}/rt-transmit',
         operationId: 'transmitPosSaleToRt',
-        description: 'Hands the sale to the fiscal printer (Registratore Telematico). The built-in printer is simulated: the receipt gets `rt_status` `simulated`, no `transmitted_at` and `reached_tax_authority` false, because nothing is sent to the Agenzia delle Entrate. `transmitted` is used only by a real RT service.',
+        description: 'Hands the sale to the fiscal printer (Registratore Telematico). The built-in printer is simulated: the receipt gets `rt_status` `simulated`, no `transmitted_at` and `reached_tax_authority` false, because nothing is sent to the Agenzia delle Entrate. `transmitted` is used only by a real RT service. When the printer fails the receipt is kept with `rt_status` `error` and calling the endpoint again retries it.',
         summary: 'Transmit sale to RT',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Retail & POS'],
@@ -133,7 +134,11 @@ class PosSaleController extends Controller
     public function rtTransmit(SyncPosSaleToRt $sync, string $id): JsonResponse
     {
         $receipt = $sync->execute(PosSale::findOrFail($id));
-        $message = $receipt->isSimulated() ? __('pos.messages.rt_simulated') : __('pos.messages.rt_transmitted');
+        $message = match ($receipt->rt_status) {
+            RtFiscalReceipt::StatusSimulated => __('pos.messages.rt_simulated'),
+            RtFiscalReceipt::StatusTransmitted => __('pos.messages.rt_transmitted'),
+            default => __('pos.messages.rt_not_transmitted'),
+        };
 
         return $this->successResponse(new RtFiscalReceiptResource($receipt), $message, Response::HTTP_CREATED);
     }

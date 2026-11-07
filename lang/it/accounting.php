@@ -18,6 +18,7 @@ return [
         'invalid_iban' => 'Il valore :iban non è un IBAN valido.',
         'unbalanced_journal' => 'La registrazione contabile non è in pareggio tra dare e avere.',
         'period_locked' => 'Il periodo contabile è bloccato per le registrazioni.',
+        'period_max_one_year' => 'Il periodo non può superare un anno.',
     ],
 
     'aging' => [
