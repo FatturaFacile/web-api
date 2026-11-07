@@ -49,6 +49,7 @@ test('Audit Ledger: records model lifecycle events with deterministic cryptograp
 
     $entries = AuditLedgerEntry::where('tenant_id', $tenantId)
         ->orderBy('event_timestamp', 'asc')
+        ->orderBy('id', 'asc')
         ->get();
 
     expect($entries)->toHaveCount(2)

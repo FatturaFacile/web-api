@@ -42,7 +42,7 @@ test('audit ledger records model lifecycle events with deterministic cryptograph
         moduleCode: 'CORE'
     );
 
-    $entries = AuditLedgerEntry::where('tenant_id', $tenantId)->orderBy('event_timestamp', 'asc')->get();
+    $entries = AuditLedgerEntry::where('tenant_id', $tenantId)->orderBy('event_timestamp', 'asc')->orderBy('id', 'asc')->get();
 
     expect($entries)->toHaveCount(2)
         ->and($entries[0]->action)->toBe('CREATED')

@@ -15,6 +15,12 @@ final class AuditLedgerArchiveEntry extends Model
 {
     protected $table = 'enterprise_audit_ledger_archive';
 
+    /**
+     * Microseconds are kept so that entries recorded in the same second keep the order of the hash chain. The record
+     * hash itself formats the timestamp to the second, so chains recorded before keep verifying.
+     */
+    protected $dateFormat = 'Y-m-d H:i:s.uP';
+
     protected $primaryKey = 'archive_id';
 
     public $timestamps = false;
