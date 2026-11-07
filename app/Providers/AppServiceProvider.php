@@ -15,6 +15,7 @@ use App\Models\Payment;
 use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\ServiceReport;
+use App\Models\Tenant;
 use App\Models\WorkOrder;
 use App\Policies\AppointmentPolicy;
 use App\Policies\ContactPolicy;
@@ -31,6 +32,7 @@ use App\Services\Ecommerce\EcommerceManager;
 use App\Services\ExchangeRate\EuropeanCentralBankProvider;
 use App\Services\Pdf\DompdfPdfGenerator;
 use App\Services\Retail\LocalFiscalPrinterGateway;
+use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -63,6 +65,15 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // The quota is checked here so every path that creates an invoice stops at the same limit.
+        Invoice::creating(static function (Invoice $invoice): void {
+            $tenant = $invoice->invoice_type === 'proforma' || $invoice->tenant_id === null ? null : Tenant::find($invoice->tenant_id);
+
+            if ($tenant !== null) {
+                app(DocumentQuotaService::class)->assertCanIssue($tenant, DocumentQuotaService::InvoicePoints);
+            }
+        });
+
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(Quote::class, QuotePolicy::class);
         Gate::policy(DeliveryNote::class, DeliveryNotePolicy::class);

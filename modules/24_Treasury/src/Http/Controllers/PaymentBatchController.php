@@ -293,7 +293,12 @@ final class PaymentBatchController extends Controller
     public function execute(Request $request, string $id): JsonResponse
     {
         $protocol = (string) $request->input('protocol', 'sepa_pain001');
-        $execution = $this->executeAction->execute($id, $protocol, (string) $request->user()?->id);
+
+        try {
+            $execution = $this->executeAction->execute($id, $protocol, (string) $request->user()?->id);
+        } catch (InvalidArgumentException $e) {
+            return response()->json(['success' => false, 'message' => $e->getMessage()], 422);
+        }
 
         return response()->json([
             'message' => 'pain.001 file generated: it must be sent to the bank, and the outcome confirmed.',

@@ -9,6 +9,7 @@ use App\Exceptions\QrBillGenerationException;
 use App\Models\Contact;
 use App\Models\ContactAddress;
 use App\Models\DeliveryNote;
+use App\Models\DocumentTemplate;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\SalesOrder;
@@ -347,6 +348,7 @@ class DocumentPdfService
         return [
             'type' => $type,
             'number' => $number,
+            'branding' => DocumentTemplate::brandingFor($document->getAttribute('tenant_id'), $type),
             'tenant' => $document->tenant,
             'tenant_address_lines' => $this->tenantAddressLines($document->tenant?->settings['preferences']['company'] ?? []),
             'contact' => $contact,

@@ -55,6 +55,7 @@ class Tenant extends Model
         'sdi_last_poll_at',
         'ade_telematic_address_registered',
         'ade_conservation_agreement_at',
+        'document_quota_points',
     ];
 
     /**
@@ -81,6 +82,7 @@ class Tenant extends Model
             'sdi_last_poll_at' => 'datetime',
             'ade_telematic_address_registered' => 'boolean',
             'ade_conservation_agreement_at' => 'date',
+            'document_quota_points' => 'decimal:1',
         ];
     }
 

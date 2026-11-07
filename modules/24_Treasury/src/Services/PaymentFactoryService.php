@@ -327,6 +327,8 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
                 throw new InvalidArgumentException("Payment batch [{$batch->batch_reference}] has already been exported.");
             }
 
+            $this->assertNotRiba($batch);
+
             if ($status !== 'approved') {
                 throw new InvalidArgumentException("Payment batch [{$batch->batch_reference}] must be approved before export.");
             }
@@ -452,8 +454,22 @@ final readonly class PaymentFactoryService implements PaymentFactoryServiceInter
      * @param  list<string>  $rejectedLineIds
      * @param  array<string, mixed>  $payload
      */
+    /**
+     * Ri.Ba. batches collect money: they have their own file and outcome, and must never reach the outflow path.
+     *
+     * @throws InvalidArgumentException
+     */
+    private function assertNotRiba(PaymentBatch $batch): void
+    {
+        if ($batch->payment_method === 'riba') {
+            throw new InvalidArgumentException("Payment batch [{$batch->batch_reference}] is a Ri.Ba. collection: use the Ri.Ba. routes.");
+        }
+    }
+
     private function applyBankOutcome(PaymentBatch $batch, array $executedLineIds, array $rejectedLineIds, string $bankReference, string $statusCode, ?string $valueDate, array $payload): PaymentBatch
     {
+        $this->assertNotRiba($batch);
+
         if (! in_array(strtolower((string) $batch->status), ['exported', 'partially_executed'], true)) {
             throw new InvalidArgumentException("Payment batch [{$batch->batch_reference}] has no exported file waiting for an outcome.");
         }

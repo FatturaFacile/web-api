@@ -71,6 +71,7 @@ final readonly class ForeignExchangeRiskService implements ForeignExchangeRiskSe
             $apExposure = (float) PaymentLine::where('tenant_id', $tenantId)
                 ->where('currency', $curr)
                 ->whereIn('status', ['pending', 'approved'])
+                ->where(static fn ($query) => $query->whereNull('recipient_type')->orWhere('recipient_type', '!=', 'customer'))
                 ->sum('amount');
 
             $netExposure = $cashHoldings + $arExposure - $apExposure;

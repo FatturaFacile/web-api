@@ -46,6 +46,8 @@ class PassiveInvoice extends Model
         'withholding_tax_amount',
         'withholdings',
         'declaration_of_intent_id',
+        'cost_account_id',
+        'cost_account_source',
     ];
 
     protected function casts(): array
@@ -78,6 +80,14 @@ class PassiveInvoice extends Model
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * @return HasMany<PassiveInvoiceLine, $this>
+     */
+    public function lines(): HasMany
+    {
+        return $this->hasMany(PassiveInvoiceLine::class)->orderBy('line_number');
     }
 
     /**

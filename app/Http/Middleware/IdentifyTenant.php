@@ -88,6 +88,14 @@ class IdentifyTenant
             )->header('Retry-After', '60');
         }
 
+        if ($user !== null && ! $request->isMethodSafe() && ! $request->routeIs('auth.*') && $this->isReadOnlyMember($user, $tenant)) {
+            return $this->problemDetailsResponse(
+                title: 'Read-Only Access',
+                detail: 'Your role in this organization can read data but cannot change it.',
+                status: Response::HTTP_FORBIDDEN,
+            );
+        }
+
         $this->tenantContext->setTenant($tenant);
 
         try {
@@ -95,6 +103,13 @@ class IdentifyTenant
         } finally {
             $this->tenantContext->clear();
         }
+    }
+
+    private function isReadOnlyMember(User $user, Tenant $tenant): bool
+    {
+        $role = $user->tenants()->where('tenants.id', $tenant->id)->first()?->pivot?->role;
+
+        return in_array($role, config('permissions.read_only_roles', []), true);
     }
 
     /**

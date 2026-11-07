@@ -258,6 +258,7 @@ final readonly class CashForecastService implements CashForecastServiceInterface
         $openBatches = PaymentBatch::where('tenant_id', $forecast->tenant_id)
             ->whereIn(DB::raw('LOWER(status)'), ['approved', 'draft'])
             ->whereBetween('execution_date', [$startDate, $endDate])
+            ->where('payment_method', '!=', 'riba')
             ->get();
 
         foreach ($openBatches as $pb) {

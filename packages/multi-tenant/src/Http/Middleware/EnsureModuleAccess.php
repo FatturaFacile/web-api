@@ -34,6 +34,16 @@ final class EnsureModuleAccess
             throw new InvalidArgumentException("Unknown module [{$module}] in the access configuration.");
         }
 
+        $apiKeyScopes = $request->attributes->get('api_key_scopes');
+
+        if (is_array($apiKeyScopes)) {
+            return in_array("{$module}.{$access}", $apiKeyScopes, true) ? $next($request) : $this->problemDetailsResponse(
+                title: 'Forbidden Module Access',
+                detail: "This API key has no {$access} scope on the {$module} module.",
+                status: Response::HTTP_FORBIDDEN,
+            );
+        }
+
         /** @var User|null $user */
         $user = $request->user();
         $tenantId = $this->tenantContext->getTenantId();

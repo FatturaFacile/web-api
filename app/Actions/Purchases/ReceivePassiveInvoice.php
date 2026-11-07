@@ -7,6 +7,7 @@ namespace App\Actions\Purchases;
 use App\Models\Contact;
 use App\Models\PassiveInvoice;
 use App\Services\ItalianSdi\FatturaPaParser;
+use App\Services\Purchases\SupplierCostRuleApplier;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -22,6 +23,7 @@ class ReceivePassiveInvoice
         private readonly TenantContext $tenantContext,
         private readonly DocumentEventRecorder $events,
         private readonly PostPassiveInvoiceAction $postToLedger,
+        private readonly SupplierCostRuleApplier $costRules,
     ) {}
 
     /**
@@ -80,6 +82,9 @@ class ReceivePassiveInvoice
                     'withholdings' => $document['withholdings'] === [] ? null : $document['withholdings'],
                     'withholding_tax_amount' => number_format(array_sum(array_map(static fn (array $withholding): float => (float) $withholding['amount'], $document['withholdings'])), 2, '.', ''),
                 ]);
+
+                $invoice->lines()->createMany(array_map(static fn (array $line): array => [...$line, 'tenant_id' => $tenant->id], $document['lines']));
+                $this->costRules->apply($invoice);
 
                 $this->post($invoice, $deferLedgerErrors);
                 $this->events->record($invoice, 'received', ['file_name' => $fileName, 'document_type' => $document['document_type']]);

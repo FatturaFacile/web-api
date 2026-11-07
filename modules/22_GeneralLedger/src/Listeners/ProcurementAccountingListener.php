@@ -189,16 +189,7 @@ final class ProcurementAccountingListener
 
         $currency = ! empty($event->currency) ? $event->currency : TenantAccountingCurrency::of($event->tenantId);
 
-        $lines = [
-            [
-                'account_id' => $grIrAcc->id,
-                'debit_amount' => (float) $event->netAmount,
-                'credit_amount' => 0.0,
-                'currency' => $currency,
-                'exchange_rate' => $event->exchangeRate,
-                'description' => "Clear GR/IR: Invoice {$event->vendorInvoiceNumber}",
-            ],
-        ];
+        $lines = $this->costLines($event, (string) $grIrAcc->id, $currency);
 
         if ((float) $event->taxAmount > 0) {
             $lines[] = [
@@ -267,6 +258,34 @@ final class ProcurementAccountingListener
             ->where('tenant_id', $event->tenantId)
             ->where('id', $event->matchLogId)
             ->update(['gl_journal_entry_id' => (string) $journalEntry->id]);
+    }
+
+    /**
+     * The debit side of a supplier invoice: the amounts sent to specific cost accounts and the rest on the default one.
+     *
+     * @return list<array<string, mixed>>
+     */
+    private function costLines(PurchaseLiabilityReadyEvent $event, string $defaultAccountId, string $currency): array
+    {
+        $line = fn (string $accountId, float $amount): array => [
+            'account_id' => $accountId,
+            'debit_amount' => $amount,
+            'credit_amount' => 0.0,
+            'currency' => $currency,
+            'exchange_rate' => $event->exchangeRate,
+            'description' => "Clear GR/IR: Invoice {$event->vendorInvoiceNumber}",
+        ];
+
+        $allocations = $event->purchaseOrderId === '' ? $event->costAllocations : [];
+        $lines = array_map(static fn (array $allocation): array => $line($allocation['account_id'], $allocation['amount']), $allocations);
+        $allocated = array_reduce($allocations, static fn (string $sum, array $allocation): string => bcadd($sum, number_format($allocation['amount'], 2, '.', ''), 2), '0.00');
+        $remaining = bcsub(number_format($event->netAmount, 2, '.', ''), $allocated, 2);
+
+        if (bccomp($remaining, '0', 2) !== 0 || $lines === []) {
+            $lines[] = $line($defaultAccountId, (float) $remaining);
+        }
+
+        return $lines;
     }
 
     /**

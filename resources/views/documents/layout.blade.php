@@ -19,11 +19,14 @@
         .totals td { border: 0; padding: 3px 6px; }
         .totals .grand td { border-top: 1px solid #1f2933; font-weight: bold; font-size: 11px; }
         .signature-line { margin-top: 36px; border-top: 1px solid #52606d; width: 220px; padding-top: 3px; }
+        @if (! empty($branding['primary_color'])) h1, h2 { color: {{ $branding['primary_color'] }}; } @endif
+        @if (! empty($branding['secondary_color'])) th { background: {{ $branding['secondary_color'] }}; } @endif
         footer { position: fixed; bottom: -14mm; left: 0; right: 0; text-align: center; font-size: 8px; color: #7b8794; }
     </style>
 </head>
 <body>
     <footer>
+        @if (! empty($branding['footer_text'])) {{ $branding['footer_text'] }}<br> @endif
         {{ $tenant?->legal_name ?: $tenant?->name }}
         @if ($tenant?->vat_number) · {{ __('pdf.vat_number') }} {{ $tenant->vat_number }} @endif
         @if ($tenant?->iban) · {{ __('pdf.payment.iban') }} {{ $tenant->iban }} @endif
@@ -32,6 +35,7 @@
     <table class="header" role="presentation">
         <tr>
             <td style="width: 55%">
+                @if (! empty($branding['logo_data_uri'])) <img src="{{ $branding['logo_data_uri'] }}" alt="" style="max-height: 55px; max-width: 180px"><br> @endif
                 <strong style="font-size: 13px">{{ $tenant?->legal_name ?: $tenant?->name }}</strong><br>
                 @foreach ($tenant_address_lines as $line) {{ $line }}<br> @endforeach
                 @if ($tenant?->vat_number) {{ __('pdf.vat_number') }}: {{ $tenant->vat_number }}<br> @endif
