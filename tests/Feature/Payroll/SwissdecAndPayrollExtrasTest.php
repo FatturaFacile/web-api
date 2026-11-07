@@ -143,19 +143,19 @@ test('the link opens with the date of birth, locks after wrong answers and expir
     $token = Str::afterLast(Mail::queued(PayslipAvailableMail::class)->first()->link, '/');
     app(TenantContext::class)->clear();
 
-    $this->postJson("/api/v1/public/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertOk()->assertHeader('Content-Type', 'application/pdf');
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertOk()->assertHeader('Content-Type', 'application/pdf');
     expect(PayslipDelivery::query()->withoutGlobalScopes()->sole()->opened_at)->not->toBeNull();
 
-    $this->postJson('/api/v1/public/payslips/inesistente', ['birth_date' => '1986-05-10'])->assertNotFound();
+    $this->postJson('/api/v1/portal/payslips/inesistente', ['birth_date' => '1986-05-10'])->assertNotFound();
 
     for ($attempt = 0; $attempt < 5; $attempt++) {
-        $this->postJson("/api/v1/public/payslips/{$token}", ['birth_date' => '2000-01-01'])->assertNotFound();
+        $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '2000-01-01'])->assertNotFound();
     }
 
-    $this->postJson("/api/v1/public/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
 
     PayslipDelivery::query()->withoutGlobalScopes()->update(['failed_attempts' => 0, 'expires_at' => now()->subMinute()]);
-    $this->postJson("/api/v1/public/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
+    $this->postJson("/api/v1/portal/payslips/{$token}", ['birth_date' => '1986-05-10'])->assertNotFound();
 });
 
 test('someone without a date of birth or a mail address is skipped with the reason', function (): void {

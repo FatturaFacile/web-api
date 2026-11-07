@@ -149,7 +149,7 @@ final class PayrollExtrasController extends PayrollController
     /**
      * Open a payslip link.
      */
-    #[OA\Post(path: '/api/v1/public/payslips/{token}', operationId: 'openPayslipLink', description: 'Public and rate limited: the PDF of a mailed link, against the date of birth of the employee. Every failure answers 404; a few wrong dates lock the link.', summary: 'Open payslip link', requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollOpenPayslipLinkRequest')), tags: ['Payroll'], parameters: [new OA\Parameter(name: 'token', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [
+    #[OA\Post(path: '/api/v1/portal/payslips/{token}', operationId: 'openPayslipLink', description: 'Public and rate limited: the PDF of a mailed link, against the date of birth of the employee. Every failure answers 404; a few wrong dates lock the link.', summary: 'Open payslip link', requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollOpenPayslipLinkRequest')), tags: ['Payroll'], parameters: [new OA\Parameter(name: 'token', in: 'path', required: true, schema: new OA\Schema(type: 'string'))], responses: [
         new OA\Response(response: 200, description: 'PDF document', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
         new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
         new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),

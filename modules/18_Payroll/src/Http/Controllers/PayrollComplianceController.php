@@ -27,6 +27,9 @@ use OpenApi\Attributes as OA;
  */
 final class PayrollComplianceController extends PayrollController
 {
+    /** @var list<string> */
+    private const array LegalTopics = ['frontier_italy', 'short_time_work', 'bad_weather', 'withholding_tax_statement'];
+
     public function __construct(
         TenantContext $tenantContext,
         private readonly WithholdingStatementService $statements,
@@ -65,6 +68,7 @@ final class PayrollComplianceController extends PayrollController
     public function saveLegalParameters(SaveLegalParametersRequest $request, string $topic, int $year): PayrollRecordResource
     {
         $this->authorize('create', PayrollRun::class);
+        abort_unless(in_array($topic, self::LegalTopics, true), 404);
 
         $row = PayrollLegalParameter::query()->whereNotNull('tenant_id')->where('topic', $topic)->where('year', $year)->first()
             ?? new PayrollLegalParameter(['topic' => $topic, 'year' => $year]);

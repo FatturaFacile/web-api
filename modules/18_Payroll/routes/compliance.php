@@ -6,22 +6,24 @@ use Illuminate\Support\Facades\Route;
 use Modules\Payroll\Http\Controllers\PayrollComplianceController;
 use Modules\Payroll\Http\Controllers\PayrollExtrasController;
 use Modules\Payroll\Http\Controllers\ShortTimeController;
+use Modules\Payroll\Models\PayrollRun;
 
 // The link of a payslip mail: public, limited, and it answers only with the date of birth of the employee.
-Route::post('api/v1/public/payslips/{token}', [PayrollExtrasController::class, 'openPayslipLink'])
+Route::post('api/v1/portal/payslips/{token}', [PayrollExtrasController::class, 'openPayslipLink'])
     ->middleware(['api', 'locale', 'throttle:20,1'])
     ->where('token', '[A-Za-z0-9]{1,128}')
-    ->name('api.v1.public.payslips.open');
+    ->name('api.v1.portal.payslips.open');
 
+// Read access is checked here too, before validation: a user without payroll rights learns nothing from a 422. The
+// controllers then ask for the ability of each action.
 Route::prefix('api/v1/payroll')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'can:viewAny,'.PayrollRun::class])
     ->name('api.v1.payroll.')
     ->where(['id' => '[0-9a-fA-F-]{36}', 'employeeId' => '[0-9a-fA-F-]{36}'])
     ->group(function (): void {
         // Legal parameters by topic
         Route::get('/legal-parameters', [PayrollComplianceController::class, 'legalParameters'])->name('legal-parameters.index');
         Route::put('/legal-parameters/{topic}/{year}', [PayrollComplianceController::class, 'saveLegalParameters'])
-            ->whereIn('topic', ['frontier_italy', 'short_time_work', 'bad_weather', 'withholding_tax_statement'])
             ->whereNumber('year')
             ->name('legal-parameters.save');
 
