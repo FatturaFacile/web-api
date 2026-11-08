@@ -6,6 +6,9 @@ namespace Modules\WorkspaceSync\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use Closure;
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\WorkspaceSync\Http\Requests\AuthorizeWorkspaceRequest;
@@ -17,6 +20,7 @@ use Modules\WorkspaceSync\Models\WorkspaceSyncedItem;
 use Modules\WorkspaceSync\Services\WorkspaceSyncService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Every call works on the connections of the caller: an owner of the company cannot read the mail of a colleague.
@@ -25,8 +29,14 @@ final class WorkspaceConnectionController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly WorkspaceSyncService $sync) {}
 
+    /**
+     * List own connections.
+     */
     #[OA\Get(
         path: '/api/v1/workspace/connections',
         operationId: 'listWorkspaceConnections',
@@ -44,6 +54,9 @@ final class WorkspaceConnectionController extends Controller
         return $this->successResponse(WorkspaceConnectionResource::collection(WorkspaceConnection::query()->where('user_id', $request->user()->id)->get()));
     }
 
+    /**
+     * Start connection.
+     */
     #[OA\Post(
         path: '/api/v1/workspace/connections/{provider}/authorize',
         operationId: 'authorizeWorkspaceConnection',
@@ -64,6 +77,9 @@ final class WorkspaceConnectionController extends Controller
         return $this->successResponse(['authorization_url' => $this->sync->authorizationUrl($provider, $request->validated('scopes'), $request->user())]);
     }
 
+    /**
+     * Complete connection.
+     */
     #[OA\Post(
         path: '/api/v1/workspace/connections/{provider}/callback',
         operationId: 'completeWorkspaceConnection',
@@ -80,11 +96,14 @@ final class WorkspaceConnectionController extends Controller
     )]
     public function callback(WorkspaceCallbackRequest $request, string $provider): JsonResponse
     {
-        $connection = $this->sync->connect($provider, $request->validated('code'), $request->validated('state'), $request->user());
+        $connection = $this->viaProvider(fn (): WorkspaceConnection => $this->sync->connect($provider, $request->validated('code'), $request->validated('state'), $request->user()));
 
         return $this->successResponse(new WorkspaceConnectionResource($connection), 'Connected', Response::HTTP_CREATED);
     }
 
+    /**
+     * Sync connection.
+     */
     #[OA\Post(
         path: '/api/v1/workspace/connections/{id}/sync',
         operationId: 'syncWorkspaceConnection',
@@ -100,9 +119,14 @@ final class WorkspaceConnectionController extends Controller
     )]
     public function sync(Request $request, string $id): JsonResponse
     {
-        return $this->successResponse(['items' => $this->sync->sync($this->ownConnection($request, $id))]);
+        $connection = $this->ownConnection($request, $id);
+
+        return $this->successResponse(['items' => $this->viaProvider(fn (): int => $this->sync->sync($connection))]);
     }
 
+    /**
+     * Revoke connection.
+     */
     #[OA\Delete(
         path: '/api/v1/workspace/connections/{id}',
         operationId: 'revokeWorkspaceConnection',
@@ -123,6 +147,9 @@ final class WorkspaceConnectionController extends Controller
         return $this->successResponse(null, 'Connection revoked');
     }
 
+    /**
+     * List own items.
+     */
     #[OA\Get(
         path: '/api/v1/workspace/items',
         operationId: 'listWorkspaceItems',
@@ -148,6 +175,23 @@ final class WorkspaceConnectionController extends Controller
                 ->limit(200)
                 ->get()
         ));
+    }
+
+    /**
+     * Run a call to the provider, turning a provider failure into a 502 instead of a server error.
+     *
+     * @template T
+     *
+     * @param  Closure(): T  $call
+     * @return T
+     */
+    private function viaProvider(Closure $call): mixed
+    {
+        try {
+            return $call();
+        } catch (RequestException|ConnectionException) {
+            throw new HttpException(Response::HTTP_BAD_GATEWAY, 'The provider could not be reached or refused the request.');
+        }
     }
 
     private function ownConnection(Request $request, string $id): WorkspaceConnection

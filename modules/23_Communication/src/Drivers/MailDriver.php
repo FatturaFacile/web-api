@@ -16,11 +16,17 @@ use Throwable;
  */
 final class MailDriver implements DeliveryDriver
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'mail';
     }
 
+    /**
+     * Send the message.
+     */
     public function send(DeliveryMessage $delivery, array $credentials): array
     {
         try {

@@ -17,15 +17,24 @@ use Modules\Assistant\Services\AssistantService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
+/**
+ * HTTP endpoints of the assistant flows of the Assistant module.
+ */
 final class AssistantController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly AssistantService $assistant,
         private readonly TenantContext $tenantContext,
     ) {}
 
+    /**
+     * Ask the assistant.
+     */
     #[OA\Post(
         path: '/api/v1/assistant/ask',
         operationId: 'askAssistant',
@@ -45,6 +54,9 @@ final class AssistantController extends Controller
         return $this->successResponse($this->assistant->ask($request->user(), (string) $this->tenantContext->getTenantId(), $request->validated('question')));
     }
 
+    /**
+     * List the catalogue.
+     */
     #[OA\Get(
         path: '/api/v1/assistant/catalogue',
         operationId: 'getAssistantCatalogue',
@@ -68,6 +80,9 @@ final class AssistantController extends Controller
         ], $queries));
     }
 
+    /**
+     * List asked questions.
+     */
     #[OA\Get(
         path: '/api/v1/assistant/logs',
         operationId: 'getAssistantLogs',

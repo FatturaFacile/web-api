@@ -33,6 +33,9 @@ final class QueryCatalogue
         return array_map(static fn (string $class): CatalogueQuery => app($class), self::Queries);
     }
 
+    /**
+     * Find.
+     */
     public function find(string $key): ?CatalogueQuery
     {
         foreach ($this->all() as $query) {

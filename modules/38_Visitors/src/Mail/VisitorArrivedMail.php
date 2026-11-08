@@ -19,6 +19,9 @@ final class VisitorArrivedMail extends Mailable implements ShouldBeEncrypted, Sh
 {
     use Queueable, SerializesModels;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         public readonly string $visitorName,
         public readonly ?string $visitorCompany,
@@ -29,11 +32,17 @@ final class VisitorArrivedMail extends Mailable implements ShouldBeEncrypted, Sh
         $this->afterCommit();
     }
 
+    /**
+     * Mail envelope.
+     */
     public function envelope(): Envelope
     {
         return new Envelope(subject: "Visitatore in reception: {$this->visitorName}");
     }
 
+    /**
+     * Mail content.
+     */
     public function content(): Content
     {
         return new Content(view: 'visitors::mail.visitor-arrived');

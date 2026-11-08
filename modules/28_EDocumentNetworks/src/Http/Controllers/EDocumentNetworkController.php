@@ -19,15 +19,24 @@ use Modules\EDocumentNetworks\Services\EDocumentGatewayManager;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * HTTP endpoints of the edocument network flows of the EDocumentNetworks module.
+ */
 final class EDocumentNetworkController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly EDocumentGatewayManager $gateways,
         private readonly TenantContext $tenantContext,
     ) {}
 
+    /**
+     * List networks.
+     */
     #[OA\Get(
         path: '/api/v1/edocument-networks',
         operationId: 'listEDocumentNetworks',
@@ -49,6 +58,9 @@ final class EDocumentNetworkController extends Controller
         }, Network::cases()));
     }
 
+    /**
+     * List transmissions.
+     */
     #[OA\Get(
         path: '/api/v1/edocument-networks/transmissions',
         operationId: 'listEDocumentTransmissions',
@@ -66,6 +78,9 @@ final class EDocumentNetworkController extends Controller
         return $this->successResponse(TransmissionResource::collection(EDocumentTransmission::query()->latest()->limit(100)->get()));
     }
 
+    /**
+     * Send document.
+     */
     #[OA\Post(
         path: '/api/v1/edocument-networks/{network}/transmissions',
         operationId: 'sendEDocument',

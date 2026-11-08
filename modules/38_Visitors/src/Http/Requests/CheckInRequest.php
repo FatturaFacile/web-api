@@ -11,6 +11,9 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class CheckInRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

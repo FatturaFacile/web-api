@@ -13,6 +13,9 @@ use Modules\EDocumentNetworks\Exceptions\NetworkNotAvailableException;
  */
 interface EDocumentGateway
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string;
 
     /**

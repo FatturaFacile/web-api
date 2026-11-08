@@ -12,11 +12,17 @@ use Modules\DocumentTrust\Models\DocumentSigningSetting;
  */
 final class LocalIntegrityDriver implements SignatureDriver
 {
+    /**
+     * Driver name.
+     */
     public function name(): string
     {
         return 'local';
     }
 
+    /**
+     * Return the SHA-256 fingerprint of the content.
+     */
     public function sign(string $content, ?DocumentSigningSetting $settings): array
     {
         return ['format' => 'sha256-integrity', 'signature' => base64_encode(hash('sha256', $content, true))];

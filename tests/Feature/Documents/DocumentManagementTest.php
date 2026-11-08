@@ -271,3 +271,20 @@ test('a folder with content cannot be deleted', function (): void {
 
     expect(DmsFolder::query()->count())->toBe(1);
 });
+
+test('a version is always downloaded as an attachment with sniffing disabled, and only by the tenant that owns it', function (): void {
+    $id = $this->post('/api/v1/dms/documents', [
+        'title' => 'Page',
+        'file' => UploadedFile::fake()->createWithContent('page.xml', '<html><script>alert(1)</script></html>'),
+    ], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
+    $versionId = $this->getJson("/api/v1/dms/documents/{$id}/versions")->json('data.0.id');
+
+    $response = $this->get("/api/v1/dms/documents/{$id}/versions/{$versionId}/download")->assertOk();
+
+    expect($response->headers->get('X-Content-Type-Options'))->toBe('nosniff')
+        ->and($response->headers->get('Content-Disposition'))->toContain('attachment')
+        ->and($response->headers->get('Content-Type'))->not->toContain('html');
+
+    dmsActAs(dmsMember($this->other, 'admin'), $this->other);
+    $this->get("/api/v1/dms/documents/{$id}/versions/{$versionId}/download")->assertNotFound();
+});

@@ -8,8 +8,14 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Documents\Enums\RetentionAction;
 
+/**
+ * Validates the input of the store retention policy operation (authorization is decided by module.access).
+ */
 final class StoreRetentionPolicyRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

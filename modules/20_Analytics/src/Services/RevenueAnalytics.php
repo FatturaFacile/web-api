@@ -25,6 +25,9 @@ final class RevenueAnalytics
     /** Drafts of the invoicing module carry this placeholder until emission; invoices of the older flows stay in draft with their real number. */
     private const string DraftNumberPrefix = 'DRAFT-';
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly TenantContext $tenantContext) {}
 
     /**

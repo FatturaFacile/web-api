@@ -26,8 +26,14 @@ use OpenApi\Attributes as OA;
  */
 final class VisitController extends Controller
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly VisitorService $visits) {}
 
+    /**
+     * List visits.
+     */
     #[OA\Get(path: '/api/v1/visitors/visits', operationId: 'listVisitorVisits', description: 'Return the visits of a day (default today, company time zone), optionally by status. Reception sees every visit, other members those they host.', summary: 'List visits', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [
         new OA\Parameter(name: 'date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['expected', 'checked_in', 'checked_out', 'cancelled'])),
@@ -55,6 +61,9 @@ final class VisitController extends Controller
         return VisitResource::collection($visits);
     }
 
+    /**
+     * Announce visit.
+     */
     #[OA\Post(path: '/api/v1/visitors/visits', operationId: 'storeVisitorVisit', description: 'Announce an expected visit, for a known visitor or with the data of a new one. A member without reception rights can only announce their own guests.', summary: 'Announce visit', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitRequest')), tags: ['Visitors'], responses: [
         new OA\Response(response: 201, description: 'Visit announced', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -73,6 +82,9 @@ final class VisitController extends Controller
         return (new VisitResource($this->visits->expect($data)))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Show visit.
+     */
     #[OA\Get(path: '/api/v1/visitors/visits/{id}', operationId: 'showVisitorVisit', description: 'Return a visit with its visitor and host.', summary: 'Show visit', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'Visit', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -87,6 +99,9 @@ final class VisitController extends Controller
         return new VisitResource($visit);
     }
 
+    /**
+     * Check in.
+     */
     #[OA\Post(path: '/api/v1/visitors/visits/{id}/check-in', operationId: 'checkInVisitorVisit', description: 'Hand a badge to an expected visitor and tell the host by mail. A badge is worn by one visitor at a time. Reception only.', summary: 'Check in', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsCheckInRequest')), tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'Visitor checked in', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -102,6 +117,9 @@ final class VisitController extends Controller
         return new VisitResource($this->visits->checkIn($visit, (string) $request->validated('badge_number')));
     }
 
+    /**
+     * Check out.
+     */
     #[OA\Post(path: '/api/v1/visitors/visits/{id}/check-out', operationId: 'checkOutVisitorVisit', description: 'Record that the visitor left and the badge came back. Reception only.', summary: 'Check out', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'Visitor checked out', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -117,6 +135,9 @@ final class VisitController extends Controller
         return new VisitResource($this->visits->checkOut($visit));
     }
 
+    /**
+     * Cancel visit.
+     */
     #[OA\Post(path: '/api/v1/visitors/visits/{id}/cancel', operationId: 'cancelVisitorVisit', description: 'Call off an expected visit. Reception or the host.', summary: 'Cancel visit', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'Visit cancelled', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -132,6 +153,9 @@ final class VisitController extends Controller
         return new VisitResource($this->visits->cancel($visit));
     }
 
+    /**
+     * Visitors on site.
+     */
     #[OA\Get(path: '/api/v1/visitors/on-site', operationId: 'listVisitorsOnSite', description: 'Who is in the building now, oldest arrival first: the list for an evacuation. Reception only.', summary: 'Visitors on site', security: [['bearerAuth' => []]], tags: ['Visitors'], responses: [
         new OA\Response(response: 200, description: 'Visitors on site', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitCollection')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),

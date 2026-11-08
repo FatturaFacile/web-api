@@ -22,8 +22,14 @@ final class RetentionPolicyController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly DocumentAccess $access) {}
 
+    /**
+     * List retention policies.
+     */
     #[OA\Get(
         path: '/api/v1/dms/retention-policies',
         operationId: 'listDmsRetentionPolicies',
@@ -41,6 +47,9 @@ final class RetentionPolicyController extends Controller
         return $this->successResponse(RetentionPolicyResource::collection(DmsRetentionPolicy::query()->orderBy('name')->get()));
     }
 
+    /**
+     * Create retention policy.
+     */
     #[OA\Post(
         path: '/api/v1/dms/retention-policies',
         operationId: 'createDmsRetentionPolicy',
@@ -62,6 +71,9 @@ final class RetentionPolicyController extends Controller
         return $this->successResponse(new RetentionPolicyResource(DmsRetentionPolicy::create($request->validated())), 'Retention policy created', Response::HTTP_CREATED);
     }
 
+    /**
+     * Update retention policy.
+     */
     #[OA\Put(
         path: '/api/v1/dms/retention-policies/{id}',
         operationId: 'updateDmsRetentionPolicy',
@@ -86,6 +98,9 @@ final class RetentionPolicyController extends Controller
         return $this->successResponse(new RetentionPolicyResource($policy), 'Retention policy updated');
     }
 
+    /**
+     * Delete retention policy.
+     */
     #[OA\Delete(
         path: '/api/v1/dms/retention-policies/{id}',
         operationId: 'deleteDmsRetentionPolicy',

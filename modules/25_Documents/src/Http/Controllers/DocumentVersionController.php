@@ -6,6 +6,7 @@ namespace Modules\Documents\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Http\Responses\StoredFileHeaders;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -19,15 +20,24 @@ use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
+/**
+ * HTTP endpoints of the document version flows of the Documents module.
+ */
 final class DocumentVersionController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly DocumentAccess $access,
         private readonly DocumentLibrary $library,
     ) {}
 
+    /**
+     * List versions.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents/{id}/versions',
         operationId: 'listDmsVersions',
@@ -46,6 +56,9 @@ final class DocumentVersionController extends Controller
         return $this->successResponse(DocumentVersionResource::collection($this->access->findVisible($id, $request->user())->versions()->get()));
     }
 
+    /**
+     * Add version.
+     */
     #[OA\Post(
         path: '/api/v1/dms/documents/{id}/versions',
         operationId: 'createDmsVersion',
@@ -75,6 +88,9 @@ final class DocumentVersionController extends Controller
         return $this->successResponse(new DocumentVersionResource($version), 'Version added', Response::HTTP_CREATED);
     }
 
+    /**
+     * Download version.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents/{id}/versions/{versionId}/download',
         operationId: 'downloadDmsVersion',
@@ -95,9 +111,12 @@ final class DocumentVersionController extends Controller
     {
         $version = $this->version($request, $id, $versionId);
 
-        return Storage::disk($version->disk)->download($version->path, $version->original_name);
+        return Storage::disk($version->disk)->download($version->path, $version->original_name, StoredFileHeaders::for($version->mime_type, (string) $version->original_name, false));
     }
 
+    /**
+     * Verify version integrity.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents/{id}/versions/{versionId}/verify',
         operationId: 'verifyDmsVersion',

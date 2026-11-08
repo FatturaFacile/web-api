@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Assistant\Enums;
 
+/**
+ * Allowed values of answer outcome in the Assistant module.
+ */
 enum AnswerOutcome: string
 {
     case Answered = 'answered';

@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Eloquent model of the delivery log (tenant scoped where it has a tenant_id).
+ */
 #[UseFactory(DeliveryLogFactory::class)]
 class DeliveryLog extends Model
 {

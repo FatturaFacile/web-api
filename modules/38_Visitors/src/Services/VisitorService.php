@@ -24,6 +24,9 @@ use Modules\Visitors\Models\VisitorVisit;
  */
 final readonly class VisitorService
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private TenantContext $tenantContext,
         private TenantPreferences $preferences,
@@ -105,6 +108,9 @@ final readonly class VisitorService
         return $visit;
     }
 
+    /**
+     * Check out.
+     */
     public function checkOut(VisitorVisit $visit): VisitorVisit
     {
         return DB::transaction(function () use ($visit): VisitorVisit {
@@ -137,6 +143,9 @@ final readonly class VisitorService
         return $this->checkOut($visit);
     }
 
+    /**
+     * Cancel.
+     */
     public function cancel(VisitorVisit $visit): VisitorVisit
     {
         return DB::transaction(function () use ($visit): VisitorVisit {

@@ -9,6 +9,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Eloquent model of the dms document (tenant scoped where it has a tenant_id).
+ */
 final class DmsDocument extends BaseEnterpriseModel
 {
     protected $table = 'dms_documents';

@@ -11,8 +11,14 @@ use Modules\Visitors\Models\VisitorKiosk;
 use Modules\Visitors\Models\VisitorVisit;
 use Modules\Visitors\Policies\VisitorsPolicy;
 
+/**
+ * Registers the routes and bindings of the Visitors module.
+ */
 final class VisitorsServiceProvider extends ServiceProvider
 {
+    /**
+     * Bootstrap the module.
+     */
     public function boot(): void
     {
         $this->app->booted(function (): void {

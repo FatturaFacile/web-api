@@ -17,5 +17,6 @@ Route::prefix('api/v1/document-trust')
 Route::prefix('api/v1/document-trust/settings')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:integrations'])
     ->group(function (): void {
+        Route::get('/', [DocumentTrustController::class, 'settings'])->name('document-trust.settings.show');
         Route::put('/', [DocumentTrustController::class, 'updateSettings'])->name('document-trust.settings.update');
     });

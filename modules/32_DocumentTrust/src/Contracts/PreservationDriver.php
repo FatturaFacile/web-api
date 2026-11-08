@@ -6,8 +6,14 @@ namespace Modules\DocumentTrust\Contracts;
 
 use Modules\DocumentTrust\Exceptions\DocumentTrustException;
 
+/**
+ * Hands a document to a preservation provider.
+ */
 interface PreservationDriver
 {
+    /**
+     * Driver name.
+     */
     public function name(): string;
 
     /**

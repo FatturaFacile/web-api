@@ -11,15 +11,24 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Modules\Documents\Services\DocumentRetention;
 
+/**
+ * Queued job: apply document retention.
+ */
 final class ApplyDocumentRetentionJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(public readonly string $tenantId)
     {
         $this->afterCommit();
     }
 
+    /**
+     * Run the unit of work.
+     */
     public function handle(DocumentRetention $retention): void
     {
         $retention->applyDuePolicies($this->tenantId);

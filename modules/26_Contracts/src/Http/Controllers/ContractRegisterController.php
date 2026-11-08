@@ -19,12 +19,21 @@ use Modules\Contracts\Services\ContractRegister;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * HTTP endpoints of the contract register flows of the Contracts module.
+ */
 final class ContractRegisterController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly ContractRegister $register) {}
 
+    /**
+     * List contracts.
+     */
     #[OA\Get(
         path: '/api/v1/contract-register',
         operationId: 'listContractRegister',
@@ -57,6 +66,9 @@ final class ContractRegisterController extends Controller
         );
     }
 
+    /**
+     * Create contract.
+     */
     #[OA\Post(
         path: '/api/v1/contract-register',
         operationId: 'createContract',
@@ -78,6 +90,9 @@ final class ContractRegisterController extends Controller
         return $this->successResponse(new ContractResource($contract->refresh()), 'Contract created', Response::HTTP_CREATED);
     }
 
+    /**
+     * Show contract.
+     */
     #[OA\Get(
         path: '/api/v1/contract-register/{kind}/{id}',
         operationId: 'getContract',
@@ -99,6 +114,9 @@ final class ContractRegisterController extends Controller
         return $this->successResponse(new ContractResource($this->register->find(ContractKind::from($kind), $id)));
     }
 
+    /**
+     * Update contract terms.
+     */
     #[OA\Put(
         path: '/api/v1/contract-register/{kind}/{id}/terms',
         operationId: 'updateContractTerms',
@@ -125,6 +143,9 @@ final class ContractRegisterController extends Controller
         return $this->successResponse(new ContractResource($contract->refresh()), 'Terms updated');
     }
 
+    /**
+     * Renew contract.
+     */
     #[OA\Post(
         path: '/api/v1/contract-register/{kind}/{id}/renew',
         operationId: 'renewContract',
@@ -151,6 +172,9 @@ final class ContractRegisterController extends Controller
         return $this->successResponse(new ContractResource($contract->refresh()), 'Contract renewed');
     }
 
+    /**
+     * Give notice.
+     */
     #[OA\Post(
         path: '/api/v1/contract-register/{kind}/{id}/notice',
         operationId: 'giveContractNotice',
@@ -174,6 +198,9 @@ final class ContractRegisterController extends Controller
         return $this->successResponse(new ContractResource($contract->refresh()), 'Notice recorded');
     }
 
+    /**
+     * List contract alerts.
+     */
     #[OA\Get(
         path: '/api/v1/contract-register/alerts',
         operationId: 'listContractAlerts',
@@ -194,6 +221,9 @@ final class ContractRegisterController extends Controller
         ));
     }
 
+    /**
+     * Acknowledge alert.
+     */
     #[OA\Post(
         path: '/api/v1/contract-register/alerts/{id}/acknowledge',
         operationId: 'acknowledgeContractAlert',

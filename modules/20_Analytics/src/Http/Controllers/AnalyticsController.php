@@ -13,10 +13,16 @@ use Modules\Analytics\Services\DueCalendar;
 use Modules\Analytics\Services\RevenueAnalytics;
 use OpenApi\Attributes as OA;
 
+/**
+ * HTTP endpoints of the analytics flows of the Analytics module.
+ */
 final class AnalyticsController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Payment and expense calendar.
+     */
     #[OA\Get(
         path: '/api/v1/analytics/due-calendar',
         operationId: 'getDueCalendar',
@@ -70,6 +76,9 @@ final class AnalyticsController extends Controller
         ], 'Due calendar retrieved');
     }
 
+    /**
+     * Year over year revenue.
+     */
     #[OA\Get(
         path: '/api/v1/analytics/revenue-comparison',
         operationId: 'getRevenueComparison',
@@ -90,6 +99,9 @@ final class AnalyticsController extends Controller
         return $this->successResponse($analytics->yearOverYear((int) ($validated['year'] ?? now()->format('Y'))), 'Revenue comparison retrieved');
     }
 
+    /**
+     * Comparison by dimension.
+     */
     #[OA\Get(
         path: '/api/v1/analytics/breakdown/{dimension}',
         operationId: 'getAnalyticsBreakdown',

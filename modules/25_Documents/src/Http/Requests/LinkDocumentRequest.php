@@ -8,8 +8,14 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Documents\Services\DocumentLinkRegistry;
 
+/**
+ * Validates the input of the link document operation (authorization is decided by module.access).
+ */
 final class LinkDocumentRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

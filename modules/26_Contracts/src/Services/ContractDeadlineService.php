@@ -16,6 +16,9 @@ use Modules\Contracts\Models\ContractAlert;
  */
 final readonly class ContractDeadlineService
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private ContractRegister $register) {}
 
     /**

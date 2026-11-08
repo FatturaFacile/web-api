@@ -13,11 +13,17 @@ use Modules\DocumentTrust\Exceptions\DocumentTrustException;
  */
 final class AccreditedPreservationDriver implements PreservationDriver
 {
+    /**
+     * Driver name.
+     */
     public function name(): string
     {
         return 'accredited';
     }
 
+    /**
+     * Always refused until a provider is contracted.
+     */
     public function preserve(string $documentName, string $content): array
     {
         throw new DocumentTrustException('Legal preservation needs an accredited provider, and none is configured.');

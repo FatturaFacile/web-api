@@ -10,6 +10,9 @@ namespace Modules\Assistant\Contracts;
  */
 interface CatalogueQuery
 {
+    /**
+     * Stable key of the query.
+     */
     public function key(): string;
 
     /**
@@ -17,6 +20,9 @@ interface CatalogueQuery
      */
     public function module(): string;
 
+    /**
+     * Human description of the query.
+     */
     public function description(): string;
 
     /**

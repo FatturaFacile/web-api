@@ -24,6 +24,9 @@ use Modules\Communication\Models\DeliveryLog;
  */
 final readonly class DocumentSender
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private DocumentPdfService $pdf) {}
 
     /**
@@ -38,6 +41,9 @@ final readonly class DocumentSender
         };
     }
 
+    /**
+     * Send the message.
+     */
     public function send(string $documentType, string $documentId, string $channel, ?string $recipient, ?string $note, ?string $userId): DeliveryLog
     {
         $document = $documentType === 'invoice' ? Invoice::with('contact')->findOrFail($documentId) : Quote::with('contact')->findOrFail($documentId);

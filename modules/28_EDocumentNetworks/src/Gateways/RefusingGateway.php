@@ -15,18 +15,30 @@ use Modules\EDocumentNetworks\Exceptions\NetworkNotAvailableException;
  */
 final readonly class RefusingGateway implements EDocumentGateway
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private Network $network) {}
 
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'refused';
     }
 
+    /**
+     * Whether the driver can run.
+     */
     public function isAvailable(): bool
     {
         return false;
     }
 
+    /**
+     * Send the message.
+     */
     public function send(Tenant $tenant, EDocumentEnvelope $envelope): array
     {
         throw NetworkNotAvailableException::contractRequired($this->network);

@@ -16,6 +16,9 @@ final class KioskCheckInRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

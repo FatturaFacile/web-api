@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * A signature produced for a stored document.
+ */
 #[UseFactory(DocumentSignatureFactory::class)]
 class DocumentSignature extends Model
 {

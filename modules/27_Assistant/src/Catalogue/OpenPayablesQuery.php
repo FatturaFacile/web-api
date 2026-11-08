@@ -7,33 +7,54 @@ namespace Modules\Assistant\Catalogue;
 use App\Models\PassiveInvoice;
 use Modules\Assistant\Contracts\CatalogueQuery;
 
+/**
+ * Catalogue query: open payables.
+ */
 final class OpenPayablesQuery implements CatalogueQuery
 {
+    /**
+     * Stable key of the query.
+     */
     public function key(): string
     {
         return 'open_payables';
     }
 
+    /**
+     * Module key whose read access gates the query.
+     */
     public function module(): string
     {
         return 'treasury';
     }
 
+    /**
+     * Human description of the query.
+     */
     public function description(): string
     {
         return 'Total still due to suppliers, by currency';
     }
 
+    /**
+     * Phrases that select this query.
+     */
     public function keywords(): array
     {
         return ['debiti verso fornitori', 'dobbiamo ai fornitori', 'da pagare', 'fatture fornitori aperte', 'open payables', 'owe suppliers', 'offene verbindlichkeiten', 'dettes fournisseurs'];
     }
 
+    /**
+     * Declared parameters with their bounds.
+     */
     public function parameters(): array
     {
         return [];
     }
 
+    /**
+     * Run the query for the tenant.
+     */
     public function run(string $tenantId, array $parameters): array
     {
         return PassiveInvoice::query()

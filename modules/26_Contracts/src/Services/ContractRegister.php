@@ -21,6 +21,9 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
  */
 final readonly class ContractRegister
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private TenantContext $tenantContext) {}
 
     /**
@@ -52,6 +55,9 @@ final readonly class ContractRegister
             ->paginate($perPage);
     }
 
+    /**
+     * Find.
+     */
     public function find(ContractKind $kind, string $id): Model
     {
         return $kind->modelClass()::query()->findOrFail($id);
@@ -108,7 +114,7 @@ final readonly class ContractRegister
     /**
      * Extends the contract by its renewal term or up to a chosen date, and records it.
      *
-     * @throws ConflictHttpException when the contract has no end date, or no term and no date
+     * @throws ConflictHttpException when the contract has no end date, or no term and no date, or the new end is not later
      */
     public function renew(ContractKind $kind, Model $contract, ?string $newEndDate, string $mode, ?string $userId): Model
     {
@@ -126,6 +132,10 @@ final readonly class ContractRegister
             }
 
             $newEnd = $newEndDate ?? CarbonImmutable::parse($currentEnd)->addMonthsNoOverflow((int) $locked->renewal_term_months)->toDateString();
+
+            if (CarbonImmutable::parse($newEnd)->lte(CarbonImmutable::parse($currentEnd))) {
+                throw new ConflictHttpException('The new end date must be after the current end date.');
+            }
 
             ContractRenewal::create([
                 'tenant_id' => $locked->tenant_id,

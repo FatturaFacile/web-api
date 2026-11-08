@@ -21,6 +21,9 @@ final class AuthenticateVisitorKiosk
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly VisitorKioskService $kiosks,

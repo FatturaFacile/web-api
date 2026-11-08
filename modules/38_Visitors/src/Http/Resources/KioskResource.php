@@ -15,6 +15,9 @@ use Modules\Visitors\Models\VisitorKiosk;
  */
 final class KioskResource extends JsonResource
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(VisitorKiosk $resource, private readonly ?string $secret = null)
     {
         parent::__construct($resource);

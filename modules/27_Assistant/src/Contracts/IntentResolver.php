@@ -6,8 +6,14 @@ namespace Modules\Assistant\Contracts;
 
 use Modules\Assistant\DTOs\ResolvedIntent;
 
+/**
+ * Contract for intent resolver in the Assistant module.
+ */
 interface IntentResolver
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string;
 
     /**

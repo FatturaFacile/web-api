@@ -14,6 +14,9 @@ use Modules\WorkspaceSync\DTOs\SyncedItemData;
  */
 interface WorkspaceProvider
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string;
 
     /**

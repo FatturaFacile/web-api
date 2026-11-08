@@ -12,6 +12,9 @@ use Modules\Documents\Models\TenantAiSetting;
  */
 final class TenantAiConsent implements TenantAiConsentInterface
 {
+    /**
+     * Allows external providers.
+     */
     public function allowsExternalProviders(string $tenantId): bool
     {
         return TenantAiSetting::withoutGlobalScopes()

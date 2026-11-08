@@ -28,6 +28,9 @@ enum ContractKind: string
         };
     }
 
+    /**
+     * End column.
+     */
     public function endColumn(): string
     {
         return match ($this) {

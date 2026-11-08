@@ -21,11 +21,17 @@ final class PurgeExpiredVisitorsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(public readonly string $tenantId)
     {
         $this->afterCommit();
     }
 
+    /**
+     * Run the unit of work.
+     */
     public function handle(TenantContext $tenantContext): void
     {
         $tenant = Tenant::query()->find($this->tenantId);

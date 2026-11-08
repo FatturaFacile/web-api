@@ -17,6 +17,9 @@ use Modules\Documents\Models\DmsDocumentVersion;
  */
 final readonly class DocumentRetention
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private AuditLedgerInterface $auditLedger) {}
 
     /**

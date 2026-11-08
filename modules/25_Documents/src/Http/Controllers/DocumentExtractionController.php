@@ -24,11 +24,17 @@ final class DocumentExtractionController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly DocumentAccess $access,
         private readonly DocumentExtractionService $extraction,
     ) {}
 
+    /**
+     * List extractions.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents/{id}/extractions',
         operationId: 'listDmsExtractions',
@@ -49,6 +55,9 @@ final class DocumentExtractionController extends Controller
         return $this->successResponse(ExtractionResource::collection(DmsExtraction::query()->where('document_id', $document->id)->latest()->get()));
     }
 
+    /**
+     * Propose extraction.
+     */
     #[OA\Post(
         path: '/api/v1/dms/documents/{id}/extractions',
         operationId: 'createDmsExtraction',
@@ -76,6 +85,9 @@ final class DocumentExtractionController extends Controller
         return $this->successResponse(new ExtractionResource($extraction), 'Extraction stored', Response::HTTP_CREATED);
     }
 
+    /**
+     * Confirm extraction.
+     */
     #[OA\Post(
         path: '/api/v1/dms/extractions/{id}/confirm',
         operationId: 'confirmDmsExtraction',
@@ -98,6 +110,9 @@ final class DocumentExtractionController extends Controller
         return $this->successResponse(new ExtractionResource($this->extraction->confirm($extraction, $request->validated('fields'), $request->user())), 'Extraction confirmed');
     }
 
+    /**
+     * Reject extraction.
+     */
     #[OA\Post(
         path: '/api/v1/dms/extractions/{id}/reject',
         operationId: 'rejectDmsExtraction',

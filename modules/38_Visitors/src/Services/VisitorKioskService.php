@@ -28,6 +28,9 @@ final class VisitorKioskService
         return ['kiosk' => $kiosk, 'secret' => $secret];
     }
 
+    /**
+     * Rotate secret.
+     */
     public function rotateSecret(VisitorKiosk $kiosk): string
     {
         $secret = Str::random(48);

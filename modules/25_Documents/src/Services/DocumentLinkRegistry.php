@@ -47,6 +47,9 @@ final class DocumentLinkRegistry
         return $class === null ? null : $class::query()->find($id);
     }
 
+    /**
+     * Alias of.
+     */
     public function aliasOf(string $morphClass): ?string
     {
         $alias = array_search($morphClass, $this->targets(), true);

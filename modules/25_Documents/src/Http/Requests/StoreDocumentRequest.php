@@ -8,12 +8,18 @@ use App\Http\Requests\Concerns\ValidatesUploadContentLength;
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Documents\Http\Requests\Concerns\ValidatesDocumentFields;
 
+/**
+ * Validates the input of the store document operation (authorization is decided by module.access).
+ */
 final class StoreDocumentRequest extends FormRequest
 {
     use ValidatesDocumentFields, ValidatesUploadContentLength;
 
     protected int $maxContentLengthBytes = 25 * 1024 * 1024;
 
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

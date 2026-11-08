@@ -7,6 +7,9 @@ namespace Modules\Documents\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * API representation of the document version.
+ */
 final class DocumentVersionResource extends JsonResource
 {
     /**

@@ -24,13 +24,22 @@ final readonly class DocumentAccess
      */
     public const array ManagerRoles = ['owner', 'admin'];
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private TenantContext $tenantContext) {}
 
+    /**
+     * Role of.
+     */
     public function roleOf(User $user): string
     {
         return (string) $user->getRoleInTenant((string) $this->tenantContext->getTenantId());
     }
 
+    /**
+     * Is manager.
+     */
     public function isManager(User $user): bool
     {
         return in_array($this->roleOf($user), self::ManagerRoles, true);
@@ -96,6 +105,9 @@ final readonly class DocumentAccess
         return array_values($denied);
     }
 
+    /**
+     * Find visible.
+     */
     public function findVisible(string $id, User $user): DmsDocument
     {
         return $this->restrict(DmsDocument::query(), $user)->findOrFail($id);

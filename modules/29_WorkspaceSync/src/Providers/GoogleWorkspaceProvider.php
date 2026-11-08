@@ -10,6 +10,9 @@ use Modules\WorkspaceSync\Contracts\WorkspaceProvider;
 use Modules\WorkspaceSync\DTOs\OAuthTokens;
 use Modules\WorkspaceSync\DTOs\SyncedItemData;
 
+/**
+ * Google workspace (WorkspaceSync module).
+ */
 final readonly class GoogleWorkspaceProvider implements WorkspaceProvider
 {
     private const string TokenUrl = 'https://oauth2.googleapis.com/token';
@@ -19,13 +22,22 @@ final readonly class GoogleWorkspaceProvider implements WorkspaceProvider
         'mail' => 'https://www.googleapis.com/auth/gmail.metadata',
     ];
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private string $clientId, private string $clientSecret) {}
 
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'google';
     }
 
+    /**
+     * Authorization url.
+     */
     public function authorizationUrl(array $scopes, string $state, string $redirectUri): string
     {
         return 'https://accounts.google.com/o/oauth2/v2/auth?'.http_build_query([
@@ -39,6 +51,9 @@ final readonly class GoogleWorkspaceProvider implements WorkspaceProvider
         ]);
     }
 
+    /**
+     * Exchange code.
+     */
     public function exchangeCode(string $code, string $redirectUri): OAuthTokens
     {
         return $this->tokens([
@@ -48,11 +63,17 @@ final readonly class GoogleWorkspaceProvider implements WorkspaceProvider
         ]);
     }
 
+    /**
+     * Refresh.
+     */
     public function refresh(string $refreshToken): OAuthTokens
     {
         return $this->tokens(['grant_type' => 'refresh_token', 'refresh_token' => $refreshToken]);
     }
 
+    /**
+     * Calendar events.
+     */
     public function calendarEvents(string $accessToken, CarbonImmutable $since): array
     {
         $body = Http::withToken($accessToken)->timeout(30)
@@ -75,6 +96,9 @@ final readonly class GoogleWorkspaceProvider implements WorkspaceProvider
         ), $body['items'] ?? []);
     }
 
+    /**
+     * Custom validation messages.
+     */
     public function messages(string $accessToken, CarbonImmutable $since): array
     {
         $list = Http::withToken($accessToken)->timeout(30)
