@@ -45,11 +45,17 @@ final class ProcessMrpRunJob implements ShouldBeUnique, ShouldQueue
         public ?string $executedBy = null
     ) {}
 
+    /**
+     * One MRP run per tenant at a time: the tenant id is the uniqueness key of the queued job.
+     */
     public function uniqueId(): string
     {
         return $this->tenantId;
     }
 
+    /**
+     * Runs the MRP for the tenant through the MRP service, which persists planned orders and pegging.
+     */
     public function handle(MrpServiceInterface $mrpService): void
     {
         $dto = new RunMrpDTO(
@@ -63,6 +69,9 @@ final class ProcessMrpRunJob implements ShouldBeUnique, ShouldQueue
         $mrpService->executeMrpRun($dto);
     }
 
+    /**
+     * Logs the failed MRP run with its horizon and run type so it can be investigated and started again.
+     */
     public function failed(?Throwable $exception): void
     {
         Log::error('MRP run failed.', [

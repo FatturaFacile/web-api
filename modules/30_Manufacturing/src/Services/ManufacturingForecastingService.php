@@ -27,6 +27,9 @@ final readonly class ManufacturingForecastingService implements ManufacturingFor
 {
     public function __construct(private EventDispatcher $dispatcher) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function generateCashAndMaterialForecast(string $tenantId, int $months = 6): array
     {
         $months = max(1, min(24, $months));

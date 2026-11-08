@@ -46,6 +46,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
+use Modules\Invoicing\Models\SalesInvoice;
 use Modules\SDI\Services\TenantSdiProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -76,13 +77,16 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         // The quota is checked here so every path that creates an invoice stops at the same limit.
-        Invoice::creating(static function (Invoice $invoice): void {
+        // Both models write the `invoices` table: the module SalesInvoice is the one InvoicingService uses.
+        $assertInvoiceQuota = static function (Invoice|SalesInvoice $invoice): void {
             $tenant = $invoice->invoice_type === 'proforma' || $invoice->tenant_id === null ? null : Tenant::find($invoice->tenant_id);
 
             if ($tenant !== null) {
                 app(DocumentQuotaService::class)->assertCanIssue($tenant, DocumentQuotaService::InvoicePoints);
             }
-        });
+        };
+        Invoice::creating($assertInvoiceQuota);
+        SalesInvoice::creating($assertInvoiceQuota);
 
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(Quote::class, QuotePolicy::class);

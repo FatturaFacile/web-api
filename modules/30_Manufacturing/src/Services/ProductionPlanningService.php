@@ -31,6 +31,9 @@ final readonly class ProductionPlanningService implements ProductionPlanningServ
         private EventDispatcher $dispatcher,
     ) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function planOrder(CreateProductionOrderDTO $dto): MfgProductionOrder
     {
         return DB::transaction(function () use ($dto): MfgProductionOrder {
@@ -92,6 +95,9 @@ final readonly class ProductionPlanningService implements ProductionPlanningServ
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function scheduleOrder(MfgProductionOrder $order, string $startDate, string $endDate): MfgProductionOrder
     {
         return DB::transaction(function () use ($order, $startDate, $endDate): MfgProductionOrder {

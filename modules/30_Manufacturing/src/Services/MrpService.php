@@ -62,6 +62,9 @@ final readonly class MrpService implements MrpServiceInterface
         private EventDispatcher $dispatcher,
     ) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function executeMrpRun(RunMrpDTO $dto): MfgMrpRun
     {
         return DB::transaction(function () use ($dto): MfgMrpRun {
@@ -128,6 +131,9 @@ final readonly class MrpService implements MrpServiceInterface
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function convertPlannedOrder(MfgMrpPlannedOrder $plannedOrder, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($plannedOrder, $actorUserId): MfgProductionOrder {
@@ -162,6 +168,9 @@ final readonly class MrpService implements MrpServiceInterface
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function markPurchaseSuggestionConverted(MfgMrpPlannedOrder $plannedOrder, string $documentType, string $documentId, ?string $actorUserId = null): MfgMrpPlannedOrder
     {
         return DB::transaction(function () use ($plannedOrder, $documentType, $documentId, $actorUserId): MfgMrpPlannedOrder {

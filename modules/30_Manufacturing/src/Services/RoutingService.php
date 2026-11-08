@@ -22,6 +22,9 @@ use Modules\Manufacturing\Support\Money;
  */
 final readonly class RoutingService implements RoutingServiceInterface
 {
+    /**
+     * {@inheritDoc}
+     */
     public function createRouting(CreateRoutingDTO $dto): MfgRouting
     {
         return DB::transaction(function () use ($dto): MfgRouting {
@@ -90,6 +93,9 @@ final readonly class RoutingService implements RoutingServiceInterface
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function effectiveRoutingFor(MfgItem $item, ?string $date = null): ?MfgRouting
     {
         $day = CarbonImmutable::parse($date ?? now())->toDateString();
@@ -105,6 +111,9 @@ final readonly class RoutingService implements RoutingServiceInterface
             ->first();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function standardTimesAndCosts(MfgRouting $routing, string $quantity): array
     {
         $rows = [];

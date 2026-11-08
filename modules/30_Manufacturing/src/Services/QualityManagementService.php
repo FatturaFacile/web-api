@@ -33,6 +33,9 @@ final readonly class QualityManagementService implements QualityManagementServic
 
     public function __construct(private EventDispatcher $dispatcher) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function createPlan(string $tenantId, array $data): MfgQualityPlan
     {
         return DB::transaction(function () use ($tenantId, $data): MfgQualityPlan {
@@ -69,6 +72,9 @@ final readonly class QualityManagementService implements QualityManagementServic
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function executeInspection(RecordQualityInspectionDTO $dto): MfgQualityInspection
     {
         return DB::transaction(function () use ($dto): MfgQualityInspection {
@@ -163,6 +169,9 @@ final readonly class QualityManagementService implements QualityManagementServic
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function recordNonConformance(string $tenantId, array $data, ?string $reportedBy = null): MfgQualityNonConformance
     {
         $nonConformance = MfgQualityNonConformance::create([
@@ -194,6 +203,9 @@ final readonly class QualityManagementService implements QualityManagementServic
         return $nonConformance;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function resolveNonConformance(MfgQualityNonConformance $nonConformance, string $disposition, ?string $correctiveAction, ?string $resolvedBy): MfgQualityNonConformance
     {
         return DB::transaction(function () use ($nonConformance, $disposition, $correctiveAction, $resolvedBy): MfgQualityNonConformance {

@@ -18,6 +18,9 @@ use Modules\Manufacturing\Support\Money;
  */
 final readonly class ProductionCostingService implements ProductionCostingServiceInterface
 {
+    /**
+     * {@inheritDoc}
+     */
     public function costReport(MfgProductionOrder $order): array
     {
         $isClosed = $order->status === 'closed';

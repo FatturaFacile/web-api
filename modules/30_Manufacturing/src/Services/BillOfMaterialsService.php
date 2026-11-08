@@ -31,6 +31,9 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
 
     public function __construct(private EventDispatcher $dispatcher) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function createBom(CreateBomDTO $dto, ?string $actorUserId = null): MfgBom
     {
         return DB::transaction(function () use ($dto): MfgBom {
@@ -74,6 +77,9 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function updateDraft(MfgBom $bom, array $data, ?string $actorUserId = null): MfgBom
     {
         return DB::transaction(function () use ($bom, $data): MfgBom {
@@ -97,6 +103,9 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function activate(MfgBom $bom, ?string $actorUserId = null): MfgBom
     {
         return DB::transaction(function () use ($bom, $actorUserId): MfgBom {
@@ -149,6 +158,9 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function reviseBom(MfgBom $bom, ?string $newRevision, string $reason, array $componentChanges = [], ?string $effectiveFrom = null, ?string $actorUserId = null): MfgBom
     {
         return DB::transaction(function () use ($bom, $newRevision, $reason, $componentChanges, $effectiveFrom): MfgBom {
@@ -232,6 +244,9 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function effectiveBomFor(MfgItem $item, ?string $date = null): ?MfgBom
     {
         $day = CarbonImmutable::parse($date ?? now())->toDateString();
@@ -247,16 +262,25 @@ final readonly class BillOfMaterialsService implements BillOfMaterialsServiceInt
             ->first();
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function explodeBom(MfgBom $bom, string $parentQuantity = '1', ?string $date = null): array
     {
         return $this->explode($bom, Money::of($parentQuantity), $date, 1, [(string) $bom->mfg_item_id => true], false);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function componentRequirements(MfgBom $bom, string $parentQuantity, ?string $date = null): array
     {
         return $this->explode($bom, Money::of($parentQuantity), $date, 1, [(string) $bom->mfg_item_id => true], true);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function whereUsed(MfgItem $item): Collection
     {
         return MfgBomComponent::query()

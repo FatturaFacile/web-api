@@ -76,7 +76,7 @@ test('every class and public method of the module is documented', function (): v
         }
 
         foreach ($reflection->getMethods(ReflectionMethod::IS_PUBLIC) as $method) {
-            if ($method->getDeclaringClass()->getName() !== $reflection->getName() || $method->getFileName() !== $file || $method->isConstructor()) {
+            if ($method->getDeclaringClass()->getName() !== $reflection->getName() || realpath((string) $method->getFileName()) !== realpath($file) || $method->isConstructor()) {
                 continue;
             }
             if ($method->getDocComment() === false) {

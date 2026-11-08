@@ -24,6 +24,9 @@ final readonly class ShopFloorService implements ShopFloorServiceInterface
 {
     public function __construct(private ProductionExecutionService $execution) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function startExecution(MfgProductionOrderOperation $operation, ?string $operatorId, ?string $machineId, ?string $actorUserId): MfgShopFloorExecution
     {
         return DB::transaction(function () use ($operation, $operatorId, $machineId): MfgShopFloorExecution {
@@ -53,6 +56,9 @@ final readonly class ShopFloorService implements ShopFloorServiceInterface
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function completeExecution(MfgShopFloorExecution $execution, string $goodUnits, string $scrapUnits, ?string $scrapReason, string $setupMinutes, ?string $laborMinutes, bool $isFinal, ?string $postingDate, ?string $actorUserId): MfgShopFloorExecution
     {
         return DB::transaction(function () use ($execution, $goodUnits, $scrapUnits, $scrapReason, $setupMinutes, $laborMinutes, $isFinal, $postingDate, $actorUserId): MfgShopFloorExecution {
@@ -106,6 +112,9 @@ final readonly class ShopFloorService implements ShopFloorServiceInterface
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function recordDowntime(MfgShopFloorExecution $execution, string $downtimeMinutes, string $reason): MfgShopFloorExecution
     {
         return DB::transaction(function () use ($execution, $downtimeMinutes, $reason): MfgShopFloorExecution {

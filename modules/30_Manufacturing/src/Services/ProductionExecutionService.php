@@ -54,6 +54,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         private EventDispatcher $dispatcher,
     ) {}
 
+    /**
+     * {@inheritDoc}
+     */
     public function releaseOrder(MfgProductionOrder $order, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($order, $actorUserId): MfgProductionOrder {
@@ -135,6 +138,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function startOrder(MfgProductionOrder $order, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($order): MfgProductionOrder {
@@ -146,6 +152,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function issueMaterials(MfgProductionOrder $order, array $lines, ?string $postingDate = null, bool $allowOverIssue = false, ?string $actorUserId = null): array
     {
         return DB::transaction(function () use ($order, $lines, $postingDate, $allowOverIssue, $actorUserId): array {
@@ -176,6 +185,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function confirmOperation(MfgProductionOrder $order, MfgProductionOrderOperation $operation, ConfirmOperationDTO $dto, ?string $actorUserId = null): MfgOperationConfirmation
     {
         return DB::transaction(function () use ($order, $operation, $dto, $actorUserId): MfgOperationConfirmation {
@@ -192,6 +204,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function receiveOutput(MfgProductionOrder $order, string $quantity, ?string $lotNumber = null, array $serialNumbers = [], ?string $warehouseId = null, ?string $postingDate = null, ?string $actorUserId = null): MfgMaterialMovement
     {
         return DB::transaction(function () use ($order, $quantity, $lotNumber, $serialNumbers, $warehouseId, $postingDate, $actorUserId): MfgMaterialMovement {
@@ -272,6 +287,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function completeOrder(MfgProductionOrder $order, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($order): MfgProductionOrder {
@@ -299,6 +317,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function closeOrder(MfgProductionOrder $order, ?string $postingDate = null, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($order, $postingDate, $actorUserId): MfgProductionOrder {
@@ -375,6 +396,9 @@ final readonly class ProductionExecutionService implements ProductionExecutionSe
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function cancelOrder(MfgProductionOrder $order, string $reason, ?string $actorUserId = null): MfgProductionOrder
     {
         return DB::transaction(function () use ($order, $reason): MfgProductionOrder {
