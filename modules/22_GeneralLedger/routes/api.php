@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\GeneralLedger\Http\Controllers\AccrualController;
 use Modules\GeneralLedger\Http\Controllers\ChartOfAccountController;
+use Modules\GeneralLedger\Http\Controllers\DimensionController;
 use Modules\GeneralLedger\Http\Controllers\EnasarcoController;
 use Modules\GeneralLedger\Http\Controllers\FinancialAnalysisController;
 use Modules\GeneralLedger\Http\Controllers\FinancialStatementController;
@@ -12,8 +14,13 @@ use Modules\GeneralLedger\Http\Controllers\FiscalYearController;
 use Modules\GeneralLedger\Http\Controllers\JournalBookController;
 use Modules\GeneralLedger\Http\Controllers\JournalEntryController;
 use Modules\GeneralLedger\Http\Controllers\LedgerBudgetController;
+use Modules\GeneralLedger\Http\Controllers\LedgerReportController;
+use Modules\GeneralLedger\Http\Controllers\LedgerSettingsController;
+use Modules\GeneralLedger\Http\Controllers\OpenItemFxRevaluationController;
 use Modules\GeneralLedger\Http\Controllers\PayrollLedgerController;
+use Modules\GeneralLedger\Http\Controllers\PeriodCloseController;
 use Modules\GeneralLedger\Http\Controllers\ReconciliationController;
+use Modules\GeneralLedger\Http\Controllers\RecurringJournalController;
 use Modules\GeneralLedger\Http\Controllers\StatementSchemeController;
 use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
@@ -36,13 +43,52 @@ Route::prefix('api/v1/general-ledger')
         Route::apiResource('fiscal-periods', FiscalPeriodController::class)->except(['update', 'destroy']);
         Route::post('fiscal-periods/{id}/close', [FiscalPeriodController::class, 'closePeriod']);
         Route::post('fiscal-periods/{id}/reopen', [FiscalPeriodController::class, 'reopenPeriod']);
+        Route::get('fiscal-periods/{id}/close-checklist', [PeriodCloseController::class, 'show'])->whereUuid('id');
+        Route::post('fiscal-periods/{id}/close-tasks', [PeriodCloseController::class, 'storeTask'])->whereUuid('id');
+        Route::post('fiscal-periods/{id}/close-tasks/{taskId}/status', [PeriodCloseController::class, 'updateTaskStatus'])->whereUuid(['id', 'taskId']);
 
         // Double-Entry Journals
         Route::post('journals/validate-balance', [JournalEntryController::class, 'validateBalance']);
         Route::post('journals/{id}/post', [JournalEntryController::class, 'post']);
         Route::post('journals/{id}/reverse', [JournalEntryController::class, 'reverse']);
+        Route::post('journals/{id}/submit', [JournalEntryController::class, 'submit'])->whereUuid('id');
+        Route::post('journals/{id}/approve', [JournalEntryController::class, 'approve'])->whereUuid('id');
+        Route::post('journals/{id}/reject', [JournalEntryController::class, 'reject'])->whereUuid('id');
         Route::apiResource('journals', JournalEntryController::class)->except(['update', 'destroy']);
         Route::get('journal-book/export', [JournalBookController::class, 'export'])->name('general-ledger.journal-book.export');
+
+        // Ledger settings: default posting accounts and four-eyes policy
+        Route::get('settings', [LedgerSettingsController::class, 'show']);
+        Route::put('settings', [LedgerSettingsController::class, 'update']);
+
+        // Recurring journals, scheduled work, accruals and deferrals, FX revaluation of open items
+        Route::get('recurring-journals', [RecurringJournalController::class, 'index']);
+        Route::post('recurring-journals', [RecurringJournalController::class, 'store']);
+        Route::get('recurring-journals/{id}', [RecurringJournalController::class, 'show'])->whereUuid('id');
+        Route::post('recurring-journals/{id}/status', [RecurringJournalController::class, 'changeStatus'])->whereUuid('id');
+        Route::post('recurring-journals/{id}/run', [RecurringJournalController::class, 'run'])->whereUuid('id');
+        Route::post('scheduled-journals/run', [RecurringJournalController::class, 'runScheduled']);
+        Route::get('accruals', [AccrualController::class, 'index']);
+        Route::post('accruals', [AccrualController::class, 'store']);
+        Route::get('accruals/{id}', [AccrualController::class, 'show'])->whereUuid('id');
+        Route::get('fx-revaluations', [OpenItemFxRevaluationController::class, 'index']);
+        Route::post('fx-revaluations', [OpenItemFxRevaluationController::class, 'store']);
+
+        // Analysis dimensions
+        Route::get('cost-centers', [DimensionController::class, 'indexCostCenters']);
+        Route::post('cost-centers', [DimensionController::class, 'storeCostCenter']);
+        Route::put('cost-centers/{id}', [DimensionController::class, 'updateCostCenter'])->whereUuid('id');
+        Route::get('profit-centers', [DimensionController::class, 'indexProfitCenters']);
+        Route::post('profit-centers', [DimensionController::class, 'storeProfitCenter']);
+        Route::put('profit-centers/{id}', [DimensionController::class, 'updateProfitCenter'])->whereUuid('id');
+
+        // Reports from posted entries and audit trail
+        Route::get('reports/trial-balance', [LedgerReportController::class, 'trialBalance']);
+        Route::get('reports/account-ledger', [LedgerReportController::class, 'accountLedger']);
+        Route::get('reports/balance-sheet', [LedgerReportController::class, 'balanceSheet']);
+        Route::get('reports/income-statement', [LedgerReportController::class, 'incomeStatement']);
+        Route::get('reports/dimensions', [LedgerReportController::class, 'dimensions']);
+        Route::get('audit-trail/export', [LedgerReportController::class, 'auditTrail']);
 
         // Financial Statements
         Route::get('financial-statements/trial-balance', [FinancialStatementController::class, 'trialBalance']);

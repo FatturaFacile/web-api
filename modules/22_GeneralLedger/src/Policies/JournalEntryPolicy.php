@@ -29,6 +29,15 @@ final class JournalEntryPolicy
         return $user->tenant_id === $entry->tenant_id && $entry->status === 'draft';
     }
 
+    /**
+     * Posting, submitting, approving, rejecting or reversing a journal of the user's tenant. Whether the journal is in
+     * the right status is decided by the services (409), the four-eyes rule by ManualJournalService (403).
+     */
+    public function process(User $user, JournalEntry $entry): bool
+    {
+        return $user->tenant_id === $entry->tenant_id;
+    }
+
     public function delete(User $user, JournalEntry $entry): bool
     {
         return $user->tenant_id === $entry->tenant_id && $entry->status === 'draft';

@@ -12,12 +12,14 @@ use Illuminate\Support\Str;
 use Modules\GeneralLedger\Http\Requests\StoreChartOfAccountRequest;
 use Modules\GeneralLedger\Http\Resources\ChartOfAccountResource;
 use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Services\ChartOfAccountService;
 use OpenApi\Attributes as OA;
 
 final class ChartOfAccountController extends Controller
 {
     public function __construct(
-        private readonly TenantContext $tenantContext
+        private readonly TenantContext $tenantContext,
+        private readonly ChartOfAccountService $accounts,
     ) {}
 
     /**
@@ -78,6 +80,7 @@ final class ChartOfAccountController extends Controller
         responses: [
             new OA\Response(response: 201, description: 'Account created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerChartOfAccountResource')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Read-only role or missing ledger write access', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
@@ -136,7 +139,7 @@ final class ChartOfAccountController extends Controller
     #[OA\Put(
         path: '/api/v1/general-ledger/accounts/{account}',
         operationId: 'updateGeneralLedgerAccount',
-        description: 'Updates an existing account of the active tenant. Also accepts the PATCH method.',
+        description: 'Updates an existing account of the active tenant. Also accepts the PATCH method. The type and normal balance of an account that already carries postings cannot change (409); an account cannot be placed under itself or one of its sub-accounts (422); the code must stay unique in the tenant (422).',
         summary: 'Update account',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
@@ -149,6 +152,8 @@ final class ChartOfAccountController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 403, description: 'Read-only role or missing ledger write access', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'Account carries postings, has sub-accounts or is a default posting account', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function update(StoreChartOfAccountRequest $request, string $id): JsonResponse
@@ -156,7 +161,7 @@ final class ChartOfAccountController extends Controller
         $account = ChartOfAccount::findOrFail($id);
         $this->authorize('update', $account);
 
-        $account->update($request->validated());
+        $account = $this->accounts->update($account, $request->validated());
 
         return response()->json([
             'message' => 'Account updated successfully',
@@ -170,7 +175,7 @@ final class ChartOfAccountController extends Controller
     #[OA\Delete(
         path: '/api/v1/general-ledger/accounts/{account}',
         operationId: 'deleteGeneralLedgerAccount',
-        description: 'Deletes a account of the active tenant.',
+        description: 'Deletes an account of the active tenant. Refused with 409 when the account carries postings (deactivate it instead), has sub-accounts or is a default posting account.',
         summary: 'Delete account',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
@@ -181,6 +186,8 @@ final class ChartOfAccountController extends Controller
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Read-only role or missing ledger write access', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'Account carries postings, has sub-accounts or is a default posting account', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function destroy(string $id): JsonResponse
@@ -188,7 +195,7 @@ final class ChartOfAccountController extends Controller
         $account = ChartOfAccount::findOrFail($id);
         $this->authorize('delete', $account);
 
-        $account->delete();
+        $this->accounts->delete($account);
 
         return response()->json([
             'message' => 'Account deleted successfully',

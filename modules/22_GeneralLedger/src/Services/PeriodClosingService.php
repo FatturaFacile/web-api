@@ -13,17 +13,22 @@ use InvalidArgumentException;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Events\PeriodClosedEvent;
 use Modules\GeneralLedger\Events\PeriodOpenedEvent;
 use Modules\GeneralLedger\Events\YearClosedEvent;
-use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Exceptions\LedgerConflictException;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\FinancialClosingRun;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\PeriodLock;
-use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
+/**
+ * Month-end and year-end closing of the ledger: period locks per subledger, the close checklist gate, the year-end
+ * closing entry of the income statement (chiusura) and the opening entry of the next year (riapertura).
+ */
 final class PeriodClosingService implements PeriodClosingServiceInterface
 {
     public const string OpeningBalanceSource = 'opening_balance';
@@ -33,6 +38,8 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
         private readonly AuditLedgerInterface $auditLedger,
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly LedgerBalanceReader $balances,
+        private readonly PostingAccountResolver $postingAccounts,
+        private readonly PeriodCloseChecklistService $checklist,
     ) {}
 
     public function closePeriod(string $fiscalPeriodId, string $closedBy): FiscalPeriod
@@ -47,13 +54,10 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 return $period;
             }
 
-            // Verify no draft entries
-            $draftCount = JournalEntry::where('fiscal_period_id', $period->id)
-                ->where('status', 'draft')
-                ->count();
+            $blocking = $this->checklist->blockingIssues($period);
 
-            if ($draftCount > 0) {
-                throw new InvalidArgumentException("Cannot close fiscal period [{$period->period_name}]: {$draftCount} unposted draft journal entries exist.");
+            if ($blocking !== []) {
+                throw new LedgerConflictException("Cannot close fiscal period [{$period->period_name}]: ".implode(' ', $blocking));
             }
 
             $before = $period->toArray();
@@ -110,7 +114,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
             $period = FiscalPeriod::where('id', $fiscalPeriodId)->lockForUpdate()->firstOrFail();
 
             if ($period->fiscalYear && $period->fiscalYear->status === 'closed') {
-                throw new InvalidArgumentException("Cannot reopen fiscal period [{$period->period_name}]: parent fiscal year [{$period->fiscalYear->year_code}] is closed.");
+                throw new LedgerConflictException("Cannot reopen fiscal period [{$period->period_name}]: parent fiscal year [{$period->fiscalYear->year_code}] is closed.");
             }
 
             $before = $period->toArray();
@@ -174,7 +178,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
             $fy = FiscalYear::where('id', $fiscalYearId)->lockForUpdate()->firstOrFail();
 
             if ($fy->status === 'closed') {
-                throw new InvalidArgumentException("Fiscal year [{$fy->year_code}] is already closed.");
+                throw new LedgerConflictException("Fiscal year [{$fy->year_code}] is already closed.");
             }
 
             // Check that all 12 periods are closed
@@ -184,7 +188,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 ->count();
 
             if ($openPeriods > 0) {
-                throw new InvalidArgumentException("Cannot close fiscal year [{$fy->year_code}]: {$openPeriods} fiscal periods are still open.");
+                throw new LedgerConflictException("Cannot close fiscal year [{$fy->year_code}]: {$openPeriods} fiscal periods are still open.");
             }
 
             // Find or use adjustment period 13 or period 12 for closing entries
@@ -192,103 +196,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 ->where('period_number', 13)
                 ->first() ?? FiscalPeriod::where('fiscal_year_id', $fy->id)->where('period_number', 12)->firstOrFail();
 
-            // Calculate revenue and expenses across year
-            $pnlLines = DB::table('journal_lines')
-                ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
-                ->join('chart_of_accounts', 'journal_lines.account_id', '=', 'chart_of_accounts.id')
-                ->where('journal_entries.tenant_id', $fy->tenant_id)
-                ->whereIn('journal_entries.fiscal_period_id', $fy->periods->pluck('id'))
-                ->where('journal_entries.status', 'posted')
-                ->where('journal_entries.ledger_type', 'statutory')
-                ->whereIn('chart_of_accounts.account_type', ['revenue', 'expense', 'cogs'])
-                ->select(
-                    'chart_of_accounts.id as account_id',
-                    'chart_of_accounts.account_code',
-                    'chart_of_accounts.account_type',
-                    DB::raw('SUM(journal_lines.debit_amount) as total_dr'),
-                    DB::raw('SUM(journal_lines.credit_amount) as total_cr')
-                )
-                ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.account_type')
-                ->get();
-
-            $totalRevenue = 0.0;
-            $totalExpense = 0.0;
-            $closingLines = [];
-
-            foreach ($pnlLines as $row) {
-                $dr = (float) $row->total_dr;
-                $cr = (float) $row->total_cr;
-
-                if ($row->account_type === 'revenue') {
-                    $netRev = $cr - $dr;
-                    $totalRevenue += $netRev;
-                    // To zero out revenue: debit revenue account
-                    if ($netRev > 0) {
-                        $closingLines[] = [
-                            'account_id' => $row->account_id,
-                            'debit_amount' => $netRev,
-                            'credit_amount' => 0.0,
-                            'description' => 'Year-end revenue closing to retained earnings',
-                        ];
-                    }
-                } else {
-                    $netExp = $dr - $cr;
-                    $totalExpense += $netExp;
-                    // To zero out expense: credit expense account
-                    if ($netExp > 0) {
-                        $closingLines[] = [
-                            'account_id' => $row->account_id,
-                            'debit_amount' => 0.0,
-                            'credit_amount' => $netExp,
-                            'description' => 'Year-end expense closing to retained earnings',
-                        ];
-                    }
-                }
-            }
-
-            $netIncome = $totalRevenue - $totalExpense;
-
-            // Retained Earnings Account (Equity 3000)
-            $retainedEarningsAccount = ChartOfAccount::where('tenant_id', $fy->tenant_id)
-                ->where(function ($q) {
-                    $q->where('account_code', '3000')
-                        ->orWhere('account_type', 'equity');
-                })
-                ->first();
-
-            if (! $retainedEarningsAccount) {
-                $retainedEarningsAccount = ChartOfAccount::create([
-                    'id' => (string) Str::uuid7(),
-                    'tenant_id' => $fy->tenant_id,
-                    'company_id' => $fy->company_id,
-                    'account_code' => '3000',
-                    'name' => 'Retained Earnings',
-                    'account_class' => 'equity',
-                    'account_type' => 'equity',
-                    'normal_balance' => 'credit',
-                    'currency' => TenantAccountingCurrency::of((string) $fy->tenant_id),
-                    'is_active' => true,
-                ]);
-            }
-
-            if ($netIncome > 0) {
-                // Credit Retained Earnings
-                $closingLines[] = [
-                    'account_id' => $retainedEarningsAccount->id,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => $netIncome,
-                    'description' => 'Net Income to Retained Earnings',
-                ];
-            } elseif ($netIncome < 0) {
-                // Debit Retained Earnings
-                $closingLines[] = [
-                    'account_id' => $retainedEarningsAccount->id,
-                    'debit_amount' => abs($netIncome),
-                    'credit_amount' => 0.0,
-                    'description' => 'Net Loss from Retained Earnings',
-                ];
-            }
-
+            [$closingLines, $netIncome] = $this->resultClosingLines($fy);
             $closingJournal = null;
             if (! empty($closingLines)) {
                 $closingJournal = $this->postingService->postYearEndClosing([
@@ -334,7 +242,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
             $event = new YearClosedEvent(
                 fiscalYearId: (string) $fy->id,
                 yearCode: (string) $fy->year_code,
-                netIncomeAmount: $netIncome,
+                netIncomeAmount: (float) $netIncome,
                 closingJournalId: (string) ($closingJournal?->id ?? ''),
                 closedBy: $closedByUuid,
                 tenantId: (string) $fy->tenant_id,
@@ -363,7 +271,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
             $fy = FiscalYear::where('id', $fiscalYearId)->lockForUpdate()->firstOrFail();
 
             if ($fy->status !== 'closed') {
-                throw new InvalidArgumentException("Fiscal year [{$fy->year_code}] must be closed before carrying its balances forward.");
+                throw new LedgerConflictException("Fiscal year [{$fy->year_code}] must be closed before carrying its balances forward.");
             }
 
             $existing = JournalEntry::where('tenant_id', $fy->tenant_id)
@@ -404,6 +312,59 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 'lines' => $lines,
             ], $actorId);
         });
+    }
+
+    /**
+     * The lines that bring every income statement account of the year to zero against the retained earnings account
+     * (utile/perdita d'esercizio), and the result of the year. Accounts are closed on whichever side they stand, so an
+     * expense account with a credit balance or a revenue account with a debit balance is closed too and the entry
+     * always balances. Reversed entries and their reversals are both read, so they cancel out.
+     *
+     * @return array{0: list<array{account_id: string, debit_amount: string, credit_amount: string, description: string}>, 1: string}
+     *
+     * @throws LedgerPostingException when the year has a result and no retained earnings account is configured
+     */
+    private function resultClosingLines(FiscalYear $fy): array
+    {
+        $movements = $this->balances->movements((string) $fy->tenant_id, CarbonImmutable::parse($fy->start_date), CarbonImmutable::parse($fy->end_date))
+            ->filter(static fn (object $row): bool => in_array($row->account_type, LedgerBalanceReader::IncomeTypes, true));
+
+        $lines = [];
+        $netIncome = '0';
+
+        foreach ($movements as $row) {
+            $creditMinusDebit = bcsub((string) $row->credit, (string) $row->debit, 4);
+
+            if (bccomp($creditMinusDebit, '0', 4) === 0) {
+                continue;
+            }
+
+            $netIncome = bcadd($netIncome, $creditMinusDebit, 4);
+            $isCreditBalance = bccomp($creditMinusDebit, '0', 4) === 1;
+            $lines[] = [
+                'account_id' => (string) $row->account_id,
+                'debit_amount' => $isCreditBalance ? $creditMinusDebit : '0',
+                'credit_amount' => $isCreditBalance ? '0' : ltrim($creditMinusDebit, '-'),
+                'description' => "Year-end closing of {$row->account_code} to the result of the year",
+            ];
+        }
+
+        if ($lines === []) {
+            return [[], '0.0000'];
+        }
+
+        if (bccomp($netIncome, '0', 4) !== 0) {
+            $retainedEarnings = $this->postingAccounts->require((string) $fy->tenant_id, PostingAccountRole::RetainedEarnings);
+            $isProfit = bccomp($netIncome, '0', 4) === 1;
+            $lines[] = [
+                'account_id' => (string) $retainedEarnings->id,
+                'debit_amount' => $isProfit ? '0' : ltrim($netIncome, '-'),
+                'credit_amount' => $isProfit ? $netIncome : '0',
+                'description' => $isProfit ? 'Net income of the year to retained earnings' : 'Net loss of the year from retained earnings',
+            ];
+        }
+
+        return [$lines, $netIncome];
     }
 
     private function nextYear(FiscalYear $fy): ?FiscalYear

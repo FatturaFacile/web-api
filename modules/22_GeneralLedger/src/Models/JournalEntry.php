@@ -41,6 +41,10 @@ final class JournalEntry extends BaseEnterpriseModel
             'journal_number' => 'integer',
             'posted_at' => 'datetime',
             'reversed_at' => 'datetime',
+            'auto_reverse_on' => 'date',
+            'submitted_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
         ];
     }
 
