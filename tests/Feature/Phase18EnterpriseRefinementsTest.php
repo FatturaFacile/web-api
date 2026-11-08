@@ -22,6 +22,8 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Actions\PostPassiveInvoiceAction;
+use Modules\GeneralLedger\Models\ChartOfAccount;
 
 uses(RefreshDatabase::class);
 
@@ -98,7 +100,10 @@ function p18Lines(array $entry): array
 // ---------------------------------------------------------------------------------------------------------------
 
 test('a supplier bank fee does not reduce the invoice debt and balances the general ledger', function (): void {
+    // The general ledger export reads the journal: the invoice reaches the ledger first, as the posting flow does.
+    fiscalCalendar($this->tenant, 2026);
     $invoice = p18Passive('SUP-100', 100.00);
+    app(PostPassiveInvoiceAction::class)->execute($invoice);
     $recorder = app(RecordSupplierPayment::class);
     $line = (string) Str::uuid();
     $common = ['paid_at' => '2026-03-10', 'bank_statement_line_id' => $line];
@@ -115,10 +120,14 @@ test('a supplier bank fee does not reduce the invoice debt and balances the gene
     // The fee is accepted even though the invoice has nothing left to pay, but a real payment is not.
     expect(fn () => $recorder->execute($invoice, $common + ['amount' => 1.00, 'type' => 'payment']))->toThrow(ValidationException::class);
 
-    $entry = collect(p18Ledger('&source=payments'))->firstWhere('document_type', 'supplier_payment');
-    expect(p18Lines($entry))->toBe([['2000', 100.0, 0.0], ['6220', 3.0, 0.0], ['1000', 0.0, 103.0]])
-        ->and((float) $entry['total_debit'])->toBe(103.0)
-        ->and((float) $entry['total_credit'])->toBe(103.0);
+    // Each payment is its own journal entry: the payment settles the payable, the fee is a bank charge.
+    $entries = collect(p18Ledger('&source=payments'))->where('document_type', 'supplier_payment')->values();
+    expect($entries->map(fn (array $entry): array => p18Lines($entry))->all())->toBe([
+        [['2000', 100.0, 0.0], ['1020', 0.0, 100.0]],
+        [['6800', 3.0, 0.0], ['1020', 0.0, 3.0]],
+    ])
+        ->and($entries->sum('total_debit'))->toEqual(103.0)
+        ->and($entries->sum('total_credit'))->toEqual(103.0);
 
     // Removing the payment and the fee together restores the debt (the fee never counted).
     SupplierPayment::withoutGlobalScopes()->where('bank_statement_line_id', $line)->where('type', 'payment')->delete();
@@ -147,44 +156,40 @@ test('a debit line with a fee settles the supplier invoice by its net amount alo
 // ---------------------------------------------------------------------------------------------------------------
 
 test('bank lines use the ledger account mapped to the IBAN of their statement', function (): void {
+    // The postings of the ledger resolve the bank account through the IBAN mapping (LedgerAccountResolver); the general
+    // ledger export reads those postings, so an entry keeps the account it was posted on even after the mapping changes.
+    fiscalCalendar($this->tenant, 2026);
+    p18Api()->putJson('/api/v1/settings/preferences/banking', ['ledger_defaults' => ['payroll_account_code' => '6000']])->assertOk();
+    ChartOfAccount::withoutGlobalScopes()->create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'account_code' => '6000', 'name' => 'Salaries', 'account_class' => 'expense', 'account_type' => 'expense', 'normal_balance' => 'debit', 'currency' => 'EUR', 'is_active' => true]);
+
     p18Api()->putJson('/api/v1/settings/preferences/accounting', ['bank_accounts' => [P18_IBAN_IT => '1001', 'ch44 3199 9123 0008 8901 2' => '1002']])->assertOk();
     p18Api()->putJson('/api/v1/settings/preferences/accounting', ['bank_accounts' => ['not an iban' => '1003']])->assertUnprocessable();
     p18Api()->putJson('/api/v1/settings/preferences/accounting', ['bank_accounts' => [P18_IBAN_UNKNOWN => 'bad code!']])->assertUnprocessable();
 
     expect(p18Api()->getJson('/api/v1/settings/preferences')->json('data.accounting.bank_accounts'))->toBe([P18_IBAN_IT => '1001', P18_IBAN_CH => '1002']);
 
-    $italy = p18Statement(P18_IBAN_IT);
-    $swiss = p18Statement(P18_IBAN_CH);
-    $unknown = p18Statement(P18_IBAN_UNKNOWN);
-    $lineOf = fn (BankStatement $statement): string => (string) BankStatementLine::withoutGlobalScopes()->where('bank_statement_id', $statement->id)->value('id');
+    $lineOf = function (string $iban): string {
+        $statement = p18Statement($iban);
+        BankStatementLine::withoutGlobalScopes()->where('bank_statement_id', $statement->id)->update(['reconciled' => false, 'reconciliation_type' => null]);
 
-    $sale = Invoice::create(['tenant_id' => $this->tenant->id, 'contact_id' => $this->customer->id, 'invoice_number' => 'INV-1', 'date' => '2026-03-01', 'currency' => 'EUR', 'total_net' => 300, 'total_tax' => 0, 'total_gross' => 300, 'invoice_type' => 'standard']);
-    foreach ([['INV-A', $italy], ['INV-B', $swiss], ['INV-C', $unknown]] as [$number, $statement]) {
-        Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $sale->id, 'amount' => 100, 'paid_at' => '2026-03-10', 'reference' => $number, 'bank_statement_line_id' => $lineOf($statement)]);
+        return (string) BankStatementLine::withoutGlobalScopes()->where('bank_statement_id', $statement->id)->value('id');
+    };
+
+    foreach ([P18_IBAN_IT, P18_IBAN_CH, P18_IBAN_UNKNOWN] as $iban) {
+        p18Api()->postJson("/api/v1/banking/statements/lines/{$lineOf($iban)}/categorize", ['category' => 'payroll'])->assertOk();
     }
-    // A payment without a bank line keeps the default bank account.
-    Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $sale->id, 'amount' => 20, 'paid_at' => '2026-03-11']);
 
-    $payable = p18Passive('SUP-1', 80.00);
-    SupplierPayment::create(['tenant_id' => $this->tenant->id, 'passive_invoice_id' => $payable->id, 'amount' => 80, 'paid_at' => '2026-03-12', 'type' => 'payment', 'bank_statement_line_id' => $lineOf($swiss)]);
+    $bankOf = fn (array $entry): array => collect(p18Lines($entry))->pluck(0)->reject(fn (string $code): bool => $code === '6000')->values()->all();
+    $entries = collect(p18Ledger('&source=banking'))->where('document_type', 'payroll')->values();
+    expect($entries->map($bankOf)->all())->toBe([['1001'], ['1002'], ['1020']]);
 
-    BankStatementLine::withoutGlobalScopes()->where('bank_statement_id', $swiss->id)->update(['reconciliation_type' => 'auto_categorization', 'reconciliation_category' => 'payroll', 'booking_date' => '2026-03-13']);
+    $names = $entries->pluck('lines')->flatten(1)->pluck('ledger_account_name', 'ledger_account_code');
+    expect($names['1001'])->toBe('Bank '.P18_IBAN_IT)->and($names['1020'])->toBe('Bank (Banca c/c)');
 
-    $entries = p18Ledger();
-    $bankOf = fn (array $entry): array => collect(p18Lines($entry))->pluck(0)->intersect(['1000', '1001', '1002'])->values()->all();
-
-    $receipts = collect($entries)->where('document_type', 'payment')->values();
-    expect($receipts->map($bankOf)->all())->toBe([['1001'], ['1002'], ['1000'], ['1000']]);
-
-    expect($bankOf(collect($entries)->firstWhere('document_type', 'supplier_payment')))->toBe(['1002'])
-        ->and($bankOf(collect($entries)->firstWhere('document_type', 'payroll')))->toBe(['1002']);
-
-    $names = collect($entries)->pluck('lines')->flatten(1)->pluck('ledger_account_name', 'ledger_account_code');
-    expect($names['1001'])->toBe('Bank '.P18_IBAN_IT)->and($names['1000'])->toBe('Bank');
-
-    // Unmapping an IBAN sends its movements back to the default account.
+    // Unmapping an IBAN sends its next movements to the default account; posted entries keep theirs.
     p18Api()->putJson('/api/v1/settings/preferences/accounting', ['bank_accounts' => [P18_IBAN_IT => null]])->assertOk();
-    expect(collect(p18Ledger())->where('document_type', 'payment')->values()->map($bankOf)->all())->toBe([['1000'], ['1002'], ['1000'], ['1000']]);
+    p18Api()->postJson("/api/v1/banking/statements/lines/{$lineOf(P18_IBAN_IT)}/categorize", ['category' => 'payroll'])->assertOk();
+    expect(collect(p18Ledger('&source=banking'))->where('document_type', 'payroll')->values()->map($bankOf)->all())->toBe([['1001'], ['1002'], ['1020'], ['1020']]);
 });
 
 // ---------------------------------------------------------------------------------------------------------------

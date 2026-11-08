@@ -22,7 +22,9 @@ interface LiquidityManagementServiceInterface
     public function calculateWorkingCapital(string $tenantId, ?string $metricDate = null, ?string $companyId = null): WorkingCapitalMetric;
 
     /**
-     * Transfer funds between intercompany accounts with transfer-pricing interest tracking.
+     * Moves funds between two bank accounts of the tenant (cash pool sweep, intercompany funding). When both accounts
+     * are linked to the chart of accounts and `$post` is true, the transfer is posted on both ledger accounts; `$post`
+     * is false for an allocation the general ledger already posted.
      */
     public function transferIntercompanyFunds(
         string $sourceBankAccountId,
@@ -31,6 +33,7 @@ interface LiquidityManagementServiceInterface
         string $transferDate,
         float $interestRate = 0.0250,
         ?string $cashPoolId = null,
-        ?string $userId = null
+        ?string $userId = null,
+        bool $post = true,
     ): IntercompanyFunding;
 }

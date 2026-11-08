@@ -76,6 +76,8 @@ class BankStatementLine extends Model
         'reconciliation_category',
         'ledger_account_code',
         'reconciliation_notes',
+        'journal_entry_id',
+        'reconciliation_rule_id',
     ];
 
     protected function casts(): array

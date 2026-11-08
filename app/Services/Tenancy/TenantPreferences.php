@@ -113,6 +113,14 @@ class TenantPreferences
                 'ledger_defaults.bank_charges_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
                 // Ledger account of the commission the bank charges on an unpaid Ri.Ba. receipt.
                 'ledger_defaults.riba_unpaid_fee_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                // Counter accounts of the treasury postings: no default is shipped, a posting without its account is refused.
+                'ledger_defaults.internal_transfer_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.generic_expense_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.interest_income_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.interest_expense_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.fx_unrealised_gain_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.fx_unrealised_loss_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
+                'ledger_defaults.cash_difference_account_code' => ['nullable', 'string', 'regex:/^[A-Za-z0-9.\-]{1,20}$/'],
                 'ledger_defaults.auto_categorize_standard_codes' => ['nullable', 'boolean'],
             ],
             'inventory' => [

@@ -39,6 +39,8 @@ class BankStatementLineResource extends JsonResource
             'reconciliation_category' => $this->reconciliation_category,
             'ledger_account_code' => $this->ledger_account_code,
             'reconciliation_notes' => $this->reconciliation_notes,
+            'journal_entry_id' => $this->journal_entry_id,
+            'reconciliation_rule_id' => $this->reconciliation_rule_id,
         ];
     }
 }

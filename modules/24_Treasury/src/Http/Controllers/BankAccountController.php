@@ -129,24 +129,17 @@ final class BankAccountController extends Controller
         parameters: [
             new OA\Parameter(name: 'bank_account', in: 'path', required: true, description: 'Identifier of the bank account', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'bank_name'), new OA\Property(property: 'branch_name'), new OA\Property(property: 'overdraft_limit'), new OA\Property(property: 'credit_line_limit'), new OA\Property(property: 'is_default'), new OA\Property(property: 'is_active')])),
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'bank_name', type: 'string'), new OA\Property(property: 'branch_name', type: 'string'), new OA\Property(property: 'bic_swift', type: 'string'), new OA\Property(property: 'gl_account_id', type: 'string', format: 'uuid'), new OA\Property(property: 'overdraft_limit', type: 'number'), new OA\Property(property: 'credit_line_limit', type: 'number'), new OA\Property(property: 'is_default', type: 'boolean'), new OA\Property(property: 'is_active', type: 'boolean')])),
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryBankAccountResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function update(Request $request, string $id): JsonResponse
+    public function update(StoreBankAccountRequest $request, string $id): JsonResponse
     {
         $account = BankAccount::findOrFail($id);
-        $account->update($request->only([
-            'bank_name',
-            'branch_name',
-            'overdraft_limit',
-            'credit_line_limit',
-            'is_default',
-            'is_active',
-        ]));
+        $account->update($request->validated());
 
         return response()->json(new BankAccountResource($account));
     }

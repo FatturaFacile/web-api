@@ -27,6 +27,10 @@ return [
         'category_not_for_credit' => 'Les entrées ne peuvent être catégorisées que comme virement interne.',
         'supplier_payment_exceeds_balance' => 'Le paiement dépasse le montant dû au fournisseur.',
         'difference_not_accepted' => 'Le montant diffère du solde de :difference.',
+        'ledger_account_not_configured' => 'Configurez le compte :setting dans les préférences bancaires (banking.ledger_defaults) avant de comptabiliser ce mouvement.',
+        'ledger_account_unknown' => 'Le compte :code n\'est pas dans le plan comptable.',
+        'bank_account_not_linked' => 'Le compte bancaire :iban n\'est lié à aucun compte du plan comptable.',
+        'posting_period_unavailable' => 'Le mouvement ne peut pas être comptabilisé : :reason',
     ],
 
     'payment_notes' => [
