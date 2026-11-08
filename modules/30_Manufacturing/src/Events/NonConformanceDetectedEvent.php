@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Events;
 
+/**
+ * A non-conformance was raised by a failed inspection or by hand.
+ */
 final class NonConformanceDetectedEvent extends BaseManufacturingEvent
 {
     public function __construct(
@@ -21,21 +24,35 @@ final class NonConformanceDetectedEvent extends BaseManufacturingEvent
         parent::__construct($tenantId, $companyId, $eventId, $occurredAt);
     }
 
+    /**
+     * Aggregate type of the event.
+     */
     public function getAggregateType(): string
     {
         return 'mfg_quality_non_conformance';
     }
 
+    /**
+     * Aggregate id of the event.
+     */
     public function getAggregateId(): string
     {
         return $this->nonConformanceId;
     }
 
+    /**
+     * Name of the event in the outbox.
+     */
     public function getEventName(): string
     {
         return 'mfg.quality.non_conformance_detected';
     }
 
+    /**
+     * Payload of the event.
+     *
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

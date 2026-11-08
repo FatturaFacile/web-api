@@ -9,6 +9,10 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * @deprecated Stages are operations of the manufacturing module (MfgProductionOrderOperation),
+ *             copied there with the same ids by LegacyProductionOrderMigrator. Kept read-only for history.
+ */
 class ProductionOrderStage extends Model
 {
     use HasFactory, HasUuids;

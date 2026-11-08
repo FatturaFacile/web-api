@@ -30,7 +30,6 @@ use Modules\Inventory\Jobs\ExpireStockLotsJob;
 use Modules\Inventory\Jobs\RecalculateInventoryValuationJob;
 use Modules\Manufacturing\Jobs\ProcessManufacturingForecastJob;
 use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
-use Modules\Manufacturing\Jobs\ProcessWorkCenterCapacityJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
 use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
 use Modules\ServiceManagement\Jobs\PollSupportMailboxesJob;
@@ -97,7 +96,6 @@ $forEachTenant('hr:leave-accruals', static fn (Tenant $tenant): object => new Pr
 $forEachTenant('hr:purge-applications', static fn (Tenant $tenant): object => new PurgeExpiredApplicationsJob($tenant->id))->dailyAt('03:40');
 $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object => new AggregateMeteredUsageJob($tenant->id))->dailyAt('01:45');
 $forEachTenant('manufacturing:mrp', static fn (Tenant $tenant): object => new ProcessMrpRunJob($tenant->id, now()->toDateString(), now()->addDays(90)->toDateString()))->dailyAt('02:15');
-$forEachTenant('manufacturing:capacity', static fn (Tenant $tenant): object => new ProcessWorkCenterCapacityJob($tenant->id, now()->toDateString()))->dailyAt('02:30');
 $forEachTenant('manufacturing:forecast', static fn (Tenant $tenant): object => new ProcessManufacturingForecastJob($tenant->id))->monthlyOn(1, '02:45');
 $forEachTenant('associations:expire-memberships', static fn (Tenant $tenant): object => new ExpireMembershipsJob($tenant->id))->dailyAt('00:30');
 $forEachTenant('associations:fee-reminders', static fn (Tenant $tenant): object => new SendFeeRemindersJob($tenant->id))->dailyAt('08:15');

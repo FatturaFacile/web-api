@@ -22,6 +22,12 @@ use Modules\CRM\Models\Account;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
+use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
+use Modules\Inventory\DTOs\StockTransferDTO;
+use Modules\Inventory\Models\StockItem;
+use Modules\Inventory\Models\StockItemCategory;
+use Modules\Inventory\Models\Warehouse as InventoryWarehouse;
+use Modules\Inventory\Services\WarehouseDefaultBinResolver;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
 use Modules\Manufacturing\Contracts\MrpServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionCostingServiceInterface;
@@ -29,6 +35,7 @@ use Modules\Manufacturing\Contracts\ProductionExecutionServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
 use Modules\Manufacturing\Contracts\QualityManagementServiceInterface;
 use Modules\Manufacturing\Contracts\RoutingServiceInterface;
+use Modules\Manufacturing\DTOs\ConfirmOperationDTO;
 use Modules\Manufacturing\DTOs\CreateBomDTO;
 use Modules\Manufacturing\DTOs\CreateProductionOrderDTO;
 use Modules\Manufacturing\DTOs\CreateRoutingDTO;
@@ -261,79 +268,87 @@ test('Scenario 2: PO -> Goods Receipt -> Inventory -> Asset -> Depreciation -> G
 
 test('Scenario 3: MRP -> Production -> Quality -> Inventory -> Sale -> Revenue (PASS)', function () {
     $tId = $this->tenant->id;
+    fiscalCalendar($this->tenant, (int) now()->year);
+
+    $warehouse = InventoryWarehouse::factory()->create(['tenant_id' => $tId, 'is_primary' => true]);
+    $stockItem = static fn (string $sku, string $cost): StockItem => StockItem::factory()->create([
+        'tenant_id' => $tId,
+        'category_id' => StockItemCategory::factory()->create(['tenant_id' => $tId])->id,
+        'sku' => $sku.'-'.Str::random(4),
+        'standard_cost' => $cost,
+        'current_moving_average_cost' => $cost,
+    ]);
 
     $raw = MfgItem::create([
         'tenant_id' => $tId,
         'item_code' => 'RM-TITANIUM-'.Str::random(4),
         'name' => 'Titanium Grade 5 Alloy Ingot',
         'item_type' => 'raw_material',
-        'standard_cost' => 300.00,
+        'standard_cost' => '300.00',
+        'stock_item_id' => $stockItem('RM-TI', '300.00')->id,
     ]);
-
     $pump = MfgItem::create([
         'tenant_id' => $tId,
         'item_code' => 'FG-AERO-PUMP-'.Str::random(4),
         'name' => 'Aerospace Hydraulic Pump',
         'item_type' => 'finished_good',
-        'standard_cost' => 2500.00,
-        'safety_stock' => 5.0,
+        'safety_stock' => '5',
+        'stock_item_id' => $stockItem('FG-AERO', '0')->id,
     ]);
 
-    // 1. BOM & Routing
-    $bom = app(BillOfMaterialsServiceInterface::class)->createBom(new CreateBomDTO(
+    $bin = app(WarehouseDefaultBinResolver::class)->resolve((string) $warehouse->id);
+    app(DoubleEntryMovementServiceInterface::class)->executeTransfer(new StockTransferDTO(stockItemId: (string) $raw->stock_item_id, sourceBinId: null, destinationBinId: (string) $bin->id, quantity: 20.0, movementType: 'receipt', customUnitCost: 300.0));
+
+    // 1. BOM (released) & Routing
+    $boms = app(BillOfMaterialsServiceInterface::class);
+    $boms->activate($boms->createBom(new CreateBomDTO(
         tenantId: $tId,
         mfgItemId: $pump->id,
         name: 'Aerospace Pump Master BOM',
-        components: [
-            ['component_item_id' => $raw->id, 'quantity_per' => 2.0, 'scrap_percentage' => 0.0],
-        ]
-    ));
-    $pump->update(['default_bom_id' => $bom->id]);
+        components: [['component_item_id' => $raw->id, 'quantity_per' => '2']]
+    )));
 
     $wc = MfgWorkCenter::create([
         'tenant_id' => $tId,
-        'work_center_code' => 'WC-AERO-01',
+        'work_center_code' => 'WC-AERO-'.Str::random(4),
         'name' => 'Precision Assembly Cell',
-        'direct_labor_rate' => 60.00,
-        'overhead_rate' => 40.00,
-        'efficiency_percentage' => 100.0,
-        'capacity_hours_per_day' => 8.0,
+        'hourly_cost_rate' => '60.00',
+        'hourly_overhead_rate' => '40.00',
+        'capacity_hours_per_day' => '8',
     ]);
 
-    $routing = app(RoutingServiceInterface::class)->createRouting(new CreateRoutingDTO(
+    app(RoutingServiceInterface::class)->createRouting(new CreateRoutingDTO(
         tenantId: $tId,
         mfgItemId: $pump->id,
         name: 'Precision Milling Route',
-        operations: [
-            ['operation_number' => 10, 'operation_code' => 'OP-10', 'name' => 'Titanium Milling', 'work_center_id' => $wc->id, 'setup_time_minutes' => 30.0, 'run_time_per_unit_minutes' => 60.0],
-        ]
+        operations: [['operation_code' => 'OP-10', 'name' => 'Titanium Milling', 'work_center_id' => $wc->id, 'setup_time_minutes' => '30', 'run_time_minutes_per_unit' => '60']]
     ));
-    $pump->update(['default_routing_id' => $routing->id]);
 
-    // 2. MRP Run
+    // 2. MRP: the safety stock of 5 pumps is planned as a make order.
     $mrpRun = app(MrpServiceInterface::class)->executeMrpRun(new RunMrpDTO(
         tenantId: $tId,
         horizonStartDate: now()->toDateString(),
         horizonEndDate: now()->addMonths(1)->toDateString(),
-        runType: 'regenerative'
     ));
-    expect($mrpRun->status)->toBe('completed');
+    expect($mrpRun->status)->toBe('completed')
+        ->and($mrpRun->plannedOrders->where('mfg_item_id', $pump->id)->first()?->quantity)->toBe('5.0000');
 
-    // 3. Production Order Execution
+    // 3. Production Order Execution: release, issue, confirm, receive, complete, close.
     $planning = app(ProductionPlanningServiceInterface::class);
     $execution = app(ProductionExecutionServiceInterface::class);
 
     $pOrder = $planning->planOrder(new CreateProductionOrderDTO(
         tenantId: $tId,
         mfgItemId: $pump->id,
-        targetQuantity: 5.0,
+        targetQuantity: '5',
         plannedStartDate: now()->toDateString(),
         plannedEndDate: now()->addDays(3)->toDateString()
     ));
-
-    $pOrder = $execution->releaseOrder($pOrder->id);
-    $pOrder = $execution->startOrder($pOrder->id);
-    $pOrder = $execution->completeOrder($pOrder->id, 5.0, 0.0);
+    $pOrder = $execution->releaseOrder($pOrder);
+    $execution->issueMaterials($pOrder, [['line_id' => (string) $pOrder->lines->first()->id, 'quantity' => '10']]);
+    $execution->confirmOperation($pOrder, $pOrder->operations->first(), new ConfirmOperationDTO(setupMinutes: '30', runMinutes: '300', goodQuantity: '5', isFinal: true));
+    $execution->receiveOutput($pOrder, '5');
+    $pOrder = $execution->completeOrder($pOrder);
     expect($pOrder->status)->toBe('completed');
 
     // 4. Quality Inspection
@@ -357,10 +372,12 @@ test('Scenario 3: MRP -> Production -> Quality -> Inventory -> Sale -> Revenue (
     ));
     expect($inspection->status)->toBe('passed');
 
-    // 5. Costing Rollup
-    $cost = app(ProductionCostingServiceInterface::class)->calculateActualCostAndVariance($pOrder->id);
-    expect($cost)->toHaveKey('actual_total_cost')
-        ->and($cost)->toHaveKey('variance_total');
+    // 5. Costing: actual equals the standard frozen at release, the close leaves no variance and no WIP.
+    $closed = $execution->closeOrder($pOrder);
+    $cost = app(ProductionCostingServiceInterface::class)->costReport($closed);
+    expect($cost['totals']['actual'])->toBe('3550.00')
+        ->and($cost['totals']['variance'])->toBe('0.00')
+        ->and($cost['totals']['wip_balance'])->toBe('0.00');
 });
 
 test('Scenario 4: Employee -> Project -> Timesheet -> Cost Posting (PASS)', function () {

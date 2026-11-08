@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Events;
 
+/**
+ * Output of a production order was received into stock at its standard unit cost.
+ */
 final class FinishedGoodsProducedEvent extends BaseManufacturingEvent
 {
     public function __construct(
@@ -20,21 +23,35 @@ final class FinishedGoodsProducedEvent extends BaseManufacturingEvent
         parent::__construct($tenantId, $companyId, $eventId, $occurredAt);
     }
 
+    /**
+     * Aggregate type of the event.
+     */
     public function getAggregateType(): string
     {
         return 'mfg_production_order';
     }
 
+    /**
+     * Aggregate id of the event.
+     */
     public function getAggregateId(): string
     {
         return $this->productionOrderId;
     }
 
+    /**
+     * Name of the event in the outbox.
+     */
     public function getEventName(): string
     {
         return 'mfg.finished_goods.produced';
     }
 
+    /**
+     * Payload of the event.
+     *
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

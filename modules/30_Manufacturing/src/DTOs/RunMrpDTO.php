@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\DTOs;
 
+/**
+ * Parameters of an MRP run: horizon, run type, optional items and the user who ran it.
+ */
 final readonly class RunMrpDTO
 {
     /**

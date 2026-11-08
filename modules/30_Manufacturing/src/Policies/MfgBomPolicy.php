@@ -6,36 +6,37 @@ namespace Modules\Manufacturing\Policies;
 
 use App\Models\User;
 use Modules\Manufacturing\Models\MfgBom;
+use Modules\Manufacturing\Policies\Concerns\ChecksManufacturingRoles;
 
+/**
+ * Record-level rules of BOM revisions: drafts of the company can be edited by writers, releasing a revision for
+ * production needs a manufacturing manager.
+ */
 final class MfgBomPolicy
 {
-    public function viewAny(User $user): bool
+    use ChecksManufacturingRoles;
+
+    /**
+     * The revision belongs to the active company.
+     */
+    public function view(?User $user, MfgBom $bom): bool
     {
-        return true;
+        return $this->ownsRecord($user, $bom);
     }
 
-    public function view(User $user, MfgBom $bom): bool
+    /**
+     * Editing and revising a revision of the company that is not locked.
+     */
+    public function update(?User $user, MfgBom $bom): bool
     {
-        return true;
+        return $this->ownsRecord($user, $bom) && ! $bom->is_locked;
     }
 
-    public function create(User $user): bool
+    /**
+     * Releasing a draft for production: a manufacturing manager.
+     */
+    public function activate(?User $user, MfgBom $bom): bool
     {
-        return true;
-    }
-
-    public function update(User $user, MfgBom $bom): bool
-    {
-        return ! $bom->is_locked;
-    }
-
-    public function delete(User $user, MfgBom $bom): bool
-    {
-        return ! $bom->is_locked;
-    }
-
-    public function revise(User $user, MfgBom $bom): bool
-    {
-        return true;
+        return $this->managesRecord($user, $bom) && ! $bom->is_locked;
     }
 }

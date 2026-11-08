@@ -11,6 +11,9 @@ use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Modules\Manufacturing\Contracts\ManufacturingForecastingServiceInterface;
 
+/**
+ * Publishes the monthly production projection of one tenant for Treasury (scheduled monthly).
+ */
 final class ProcessManufacturingForecastJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -20,6 +23,9 @@ final class ProcessManufacturingForecastJob implements ShouldQueue
         public int $months = 6
     ) {}
 
+    /**
+     * Runs the projection.
+     */
     public function handle(ManufacturingForecastingServiceInterface $forecastingService): void
     {
         $forecastingService->generateCashAndMaterialForecast($this->tenantId, $this->months);

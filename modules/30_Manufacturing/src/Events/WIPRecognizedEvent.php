@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Events;
 
+/**
+ * A cost element was charged to the WIP of a production order.
+ */
 final class WIPRecognizedEvent extends BaseManufacturingEvent
 {
     public function __construct(
@@ -19,21 +22,35 @@ final class WIPRecognizedEvent extends BaseManufacturingEvent
         parent::__construct($tenantId, $companyId, $eventId, $occurredAt);
     }
 
+    /**
+     * Aggregate type of the event.
+     */
     public function getAggregateType(): string
     {
         return 'mfg_production_order';
     }
 
+    /**
+     * Aggregate id of the event.
+     */
     public function getAggregateId(): string
     {
         return $this->productionOrderId;
     }
 
+    /**
+     * Name of the event in the outbox.
+     */
     public function getEventName(): string
     {
         return 'mfg.accounting.wip_recognized';
     }
 
+    /**
+     * Payload of the event.
+     *
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

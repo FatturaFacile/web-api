@@ -6,16 +6,23 @@ namespace Database\Seeders;
 
 use App\Models\Tenant;
 use Illuminate\Database\Seeder;
+use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
 use Modules\Manufacturing\Contracts\MrpServiceInterface;
-use Modules\Manufacturing\Contracts\ProductionExecutionServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
 use Modules\Manufacturing\DTOs\CreateProductionOrderDTO;
 use Modules\Manufacturing\DTOs\RunMrpDTO;
 use Modules\Manufacturing\Models\MfgItem;
 use Modules\Manufacturing\Models\MfgProductionOrder;
 
+/**
+ * Demo data of manufacturing: a planned production order for an item with a released BOM, then an MRP run. Orders are
+ * not released here, because release reserves stock that only the inventory of a real company holds.
+ */
 final class ManufacturingDemoDataSeeder extends Seeder
 {
+    /**
+     * Seeds every tenant once (idempotent on the planned order of the item).
+     */
     public function run(): void
     {
         $tenants = Tenant::all();
@@ -23,38 +30,31 @@ final class ManufacturingDemoDataSeeder extends Seeder
             $tenants = collect([Tenant::factory()->create()]);
         }
 
-        $planningService = app(ProductionPlanningServiceInterface::class);
-        $executionService = app(ProductionExecutionServiceInterface::class);
-        $mrpService = app(MrpServiceInterface::class);
+        $planning = app(ProductionPlanningServiceInterface::class);
+        $boms = app(BillOfMaterialsServiceInterface::class);
+        $mrp = app(MrpServiceInterface::class);
 
         foreach ($tenants as $tenant) {
-            $pumpItem = MfgItem::where('tenant_id', $tenant->id)->where('item_code', 'FG-PUMP-HD500')->first();
-            if (! $pumpItem || ! $pumpItem->default_bom_id) {
-                continue;
+            foreach (['FG-PUMP-HD500', 'TEST-FG-ASSEMBLY'] as $code) {
+                $item = MfgItem::query()->where('tenant_id', $tenant->id)->where('item_code', $code)->first();
+                if (! $item instanceof MfgItem || $boms->effectiveBomFor($item) === null) {
+                    continue;
+                }
+
+                if (! MfgProductionOrder::query()->where('tenant_id', $tenant->id)->where('mfg_item_id', $item->id)->exists()) {
+                    $planning->planOrder(new CreateProductionOrderDTO(
+                        tenantId: (string) $tenant->id,
+                        mfgItemId: (string) $item->id,
+                        targetQuantity: '25',
+                        plannedStartDate: now()->toDateString(),
+                        plannedEndDate: now()->addDays(7)->toDateString(),
+                        notes: 'Demo production batch'
+                    ));
+                }
             }
 
-            // 1. Create a planned production order
-            $order = MfgProductionOrder::where('tenant_id', $tenant->id)->where('mfg_item_id', $pumpItem->id)->first();
-            if (! $order) {
-                $order = $planningService->planOrder(new CreateProductionOrderDTO(
-                    tenantId: $tenant->id,
-                    mfgItemId: $pumpItem->id,
-                    targetQuantity: 25.0,
-                    plannedStartDate: now()->toDateString(),
-                    plannedEndDate: now()->addDays(7)->toDateString(),
-                    notes: 'Demo production batch for heavy duty industrial pumps'
-                ));
-
-                // 2. Release order and allocate lines
-                $order = $executionService->releaseOrder($order->id);
-
-                // 3. Start order
-                $order = $executionService->startOrder($order->id);
-            }
-
-            // 4. Execute demo MRP Run
-            $mrpService->executeMrpRun(new RunMrpDTO(
-                tenantId: $tenant->id,
+            $mrp->executeMrpRun(new RunMrpDTO(
+                tenantId: (string) $tenant->id,
                 horizonStartDate: now()->toDateString(),
                 horizonEndDate: now()->addMonths(2)->toDateString(),
                 runType: 'regenerative'

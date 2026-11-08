@@ -2,200 +2,204 @@
 
 declare(strict_types=1);
 
-namespace Tests\Feature\Manufacturing;
-
-use App\Models\Tenant;
-use App\Services\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Str;
-use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
-use Modules\Manufacturing\Contracts\RoutingServiceInterface;
-use Modules\Manufacturing\DTOs\CreateBomDTO;
-use Modules\Manufacturing\DTOs\CreateEcoDTO;
-use Modules\Manufacturing\DTOs\CreateRoutingDTO;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\Manufacturing\Models\MfgBom;
 use Modules\Manufacturing\Models\MfgItem;
-use Modules\Manufacturing\Models\MfgWorkCenter;
 
-uses(DatabaseTransactions::class);
+require_once __DIR__.'/ManufacturingSupport.php';
 
-beforeEach(function () {
-    $this->tenant = Tenant::factory()->create();
-    app(TenantContext::class)->setTenant($this->tenant);
+uses(RefreshDatabase::class);
 
-    $this->bomService = app(BillOfMaterialsServiceInterface::class);
-    $this->routingService = app(RoutingServiceInterface::class);
+beforeEach(function (): void {
+    mfgSetUp($this);
 });
 
-test('BOM service creates single-level and multi-level bills of material with phantom and scrap calculations', function () {
-    // 1. Create Raw Materials
-    $rawSteel = MfgItem::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'item_type' => 'raw_material',
-        'item_code' => 'RM-ST-01',
-        'standard_cost' => 15.00,
-    ]);
+/**
+ * Creates and activates a BOM through the API.
+ *
+ * @param  list<array<string, mixed>>  $components
+ * @param  array<string, mixed>  $overrides
+ */
+function mfgActiveBom(object $test, MfgItem $item, array $components, array $overrides = []): string
+{
+    $id = (string) $test->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $item->id, 'name' => $item->item_code.' BOM', 'components' => $components, ...$overrides])->assertCreated()->json('data.id');
+    $test->postJson("/api/v1/manufacturing/boms/{$id}/activate")->assertOk();
 
-    $rawCoil = MfgItem::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'item_type' => 'raw_material',
-        'item_code' => 'RM-COIL-01',
-        'standard_cost' => 5.00,
-    ]);
+    return $id;
+}
 
-    // 2. Create Subassembly (Motor)
-    $motorSub = MfgItem::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'item_type' => 'subassembly',
-        'item_code' => 'SA-MOTOR-01',
-    ]);
+test('items are created, listed, filtered, shown and updated through the API', function (): void {
+    $stock = mfgItem($this, 'RM-BASE', 'raw_material', '3.00');
+    $this->postJson('/api/v1/manufacturing/items', ['item_code' => 'FG-NEW', 'name' => 'New pump', 'item_type' => 'finished_good', 'stock_item_id' => $stock->stock_item_id, 'safety_stock' => '5', 'min_lot_size' => '10', 'lot_size_multiple' => '5'])
+        ->assertCreated()->assertJsonPath('data.procurement_type', 'make')->assertJsonPath('data.safety_stock', '5.0000');
+    $this->postJson('/api/v1/manufacturing/items', ['item_code' => 'FG-NEW', 'name' => 'Again', 'item_type' => 'gadget', 'stock_item_id' => (string) Str::uuid()])
+        ->assertUnprocessable()->assertJsonValidationErrors(['item_code', 'item_type', 'stock_item_id']);
 
-    $subBom = $this->bomService->createBom(new CreateBomDTO(
-        tenantId: $this->tenant->id,
-        mfgItemId: $motorSub->id,
-        name: 'Motor Subassembly BOM',
-        components: [
-            ['component_item_id' => $rawCoil->id, 'quantity_per' => 3.0, 'scrap_percentage' => 5.0],
-        ]
-    ));
-
-    expect($subBom)->toBeInstanceOf(MfgBom::class)
-        ->and($subBom->components)->toHaveCount(1);
-
-    // 3. Create Finished Good (Pump)
-    $pump = MfgItem::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'item_type' => 'finished_good',
-        'item_code' => 'FG-PUMP-01',
-    ]);
-
-    $pumpBom = $this->bomService->createBom(new CreateBomDTO(
-        tenantId: $this->tenant->id,
-        mfgItemId: $pump->id,
-        name: 'Pump Main BOM',
-        components: [
-            ['component_item_id' => $motorSub->id, 'quantity_per' => 1.0],
-            ['component_item_id' => $rawSteel->id, 'quantity_per' => 2.0, 'scrap_percentage' => 10.0],
-        ]
-    ));
-
-    expect($pumpBom)->toBeInstanceOf(MfgBom::class)
-        ->and($pumpBom->components)->toHaveCount(2);
-
-    // 4. Recursive Multi-level Explosion for 10 finished pumps
-    $tree = $this->bomService->explodeBom($pumpBom->id, 10.0);
-
-    expect(count($tree))->toBeGreaterThanOrEqual(3);
-
-    // Steel raw material: 10 units * 2 per unit * (1 + 10% scrap) = 22.0
-    $steelLine = collect($tree)->firstWhere('component_item_id', $rawSteel->id);
-    expect($steelLine)->not->toBeNull()
-        ->and((float) $steelLine['effective_quantity'])->toBe(22.0);
-
-    // Motor subassembly line: 10 units * 1 = 10.0
-    $motorLine = collect($tree)->firstWhere('component_item_id', $motorSub->id);
-    expect($motorLine)->not->toBeNull()
-        ->and((float) $motorLine['effective_quantity'])->toBe(10.0);
-
-    // Child coil from exploded subassembly: 10 units * 3 per unit * (1 + 5% scrap) = 31.5
-    $coilLine = collect($tree)->firstWhere('component_item_id', $rawCoil->id);
-    expect($coilLine)->not->toBeNull()
-        ->and((float) $coilLine['effective_quantity'])->toBe(31.5);
+    $id = $this->getJson('/api/v1/manufacturing/items?search=fg-new')->assertOk()->assertJsonCount(1, 'data')->json('data.0.id');
+    $this->getJson('/api/v1/manufacturing/items?item_type=raw_material')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson("/api/v1/manufacturing/items/{$id}")->assertOk()->assertJsonPath('data.item_code', 'FG-NEW');
+    $this->putJson("/api/v1/manufacturing/items/{$id}", ['name' => 'Renamed', 'procurement_type' => 'subcontract', 'lead_time_days' => 9])
+        ->assertOk()->assertJsonPath('data.name', 'Renamed')->assertJsonPath('data.procurement_type', 'subcontract')->assertJsonPath('data.lead_time_days', 9);
+    $this->putJson("/api/v1/manufacturing/items/{$id}", ['min_lot_size' => '-1'])->assertUnprocessable()->assertJsonValidationErrors(['min_lot_size']);
 });
 
-test('BOM revision and Engineering Change Order lifecycle updates revisions and versions', function () {
-    $item = MfgItem::factory()->create(['tenant_id' => $this->tenant->id]);
-    $raw = MfgItem::factory()->create(['tenant_id' => $this->tenant->id, 'item_type' => 'raw_material']);
+test('BOM drafts are edited, released with effective dates, superseded and refused when recursive', function (): void {
+    $fg = mfgItem($this, 'FG-A', 'finished_good');
+    $rm1 = mfgItem($this, 'RM-1', 'raw_material', '1.00');
+    $rm2 = mfgItem($this, 'RM-2', 'raw_material', '2.00');
 
-    $bom = $this->bomService->createBom(new CreateBomDTO(
-        tenantId: $this->tenant->id,
-        mfgItemId: $item->id,
-        name: 'Initial BOM',
-        revision: 'A',
-        components: [['component_item_id' => $raw->id, 'quantity_per' => 1.0]]
-    ));
+    $this->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $fg->id, 'name' => 'Self', 'components' => [['component_item_id' => $fg->id, 'quantity_per' => '1']]])
+        ->assertUnprocessable()->assertJsonValidationErrors(['components']);
+    $this->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $fg->id, 'name' => 'Bad', 'components' => [['component_item_id' => $rm1->id, 'quantity_per' => '0', 'yield_percentage' => '0']]])
+        ->assertUnprocessable()->assertJsonValidationErrors(['components.0.quantity_per', 'components.0.yield_percentage']);
 
-    expect($bom->revision)->toBe('A')
-        ->and($bom->version)->toBe(1);
+    $draft = (string) $this->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $fg->id, 'name' => 'A', 'components' => [['component_item_id' => $rm1->id, 'quantity_per' => '1']]])
+        ->assertCreated()->assertJsonPath('data.status', 'draft')->assertJsonPath('data.revision', 'A')->json('data.id');
+    $this->putJson("/api/v1/manufacturing/boms/{$draft}", ['name' => 'A edited', 'components' => [['component_item_id' => $rm1->id, 'quantity_per' => '2'], ['component_item_id' => $rm2->id, 'quantity_per' => '1']]])
+        ->assertOk()->assertJsonPath('data.name', 'A edited')->assertJsonCount(2, 'data.components');
 
-    // 1. Direct Revision
-    $revised = $this->bomService->reviseBom($bom->id, 'B', 'Engineering upgrade on material specification');
-    expect($revised->revision)->toBe('B')
-        ->and($revised->version)->toBe(2);
+    mfgActAs($this, $this->member);
+    $this->postJson("/api/v1/manufacturing/boms/{$draft}/activate")->assertForbidden();
+    mfgActAs($this, $this->production);
+    $this->postJson("/api/v1/manufacturing/boms/{$draft}/activate")->assertOk()->assertJsonPath('data.status', 'active')->assertJsonPath('data.effective_from', now()->toDateString());
+    $this->putJson("/api/v1/manufacturing/boms/{$draft}", ['name' => 'Too late'])->assertUnprocessable()->assertJsonValidationErrors(['status']);
+    expect($fg->refresh()->default_bom_id)->toBe($draft);
 
-    // 2. Engineering Change Order (ECO)
-    $eco = $this->bomService->createEco(new CreateEcoDTO(
-        tenantId: $this->tenant->id,
-        title: 'Upgrade to Rev C',
-        reason: 'Tolerance precision improvement',
-        changePayload: ['bom_id' => $bom->id, 'new_revision' => 'C']
-    ));
+    // Revision B from next week: A ends the day before, both stay effective in their own range.
+    $from = now()->addWeek()->toDateString();
+    $revB = (string) $this->postJson("/api/v1/manufacturing/boms/{$draft}/revise", ['reason' => 'Cheaper seal', 'effective_from' => $from, 'components' => [['action' => 'remove', 'component_item_id' => $rm2->id], ['action' => 'update', 'component_item_id' => $rm1->id, 'quantity_per' => '3']]])
+        ->assertCreated()->assertJsonPath('data.revision', 'B')->assertJsonPath('data.status', 'draft')->assertJsonPath('data.supersedes_bom_id', $draft)->json('data.id');
+    $this->postJson("/api/v1/manufacturing/boms/{$revB}/activate")->assertOk()->assertJsonPath('data.effective_from', $from);
+    $this->getJson("/api/v1/manufacturing/boms/{$draft}")->assertOk()->assertJsonPath('data.status', 'superseded')->assertJsonPath('data.effective_to', now()->addDays(6)->toDateString());
 
-    expect($eco->status)->toBe('draft');
+    $this->getJson("/api/v1/manufacturing/boms/{$draft}/explode?quantity=2")->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson('/api/v1/manufacturing/boms?mfg_item_id='.$fg->id)->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson('/api/v1/manufacturing/boms?status=active')->assertOk()->assertJsonCount(1, 'data');
 
-    $approverId = (string) Str::uuid7();
-    $approvedEco = $this->bomService->approveEco($eco->id, $approverId);
-    expect($approvedEco->status)->toBe('approved');
+    // A future revision cannot overlap an earlier start.
+    $revC = (string) $this->postJson("/api/v1/manufacturing/boms/{$revB}/revise", ['reason' => 'Overlap', 'effective_from' => now()->addDays(3)->toDateString()])->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/manufacturing/boms/{$revC}/activate")->assertUnprocessable()->assertJsonValidationErrors(['effective_from']);
+    $this->postJson("/api/v1/manufacturing/boms/{$revB}/revise", ['reason' => 'Duplicate', 'new_revision' => 'B'])->assertUnprocessable()->assertJsonValidationErrors(['new_revision']);
 
-    $implementedEco = $this->bomService->implementEco($eco->id);
-    expect($implementedEco->status)->toBe('implemented');
+    // A BOM of RM-1 made of FG-A would close a loop.
+    $loop = (string) $this->postJson('/api/v1/manufacturing/boms', ['mfg_item_id' => $rm1->id, 'name' => 'Loop', 'components' => [['component_item_id' => $fg->id, 'quantity_per' => '1']]])->assertCreated()->json('data.id');
+    $this->postJson("/api/v1/manufacturing/boms/{$loop}/activate")->assertUnprocessable()->assertJsonValidationErrors(['components']);
 
-    $bom->refresh();
-    expect($bom->revision)->toBe('C')
-        ->and($bom->version)->toBe(3);
+    $this->getJson("/api/v1/manufacturing/items/{$rm1->id}/where-used")->assertOk()->assertJsonCount(3, 'data');
 });
 
-test('Routing service configures operations and calculates standard setup, run, and labor costs', function () {
-    $item = MfgItem::factory()->create(['tenant_id' => $this->tenant->id]);
-    $wc1 = MfgWorkCenter::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'hourly_cost_rate' => 50.00,
-        'hourly_overhead_rate' => 20.00,
-    ]);
+test('a multi-level BOM explodes through phantoms with scrap and yield and rolls up the standard cost', function (): void {
+    $fg = mfgItem($this, 'FG-M', 'finished_good');
+    $sub = mfgItem($this, 'SA-M', 'subassembly');
+    $phantom = mfgItem($this, 'PH-M', 'phantom');
+    $rm = mfgItem($this, 'RM-M', 'raw_material', '4.00');
+    $wc = mfgWorkCenter($this, 'WC-M', '48.00', '24.00');
 
-    $routing = $this->routingService->createRouting(new CreateRoutingDTO(
-        tenantId: $this->tenant->id,
-        mfgItemId: $item->id,
-        name: 'Standard Precision Routing',
-        operations: [
-            [
-                'operation_code' => 'OP-10-MILL',
-                'name' => 'CNC Milling',
-                'work_center_id' => $wc1->id,
-                'setup_time_minutes' => 30.0,
-                'run_time_minutes_per_unit' => 12.0,
-                'labor_time_minutes_per_unit' => 12.0,
-                'standard_labor_rate' => 30.0,
-                'standard_machine_rate' => 60.0,
-            ],
-            [
-                'operation_code' => 'OP-20-INSPECT',
-                'name' => 'In-Line Deburring and Inspection',
-                'work_center_id' => $wc1->id,
-                'setup_time_minutes' => 10.0,
-                'run_time_minutes_per_unit' => 3.0,
-                'labor_time_minutes_per_unit' => 3.0,
-                'standard_labor_rate' => 25.0,
-                'standard_machine_rate' => 30.0,
-            ],
-        ]
-    ));
+    mfgActiveBom($this, $phantom, [['component_item_id' => $rm->id, 'quantity_per' => '1']]);
+    mfgActiveBom($this, $sub, [['component_item_id' => $rm->id, 'quantity_per' => '2', 'scrap_percentage' => '10']], ['base_quantity' => '2']);
+    $bomId = mfgActiveBom($this, $fg, [['component_item_id' => $sub->id, 'quantity_per' => '1'], ['component_item_id' => $phantom->id, 'quantity_per' => '2', 'yield_percentage' => '80']]);
+    $this->postJson('/api/v1/manufacturing/routings', ['mfg_item_id' => $sub->id, 'name' => 'Sub', 'operations' => [['operation_code' => 'S10', 'name' => 'Weld', 'work_center_id' => $wc->id, 'setup_time_minutes' => '0', 'run_time_minutes_per_unit' => '15']]])->assertCreated();
 
-    expect($routing->operations)->toHaveCount(2);
+    $rows = collect($this->getJson("/api/v1/manufacturing/boms/{$bomId}/explode?quantity=10")->assertOk()->json('data'));
+    // Sub: 10; its raw material 2 per 2 units * 10 * 1.10 scrap = 11; phantom 2 * 10 / 0.8 = 25, its raw material 25.
+    expect($rows->where('component_item_id', $sub->id)->first()['effective_quantity'])->toBe('10.0000')
+        ->and($rows->where('level', 2)->pluck('effective_quantity')->sort()->values()->all())->toBe(['11.0000', '25.0000'])
+        ->and($rows->firstWhere('component_item_id', $phantom->id)['is_phantom'])->toBeTrue();
 
-    // Calculate times for 10 units:
-    // Setup = 30 + 10 = 40 min
-    // Run = (12 * 10) + (3 * 10) = 150 min
-    // Labor = (12 * 10) + (3 * 10) = 150 min
-    // Total cycle = 40 + 150 = 190 min
-    $times = $this->routingService->calculateTotalStandardTimes($routing->id, 10.0);
-    expect($times['total_setup_minutes'])->toBe(40.0)
-        ->and($times['total_run_minutes'])->toBe(150.0)
-        ->and($times['total_cycle_minutes'])->toBe(190.0);
+    // Sub: material 2 * 1.10 * 4 / 2 = 4.40, labour 15 min at 48/h = 12, overhead 15 min at 24/h = 6 => 22.40.
+    $rollup = $this->postJson("/api/v1/manufacturing/items/{$fg->id}/cost-rollup")->assertOk();
+    expect($rollup->json('data.material'))->toBe('32.4000')
+        ->and($rollup->json('data.total'))->toBe('32.4000')
+        ->and($sub->refresh()->standard_cost)->toBe('22.4000')
+        ->and($sub->standard_labor_cost)->toBe('12.0000');
+});
 
-    // Calculate costs
-    $costs = $this->routingService->calculateStandardOperationsCost($routing->id, 10.0);
-    expect($costs['labor_cost'])->toBeGreaterThan(0.0)
-        ->and($costs['machine_cost'])->toBeGreaterThan(0.0)
-        ->and($costs['total_cost'])->toBeGreaterThan(0.0);
+test('routings are created with work centre rates, listed and shown', function (): void {
+    $fg = mfgItem($this, 'FG-R', 'finished_good');
+    $wc = mfgWorkCenter($this, 'WC-R', '50.00', '20.00');
+    $foreignWc = mfgWorkCenter($this, 'WC-X', '1', '1', $this->otherTenant);
+
+    $this->postJson('/api/v1/manufacturing/routings', ['mfg_item_id' => $fg->id, 'name' => 'R', 'operations' => [['operation_code' => 'X', 'name' => 'X', 'work_center_id' => $foreignWc->id]]])
+        ->assertUnprocessable()->assertJsonValidationErrors(['operations.0.work_center_id']);
+    $this->postJson('/api/v1/manufacturing/routings', ['mfg_item_id' => $fg->id, 'name' => 'R'])->assertUnprocessable()->assertJsonValidationErrors(['operations']);
+
+    $id = $this->postJson('/api/v1/manufacturing/routings', ['mfg_item_id' => $fg->id, 'name' => 'R', 'operations' => [
+        ['operation_code' => 'OP10', 'name' => 'Cut', 'work_center_id' => $wc->id, 'setup_time_minutes' => '10', 'run_time_minutes_per_unit' => '2', 'labor_time_minutes_per_unit' => '1'],
+        ['operation_code' => 'OP20', 'name' => 'Plate', 'work_center_id' => $wc->id, 'is_subcontracted' => true, 'subcontract_unit_cost' => '3.50'],
+    ]])->assertCreated()->assertJsonCount(2, 'data.operations')->assertJsonPath('data.operations.1.is_subcontracted', true)->json('data.id');
+
+    $this->getJson('/api/v1/manufacturing/routings?mfg_item_id='.$fg->id)->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson("/api/v1/manufacturing/routings/{$id}")->assertOk()->assertJsonPath('data.operations.0.labor_time_minutes_per_unit', '1.00');
+    expect($fg->refresh()->default_routing_id)->toBe($id);
+    $this->postJson('/api/v1/manufacturing/routings', ['mfg_item_id' => $fg->id, 'name' => 'Again', 'operations' => [['operation_code' => 'OP10', 'name' => 'Cut', 'work_center_id' => $wc->id]]])
+        ->assertUnprocessable()->assertJsonValidationErrors(['revision']);
+});
+
+test('engineering changes are submitted, decided by another manager and implemented as a new effective revision', function (): void {
+    $fg = mfgItem($this, 'FG-E', 'finished_good');
+    $rm1 = mfgItem($this, 'RM-E1', 'raw_material', '1.00');
+    $rm2 = mfgItem($this, 'RM-E2', 'raw_material', '1.00');
+    $bomId = mfgActiveBom($this, $fg, [['component_item_id' => $rm1->id, 'quantity_per' => '1']]);
+
+    mfgActAs($this, $this->production);
+    $this->postJson('/api/v1/manufacturing/engineering-changes', ['bom_id' => $bomId, 'title' => 'X'])->assertUnprocessable()->assertJsonValidationErrors(['reason', 'components']);
+    $ecoId = $this->postJson('/api/v1/manufacturing/engineering-changes', [
+        'bom_id' => $bomId,
+        'title' => 'Substitute RM-E1',
+        'reason' => 'Supplier discontinued',
+        'effective_date' => now()->addDays(10)->toDateString(),
+        'components' => [['action' => 'remove', 'component_item_id' => $rm1->id], ['action' => 'add', 'component_item_id' => $rm2->id, 'quantity_per' => '1.5']],
+    ])->assertCreated()->assertJsonPath('data.status', 'draft')->json('data.id');
+
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/approve")->assertForbidden();
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/submit")->assertOk()->assertJsonPath('data.status', 'submitted');
+    // The requester cannot approve, a member cannot decide.
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/approve")->assertForbidden();
+    mfgActAs($this, $this->member);
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/reject", ['reason' => 'No'])->assertForbidden();
+
+    mfgActAs($this, $this->owner);
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/implement")->assertUnprocessable()->assertJsonValidationErrors(['status']);
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/approve")->assertOk()->assertJsonPath('data.status', 'approved')->assertJsonPath('data.approved_by', $this->owner->id);
+    $implemented = $this->postJson("/api/v1/manufacturing/engineering-changes/{$ecoId}/implement")->assertOk()->assertJsonPath('data.status', 'implemented');
+
+    $newBom = MfgBom::query()->findOrFail($implemented->json('data.resulting_bom_id'));
+    expect($newBom->revision)->toBe('B')
+        ->and($newBom->status)->toBe('active')
+        ->and($newBom->engineering_change_order_id)->toBe($ecoId)
+        ->and($newBom->effective_from->toDateString())->toBe(now()->addDays(10)->toDateString())
+        ->and($newBom->components()->pluck('component_item_id')->all())->toBe([$rm2->id])
+        ->and(MfgBom::query()->findOrFail($bomId)->effective_to?->toDateString())->toBe(now()->addDays(9)->toDateString());
+
+    $this->getJson('/api/v1/manufacturing/engineering-changes?status=implemented')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson("/api/v1/manufacturing/engineering-changes/{$ecoId}")->assertOk()->assertJsonPath('data.resulting_bom_id', $newBom->id);
+
+    $second = $this->postJson('/api/v1/manufacturing/engineering-changes', ['bom_id' => $newBom->id, 'title' => 'More', 'reason' => 'Test', 'components' => [['action' => 'update', 'component_item_id' => $rm2->id, 'quantity_per' => '2']]])->json('data.id');
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$second}/submit")->assertOk();
+    mfgActAs($this, $this->production);
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$second}/reject", [])->assertUnprocessable()->assertJsonValidationErrors(['reason']);
+    $this->postJson("/api/v1/manufacturing/engineering-changes/{$second}/reject", ['reason' => 'Not needed'])->assertOk()->assertJsonPath('data.status', 'rejected')->assertJsonPath('data.rejection_reason', 'Not needed');
+});
+
+test('work centres keep a weekly calendar with exceptions and report capacity against the load of released orders', function (): void {
+    $this->postJson('/api/v1/manufacturing/work-centers', ['name' => 'X', 'efficiency_rate' => '0'])->assertUnprocessable()->assertJsonValidationErrors(['work_center_code', 'efficiency_rate']);
+    $id = $this->postJson('/api/v1/manufacturing/work-centers', ['work_center_code' => 'WC-CAP', 'name' => 'Lathe', 'capacity_hours_per_day' => '8', 'efficiency_rate' => '90', 'availability_rate' => '100', 'hourly_cost_rate' => '40', 'hourly_overhead_rate' => '20'])
+        ->assertCreated()->assertJsonPath('data.hourly_cost_rate', '40.0000')->json('data.id');
+    $this->putJson("/api/v1/manufacturing/work-centers/{$id}", ['hourly_overhead_rate' => '25'])->assertOk()->assertJsonPath('data.hourly_overhead_rate', '25.0000');
+    $this->getJson('/api/v1/manufacturing/work-centers')->assertOk()->assertJsonCount(1, 'data');
+
+    $monday = now()->next('Monday')->toDateString();
+    $this->putJson("/api/v1/manufacturing/work-centers/{$id}/calendar", ['days' => [['weekday' => 1, 'available_hours' => '10'], ['weekday' => 1, 'available_hours' => '2']]])->assertUnprocessable()->assertJsonValidationErrors(['days.0.weekday']);
+    $this->putJson("/api/v1/manufacturing/work-centers/{$id}/calendar", ['days' => [['weekday' => 1, 'available_hours' => '10'], ['weekday' => 2, 'available_hours' => '10']]])
+        ->assertOk()->assertJsonCount(2, 'data.calendar');
+    $this->postJson("/api/v1/manufacturing/work-centers/{$id}/calendar-exceptions", ['calendar_date' => now()->next('Monday')->addDay()->toDateString(), 'available_hours' => '0', 'reason' => 'Maintenance'])
+        ->assertCreated()->assertJsonPath('data.available_hours', '0.00')->assertJsonPath('data.is_exception', true);
+
+    $days = collect($this->getJson("/api/v1/manufacturing/work-centers/{$id}/capacity?from={$monday}&to=".now()->next('Monday')->addDays(2)->toDateString())->assertOk()->json('data'));
+    expect($days->pluck('available_hours')->all())->toBe(['9.00', '0.00', '0.00'])
+        ->and($days[0]['utilization_percent'])->toBe('0.00')
+        ->and($days[1]['utilization_percent'])->toBeNull();
+
+    $this->getJson("/api/v1/manufacturing/work-centers/{$id}/capacity?from={$monday}&to=".now()->subYear()->toDateString())->assertUnprocessable()->assertJsonValidationErrors(['to']);
+    $this->getJson("/api/v1/manufacturing/work-centers/{$id}")->assertOk()->assertJsonPath('data.work_center_code', 'WC-CAP');
 });

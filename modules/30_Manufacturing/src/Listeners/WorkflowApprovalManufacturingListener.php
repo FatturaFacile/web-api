@@ -4,53 +4,69 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Listeners;
 
-use Enterprise\EventBus\Models\TransactionalInbox;
-use Illuminate\Support\Str;
-use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
-use Modules\Manufacturing\Models\MfgBom;
-use Modules\Manufacturing\Models\MfgProductionOrder;
+use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
+use Modules\Manufacturing\Models\MfgEngineeringChangeOrder;
+use Modules\Manufacturing\Services\EngineeringChangeService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
+use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
+use Modules\Workflow\Models\WorkflowInstance;
 
-final readonly class WorkflowApprovalManufacturingListener
+/**
+ * Applies the decision of an approval workflow started for an engineering change: approval or rejection in the name
+ * of the last user who acted on the workflow instance. Only changes still submitted are touched, so a redelivered event
+ * changes nothing; nothing else (production orders, BOM revisions) is ever released by a workflow event.
+ */
+final readonly class WorkflowApprovalManufacturingListener implements ShouldQueueAfterCommit
 {
     public function __construct(
-        private BillOfMaterialsServiceInterface $bomService
+        private EngineeringChangeService $changes,
+        private TenantContext $tenantContext,
     ) {}
 
-    public function handle(WorkflowInstanceCompletedEvent $event): void
+    /**
+     * Approves the submitted change of a completed workflow.
+     */
+    public function handleCompleted(WorkflowInstanceCompletedEvent $event): void
     {
-        $messageId = $event->instanceId;
-        if (TransactionalInbox::where('message_id', $messageId)->exists()) {
-            return;
-        }
+        $this->withChange($event->instanceId, $event->tenantId, function (MfgEngineeringChangeOrder $eco, string $actor): void {
+            $this->changes->approve($eco, $actor);
+        });
+    }
 
-        TransactionalInbox::create([
-            'id' => (string) Str::uuid7(),
-            'tenant_id' => $event->tenantId,
-            'message_id' => $messageId,
-            'event_type' => $event->getEventName(),
-            'payload_json' => $event->toPayload(),
-            'received_at' => now(),
-            'status' => 'processed',
-            'processed_at' => now(),
-        ]);
+    /**
+     * Rejects the submitted change of a rejected workflow.
+     */
+    public function handleRejected(WorkflowInstanceRejectedEvent $event): void
+    {
+        $this->withChange($event->instanceId, $event->tenantId, function (MfgEngineeringChangeOrder $eco, string $actor): void {
+            $this->changes->reject($eco, $actor, 'Rejected by workflow');
+        });
+    }
 
-        if ($event->aggregateType === 'mfg_production_order') {
-            MfgProductionOrder::where('id', $event->aggregateId)
-                ->where('tenant_id', $event->tenantId)
-                ->update([
-                    'is_locked' => false,
-                    'status' => 'released',
-                ]);
-        } elseif ($event->aggregateType === 'mfg_bom') {
-            MfgBom::where('id', $event->aggregateId)
-                ->where('tenant_id', $event->tenantId)
-                ->update([
-                    'is_locked' => false,
-                    'status' => 'active',
-                ]);
-        } elseif ($event->aggregateType === 'mfg_engineering_change_order') {
-            $this->bomService->approveEco($event->aggregateId, (string) Str::uuid7());
-        }
+    /**
+     * Runs the decision in the tenant of the event on the submitted change the workflow instance approves.
+     *
+     * @param  callable(MfgEngineeringChangeOrder, string): void  $decide
+     */
+    private function withChange(string $instanceId, string $tenantId, callable $decide): void
+    {
+        $tenant = $tenantId !== '' ? Tenant::query()->find($tenantId) : null;
+        $run = function () use ($instanceId, $decide): void {
+            $instance = WorkflowInstance::query()->find($instanceId);
+            if (! $instance instanceof WorkflowInstance || $instance->getAttribute('approvable_type') !== MfgEngineeringChangeOrder::class) {
+                return;
+            }
+
+            $eco = MfgEngineeringChangeOrder::query()->find($instance->getAttribute('approvable_id'));
+            if (! $eco instanceof MfgEngineeringChangeOrder || $eco->status !== 'submitted') {
+                return;
+            }
+
+            $decide($eco, (string) ($instance->getAttribute('updated_by') ?? $instance->getAttribute('created_by') ?? ''));
+        };
+
+        $tenant !== null ? $this->tenantContext->runWithTenant($tenant, $run) : $run();
     }
 }

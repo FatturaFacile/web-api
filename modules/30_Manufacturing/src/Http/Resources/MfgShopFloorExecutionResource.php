@@ -9,10 +9,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Manufacturing\Models\MfgShopFloorExecution;
 
 /**
+ * A shop floor job card with its downtime and the confirmation it produced.
+ *
  * @mixin MfgShopFloorExecution
  */
 final class MfgShopFloorExecutionResource extends JsonResource
 {
+    /**
+     * @return array<string, mixed>
+     */
     public function toArray(Request $request): array
     {
         return [
@@ -24,11 +29,13 @@ final class MfgShopFloorExecutionResource extends JsonResource
             'operator_id' => $this->operator_id,
             'machine_id' => $this->machine_id,
             'status' => $this->status,
-            'good_units' => (float) $this->good_units,
-            'scrap_units' => (float) $this->scrap_units,
-            'started_at' => $this->started_at?->toIso8601String(),
-            'completed_at' => $this->completed_at?->toIso8601String(),
+            'good_units' => $this->good_units,
+            'scrap_units' => $this->scrap_units,
+            'downtime_minutes' => $this->downtime_minutes,
             'downtime_reason' => $this->downtime_reason,
+            'confirmation_id' => $this->confirmation_id,
+            'started_at' => $this->started_at->toIso8601String(),
+            'completed_at' => $this->completed_at?->toIso8601String(),
         ];
     }
 }

@@ -7,128 +7,108 @@ namespace Modules\Manufacturing\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\Manufacturing\Contracts\ShopFloorServiceInterface;
-use Modules\Manufacturing\DTOs\RecordShopFloorExecutionDTO;
-use Modules\Manufacturing\Http\Controllers\Concerns\ResolvesTenant;
-use Modules\Manufacturing\Http\Requests\RecordShopFloorExecutionRequest;
+use Modules\Manufacturing\Http\Controllers\Concerns\InteractsWithManufacturing;
+use Modules\Manufacturing\Http\Requests\CompleteExecutionRequest;
+use Modules\Manufacturing\Http\Requests\RecordDowntimeRequest;
+use Modules\Manufacturing\Http\Requests\StartExecutionRequest;
 use Modules\Manufacturing\Http\Resources\MfgShopFloorExecutionResource;
+use Modules\Manufacturing\Models\MfgProductionOrder;
+use Modules\Manufacturing\Models\MfgProductionOrderOperation;
+use Modules\Manufacturing\Models\MfgShopFloorExecution;
 use OpenApi\Attributes as OA;
 
+/**
+ * Shop floor job cards: start on an operation, downtime, completion (which confirms the operation).
+ */
 final class ShopFloorController extends Controller
 {
-    use ResolvesTenant;
+    use InteractsWithManufacturing;
 
-    public function __construct(
-        private ShopFloorServiceInterface $shopFloorService
-    ) {}
+    public function __construct(private readonly ShopFloorServiceInterface $shopFloor) {}
 
     /**
-     * Records the execution of a production order operation on a work center.
+     * Paginated job cards.
      */
-    #[OA\Post(
-        path: '/api/v1/manufacturing/shop-floor/executions',
-        operationId: 'recordExecutionManufacturingShopFloorExecutions',
-        description: 'Records the execution of a production order operation on a work center.',
-        summary: 'Record shop floor execution',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing Shop Floor'],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ManufacturingRecordShopFloorExecutionRequest')),
-        responses: [
-            new OA\Response(response: 201, description: 'Execution created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgShopFloorExecutionResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
-    )]
-    public function recordExecution(RecordShopFloorExecutionRequest $request): JsonResponse
+    #[OA\Get(path: '/api/v1/manufacturing/shop-floor/executions', operationId: 'listMfgShopFloorExecutions', description: 'Paginated job cards of the active company, filtered by status and production order.', summary: 'List job cards', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Shop Floor'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgStatus'), new OA\Parameter(name: 'production_order_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        responses: [new OA\Response(response: 200, description: 'Job cards', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgShopFloorExecution'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $tenantId = $this->resolveTenantId($request);
-        $validated = $request->validated();
+        $query = MfgShopFloorExecution::query()->where('tenant_id', $this->tenantId());
+        if ($request->filled('status')) {
+            $query->where('status', (string) $request->query('status'));
+        }
+        if ($request->filled('production_order_id')) {
+            $query->where('production_order_id', (string) $request->query('production_order_id'));
+        }
 
-        $dto = new RecordShopFloorExecutionDTO(
-            tenantId: $tenantId,
-            productionOrderId: $validated['production_order_id'],
-            productionOrderOperationId: $validated['production_order_operation_id'],
-            workCenterId: $validated['work_center_id'],
-            operatorId: $validated['operator_id'] ?? null,
-            machineId: $validated['machine_id'] ?? null,
-            goodUnits: (float) ($validated['good_units'] ?? 0.0),
-            scrapUnits: (float) ($validated['scrap_units'] ?? 0.0),
-            downtimeReason: $validated['downtime_reason'] ?? null,
-            laborLogs: $validated['labor_logs'] ?? [],
-            machineLogs: $validated['machine_logs'] ?? []
-        );
-
-        $execution = $this->shopFloorService->recordExecution($dto);
-
-        return response()->json([
-            'message' => 'Shop floor execution recorded.',
-            'data' => new MfgShopFloorExecutionResource($execution),
-        ], 201);
+        return MfgShopFloorExecutionResource::collection($query->latest('started_at')->paginate($this->perPage($request)));
     }
 
     /**
-     * Completes a shop floor execution with its good and scrap units.
+     * Starts a job card.
      */
-    #[OA\Post(
-        path: '/api/v1/manufacturing/shop-floor/executions/{id}/complete',
-        operationId: 'completeExecutionManufacturingShopFloorExecution',
-        description: 'Completes a shop floor execution with its good and scrap units.',
-        summary: 'Complete shop floor execution',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing Shop Floor'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the execution', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'good_units', type: 'number', default: 1), new OA\Property(property: 'scrap_units', type: 'number', default: 0)])),
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgShopFloorExecutionResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function completeExecution(Request $request, string $id): JsonResponse
+    #[OA\Post(path: '/api/v1/manufacturing/shop-floor/executions', operationId: 'recordExecutionManufacturingShopFloor', description: 'Starts a job card on an operation of a released or in-progress order.', summary: 'Start job card', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Shop Floor'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgStartExecutionRequest')),
+        responses: [new OA\Response(response: 201, description: 'Job card started', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgShopFloorExecution')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
+    public function recordExecution(StartExecutionRequest $request): JsonResponse
     {
-        $goodUnits = (float) $request->input('good_units', 1.0);
-        $scrapUnits = (float) $request->input('scrap_units', 0.0);
+        $data = $request->validated();
+        $operation = $this->owned(MfgProductionOrderOperation::class, (string) $data['production_order_operation_id']);
+        $this->authorize('execute', $this->owned(MfgProductionOrder::class, (string) $operation->production_order_id));
 
-        $execution = $this->shopFloorService->completeExecution($id, $goodUnits, $scrapUnits);
-
-        return response()->json([
-            'message' => 'Shop floor execution completed.',
-            'data' => new MfgShopFloorExecutionResource($execution),
-        ]);
+        return (new MfgShopFloorExecutionResource($this->shopFloor->startExecution($operation, $data['operator_id'] ?? null, $data['machine_id'] ?? null, $this->actor($request))))->response()->setStatusCode(201);
     }
 
     /**
-     * Records machine downtime on a shop floor execution.
+     * Completes a job card.
      */
-    #[OA\Post(
-        path: '/api/v1/manufacturing/shop-floor/executions/{id}/downtime',
-        operationId: 'recordDowntimeManufacturingShopFloorExecution',
-        description: 'Records machine downtime on a shop floor execution.',
-        summary: 'Record machine downtime',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing Shop Floor'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the execution', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'downtime_minutes', type: 'number', default: 15), new OA\Property(property: 'reason', type: 'string', default: 'Machine adjustment')])),
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgShopFloorExecutionResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function recordDowntime(Request $request, string $id): JsonResponse
+    #[OA\Post(path: '/api/v1/manufacturing/shop-floor/executions/{id}/complete', operationId: 'completeExecutionManufacturingShopFloor', description: 'Completes a job card: the time from start to now less the downtime (less the setup minutes given) is confirmed as run time with the good and scrapped units; labour, overhead and backflush follow.', summary: 'Complete job card', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Shop Floor'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgCompleteExecutionRequest')),
+        responses: [new OA\Response(response: 200, description: 'Job card completed', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgShopFloorExecution')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
+    public function completeExecution(CompleteExecutionRequest $request, string $id): MfgShopFloorExecutionResource
     {
-        $minutes = (float) $request->input('downtime_minutes', 15.0);
-        $reason = (string) $request->input('reason', 'Machine adjustment');
+        $execution = $this->authorizedExecution($id);
+        $data = $request->validated();
 
-        $execution = $this->shopFloorService->recordDowntime($id, $minutes, $reason);
+        return new MfgShopFloorExecutionResource($this->shopFloor->completeExecution(
+            $execution,
+            (string) $data['good_units'],
+            (string) ($data['scrap_units'] ?? '0'),
+            $data['scrap_reason'] ?? null,
+            (string) ($data['setup_minutes'] ?? '0'),
+            isset($data['labor_minutes']) ? (string) $data['labor_minutes'] : null,
+            (bool) ($data['is_final'] ?? false),
+            $data['posting_date'] ?? null,
+            $this->actor($request),
+        ));
+    }
 
-        return response()->json([
-            'message' => 'Machine downtime recorded.',
-            'data' => new MfgShopFloorExecutionResource($execution),
-        ]);
+    /**
+     * Reports downtime on a job card.
+     */
+    #[OA\Post(path: '/api/v1/manufacturing/shop-floor/executions/{id}/downtime', operationId: 'recordDowntimeManufacturingShopFloor', description: 'Adds downtime with its reason to an active job card; it is the availability input of OEE.', summary: 'Report downtime', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Shop Floor'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgRecordDowntimeRequest')),
+        responses: [new OA\Response(response: 200, description: 'Downtime recorded', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgShopFloorExecution')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
+    public function recordDowntime(RecordDowntimeRequest $request, string $id): MfgShopFloorExecutionResource
+    {
+        $data = $request->validated();
+
+        return new MfgShopFloorExecutionResource($this->shopFloor->recordDowntime($this->authorizedExecution($id), (string) $data['downtime_minutes'], (string) $data['reason']));
+    }
+
+    /**
+     * The job card of the company, on an order the user may execute.
+     */
+    private function authorizedExecution(string $id): MfgShopFloorExecution
+    {
+        $execution = $this->owned(MfgShopFloorExecution::class, $id);
+        $this->authorize('execute', $this->owned(MfgProductionOrder::class, (string) $execution->production_order_id));
+
+        return $execution;
     }
 }

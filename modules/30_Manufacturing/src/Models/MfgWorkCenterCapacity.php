@@ -6,7 +6,23 @@ namespace Modules\Manufacturing\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * A dated capacity exception of a work centre (holiday, maintenance stop, extra shift): the gross hours of that day
+ * replace the weekly calendar.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $work_center_id
+ * @property Carbon $calendar_date
+ * @property string $available_hours
+ * @property string $booked_hours
+ * @property string $utilization_rate
+ * @property string|null $reason
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 final class MfgWorkCenterCapacity extends BaseEnterpriseModel
 {
     protected $table = 'mfg_work_center_capacities';
@@ -21,6 +37,9 @@ final class MfgWorkCenterCapacity extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<MfgWorkCenter, $this>
+     */
     public function workCenter(): BelongsTo
     {
         return $this->belongsTo(MfgWorkCenter::class, 'work_center_id');
