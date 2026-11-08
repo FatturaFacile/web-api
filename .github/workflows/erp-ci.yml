@@ -1,7 +1,7 @@
 name: Enterprise ERP CI Pipeline
 
 on:
-  # First link of the main chain: CI -> SonarCloud (sonar.yml) -> Qodana + deploy (workflow_run)
+  # First link of the main chain: CI -> Qodana + deploy (workflow_run)
   push:
     # dev pushes run this pipeline through deploy-dev.yml (workflow_call)
     branches: [ main ]
