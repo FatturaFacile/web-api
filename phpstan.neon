@@ -1,0 +1,29 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+    - phpstan-baseline.neon
+
+parameters:
+    # Level 5: types of arguments and return values are checked. The baseline holds the errors found when Larastan was
+    # introduced, so the CI fails only on new ones; shrink it over time instead of adding to it.
+    level: 5
+
+    paths:
+        - app
+        - modules
+        - packages
+        - routes
+        - config
+        - database/factories
+        - database/seeders
+
+    excludePaths:
+        analyseAndScan:
+            - modules/*/tests/*
+            - packages/*/tests/*
+
+    tmpDir: storage/framework/cache/phpstan
+
+    parallel:
+        maximumNumberOfProcesses: 4
+
+    reportUnmatchedIgnoredErrors: false
