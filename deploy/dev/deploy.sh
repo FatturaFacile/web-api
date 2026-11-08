@@ -25,6 +25,10 @@ until docker compose exec -T app pgrep -f 'php-fpm: master' >/dev/null 2>&1; do
   sleep 2
 done
 
+# nginx resolves ffdev_app once, when it starts: the recreated app container has a new address, so a reload makes
+# nginx look it up again (otherwise every request is a 502 until nginx restarts).
+docker compose exec -T web nginx -s reload
+
 docker compose exec -T app sh -c '
   set -e
   php -d memory_limit=512M artisan demo:reset
