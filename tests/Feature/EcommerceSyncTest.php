@@ -423,7 +423,8 @@ test('stock movements queue a stock push only when a channel syncs stock', funct
     Queue::fake();
 
     ecApi()->postJson('/api/v1/inventory/stock-adjustments', ['product_id' => $this->mug->id, 'quantity' => 1])->assertCreated();
-    Queue::assertNothingPushed();
+    // The movement is the inventory module's, so its own queued listeners (reorder rules) run; no stock push though.
+    Queue::assertNotPushed(PushStockToEcommerceJob::class);
 
     ecChannel('woocommerce', ['sync_stock_enabled' => true]);
     ecApi()->postJson('/api/v1/inventory/stock-adjustments', ['product_id' => $this->mug->id, 'quantity' => 1])->assertCreated();

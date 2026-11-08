@@ -40,6 +40,7 @@ use Modules\Inventory\Listeners\DispatchOutboxOnInventoryEventListener;
 use Modules\Inventory\Listeners\ProcurementGoodsReceivedListener;
 use Modules\Inventory\Listeners\ProcurementIntegrationListener;
 use Modules\Inventory\Listeners\SendSafetyDataSheetsOnDeliveryListener;
+use Modules\Inventory\Listeners\SettleStockShortfallsListener;
 use Modules\Inventory\Listeners\UpdateSerialLifecycleListener;
 use Modules\Inventory\Listeners\WorkflowApprovalInventoryListener;
 use Modules\Inventory\Models\InventoryAdjustment;
@@ -137,6 +138,8 @@ final class InventoryServiceProvider extends ServiceProvider
         // Automations
         Event::listen(StockTransferredEvent::class, CheckReorderRulesListener::class);
         Event::listen(StockTransferredEvent::class, AuditInventoryMovementListener::class);
+        // Synchronous: incoming stock settles what was sold beyond the stock inside the same transaction.
+        Event::listen(StockTransferredEvent::class, SettleStockShortfallsListener::class);
         Event::listen(LotExpiredEvent::class, BlockAvailabilityOnLotExpiredListener::class);
         Event::listen(SerialAssignedEvent::class, UpdateSerialLifecycleListener::class);
         Event::listen(DeliveryNoteIssuedEvent::class, SendSafetyDataSheetsOnDeliveryListener::class);

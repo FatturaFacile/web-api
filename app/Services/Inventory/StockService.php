@@ -7,47 +7,68 @@ namespace App\Services\Inventory;
 use App\Events\Inventory\StockMovementRecorded;
 use App\Jobs\PushStockToEcommerceJob;
 use App\Models\EcommerceChannel;
+use App\Models\GoodsReceipt;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Inventory\Services\ProductStockLedger;
 
 /**
- * Records stock movements and computes stock levels.
- * Only products with `track_inventory` generate movements, and movements need a warehouse
- * (the primary one by default). Stock may go negative; levels expose it instead of blocking sales.
+ * Records stock movements of catalog products and reads their stock levels, on the inventory module's ledger
+ * (ProductStockLedger): one stock truth for the app's documents and the module's receipts, transfers and reservations.
+ * Only products with `track_inventory` generate movements, and movements need a warehouse (the primary one by
+ * default). A sale is never refused for missing stock: what the warehouse lacks stays open as a shortfall and the level
+ * shows it as negative stock (see ProductStockLedger for the policy).
  */
 class StockService
 {
+    public function __construct(private readonly ProductStockLedger $ledger) {}
+
     public function defaultWarehouse(): ?Warehouse
     {
         return Warehouse::query()->orderByDesc('is_primary')->orderBy('created_at')->first();
     }
 
     /**
-     * Record one movement. Quantity is always positive except for `adjustment`, which is signed.
-     * Returns null when no warehouse exists.
+     * Record one movement. Quantity is always positive except for `adjustment`, which is signed; a negative `in` or
+     * `out` (a document line with a negative quantity) moves the other way. Returns null when no warehouse exists or
+     * the quantity is zero.
+     *
+     * The movement is the module's double-entry movement (stock item, bin, quant update under lock) carrying the app
+     * columns (product, type, reference). Its quantity is unsigned like every module movement: the direction is given
+     * by the source and destination bins, and `signed_quantity` gives the app's signed view of it.
      */
     public function record(string $productId, string $type, float $quantity, ?Model $reference = null, ?Warehouse $warehouse = null, float $unitCost = 0.0, ?string $notes = null): ?StockMovement
     {
         $warehouse ??= $this->defaultWarehouse();
 
-        if ($warehouse === null) {
+        if ($warehouse === null || round($quantity, 4) === 0.0) {
             return null;
         }
 
-        $movement = StockMovement::create([
-            'product_id' => $productId,
-            'warehouse_id' => $warehouse->id,
-            'type' => $type,
-            'quantity' => $quantity,
-            'unit_cost' => $unitCost,
+        $product = Product::withTrashed()->findOrFail($productId);
+        $inbound = match ($type) {
+            'out' => $quantity < 0,
+            default => $quantity > 0,
+        };
+        $context = [
+            'movement_type' => $this->movementTypeOf($type, $inbound, $reference),
+            'app_type' => $type === 'adjustment' ? 'adjustment' : ($inbound ? 'in' : 'out'),
             'reference_type' => $reference?->getMorphClass(),
-            'reference_id' => $reference?->getKey(),
+            'reference_id' => $reference?->getKey() !== null ? (string) $reference->getKey() : null,
+            'unit_cost' => $unitCost,
             'notes' => $notes,
-        ]);
+        ];
+
+        $moduleMovement = DB::transaction(fn () => $inbound
+            ? $this->ledger->receive($product, (string) $warehouse->id, abs($quantity), $context)
+            : $this->ledger->issue($product, (string) $warehouse->id, abs($quantity), $context));
+
+        $movement = StockMovement::query()->findOrFail($moduleMovement->id);
 
         $this->queueEcommerceStockPush($movement);
         StockMovementRecorded::dispatch($movement);
@@ -69,16 +90,12 @@ class StockService
     }
 
     /**
-     * Current quantity of one product (in - out + signed adjustments) over all warehouses.
+     * Current stock of one product over all warehouses: on hand in the module's quants minus the quantity sold beyond
+     * the stock and not yet settled (so it can be negative, as it always could).
      */
     public function quantityOf(string $productId): float
     {
-        $quantity = StockMovement::query()
-            ->where('product_id', $productId)
-            ->selectRaw("COALESCE(SUM(CASE type WHEN 'in' THEN quantity WHEN 'out' THEN -quantity WHEN 'adjustment' THEN quantity ELSE 0 END), 0) as quantity")
-            ->value('quantity');
-
-        return round((float) $quantity, 4);
+        return (float) ($this->ledger->levels(null, [$productId])->first()['quantity'] ?? 0.0);
     }
 
     /**
@@ -96,6 +113,21 @@ class StockService
         if ($hasChannel) {
             PushStockToEcommerceJob::dispatch($movement->tenant_id, $movement->product_id)->afterCommit();
         }
+    }
+
+    /**
+     * The module's movement type for an app movement, which the module's analytics read (consumption for safety stock
+     * and ABC classes, receipts for FIFO valuation).
+     */
+    private function movementTypeOf(string $type, bool $inbound, ?Model $reference): string
+    {
+        return match (true) {
+            $type === 'adjustment' => $inbound ? 'adjustment_in' : 'adjustment_out',
+            $inbound && $reference instanceof GoodsReceipt => 'supplier_receipt',
+            $inbound && $reference !== null => 'customer_return',
+            $inbound => 'receipt',
+            default => 'customer_delivery',
+        };
     }
 
     /**
@@ -126,25 +158,28 @@ class StockService
     }
 
     /**
-     * Current quantity per product (in - out + signed adjustments), optionally for one warehouse.
+     * Current stock per product from the module's quants, optionally for one warehouse. `quantity` keeps its meaning
+     * (stock net of what was sold beyond it, possibly negative); `on_hand`, `reserved`, `available` and `shortfall` are
+     * the module's figures behind it.
      *
-     * @return Collection<int, array{product_id: string, sku: ?string, name: ?string, quantity: float}>
+     * @return Collection<int, array{product_id: string, sku: ?string, name: ?string, quantity: float, on_hand: float, reserved: float, available: float, shortfall: float}>
      */
     public function levels(?string $warehouseId = null): Collection
     {
-        $rows = StockMovement::query()
-            ->selectRaw("product_id, SUM(CASE type WHEN 'in' THEN quantity WHEN 'out' THEN -quantity WHEN 'adjustment' THEN quantity ELSE 0 END) as quantity")
-            ->when($warehouseId !== null, fn ($q) => $q->where('warehouse_id', $warehouseId))
-            ->groupBy('product_id')
-            ->get();
-
+        $rows = $this->ledger->levels($warehouseId);
         $products = Product::withTrashed()->whereIn('id', $rows->pluck('product_id'))->get()->keyBy('id');
 
-        return $rows->map(fn ($row): array => [
-            'product_id' => $row->product_id,
-            'sku' => $products[$row->product_id]->sku ?? null,
-            'name' => $products[$row->product_id]->name ?? null,
-            'quantity' => round((float) $row->quantity, 4),
-        ])->values();
+        return $rows
+            ->filter(fn (array $row): bool => $products->has($row['product_id']))
+            ->map(fn (array $row): array => [
+                'product_id' => $row['product_id'],
+                'sku' => $products[$row['product_id']]->sku ?? null,
+                'name' => $products[$row['product_id']]->name ?? null,
+                'quantity' => $row['quantity'],
+                'on_hand' => $row['on_hand'],
+                'reserved' => $row['reserved'],
+                'available' => $row['available'],
+                'shortfall' => $row['shortfall'],
+            ])->values();
     }
 }
