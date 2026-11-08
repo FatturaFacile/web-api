@@ -6,7 +6,13 @@ namespace Modules\AssetManagement\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\AssetManagement\Models\DepreciationSchedule;
 
+/**
+ * The depreciation charged to an asset book for a period. Amounts are decimal strings.
+ *
+ * @mixin DepreciationSchedule
+ */
 final class DepreciationScheduleResource extends JsonResource
 {
     /**
@@ -22,12 +28,15 @@ final class DepreciationScheduleResource extends JsonResource
             'period_code' => $this->period_code,
             'period_type' => $this->period_type,
             'depreciation_method' => $this->depreciation_method,
-            'opening_book_value' => (float) $this->opening_book_value,
-            'depreciation_amount' => (float) $this->depreciation_amount,
-            'closing_book_value' => (float) $this->closing_book_value,
-            'accumulated_depreciation' => (float) $this->accumulated_depreciation,
+            'opening_book_value' => $this->opening_book_value !== null ? (string) $this->opening_book_value : null,
+            'depreciation_amount' => $this->depreciation_amount !== null ? (string) $this->depreciation_amount : null,
+            'closing_book_value' => $this->closing_book_value !== null ? (string) $this->closing_book_value : null,
+            'accumulated_depreciation' => $this->accumulated_depreciation !== null ? (string) $this->accumulated_depreciation : null,
+            'units_produced' => $this->units_produced !== null ? (string) $this->units_produced : null,
             'status' => $this->status,
             'journal_entry_id' => $this->journal_entry_id,
+            'calculated_at' => $this->calculated_at?->toIso8601String(),
+            'posted_at' => $this->posted_at?->toIso8601String(),
         ];
     }
 }

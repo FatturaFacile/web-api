@@ -12,33 +12,7 @@ use Modules\AssetManagement\Contracts\AssetLifecycleServiceInterface;
 use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
 use Modules\AssetManagement\Contracts\MaintenanceManagementServiceInterface;
 use Modules\AssetManagement\Contracts\ProjectAssetIntegrationServiceInterface;
-use Modules\AssetManagement\Events\AssetAcquisitionReadyEvent;
-use Modules\AssetManagement\Events\AssetAssignedEvent;
-use Modules\AssetManagement\Events\AssetCapitalizationReadyEvent;
-use Modules\AssetManagement\Events\AssetCapitalizedEvent;
-use Modules\AssetManagement\Events\AssetCashImpactEvent;
-use Modules\AssetManagement\Events\AssetDepreciationCalculatedEvent;
-use Modules\AssetManagement\Events\AssetDepreciationPostedEvent;
-use Modules\AssetManagement\Events\AssetDepreciationReadyEvent;
-use Modules\AssetManagement\Events\AssetDisposalCashForecastEvent;
-use Modules\AssetManagement\Events\AssetDisposalForecastEvent;
-use Modules\AssetManagement\Events\AssetDisposalReadyEvent;
-use Modules\AssetManagement\Events\AssetDisposedEvent;
-use Modules\AssetManagement\Events\AssetImpairedEvent;
-use Modules\AssetManagement\Events\AssetImpairmentReadyEvent;
-use Modules\AssetManagement\Events\AssetMaintenanceCreatedEvent;
-use Modules\AssetManagement\Events\AssetPurchaseForecastEvent;
-use Modules\AssetManagement\Events\AssetRegisteredEvent;
-use Modules\AssetManagement\Events\AssetReplacementForecastEvent;
-use Modules\AssetManagement\Events\AssetRevaluationReadyEvent;
-use Modules\AssetManagement\Events\AssetRevaluedEvent;
-use Modules\AssetManagement\Events\AssetTransferredEvent;
-use Modules\AssetManagement\Events\MaintenanceCompletedEvent;
-use Modules\AssetManagement\Events\MaintenanceWorkOrderCreatedEvent;
-use Modules\AssetManagement\Events\ProjectAssetAssignedEvent;
-use Modules\AssetManagement\Events\ProjectAssetReleasedEvent;
 use Modules\AssetManagement\Listeners\AssetAcquisitionEventListener;
-use Modules\AssetManagement\Listeners\DispatchOutboxOnAssetEventListener;
 use Modules\AssetManagement\Listeners\GeneralLedgerAssetListener;
 use Modules\AssetManagement\Listeners\ProjectAssetEventListener;
 use Modules\AssetManagement\Listeners\WorkflowApprovalAssetListener;
@@ -72,8 +46,14 @@ use Modules\Projects\Events\ProjectCreatedEvent;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
+/**
+ * Wires the asset management module: service contracts, policies, listeners of the other modules and routes.
+ */
 final class AssetManagementServiceProvider extends ServiceProvider
 {
+    /**
+     * Binds the service contracts.
+     */
     public function register(): void
     {
         $this->app->singleton(AssetAccountingServiceInterface::class, AssetAccountingService::class);
@@ -83,6 +63,9 @@ final class AssetManagementServiceProvider extends ServiceProvider
         $this->app->singleton(ProjectAssetIntegrationServiceInterface::class, ProjectAssetIntegrationService::class);
     }
 
+    /**
+     * Registers policies, listeners and routes.
+     */
     public function boot(): void
     {
         $this->registerPolicies();
@@ -102,38 +85,8 @@ final class AssetManagementServiceProvider extends ServiceProvider
 
     private function registerEventListeners(): void
     {
-        // 1. Outbox Relaying for Module 16 Domain Events (24 Events)
-        $domainEvents = [
-            AssetRegisteredEvent::class,
-            AssetAssignedEvent::class,
-            AssetAcquisitionReadyEvent::class,
-            AssetCapitalizationReadyEvent::class,
-            AssetCapitalizedEvent::class,
-            AssetTransferredEvent::class,
-            AssetRevaluedEvent::class,
-            AssetImpairedEvent::class,
-            AssetDisposedEvent::class,
-            AssetMaintenanceCreatedEvent::class,
-            MaintenanceWorkOrderCreatedEvent::class,
-            MaintenanceCompletedEvent::class,
-            ProjectAssetAssignedEvent::class,
-            ProjectAssetReleasedEvent::class,
-            AssetDepreciationCalculatedEvent::class,
-            AssetDepreciationPostedEvent::class,
-            AssetDepreciationReadyEvent::class,
-            AssetImpairmentReadyEvent::class,
-            AssetDisposalReadyEvent::class,
-            AssetRevaluationReadyEvent::class,
-            AssetPurchaseForecastEvent::class,
-            AssetReplacementForecastEvent::class,
-            AssetDisposalCashForecastEvent::class,
-            AssetDisposalForecastEvent::class,
-            AssetCashImpactEvent::class,
-        ];
-
-        foreach ($domainEvents as $eventClass) {
-            Event::listen($eventClass, DispatchOutboxOnAssetEventListener::class);
-        }
+        // Module events reach the outbox once, through EventDispatcher::publishAndDispatch in the services; no listener
+        // records them a second time.
 
         // 2. Upstream Procurement & Inventory Acquisition Events
         Event::listen(PurchaseOrderCommittedEvent::class, [AssetAcquisitionEventListener::class, 'handlePurchaseOrderCommitted']);

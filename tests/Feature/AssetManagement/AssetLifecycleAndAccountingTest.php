@@ -29,6 +29,7 @@ beforeEach(function (): void {
         ['name' => 'EAM Lifecycle Tenant', 'legal_name' => 'EAM Lifecycle Tenant SpA']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    fiscalCalendar($this->tenant, (int) date('Y'));
 
     $this->user = User::firstOrCreate(
         ['email' => 'eam.manager@example.com'],
@@ -198,7 +199,9 @@ test('performs IAS 16 revaluation and IAS 36 impairment with GL postings', funct
 
     expect($impairment->status)->toBe('posted')
         ->and((float) $impairment->recoverable_amount)->toBe(95000.00)
-        ->and((float) $impairment->impairment_loss_amount)->toBe(30000.00)
+        // IAS 36.61: the loss of a revalued asset is charged first against its revaluation surplus (25,000).
+        ->and((float) $impairment->revaluation_reserve_delta)->toBe(-25000.00)
+        ->and((float) $impairment->impairment_loss_amount)->toBe(5000.00)
         ->and((float) $asset->fresh()->carrying_amount)->toBe(95000.00)
         ->and($impairment->journal_entry_id)->not->toBeNull();
 
@@ -210,9 +213,10 @@ test('performs IAS 16 revaluation and IAS 36 impairment with GL postings', funct
         (string) $this->user->id
     );
 
-    expect((float) $reversal->adjustment_amount)->toBe(15000.00)
-        ->and((float) $asset->fresh()->carrying_amount)->toBe(110000.00)
-        ->and((float) $asset->fresh()->impairment_loss_total)->toBe(15000.00);
+    // Only the 5,000 recognised in profit or loss can be reversed through profit or loss.
+    expect((float) $reversal->adjustment_amount)->toBe(5000.00)
+        ->and((float) $asset->fresh()->carrying_amount)->toBe(100000.00)
+        ->and((float) $asset->fresh()->impairment_loss_total)->toBe(0.00);
 });
 
 test('disposes asset via sale, calculates gain/loss, posts GL entry, and emits cash forecast', function (): void {

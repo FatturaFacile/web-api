@@ -7,6 +7,9 @@ namespace Modules\AssetManagement\Policies;
 use App\Models\User;
 use Modules\AssetManagement\Models\AssetDisposal;
 
+/**
+ * Record-level authorization of the asset disposal records; role access is decided by the module.access middleware.
+ */
 final class AssetDisposalPolicy
 {
     public function viewAny(?User $user): bool

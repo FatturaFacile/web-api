@@ -23,6 +23,7 @@ beforeEach(function (): void {
         ['name' => 'EAM Maintenance Tenant', 'legal_name' => 'EAM Maintenance Tenant SpA']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    fiscalCalendar($this->tenant, (int) date('Y'));
 
     $this->user = User::firstOrCreate(
         ['email' => 'eam.tech@example.com'],
@@ -76,7 +77,8 @@ test('creates preventive maintenance plan, schedules work order, and tracks down
     expect($completed->status)->toBe('completed')
         ->and((float) $completed->downtime_hours)->toBe(4.5)
         ->and((float) $completed->total_cost)->toBe(900.00)
-        ->and($asset->fresh()->status)->toBe('in_service')
+        // The asset goes back to the status it had before the maintenance.
+        ->and($asset->fresh()->status)->toBe('active')
         ->and($asset->fresh()->condition)->toBe('excellent')
         ->and($plan->fresh()->last_executed_date)->not->toBeNull();
 });

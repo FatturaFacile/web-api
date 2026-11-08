@@ -14,7 +14,11 @@ use Modules\AssetManagement\Events\ProjectAssetAssignedEvent;
 use Modules\AssetManagement\Events\ProjectAssetReleasedEvent;
 use Modules\AssetManagement\Models\FixedAsset;
 use Modules\AssetManagement\Models\ProjectAssetAllocation;
+use Modules\AssetManagement\Support\Money;
 
+/**
+ * Allocation of assets to projects with utilization rates and attributed cost (decimal strings).
+ */
 final readonly class ProjectAssetIntegrationService implements ProjectAssetIntegrationServiceInterface
 {
     public function __construct(
@@ -25,13 +29,10 @@ final readonly class ProjectAssetIntegrationService implements ProjectAssetInteg
     public function allocateAssetToProject(AllocateProjectAssetDTO $dto, ?string $actorUserId = null): ProjectAssetAllocation
     {
         return DB::transaction(function () use ($dto, $actorUserId) {
-            $asset = FixedAsset::where('id', $dto->assetId)->lockForUpdate()->firstOrFail();
+            $asset = FixedAsset::where('tenant_id', $dto->tenantId)->where('id', $dto->assetId)->lockForUpdate()->firstOrFail();
             $actorUuid = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : null;
 
-            $attributedCost = round(
-                ($dto->utilizedHours * $dto->hourlyRate) + ($dto->utilizedDays * $dto->dailyRate),
-                2
-            );
+            $attributedCost = Money::round(Money::add(Money::mul($dto->utilizedHours, $dto->hourlyRate), Money::mul($dto->utilizedDays, $dto->dailyRate)));
 
             $allocation = ProjectAssetAllocation::create([
                 'id' => (string) Str::uuid7(),
@@ -40,10 +41,10 @@ final readonly class ProjectAssetIntegrationService implements ProjectAssetInteg
                 'project_id' => $dto->projectId,
                 'allocated_from' => $dto->allocatedFrom,
                 'allocated_to' => $dto->allocatedTo,
-                'hourly_rate' => $dto->hourlyRate,
-                'daily_rate' => $dto->dailyRate,
-                'utilized_hours' => $dto->utilizedHours,
-                'utilized_days' => $dto->utilizedDays,
+                'hourly_rate' => Money::round($dto->hourlyRate),
+                'daily_rate' => Money::round($dto->dailyRate),
+                'utilized_hours' => Money::round($dto->utilizedHours),
+                'utilized_days' => Money::round($dto->utilizedDays),
                 'attributed_cost' => $attributedCost,
                 'status' => 'active',
                 'allocated_by_user_id' => $actorUuid,
@@ -64,14 +65,13 @@ final readonly class ProjectAssetIntegrationService implements ProjectAssetInteg
                 allocationId: (string) $allocation->id,
                 assetId: (string) $asset->id,
                 projectId: $dto->projectId,
-                hourlyRate: $dto->hourlyRate,
-                dailyRate: $dto->dailyRate,
+                hourlyRate: Money::toFloat($dto->hourlyRate),
+                dailyRate: Money::toFloat($dto->dailyRate),
                 allocatedFrom: $dto->allocatedFrom,
                 tenantId: $dto->tenantId,
                 companyId: (string) ($asset->company_id ?? $dto->tenantId)
             );
-            $this->dispatcher->publish($assignedEvent);
-            event($assignedEvent);
+            $this->dispatcher->publishAndDispatch($assignedEvent);
 
             return $allocation;
         });
@@ -79,20 +79,17 @@ final readonly class ProjectAssetIntegrationService implements ProjectAssetInteg
 
     public function recordUtilization(
         ProjectAssetAllocation $allocation,
-        float $additionalHours,
-        float $additionalDays = 0.0,
+        string|int|float $additionalHours,
+        string|int|float $additionalDays = 0,
         ?string $actorUserId = null
     ): ProjectAssetAllocation {
         return DB::transaction(function () use ($allocation, $additionalHours, $additionalDays) {
             $locked = ProjectAssetAllocation::where('id', $allocation->id)->lockForUpdate()->firstOrFail();
             $before = $locked->toArray();
 
-            $newHours = round((float) $locked->utilized_hours + $additionalHours, 2);
-            $newDays = round((float) $locked->utilized_days + $additionalDays, 2);
-            $newCost = round(
-                ($newHours * (float) $locked->hourly_rate) + ($newDays * (float) $locked->daily_rate),
-                2
-            );
+            $newHours = Money::round(Money::add($locked->utilized_hours, $additionalHours));
+            $newDays = Money::round(Money::add($locked->utilized_days, $additionalDays));
+            $newCost = Money::round(Money::add(Money::mul($newHours, $locked->hourly_rate), Money::mul($newDays, $locked->daily_rate)));
 
             $locked->update([
                 'utilized_hours' => $newHours,
@@ -136,13 +133,12 @@ final readonly class ProjectAssetIntegrationService implements ProjectAssetInteg
                     allocationId: (string) $allocation->id,
                     assetId: (string) $allocation->asset_id,
                     projectId: $projectId,
-                    totalAttributedCost: (float) $allocation->attributed_cost,
+                    totalAttributedCost: Money::toFloat($allocation->attributed_cost),
                     releasedAt: $releasedAt->toIso8601String(),
                     tenantId: (string) $allocation->tenant_id,
                     companyId: (string) $allocation->tenant_id
                 );
-                $this->dispatcher->publish($releasedEvent);
-                event($releasedEvent);
+                $this->dispatcher->publishAndDispatch($releasedEvent);
 
                 $count++;
             }

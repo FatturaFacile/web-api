@@ -9,8 +9,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
+/**
+ * Eloquent model of the maintenance activity records of the asset management module.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property string|null $company_id
+ * @property string|null $work_order_id
+ * @property string|null $asset_id
+ * @property string|null $activity_code
+ * @property string|null $activity_type
+ * @property string|null $description
+ * @property string|null $performed_by
+ * @property string|null $duration_hours
+ * @property string|null $labor_cost
+ * @property string|null $spare_parts_cost
+ * @property array<string, mixed>|null $spare_parts_consumed
+ * @property string|null $status
+ * @property Carbon|null $completed_at
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 final class MaintenanceActivity extends Model
 {
     /** @use HasFactory<MaintenanceActivityFactory> */

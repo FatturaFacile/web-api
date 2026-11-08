@@ -7,6 +7,9 @@ namespace Modules\AssetManagement\Policies;
 use App\Models\User;
 use Modules\AssetManagement\Models\AssetCategory;
 
+/**
+ * Record-level authorization of the asset category records; role access is decided by the module.access middleware.
+ */
 final class AssetCategoryPolicy
 {
     public function viewAny(?User $user): bool

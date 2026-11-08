@@ -10,6 +10,7 @@ use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Modules\AssetManagement\Jobs\NotifyExpiringAssetCoverageJob;
 use Modules\Associations\Jobs\ExpireMembershipsJob;
 use Modules\Associations\Jobs\SendCertificateAlertsJob;
 use Modules\Associations\Jobs\SendFeeRemindersJob;
@@ -91,6 +92,7 @@ $forEachTenant('inventory:valuation', static fn (Tenant $tenant): object => new 
 $forEachTenant('procurement:expiring-contracts', static fn (Tenant $tenant): object => new CheckExpiringSupplierContractsJob($tenant->id))->dailyAt('05:10');
 $forEachTenant('procurement:supplier-otif', static fn (Tenant $tenant): object => new EvaluateSupplierOtifScoresJob($tenant->id))->monthlyOn(1, '05:20');
 $forEachTenant('hr:expiring-certifications', static fn (Tenant $tenant): object => new ScanExpiringCertificationsJob($tenant->id))->dailyAt('05:30');
+$forEachTenant('eam:expiring-coverage', static fn (Tenant $tenant): object => new NotifyExpiringAssetCoverageJob($tenant->id))->dailyAt('05:35');
 $forEachTenant('hr:leave-accruals', static fn (Tenant $tenant): object => new ProcessMonthlyLeaveAccrualsJob($tenant->id, now()->year))->monthlyOn(1, '05:40');
 $forEachTenant('hr:purge-applications', static fn (Tenant $tenant): object => new PurgeExpiredApplicationsJob($tenant->id))->dailyAt('03:40');
 $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object => new AggregateMeteredUsageJob($tenant->id))->dailyAt('01:45');

@@ -7,6 +7,9 @@ namespace Modules\AssetManagement\Policies;
 use App\Models\User;
 use Modules\AssetManagement\Models\MaintenanceWorkOrder;
 
+/**
+ * Record-level authorization of the maintenance work order records; role access is decided by the module.access middleware.
+ */
 final class MaintenanceWorkOrderPolicy
 {
     public function viewAny(?User $user): bool

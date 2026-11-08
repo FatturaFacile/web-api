@@ -8,6 +8,9 @@ use Modules\AssetManagement\Contracts\AssetLifecycleServiceInterface;
 use Modules\AssetManagement\DTOs\CapitalizeAssetDTO;
 use Modules\AssetManagement\Models\FixedAsset;
 
+/**
+ * Single-purpose action (capitalize asset) delegating to the asset services.
+ */
 final readonly class CapitalizeAssetAction
 {
     public function __construct(

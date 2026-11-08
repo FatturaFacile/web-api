@@ -8,6 +8,9 @@ use Modules\AssetManagement\Contracts\ProjectAssetIntegrationServiceInterface;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
 use Modules\Projects\Events\ProjectCreatedEvent;
 
+/**
+ * Reacts to the project lifecycle: assets allocated to a closed project are released.
+ */
 final readonly class ProjectAssetEventListener
 {
     public function __construct(

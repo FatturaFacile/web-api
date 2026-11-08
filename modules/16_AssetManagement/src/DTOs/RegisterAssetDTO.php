@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\AssetManagement\DTOs;
 
+/**
+ * Registration data of a new fixed asset, including its acquisition source and coverage data.
+ */
 final readonly class RegisterAssetDTO
 {
     /**
@@ -15,7 +18,7 @@ final readonly class RegisterAssetDTO
         public string $companyId,
         public string $name,
         public string $categoryId,
-        public float $acquisitionCost,
+        public string|int|float $acquisitionCost,
         public string $acquisitionType = 'purchase',
         public ?string $assetClassId = null,
         public ?string $locationId = null,
@@ -31,14 +34,26 @@ final readonly class RegisterAssetDTO
         public ?string $serialNumber = null,
         public ?string $description = null,
         public ?string $acquisitionDate = null,
-        public float $salvageValue = 0.0,
+        public string|int|float $salvageValue = 0.0,
         public ?string $depreciationMethod = null,
         public ?int $usefulLifeYears = null,
-        public float $totalExpectedUnits = 0.0,
-        public float $replacementCost = 0.0,
+        public string|int|float $totalExpectedUnits = 0.0,
+        public string|int|float $replacementCost = 0.0,
         public string $currency = 'EUR',
         public string $condition = 'new',
         public array $specifications = [],
-        public array $metadata = []
+        public array $metadata = [],
+        public ?string $costCenterId = null,
+        public ?string $purchaseInvoiceId = null,
+        public ?string $purchaseInvoiceLineId = null,
+        public ?string $purchaseOrderItemId = null,
+        public ?string $capitalizationAccountId = null,
+        public ?string $warrantyExpiryDate = null,
+        public ?string $warrantyProvider = null,
+        public ?string $insuranceProvider = null,
+        public ?string $insurancePolicyNumber = null,
+        public string|int|float|null $insuredValue = null,
+        public ?string $insuranceExpiryDate = null,
+        public ?string $proRataConvention = null
     ) {}
 }
