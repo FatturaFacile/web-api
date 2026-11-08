@@ -37,7 +37,7 @@ test('a Swiss run gives the payslip of the desktop test case and stores its line
 
     $id = payrollCalculate($this->tenant, $this->manager, 2026, 1)
         ->assertCreated()
-        ->assertJsonPath('data.status', 'Draft')
+        ->assertJsonPath('data.status', 'Calculated')
         ->assertJsonPath('data.country', 'CH')
         ->assertJsonPath('data.currency', 'CHF')
         ->json('data.id');
@@ -146,7 +146,18 @@ test('closing a run publishes the domain event accounting subscribes to', functi
     $employee = payrollEmployee($this->tenant);
     payrollProfile($this->tenant, $employee);
     payrollSwissSetup($this->tenant, $this->manager);
-    $id = payrollCalculate($this->tenant, $this->manager, 2026, 1)->json('data.id');
+    $id = payrollCalculate($this->tenant, $this->manager, 2026, 1)->assertJsonPath('data.status', 'Calculated')->json('data.id');
+
+    payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$id}/finalize")
+        ->assertUnprocessable()
+        ->assertJsonPath('detail', "Approvare l'elaborazione prima di chiuderla.");
+
+    payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$id}/approve")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'Approved')
+        ->assertJsonPath('data.approved_by', $this->manager->id);
+
+    payrollCalculate($this->tenant, $this->manager, 2026, 1)->assertConflict();
 
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$id}/finalize")
         ->assertOk()
@@ -192,7 +203,7 @@ test('an Italian run applies the agreement, warns below the minimum and withhold
 
     $january = payrollCalculate($tenant, $manager, 2026, 1)->assertCreated()->json('data.id');
     $march = payrollCalculate($tenant, $manager, 2026, 3)->assertCreated()->json('data.id');
-    expect(payrollCalculate($tenant, $manager, 2027, 2)->assertCreated()->json('data.status'))->toBe('Draft');
+    expect(payrollCalculate($tenant, $manager, 2027, 2)->assertCreated()->json('data.status'))->toBe('Calculated');
 
     $first = Payslip::query()->withoutGlobalScopes()->where('payroll_run_id', $january)->sole();
     $third = Payslip::query()->withoutGlobalScopes()->where('payroll_run_id', $march)->sole();

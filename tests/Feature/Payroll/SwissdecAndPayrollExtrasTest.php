@@ -124,6 +124,7 @@ test('a net that no salary reaches comes back flagged, the simulation saves noth
 test('payslip mails need a closed run and carry no figure, and the link stores only a hash', function (): void {
     $run = payrollCalculate($this->tenant, $this->manager, 2026, 1)->assertCreated()->json('data.id');
     extrasApi()->postJson("/api/v1/payroll/runs/{$run}/deliver-payslips")->assertUnprocessable();
+    extrasApi()->postJson("/api/v1/payroll/runs/{$run}/approve")->assertOk();
     extrasApi()->postJson("/api/v1/payroll/runs/{$run}/finalize")->assertOk();
 
     $outcome = extrasApi()->postJson("/api/v1/payroll/runs/{$run}/deliver-payslips")->assertOk()->json('data');
@@ -266,6 +267,7 @@ test('a payment file needs a closed run, every IBAN and the right currency', fun
     $euro = extrasBank($this->tenant->id, 'CH4431999123000889012', 'EUR');
     $id = payrollCalculate($this->tenant, $this->manager, 2026, 1)->assertCreated()->json('data.id');
     extrasApi()->postJson("/api/v1/payroll/runs/{$id}/payment-batches", ['allocations' => [['bank_account_id' => $account->id]]])->assertUnprocessable();
+    extrasApi()->postJson("/api/v1/payroll/runs/{$id}/approve")->assertOk();
     extrasApi()->postJson("/api/v1/payroll/runs/{$id}/finalize")->assertOk();
 
     extrasApi()->postJson("/api/v1/payroll/runs/{$id}/payment-batches", ['allocations' => [['bank_account_id' => $euro->id]]])->assertUnprocessable();

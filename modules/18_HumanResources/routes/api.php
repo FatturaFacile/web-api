@@ -5,10 +5,32 @@ declare(strict_types=1);
 use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Support\Facades\Route;
 use Modules\HumanResources\Http\Controllers\EmployeeController;
+use Modules\HumanResources\Http\Controllers\EmployeeDocumentController;
+use Modules\HumanResources\Http\Controllers\EmployeeSelfServiceController;
+use Modules\HumanResources\Http\Controllers\EmploymentContractController;
 use Modules\HumanResources\Http\Controllers\LeaveAndTimeController;
+use Modules\HumanResources\Http\Controllers\LeaveManagementController;
 use Modules\HumanResources\Http\Controllers\OrganizationController;
 use Modules\HumanResources\Http\Controllers\TalentAndTrainingController;
 use Modules\HumanResources\Http\Controllers\TimeTrackingController;
+use Modules\HumanResources\Http\Controllers\WorkingTimeRulesController;
+
+// Employee self-service: every member reaches only the records of the employee linked to the own user, so these
+// routes need no HR module access (the controller resolves the own employee record and answers 403 without one).
+Route::prefix('api/v1/hr/me')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->name('api.v1.hr.me.')
+    ->whereUuid('id')
+    ->group(function (): void {
+        Route::get('/', [EmployeeSelfServiceController::class, 'profile'])->name('profile');
+        Route::get('/leave-balances', [EmployeeSelfServiceController::class, 'leaveBalances'])->name('leave-balances');
+        Route::get('/leave-requests', [EmployeeSelfServiceController::class, 'leaveRequests'])->name('leave-requests.index');
+        Route::post('/leave-requests', [EmployeeSelfServiceController::class, 'submitLeave'])->name('leave-requests.store');
+        Route::post('/leave-requests/{id}/cancel', [EmployeeSelfServiceController::class, 'cancelLeave'])->name('leave-requests.cancel');
+        Route::get('/training', [EmployeeSelfServiceController::class, 'training'])->name('training');
+        Route::get('/documents', [EmployeeSelfServiceController::class, 'documents'])->name('documents.index');
+        Route::get('/documents/{id}/download', [EmployeeSelfServiceController::class, 'downloadDocument'])->name('documents.download');
+    });
 
 Route::prefix('api/v1/hr')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:hr'])
@@ -59,6 +81,45 @@ Route::prefix('api/v1/hr')
             Route::get('/holidays', [TimeTrackingController::class, 'holidays'])->name('holidays');
             Route::get('/profiles/{userId}', [TimeTrackingController::class, 'profile'])->whereUuid('userId')->name('profiles.show');
             Route::put('/profiles/{userId}', [TimeTrackingController::class, 'saveProfile'])->whereUuid('userId')->name('profiles.save');
+            Route::get('/overtime', [WorkingTimeRulesController::class, 'overtime'])->name('overtime');
+        });
+
+        // Contract history and salary components
+        Route::whereUuid('id')->group(function (): void {
+            Route::put('/departments/{id}', [OrganizationController::class, 'updateDepartment'])->name('api.v1.hr.departments.update');
+            Route::put('/positions/{id}', [OrganizationController::class, 'updatePosition'])->name('api.v1.hr.positions.update');
+
+            Route::get('/employees/{id}/contracts', [EmploymentContractController::class, 'index'])->name('api.v1.hr.contracts.index');
+            Route::post('/employees/{id}/contracts', [EmploymentContractController::class, 'store'])->name('api.v1.hr.contracts.store');
+            Route::put('/contracts/{id}', [EmploymentContractController::class, 'update'])->name('api.v1.hr.contracts.update');
+            Route::post('/contracts/{id}/salary-components', [EmploymentContractController::class, 'storeComponent'])->name('api.v1.hr.salary-components.store');
+            Route::put('/salary-components/{id}', [EmploymentContractController::class, 'updateComponent'])->name('api.v1.hr.salary-components.update');
+            Route::delete('/salary-components/{id}', [EmploymentContractController::class, 'destroyComponent'])->name('api.v1.hr.salary-components.destroy');
+
+            // Personnel file
+            Route::get('/employees/{id}/documents', [EmployeeDocumentController::class, 'index'])->name('api.v1.hr.employee-documents.index');
+            Route::post('/employees/{id}/documents', [EmployeeDocumentController::class, 'store'])->name('api.v1.hr.employee-documents.store');
+            Route::get('/employee-documents/{id}/download', [EmployeeDocumentController::class, 'download'])->name('api.v1.hr.employee-documents.download');
+            Route::delete('/employee-documents/{id}', [EmployeeDocumentController::class, 'destroy'])->name('api.v1.hr.employee-documents.destroy');
+
+            // Leave configuration and planning
+            Route::post('/leave-types', [LeaveManagementController::class, 'storeType'])->name('api.v1.hr.leave-types.store');
+            Route::put('/leave-types/{id}', [LeaveManagementController::class, 'updateType'])->name('api.v1.hr.leave-types.update');
+            Route::get('/leave-accrual-policies', [LeaveManagementController::class, 'policies'])->name('api.v1.hr.leave-accrual-policies.index');
+            Route::post('/leave-accrual-policies', [LeaveManagementController::class, 'storePolicy'])->name('api.v1.hr.leave-accrual-policies.store');
+            Route::put('/leave-accrual-policies/{id}', [LeaveManagementController::class, 'updatePolicy'])->name('api.v1.hr.leave-accrual-policies.update');
+            Route::delete('/leave-accrual-policies/{id}', [LeaveManagementController::class, 'destroyPolicy'])->name('api.v1.hr.leave-accrual-policies.destroy');
+            Route::post('/leave-requests/{id}/cancel', [LeaveManagementController::class, 'cancel'])->name('api.v1.hr.leave-requests.cancel');
+            Route::get('/leave-calendar', [LeaveManagementController::class, 'calendar'])->name('api.v1.hr.leave-calendar');
+
+            // Overtime rules and monthly closing of the working time records
+            Route::get('/overtime-rules', [WorkingTimeRulesController::class, 'rules'])->name('api.v1.hr.overtime-rules.index');
+            Route::post('/overtime-rules', [WorkingTimeRulesController::class, 'storeRule'])->name('api.v1.hr.overtime-rules.store');
+            Route::put('/overtime-rules/{id}', [WorkingTimeRulesController::class, 'updateRule'])->name('api.v1.hr.overtime-rules.update');
+            Route::delete('/overtime-rules/{id}', [WorkingTimeRulesController::class, 'destroyRule'])->name('api.v1.hr.overtime-rules.destroy');
+            Route::get('/time-closings', [WorkingTimeRulesController::class, 'closings'])->name('api.v1.hr.time-closings.index');
+            Route::post('/time-closings', [WorkingTimeRulesController::class, 'close'])->name('api.v1.hr.time-closings.store');
+            Route::post('/time-closings/{id}/reopen', [WorkingTimeRulesController::class, 'reopen'])->name('api.v1.hr.time-closings.reopen');
         });
 
         // Talent, Performance & Training Routes

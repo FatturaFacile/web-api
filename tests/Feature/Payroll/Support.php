@@ -103,6 +103,7 @@ function payrollCalculate(Tenant $tenant, User $manager, int $year, int $month):
 function payrollClosedRun(Tenant $tenant, User $manager, int $year, int $month): PayrollRun
 {
     $id = payrollCalculate($tenant, $manager, $year, $month)->assertCreated()->json('data.id');
+    payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$id}/approve")->assertOk();
     payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$id}/finalize")->assertOk();
 
     return PayrollRun::query()->withoutGlobalScopes()->findOrFail($id);

@@ -17,6 +17,10 @@ final class PayrollRun extends PayrollRecord
 
     public const string StatusDraft = 'Draft';
 
+    public const string StatusCalculated = 'Calculated';
+
+    public const string StatusApproved = 'Approved';
+
     public const string StatusFinal = 'Final';
 
     protected $table = 'payroll_runs';

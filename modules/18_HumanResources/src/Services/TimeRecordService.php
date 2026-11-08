@@ -14,6 +14,7 @@ use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Models\TimeRecordingProfile;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
+use Modules\HumanResources\Services\TimeTracking\TimePeriodClosingService;
 use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
 
 /**
@@ -22,6 +23,8 @@ use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
  */
 final class TimeRecordService
 {
+    public function __construct(private readonly TimePeriodClosingService $closings) {}
+
     private const STATE_OFF = 'Off';
 
     private const STATE_WORKING = 'Working';
@@ -78,6 +81,12 @@ final class TimeRecordService
         }
 
         return DB::transaction(function () use ($actor, $event, $values, $reason): TimeClockEvent {
+            $this->closings->assertOpen($event->occurred_at);
+
+            if (isset($values['occurred_at'])) {
+                $this->closings->assertOpen($values['occurred_at']);
+            }
+
             $before = $event->auditValues();
             $event->fill($values)->save();
             $this->audit($actor, (string) $event->user_id, 'TimeClockEvent', (string) $event->id, 'Modified', $before, $event->auditValues(), $reason);
@@ -92,6 +101,7 @@ final class TimeRecordService
     public function delete(User $actor, TimeClockEvent $event, string $reason): void
     {
         DB::transaction(function () use ($actor, $event, $reason): void {
+            $this->closings->assertOpen($event->occurred_at);
             $event->fill(['deleted_by' => $actor->id, 'deletion_reason' => $reason])->save();
             $event->delete();
             $this->audit($actor, (string) $event->user_id, 'TimeClockEvent', (string) $event->id, 'Deleted', $event->auditValues(), null, $reason);
@@ -106,6 +116,7 @@ final class TimeRecordService
     public function saveDailyRecord(User $actor, string $employeeId, string $workDate, array $values, ?string $reason): TimeDailyRecord
     {
         return DB::transaction(function () use ($actor, $employeeId, $workDate, $values, $reason): TimeDailyRecord {
+            $this->closings->assertDayOpen($workDate);
             User::query()->whereKey($employeeId)->lockForUpdate()->first();
 
             $record = TimeDailyRecord::query()->where('user_id', $employeeId)->whereDate('work_date', $workDate)->first();
@@ -146,6 +157,26 @@ final class TimeRecordService
         });
     }
 
+    /**
+     * Mirror a clock-in or clock-out of the deprecated /time-attendance endpoints as a clock event linked to its legacy
+     * entry, so the Human Resources records stay the single source of working time. Idempotent per entry and type.
+     */
+    public function mirrorLegacyEntry(User $employee, string $legacyEntryId, TimeEventType $eventType, CarbonImmutable $occurredAt, ?string $note): TimeClockEvent
+    {
+        return DB::transaction(function () use ($employee, $legacyEntryId, $eventType, $occurredAt, $note): TimeClockEvent {
+            $existing = TimeClockEvent::query()->where('legacy_time_entry_id', $legacyEntryId)->where('event_type', $eventType->value)->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            $event = $this->storeEvent($employee, (string) $employee->id, $occurredAt, $eventType, TimeRecordSource::Web, $note, 'Registrata da /time-attendance (deprecato)');
+            $event->forceFill(['legacy_time_entry_id' => $legacyEntryId])->save();
+
+            return $event;
+        });
+    }
+
     private function storeEvent(
         User $actor,
         string $employeeId,
@@ -155,6 +186,8 @@ final class TimeRecordService
         ?string $note,
         ?string $reason,
     ): TimeClockEvent {
+        $this->closings->assertOpen($occurredAt);
+
         $event = TimeClockEvent::create([
             'user_id' => $employeeId,
             'occurred_at' => $occurredAt,

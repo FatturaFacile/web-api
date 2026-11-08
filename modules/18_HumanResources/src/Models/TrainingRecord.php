@@ -6,9 +6,17 @@ namespace Modules\HumanResources\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * The enrolment of an employee in a training course.
+ *
+ * @property Carbon|null $assigned_date
+ * @property Carbon|null $scheduled_date
+ * @property Carbon|null $completed_date
+ */
 final class TrainingRecord extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'hr_training_records';
@@ -45,6 +53,9 @@ final class TrainingRecord extends BaseEnterpriseModel implements LockableByWork
         return $this->belongsTo(Employee::class, 'employee_id');
     }
 
+    /**
+     * @return BelongsTo<TrainingCourse, $this>
+     */
     public function course(): BelongsTo
     {
         return $this->belongsTo(TrainingCourse::class, 'course_id');

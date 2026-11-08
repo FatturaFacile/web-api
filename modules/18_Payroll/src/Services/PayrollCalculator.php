@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\Payroll\Services;
 
 use App\Models\Tenant;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Collection;
+use Modules\HumanResources\Models\ContractSalaryComponent;
 use Modules\HumanResources\Models\Employee;
 use Modules\Payroll\Calculation\AbsenceData;
 use Modules\Payroll\Calculation\ChildData;
@@ -238,11 +240,14 @@ final class PayrollCalculator
     }
 
     /**
+     * The variable inputs of the month, followed by the monthly salary components of the employment contracts (HR)
+     * valid on at least one day of the month, each with its full amount.
+     *
      * @return \Illuminate\Support\Collection<string, list<PayrollInputData>>
      */
     private function inputs(int $year, int $month): \Illuminate\Support\Collection
     {
-        return PayrollInput::query()
+        $inputs = PayrollInput::query()
             ->where('year', $year)
             ->where('month', $month)
             ->orderBy('created_at')
@@ -257,6 +262,28 @@ final class PayrollCalculator
                 $input->note,
             ))->all())
             ->toBase();
+
+        $first = sprintf('%04d-%02d-01', $year, $month);
+        $last = CarbonImmutable::parse($first)->endOfMonth()->format('Y-m-d');
+        $components = ContractSalaryComponent::query()
+            ->where('frequency', ContractSalaryComponent::FrequencyMonthly)
+            ->whereDate('valid_from', '<=', $last)
+            ->where(static fn ($query) => $query->whereNull('valid_to')->orWhereDate('valid_to', '>=', $first))
+            ->whereHas('contract')
+            ->with('contract:id,employee_id')
+            ->orderBy('valid_from')
+            ->orderBy('id')
+            ->get();
+
+        foreach ($components as $component) {
+            $employeeId = (string) $component->contract?->employee_id;
+            $inputs[$employeeId] = [
+                ...($inputs[$employeeId] ?? []),
+                new PayrollInputData($component->wage_type_code, '0', '0', Dec::of((string) $component->amount), $component->description),
+            ];
+        }
+
+        return $inputs;
     }
 
     /**

@@ -4,9 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\HumanResources\Services;
 
+use App\Models\Tenant;
+use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
 use Modules\HumanResources\Contracts\TrainingAndCertificationServiceInterface;
 use Modules\HumanResources\DTOs\AssignTrainingDTO;
@@ -18,12 +21,23 @@ use Modules\HumanResources\Models\Certification;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\TrainingCourse;
 use Modules\HumanResources\Models\TrainingRecord;
+use Modules\HumanResources\Notifications\CertificationExpiringNotification;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
 use Modules\Workflow\Models\WorkflowDefinition;
 
+/**
+ * Training assignments and completions, certifications and their expiry alerts.
+ */
 final readonly class TrainingAndCertificationService implements TrainingAndCertificationServiceInterface
 {
+    /**
+     * Roles of the company told about expiring certifications, besides the employee.
+     *
+     * @var list<string>
+     */
+    public const array AlertRecipientRoles = ['owner', 'admin', 'hr'];
+
     public function __construct(
         private EventDispatcher $dispatcher,
         private AuditLedgerInterface $auditLedger,
@@ -62,8 +76,8 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
                     ->exists();
 
                 if ($hasDef) {
-                    $initiatorId = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7();
-                    $instance = $this->workflowEngine->startWorkflow(new StartWorkflowDTO(
+                    $initiatorId = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : null;
+                    $instance = $this->workflowEngine->start(new StartWorkflowDTO(
                         workflowCode: 'HR_TRAINING_APPROVAL',
                         approvable: $record,
                         contextSnapshot: [
@@ -98,8 +112,7 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
                 tenantId: $dto->tenantId,
                 companyId: $companyId
             );
-            $this->dispatcher->publish($assignedEvent);
-            event($assignedEvent);
+            $this->dispatcher->publishAndDispatch($assignedEvent);
 
             if ($cost > 0.0) {
                 $budgetEvent = new TrainingBudgetForecastEvent(
@@ -111,8 +124,7 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
                     tenantId: $dto->tenantId,
                     companyId: $companyId
                 );
-                $this->dispatcher->publish($budgetEvent);
-                event($budgetEvent);
+                $this->dispatcher->publishAndDispatch($budgetEvent);
             }
 
             return $record->fresh();
@@ -157,8 +169,7 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
                     tenantId: (string) $locked->tenant_id,
                     companyId: (string) ($locked->company_id ?? $locked->tenant_id)
                 );
-                $this->dispatcher->publish($costReadyEvent);
-                event($costReadyEvent);
+                $this->dispatcher->publishAndDispatch($costReadyEvent);
             }
 
             $this->auditLedger->record(
@@ -198,10 +209,16 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
         ]);
     }
 
+    /**
+     * Mark the certifications expiring within the horizon (expiring_soon) or past their date (expired), publish the
+     * domain event and notify the employee and the HR managers. A certification is alerted once per status change, so
+     * a daily scan does not repeat the same alert.
+     */
     public function scanExpiringCertifications(string $tenantId, int $withinDays = 30): int
     {
         return DB::transaction(function () use ($tenantId, $withinDays) {
-            $thresholdDate = date('Y-m-d', strtotime("+{$withinDays} days"));
+            $thresholdDate = now()->addDays($withinDays)->format('Y-m-d');
+            $managers = Tenant::query()->find($tenantId)?->users()->wherePivotIn('role', self::AlertRecipientRoles)->get() ?? collect();
 
             $certifications = Certification::where('tenant_id', $tenantId)
                 ->whereNotNull('employee_id')
@@ -213,8 +230,27 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
 
             $alerted = 0;
             foreach ($certifications as $cert) {
-                $daysLeft = (int) floor((strtotime($cert->expiry_date->format('Y-m-d')) - time()) / 86400);
+                $daysLeft = (int) now()->startOfDay()->diffInDays($cert->expiry_date->copy()->startOfDay(), false);
                 $newStatus = $daysLeft < 0 ? 'expired' : 'expiring_soon';
+
+                if ($cert->status === $newStatus && $cert->renewal_alert_sent_at !== null) {
+                    continue;
+                }
+
+                $employee = Employee::query()->find($cert->employee_id);
+                $recipients = $managers->concat($employee?->user_id ? User::query()->whereKey($employee->user_id)->get() : [])->unique('id')->values();
+
+                if ($recipients->isNotEmpty()) {
+                    Notification::send($recipients, new CertificationExpiringNotification(
+                        certificationId: (string) $cert->id,
+                        employeeId: (string) $cert->employee_id,
+                        employeeName: (string) ($employee->full_name ?? ''),
+                        certificationCode: (string) $cert->code,
+                        certificationName: (string) $cert->name,
+                        expiryDate: $cert->expiry_date->format('Y-m-d'),
+                        daysUntilExpiry: $daysLeft,
+                    ));
+                }
 
                 $cert->update([
                     'status' => $newStatus,
@@ -231,8 +267,7 @@ final readonly class TrainingAndCertificationService implements TrainingAndCerti
                     tenantId: $tenantId,
                     companyId: (string) ($cert->company_id ?? $tenantId)
                 );
-                $this->dispatcher->publish($expEvent);
-                event($expEvent);
+                $this->dispatcher->publishAndDispatch($expEvent);
 
                 $alerted++;
             }

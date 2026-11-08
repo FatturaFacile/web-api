@@ -94,8 +94,7 @@ final readonly class OrganizationManagementService implements OrganizationManage
                 tenantId: $tenantId,
                 companyId: $tenantId
             );
-            $this->dispatcher->publish($payrollForecast);
-            event($payrollForecast);
+            $this->dispatcher->publishAndDispatch($payrollForecast);
 
             $accrualReady = new AccrualReadyEvent(
                 accrualType: 'payroll_13th_and_tfr_provision',
@@ -106,8 +105,7 @@ final readonly class OrganizationManagementService implements OrganizationManage
                 tenantId: $tenantId,
                 companyId: $tenantId
             );
-            $this->dispatcher->publish($accrualReady);
-            event($accrualReady);
+            $this->dispatcher->publishAndDispatch($accrualReady);
         }
 
         return [

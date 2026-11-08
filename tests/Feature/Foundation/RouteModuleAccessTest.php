@@ -51,6 +51,8 @@ function writeRoutesWithoutModule(): array
         'PUT api/v1/hr/time/profiles/{userId}' => 'TimeTrackingPolicy',
         'POST api/v1/hr/time/meal-bookings' => 'own meal booking',
         'POST api/v1/hr/time/punches/import' => 'TimeClockEvent manage ability',
+        'POST api/v1/hr/me/leave-requests' => 'own leave request, employee linked to the user',
+        'POST api/v1/hr/me/leave-requests/{id}/cancel' => 'own leave request, employee linked to the user',
         // Shared endpoints on records of several modules: RecordAccess checks the module of the record.
         'POST api/v1/attachments' => 'module of the parent record',
         'DELETE api/v1/attachments/{id}' => 'module of the parent record',

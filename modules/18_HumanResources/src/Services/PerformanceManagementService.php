@@ -64,8 +64,8 @@ final readonly class PerformanceManagementService implements PerformanceManageme
                     ->exists();
 
                 if ($hasDef) {
-                    $initiatorId = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7();
-                    $instance = $this->workflowEngine->startWorkflow(new StartWorkflowDTO(
+                    $initiatorId = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : null;
+                    $instance = $this->workflowEngine->start(new StartWorkflowDTO(
                         workflowCode: 'HR_PERFORMANCE_REVIEW_APPROVAL',
                         approvable: $review,
                         contextSnapshot: [
@@ -122,8 +122,7 @@ final readonly class PerformanceManagementService implements PerformanceManageme
                 tenantId: (string) $locked->tenant_id,
                 companyId: (string) ($locked->company_id ?? $locked->tenant_id)
             );
-            $this->dispatcher->publish($event);
-            event($event);
+            $this->dispatcher->publishAndDispatch($event);
 
             return $locked->fresh();
         });

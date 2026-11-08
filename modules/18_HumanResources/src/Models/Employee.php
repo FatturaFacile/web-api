@@ -9,9 +9,17 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Support\Carbon;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * An employee of the company. Personal identifiers are encrypted at rest and never reach the audit ledger in clear.
+ *
+ * @property Carbon|null $hire_date
+ * @property Carbon|null $birth_date
+ * @property Carbon|null $termination_date
+ */
 final class Employee extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'hr_employees';
@@ -98,6 +106,9 @@ final class Employee extends BaseEnterpriseModel implements LockableByWorkflowIn
         return $this->hasMany(self::class, 'manager_id');
     }
 
+    /**
+     * @return HasOne<EmploymentContract, $this>
+     */
     public function activeContract(): HasOne
     {
         return $this->hasOne(EmploymentContract::class, 'employee_id')->where('is_active', true);

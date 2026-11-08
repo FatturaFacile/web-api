@@ -422,7 +422,7 @@ Route::prefix('v1')->group(function (): void {
         });
 
         // 15. Time & Attendance (Rilevazione Presenze)
-        Route::prefix('time-attendance')->name('time-attendance.')->group(function (): void {
+        Route::prefix('time-attendance')->name('time-attendance.')->middleware('deprecated:/api/v1/hr/time/events')->group(function (): void {
             Route::get('/entries', [TimeAttendanceController::class, 'index'])->name('entries');
             Route::post('/clock-in', [TimeAttendanceController::class, 'clockIn'])->name('clock-in');
             Route::post('/clock-out', [TimeAttendanceController::class, 'clockOut'])->name('clock-out');

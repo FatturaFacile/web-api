@@ -6,7 +6,14 @@ namespace Modules\HumanResources\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * A certification of an employee (or a catalogue entry without employee), with its expiry date.
+ *
+ * @property Carbon|null $issue_date
+ * @property Carbon|null $expiry_date
+ */
 final class Certification extends BaseEnterpriseModel
 {
     protected $table = 'hr_certifications';

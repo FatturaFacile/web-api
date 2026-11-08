@@ -13,6 +13,10 @@ final class PayrollRunEvent extends PayrollRecord
 {
     public const string Calculated = 'Calculated';
 
+    public const string Approved = 'Approved';
+
+    public const string ApprovalRevoked = 'ApprovalRevoked';
+
     public const string Finalized = 'Finalized';
 
     public const string Reopened = 'Reopened';

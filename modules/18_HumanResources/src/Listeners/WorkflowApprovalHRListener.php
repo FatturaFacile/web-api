@@ -13,6 +13,10 @@ use Modules\HumanResources\Models\Timesheet;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
+/**
+ * Applies the decision of an approval workflow to the HR record it governs: the record is unlocked and approved or
+ * rejected through the same service methods a manager would use, so balances and events stay consistent.
+ */
 final readonly class WorkflowApprovalHRListener
 {
     public function __construct(
@@ -20,12 +24,15 @@ final readonly class WorkflowApprovalHRListener
         private AuditLedgerInterface $auditLedger
     ) {}
 
+    /**
+     * The workflow approved its record.
+     */
     public function handleWorkflowApproved(WorkflowInstanceCompletedEvent $event): void
     {
         $instanceId = $event->instanceId;
 
         $leaveRequest = LeaveRequest::where('workflow_instance_id', $instanceId)->first();
-        if ($leaveRequest !== null && in_array($leaveRequest->status, ['pending_approval', 'submitted'], true)) {
+        if ($leaveRequest !== null && $leaveRequest->status === 'pending_approval') {
             $leaveRequest->update(['is_locked' => false]);
             $this->leaveAndTimeService->approveLeaveRequest($leaveRequest, null);
 
@@ -62,12 +69,15 @@ final readonly class WorkflowApprovalHRListener
         }
     }
 
+    /**
+     * The workflow rejected its record.
+     */
     public function handleWorkflowRejected(WorkflowInstanceRejectedEvent $event): void
     {
         $instanceId = $event->instanceId;
 
         $leaveRequest = LeaveRequest::where('workflow_instance_id', $instanceId)->first();
-        if ($leaveRequest !== null && in_array($leaveRequest->status, ['pending_approval', 'submitted'], true)) {
+        if ($leaveRequest !== null && $leaveRequest->status === 'pending_approval') {
             $leaveRequest->update(['is_locked' => false]);
             $this->leaveAndTimeService->rejectLeaveRequest($leaveRequest, 'Rejected via Workflow Engine V2', null);
 

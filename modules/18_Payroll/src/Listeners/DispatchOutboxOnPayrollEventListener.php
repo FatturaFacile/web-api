@@ -5,27 +5,21 @@ declare(strict_types=1);
 namespace Modules\Payroll\Listeners;
 
 use Enterprise\EventBus\Contracts\DomainEventInterface;
-use Enterprise\EventBus\Models\TransactionalOutbox;
-use Illuminate\Support\Str;
+use Enterprise\EventBus\Services\TransactionalOutboxService;
 
 /**
- * Stores the payroll events in the outbox, in the transaction that produced them.
+ * Stores the payroll events in the outbox, in the transaction that produced them. The outbox service deduplicates the
+ * event object, so an event published through EventDispatcher::publishAndDispatch() is stored once.
  */
 final readonly class DispatchOutboxOnPayrollEventListener
 {
+    public function __construct(private TransactionalOutboxService $outboxService) {}
+
+    /**
+     * Record the event in the transactional outbox.
+     */
     public function handle(DomainEventInterface $event): void
     {
-        TransactionalOutbox::create([
-            'id' => (string) Str::uuid7(),
-            'tenant_id' => $event->getTenantId(),
-            'company_id' => $event->getCompanyId(),
-            'event_type' => $event->getEventName(),
-            'aggregate_type' => $event->getAggregateType(),
-            'aggregate_id' => $event->getAggregateId(),
-            'payload_json' => $event->toPayload(),
-            'status' => 'pending',
-            'retry_count' => 0,
-            'occurred_at' => now(),
-        ]);
+        $this->outboxService->record($event);
     }
 }

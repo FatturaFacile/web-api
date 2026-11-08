@@ -17,16 +17,22 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\HumanResources\Services\TimeTracking\LegacyTimeAttendanceBridge;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Deprecated legacy time & attendance endpoints (successor: /api/v1/hr/time). Clock-in and clock-out are mirrored as
+ * Human Resources clock events by LegacyTimeAttendanceBridge, so both APIs read the same working time.
+ */
 class TimeAttendanceController extends Controller
 {
     use ApiResponse;
 
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly AttendanceComplianceService $complianceService
+        private readonly AttendanceComplianceService $complianceService,
+        private readonly LegacyTimeAttendanceBridge $legacyBridge,
     ) {}
 
     /**
@@ -39,6 +45,7 @@ class TimeAttendanceController extends Controller
         summary: 'List time attendance entries',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Time & Attendance'],
+        deprecated: true,
         parameters: [
             new OA\Parameter(name: 'all_users', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
             new OA\Parameter(name: 'from_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -94,6 +101,7 @@ class TimeAttendanceController extends Controller
         summary: 'Record clock-in',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Time & Attendance'],
+        deprecated: true,
         requestBody: new OA\RequestBody(
             required: false,
             content: new OA\JsonContent(
@@ -131,16 +139,15 @@ class TimeAttendanceController extends Controller
             );
         }
 
-        $validated = $request->validated();
+        $entry = $this->legacyBridge->clockIn($user, $request->validated());
 
-        $entry = new TimeEntry;
-        $entry->user_id = $user->id;
-        $entry->clock_in = ! empty($validated['clock_in']) ? Carbon::parse($validated['clock_in']) : now();
-        $entry->clock_in_lat = $validated['latitude'] ?? null;
-        $entry->clock_in_lng = $validated['longitude'] ?? null;
-        $entry->is_simplified_record = (bool) ($validated['is_simplified_record'] ?? false);
-        $entry->notes = $validated['notes'] ?? null;
-        $entry->save();
+        if ($entry === null) {
+            return $this->problemDetailsResponse(
+                title: 'Already Clocked In',
+                detail: 'You have an open shift. Please clock out before starting a new one.',
+                status: Response::HTTP_CONFLICT
+            );
+        }
 
         return $this->successResponse(
             data: new TimeEntryResource($entry->load('user')),
@@ -159,6 +166,7 @@ class TimeAttendanceController extends Controller
         summary: 'Record clock-out',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Time & Attendance'],
+        deprecated: true,
         requestBody: new OA\RequestBody(
             required: false,
             content: new OA\JsonContent(
@@ -204,12 +212,15 @@ class TimeAttendanceController extends Controller
             );
         }
 
-        $activeEntry->clock_out = $clockOutTime;
-        $activeEntry->break_minutes = (int) ($validated['break_minutes'] ?? 0);
-        if (! empty($validated['notes'])) {
-            $activeEntry->notes = ($activeEntry->notes ? $activeEntry->notes."\n" : '').$validated['notes'];
+        $activeEntry = $this->legacyBridge->clockOut($user, $validated);
+
+        if ($activeEntry === null) {
+            return $this->problemDetailsResponse(
+                title: 'No Active Shift Found',
+                detail: 'No running shift found to clock out from. Please clock in first.',
+                status: Response::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
-        $activeEntry->save();
 
         return $this->successResponse(
             data: new TimeEntryResource($activeEntry->load('user')),
@@ -227,6 +238,7 @@ class TimeAttendanceController extends Controller
         summary: 'Monthly attendance report',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Time & Attendance'],
+        deprecated: true,
         parameters: [
             new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(name: 'year', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
@@ -317,6 +329,7 @@ class TimeAttendanceController extends Controller
         summary: 'Labour compliance check',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Time & Attendance'],
+        deprecated: true,
         parameters: [
             new OA\Parameter(name: 'start_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'end_date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
