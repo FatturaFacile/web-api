@@ -10,6 +10,7 @@ use App\Actions\Sales\ConvertToInvoice;
 use App\Actions\Sales\SaveSalesDocument;
 use App\Actions\Sales\SignQuote;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Sales\ConvertToDeliveryNoteRequest;
 use App\Http\Requests\Sales\SignQuoteRequest;
 use App\Http\Requests\Sales\StoreQuoteRequest;
 use App\Http\Resources\DeliveryNoteResource;
@@ -201,7 +202,7 @@ class QuoteController extends Controller
     #[OA\Post(
         path: '/api/v1/sales/quotes/{id}/convert-to-order',
         summary: 'Convert quote to order',
-        description: 'Convert an accepted quote into a confirmed sales order',
+        description: 'Converts a quote (not rejected, expired or superseded, and still within its validity date unless already accepted) into a sales order, once: the order is numbered on the order series and confirmed behind the credit check of the company, so it can come back on credit hold (status on_hold). The quote ends accepted.',
         tags: ['Quotes'],
         security: [['sanctum' => []]],
         parameters: [
@@ -210,6 +211,7 @@ class QuoteController extends Controller
         responses: [
             new OA\Response(response: 201, description: 'Sales order created from quote'),
             new OA\Response(response: 404, description: 'Quote not found'),
+            new OA\Response(response: 422, description: 'Quote not convertible (status, validity, already converted)', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Forbidden'),
         ]
@@ -219,7 +221,7 @@ class QuoteController extends Controller
         $quote = Quote::with('items')->findOrFail($id);
         $this->authorize('convert', $quote);
 
-        $order = $this->quoteToOrder->execute($quote);
+        $order = $this->quoteToOrder->execute($quote, auth()->id() !== null ? (string) auth()->id() : null);
 
         return $this->successResponse(new SalesOrderResource($order), __('sales.messages.quote_to_order'), Response::HTTP_CREATED);
     }
@@ -259,25 +261,29 @@ class QuoteController extends Controller
     #[OA\Post(
         path: '/api/v1/sales/quotes/{id}/delivery-note',
         summary: 'Create delivery note from quote',
-        description: 'Create a delivery note directly from a sales quote',
+        description: 'Ships a quote straight away, without an order: creates and issues a delivery note (DDT) with every line of the quote and the transport data given; the stock of the products with inventory tracking leaves the warehouse. The quote must be convertible and within its validity date; it ends accepted.',
         tags: ['Quotes'],
         security: [['sanctum' => []]],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/SalesCycleDeliveryNoteRequest')),
         responses: [
             new OA\Response(response: 201, description: 'Delivery note created from quote'),
             new OA\Response(response: 404, description: 'Quote not found'),
+            new OA\Response(response: 422, description: 'Quote not convertible, or invalid transport data', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Forbidden'),
         ]
     )]
-    public function createDeliveryNote(ConvertQuoteToDeliveryNote $toDeliveryNote, string $id): JsonResponse
+    public function createDeliveryNote(ConvertToDeliveryNoteRequest $request, ConvertQuoteToDeliveryNote $toDeliveryNote, string $id): JsonResponse
     {
         $quote = Quote::with('items')->findOrFail($id);
         $this->authorize('convert', $quote);
+        $attributes = $request->validated();
+        unset($attributes['lines']);
 
-        $note = $toDeliveryNote->execute($quote);
+        $note = $toDeliveryNote->execute($quote, $attributes, auth()->id() !== null ? (string) auth()->id() : null);
 
         return $this->successResponse(new DeliveryNoteResource($note), __('sales.messages.quote_delivery_note'), Response::HTTP_CREATED);
     }

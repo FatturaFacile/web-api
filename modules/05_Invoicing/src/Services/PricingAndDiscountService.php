@@ -4,22 +4,35 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Models\Contact;
 use App\Models\Product;
+use App\Models\Tenant;
 use App\Services\Catalog\PriceResolver;
 use App\Services\Sales\DocumentTotalsCalculator;
+use App\Services\Sales\SalesPriceEngine;
 use App\Services\Sales\VatSummaryCalculator;
+use App\Services\Tenancy\TenantClock;
+use Carbon\CarbonImmutable;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
-use Modules\Invoicing\Models\CustomerGroup;
-use Modules\Invoicing\Models\DiscountPolicy;
 
+/**
+ * Prices and totals of the sales documents of the invoicing module. The price of a line comes from the price
+ * determination of the sales cycle (SalesPriceEngine: price lists with validity and quantity breaks, customer lists,
+ * promotions by priority); totals from the decimal totals calculator shared by every sales document.
+ */
 final class PricingAndDiscountService implements PricingAndDiscountServiceInterface
 {
     public function __construct(
         private readonly PriceResolver $prices = new PriceResolver,
-        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator
+        private readonly VatSummaryCalculator $vat = new VatSummaryCalculator,
+        private readonly ?SalesPriceEngine $engine = null,
+        private readonly ?TenantClock $clock = null,
     ) {}
 
     /**
+     * Price of a product for a quantity, without a customer, as floats for the callers that still read them.
+     *
      * @return array{unit_price: float, discount_percentage: float, discount_amount: float, final_price: float}
      */
     public function resolvePrice(
@@ -29,66 +42,36 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
         ?string $customerGroupId = null,
         ?string $discountPolicyId = null
     ): array {
-        $basePrice = 0.0;
+        $product = Product::query()->find($productId);
 
-        // 1. Check price list item with volume tiers
-        if ($priceListId !== null) {
-            $listPrice = $this->prices->priceInActiveList($priceListId, $productId, $quantity, now());
-
-            if ($listPrice !== null) {
-                $basePrice = (float) $listPrice;
-            }
+        if ($product === null) {
+            return ['unit_price' => 0.0, 'discount_percentage' => 0.0, 'discount_amount' => 0.0, 'final_price' => 0.0];
         }
 
-        // 2. Fallback to product standard unit price
-        if ($basePrice <= 0.0) {
-            $product = Product::find($productId);
-            if ($product !== null) {
-                $basePrice = (float) ($product->sale_price ?? 0.0);
-            }
-        }
-
-        // 3. Resolve customer group discount
-        $discountPercent = 0.0;
-        if ($customerGroupId !== null) {
-            $group = CustomerGroup::find($customerGroupId);
-            if ($group !== null && $group->is_active) {
-                $discountPercent += (float) $group->discount_percentage;
-            }
-        }
-
-        // 4. Resolve discount policy
-        $discountAmount = 0.0;
-        if ($discountPolicyId !== null) {
-            $policy = DiscountPolicy::with('rules')->find($discountPolicyId);
-            if ($policy !== null && $policy->is_active) {
-                if ($policy->discount_type === 'percentage') {
-                    $discountPercent += (float) $policy->value;
-                } elseif ($policy->discount_type === 'fixed_amount') {
-                    $discountAmount += (float) $policy->value;
-                }
-
-                // Check rules for specific product or group
-                foreach ($policy->rules as $rule) {
-                    if ($rule->product_id === $productId || ($customerGroupId !== null && $rule->customer_group_id === $customerGroupId)) {
-                        $discountPercent += (float) $rule->discount_percent;
-                        $discountAmount += (float) $rule->discount_fixed_amount;
-                    }
-                }
-            }
-        }
-
-        $discountPercent = min(100.0, max(0.0, $discountPercent));
-        $percentDiscountAmount = round(($basePrice * $discountPercent) / 100.0, 4);
-        $totalDiscountPerUnit = $percentDiscountAmount + $discountAmount;
-        $finalPrice = max(0.0, $basePrice - $totalDiscountPerUnit);
+        $price = $this->engine()->determine($product, null, DocumentTotalsCalculator::decimal($quantity), $this->today((string) $product->tenant_id), $priceListId, $discountPolicyId, $customerGroupId);
+        $discountPerUnit = Decimal::sub($price['list_price'], $price['net_unit_price']);
 
         return [
-            'unit_price' => round($basePrice, 4),
-            'discount_percentage' => round($discountPercent, 2),
-            'discount_amount' => round($totalDiscountPerUnit, 4),
-            'final_price' => round($finalPrice, 4),
+            'unit_price' => (float) $price['list_price'],
+            'discount_percentage' => (float) $price['discount_percentage'],
+            'discount_amount' => (float) bcadd($discountPerUnit, '0', 4),
+            'final_price' => (float) $price['net_unit_price'],
         ];
+    }
+
+    /**
+     * Price of a document line for a customer on a date: unit price (list price less the fixed discounts per unit) and
+     * discount percentage as the line stores them, with the discounts that were applied.
+     *
+     * @return array{list_price: string, price_source: string, price_list_id: ?string, unit_price: string, discount_percentage: string, fixed_discount_per_unit: string, net_unit_price: string, applied_discounts: list<array{discount_policy_id: string, code: ?string, name: ?string, priority: int, percentage: string, fixed_amount_per_unit: string, explicit: bool}>}
+     */
+    public function determineLinePrice(string $productId, string $quantity, ?string $contactId, ?string $priceListId = null, ?string $discountPolicyId = null, ?string $date = null, ?string $orderAmount = null): array
+    {
+        $product = Product::query()->findOrFail($productId);
+        $contact = $contactId !== null ? Contact::query()->find($contactId) : null;
+        $day = $date !== null ? CarbonImmutable::parse($date) : $this->today((string) $product->tenant_id);
+
+        return $this->engine()->determine($product, $contact, $quantity, $day, $priceListId, $discountPolicyId, null, $orderAmount);
     }
 
     /**
@@ -100,8 +83,6 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
      */
     public function calculateOrderTotals(array $items, ?string $discountPolicyId = null): array
     {
-        // One computation for every sales document: the decimal one of the totals calculator, so an order, a quote and
-        // the invoice of the same lines always show the same line nets and totals.
         $totals = (new DocumentTotalsCalculator($this->vat))->calculateDecimal($items);
 
         return [
@@ -111,5 +92,15 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
             'tax_total' => (float) $totals['total_tax'],
             'gross_total' => (float) $totals['total_gross'],
         ];
+    }
+
+    private function engine(): SalesPriceEngine
+    {
+        return $this->engine ?? new SalesPriceEngine($this->prices);
+    }
+
+    private function today(string $tenantId): CarbonImmutable
+    {
+        return ($this->clock ?? app(TenantClock::class))->today(Tenant::query()->find($tenantId));
     }
 }

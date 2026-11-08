@@ -7,13 +7,16 @@ namespace Modules\Invoicing\Services;
 use App\Enums\SalesOrderStatus;
 use App\Models\Tenant;
 use App\Services\Sales\DocumentNumberingService;
+use App\Services\Sales\DocumentTotalsCalculator;
 use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use InvalidArgumentException;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
@@ -24,6 +27,11 @@ use Modules\Invoicing\Models\CustomerAgreement;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesOrderItem;
 
+/**
+ * Life cycle of the sales orders of the invoicing module: creation with price determination and decimal totals,
+ * confirmation behind the credit check, approval, stock reservation through the inventory module and cancellation.
+ * Every status change goes through the SalesOrderStatus state machine, on a locked row.
+ */
 final class SalesOrderService implements SalesOrderServiceInterface
 {
     public function __construct(
@@ -31,10 +39,14 @@ final class SalesOrderService implements SalesOrderServiceInterface
         private readonly CustomerCreditServiceInterface $creditService,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly DocumentNumberingService $numbering,
-        private readonly ?TenantClock $clock = null
+        private readonly ?TenantClock $clock = null,
+        private readonly ?SalesOrderStockReservations $reservations = null,
     ) {}
 
     /**
+     * Creates a draft order. A product line without a unit price is priced by the price determination of the sales
+     * cycle (price list, customer list, promotions); a line with a price keeps it. Every line states its VAT rate.
+     *
      * @param  array<string, mixed>  $data
      * @param  array<int, array<string, mixed>>  $items
      */
@@ -42,36 +54,57 @@ final class SalesOrderService implements SalesOrderServiceInterface
     {
         $tenantId = (string) $data['tenant_id'];
         $orderId = (string) Str::uuid7();
+        $date = CarbonImmutable::parse($data['date'] ?? ($this->clock ?? app(TenantClock::class))->today(Tenant::query()->find($tenantId)));
+        $calculatedItems = $this->priceLines($data, $items, $date);
+        $totals = (new DocumentTotalsCalculator)->calculateDecimal($calculatedItems);
 
-        $calculatedItems = [];
+        foreach ($totals['items'] as $index => $line) {
+            $calculatedItems[$index] = array_merge($calculatedItems[$index], $line);
+        }
+
+        return DB::transaction(fn (): SalesOrder => $this->insertOrder($orderId, $tenantId, $data, $calculatedItems, $totals, $date));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
+     * @return array<int, array<string, mixed>>
+     */
+    private function priceLines(array $data, array $items, CarbonImmutable $date): array
+    {
+        $contactId = isset($data['contact_id']) ? (string) $data['contact_id'] : null;
+        $priceListId = isset($data['price_list_id']) ? (string) $data['price_list_id'] : null;
+        $policyId = isset($data['discount_policy_id']) ? (string) $data['discount_policy_id'] : null;
+
+        // The order amount at list prices, for the promotions with a minimum order amount.
+        $orderAmount = '0';
         foreach ($items as $item) {
-            $productId = isset($item['product_id']) ? (string) $item['product_id'] : null;
-            $pricing = $productId !== null ? $this->pricingService->resolvePrice(
-                productId: $productId,
-                quantity: (float) ($item['quantity'] ?? 1.0),
-                priceListId: $data['price_list_id'] ?? null,
-                discountPolicyId: $data['discount_policy_id'] ?? null
-            ) : ['unit_price' => (float) ($item['unit_price'] ?? 0.0), 'discount_percentage' => (float) ($item['discount_percentage'] ?? 0.0)];
+            $quantity = DocumentTotalsCalculator::decimal($item['quantity'] ?? '1');
+            $price = isset($item['unit_price']) ? DocumentTotalsCalculator::decimal($item['unit_price'])
+                : (isset($item['product_id']) ? $this->pricingService->determineLinePrice((string) $item['product_id'], $quantity, $contactId, $priceListId, null, $date->toDateString())['list_price'] : '0');
+            $orderAmount = Decimal::add($orderAmount, Decimal::mul($quantity, $price));
+        }
 
-            $unitPrice = isset($item['unit_price']) ? (float) $item['unit_price'] : $pricing['unit_price'];
-            $discountPct = isset($item['discount_percentage']) ? (float) $item['discount_percentage'] : $pricing['discount_percentage'];
-            $taxRate = (float) ($item['tax_rate'] ?? throw new InvalidArgumentException('Every order line must state its VAT rate.'));
-            $qty = (float) ($item['quantity'] ?? 1.0);
+        $calculated = [];
+        foreach ($items as $item) {
+            if (! isset($item['tax_rate'])) {
+                throw new InvalidArgumentException('Every order line must state its VAT rate.');
+            }
 
-            $lineNet = round(($qty * $unitPrice) * (1 - ($discountPct / 100.0)), 2);
+            $quantity = DocumentTotalsCalculator::decimal($item['quantity'] ?? '1');
+            $pricing = isset($item['product_id']) && (! isset($item['unit_price']) || ! isset($item['discount_percentage']))
+                ? $this->pricingService->determineLinePrice((string) $item['product_id'], $quantity, $contactId, $priceListId, $policyId, $date->toDateString(), Decimal::round2($orderAmount))
+                : null;
 
-            $calculatedItems[] = array_merge($item, [
-                'unit_price' => $unitPrice,
-                'discount_percentage' => $discountPct,
-                'tax_rate' => $taxRate,
-                'line_total' => $lineNet,
+            $calculated[] = array_merge($item, [
+                'quantity' => $quantity,
+                'unit_price' => isset($item['unit_price']) ? DocumentTotalsCalculator::decimal($item['unit_price']) : ($pricing['unit_price'] ?? '0'),
+                'discount_percentage' => isset($item['discount_percentage']) ? DocumentTotalsCalculator::decimal($item['discount_percentage']) : ($pricing['discount_percentage'] ?? '0'),
+                'tax_rate' => DocumentTotalsCalculator::decimal($item['tax_rate']),
             ]);
         }
 
-        $totals = $this->pricingService->calculateOrderTotals($calculatedItems, $data['discount_policy_id'] ?? null);
-        $date = CarbonImmutable::parse($data['date'] ?? ($this->clock ?? app(TenantClock::class))->today(Tenant::query()->find($tenantId)));
-
-        return DB::transaction(fn (): SalesOrder => $this->insertOrder($orderId, $tenantId, $data, $calculatedItems, $totals, $date));
+        return $calculated;
     }
 
     /**
@@ -80,7 +113,7 @@ final class SalesOrderService implements SalesOrderServiceInterface
      *
      * @param  array<string, mixed>  $data
      * @param  array<int, array<string, mixed>>  $calculatedItems
-     * @param  array<string, float>  $totals
+     * @param  array{subtotal: string, discount_total: string, total_net: string, total_tax: string, total_gross: string}  $totals
      */
     private function insertOrder(string $orderId, string $tenantId, array $data, array $calculatedItems, array $totals, CarbonImmutable $date): SalesOrder
     {
@@ -101,9 +134,9 @@ final class SalesOrderService implements SalesOrderServiceInterface
             'currency' => $data['currency'] ?? 'EUR',
             'subtotal' => $totals['subtotal'],
             'discount_amount' => $totals['discount_total'],
-            'total_net' => $totals['net_total'],
-            'total_tax' => $totals['tax_total'],
-            'total_gross' => $totals['gross_total'],
+            'total_net' => $totals['total_net'],
+            'total_tax' => $totals['total_tax'],
+            'total_gross' => $totals['total_gross'],
             'status' => SalesOrderStatus::Draft->value,
             'credit_status' => 'pending_check',
             'inventory_status' => 'pending',
@@ -126,25 +159,25 @@ final class SalesOrderService implements SalesOrderServiceInterface
                 'sales_order_id' => $actualOrderId,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? 'Product item',
-                'quantity' => (float) ($item['quantity'] ?? 1.0),
-                'quantity_reserved' => 0.0,
-                'quantity_delivered' => 0.0,
-                'quantity_invoiced' => 0.0,
-                'unit_price' => (float) ($item['unit_price'] ?? 0.0),
-                'tax_rate' => (float) ($item['tax_rate'] ?? 0.0),
-                'discount_percentage' => (float) ($item['discount_percentage'] ?? 0.0),
-                'line_total' => (float) ($item['line_total'] ?? 0.0),
-                'cost_price' => (float) ($item['cost_price'] ?? 0.0),
+                'quantity' => $item['quantity'],
+                'quantity_reserved' => '0',
+                'quantity_delivered' => '0',
+                'quantity_invoiced' => '0',
+                'unit_price' => $item['unit_price'],
+                'tax_rate' => $item['tax_rate'],
+                'discount_percentage' => $item['discount_percentage'],
+                'line_total' => $item['line_total'],
+                'cost_price' => DocumentTotalsCalculator::decimal($item['cost_price'] ?? '0'),
                 'uom' => $item['uom'] ?? 'EA',
                 'notes' => $item['notes'] ?? null,
             ]);
         }
 
-        // Update customer agreement consumed amount if applicable
         if (! empty($data['customer_agreement_id'])) {
-            $agreement = CustomerAgreement::find($data['customer_agreement_id']);
+            $agreement = CustomerAgreement::query()->whereKey($data['customer_agreement_id'])->lockForUpdate()->first();
+
             if ($agreement !== null) {
-                $agreement->increment('consumed_amount', $totals['gross_total']);
+                $agreement->update(['consumed_amount' => Decimal::round2(Decimal::add(DocumentTotalsCalculator::decimal($agreement->consumed_amount), $totals['total_gross']))]);
             }
         }
 
@@ -161,107 +194,155 @@ final class SalesOrderService implements SalesOrderServiceInterface
         return $order->load('items');
     }
 
+    /**
+     * Confirms the order behind the credit check of the company (see CustomerCreditService): an order the check does
+     * not pass is put on credit hold, one it passes (or passes with a warning) is confirmed.
+     *
+     * @throws ValidationException when the order cannot be confirmed from its status
+     */
     public function submitOrder(SalesOrder $order, string $userId): SalesOrder
     {
-        // Perform mandatory credit check
-        $creditResult = $this->creditService->checkOrderCredit($order);
+        return DB::transaction(function () use ($order, $userId): SalesOrder {
+            $locked = SalesOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-        if (! $creditResult['approved']) {
-            $this->creditService->placeHold(
-                order: $order,
-                holdType: 'credit_limit',
-                reason: $creditResult['reason'] ?? 'Credit check failed.',
-                userId: $userId
-            );
+            if ($locked->status === SalesOrderStatus::OnHold->value) {
+                throw ValidationException::withMessages(['status' => __('sales.order_on_hold_release_required')]);
+            }
 
-            return $order->fresh(['items', 'holds']);
-        }
+            SalesOrderStatus::assertTransition($locked->status, SalesOrderStatus::Confirmed);
 
-        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::Confirmed);
+            $creditResult = $this->creditService->checkOrderCredit($locked);
 
-        $order->update([
-            'status' => SalesOrderStatus::Confirmed->value,
-            'confirmed_at' => now(),
-        ]);
+            if (! $creditResult['approved']) {
+                $this->creditService->placeHold(
+                    order: $locked,
+                    holdType: 'credit_limit',
+                    reason: $creditResult['reason'] ?? __('sales.credit_customer_on_hold'),
+                    userId: $userId
+                );
+            } else {
+                $locked->update([
+                    'status' => SalesOrderStatus::Confirmed->value,
+                    'confirmed_at' => $locked->confirmed_at ?? now(),
+                ]);
+            }
 
-        return $order;
+            $order->setRawAttributes($locked->getAttributes(), true);
+
+            return $order->load(['items', 'holds']);
+        });
     }
 
     public function approveOrder(SalesOrder $order, string $userId): SalesOrder
     {
-        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::Approved);
-        $quoteUserId = Str::isUuid($userId) ? $userId : (string) Str::uuid7();
+        return DB::transaction(function () use ($order, $userId): SalesOrder {
+            $locked = SalesOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            SalesOrderStatus::assertTransition($locked->status, SalesOrderStatus::Approved);
+            $approverId = Str::isUuid($userId) ? $userId : null;
 
-        $order->update([
-            'status' => SalesOrderStatus::Approved->value,
-            'approved_by' => $quoteUserId,
-            'approved_at' => now(),
-        ]);
-
-        $this->dispatchDomainEvent(new SalesOrderApprovedEvent(
-            salesOrderId: (string) $order->id,
-            approvedBy: $quoteUserId,
-            tenantId: (string) $order->tenant_id,
-            companyId: (string) $order->tenant_id
-        ));
-
-        return $order;
-    }
-
-    public function reserveInventory(SalesOrder $order): SalesOrder
-    {
-        $order->load('items');
-        $reservedItems = [];
-
-        foreach ($order->items as $item) {
-            $qtyToReserve = (float) $item->quantity;
-            $item->update([
-                'quantity_reserved' => $qtyToReserve,
+            $locked->update([
+                'status' => SalesOrderStatus::Approved->value,
+                'approved_by' => $approverId,
+                'approved_at' => now(),
             ]);
 
-            $reservedItems[] = [
-                'product_id' => (string) $item->product_id,
-                'quantity' => $qtyToReserve,
-                'sales_order_item_id' => (string) $item->id,
-            ];
-        }
+            $this->dispatchDomainEvent(new SalesOrderApprovedEvent(
+                salesOrderId: (string) $locked->id,
+                approvedBy: $userId,
+                tenantId: (string) $locked->tenant_id,
+                companyId: (string) $locked->tenant_id
+            ));
 
-        $order->update([
-            'inventory_status' => 'reserved',
-        ]);
+            $order->setRawAttributes($locked->getAttributes(), true);
 
-        $this->dispatchDomainEvent(new SalesOrderStockReservedEvent(
-            salesOrderId: (string) $order->id,
-            reservedItems: $reservedItems,
-            tenantId: (string) $order->tenant_id,
-            companyId: (string) $order->tenant_id
-        ));
+            return $order;
+        });
+    }
 
-        return $order;
+    /**
+     * Reserves the open quantities of the stock-relevant lines in the primary warehouse of the company.
+     */
+    public function reserveInventory(SalesOrder $order): SalesOrder
+    {
+        return $this->reserveInventoryIn($order, null, null);
+    }
+
+    /**
+     * Reserves the open quantities of the stock-relevant lines in a warehouse (the primary one when none is given),
+     * through the reservation service of the inventory module. A line gets what the warehouse can give; the inventory
+     * status of the order says whether everything was reserved.
+     *
+     * @throws ValidationException when the order is closed or no warehouse exists
+     */
+    public function reserveInventoryIn(SalesOrder $order, ?string $warehouseId, ?string $userId): SalesOrder
+    {
+        return DB::transaction(function () use ($order, $warehouseId, $userId): SalesOrder {
+            $locked = SalesOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+
+            if (SalesOrderStatus::tryFrom((string) $locked->status)?->isFinal() ?? true) {
+                throw ValidationException::withMessages(['status' => __('sales.order_closed_for_reservation')]);
+            }
+
+            $reservations = $this->reservations();
+            $warehouse = $reservations->warehouseFor($warehouseId) ?? throw ValidationException::withMessages(['warehouse_id' => __('sales.no_warehouse')]);
+            $locked->load('items');
+            $dueDate = $locked->getRawOriginal('due_date');
+            $expiresAt = $dueDate !== null ? CarbonImmutable::parse((string) $dueDate)->endOfDay()->toDateTimeString() : null;
+            $status = $reservations->reserve($locked, $warehouse, $userId !== null && Str::isUuid($userId) ? $userId : null, $expiresAt);
+
+            $locked->update(['inventory_status' => $status]);
+            $locked->load('items');
+
+            $this->dispatchDomainEvent(new SalesOrderStockReservedEvent(
+                salesOrderId: (string) $locked->id,
+                reservedItems: $locked->items
+                    ->filter(static fn (SalesOrderItem $item): bool => Decimal::isPositive(DocumentTotalsCalculator::decimal($item->quantity_reserved)))
+                    ->map(static fn (SalesOrderItem $item): array => [
+                        'product_id' => (string) $item->product_id,
+                        'quantity' => (float) $item->quantity_reserved,
+                        'sales_order_item_id' => (string) $item->id,
+                    ])->values()->all(),
+                tenantId: (string) $locked->tenant_id,
+                companyId: (string) $locked->tenant_id
+            ));
+
+            $order->setRawAttributes($locked->getAttributes(), true);
+
+            return $order->setRelation('items', $locked->items);
+        });
     }
 
     private function dispatchDomainEvent(DomainEventInterface $event): void
     {
-        $this->eventDispatcher->publish($event);
-        $this->eventDispatcher->dispatch($event);
+        $this->eventDispatcher->publishAndDispatch($event);
     }
 
+    /**
+     * Cancels the order and gives its reserved stock back.
+     */
     public function cancelOrder(SalesOrder $order, string $reason, string $userId): SalesOrder
     {
-        SalesOrderStatus::assertTransition($order->status, SalesOrderStatus::Cancelled);
-        $order->load('items');
+        return DB::transaction(function () use ($order, $reason): SalesOrder {
+            $locked = SalesOrder::query()->whereKey($order->id)->lockForUpdate()->firstOrFail();
+            SalesOrderStatus::assertTransition($locked->status, SalesOrderStatus::Cancelled);
+            $locked->load('items');
 
-        // Release any reservations
-        foreach ($order->items as $item) {
-            $item->update(['quantity_reserved' => 0.0]);
-        }
+            $this->reservations()->release($locked);
 
-        $order->update([
-            'status' => SalesOrderStatus::Cancelled->value,
-            'inventory_status' => 'pending',
-            'notes' => trim(($order->notes ?? '')."\nCancellation reason: ".$reason),
-        ]);
+            $locked->update([
+                'status' => SalesOrderStatus::Cancelled->value,
+                'inventory_status' => 'released',
+                'notes' => trim(($locked->notes ?? '')."\n".__('sales.order_cancellation_note', ['reason' => $reason])),
+            ]);
 
-        return $order;
+            $order->setRawAttributes($locked->getAttributes(), true);
+
+            return $order;
+        });
+    }
+
+    private function reservations(): SalesOrderStockReservations
+    {
+        return $this->reservations ?? app(SalesOrderStockReservations::class);
     }
 }

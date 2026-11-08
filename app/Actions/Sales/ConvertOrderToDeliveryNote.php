@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
-use App\Enums\DeliveryNoteStatus;
-use App\Enums\SalesOrderStatus;
 use App\Models\DeliveryNote;
-use App\Models\DeliveryNoteItem;
 use App\Models\SalesOrder;
-use App\Services\Inventory\StockService;
 use App\Services\Sales\DocumentEventRecorder;
-use App\Services\Sales\DocumentNumberingService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\ValidationException;
+use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
+use Modules\Invoicing\Models\SalesDeliveryNote;
+use Modules\Invoicing\Models\SalesOrder as ModuleSalesOrder;
 
+/**
+ * Ships an order from the sales API: the delivery note is created and issued at once by the one delivery note writer
+ * (DeliveryFulfillmentService), which checks the open quantities, moves the stock and keeps the backorder open.
+ */
 class ConvertOrderToDeliveryNote
 {
     public function __construct(
-        private readonly DocumentNumberingService $numbering,
+        private readonly DeliveryFulfillmentServiceInterface $fulfillment,
         private readonly DocumentEventRecorder $events,
-        private readonly StockService $stock,
     ) {}
 
     /**
@@ -28,72 +28,33 @@ class ConvertOrderToDeliveryNote
      * (sales_order_item_id => quantity) only those quantities are shipped, otherwise all open quantities.
      *
      * @param  array<string, float|int|string>  $lines
-     * @param  array<string, mixed>  $attributes
+     * @param  array<string, mixed>  $attributes  transport data of the note
      */
-    public function execute(SalesOrder $order, array $lines = [], array $attributes = []): DeliveryNote
+    public function execute(SalesOrder $order, array $lines = [], array $attributes = [], ?string $userId = null): DeliveryNote
     {
-        if ($order->status === SalesOrderStatus::Draft->value || ! SalesOrderStatus::allows($order->status, SalesOrderStatus::InFulfillment) && ! SalesOrderStatus::allows($order->status, SalesOrderStatus::Shipped)) {
-            throw ValidationException::withMessages(['order' => __('sales.order_not_deliverable')]);
-        }
+        return DB::transaction(function () use ($order, $lines, $attributes, $userId): DeliveryNote {
+            $items = [];
 
-        return DB::transaction(function () use ($order, $lines, $attributes): DeliveryNote {
-            $toShip = [];
-            foreach ($order->items()->orderBy('id')->lockForUpdate()->get() as $item) {
-                $deliveredAcrossPriorNotes = (float) DeliveryNoteItem::where('sales_order_item_id', $item->id)
-                    ->whereHas('deliveryNote', fn ($q) => $q->whereNull('deleted_at'))
-                    ->sum('quantity');
-
-                $delivered = max((float) $item->quantity_delivered, $deliveredAcrossPriorNotes);
-                $open = round(max(0.0, (float) $item->quantity - $delivered), 4);
-                $requested = $lines === [] ? $open : round((float) ($lines[$item->id] ?? 0), 4);
-
-                if ($requested <= 0) {
-                    continue;
-                }
-
-                if ($requested > $open) {
-                    throw ValidationException::withMessages(['lines' => "Quantity for '{$item->description}' exceeds the open quantity."]);
-                }
-
-                $toShip[] = [$item, $requested, $delivered];
+            foreach ($lines as $itemId => $quantity) {
+                $items[] = ['sales_order_item_id' => (string) $itemId, 'quantity' => (string) $quantity];
             }
 
-            if ($toShip === []) {
-                throw ValidationException::withMessages(['lines' => __('sales.nothing_to_deliver')]);
-            }
+            $moduleOrder = ModuleSalesOrder::query()->findOrFail($order->id);
+            $note = $this->fulfillment->createDeliveryNote($moduleOrder, $attributes + ['created_by' => $userId], $items);
+            $this->fulfillment->dispatchDelivery($note, $userId ?? 'system');
 
-            $number = $this->numbering->next('delivery_note');
-
-            $note = DeliveryNote::create(array_merge($attributes, [
-                'tenant_id' => $order->tenant_id,
-                'contact_id' => $order->contact_id,
-                'sales_order_id' => $order->id,
-                'ddt_number' => $number['number'],
-                'date' => now()->toDateString(),
-                'status' => DeliveryNoteStatus::Issued->value,
-            ]));
-
-            foreach ($toShip as [$item, $quantity, $delivered]) {
-                $note->items()->create([
-                    'sales_order_item_id' => $item->id,
-                    'product_id' => $item->product_id,
-                    'description' => $item->description,
-                    'quantity' => $quantity,
-                    'unit_price' => $item->unit_price,
-                    'tax_rate' => $item->tax_rate,
-                ]);
-                $item->update(['quantity_delivered' => $delivered + $quantity]);
-            }
-
-            $this->stock->recordForLines('out', $note, $note->items()->get());
-
-            $fullyDelivered = ! $order->items()->whereColumn('quantity_delivered', '<', 'quantity')->exists();
-            $orderStatus = $fullyDelivered ? SalesOrderStatus::Shipped : SalesOrderStatus::InFulfillment;
-            SalesOrderStatus::assertTransition($order->status, $orderStatus);
-            $order->update(['status' => $orderStatus->value]);
+            $order->refresh();
             $this->events->record($order, 'delivery_note_created', ['delivery_note_id' => $note->id]);
 
-            return $note->load(['items' => fn ($query) => $query->orderBy('id')]);
+            return self::appNote($note);
         });
+    }
+
+    /**
+     * The note as the sales API returns it.
+     */
+    public static function appNote(SalesDeliveryNote $note): DeliveryNote
+    {
+        return DeliveryNote::query()->with(['items' => static fn ($query) => $query->orderBy('id')])->findOrFail($note->id);
     }
 }

@@ -16,8 +16,11 @@ use App\Http\Resources\InvoiceResource;
 use App\Http\Resources\SalesOrderResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\SalesOrder;
+use App\Services\Sales\DocumentTotalsCalculator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -72,7 +75,7 @@ class SalesOrderController extends Controller
     #[OA\Post(
         path: '/api/v1/sales/orders',
         summary: 'Create sales order',
-        description: 'Create a new customer sales order with line items',
+        description: 'Create a new customer sales order with line items. The number comes from the gapless order series. An order created with status confirmed goes through the credit check of the company first and can come back on credit hold (status on_hold).',
         tags: ['Sales Orders'],
         security: [['sanctum' => []]],
         requestBody: new OA\RequestBody(
@@ -94,7 +97,7 @@ class SalesOrderController extends Controller
     )]
     public function store(StoreSalesOrderRequest $request): JsonResponse
     {
-        $order = $this->saveDocument->create(SalesOrder::class, 'sales_order', 'order_number', $request->validated());
+        $order = $this->saveDocument->createOrder($request->validated());
 
         return $this->successResponse(new SalesOrderResource($order), __('sales.messages.order_created'), Response::HTTP_CREATED);
     }
@@ -157,7 +160,7 @@ class SalesOrderController extends Controller
     #[OA\Delete(
         path: '/api/v1/sales/orders/{id}',
         summary: 'Delete sales order',
-        description: 'Delete a sales order',
+        description: 'Delete a sales order (soft delete). An order with delivered or invoiced quantities cannot be deleted: cancel it instead.',
         tags: ['Sales Orders'],
         security: [['sanctum' => []]],
         parameters: [
@@ -166,12 +169,19 @@ class SalesOrderController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Sales order deleted successfully'),
             new OA\Response(response: 404, description: 'Sales order not found'),
+            new OA\Response(response: 422, description: 'The order has delivered or invoiced quantities', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
     public function destroy(string $id): JsonResponse
     {
-        SalesOrder::findOrFail($id)->delete();
+        $order = SalesOrder::with('items')->findOrFail($id);
+
+        if ($order->items->contains(static fn ($item): bool => Decimal::isPositive(DocumentTotalsCalculator::decimal($item->quantity_delivered)) || Decimal::isPositive(DocumentTotalsCalculator::decimal($item->getAttribute('quantity_invoiced'))))) {
+            throw ValidationException::withMessages(['order' => __('sales.order_with_movements_not_deletable')]);
+        }
+
+        $order->delete();
 
         return $this->successResponse(null, __('sales.messages.order_deleted'));
     }
@@ -182,7 +192,7 @@ class SalesOrderController extends Controller
     #[OA\Post(
         path: '/api/v1/sales/orders/{id}/delivery-notes',
         summary: 'Create delivery note from sales order',
-        description: 'Create a delivery note from an order (full or partial line fulfillment)',
+        description: 'Ships an order: creates and issues a delivery note (DDT) for the lines and quantities given (order line id => quantity) or for every open quantity. Each quantity must stay within the open quantity of its line (ordered less delivered); what stays open is the backorder. The stock of the products with inventory tracking leaves the warehouse (after the reservations of the shipped lines are released) and the order goes in fulfilment, or shipped once every line is delivered. Only confirmed or approved orders (not drafts, not on hold) can be shipped.',
         tags: ['Sales Orders'],
         security: [['sanctum' => []]],
         parameters: [
@@ -191,11 +201,7 @@ class SalesOrderController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'transport_reason', type: 'string'),
-                    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object')),
-                ]
+                ref: '#/components/schemas/SalesCycleDeliveryNoteRequest'
             )
         ),
         responses: [
@@ -211,7 +217,7 @@ class SalesOrderController extends Controller
         $lines = $validated['lines'] ?? [];
         unset($validated['lines']);
 
-        $note = $this->toDeliveryNote->execute(SalesOrder::findOrFail($id), $lines, $validated);
+        $note = $this->toDeliveryNote->execute(SalesOrder::findOrFail($id), $lines, $validated, $request->user()?->id !== null ? (string) $request->user()->id : null);
 
         return $this->successResponse(new DeliveryNoteResource($note), __('sales.messages.order_delivery_note'), Response::HTTP_CREATED);
     }

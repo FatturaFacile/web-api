@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Invoicing\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -13,6 +14,7 @@ use Modules\Invoicing\Actions\ReleaseSalesOrderHoldAction;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Http\Requests\UpdateCreditLimitRequest;
 use Modules\Invoicing\Http\Resources\CustomerCreditProfileResource;
+use Modules\Invoicing\Models\CustomerCreditProfile;
 use Modules\Invoicing\Models\SalesOrderHold;
 use OpenApi\Attributes as OA;
 
@@ -40,6 +42,7 @@ final class CustomerCreditController extends Controller
     public function show(string $customerId, EvaluateCustomerCreditAction $action, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
+        Contact::query()->where('tenant_id', $tenantId)->findOrFail($customerId);
         $profile = $action->execute($customerId, $tenantId);
 
         return response()->json(new CustomerCreditProfileResource($profile));
@@ -59,6 +62,7 @@ final class CustomerCreditController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingCustomerCreditProfileResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Only the credit managers of the company (owner, admin, accountant, sales manager) manage credit', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
@@ -67,13 +71,14 @@ final class CustomerCreditController extends Controller
         CustomerCreditServiceInterface $service,
         TenantContext $tenantContext
     ): JsonResponse {
+        $this->authorize('manageCredit', CustomerCreditProfile::class);
         $validated = $request->validated();
         $tenantId = $tenantContext->getTenantId();
         $userId = (string) ($request->user()?->id ?? 'system');
 
         $profile = $service->updateCreditLimit(
             customerId: (string) $validated['customer_id'],
-            newLimit: (float) $validated['credit_limit'],
+            newLimit: (string) $validated['credit_limit'],
             userId: $userId,
             tenantId: $tenantId
         );
@@ -98,12 +103,14 @@ final class CustomerCreditController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'hold_id', type: 'string', format: 'uuid'), new OA\Property(property: 'status')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Only the credit managers of the company (owner, admin, accountant, sales manager) manage credit', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function releaseHold(string $holdId, ReleaseSalesOrderHoldAction $action, Request $request): JsonResponse
     {
         $hold = SalesOrderHold::findOrFail($holdId);
+        $this->authorize('manageCredit', CustomerCreditProfile::class);
         $userId = (string) ($request->user()?->id ?? 'system');
         $notes = $request->input('notes');
 

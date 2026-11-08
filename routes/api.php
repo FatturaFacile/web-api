@@ -55,9 +55,14 @@ use App\Http\Controllers\Api\V1\ProfessionalsController;
 use App\Http\Controllers\Api\V1\PurchaseOrderController;
 use App\Http\Controllers\Api\V1\PurchasesController;
 use App\Http\Controllers\Api\V1\QuoteController;
+use App\Http\Controllers\Api\V1\QuoteRevisionController;
 use App\Http\Controllers\Api\V1\RegistrationController;
+use App\Http\Controllers\Api\V1\SalesKpiController;
 use App\Http\Controllers\Api\V1\SalesOrderController;
+use App\Http\Controllers\Api\V1\SalesOrderFulfillmentController;
 use App\Http\Controllers\Api\V1\SalesOrderLineController;
+use App\Http\Controllers\Api\V1\SalesPricingController;
+use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SessionController;
@@ -213,6 +218,30 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/quotes/{id}/invoice', [QuoteController::class, 'createInvoice'])->name('quotes.invoice');
             Route::post('/quotes/{id}/delivery-note', [QuoteController::class, 'createDeliveryNote'])->name('quotes.delivery-note');
             Route::post('/quotes/{id}/signature', [QuoteController::class, 'sign'])->name('quotes.signature');
+            Route::post('/quotes/expire', [QuoteRevisionController::class, 'expire'])->name('quotes.expire');
+            Route::post('/quotes/{id}/revise', [QuoteRevisionController::class, 'revise'])->whereUuid('id')->name('quotes.revise');
+
+            // Order fulfilment: credit check on confirmation, availability to promise, reservations, backorders.
+            Route::post('/orders/{id}/confirm', [SalesOrderFulfillmentController::class, 'confirm'])->whereUuid('id')->name('orders.confirm');
+            Route::post('/orders/{id}/cancel', [SalesOrderFulfillmentController::class, 'cancel'])->whereUuid('id')->name('orders.cancel');
+            Route::get('/orders/{id}/availability', [SalesOrderFulfillmentController::class, 'availability'])->whereUuid('id')->name('orders.availability');
+            Route::post('/orders/{id}/reserve', [SalesOrderFulfillmentController::class, 'reserve'])->whereUuid('id')->name('orders.reserve');
+            Route::get('/backorders', [SalesOrderFulfillmentController::class, 'backorders'])->name('backorders.index');
+            Route::get('/kpis', SalesKpiController::class)->name('kpis');
+
+            // Price determination and promotions.
+            Route::get('/pricing/price', [SalesPricingController::class, 'price'])->name('pricing.price');
+            Route::apiResource('discount-policies', SalesPricingController::class)->parameters(['discount-policies' => 'id'])->where(['id' => '[0-9a-fA-F-]{36}']);
+
+            // Sales returns (RMA).
+            Route::get('/returns', [SalesReturnController::class, 'index'])->name('returns.index');
+            Route::post('/returns', [SalesReturnController::class, 'store'])->name('returns.store');
+            Route::get('/returns/{id}', [SalesReturnController::class, 'show'])->whereUuid('id')->name('returns.show');
+            Route::post('/returns/{id}/approve', [SalesReturnController::class, 'approve'])->whereUuid('id')->name('returns.approve');
+            Route::post('/returns/{id}/reject', [SalesReturnController::class, 'reject'])->whereUuid('id')->name('returns.reject');
+            Route::post('/returns/{id}/cancel', [SalesReturnController::class, 'cancel'])->whereUuid('id')->name('returns.cancel');
+            Route::post('/returns/{id}/receive', [SalesReturnController::class, 'receive'])->whereUuid('id')->name('returns.receive');
+            Route::post('/returns/{id}/credit-note', [SalesReturnController::class, 'credit'])->whereUuid('id')->name('returns.credit-note');
 
             Route::apiResource('orders', SalesOrderController::class)->parameters(['orders' => 'id']);
             Route::post('/orders/{id}/delivery-notes', [SalesOrderController::class, 'createDeliveryNote'])->name('orders.delivery-notes.store');

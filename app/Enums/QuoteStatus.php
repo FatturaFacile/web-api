@@ -18,7 +18,9 @@ use App\Enums\Concerns\DocumentStatusMachine;
  * Internal approval is optional: a draft may be sent or accepted directly, or approved by a manager without being
  * submitted. A quote that waits for approval, though, cannot be sent, accepted or converted until it is approved. Converting a
  * quote into an order, a delivery note or an invoice leaves it accepted (the module used to write `converted`; the link
- * to the order is kept in `converted_to_order_id`). Rejected and expired quotes are final.
+ * to the order is kept in `converted_to_order_id`). A quote still open (draft, pending approval, approved or sent) can be
+ * revised: the revision is a new quote and the old one becomes superseded. Rejected, expired and superseded quotes are
+ * final.
  */
 enum QuoteStatus: string
 {
@@ -31,6 +33,7 @@ enum QuoteStatus: string
     case Accepted = 'accepted';
     case Rejected = 'rejected';
     case Expired = 'expired';
+    case Superseded = 'superseded';
 
     /**
      * Values written before the vocabulary was unified, with the status they stand for now.
@@ -45,11 +48,11 @@ enum QuoteStatus: string
     public function transitions(): array
     {
         return match ($this) {
-            self::Draft => [self::PendingApproval, self::Approved, self::Sent, self::Accepted, self::Rejected, self::Expired],
-            self::PendingApproval => [self::Approved, self::Rejected],
-            self::Approved => [self::Sent, self::Accepted, self::Rejected, self::Expired],
-            self::Sent => [self::Accepted, self::Rejected, self::Expired],
-            self::Accepted, self::Rejected, self::Expired => [],
+            self::Draft => [self::PendingApproval, self::Approved, self::Sent, self::Accepted, self::Rejected, self::Expired, self::Superseded],
+            self::PendingApproval => [self::Approved, self::Rejected, self::Superseded],
+            self::Approved => [self::Sent, self::Accepted, self::Rejected, self::Expired, self::Superseded],
+            self::Sent => [self::Accepted, self::Rejected, self::Expired, self::Superseded],
+            self::Accepted, self::Rejected, self::Expired, self::Superseded => [],
         };
     }
 

@@ -13,6 +13,8 @@ use App\Models\DeliveryNote;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
+use Modules\Invoicing\Models\SalesDeliveryNote;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,7 +24,10 @@ class DeliveryNoteController extends Controller
     use ApiResponse;
     use AuthorizesRequests;
 
-    public function __construct(private readonly ConvertToInvoice $toInvoice) {}
+    public function __construct(
+        private readonly ConvertToInvoice $toInvoice,
+        private readonly DeliveryFulfillmentServiceInterface $fulfillment,
+    ) {}
 
     #[OA\Get(
         path: '/api/v1/sales/delivery-notes',
@@ -81,7 +86,7 @@ class DeliveryNoteController extends Controller
     #[OA\Delete(
         path: '/api/v1/sales/delivery-notes/{id}',
         summary: 'Delete delivery note',
-        description: 'Delete a delivery note',
+        description: 'Deletes a draft delivery note and gives its quantities back to the order lines. An issued note has left with the goods: it cannot be deleted (goods that come back are a sales return, see /api/v1/sales/returns).',
         tags: ['Delivery Notes'],
         security: [['sanctum' => []]],
         parameters: [
@@ -90,6 +95,7 @@ class DeliveryNoteController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Delivery note deleted successfully'),
             new OA\Response(response: 404, description: 'Delivery note not found'),
+            new OA\Response(response: 422, description: 'The note is issued, or its order is closed', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Forbidden'),
         ]
@@ -99,7 +105,7 @@ class DeliveryNoteController extends Controller
         $note = DeliveryNote::findOrFail($id);
         $this->authorize('delete', $note);
 
-        $note->delete();
+        $this->fulfillment->deleteDraft(SalesDeliveryNote::query()->findOrFail($note->id));
 
         return $this->successResponse(null, __('sales.messages.delivery_note_deleted'));
     }

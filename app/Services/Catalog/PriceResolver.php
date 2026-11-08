@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\PriceList;
 use App\Models\PriceListItem;
 use App\Models\Product;
+use App\Services\Sales\DocumentTotalsCalculator;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -22,6 +23,18 @@ class PriceResolver
      */
     public function resolve(Product $product, ?Contact $contact, float $quantity = 1.0, ?CarbonInterface $date = null): array
     {
+        $resolved = $this->resolveDecimal($product, $contact, $quantity, $date);
+
+        return ['price' => (float) $resolved['price'], 'source' => $resolved['source'], 'price_list_id' => $resolved['price_list_id']];
+    }
+
+    /**
+     * The same resolution as resolve(), with the price as a decimal string (4 decimals), for the sales documents.
+     *
+     * @return array{price: string, source: string, price_list_id: ?string}
+     */
+    public function resolveDecimal(Product $product, ?Contact $contact, float $quantity = 1.0, ?CarbonInterface $date = null): array
+    {
         $date ??= now();
         $candidates = [];
 
@@ -35,11 +48,11 @@ class PriceResolver
             $price = $this->priceInList($list, (string) $product->id, $quantity, $date);
 
             if ($price !== null) {
-                return ['price' => (float) $price, 'source' => 'price_list', 'price_list_id' => $list->id];
+                return ['price' => bcadd($price, '0', 4), 'source' => 'price_list', 'price_list_id' => (string) $list->id];
             }
         }
 
-        return ['price' => (float) $product->sale_price, 'source' => 'product', 'price_list_id' => null];
+        return ['price' => bcadd(DocumentTotalsCalculator::decimal($product->sale_price), '0', 4), 'source' => 'product', 'price_list_id' => null];
     }
 
     /**
@@ -108,6 +121,8 @@ class PriceResolver
             ->where(static fn ($query) => $query->whereNull('valid_from')->orWhereDate('valid_from', '<=', $date))
             ->where(static fn ($query) => $query->whereNull('valid_to')->orWhereDate('valid_to', '>=', $date))
             ->orderByDesc('min_quantity')
+            // A dated price wins over an open-ended one for the same break (PostgreSQL sorts nulls first when descending).
+            ->orderByRaw('valid_from is null')
             ->orderByDesc('valid_from')
             ->first();
     }

@@ -46,16 +46,18 @@ if ($mode === 'setup') {
 
     for ($index = 0; $index < (int) $argv[2]; $index++) {
         if ($index % 2 === 0) {
-            $orders[] = (string) $app->make(SalesOrderServiceInterface::class)->createOrder(
+            $moduleOrder = $app->make(SalesOrderServiceInterface::class)->createOrder(
                 ['tenant_id' => $tenant->id, 'contact_id' => $contact->id],
                 [['description' => 'Pallet', 'quantity' => 2, 'unit_price' => 100, 'tax_rate' => 22]]
-            )->id;
+            );
+            // Only a confirmed order can be shipped.
+            $orders[] = (string) $app->make(SalesOrderServiceInterface::class)->submitOrder($moduleOrder, 'setup')->id;
 
             continue;
         }
 
         $order = SalesOrder::create(['tenant_id' => $tenant->id, 'contact_id' => $contact->id, 'order_number' => 'SETUP-'.$index, 'date' => now()->toDateString(), 'currency' => 'EUR', 'status' => 'confirmed']);
-        $order->items()->create(['description' => 'Pallet', 'quantity' => 2, 'unit_price' => 100, 'tax_rate' => 22, 'line_total' => 200]);
+        $order->items()->make(['description' => 'Pallet', 'quantity' => 2, 'unit_price' => 100, 'tax_rate' => 22, 'line_total' => 200])->forceFill(['tenant_id' => $tenant->id])->save();
         $orders[] = (string) $order->id;
     }
 

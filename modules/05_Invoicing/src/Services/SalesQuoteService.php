@@ -8,6 +8,8 @@ use App\Enums\QuoteStatus;
 use App\Exceptions\BusinessRuleException;
 use App\Models\Tenant;
 use App\Services\Sales\DocumentNumberingService;
+use App\Services\Sales\DocumentTotalsCalculator;
+use App\Services\Sales\QuoteLifecycleService;
 use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
@@ -64,33 +66,37 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
     {
         $tenantId = (string) $data['tenant_id'];
 
+        $date = CarbonImmutable::parse($data['date'] ?? $this->today($tenantId));
         $calculatedItems = [];
         foreach ($items as $item) {
-            $productId = isset($item['product_id']) ? (string) $item['product_id'] : null;
-            $pricing = $productId !== null ? $this->pricingService->resolvePrice(
-                productId: $productId,
-                quantity: (float) ($item['quantity'] ?? 1.0),
-                priceListId: $data['price_list_id'] ?? null,
-                discountPolicyId: $data['discount_policy_id'] ?? null
-            ) : ['unit_price' => (float) ($item['unit_price'] ?? 0.0), 'discount_percentage' => (float) ($item['discount_percentage'] ?? 0.0)];
+            if (! isset($item['tax_rate'])) {
+                throw new InvalidArgumentException('Every quote line must state its VAT rate.');
+            }
 
-            $unitPrice = isset($item['unit_price']) ? (float) $item['unit_price'] : $pricing['unit_price'];
-            $discountPct = isset($item['discount_percentage']) ? (float) $item['discount_percentage'] : $pricing['discount_percentage'];
-            $taxRate = (float) ($item['tax_rate'] ?? throw new InvalidArgumentException('Every quote line must state its VAT rate.'));
-            $qty = (float) ($item['quantity'] ?? 1.0);
-
-            $lineNet = round(($qty * $unitPrice) * (1 - ($discountPct / 100.0)), 2);
+            $quantity = DocumentTotalsCalculator::decimal($item['quantity'] ?? '1');
+            $pricing = isset($item['product_id']) && (! isset($item['unit_price']) || ! isset($item['discount_percentage']))
+                ? $this->pricingService->determineLinePrice((string) $item['product_id'], $quantity, (string) $data['contact_id'], $data['price_list_id'] ?? null, $data['discount_policy_id'] ?? null, $date->toDateString())
+                : null;
 
             $calculatedItems[] = array_merge($item, [
-                'unit_price' => $unitPrice,
-                'discount_percentage' => $discountPct,
-                'tax_rate' => $taxRate,
-                'line_total' => $lineNet,
+                'quantity' => $quantity,
+                'unit_price' => isset($item['unit_price']) ? DocumentTotalsCalculator::decimal($item['unit_price']) : ($pricing['unit_price'] ?? '0'),
+                'discount_percentage' => isset($item['discount_percentage']) ? DocumentTotalsCalculator::decimal($item['discount_percentage']) : ($pricing['discount_percentage'] ?? '0'),
+                'tax_rate' => DocumentTotalsCalculator::decimal($item['tax_rate']),
             ]);
         }
 
-        $totals = $this->pricingService->calculateOrderTotals($calculatedItems, $data['discount_policy_id'] ?? null);
-        $date = CarbonImmutable::parse($data['date'] ?? $this->today($tenantId));
+        $decimalTotals = (new DocumentTotalsCalculator)->calculateDecimal($calculatedItems);
+        foreach ($decimalTotals['items'] as $index => $line) {
+            $calculatedItems[$index] = array_merge($calculatedItems[$index], $line);
+        }
+        $totals = [
+            'subtotal' => $decimalTotals['subtotal'],
+            'discount_total' => $decimalTotals['discount_total'],
+            'net_total' => $decimalTotals['total_net'],
+            'tax_total' => $decimalTotals['total_tax'],
+            'gross_total' => $decimalTotals['total_gross'],
+        ];
 
         $quote = DB::transaction(function () use ($data, $tenantId, $totals, $calculatedItems, $date): SalesQuote {
             $number = $this->numbering->next('quote', $date->year, $tenantId);
@@ -125,13 +131,13 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
                     'quote_id' => (string) $quote->id,
                     'product_id' => $item['product_id'] ?? null,
                     'description' => $item['description'] ?? 'Product item',
-                    'quantity' => (float) ($item['quantity'] ?? 1.0),
-                    'unit_price' => (float) ($item['unit_price'] ?? 0.0),
-                    'tax_rate' => (float) ($item['tax_rate'] ?? 0.0),
-                    'discount_percentage' => (float) ($item['discount_percentage'] ?? 0.0),
-                    'line_total' => (float) ($item['line_total'] ?? 0.0),
-                    'cost_price' => (float) ($item['cost_price'] ?? 0.0),
-                    'margin_percentage' => (float) ($item['margin_percentage'] ?? 0.0),
+                    'quantity' => $item['quantity'],
+                    'unit_price' => $item['unit_price'],
+                    'tax_rate' => $item['tax_rate'],
+                    'discount_percentage' => $item['discount_percentage'],
+                    'line_total' => $item['line_total'],
+                    'cost_price' => DocumentTotalsCalculator::decimal($item['cost_price'] ?? '0'),
+                    'margin_percentage' => DocumentTotalsCalculator::decimal($item['margin_percentage'] ?? '0'),
                     'uom' => $item['uom'] ?? 'EA',
                     'notes' => $item['notes'] ?? null,
                 ]);
@@ -283,6 +289,7 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
     public function acceptQuote(SalesQuote $quote): SalesQuote
     {
         QuoteStatus::assertTransition($quote->status, QuoteStatus::Accepted);
+        app(QuoteLifecycleService::class)->assertWithinValidity($quote);
 
         $quote->update([
             'status' => QuoteStatus::Accepted->value,
@@ -313,6 +320,7 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
         return DB::transaction(function () use ($quote, $userId): SalesOrder {
             $locked = SalesQuote::query()->whereKey($quote->id)->lockForUpdate()->firstOrFail();
             QuoteStatus::assertTransition($locked->status, QuoteStatus::Accepted);
+            app(QuoteLifecycleService::class)->assertWithinValidity($locked);
 
             if ($locked->converted_to_order_id !== null || SalesOrder::query()->where('quote_id', $locked->id)->exists()) {
                 throw new BusinessRuleException(__('sales.quote_already_converted'));
@@ -342,11 +350,11 @@ final class SalesQuoteService implements SalesQuoteServiceInterface
                 $orderItems[] = [
                     'product_id' => $item->product_id,
                     'description' => (string) $item->description,
-                    'quantity' => (float) $item->quantity,
-                    'unit_price' => (float) $item->unit_price,
-                    'tax_rate' => (float) $item->tax_rate,
-                    'discount_percentage' => (float) $item->discount_percentage,
-                    'cost_price' => (float) $item->cost_price,
+                    'quantity' => DocumentTotalsCalculator::decimal($item->quantity),
+                    'unit_price' => DocumentTotalsCalculator::decimal($item->unit_price),
+                    'tax_rate' => DocumentTotalsCalculator::decimal($item->tax_rate),
+                    'discount_percentage' => DocumentTotalsCalculator::decimal($item->discount_percentage),
+                    'cost_price' => DocumentTotalsCalculator::decimal($item->cost_price),
                     'uom' => (string) $item->uom,
                     'notes' => $item->notes,
                 ];

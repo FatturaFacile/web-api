@@ -55,6 +55,7 @@ Artisan::command('inspire', function () {
 Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
+Schedule::command('sales:expire-quotes')->dailyAt('00:30')->withoutOverlapping()->onOneServer();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
 // Expired Bearer tokens stop working at once; this only removes their rows.
 Schedule::command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('04:05')->withoutOverlapping()->onOneServer();
