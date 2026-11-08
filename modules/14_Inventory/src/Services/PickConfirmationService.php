@@ -41,8 +41,11 @@ final class PickConfirmationService
 
             $this->freeHold($locked);
 
+            $list = StockPickList::query()->with('wave')->findOrFail($locked->stock_pick_list_id);
+            // Lists of a wave stage their goods in the wave's shipping bin unless the picker names another bin.
+            $destinationBinId ??= $list->wave?->staging_bin_id !== null ? (string) $list->wave->staging_bin_id : null;
+
             if (Decimal::isPositive($quantityPicked)) {
-                $list = StockPickList::findOrFail($locked->stock_pick_list_id);
 
                 $this->movements->executeTransfer(new StockTransferDTO(
                     stockItemId: $locked->stock_item_id,
@@ -65,6 +68,7 @@ final class PickConfirmationService
                 'status' => $isShort ? 'shorted' : 'picked',
                 'picked_at' => now(),
                 'picked_by_user_id' => $userId,
+                'destination_bin_id' => Decimal::isPositive($quantityPicked) ? $destinationBinId : null,
             ]);
 
             $this->advanceList((string) $locked->stock_pick_list_id);
@@ -81,7 +85,7 @@ final class PickConfirmationService
         return DB::transaction(function () use ($list): StockPickList {
             $locked = StockPickList::query()->whereKey($list->id)->lockForUpdate()->firstOrFail();
 
-            if (in_array($locked->status, ['completed', 'cancelled'], true)) {
+            if (in_array($locked->status, ['completed', 'cancelled', 'shipped'], true)) {
                 throw new StockRuleViolation("A pick list in status [{$locked->status}] cannot be cancelled.");
             }
 

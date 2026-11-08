@@ -13,6 +13,7 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
 use Modules\Inventory\Contracts\StockValuationServiceInterface;
 use Modules\Inventory\Models\StockItem;
+use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\Warehouse;
 use Throwable;
 
@@ -48,22 +49,39 @@ final class RecalculateInventoryValuationJob implements ShouldBeUnique, ShouldQu
         return ($this->tenantId ?? 'all').':'.$this->valuationMethod;
     }
 
+    /**
+     * One snapshot per item and warehouse of the tenant where the item has stock, valued with the method of the item's
+     * category (StockValuationService::generateDailySnapshot). The `valuationMethod` of the job is kept for the unique
+     * id of queued jobs only: the method is the category's, not the job's.
+     */
     public function handle(StockValuationServiceInterface $service): void
     {
-        $warehouses = Warehouse::where('is_active', true)->get();
+        $warehouses = Warehouse::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('is_active', true)
+            ->when($this->tenantId !== null, fn ($query) => $query->where('tenant_id', $this->tenantId))
+            ->get();
 
-        $itemsQuery = StockItem::where('is_active', true);
-        if ($this->tenantId !== null) {
-            $itemsQuery->where('tenant_id', $this->tenantId);
-        }
+        StockItem::withoutGlobalScopes()
+            ->whereNull('deleted_at')
+            ->where('is_active', true)
+            ->when($this->tenantId !== null, fn ($query) => $query->where('tenant_id', $this->tenantId))
+            ->chunkById(100, function ($items) use ($service, $warehouses): void {
+                foreach ($items as $item) {
+                    foreach ($warehouses->where('tenant_id', $item->tenant_id) as $warehouse) {
+                        $hasStock = StockQuant::withoutGlobalScopes()
+                            ->whereNull('deleted_at')
+                            ->where('stock_item_id', $item->id)
+                            ->where('quantity_on_hand', '>', 0)
+                            ->whereHas('bin.rack.aisle.zone', static fn ($zone) => $zone->withoutGlobalScopes()->where('warehouse_id', $warehouse->id))
+                            ->exists();
 
-        $itemsQuery->chunkById(100, function ($items) use ($service, $warehouses): void {
-            foreach ($items as $item) {
-                foreach ($warehouses as $warehouse) {
-                    $service->capturePeriodicSnapshot($item, $warehouse->id, $this->valuationMethod);
+                        if ($hasStock) {
+                            $service->generateDailySnapshot($item, (string) $warehouse->id);
+                        }
+                    }
                 }
-            }
-        });
+            });
     }
 
     public function failed(?Throwable $exception): void

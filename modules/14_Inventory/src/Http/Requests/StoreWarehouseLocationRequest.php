@@ -7,6 +7,7 @@ namespace Modules\Inventory\Http\Requests;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Modules\Inventory\Models\WarehouseBin;
 
 final class StoreWarehouseLocationRequest extends FormRequest
 {
@@ -31,6 +32,8 @@ final class StoreWarehouseLocationRequest extends FormRequest
             'pick_sequence' => ['nullable', 'integer', 'min:0'],
             'max_weight_kg' => ['nullable', 'numeric', 'min:0'],
             'max_volume_cbm' => ['nullable', 'numeric', 'min:0'],
+            'max_quantity' => ['nullable', 'numeric', 'gt:0'],
+            'bin_type' => ['nullable', 'string', Rule::in(WarehouseBin::BIN_TYPES)],
         ];
     }
 }

@@ -27,6 +27,9 @@ final class SafetyDataSheetVersion extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<SafetyDataSheet, $this>
+     */
     public function sheet(): BelongsTo
     {
         return $this->belongsTo(SafetyDataSheet::class, 'safety_data_sheet_id');

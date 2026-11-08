@@ -15,6 +15,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Inventory\Services\OutboundIssuePreference;
 use Modules\Inventory\Services\ProductStockLedger;
 
 /**
@@ -26,10 +27,23 @@ use Modules\Inventory\Services\ProductStockLedger;
  */
 class StockService
 {
-    public function __construct(private readonly ProductStockLedger $ledger) {}
+    public function __construct(
+        private readonly ProductStockLedger $ledger,
+        private readonly OutboundIssuePreference $preference,
+    ) {}
 
+    /**
+     * The warehouse of documents that name none: the one chosen by the WMS shipment confirmation while it runs
+     * (OutboundIssuePreference), else the primary warehouse, else the oldest one.
+     */
     public function defaultWarehouse(): ?Warehouse
     {
+        $preferred = $this->preference->warehouseId();
+
+        if ($preferred !== null) {
+            return Warehouse::query()->find($preferred);
+        }
+
         return Warehouse::query()->orderByDesc('is_primary')->orderBy('created_at')->first();
     }
 

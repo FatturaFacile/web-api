@@ -19,7 +19,7 @@ use Modules\Inventory\Models\InventoryAdjustment;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\Warehouse;
-use Modules\Inventory\Models\WarehouseBin;
+use Modules\Inventory\Services\WarehouseLocationService;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
@@ -78,8 +78,9 @@ beforeEach(function (): void {
         'company_id' => $this->tenant->id,
     ]);
 
-    $this->bin = WarehouseBin::factory()->create([
-        'tenant_id' => $this->tenant->id,
+    // A bin of the adjustment warehouse: adjustment lines must name bins of their warehouse.
+    $this->bin = app(WarehouseLocationService::class)->addBin($this->warehouse, [
+        'zone_code' => 'Z1', 'aisle_code' => 'A1', 'rack_code' => 'R1', 'bin_code' => 'B1', 'barcode' => 'BIN-'.Str::random(8),
     ]);
 
     $this->item = StockItem::factory()->create([

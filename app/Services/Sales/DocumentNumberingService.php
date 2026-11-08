@@ -38,6 +38,11 @@ class DocumentNumberingService
         'service_report' => 'SR-',
         'appointment' => 'APT-',
         'expense' => 'EXP-',
+        'inventory_count' => 'CNT-',
+        'inventory_adjustment' => 'ADJ-',
+        'pick_list' => 'PICK-',
+        'pick_wave' => 'WAVE-',
+        'transfer_order' => 'TO-',
     ];
 
     public function __construct(

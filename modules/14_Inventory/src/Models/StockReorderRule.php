@@ -24,16 +24,25 @@ final class StockReorderRule extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<Warehouse, $this>
+     */
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
     public function preferredSupplier(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'preferred_supplier_id');

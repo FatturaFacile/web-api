@@ -11,6 +11,7 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Inventory\DTOs\InventoryCountSessionDTO;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Models\InventoryAdjustment;
@@ -240,6 +241,8 @@ test('path 3: fifo valuation calculation and moving average cost update', functi
 });
 
 test('path 4: cycle count session recording and discrepancy reconciliation', function (): void {
+    // Approved count differences reach the General Ledger, which needs an open fiscal year.
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->year);
     /** @var DoubleEntryMovementService $movementService */
     $movementService = app(DoubleEntryMovementService::class);
     /** @var InventoryCountService $countService */

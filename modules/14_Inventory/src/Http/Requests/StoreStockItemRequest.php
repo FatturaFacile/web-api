@@ -24,7 +24,7 @@ final class StoreStockItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => ['required', 'uuid'],
+            'category_id' => ['required', 'uuid', $this->tenantExists('stock_item_categories')],
             'sku' => ['required', 'string', 'max:100'],
             'name' => ['required', 'string', 'max:255'],
             'uom' => ['required', 'string', 'max:20'],

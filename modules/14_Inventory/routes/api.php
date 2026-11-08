@@ -5,11 +5,15 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Inventory\Http\Controllers\BarcodeController;
 use Modules\Inventory\Http\Controllers\CustomerPortalStockController;
+use Modules\Inventory\Http\Controllers\CycleCountController;
 use Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
 use Modules\Inventory\Http\Controllers\InventoryCountController;
+use Modules\Inventory\Http\Controllers\OutboundController;
 use Modules\Inventory\Http\Controllers\PortalMovementRequestController;
 use Modules\Inventory\Http\Controllers\ProductChargeController;
+use Modules\Inventory\Http\Controllers\PutawayController;
 use Modules\Inventory\Http\Controllers\RepairOrderController;
+use Modules\Inventory\Http\Controllers\ReplenishmentController;
 use Modules\Inventory\Http\Controllers\SafetyDataSheetController;
 use Modules\Inventory\Http\Controllers\ShippingController;
 use Modules\Inventory\Http\Controllers\StockItemController;
@@ -21,8 +25,10 @@ use Modules\Inventory\Http\Controllers\StockPickListController;
 use Modules\Inventory\Http\Controllers\StockQuantController;
 use Modules\Inventory\Http\Controllers\StockReservationController;
 use Modules\Inventory\Http\Controllers\StockValuationController;
+use Modules\Inventory\Http\Controllers\TransferOrderController;
 use Modules\Inventory\Http\Controllers\WarehouseController;
 use Modules\Inventory\Http\Controllers\WarehouseLocationController;
+use Modules\Inventory\Http\Controllers\WarehouseStructureController;
 use Modules\Inventory\Http\Controllers\WarehouseTerminalController;
 use Modules\Inventory\Http\Controllers\WeighbridgeController;
 
@@ -146,9 +152,66 @@ Route::prefix('api/v1/inventory')
         Route::post('lots/{id}/release', [StockLotController::class, 'release'])->name('inventory.lots.release');
         Route::get('availability', [StockLotController::class, 'availability'])->name('inventory.availability');
 
-        // 10. Valuation (FIFO / AVCO / Standard Costing)
+        // 10. Valuation (FIFO / AVCO / Standard Costing) and KPIs
         Route::get('valuation/summary', [StockValuationController::class, 'summary'])->name('inventory.valuation.summary');
+        Route::get('valuation/at-date', [StockValuationController::class, 'atDate'])->name('inventory.valuation.at-date');
         Route::post('valuation/snapshot', [StockValuationController::class, 'captureSnapshot'])->name('inventory.valuation.snapshot');
+        Route::get('kpis', [StockValuationController::class, 'kpis'])->name('inventory.kpis');
+
+        // 11. Location master: zones and bins with type, capacity and occupancy
+        Route::get('warehouses/{id}/zones', [WarehouseStructureController::class, 'zones'])->name('inventory.warehouses.zones.index');
+        Route::get('warehouses/{id}/bins', [WarehouseStructureController::class, 'bins'])->name('inventory.warehouses.bins.index');
+        Route::patch('zones/{id}', [WarehouseStructureController::class, 'updateZone'])->name('inventory.zones.update');
+        Route::patch('bins/{id}', [WarehouseStructureController::class, 'updateBin'])->name('inventory.bins.update');
+
+        // 12. Putaway rules and directed putaway
+        Route::get('putaway-rules', [PutawayController::class, 'index'])->name('inventory.putaway-rules.index');
+        Route::post('putaway-rules', [PutawayController::class, 'store'])->name('inventory.putaway-rules.store');
+        Route::put('putaway-rules/{id}', [PutawayController::class, 'update'])->name('inventory.putaway-rules.update');
+        Route::delete('putaway-rules/{id}', [PutawayController::class, 'destroy'])->name('inventory.putaway-rules.destroy');
+        Route::post('putaway/suggest', [PutawayController::class, 'suggest'])->name('inventory.putaway.suggest');
+        Route::post('putaway', [PutawayController::class, 'putAway'])->name('inventory.putaway.execute');
+
+        // 13. Outbound: sales order reservations, picking waves, shipment confirmation (delivery note)
+        Route::post('sales-orders/{id}/reserve', [OutboundController::class, 'reserve'])->name('inventory.sales-orders.reserve');
+        Route::post('sales-orders/{id}/release-reservations', [OutboundController::class, 'releaseReservations'])->name('inventory.sales-orders.release-reservations');
+        Route::get('waves', [OutboundController::class, 'waves'])->name('inventory.waves.index');
+        Route::post('waves', [OutboundController::class, 'releaseWave'])->name('inventory.waves.store');
+        Route::get('waves/{id}', [OutboundController::class, 'showWave'])->name('inventory.waves.show');
+        Route::post('waves/{id}/cancel', [OutboundController::class, 'cancelWave'])->name('inventory.waves.cancel');
+        Route::post('pick-lists/{id}/ship', [OutboundController::class, 'ship'])->name('inventory.pick-lists.ship');
+
+        // 14. Transfer orders between warehouses (stock in transit)
+        Route::get('transfer-orders', [TransferOrderController::class, 'index'])->name('inventory.transfer-orders.index');
+        Route::post('transfer-orders', [TransferOrderController::class, 'store'])->name('inventory.transfer-orders.store');
+        Route::get('transfer-orders/{id}', [TransferOrderController::class, 'show'])->name('inventory.transfer-orders.show');
+        Route::post('transfer-orders/{id}/ship', [TransferOrderController::class, 'ship'])->name('inventory.transfer-orders.ship');
+        Route::post('transfer-orders/{id}/receive', [TransferOrderController::class, 'receive'])->name('inventory.transfer-orders.receive');
+        Route::post('transfer-orders/{id}/cancel', [TransferOrderController::class, 'cancel'])->name('inventory.transfer-orders.cancel');
+
+        // 15. Cycle counting: ABC classes, count plans, recount, cancel
+        Route::post('abc-classification/run', [CycleCountController::class, 'classify'])->name('inventory.abc-classification.run');
+        Route::get('cycle-count-plans', [CycleCountController::class, 'index'])->name('inventory.cycle-count-plans.index');
+        Route::post('cycle-count-plans', [CycleCountController::class, 'store'])->name('inventory.cycle-count-plans.store');
+        Route::post('cycle-count-plans/run-due', [CycleCountController::class, 'runDue'])->name('inventory.cycle-count-plans.run-due');
+        Route::put('cycle-count-plans/{id}', [CycleCountController::class, 'update'])->name('inventory.cycle-count-plans.update');
+        Route::delete('cycle-count-plans/{id}', [CycleCountController::class, 'destroy'])->name('inventory.cycle-count-plans.destroy');
+        Route::post('cycle-count-plans/{id}/run', [CycleCountController::class, 'run'])->name('inventory.cycle-count-plans.run');
+        Route::post('counts/{id}/recount', [InventoryCountController::class, 'recount'])->name('inventory.counts.recount');
+        Route::post('counts/{id}/cancel', [InventoryCountController::class, 'cancel'])->name('inventory.counts.cancel');
+
+        // 16. Replenishment: reorder rules, suggestions, hand-off to Procurement purchase suggestions
+        Route::get('reorder-rules', [ReplenishmentController::class, 'index'])->name('inventory.reorder-rules.index');
+        Route::post('reorder-rules', [ReplenishmentController::class, 'store'])->name('inventory.reorder-rules.store');
+        Route::put('reorder-rules/{id}', [ReplenishmentController::class, 'update'])->name('inventory.reorder-rules.update');
+        Route::delete('reorder-rules/{id}', [ReplenishmentController::class, 'destroy'])->name('inventory.reorder-rules.destroy');
+        Route::get('replenishment/suggestions', [ReplenishmentController::class, 'suggestions'])->name('inventory.replenishment.suggestions');
+        Route::post('replenishment/hand-off', [ReplenishmentController::class, 'handOff'])->middleware('module.access:procurement')->name('inventory.replenishment.hand-off');
+
+        // 17. Handheld lookup and lot recall
+        Route::get('barcode/lookup', [BarcodeController::class, 'lookup'])->name('inventory.barcode.lookup');
+        Route::get('lots/{id}/recall', [StockLotController::class, 'recallReport'])->name('inventory.lots.recall-report');
+        Route::post('lots/{id}/recall', [StockLotController::class, 'recall'])->name('inventory.lots.recall');
     });
 
 Route::prefix('api/v1/invoicing')

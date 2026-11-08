@@ -27,21 +27,33 @@ final class StockShortfall extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
+    /**
+     * @return BelongsTo<Product, $this>
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
 
+    /**
+     * @return BelongsTo<Warehouse, $this>
+     */
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
+    /**
+     * @return BelongsTo<WarehouseBin, $this>
+     */
     public function bin(): BelongsTo
     {
         return $this->belongsTo(WarehouseBin::class, 'warehouse_bin_id');

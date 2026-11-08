@@ -168,7 +168,7 @@ final class PackingListService
             ->filter(static fn ($line): bool => bccomp((string) $line->quantity_picked, '0', 4) > 0)
             ->groupBy(static fn ($line): string => $line->stock_item_id.'|'.$line->lot_id)
             ->map(static fn (Collection $lines): array => [
-                'item' => $lines->first()->item,
+                'item' => StockItem::query()->findOrFail($lines->first()->stock_item_id),
                 'lot_id' => $lines->first()->lot_id,
                 'quantity' => $lines->reduce(static fn (string $sum, $line): string => bcadd($sum, (string) $line->quantity_picked, 4), '0'),
             ])

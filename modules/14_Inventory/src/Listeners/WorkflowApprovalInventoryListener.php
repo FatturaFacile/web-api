@@ -6,6 +6,7 @@ namespace Modules\Inventory\Listeners;
 
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Inventory\Actions\PostInventoryAdjustmentAction;
+use Modules\Inventory\Actions\RejectInventoryAdjustmentAction;
 use Modules\Inventory\Models\InventoryAdjustment;
 use Modules\Inventory\Models\InventoryCountSession;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
@@ -56,11 +57,9 @@ final readonly class WorkflowApprovalInventoryListener implements ShouldQueueAft
 
         if ($targetType === InventoryAdjustment::class) {
             $adjustment = InventoryAdjustment::find($targetId);
-            if ($adjustment) {
-                $adjustment->update([
-                    'status' => 'rejected',
-                    'is_locked' => false,
-                ]);
+            if ($adjustment && $adjustment->status === 'pending_approval') {
+                // Also puts a physical count whose differences were rejected back in progress.
+                app(RejectInventoryAdjustmentAction::class)->execute($adjustment);
             }
         } elseif ($targetType === InventoryCountSession::class) {
             $session = InventoryCountSession::find($targetId);

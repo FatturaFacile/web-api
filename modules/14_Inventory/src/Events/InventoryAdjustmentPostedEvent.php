@@ -7,6 +7,7 @@ namespace Modules\Inventory\Events;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Illuminate\Support\Str;
 use Modules\Inventory\Models\InventoryAdjustment;
+use Modules\Inventory\Support\Quantity;
 
 final readonly class InventoryAdjustmentPostedEvent implements DomainEventInterface
 {
@@ -34,17 +35,17 @@ final readonly class InventoryAdjustmentPostedEvent implements DomainEventInterf
      */
     public static function forAdjustment(InventoryAdjustment $adjustment, array $lines): self
     {
-        $impact = 0.0;
+        $impact = '0';
         $eventLines = [];
 
         foreach ($lines as $line) {
-            $lineImpact = round((float) $line['quantity_delta'] * (float) $line['unit_cost'], 4);
-            $impact += $lineImpact;
+            $lineImpact = Quantity::mul($line['quantity_delta'], $line['unit_cost']);
+            $impact = Quantity::add($impact, $lineImpact);
             $eventLines[] = [
                 'item_id' => (string) $line['stock_item_id'],
-                'quantity_delta' => (float) $line['quantity_delta'],
-                'unit_cost' => (float) $line['unit_cost'],
-                'cost_impact' => $lineImpact,
+                'quantity_delta' => (float) Quantity::of($line['quantity_delta']),
+                'unit_cost' => (float) Quantity::of($line['unit_cost']),
+                'cost_impact' => (float) $lineImpact,
             ];
         }
 
@@ -59,7 +60,7 @@ final readonly class InventoryAdjustmentPostedEvent implements DomainEventInterf
                 default => 'mixed',
             },
             reasonCode: (string) ($adjustment->reason ?? 'adjustment'),
-            totalCostImpact: round($impact, 2),
+            totalCostImpact: (float) Quantity::of($impact, 2),
             lines: $eventLines,
             companyId: (string) ($adjustment->company_id ?? ''),
             tenantId: (string) $adjustment->tenant_id,

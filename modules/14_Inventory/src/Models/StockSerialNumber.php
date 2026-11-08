@@ -21,16 +21,25 @@ final class StockSerialNumber extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
+    /**
+     * @return BelongsTo<WarehouseBin, $this>
+     */
     public function bin(): BelongsTo
     {
         return $this->belongsTo(WarehouseBin::class, 'current_warehouse_bin_id');
     }
 
+    /**
+     * @return BelongsTo<StockLot, $this>
+     */
     public function lot(): BelongsTo
     {
         return $this->belongsTo(StockLot::class, 'lot_id');

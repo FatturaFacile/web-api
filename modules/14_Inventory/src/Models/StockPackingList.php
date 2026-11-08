@@ -25,11 +25,17 @@ final class StockPackingList extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return HasMany<StockPackage, $this>
+     */
     public function packages(): HasMany
     {
         return $this->hasMany(StockPackage::class, 'stock_packing_list_id');
     }
 
+    /**
+     * @return BelongsTo<StockPickList, $this>
+     */
     public function pickList(): BelongsTo
     {
         return $this->belongsTo(StockPickList::class, 'stock_pick_list_id');

@@ -32,6 +32,9 @@ final class InventoryAdjustment extends BaseEnterpriseModel implements LockableB
         return (bool) $this->is_locked;
     }
 
+    /**
+     * @return BelongsTo<Warehouse, $this>
+     */
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');

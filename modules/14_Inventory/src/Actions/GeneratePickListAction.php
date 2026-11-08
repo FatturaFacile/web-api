@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Actions;
 
+use App\Services\Sales\DocumentNumberingService;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Exceptions\StockRuleViolation;
 use Modules\Inventory\Models\StockItem;
@@ -26,7 +26,8 @@ final readonly class GeneratePickListAction
 {
     public function __construct(
         private StockAllocationPlanner $planner,
-        private PickRouteOptimizer $route
+        private PickRouteOptimizer $route,
+        private DocumentNumberingService $numbering
     ) {}
 
     /**
@@ -37,9 +38,10 @@ final readonly class GeneratePickListAction
         array $items,
         ?string $assignedPickerId = null,
         ?string $originType = null,
-        ?string $originId = null
+        ?string $originId = null,
+        ?string $waveId = null
     ): StockPickList {
-        return DB::transaction(function () use ($warehouseId, $items, $assignedPickerId, $originType, $originId): StockPickList {
+        return DB::transaction(function () use ($warehouseId, $items, $assignedPickerId, $originType, $originId, $waveId): StockPickList {
             $warehouse = Warehouse::findOrFail($warehouseId);
             $stops = [];
             $shortages = [];
@@ -78,12 +80,13 @@ final readonly class GeneratePickListAction
                 'tenant_id' => $warehouse->tenant_id,
                 'company_id' => $warehouse->company_id,
                 'warehouse_id' => $warehouse->id,
-                'pick_list_number' => 'PICK-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
+                'pick_list_number' => $this->numbering->next('pick_list', null, (string) $warehouse->tenant_id)['number'],
                 'assigned_picker_user_id' => $assignedPickerId,
                 'status' => $assignedPickerId === null ? 'draft' : 'assigned',
                 'origin_document_type' => $originType,
                 'origin_document_id' => $originId,
                 'shortages' => $shortages === [] ? null : $shortages,
+                'pick_wave_id' => $waveId,
             ]);
 
             $bins = WarehouseBin::query()->with('rack.aisle.zone')->whereIn('id', array_column($stops, 'warehouse_bin_id'))->get()->keyBy('id');

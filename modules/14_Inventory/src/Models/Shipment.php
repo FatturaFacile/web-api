@@ -7,7 +7,11 @@ namespace Modules\Inventory\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon|null $delivered_at
+ */
 final class Shipment extends BaseEnterpriseModel
 {
     protected $table = 'shipments';
@@ -25,16 +29,25 @@ final class Shipment extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<ShippingCarrier, $this>
+     */
     public function carrier(): BelongsTo
     {
         return $this->belongsTo(ShippingCarrier::class, 'shipping_carrier_id');
     }
 
+    /**
+     * @return BelongsTo<StockPackingList, $this>
+     */
     public function packingList(): BelongsTo
     {
         return $this->belongsTo(StockPackingList::class, 'stock_packing_list_id');
     }
 
+    /**
+     * @return HasMany<ShipmentTrackingEvent, $this>
+     */
     public function trackingEvents(): HasMany
     {
         return $this->hasMany(ShipmentTrackingEvent::class, 'shipment_id')->orderBy('occurred_at');

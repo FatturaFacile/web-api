@@ -28,7 +28,7 @@ final readonly class CheckReorderRulesListener implements ShouldQueueAfterCommit
             ->get();
 
         foreach ($rules as $rule) {
-            $this->replenishmentService->triggerReorderIfThresholdReached($rule);
+            $this->replenishmentService->evaluateReorderRule($rule);
         }
     }
 }

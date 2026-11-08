@@ -12,11 +12,17 @@ final class WarehouseAisle extends BaseEnterpriseModel
 {
     protected $table = 'warehouse_aisles';
 
+    /**
+     * @return BelongsTo<WarehouseZone, $this>
+     */
     public function zone(): BelongsTo
     {
         return $this->belongsTo(WarehouseZone::class, 'warehouse_zone_id');
     }
 
+    /**
+     * @return HasMany<WarehouseRack, $this>
+     */
     public function racks(): HasMany
     {
         return $this->hasMany(WarehouseRack::class, 'warehouse_aisle_id');

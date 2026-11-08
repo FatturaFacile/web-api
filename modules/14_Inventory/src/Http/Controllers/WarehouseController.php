@@ -66,7 +66,7 @@ final class WarehouseController extends Controller
                     new OA\Property(property: 'code', type: 'string', example: 'WH-MAIN'),
                     new OA\Property(property: 'name', type: 'string', example: 'Milano Central Logistics Hub'),
                     new OA\Property(property: 'type', type: 'string', enum: ['standard', 'van', 'transit', 'quarantine', 'consignment', 'virtual'], example: 'standard'),
-                    new OA\Property(property: 'picking_strategy', type: 'string', enum: ['fifo', 'fefo'], nullable: true),
+                    new OA\Property(property: 'picking_strategy', type: 'string', enum: ['fifo', 'fefo', 'lifo'], nullable: true),
                     new OA\Property(property: 'is_virtual', type: 'boolean', description: 'A logical warehouse with no physical location, such as stock held at a third party'),
                     new OA\Property(property: 'owner_contact_id', type: 'string', format: 'uuid', nullable: true, description: 'The customer who owns the stock kept here, shown on the customer portal'),
                     new OA\Property(property: 'address', type: 'string', example: 'Via Logistica 10'),

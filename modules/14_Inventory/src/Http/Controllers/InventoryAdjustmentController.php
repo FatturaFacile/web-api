@@ -10,6 +10,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Inventory\Actions\CreateInventoryAdjustmentAction;
 use Modules\Inventory\Actions\PostInventoryAdjustmentAction;
+use Modules\Inventory\Actions\RejectInventoryAdjustmentAction;
 use Modules\Inventory\DTOs\InventoryAdjustmentDTO;
 use Modules\Inventory\Http\Requests\StoreInventoryAdjustmentRequest;
 use Modules\Inventory\Http\Requests\WorkflowActionRequest;
@@ -128,15 +129,17 @@ final class InventoryAdjustmentController extends Controller
     #[OA\Post(
         path: '/api/v1/inventory/adjustments/{id}/approve',
         summary: 'Approve inventory adjustment',
-        description: 'Approves write-off adjustment and executes double-entry stock reductions. Enforces segregation of duties.',
+        description: 'Approves an adjustment waiting for approval (manager roles owner/admin, never its creator: segregation of duties) and posts exactly the lines that were submitted: stock movements plus the cost impact to the General Ledger. Lines sent in the request body are ignored. When the adjustment carries the differences of a physical count, the count session is closed as reconciled and its stock freeze ends.',
         tags: ['Inventory Adjustments'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Adjustment approved'),
-            new OA\Response(response: 403, description: 'Segregation of duties violation'),
+            new OA\Response(response: 200, description: 'Adjustment approved and posted'),
+            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 403, description: 'Not a manager, read-only role, or segregation of duties violation'),
             new OA\Response(response: 404, description: 'Adjustment not found'),
+            new OA\Response(response: 422, description: 'The adjustment is not pending approval, or the stock does not allow it'),
         ]
     )]
     #[EnterpriseEndpoint(summary: 'Approve inventory adjustment', tags: ['Inventory'])]
@@ -145,9 +148,7 @@ final class InventoryAdjustmentController extends Controller
         $adjustment = InventoryAdjustment::findOrFail($id);
         $this->authorize('approve', $adjustment);
 
-        // Lines can be passed in request or stored; execute posting
-        $lines = (array) $request->input('lines', []);
-        $updated = $action->execute($adjustment, $lines, (string) auth()->id());
+        $updated = $action->execute($adjustment, [], (string) auth()->id());
 
         return response()->json(new InventoryAdjustmentResource($updated));
     }
@@ -166,16 +167,11 @@ final class InventoryAdjustmentController extends Controller
         ]
     )]
     #[EnterpriseEndpoint(summary: 'Reject inventory adjustment', tags: ['Inventory'])]
-    public function reject(string $id, WorkflowActionRequest $request): JsonResponse
+    public function reject(string $id, WorkflowActionRequest $request, RejectInventoryAdjustmentAction $action): JsonResponse
     {
         $adjustment = InventoryAdjustment::findOrFail($id);
         $this->authorize('reject', $adjustment);
 
-        $adjustment->update([
-            'status' => 'rejected',
-            'is_locked' => false,
-        ]);
-
-        return response()->json(new InventoryAdjustmentResource($adjustment));
+        return response()->json(new InventoryAdjustmentResource($action->execute($adjustment)));
     }
 }

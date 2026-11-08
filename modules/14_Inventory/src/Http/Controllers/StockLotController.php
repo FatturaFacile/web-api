@@ -11,11 +11,13 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Inventory\Http\Requests\AddLotComponentRequest;
 use Modules\Inventory\Http\Requests\StoreStockLotRequest;
+use Modules\Inventory\Http\Requests\WmsQueryRequest;
 use Modules\Inventory\Http\Resources\StockLotResource;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockLot;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Services\LotRecallService;
 use Modules\Inventory\Services\LotTraceabilityService;
 use Modules\Inventory\Services\StockAllocationPlanner;
 use OpenApi\Attributes as OA;
@@ -305,5 +307,46 @@ final class StockLotController extends Controller
         $warehouse = Warehouse::findOrFail($validated['warehouse_id']);
 
         return response()->json(['strategy' => $planner->strategyFor($item, $warehouse)->value, 'quants' => $planner->availability($item, $warehouse)]);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/inventory/lots/{id}/recall',
+        operationId: 'wmsLotRecallReport',
+        summary: 'Recall report of a lot',
+        description: 'Forward trace of the lot through its genealogy: every affected lot with the stock still on hand (per bin and warehouse), the delivery notes and customers that received it (by batch number on the DDT lines and by the lot of the stock issued for a DDT) and the other documents that took stock of it. Read-only.',
+        tags: ['Inventory Lots'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/WmsRecordId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Recall report', content: new OA\JsonContent(ref: '#/components/schemas/WmsLotRecall')),
+            new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
+        ]
+    )]
+    public function recallReport(string $id, LotRecallService $recall): JsonResponse
+    {
+        return response()->json($recall->report(StockLot::query()->findOrFail($id)));
+    }
+
+    #[OA\Post(
+        path: '/api/v1/inventory/lots/{id}/recall',
+        operationId: 'wmsLotRecall',
+        summary: 'Recall a lot',
+        description: 'Same report as the GET, and with quarantine=true (default) every affected lot is quarantined at once: its stock can no longer be reserved, picked, shipped or sold until released.',
+        tags: ['Inventory Lots'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/WmsRecordId')],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [
+            new OA\Property(property: 'quarantine', type: 'boolean', example: true),
+        ])),
+        responses: [
+            new OA\Response(response: 200, description: 'Recall report, lots quarantined', content: new OA\JsonContent(ref: '#/components/schemas/WmsLotRecall')),
+            new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        ]
+    )]
+    public function recall(string $id, WmsQueryRequest $request, LotRecallService $recall): JsonResponse
+    {
+        return response()->json($recall->report(StockLot::query()->findOrFail($id), $request->boolean('quarantine', true)));
     }
 }

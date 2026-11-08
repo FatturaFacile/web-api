@@ -23,11 +23,17 @@ final class ProductChargeAssignment extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<ProductChargeType, $this>
+     */
     public function type(): BelongsTo
     {
         return $this->belongsTo(ProductChargeType::class, 'product_charge_type_id');
     }
 
+    /**
+     * @return BelongsTo<Product, $this>
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
