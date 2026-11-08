@@ -15,12 +15,18 @@ docker compose stop scheduler queue_worker
 docker compose up -d postgres
 docker compose up -d --remove-orphans app web
 
+# The image CMD caches config, routes and views and then starts php-fpm. Running artisan cache commands while it is
+# still caching races with it: a route:clear in the middle breaks its `&&` chain, the container restarts and this exec
+# is killed (exit 137). Wait for the php-fpm master instead, so the caches are built once, by the CMD.
+i=0
+until docker compose exec -T app pgrep -f 'php-fpm: master' >/dev/null 2>&1; do
+  i=$((i + 1))
+  [ "$i" -ge 60 ] && { docker compose logs --tail=50 app; exit 1; }
+  sleep 2
+done
+
 docker compose exec -T app sh -c '
   set -e
-  php artisan config:cache
-  # The image CMD already ran route:cache, and caching again over a cached collection raises a TypeError
-  php artisan route:clear
-  php artisan route:cache
   php -d memory_limit=512M artisan demo:reset
   php -d memory_limit=1G artisan l5-swagger:generate
 '
