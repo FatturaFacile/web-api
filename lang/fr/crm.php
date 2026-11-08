@@ -21,4 +21,9 @@ return [
     'stage_negotiation' => 'Négociation contractuelle',
     'stage_won' => 'Gagnée',
     'stage_lost' => 'Perdue',
+    'campaign_opt_out_notice' => 'Vous recevez ce message car vous avez accepté nos communications commerciales. Répondez à cet e-mail pour ne plus les recevoir.',
+    'activity_reminder' => [
+        'subject' => 'Rappel : :subject',
+        'body' => 'L\'activité « :subject » est prévue le :due.',
+    ],
 ];

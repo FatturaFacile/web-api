@@ -8,17 +8,25 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Str;
 use Modules\CRM\Contracts\CustomerHealthServiceInterface;
+use Modules\CRM\Http\Requests\StoreAccountRequest;
+use Modules\CRM\Http\Requests\UpdateAccountRequest;
 use Modules\CRM\Http\Resources\AccountResource;
 use Modules\CRM\Http\Resources\CustomerHealthProfileResource;
 use Modules\CRM\Models\Account;
+use Modules\CRM\Models\PartyLinkLog;
+use Modules\CRM\Services\PartyMaster\AccountPartyService;
 use OpenApi\Attributes as OA;
 
+/**
+ * CRM accounts. Each account references a contact, the party master shared with invoicing, quotes and orders: the
+ * account holds CRM attributes, the contact holds master data, and the responses expose both.
+ */
 final class AccountController extends Controller
 {
     public function __construct(
         private readonly CustomerHealthServiceInterface $healthService,
+        private readonly AccountPartyService $partyService,
         private readonly TenantContext $tenantContext
     ) {}
 
@@ -28,13 +36,14 @@ final class AccountController extends Controller
     #[OA\Get(
         path: '/api/v1/crm/accounts',
         operationId: 'listCrmAccounts',
-        description: 'Returns the paginated list of accounts of the active tenant. Results can be narrowed with the query parameters.',
+        description: 'Returns the paginated list of accounts of the active tenant, each with the master data of its contact. Results can be narrowed with the query parameters.',
         summary: 'List accounts',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Accounts'],
         parameters: [
             new OA\Parameter(name: 'tier', in: 'query', required: false, description: 'Filter by tier', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'churn_risk', in: 'query', required: false, description: 'Filter by churn risk', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'contact_id', in: 'query', required: false, description: 'Accounts of a contact', schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
@@ -45,7 +54,7 @@ final class AccountController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $query = Account::where('tenant_id', $tenant->id);
+        $query = Account::with('primaryContact')->where('tenant_id', $tenant->id);
 
         if ($request->has('tier')) {
             $query->where('tier', $request->query('tier'));
@@ -53,6 +62,10 @@ final class AccountController extends Controller
 
         if ($request->has('churn_risk')) {
             $query->where('churn_risk', $request->query('churn_risk'));
+        }
+
+        if ($request->filled('contact_id')) {
+            $query->where('contact_id', $request->query('contact_id'));
         }
 
         $accounts = $query->orderBy('name')->paginate(25);
@@ -67,46 +80,33 @@ final class AccountController extends Controller
     }
 
     /**
-     * Creates a new account in the active tenant.
+     * Creates a new account linked to its contact: the given contact, the one carrying the same VAT number, fiscal
+     * code or email, or a new one built from the master data.
      */
     #[OA\Post(
         path: '/api/v1/crm/accounts',
         operationId: 'createCrmAccount',
-        description: 'Creates a new account in the active tenant.',
+        description: 'Creates a new account in the active tenant. The account references a contact (the party master shared with invoices, quotes and orders): the given contact_id, else the single contact with the same VAT number, fiscal code or email, else a new customer contact built from the master data fields.',
         summary: 'Create account',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Accounts'],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['name'], properties: [new OA\Property(property: 'name', type: 'string', maxLength: 200), new OA\Property(property: 'tier', type: 'string', nullable: true, enum: ['strategic', 'enterprise', 'mid_market', 'smb', 'standard']), new OA\Property(property: 'industry', type: 'string', maxLength: 100, nullable: true), new OA\Property(property: 'website', type: 'string', maxLength: 255, nullable: true)])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CRMStoreAccountRequest')),
         responses: [
             new OA\Response(response: 201, description: 'Account created', content: new OA\JsonContent(ref: '#/components/schemas/CRMAccountResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Read-only role', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function store(Request $request): JsonResponse
+    public function store(StoreAccountRequest $request): JsonResponse
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:200'],
-            'tier' => ['nullable', 'string', 'in:strategic,enterprise,mid_market,smb,standard'],
-            'industry' => ['nullable', 'string', 'max:100'],
-            'website' => ['nullable', 'string', 'max:255'],
-        ]);
+        $account = $this->partyService->createAccount(
+            (string) $this->tenantContext->getTenant()->id,
+            $request->validated(),
+            $request->user()?->id !== null ? (string) $request->user()->id : null,
+        );
 
-        $tenant = $this->tenantContext->getTenant();
-        $account = Account::create([
-            'id' => (string) Str::uuid7(),
-            'tenant_id' => (string) $tenant->id,
-            'name' => $request->input('name'),
-            'account_number' => 'ACC-'.strtoupper(Str::random(6)),
-            'tier' => $request->input('tier', 'standard'),
-            'industry' => $request->input('industry'),
-            'website' => $request->input('website'),
-            'owner_user_id' => $request->user()?->id,
-            'customer_health_index' => 100.00,
-            'churn_risk' => 'low',
-        ]);
-
-        return response()->json(new AccountResource($account), 201);
+        return response()->json(new AccountResource($account->load('primaryContact')), 201);
     }
 
     /**
@@ -115,7 +115,7 @@ final class AccountController extends Controller
     #[OA\Get(
         path: '/api/v1/crm/accounts/{account}',
         operationId: 'getCrmAccount',
-        description: 'Returns a single account of the active tenant.',
+        description: 'Returns a single account of the active tenant with the master data of its contact.',
         summary: 'Get account',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Accounts'],
@@ -131,41 +131,40 @@ final class AccountController extends Controller
     public function show(string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $account = Account::where('tenant_id', $tenant->id)->findOrFail($id);
+        $account = Account::with('primaryContact')->where('tenant_id', $tenant->id)->findOrFail($id);
 
         return response()->json(new AccountResource($account));
     }
 
     /**
-     * Updates an existing account of the active tenant.
+     * Updates an account: CRM attributes on the account, master data on its contact.
      */
     #[OA\Put(
         path: '/api/v1/crm/accounts/{account}',
         operationId: 'updateCrmAccount',
-        description: 'Updates an existing account of the active tenant. Also accepts the PATCH method.',
+        description: 'Updates an existing account of the active tenant. CRM attributes are stored on the account; master data fields (name, vat_number, fiscal_code, email, phone, pec, sdi_code, country) are written to the linked contact. contact_id relinks the account to another contact. Also accepts the PATCH method.',
         summary: 'Update account',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Accounts'],
         parameters: [
             new OA\Parameter(name: 'account', in: 'path', required: true, description: 'Identifier of the account', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'name'), new OA\Property(property: 'tier'), new OA\Property(property: 'industry'), new OA\Property(property: 'website'), new OA\Property(property: 'status'), new OA\Property(property: 'annual_revenue'), new OA\Property(property: 'employee_count'), new OA\Property(property: 'tags')])),
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/CRMUpdateAccountRequest')),
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/CRMAccountResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Read-only role', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateAccountRequest $request, string $id): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
         $account = Account::where('tenant_id', $tenant->id)->findOrFail($id);
+        $this->partyService->updateAccount($account, $request->validated());
 
-        $account->update($request->only([
-            'name', 'tier', 'industry', 'website', 'status', 'annual_revenue', 'employee_count', 'tags',
-        ]));
-
-        return response()->json(new AccountResource($account));
+        return response()->json(new AccountResource($account->fresh('primaryContact')));
     }
 
     /**
@@ -174,7 +173,7 @@ final class AccountController extends Controller
     #[OA\Delete(
         path: '/api/v1/crm/accounts/{account}',
         operationId: 'deleteCrmAccount',
-        description: 'Deletes a account of the active tenant.',
+        description: 'Deletes a account of the active tenant. The linked contact is kept: it is the party master of the sales documents.',
         summary: 'Delete account',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Accounts'],
@@ -223,5 +222,49 @@ final class AccountController extends Controller
         $profile = $this->healthService->evaluateHealth($account);
 
         return response()->json(new CustomerHealthProfileResource($profile));
+    }
+
+    /**
+     * Lists the decisions of the account-to-contact consolidation, so that ambiguous accounts can be resolved by
+     * relinking them (PUT /accounts/{id} with contact_id).
+     */
+    #[OA\Get(
+        path: '/api/v1/crm/accounts/party-links',
+        operationId: 'listCrmAccountPartyLinks',
+        description: 'Lists the decisions taken when CRM accounts were linked to the contact master: linked, created, ambiguous (left unlinked for a person to decide) or resolved. Resolve an ambiguous account with PUT /api/v1/crm/accounts/{id} and contact_id.',
+        summary: 'List account-contact link decisions',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['CRM Accounts'],
+        parameters: [
+            new OA\Parameter(name: 'outcome', in: 'query', required: false, description: 'Filter by outcome', schema: new OA\Schema(type: 'string', enum: ['linked', 'created', 'ambiguous', 'resolved'])),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Link decisions', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMPartyLinkLog')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function partyLinks(Request $request): JsonResponse
+    {
+        $request->validate(['outcome' => ['nullable', 'string', 'in:linked,created,ambiguous,resolved']]);
+
+        $logs = PartyLinkLog::where('tenant_id', $this->tenantContext->getTenantId())
+            ->when($request->filled('outcome'), fn ($query) => $query->where('outcome', $request->query('outcome')))
+            ->orderByDesc('updated_at')
+            ->paginate(50);
+
+        return response()->json([
+            'data' => $logs->getCollection()->map(fn (PartyLinkLog $log): array => [
+                'id' => $log->id,
+                'account_id' => $log->account_id,
+                'outcome' => $log->outcome,
+                'matched_on' => $log->matched_on,
+                'contact_id' => $log->contact_id,
+                'candidate_contact_ids' => $log->candidate_contact_ids ?? [],
+                'note' => $log->note,
+                'updated_at' => $log->updated_at?->toIso8601String(),
+            ])->values(),
+            'meta' => ['current_page' => $logs->currentPage(), 'total' => $logs->total()],
+        ]);
     }
 }

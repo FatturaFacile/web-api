@@ -15,6 +15,7 @@ final readonly class ConvertLeadDTO
         public ?string $opportunityName = null,
         public ?float $opportunityAmount = null,
         public ?string $expectedCloseDate = null,
-        public ?string $ownerUserId = null
+        public ?string $ownerUserId = null,
+        public ?string $existingContactId = null
     ) {}
 }

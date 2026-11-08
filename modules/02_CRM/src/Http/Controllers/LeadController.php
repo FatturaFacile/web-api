@@ -14,6 +14,7 @@ use Modules\CRM\DTOs\CreateLeadDTO;
 use Modules\CRM\Http\Requests\ConvertLeadRequest;
 use Modules\CRM\Http\Requests\StoreLeadRequest;
 use Modules\CRM\Http\Resources\AccountResource;
+use Modules\CRM\Http\Resources\ContactMasterDataResource;
 use Modules\CRM\Http\Resources\LeadResource;
 use Modules\CRM\Http\Resources\OpportunityResource;
 use Modules\CRM\Models\Lead;
@@ -170,9 +171,9 @@ final class LeadController extends Controller
             'first_name', 'last_name', 'company_name', 'title', 'email', 'phone', 'website', 'country', 'estimated_budget', 'tags',
         ]));
 
-        $lead->update(['score' => $this->leadService->scoreLead($lead)]);
+        $this->leadService->recalculateScore($lead);
 
-        return response()->json(new LeadResource($lead));
+        return response()->json(new LeadResource($lead->fresh()));
     }
 
     /**
@@ -273,7 +274,7 @@ final class LeadController extends Controller
     #[OA\Post(
         path: '/api/v1/crm/leads/{id}/convert',
         operationId: 'convertCrmLead',
-        description: 'Converts a lead into an account, using an existing account or creating a new one.',
+        description: 'Converts a lead into an account, using an existing account or creating a new one. The person is linked to the contact master: existing_contact_id, else the single contact with the lead email (or VAT number in custom_fields), else a new contact (contact_linked tells which). The lead consents are carried over to the contact.',
         summary: 'Convert lead',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Leads'],
@@ -282,9 +283,10 @@ final class LeadController extends Controller
         ],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CRMConvertLeadRequest')),
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'account', ref: '#/components/schemas/CRMAccountResource'), new OA\Property(property: 'contact_id', type: 'string'), new OA\Property(property: 'opportunity', ref: '#/components/schemas/CRMOpportunityResource')])),
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'account', ref: '#/components/schemas/CRMAccountResource'), new OA\Property(property: 'contact_id', type: 'string'), new OA\Property(property: 'contact', ref: '#/components/schemas/CRMContactMasterData'), new OA\Property(property: 'contact_linked', type: 'boolean', description: 'True when an existing contact was linked instead of creating one'), new OA\Property(property: 'opportunity', ref: '#/components/schemas/CRMOpportunityResource')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'Lead already converted', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
@@ -293,6 +295,10 @@ final class LeadController extends Controller
         $tenant = $this->tenantContext->getTenant();
         $lead = Lead::where('tenant_id', $tenant->id)->findOrFail($id);
         $actorId = (string) ($request->user()?->id ?? 'system');
+
+        if ($lead->status === 'converted') {
+            return response()->json(['message' => "Lead [{$lead->id}] has already been converted."], 409);
+        }
 
         $result = $this->leadService->convertLead($lead, new ConvertLeadDTO(
             existingAccountId: $request->input('existing_account_id'),
@@ -303,24 +309,31 @@ final class LeadController extends Controller
             opportunityName: $request->input('opportunity_name'),
             opportunityAmount: $request->input('opportunity_amount') ? (float) $request->input('opportunity_amount') : null,
             expectedCloseDate: $request->input('expected_close_date'),
-            ownerUserId: $request->input('owner_user_id')
+            ownerUserId: $request->input('owner_user_id'),
+            existingContactId: $request->input('existing_contact_id')
         ), $actorId);
 
         return response()->json([
-            'account' => new AccountResource($result['account']),
+            'account' => new AccountResource($result['account']->load('primaryContact')),
             'contact_id' => (string) $result['contact']->id,
+            'contact' => new ContactMasterDataResource($result['contact']),
+            'contact_linked' => $result['contact_linked'],
             'opportunity' => $result['opportunity'] ? new OpportunityResource($result['opportunity']) : null,
         ]);
     }
 
     /**
      * Returns the leads that match the given email, phone or company name.
+     *
+     * @deprecated Exact, unnormalised matching only. Use GET /api/v1/crm/duplicates?entity=leads, which normalises
+     *             email and phone and also finds duplicate groups.
      */
     #[OA\Get(
         path: '/api/v1/crm/leads/duplicates',
         operationId: 'getDetectDuplicatesCrmLeadsDuplicates',
-        description: 'Returns the leads that match the given email, phone or company name.',
-        summary: 'Detect duplicate leads',
+        description: 'Deprecated: use GET /api/v1/crm/duplicates?entity=leads (normalised email and phone, duplicate groups). Returns the leads that match the given email, phone or company name.',
+        summary: 'Detect duplicate leads (deprecated)',
+        deprecated: true,
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['CRM Leads'],
         parameters: [

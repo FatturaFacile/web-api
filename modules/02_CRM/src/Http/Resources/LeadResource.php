@@ -29,6 +29,9 @@ final class LeadResource extends JsonResource
             'status' => $this->status,
             'score' => $this->score,
             'rating' => $this->rating,
+            'score_breakdown' => $this->score_breakdown['items'] ?? [],
+            'score_model' => $this->score_breakdown['model'] ?? null,
+            'score_calculated_at' => $this->score_calculated_at?->toIso8601String(),
             'estimated_budget' => $this->estimated_budget,
             'lead_source' => $this->leadSource ? [
                 'id' => $this->leadSource->id,

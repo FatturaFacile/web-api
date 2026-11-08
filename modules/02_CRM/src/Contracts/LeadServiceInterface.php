@@ -18,12 +18,19 @@ interface LeadServiceInterface
 
     public function scoreLead(Lead $lead): int;
 
+    /**
+     * Recalculates and stores the lead's score with its explanation, after data or engagement changed.
+     *
+     * @return array{score: int, rating: string, model: string, breakdown: list<array{rule: string, points: int, reason: string}>}
+     */
+    public function recalculateScore(Lead $lead): array;
+
     public function qualifyLead(Lead $lead, string $actorUserId): Lead;
 
     public function disqualifyLead(Lead $lead, string $reason, string $actorUserId): Lead;
 
     /**
-     * @return array{account: Account, contact: Contact, opportunity: ?Opportunity}
+     * @return array{account: Account, contact: Contact, contact_linked: bool, opportunity: ?Opportunity}
      */
     public function convertLead(Lead $lead, ConvertLeadDTO $dto, string $actorUserId): array;
 

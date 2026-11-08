@@ -7,6 +7,7 @@ namespace Modules\CRM\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\CRM\Console\LinkAccountsToContactsCommand;
 use Modules\CRM\Contracts\ActivityServiceInterface;
 use Modules\CRM\Contracts\CampaignServiceInterface;
 use Modules\CRM\Contracts\CustomerHealthServiceInterface;
@@ -14,6 +15,7 @@ use Modules\CRM\Contracts\ForecastServiceInterface;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\Contracts\OpportunityServiceInterface;
 use Modules\CRM\Events\ActivityCompletedEvent;
+use Modules\CRM\Events\ActivityLoggedEvent;
 use Modules\CRM\Events\CustomerHealthChangedEvent;
 use Modules\CRM\Events\LeadConvertedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
@@ -28,6 +30,7 @@ use Modules\CRM\Events\ProjectLeadQualifiedEvent;
 use Modules\CRM\Events\ProjectOpportunityCreatedEvent;
 use Modules\CRM\Events\QuoteRequestedEvent;
 use Modules\CRM\Listeners\DispatchOutboxOnCRMEventListener;
+use Modules\CRM\Listeners\RecalculateLeadScoreListener;
 use Modules\CRM\Listeners\SalesEventListener;
 use Modules\CRM\Listeners\WorkflowApprovalCRMListener;
 use Modules\CRM\Models\Account;
@@ -71,6 +74,10 @@ final class CRMServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerEventListeners();
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([LinkAccountsToContactsCommand::class]);
+        }
     }
 
     private function registerPolicies(): void
@@ -100,6 +107,10 @@ final class CRMServiceProvider extends ServiceProvider
         Event::listen(QuoteRequestedEvent::class, DispatchOutboxOnCRMEventListener::class);
         Event::listen(ProjectOpportunityCreatedEvent::class, DispatchOutboxOnCRMEventListener::class);
         Event::listen(ProjectLeadQualifiedEvent::class, DispatchOutboxOnCRMEventListener::class);
+
+        // Engagement-based lead scoring follows logged and completed activities.
+        Event::listen(ActivityLoggedEvent::class, RecalculateLeadScoreListener::class);
+        Event::listen(ActivityCompletedEvent::class, RecalculateLeadScoreListener::class);
 
         // 2. Module 05 Sales & Invoicing -> CRM Upstream Integration
         Event::listen(SalesQuoteAcceptedEvent::class, [SalesEventListener::class, 'handleQuoteAccepted']);

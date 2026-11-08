@@ -21,4 +21,9 @@ return [
     'stage_negotiation' => 'Contract Negotiation',
     'stage_won' => 'Closed Won',
     'stage_lost' => 'Closed Lost',
+    'campaign_opt_out_notice' => 'You receive this message because you agreed to our marketing communications. Reply to this email to stop receiving them.',
+    'activity_reminder' => [
+        'subject' => 'Reminder: :subject',
+        'body' => 'The activity ":subject" is due on :due.',
+    ],
 ];

@@ -4,10 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * References to other records are validated against the active tenant (TenantScopedRules).
+ */
 final class StoreCampaignRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -18,7 +24,7 @@ final class StoreCampaignRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:200'],
             'code' => ['nullable', 'string', 'max:50'],
-            'campaign_type_id' => ['nullable', 'uuid'],
+            'campaign_type_id' => ['nullable', 'uuid', $this->tenantOwns('crm_campaign_types')],
             'status' => ['nullable', 'string', 'in:planned,active,completed,cancelled'],
             'start_date' => ['nullable', 'date'],
             'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],

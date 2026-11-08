@@ -10,6 +10,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
+/**
+ * A CRM account: the commercial relationship (tier, owner, health, lifecycle) with a party whose master data lives
+ * on the referenced contact (`contact_id`), the record shared with invoicing, quotes and orders.
+ *
+ * @property string|null $contact_id
+ */
 final class Account extends BaseEnterpriseModel
 {
     protected $table = 'crm_accounts';
@@ -26,6 +32,11 @@ final class Account extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * The contact of the party master that owns this account's master data.
+     *
+     * @return BelongsTo<Contact, $this>
+     */
     public function primaryContact(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'contact_id');

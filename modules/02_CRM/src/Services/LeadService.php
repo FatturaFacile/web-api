@@ -24,12 +24,20 @@ use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadSource;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
+use Modules\CRM\Services\PartyMaster\ContactMatcher;
 
+/**
+ * Lead lifecycle: capture, scoring, qualification and conversion into an account, a contact of the party master and
+ * an optional opportunity.
+ */
 final readonly class LeadService implements LeadServiceInterface
 {
     public function __construct(
         private EventDispatcher $dispatcher,
-        private AuditLedgerInterface $auditLedger
+        private AuditLedgerInterface $auditLedger,
+        private LeadScoringService $scoringService,
+        private ContactMatcher $contactMatcher,
+        private ConsentService $consentService,
     ) {}
 
     public function captureLead(CreateLeadDTO $dto, ?string $actorUserId = null): Lead
@@ -69,13 +77,7 @@ final readonly class LeadService implements LeadServiceInterface
             ]);
 
             // Calculate and assign initial lead score
-            $score = $this->scoreLead($lead);
-            $rating = $score >= 70 ? 'hot' : ($score >= 40 ? 'warm' : 'cold');
-
-            $lead->update([
-                'score' => $score,
-                'rating' => $rating,
-            ]);
+            $score = $this->scoringService->recalculate($lead)['score'];
 
             // Audit Trail
             $this->auditLedger->record(
@@ -109,54 +111,22 @@ final readonly class LeadService implements LeadServiceInterface
         });
     }
 
+    /**
+     * The lead's score under the tenant's scoring model (its own rules, or the built-in default), without saving it.
+     */
     public function scoreLead(Lead $lead): int
     {
-        $score = 0;
+        return $this->scoringService->evaluate($lead)['score'];
+    }
 
-        // 1. Title / Seniority check (+20)
-        $title = strtolower((string) $lead->title);
-        if (preg_match('/(director|vp|c-level|ceo|cfo|cto|coo|head|chief|president|founder|owner|partner|manager)/', $title)) {
-            $score += 20;
-        }
-
-        // 2. Business Email check (+15)
-        $email = strtolower((string) $lead->email);
-        if (! empty($email)) {
-            $freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'libero.it', 'icloud.com'];
-            $domain = substr(strrchr($email, '@') ?: '', 1);
-            if (! in_array($domain, $freeProviders, true) && ! empty($domain)) {
-                $score += 15;
-            } else {
-                $score += 5;
-            }
-        }
-
-        // 3. Phone presence (+10)
-        if (! empty($lead->phone)) {
-            $score += 10;
-        }
-
-        // 4. Company presence (+15)
-        if (! empty($lead->company_name)) {
-            $score += 15;
-        }
-
-        // 5. Budget capability (+20 / +30)
-        $budget = (float) $lead->estimated_budget;
-        if ($budget >= 50000.0) {
-            $score += 30;
-        } elseif ($budget >= 10000.0) {
-            $score += 20;
-        } elseif ($budget > 0.0) {
-            $score += 10;
-        }
-
-        // 6. Website presence (+10)
-        if (! empty($lead->website)) {
-            $score += 10;
-        }
-
-        return min(100, $score);
+    /**
+     * Stores score, rating and explanation of the lead.
+     *
+     * @return array{score: int, rating: string, model: string, breakdown: list<array{rule: string, points: int, reason: string}>}
+     */
+    public function recalculateScore(Lead $lead): array
+    {
+        return $this->scoringService->recalculate($lead);
     }
 
     public function qualifyLead(Lead $lead, string $actorUserId): Lead
@@ -264,28 +234,48 @@ final readonly class LeadService implements LeadServiceInterface
                 ]);
             }
 
-            // 2. Create or Link Contact
-            $contact = Contact::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $tenantId,
-                'type' => 'client',
-                'country' => $lockedLead->country ?: 'IT',
-                'company_name' => $account->name,
-                'first_name' => $lockedLead->first_name,
-                'last_name' => $lockedLead->last_name,
-                'email' => $lockedLead->email,
-                'phone' => $lockedLead->phone,
-            ]);
+            // 2. Link the party master: the chosen contact, else the single contact with the lead's email or VAT
+            //    number, else a new one. A second record of an existing customer is never created by a conversion.
+            $contactLinked = true;
+            if (! empty($dto->existingContactId)) {
+                $contact = Contact::where('tenant_id', $tenantId)->findOrFail($dto->existingContactId);
+            } else {
+                $customFields = is_array($lockedLead->custom_fields) ? $lockedLead->custom_fields : [];
+                $contact = $this->contactMatcher->findUnique(
+                    $tenantId,
+                    isset($customFields['vat_number']) ? (string) $customFields['vat_number'] : null,
+                    isset($customFields['fiscal_code']) ? (string) $customFields['fiscal_code'] : null,
+                    $lockedLead->email,
+                );
+            }
 
-            // 3. Link Contact to Account
-            ContactRole::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $tenantId,
-                'account_id' => $account->id,
-                'contact_id' => $contact->id,
-                'role' => $dto->contactRole ?? 'decision_maker',
-                'is_primary' => true,
-            ]);
+            if ($contact === null) {
+                $contactLinked = false;
+                $contact = Contact::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $tenantId,
+                    'type' => 'client',
+                    'country' => $lockedLead->country ?: 'IT',
+                    'company_name' => $account->name,
+                    'first_name' => $lockedLead->first_name,
+                    'last_name' => $lockedLead->last_name,
+                    'email' => $lockedLead->email,
+                    'phone' => $lockedLead->phone,
+                ]);
+            }
+
+            // 3. Link Contact to Account (once)
+            ContactRole::firstOrCreate(
+                ['tenant_id' => $tenantId, 'account_id' => $account->id, 'contact_id' => $contact->id],
+                [
+                    'id' => (string) Str::uuid7(),
+                    'role' => $dto->contactRole ?? 'decision_maker',
+                    'is_primary' => true,
+                ]
+            );
+
+            // GDPR consents given as a lead remain valid for the same person as a contact.
+            $this->consentService->carryOverFromLead($lockedLead, (string) $contact->id, $actorUserId);
 
             // Update primary contact on account if null
             if (empty($account->contact_id)) {
@@ -376,6 +366,7 @@ final readonly class LeadService implements LeadServiceInterface
             return [
                 'account' => $account,
                 'contact' => $contact,
+                'contact_linked' => $contactLinked,
                 'opportunity' => $opportunity,
             ];
         });
