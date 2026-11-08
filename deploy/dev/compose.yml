@@ -29,6 +29,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - ffdev
 
@@ -80,6 +82,25 @@ services:
     networks:
       - ffdev
 
+  # Queues (QUEUE_CONNECTION=redis), cache and locks. Only on the private ffdev network, never published. The password
+  # is applied when REDIS_PASSWORD is set in .env, so the stack still starts on a server that has not set it yet.
+  redis:
+    image: redis:7-alpine
+    container_name: ffdev_redis
+    restart: always
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    command: ["sh", "-c", "exec redis-server --appendonly yes $${REDIS_PASSWORD:+--requirepass \"$$REDIS_PASSWORD\"}"]
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli $${REDIS_PASSWORD:+-a \"$$REDIS_PASSWORD\"} --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - ffdev
+
 
 networks:
   ffdev:
@@ -91,3 +112,4 @@ networks:
 volumes:
   app_storage:
   pg_data:
+  redis_data:

@@ -15,6 +15,15 @@ RUN apk add --no-cache \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install pdo pdo_pgsql pdo_mysql mbstring zip exif pcntl bcmath gd intl
 
+# phpredis (REDIS_CLIENT=phpredis): queues, cache and locks on Redis. Built from PECL with a pinned version and the
+# build toolchain removed afterwards, so the image keeps only the compiled extension.
+ARG PHPREDIS_VERSION=6.3.0
+RUN apk add --no-cache --virtual .phpredis-build $PHPIZE_DEPS \
+    && pecl install "redis-${PHPREDIS_VERSION}" \
+    && docker-php-ext-enable redis \
+    && apk del .phpredis-build \
+    && rm -rf /tmp/pear
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
