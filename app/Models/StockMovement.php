@@ -26,12 +26,37 @@ class StockMovement extends Model
         'notes',
     ];
 
+    /**
+     * `signed_quantity` is added to the serialized movement: single-ledger movements store an unsigned quantity.
+     *
+     * @var list<string>
+     */
+    protected $appends = ['signed_quantity'];
+
     protected function casts(): array
     {
         return [
             'quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
         ];
+    }
+
+    /**
+     * The app's signed view of the movement: negative when stock leaves. Movements of the inventory module's ledger
+     * (stock item set) carry an unsigned quantity whose direction is given by the source and destination bins; legacy
+     * app rows keep their sign (`out` positive but outbound, `adjustment` signed).
+     */
+    public function getSignedQuantityAttribute(): float
+    {
+        $quantity = (float) $this->getAttribute('quantity');
+
+        if ($this->getAttribute('stock_item_id') !== null) {
+            $leaves = $this->getAttribute('source_location_id') !== null && $this->getAttribute('destination_location_id') === null;
+
+            return $leaves ? -abs($quantity) : abs($quantity);
+        }
+
+        return $this->getAttribute('type') === 'out' ? -$quantity : $quantity;
     }
 
     /**

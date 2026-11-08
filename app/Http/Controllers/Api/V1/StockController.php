@@ -24,12 +24,14 @@ class StockController extends Controller
     public function __construct(private readonly StockService $stock) {}
 
     /**
-     * Current stock per product, optionally restricted to one warehouse.
+     * Current stock per product, optionally restricted to one warehouse, read from the inventory module's quants.
+     * Each row keeps `product_id`, `sku`, `name` and `quantity` (stock net of open shortfalls, negative when sales went
+     * beyond the stock) and adds `on_hand`, `reserved`, `available` and `shortfall`.
      */
     #[OA\Get(
         path: '/api/v1/inventory/stock-levels',
         operationId: 'getStockLevels',
-        description: 'Get current stock balance on hand per product, optionally filtered by warehouse.',
+        description: 'Get current stock per product from the inventory module (stock quants), optionally filtered by warehouse. Each row: product_id, sku, name, quantity (on hand minus open shortfall; negative when sales exceeded the stock), on_hand, reserved, available (on hand minus reserved) and shortfall (quantity sold beyond the stock, not yet settled by incoming stock).',
         summary: 'Get stock levels',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Inventory', 'Stock'],

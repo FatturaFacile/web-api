@@ -17,10 +17,11 @@ class StockMovementRecorded
     public function __construct(public readonly StockMovement $movement) {}
 
     /**
-     * Whether the movement lowers the stock: an `out` movement or a negative adjustment.
+     * Whether the movement lowers the stock: an `out` movement or a negative adjustment. Movements of the single ledger
+     * are unsigned, so a downward adjustment is one that leaves a bin without entering another.
      */
     public function isOutbound(): bool
     {
-        return $this->movement->type === 'out' || ($this->movement->type === 'adjustment' && (float) $this->movement->quantity < 0);
+        return $this->movement->type === 'out' || ($this->movement->type === 'adjustment' && $this->movement->signed_quantity < 0);
     }
 }
