@@ -225,6 +225,23 @@ final class FixedAssetController extends Controller
             new OA\Response(ref: '#/components/responses/EamUnprocessable', response: 422),
         ]
     )]
+    #[OA\Patch(
+        path: '/api/v1/eam/assets/{id}',
+        operationId: 'patchEamAsset',
+        description: 'Same as PUT: updates the descriptive, warranty and insurance data of an asset; only the fields sent change.',
+        summary: 'Update asset (PATCH)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Assets'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/EamAssetId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AssetManagementUpdateFixedAssetRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Asset updated', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementFixedAssetResource')])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/EamForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/EamNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/EamUnprocessable', response: 422),
+        ]
+    )]
     public function update(UpdateFixedAssetRequest $request, string $id): FixedAssetResource
     {
         $asset = $this->asset($id);
