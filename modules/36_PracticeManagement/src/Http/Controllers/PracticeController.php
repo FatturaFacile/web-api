@@ -22,6 +22,10 @@ final class PracticeController extends Controller
 {
     public function __construct(private readonly PracticeService $practice) {}
 
+    /**
+     * Return the logged time of a period by professional and case, billed and not, and how many unbilled activities
+     * are older than the threshold.
+     */
     #[OA\Get(path: '/api/v1/practice/activity-control', operationId: 'practiceActivityControl', description: 'Return the logged time of a period by professional and case, billed and not, and how many unbilled activities are older than the threshold.', summary: 'Activity control', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [
         new OA\Parameter(name: 'from', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
         new OA\Parameter(name: 'to', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -40,6 +44,10 @@ final class PracticeController extends Controller
         return response()->json(['data' => $this->practice->activityControl((string) $request->validated('from'), (string) $request->validated('to'), $request->validated('user_id'), (int) ($request->validated('stale_days') ?? 30))]);
     }
 
+    /**
+     * Create a draft fee note from unbilled activities of one client and mark them billed. Contribution, withholding
+     * and VAT rates are entered.
+     */
     #[OA\Post(path: '/api/v1/practice/fee-notes/from-activities', operationId: 'practiceFeeNoteFromActivities', description: 'Create a draft fee note from unbilled activities of one client and mark them billed. Contribution, withholding and VAT rates are entered.', summary: 'Fee note from activities', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PracticeFeeNoteRequest')), tags: ['Practice Management'], responses: [
         new OA\Response(response: 201, description: 'Fee note created', content: new OA\JsonContent(ref: '#/components/schemas/PracticeRecordResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
@@ -53,6 +61,9 @@ final class PracticeController extends Controller
         return (new PracticeResource($this->practice->feeNoteFromActivities($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return the activities billed by a fee note.
+     */
     #[OA\Get(path: '/api/v1/practice/fee-notes/{id}/activities', operationId: 'practiceFeeNoteActivities', description: 'Return the activities billed by a fee note.', summary: 'Activities of a fee note', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
         new OA\Response(response: 200, description: 'Activities', content: new OA\JsonContent(ref: '#/components/schemas/PracticeDataResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
@@ -67,6 +78,10 @@ final class PracticeController extends Controller
         return response()->json(['data' => BillableActivity::query()->where('fee_note_id', $note->id)->orderBy('date')->get()]);
     }
 
+    /**
+     * Return, for every client with work, fee notes or a closing in the period, what is left to bill, to issue and
+     * to collect, and the state of the closing.
+     */
     #[OA\Get(path: '/api/v1/practice/closing-overview', operationId: 'practiceClosingOverview', description: 'Return, for every client with work, fee notes or a closing in the period, what is left to bill, to issue and to collect, and the state of the closing.', summary: 'Multi-client closing view', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [
         new OA\Parameter(name: 'from', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
         new OA\Parameter(name: 'to', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -83,6 +98,9 @@ final class PracticeController extends Controller
         return response()->json(['data' => $this->practice->closingOverview((string) $request->validated('from'), (string) $request->validated('to'))]);
     }
 
+    /**
+     * Open the closing of a period for a client, with its checklist.
+     */
     #[OA\Post(path: '/api/v1/practice/closings', operationId: 'practiceOpenClosing', description: 'Open the closing of a period for a client, with its checklist.', summary: 'Open closing', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PracticeClosingRequest')), tags: ['Practice Management'], responses: [
         new OA\Response(response: 201, description: 'Closing opened', content: new OA\JsonContent(ref: '#/components/schemas/PracticeRecordResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
@@ -96,6 +114,9 @@ final class PracticeController extends Controller
         return (new PracticeResource($this->practice->openClosing($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Tick the checks of a closing.
+     */
     #[OA\Put(path: '/api/v1/practice/closings/{id}/checklist', operationId: 'practiceClosingChecklist', description: 'Tick the checks of a closing.', summary: 'Update closing checklist', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PracticeChecklistRequest')), tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
         new OA\Response(response: 200, description: 'Checklist updated', content: new OA\JsonContent(ref: '#/components/schemas/PracticeRecordResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
@@ -110,6 +131,9 @@ final class PracticeController extends Controller
         return new PracticeResource($this->practice->updateChecklist($closing, $request->validated('items'), $request->validated('notes')));
     }
 
+    /**
+     * Close the period of a client: every check done and nothing unbilled, unless allowed with a reason.
+     */
     #[OA\Post(path: '/api/v1/practice/closings/{id}/close', operationId: 'practiceCloseClosing', description: 'Close the period of a client: every check done and nothing unbilled, unless allowed with a reason.', summary: 'Close period', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/PracticeCloseRequest')), tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
         new OA\Response(response: 200, description: 'Period closed', content: new OA\JsonContent(ref: '#/components/schemas/PracticeRecordResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
@@ -124,6 +148,9 @@ final class PracticeController extends Controller
         return new PracticeResource($this->practice->close($closing, $request->user()?->getKey(), (bool) $request->validated('allow_unbilled', false), $request->validated('reason')));
     }
 
+    /**
+     * Reopen a closed period. Owners and administrators only.
+     */
     #[OA\Post(path: '/api/v1/practice/closings/{id}/reopen', operationId: 'practiceReopenClosing', description: 'Reopen a closed period. Owners and administrators only.', summary: 'Reopen period', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
         new OA\Response(response: 200, description: 'Period reopened', content: new OA\JsonContent(ref: '#/components/schemas/PracticeRecordResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),

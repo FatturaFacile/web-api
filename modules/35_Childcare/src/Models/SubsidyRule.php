@@ -42,6 +42,9 @@ final class SubsidyRule extends ChildcareRecord
         return ['parameters' => 'array', 'valid_from' => 'immutable_date', 'valid_to' => 'immutable_date', 'verified_at' => 'immutable_datetime'];
     }
 
+    /**
+     * Whether the rule was verified against its official source; only verified rules are used to bill.
+     */
     public function isVerified(): bool
     {
         return $this->verified_at !== null;

@@ -24,6 +24,9 @@ abstract class TradesRecord extends Model
 
     protected $guarded = ['id', 'tenant_id', 'created_at', 'updated_at'];
 
+    /**
+     * Whether the record is a generic one shared by every company: readable, never writable.
+     */
     public function isGeneric(): bool
     {
         return $this->tenant_id === null;

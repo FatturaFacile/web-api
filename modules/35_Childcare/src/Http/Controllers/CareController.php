@@ -26,6 +26,9 @@ final class CareController extends Controller
 {
     public function __construct(private readonly CareService $care) {}
 
+    /**
+     * Return the notes about a child, optionally of a day.
+     */
     #[OA\Get(path: '/api/v1/childcare/notes', operationId: 'listChildcareNotes', description: 'Return the notes about a child, optionally of a day.', summary: 'List notes', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'child_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         new OA\Parameter(name: 'date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -44,6 +47,9 @@ final class CareController extends Controller
             ->latest()->get());
     }
 
+    /**
+     * Record a note about a child; notes visible to the family appear in the daily report.
+     */
     #[OA\Post(path: '/api/v1/childcare/notes', operationId: 'storeChildcareNote', description: 'Record a note about a child; notes visible to the family appear in the daily report.', summary: 'Record note', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareNoteRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 201, description: 'Note recorded', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -57,6 +63,9 @@ final class CareController extends Controller
         return $this->created(Note::query()->create([...$request->validated(), 'author_id' => $request->user()?->getKey()]));
     }
 
+    /**
+     * Return the daily report of a child as the family sees it.
+     */
     #[OA\Get(path: '/api/v1/childcare/children/{id}/daily-report', operationId: 'showChildcareDailyReport', description: 'Return the daily report of a child as the family sees it.', summary: 'Daily report', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/ChildcareId'),
         new OA\Parameter(name: 'date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -71,6 +80,9 @@ final class CareController extends Controller
         return response()->json(['data' => $this->care->dailyReport($this->child($id), $request->string('date', now()->toDateString())->toString())]);
     }
 
+    /**
+     * Return the meals to cook on a day and the dietary requirements of the children expected.
+     */
     #[OA\Get(path: '/api/v1/childcare/meals', operationId: 'childcareMealCounts', description: 'Return the meals to cook on a day and the dietary requirements of the children expected.', summary: 'Meal counts', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'date', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date')),
     ], responses: [
@@ -86,6 +98,9 @@ final class CareController extends Controller
         return response()->json(['data' => $this->care->mealCounts((string) $request->validated('date'))]);
     }
 
+    /**
+     * Record the hours of a staff member; educators record their own hours only.
+     */
     #[OA\Post(path: '/api/v1/childcare/staff-shifts', operationId: 'storeChildcareStaffShift', description: 'Record the hours of a staff member; educators record their own hours only.', summary: 'Record staff hours', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareStaffShiftRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 201, description: 'Shift recorded', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -99,6 +114,9 @@ final class CareController extends Controller
         return $this->created(StaffShift::query()->create($request->validated()));
     }
 
+    /**
+     * Return the minutes worked per staff member in a month.
+     */
     #[OA\Get(path: '/api/v1/childcare/staff-hours', operationId: 'childcareStaffHours', description: 'Return the minutes worked per staff member in a month.', summary: 'Staff hours', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'month', in: 'query', required: true, schema: new OA\Schema(type: 'string', example: '2026-11')),
     ], responses: [
@@ -114,6 +132,9 @@ final class CareController extends Controller
         return response()->json(['data' => $this->care->staffHours((string) $request->validated('month'))]);
     }
 
+    /**
+     * Return the extracurricular activities with their enrolments.
+     */
     #[OA\Get(path: '/api/v1/childcare/activities', operationId: 'listChildcareActivities', description: 'Return the extracurricular activities with their enrolments.', summary: 'List activities', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Activities', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -126,6 +147,9 @@ final class CareController extends Controller
         return ChildcareResource::collection(Activity::query()->with('enrolments')->orderBy('weekday')->orderBy('starts_at')->get());
     }
 
+    /**
+     * Create an extracurricular activity, optionally with a monthly fee.
+     */
     #[OA\Post(path: '/api/v1/childcare/activities', operationId: 'storeChildcareActivity', description: 'Create an extracurricular activity, optionally with a monthly fee.', summary: 'Create activity', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareActivityRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 201, description: 'Activity created', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -139,6 +163,9 @@ final class CareController extends Controller
         return $this->created(Activity::query()->create($request->validated()));
     }
 
+    /**
+     * Enrol a child in an activity, within its capacity.
+     */
     #[OA\Post(path: '/api/v1/childcare/activities/{id}/enrolments', operationId: 'enrolChildcareActivity', description: 'Enrol a child in an activity, within its capacity.', summary: 'Enrol in activity', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareEnrolmentRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 201, description: 'Child enrolled', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -157,6 +184,9 @@ final class CareController extends Controller
         return $this->created(ActivityEnrolment::query()->create([...$request->validated(), 'activity_id' => $activity->id]));
     }
 
+    /**
+     * Return the messages exchanged with the family of a child.
+     */
     #[OA\Get(path: '/api/v1/childcare/children/{id}/messages', operationId: 'listChildcareMessages', description: 'Return the messages exchanged with the family of a child.', summary: 'List messages', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'Messages', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -171,6 +201,9 @@ final class CareController extends Controller
         return ChildcareResource::collection(Message::query()->where('child_id', $child->id)->orderBy('created_at')->get());
     }
 
+    /**
+     * Send a message to the family of a child.
+     */
     #[OA\Post(path: '/api/v1/childcare/children/{id}/messages', operationId: 'storeChildcareMessage', description: 'Send a message to the family of a child.', summary: 'Message the family', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareMessageRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 201, description: 'Message sent', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),

@@ -52,6 +52,9 @@ final class WorkshopFolder extends WorkshopRecord
         return ['received_at' => 'datetime', 'promised_at' => 'datetime', 'mileage_in' => 'integer', 'mileage_out' => 'integer'];
     }
 
+    /**
+     * Whether the folder is final (delivered, invoiced or cancelled) and its lines and data can no longer change.
+     */
     public function isLocked(): bool
     {
         return in_array($this->status, ['invoiced', 'cancelled'], true);

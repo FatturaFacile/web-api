@@ -47,6 +47,9 @@ final class HospitalityService
         ];
     }
 
+    /**
+     * Opens the order of a table, one open order per table, under a lock on the table.
+     */
     public function openOrder(DiningTable $table, int $covers, ?string $userId, ?string $notes): Order
     {
         return DB::transaction(function () use ($table, $covers, $userId, $notes): Order {
@@ -74,28 +77,31 @@ final class HospitalityService
      */
     public function addItems(Order $order, array $items): Collection
     {
-        $this->assertOpen($order);
         $products = Product::query()->whereIn('id', collect($items)->pluck('product_id')->filter())->get()->keyBy('id');
 
-        return DB::transaction(fn (): Collection => collect($items)->map(function (array $item) use ($order, $products): OrderItem {
-            $product = isset($item['product_id']) ? $products->get($item['product_id']) : null;
-            $model = new OrderItem;
-            $model->fill([
-                'order_id' => $order->id,
-                'product_id' => $product?->id,
-                'description' => $item['description'] ?? $product?->name,
-                'quantity' => (string) $item['quantity'],
-                'unit_price' => (string) ($item['unit_price'] ?? $product?->sale_price ?? '0'),
-                'tax_rate' => (string) ($item['tax_rate'] ?? $product?->tax_rate ?? '0'),
-                'course' => (int) ($item['course'] ?? 1),
-                'station' => $item['station'] ?? 'kitchen',
-                'notes' => $item['notes'] ?? null,
-                'status' => 'pending',
-            ]);
-            $model->save();
+        return DB::transaction(function () use ($order, $items, $products): Collection {
+            $this->lockOpen($order);
 
-            return $model;
-        }));
+            return collect($items)->map(function (array $item) use ($order, $products): OrderItem {
+                $product = isset($item['product_id']) ? $products->get($item['product_id']) : null;
+                $model = new OrderItem;
+                $model->fill([
+                    'order_id' => $order->id,
+                    'product_id' => $product?->id,
+                    'description' => $item['description'] ?? $product?->name,
+                    'quantity' => (string) $item['quantity'],
+                    'unit_price' => (string) ($item['unit_price'] ?? $product?->sale_price ?? '0'),
+                    'tax_rate' => (string) ($item['tax_rate'] ?? $product?->tax_rate ?? '0'),
+                    'course' => (int) ($item['course'] ?? 1),
+                    'station' => $item['station'] ?? 'kitchen',
+                    'notes' => $item['notes'] ?? null,
+                    'status' => 'pending',
+                ]);
+                $model->save();
+
+                return $model;
+            });
+        });
     }
 
     /**
@@ -105,9 +111,8 @@ final class HospitalityService
      */
     public function fireCourse(Order $order, int $course): Collection
     {
-        $this->assertOpen($order);
-
         return DB::transaction(function () use ($order, $course): Collection {
+            $this->lockOpen($order);
             $items = OrderItem::query()->where('order_id', $order->id)->where('course', $course)->where('status', 'pending')->lockForUpdate()->get();
 
             if ($items->isEmpty()) {
@@ -134,48 +139,93 @@ final class HospitalityService
         });
     }
 
+    /**
+     * Moves a kitchen ticket one step forward (open, ready, served); the items of the ticket follow it.
+     */
     public function advanceTicket(KitchenTicket $ticket, string $target): KitchenTicket
     {
         $allowed = ['open' => ['ready'], 'ready' => ['served'], 'served' => []];
 
-        if (! in_array($target, $allowed[$ticket->status] ?? [], true)) {
-            throw new BusinessRuleException("A ticket cannot move from {$ticket->status} to {$target}.");
-        }
+        return DB::transaction(function () use ($ticket, $target, $allowed): KitchenTicket {
+            $locked = KitchenTicket::query()->lockForUpdate()->findOrFail($ticket->id);
 
-        DB::transaction(function () use ($ticket, $target): void {
-            $ticket->update(['status' => $target, 'ready_at' => $target === 'ready' ? now() : $ticket->ready_at]);
-            OrderItem::query()->whereIn('id', collect($ticket->lines)->pluck('order_item_id'))->where('status', '!=', 'voided')->update(['status' => $target]);
+            if (! in_array($target, $allowed[$locked->status] ?? [], true)) {
+                throw new BusinessRuleException("A ticket cannot move from {$locked->status} to {$target}.");
+            }
+
+            $locked->update(['status' => $target, 'ready_at' => $target === 'ready' ? now() : $locked->ready_at]);
+            OrderItem::query()->whereIn('id', collect($locked->lines)->pluck('order_item_id'))->where('status', '!=', 'voided')->update(['status' => $target]);
+
+            return $locked;
         });
-
-        return $ticket;
     }
 
+    /**
+     * Voids an unpaid item of an open order. When nothing is left to pay and nothing was ever paid, the order is
+     * cancelled so the table is freed.
+     */
     public function voidItem(OrderItem $item, string $reason): OrderItem
     {
-        if (Decimal::isPositive((string) $item->paid_quantity)) {
-            throw new BusinessRuleException('A paid item cannot be voided.');
-        }
+        return DB::transaction(function () use ($item, $reason): OrderItem {
+            $order = Order::query()->lockForUpdate()->findOrFail($item->order_id);
+            $this->assertOpen($order);
+            $locked = OrderItem::query()->lockForUpdate()->findOrFail($item->id);
 
-        $item->update(['status' => 'voided', 'void_reason' => $reason]);
-        $this->closeIfSettled(Order::query()->findOrFail($item->order_id));
+            if ($locked->status === 'voided') {
+                throw new BusinessRuleException('The item is already voided.');
+            }
 
-        return $item;
+            if (Decimal::isPositive((string) $locked->paid_quantity)) {
+                throw new BusinessRuleException('A paid item cannot be voided.');
+            }
+
+            $locked->update(['status' => 'voided', 'void_reason' => $reason]);
+            $this->closeIfSettled($order);
+
+            return $locked;
+        });
     }
 
+    /**
+     * Cancels an open order that has nothing paid, voiding its unpaid items, so a table opened by mistake is freed.
+     */
+    public function cancelOrder(Order $order, string $reason): Order
+    {
+        return DB::transaction(function () use ($order, $reason): Order {
+            $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
+            $this->assertOpen($locked);
+
+            if ($locked->payments()->exists()) {
+                throw new BusinessRuleException('An order with payments cannot be cancelled.');
+            }
+
+            OrderItem::query()->where('order_id', $locked->id)->where('status', '!=', 'voided')->update(['status' => 'voided', 'void_reason' => $reason]);
+            $locked->update(['status' => 'cancelled', 'closed_at' => now()]);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Moves an open order to a free table.
+     */
     public function moveOrder(Order $order, DiningTable $target): Order
     {
-        $this->assertOpen($order);
-
         return DB::transaction(function () use ($order, $target): Order {
-            DiningTable::query()->lockForUpdate()->findOrFail($target->id);
+            $locked = $this->lockOpen($order);
+            $table = DiningTable::query()->lockForUpdate()->findOrFail($target->id);
 
-            if (Order::query()->where('table_id', $target->id)->where('status', 'open')->exists()) {
+            if (! $table->is_active) {
+                throw new BusinessRuleException('The table is not in service.');
+            }
+
+            if (Order::query()->where('table_id', $table->id)->where('status', 'open')->exists()) {
                 throw new BusinessRuleException('The target table already has an open order.');
             }
 
-            $order->update(['table_id' => $target->id]);
+            $locked->update(['table_id' => $table->id]);
 
-            return $order;
+            return $locked;
         });
     }
 
@@ -301,8 +351,14 @@ final class HospitalityService
         $open = OrderItem::query()->where('order_id', $order->id)->where('status', '!=', 'voided')->get()
             ->contains(static fn (OrderItem $item): bool => Decimal::isPositive($item->remainingQuantity()));
 
-        if (! $open && $order->payments()->exists()) {
+        if ($open) {
+            return;
+        }
+
+        if ($order->payments()->exists()) {
             $order->update(['status' => 'closed', 'closed_at' => now()]);
+        } elseif (OrderItem::query()->where('order_id', $order->id)->exists()) {
+            $order->update(['status' => 'cancelled', 'closed_at' => now()]);
         }
     }
 
@@ -311,6 +367,18 @@ final class HospitalityService
         if ($order->status !== 'open') {
             throw new BusinessRuleException('The order is closed.');
         }
+    }
+
+    /**
+     * Locks the order row and checks that it is still open, so that items, courses and moves cannot race with a payment
+     * or a cancellation.
+     */
+    private function lockOpen(Order $order): Order
+    {
+        $locked = Order::query()->lockForUpdate()->findOrFail($order->id);
+        $this->assertOpen($locked);
+
+        return $locked;
     }
 
     private function trim(string $value): string

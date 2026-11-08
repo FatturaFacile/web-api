@@ -28,21 +28,33 @@ final class ChildcarePolicy
     /** @var list<string> */
     private const array BillingRoles = ['owner', 'admin', 'childcare_manager', 'accountant'];
 
+    /**
+     * Daily care (attendance, notes, meals, plans, messages): educators and management.
+     */
     public function care(User $user, ?Model $record = null): bool
     {
         return $this->allows($user, self::CareRoles, 'childcare.care', $record);
     }
 
+    /**
+     * Master data, documents, subsidy rules and exports: management only.
+     */
     public function manageRecords(User $user, ?Model $record = null): bool
     {
         return $this->allows($user, self::RecordRoles, 'childcare.records', $record);
     }
 
+    /**
+     * Corrections of attendance, kept with their history: management only.
+     */
     public function correct(User $user, ?Model $record = null): bool
     {
         return $this->allows($user, self::RecordRoles, 'childcare.records', $record);
     }
 
+    /**
+     * Fee plans and monthly bills: management and the accountant.
+     */
     public function bill(User $user, ?Model $record = null): bool
     {
         return $this->allows($user, self::BillingRoles, 'childcare.billing', $record);

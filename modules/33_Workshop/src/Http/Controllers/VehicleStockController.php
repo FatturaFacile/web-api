@@ -23,6 +23,9 @@ final class VehicleStockController extends Controller
 {
     public function __construct(private readonly WorkshopService $workshop) {}
 
+    /**
+     * Return the vehicles for sale, optionally by condition or status.
+     */
     #[OA\Get(path: '/api/v1/workshop/vehicle-stock', operationId: 'listWorkshopVehicleStock', description: 'Return the vehicles for sale, optionally by condition or status.', summary: 'List vehicle stock', security: [['bearerAuth' => []]], tags: ['Workshop'], parameters: [
         new OA\Parameter(name: 'condition', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['new', 'used'])),
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['in_stock', 'reserved', 'sold'])),
@@ -42,6 +45,9 @@ final class VehicleStockController extends Controller
             ->paginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
+    /**
+     * Add a new or used vehicle to the stock for sale.
+     */
     #[OA\Post(path: '/api/v1/workshop/vehicle-stock', operationId: 'storeWorkshopVehicleStock', description: 'Add a new or used vehicle to the stock for sale.', summary: 'Add stock vehicle', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopStockUnitRequest')), tags: ['Workshop'], responses: [
         new OA\Response(response: 201, description: 'Vehicle added', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -59,6 +65,9 @@ final class VehicleStockController extends Controller
         return (new WorkshopResource($unit))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return a stock vehicle with its sale.
+     */
     #[OA\Get(path: '/api/v1/workshop/vehicle-stock/{id}', operationId: 'showWorkshopVehicleStock', description: 'Return a stock vehicle with its sale.', summary: 'Show stock vehicle', security: [['bearerAuth' => []]], tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 200, description: 'Vehicle', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -70,6 +79,9 @@ final class VehicleStockController extends Controller
         return new WorkshopResource($this->find($id, 'view')->load('sale'));
     }
 
+    /**
+     * Change a stock vehicle that is not sold.
+     */
     #[OA\Put(path: '/api/v1/workshop/vehicle-stock/{id}', operationId: 'updateWorkshopVehicleStock', description: 'Change a stock vehicle that is not sold.', summary: 'Change stock vehicle', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopStockUnitRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 200, description: 'Vehicle changed', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -87,6 +99,9 @@ final class VehicleStockController extends Controller
         return new WorkshopResource($unit);
     }
 
+    /**
+     * Sell a stock vehicle: it joins the vehicles of the buyer and the sale is invoiced through the invoicing flow.
+     */
     #[OA\Post(path: '/api/v1/workshop/vehicle-stock/{id}/sell', operationId: 'sellWorkshopVehicle', description: 'Sell a stock vehicle: it joins the vehicles of the buyer and the sale is invoiced through the invoicing flow.', summary: 'Sell vehicle', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopSellRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 201, description: 'Vehicle sold', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),

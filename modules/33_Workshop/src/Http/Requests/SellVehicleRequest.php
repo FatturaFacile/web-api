@@ -7,10 +7,17 @@ namespace Modules\Workshop\Http\Requests;
 use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validates the sale of a stock vehicle: buyer of the company, date, price and VAT rate.
+ */
 final class SellVehicleRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

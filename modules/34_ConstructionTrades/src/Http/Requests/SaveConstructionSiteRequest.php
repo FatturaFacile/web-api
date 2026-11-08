@@ -19,6 +19,10 @@ final class SaveConstructionSiteRequest extends FormRequest
     /** @var list<string> */
     public const array Statuses = ['planning', 'active', 'paused', 'completed'];
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

@@ -9,10 +9,17 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\ConstructionTrades\Models\PriceList;
 
+/**
+ * Validates a bid: customer and site of the company, title, language, currency and discount.
+ */
 final class SaveBidRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

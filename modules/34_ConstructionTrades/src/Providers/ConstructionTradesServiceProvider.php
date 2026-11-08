@@ -18,8 +18,15 @@ use Modules\ConstructionTrades\Models\WorkCycle;
 use Modules\ConstructionTrades\Models\WorkCycleStep;
 use Modules\ConstructionTrades\Policies\TradesPolicy;
 
+/**
+ * Registers the construction trades module: routes, views and the policy of its models.
+ */
 final class ConstructionTradesServiceProvider extends ServiceProvider
 {
+    /**
+     * Loads the module routes and views once the application is booted and registers the policy of every trades
+     * model.
+     */
     public function boot(): void
     {
         $this->app->booted(function (): void {

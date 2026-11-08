@@ -47,25 +47,35 @@ final class TradesService
      */
     public function updateBid(Bid $bid, array $data): Bid
     {
-        $this->assertDraft($bid);
-        $bid->update($data);
+        return DB::transaction(function () use ($bid, $data): Bid {
+            $locked = $this->lock($bid);
+            $this->assertDraft($locked);
+            $locked->update($data);
 
-        return $bid;
+            return $locked;
+        });
     }
 
+    /**
+     * Moves the bid along its workflow (see Bid::Transitions); a bid is submitted only with positions.
+     */
     public function transition(Bid $bid, string $target): Bid
     {
-        if (! in_array($target, Bid::Transitions[$bid->status] ?? [], true)) {
-            throw new BusinessRuleException("A bid cannot move from {$bid->status} to {$target}.");
-        }
+        return DB::transaction(function () use ($bid, $target): Bid {
+            $locked = $this->lock($bid);
 
-        if ($target === 'submitted' && ! $bid->positions()->exists()) {
-            throw new BusinessRuleException('A bid without positions cannot be submitted.');
-        }
+            if (! in_array($target, Bid::Transitions[$locked->status] ?? [], true)) {
+                throw new BusinessRuleException("A bid cannot move from {$locked->status} to {$target}.");
+            }
 
-        $bid->update(['status' => $target]);
+            if ($target === 'submitted' && ! $locked->positions()->exists()) {
+                throw new BusinessRuleException('A bid without positions cannot be submitted.');
+            }
 
-        return $bid;
+            $locked->update(['status' => $target]);
+
+            return $locked;
+        });
     }
 
     /**
@@ -74,6 +84,14 @@ final class TradesService
      * @param  array<string, mixed>  $data
      */
     public function addPosition(Bid $bid, array $data): BidPosition
+    {
+        return DB::transaction(fn (): BidPosition => $this->addPositionLocked($this->lock($bid), $data));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function addPositionLocked(Bid $bid, array $data): BidPosition
     {
         $this->assertDraft($bid);
         $item = isset($data['price_item_id']) ? PriceItem::query()->findOrFail($data['price_item_id']) : null;
@@ -101,6 +119,14 @@ final class TradesService
      * @param  array<string, mixed>  $data
      */
     public function addWorkCycle(Bid $bid, array $data): BidPosition
+    {
+        return DB::transaction(fn (): BidPosition => $this->addWorkCycleLocked($this->lock($bid), $data));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     */
+    private function addWorkCycleLocked(Bid $bid, array $data): BidPosition
     {
         $this->assertDraft($bid);
         $cycle = WorkCycle::query()->with('steps')->findOrFail($data['work_cycle_id']);
@@ -140,28 +166,38 @@ final class TradesService
         return $position;
     }
 
+    /**
+     * Removes a position of a draft bid.
+     */
     public function removePosition(Bid $bid, BidPosition $position): void
     {
-        $this->assertDraft($bid);
-        $position->delete();
+        DB::transaction(function () use ($bid, $position): void {
+            $this->assertDraft($this->lock($bid));
+            $position->delete();
+        });
     }
 
     /**
+     * Records the measured quantity of a position of an accepted bid, until the settlement is approved.
+     *
      * @param  array<string, mixed>  $data
      */
     public function recordMeasurement(Bid $bid, array $data, ?string $userId): Measurement
     {
-        $this->assertBillable($bid);
+        return DB::transaction(function () use ($bid, $data, $userId): Measurement {
+            $locked = $this->lock($bid);
+            $this->assertBillable($locked);
 
-        if ($bid->settlement_approved_at !== null) {
-            throw new BusinessRuleException('The settlement is approved: no further measurement can be recorded.');
-        }
+            if ($locked->settlement_approved_at !== null) {
+                throw new BusinessRuleException('The settlement is approved: no further measurement can be recorded.');
+            }
 
-        $measurement = new Measurement;
-        $measurement->fill([...$data, 'bid_id' => $bid->id, 'recorded_by' => $userId]);
-        $measurement->save();
+            $measurement = new Measurement;
+            $measurement->fill([...$data, 'bid_id' => $locked->id, 'recorded_by' => $userId]);
+            $measurement->save();
 
-        return $measurement;
+            return $measurement;
+        });
     }
 
     /**
@@ -195,21 +231,32 @@ final class TradesService
         return ['bid_id' => $bid->id, 'approved_at' => $bid->settlement_approved_at?->toIso8601String(), 'positions' => $positions, 'gross' => Decimal::round2($gross), 'discount' => $discount, 'net' => $net];
     }
 
+    /**
+     * Approves the settlement: it freezes the measurements, and the final account can then be issued.
+     */
     public function approveSettlement(Bid $bid): Bid
     {
-        $this->assertBillable($bid);
+        return DB::transaction(function () use ($bid): Bid {
+            $locked = $this->lock($bid);
+            $this->assertBillable($locked);
 
-        if ($bid->settlement_approved_at !== null) {
-            throw new BusinessRuleException('The settlement is already approved.');
-        }
+            if ($locked->settlement_approved_at !== null) {
+                throw new BusinessRuleException('The settlement is already approved.');
+            }
 
-        if (! Measurement::query()->where('bid_id', $bid->id)->exists()) {
-            throw new BusinessRuleException('Nothing is measured yet.');
-        }
+            if (! Measurement::query()->where('bid_id', $locked->id)->exists()) {
+                throw new BusinessRuleException('Nothing is measured yet.');
+            }
 
-        $bid->update(['settlement_approved_at' => now()]);
+            $locked->update(['settlement_approved_at' => now()]);
 
-        return $bid;
+            return $locked;
+        });
+    }
+
+    private function lock(Bid $bid): Bid
+    {
+        return Bid::query()->lockForUpdate()->findOrFail($bid->id);
     }
 
     /**

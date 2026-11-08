@@ -25,6 +25,9 @@ use OpenApi\Attributes as OA;
  */
 final class ChildController extends Controller
 {
+    /**
+     * Return the groups of the kindergarten.
+     */
     #[OA\Get(path: '/api/v1/childcare/groups', operationId: 'listChildcareGroups', description: 'Return the groups of the kindergarten.', summary: 'List groups', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Groups', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -37,6 +40,9 @@ final class ChildController extends Controller
         return ChildcareResource::collection(Group::query()->orderBy('name')->get());
     }
 
+    /**
+     * Create a group or room.
+     */
     #[OA\Post(path: '/api/v1/childcare/groups', operationId: 'storeChildcareGroup', description: 'Create a group or room.', summary: 'Create group', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareGroupRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 201, description: 'Group created', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -50,6 +56,9 @@ final class ChildController extends Controller
         return $this->created(Group::query()->create($request->validated()));
     }
 
+    /**
+     * Return the children, optionally of a group or with a status, sorted by name.
+     */
     #[OA\Get(path: '/api/v1/childcare/children', operationId: 'listChildcareChildren', description: 'Return the children, optionally of a group or with a status, sorted by name.', summary: 'List children', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'group_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['active', 'left'])),
@@ -72,6 +81,9 @@ final class ChildController extends Controller
         return ChildcareResource::collection($children);
     }
 
+    /**
+     * Enrol a child. Personal and health data is stored encrypted.
+     */
     #[OA\Post(path: '/api/v1/childcare/children', operationId: 'storeChildcareChild', description: 'Enrol a child. Personal and health data is stored encrypted.', summary: 'Enrol child', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareChildRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 201, description: 'Child enrolled', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -89,6 +101,9 @@ final class ChildController extends Controller
         return $this->created($child);
     }
 
+    /**
+     * Return a child with reference persons and weekly plans.
+     */
     #[OA\Get(path: '/api/v1/childcare/children/{id}', operationId: 'showChildcareChild', description: 'Return a child with reference persons and weekly plans.', summary: 'Show child', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'Child', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -103,6 +118,9 @@ final class ChildController extends Controller
         return new ChildcareResource($child->load(['referencePersons', 'weeklyPlans']));
     }
 
+    /**
+     * Change the data of a child.
+     */
     #[OA\Put(path: '/api/v1/childcare/children/{id}', operationId: 'updateChildcareChild', description: 'Change the data of a child.', summary: 'Change child', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareChildRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'Child changed', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -119,6 +137,9 @@ final class ChildController extends Controller
         return new ChildcareResource($child);
     }
 
+    /**
+     * Add a guardian, relative or authorised pick-up person.
+     */
     #[OA\Post(path: '/api/v1/childcare/children/{id}/reference-persons', operationId: 'storeChildcareReferencePerson', description: 'Add a guardian, relative or authorised pick-up person.', summary: 'Add reference person', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareReferencePersonRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 201, description: 'Reference person added', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -133,6 +154,9 @@ final class ChildController extends Controller
         return $this->created(ReferencePerson::query()->create([...$request->validated(), 'child_id' => $child->id]));
     }
 
+    /**
+     * Mail a personal link to the family portal to a guardian; earlier links stop working.
+     */
     #[OA\Post(path: '/api/v1/childcare/reference-persons/{id}/portal-access', operationId: 'issueChildcareFamilyAccess', description: 'Mail a personal link to the family portal to a guardian; earlier links stop working.', summary: 'Issue family portal access', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 202, description: 'Link sent', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareMessageResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -149,6 +173,9 @@ final class ChildController extends Controller
         return response()->json(['data' => ['message' => 'Link sent']], Response::HTTP_ACCEPTED);
     }
 
+    /**
+     * Set the planned days, times and meals of a child from a date on.
+     */
     #[OA\Post(path: '/api/v1/childcare/children/{id}/weekly-plans', operationId: 'storeChildcareWeeklyPlan', description: 'Set the planned days, times and meals of a child from a date on.', summary: 'Set weekly plan', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareWeeklyPlanRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 201, description: 'Plan set', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -163,6 +190,9 @@ final class ChildController extends Controller
         return $this->created(WeeklyPlan::query()->create([...$request->validated(), 'child_id' => $child->id]));
     }
 
+    /**
+     * Assign a fee plan to a child for a period.
+     */
     #[OA\Post(path: '/api/v1/childcare/children/{id}/fees', operationId: 'storeChildcareChildFee', description: 'Assign a fee plan to a child for a period.', summary: 'Assign fee plan', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareChildFeeRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 201, description: 'Fee plan assigned', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),

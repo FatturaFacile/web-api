@@ -19,6 +19,9 @@ use OpenApi\Attributes as OA;
  */
 final class ConstructionSiteController extends Controller
 {
+    /**
+     * Open a construction site of the active company for a customer. The code is unique in the company.
+     */
     #[OA\Post(path: '/api/v1/construction/sites', operationId: 'storeConstructionSite', description: 'Open a construction site of the active company for a customer. The code is unique in the company.', summary: 'Create construction site', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConstructionSiteRequest')), tags: ['Construction'], responses: [
         new OA\Response(response: 201, description: 'Site created', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -34,6 +37,9 @@ final class ConstructionSiteController extends Controller
         return (new JsonResource($site))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return a construction site with its customer.
+     */
     #[OA\Get(path: '/api/v1/construction/sites/{id}', operationId: 'showConstructionSite', description: 'Return a construction site with its customer.', summary: 'Show construction site', security: [['bearerAuth' => []]], tags: ['Construction'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Site', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -45,6 +51,9 @@ final class ConstructionSiteController extends Controller
         return new JsonResource($this->find($id, 'view')->load('client'));
     }
 
+    /**
+     * Change a construction site, its dates or its status (planning, active, paused, completed).
+     */
     #[OA\Put(path: '/api/v1/construction/sites/{id}', operationId: 'updateConstructionSite', description: 'Change a construction site, its dates or its status (planning, active, paused, completed).', summary: 'Change construction site', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ConstructionSiteRequest')), tags: ['Construction'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Site changed', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -67,6 +76,9 @@ final class ConstructionSiteController extends Controller
         return new JsonResource($site);
     }
 
+    /**
+     * Archive a construction site (soft delete). Refused while it has progress billings: complete it instead.
+     */
     #[OA\Delete(path: '/api/v1/construction/sites/{id}', operationId: 'destroyConstructionSite', description: 'Archive a construction site (soft delete). Refused while it has progress billings: complete it instead.', summary: 'Archive construction site', security: [['bearerAuth' => []]], tags: ['Construction'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 204, description: 'Site archived'),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),

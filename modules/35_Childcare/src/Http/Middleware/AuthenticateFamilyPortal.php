@@ -10,6 +10,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Modules\Childcare\Services\FamilyPortalService;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /**
  * Family portal endpoints: the personal token in the X-Family-Token header identifies the guardian and the tenant. It
@@ -38,7 +39,11 @@ final class AuthenticateFamilyPortal
         $previous = $this->tenantContext->isExplicit() ? $this->tenantContext->getTenant() : null;
 
         try {
-            $request->attributes->set('familyContact', $this->portal->contactFor($token));
+            try {
+                $request->attributes->set('familyContact', $this->portal->contactFor($token));
+            } catch (HttpExceptionInterface) {
+                return $this->problemDetailsResponse(title: 'Unauthenticated', detail: 'The family token is not valid or has expired.', status: Response::HTTP_UNAUTHORIZED);
+            }
 
             return $next($request);
         } finally {

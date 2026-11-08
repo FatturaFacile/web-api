@@ -21,6 +21,9 @@ use OpenApi\Attributes as OA;
  */
 final class WorkCycleController extends Controller
 {
+    /**
+     * Return the work cycles of the company and the generic ones.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/work-cycles', operationId: 'listTradesWorkCycles', description: 'Return the work cycles of the company and the generic ones.', summary: 'List work cycles', security: [['bearerAuth' => []]], tags: ['Construction Trades'], responses: [
         new OA\Response(response: 200, description: 'Work cycles', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordCollection')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -33,6 +36,9 @@ final class WorkCycleController extends Controller
         return TradesResource::collection(WorkCycle::query()->with('steps')->orderBy('name')->paginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
+    /**
+     * Create a work cycle with its ordered steps.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/work-cycles', operationId: 'storeTradesWorkCycle', description: 'Create a work cycle with its ordered steps.', summary: 'Create work cycle', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesWorkCycleRequest')), tags: ['Construction Trades'], responses: [
         new OA\Response(response: 201, description: 'Work cycle created', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -69,6 +75,9 @@ final class WorkCycleController extends Controller
         return (new TradesResource($cycle->load('steps')))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return a work cycle with its steps.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/work-cycles/{id}', operationId: 'showTradesWorkCycle', description: 'Return a work cycle with its steps.', summary: 'Show work cycle', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Work cycle', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),

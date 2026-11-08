@@ -25,6 +25,9 @@ final class FolderController extends Controller
 {
     public function __construct(private readonly WorkshopService $workshop) {}
 
+    /**
+     * Return the work folders, newest first, optionally by status or vehicle.
+     */
     #[OA\Get(path: '/api/v1/workshop/folders', operationId: 'listWorkshopFolders', description: 'Return the work folders, newest first, optionally by status or vehicle.', summary: 'List work folders', security: [['bearerAuth' => []]], tags: ['Workshop'], parameters: [
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         new OA\Parameter(name: 'vehicle_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
@@ -46,6 +49,9 @@ final class FolderController extends Controller
         return WorkshopResource::collection($folders);
     }
 
+    /**
+     * Open a work folder for a vehicle of the company.
+     */
     #[OA\Post(path: '/api/v1/workshop/folders', operationId: 'storeWorkshopFolder', description: 'Open a work folder for a vehicle of the company.', summary: 'Open work folder', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopFolderRequest')), tags: ['Workshop'], responses: [
         new OA\Response(response: 201, description: 'Folder opened', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -59,6 +65,9 @@ final class FolderController extends Controller
         return (new WorkshopResource($this->workshop->openFolder($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return a work folder with its lines and vehicle.
+     */
     #[OA\Get(path: '/api/v1/workshop/folders/{id}', operationId: 'showWorkshopFolder', description: 'Return a work folder with its lines and vehicle.', summary: 'Show work folder', security: [['bearerAuth' => []]], tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 200, description: 'Folder', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -72,6 +81,9 @@ final class FolderController extends Controller
         return new WorkshopResource($folder->load(['lines', 'vehicle']));
     }
 
+    /**
+     * Change the reception data of an open folder.
+     */
     #[OA\Put(path: '/api/v1/workshop/folders/{id}', operationId: 'updateWorkshopFolder', description: 'Change the reception data of an open folder.', summary: 'Change work folder', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopFolderRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 200, description: 'Folder changed', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -84,6 +96,9 @@ final class FolderController extends Controller
         return new WorkshopResource($this->workshop->updateFolder($this->find($id, 'update'), $request->validated()));
     }
 
+    /**
+     * Add labour, a part, paint material or sublet work to a folder.
+     */
     #[OA\Post(path: '/api/v1/workshop/folders/{id}/lines', operationId: 'storeWorkshopFolderLine', description: 'Add labour, a part, paint material or sublet work to a folder.', summary: 'Add folder line', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopFolderLineRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 201, description: 'Line added', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -98,6 +113,9 @@ final class FolderController extends Controller
         return (new WorkshopResource($line))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Remove a line from a folder that is not invoiced.
+     */
     #[OA\Delete(path: '/api/v1/workshop/folders/{id}/lines/{lineId}', operationId: 'destroyWorkshopFolderLine', description: 'Remove a line from a folder that is not invoiced.', summary: 'Remove folder line', security: [['bearerAuth' => []]], tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId'), new OA\Parameter(ref: '#/components/parameters/WorkshopLineId')], responses: [
         new OA\Response(response: 204, description: 'Line removed'),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -113,6 +131,9 @@ final class FolderController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * Move a folder along its workflow: open, in progress, completed, delivered, or cancelled.
+     */
     #[OA\Post(path: '/api/v1/workshop/folders/{id}/status', operationId: 'changeWorkshopFolderStatus', description: 'Move a folder along its workflow: open, in progress, completed, delivered, or cancelled.', summary: 'Change folder status', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopFolderActionRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 200, description: 'Status changed', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopRecordResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -128,6 +149,9 @@ final class FolderController extends Controller
         return new WorkshopResource($this->workshop->transition($this->find($id, 'update'), (string) $request->validated('status'), $mileageOut));
     }
 
+    /**
+     * Create a sales quote from the lines of the folder for the customer to approve.
+     */
     #[OA\Post(path: '/api/v1/workshop/folders/{id}/quote', operationId: 'quoteWorkshopFolder', description: 'Create a sales quote from the lines of the folder for the customer to approve.', summary: 'Quote from folder', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopFolderActionRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 201, description: 'Quote created', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopDocumentResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -143,6 +167,9 @@ final class FolderController extends Controller
         return $this->documentResponse($folder, 'quote', (string) $quote->id, (string) $quote->quote_number);
     }
 
+    /**
+     * Create the delivery note of a completed folder; tracked parts leave the stock.
+     */
     #[OA\Post(path: '/api/v1/workshop/folders/{id}/delivery-note', operationId: 'deliveryNoteWorkshopFolder', description: 'Create the delivery note of a completed folder; tracked parts leave the stock.', summary: 'Delivery note from folder', security: [['bearerAuth' => []]], tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 201, description: 'Delivery note created', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopDocumentResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),
@@ -158,6 +185,9 @@ final class FolderController extends Controller
         return $this->documentResponse($folder, 'delivery_note', (string) $note->id, (string) $note->ddt_number);
     }
 
+    /**
+     * Invoice a completed or delivered folder once, through the invoicing flow.
+     */
     #[OA\Post(path: '/api/v1/workshop/folders/{id}/invoice', operationId: 'invoiceWorkshopFolder', description: 'Invoice a completed or delivered folder once, through the invoicing flow.', summary: 'Invoice folder', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/WorkshopFolderActionRequest')), tags: ['Workshop'], parameters: [new OA\Parameter(ref: '#/components/parameters/WorkshopId')], responses: [
         new OA\Response(response: 201, description: 'Invoice issued', content: new OA\JsonContent(ref: '#/components/schemas/WorkshopDocumentResponse')),
         new OA\Response(ref: '#/components/responses/WorkshopUnauthenticated', response: 401),

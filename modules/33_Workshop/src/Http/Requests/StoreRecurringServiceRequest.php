@@ -10,10 +10,17 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Workshop\Models\RecurringService;
 
+/**
+ * Validates a recurring service (for example yearly tyre storage) billed through a subscription.
+ */
 final class StoreRecurringServiceRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

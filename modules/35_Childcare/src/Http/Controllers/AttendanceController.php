@@ -22,6 +22,9 @@ final class AttendanceController extends Controller
 {
     public function __construct(private readonly AttendanceService $attendance) {}
 
+    /**
+     * Check a child in, optionally with the measured temperature.
+     */
     #[OA\Post(path: '/api/v1/childcare/attendances/check-in', operationId: 'checkInChildcareChild', description: 'Check a child in, optionally with the measured temperature.', summary: 'Check in', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareCheckInRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Checked in', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -36,6 +39,9 @@ final class AttendanceController extends Controller
         return (new ChildcareResource($attendance))->response()->setStatusCode(200);
     }
 
+    /**
+     * Check a child out to an authorised reference person.
+     */
     #[OA\Post(path: '/api/v1/childcare/attendances/check-out', operationId: 'checkOutChildcareChild', description: 'Check a child out to an authorised reference person.', summary: 'Check out', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareCheckOutRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Checked out', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -49,6 +55,9 @@ final class AttendanceController extends Controller
         return new ChildcareResource($this->attendance->checkOut($child, $request->validated('at'), (string) $request->validated('picked_up_by'), $request->user()?->getKey()));
     }
 
+    /**
+     * Record that a child is absent on a day.
+     */
     #[OA\Post(path: '/api/v1/childcare/attendances/absence', operationId: 'markChildcareAbsence', description: 'Record that a child is absent on a day.', summary: 'Record absence', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareAbsenceRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Absence recorded', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -63,6 +72,9 @@ final class AttendanceController extends Controller
         return (new ChildcareResource($attendance))->response()->setStatusCode(200);
     }
 
+    /**
+     * Correct an attendance; each previous value is kept with the reason and the author. Management only.
+     */
     #[OA\Put(path: '/api/v1/childcare/attendances/{id}', operationId: 'correctChildcareAttendance', description: 'Correct an attendance; each previous value is kept with the reason and the author. Management only.', summary: 'Correct attendance', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareCorrectionRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'Attendance corrected', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -78,6 +90,9 @@ final class AttendanceController extends Controller
         return new ChildcareResource($this->attendance->correct($attendance, $request->corrections(), (string) $request->validated('reason'), $request->user()?->getKey()));
     }
 
+    /**
+     * Return the history of corrections of an attendance.
+     */
     #[OA\Get(path: '/api/v1/childcare/attendances/{id}/corrections', operationId: 'listChildcareAttendanceCorrections', description: 'Return the history of corrections of an attendance.', summary: 'List corrections', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'Corrections', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -92,6 +107,9 @@ final class AttendanceController extends Controller
         return ChildcareResource::collection(AttendanceCorrection::query()->where('attendance_id', $attendance->id)->orderBy('created_at')->get());
     }
 
+    /**
+     * Return the monthly register: per child and day the status and the times.
+     */
     #[OA\Get(path: '/api/v1/childcare/attendances/register', operationId: 'childcareMonthlyRegister', description: 'Return the monthly register: per child and day the status and the times.', summary: 'Monthly register', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'month', in: 'query', required: true, schema: new OA\Schema(type: 'string', example: '2026-11')),
         new OA\Parameter(name: 'group_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),

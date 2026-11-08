@@ -6,8 +6,15 @@ namespace Modules\ConstructionTrades\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validates the CSV file of a price list import.
+ */
 final class ImportPriceListRequest extends FormRequest
 {
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

@@ -21,6 +21,9 @@ final class StaffShift extends ChildcareRecord
         return ['date' => 'immutable_date', 'break_minutes' => 'integer'];
     }
 
+    /**
+     * Minutes worked in the shift, less the unpaid break.
+     */
     public function workedMinutes(): int
     {
         [$startHour, $startMinute] = array_map('intval', explode(':', $this->starts_at));

@@ -27,6 +27,9 @@ final class BidController extends Controller
 {
     public function __construct(private readonly TradesService $trades) {}
 
+    /**
+     * Return the bids, newest first, optionally by status.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids', operationId: 'listTradesBids', description: 'Return the bids, newest first, optionally by status.', summary: 'List bids', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
     ], responses: [
@@ -44,6 +47,9 @@ final class BidController extends Controller
             ->paginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
+    /**
+     * Create a draft bid for a customer, optionally on a construction site.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids', operationId: 'storeTradesBid', description: 'Create a draft bid for a customer, optionally on a construction site.', summary: 'Create bid', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesBidRequest')), tags: ['Construction Trades'], responses: [
         new OA\Response(response: 201, description: 'Bid created', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -57,6 +63,9 @@ final class BidController extends Controller
         return (new TradesResource($this->trades->createBid($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return a bid with its positions, billings and net total.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids/{id}', operationId: 'showTradesBid', description: 'Return a bid with its positions, billings and net total.', summary: 'Show bid', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Bid', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -70,6 +79,9 @@ final class BidController extends Controller
         return (new TradesResource($bid->load(['positions', 'billings'])))->additional(['meta' => ['net_total' => $this->trades->bidNet($bid)]])->response();
     }
 
+    /**
+     * Change a draft bid.
+     */
     #[OA\Put(path: '/api/v1/construction-trades/bids/{id}', operationId: 'updateTradesBid', description: 'Change a draft bid.', summary: 'Change bid', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesBidRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Bid changed', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -82,6 +94,9 @@ final class BidController extends Controller
         return new TradesResource($this->trades->updateBid($this->find($id, 'update'), $request->validated()));
     }
 
+    /**
+     * Submit, accept, reject or reopen a bid.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids/{id}/status', operationId: 'changeTradesBidStatus', description: 'Submit, accept, reject or reopen a bid.', summary: 'Change bid status', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesStatusRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Status changed', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -94,6 +109,9 @@ final class BidController extends Controller
         return new TradesResource($this->trades->transition($this->find($id, 'update'), (string) $request->validated('status')));
     }
 
+    /**
+     * Add a position to a draft bid: from a price list item, from a work cycle, or by hand.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids/{id}/positions', operationId: 'storeTradesBidPosition', description: 'Add a position to a draft bid: from a price list item, from a work cycle, or by hand.', summary: 'Add bid position', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesPositionRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 201, description: 'Position added', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -110,6 +128,9 @@ final class BidController extends Controller
         return (new TradesResource($position))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Remove a position from a draft bid.
+     */
     #[OA\Delete(path: '/api/v1/construction-trades/bids/{id}/positions/{positionId}', operationId: 'destroyTradesBidPosition', description: 'Remove a position from a draft bid.', summary: 'Remove bid position', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId'), new OA\Parameter(ref: '#/components/parameters/TradesPositionId')], responses: [
         new OA\Response(response: 204, description: 'Position removed'),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -125,6 +146,9 @@ final class BidController extends Controller
         return response()->noContent();
     }
 
+    /**
+     * Print the bid as a tender specification (PDF), with or without prices.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids/{id}/tender-specification', operationId: 'tradesTenderSpecification', description: 'Print the bid as a tender specification (PDF), with or without prices.', summary: 'Tender specification', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/TradesId'),
         new OA\Parameter(name: 'with_prices', in: 'query', required: false, schema: new OA\Schema(type: 'boolean', default: true)),
