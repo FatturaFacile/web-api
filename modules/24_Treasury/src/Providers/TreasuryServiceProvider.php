@@ -42,6 +42,7 @@ use Modules\Treasury\Events\PaymentScheduledEvent;
 use Modules\Treasury\Events\TreasuryAllocationExecutedEvent;
 use Modules\Treasury\Listeners\DispatchOutboxOnTreasuryEventListener;
 use Modules\Treasury\Listeners\GeneralLedgerTreasuryListener;
+use Modules\Treasury\Listeners\PaymentProposalDiscountListener;
 use Modules\Treasury\Listeners\ProcurementTreasuryListener;
 use Modules\Treasury\Listeners\ProjectsTreasuryListener;
 use Modules\Treasury\Listeners\TreasuryReadinessEventListener;
@@ -133,5 +134,8 @@ final class TreasuryServiceProvider extends ServiceProvider
         Event::listen(TreasuryAllocationExecutedEvent::class, DispatchOutboxOnTreasuryEventListener::class);
         Event::listen(CashPositionUpdatedEvent::class, DispatchOutboxOnTreasuryEventListener::class);
         Event::listen(FXAdjustmentCalculatedEvent::class, DispatchOutboxOnTreasuryEventListener::class);
+
+        // 7. Early-payment discounts of the payment proposals, recorded with the payments the bank executed
+        Event::listen(PaymentExecutedEvent::class, PaymentProposalDiscountListener::class);
     }
 }

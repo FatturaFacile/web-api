@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\AutomotiveController;
+use App\Http\Controllers\Api\V1\Banking\BankReconciliationRuleController;
 use App\Http\Controllers\Api\V1\Banking\BankStatementController;
 use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
@@ -466,6 +467,10 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/statements/lines/{lineId}/unmatch', [BankStatementController::class, 'unmatch'])->name('statements.lines.unmatch');
             Route::get('/statements/{id}', [BankStatementController::class, 'show'])->name('statements.show');
             Route::post('/statements/{id}/reconcile', [BankStatementController::class, 'reconcile'])->name('statements.reconcile');
+            Route::get('/reconciliation-rules', [BankReconciliationRuleController::class, 'index'])->name('reconciliation-rules.index');
+            Route::post('/reconciliation-rules', [BankReconciliationRuleController::class, 'store'])->name('reconciliation-rules.store');
+            Route::put('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'update'])->whereUuid('ruleId')->name('reconciliation-rules.update');
+            Route::delete('/reconciliation-rules/{ruleId}', [BankReconciliationRuleController::class, 'destroy'])->whereUuid('ruleId')->name('reconciliation-rules.destroy');
         });
 
         // System: manual tenant backups

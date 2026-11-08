@@ -2,26 +2,42 @@
 
 declare(strict_types=1);
 
+/*
+ * The general ledger export (prima nota) reads the single ledger: the posted entries of `journal_entries`.
+ *
+ * Until April 2027 it rebuilt the postings from the documents with its own default accounts (receivables 1200, bank
+ * 1000, revenue 4000, output VAT 2600...), which differed from the accounts of the posting services (1100, 1020, 2200)
+ * and could differ in the figures too. The fixtures therefore post entries through the double-entry posting service
+ * instead of creating raw documents, and the expected accounts are the ones of the ledger. What did not change, and is
+ * still asserted as before: the CSV format (BOM, header, `;`, decimal commas, quoting and formula neutralisation, ISO
+ * or European dates), the JSON shape, the numbering over the whole period that is stable across pages, months, filters
+ * and the export, the totals and balance check, the validation, the one-year limit and the tenant isolation. The
+ * `accounting.accounts.*` preferences no longer rename accounts in the export: the accounts are the ones posted.
+ */
+
 use App\Models\BankStatement;
 use App\Models\BankStatementLine;
 use App\Models\Contact;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
-use App\Models\PassiveInvoice;
-use App\Models\Payment;
-use App\Models\SupplierPayment;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
+use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Models\JournalLine;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\LedgerAccountResolver;
 
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
     $this->tenant = Tenant::create(['name' => 'FatturaFacile Italy SRL', 'legal_name' => 'FatturaFacile Italy SRL', 'country' => 'IT', 'default_currency' => 'EUR']);
     $this->otherTenant = Tenant::create(['name' => 'Other SRL', 'legal_name' => 'Other SRL', 'country' => 'IT', 'default_currency' => 'EUR']);
+    fiscalCalendar($this->tenant, 2026);
+    fiscalCalendar($this->otherTenant, 2026);
 
     $this->user = User::create(['name' => 'Leonardo', 'email' => 'leo@fatturafacile.com', 'password' => bcrypt('secret123'), 'locale' => 'en']);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
@@ -43,84 +59,78 @@ function glApi(?string $tenantId = null)
 }
 
 /**
- * @param  array<string, mixed>  $overrides
+ * An account of the chart of a tenant: the control accounts of the posting services, or a plain one by code.
  */
-function glInvoice(string $number, string $date, float $net, float $tax, ?float $gross = null, array $overrides = []): Invoice
+function glAccount(string $code, ?string $tenantId = null, ?string $name = null): ChartOfAccount
 {
-    $tenantId = $overrides['tenant_id'] ?? test()->tenant->id;
+    $tenantId ??= test()->tenant->id;
+    $resolver = app(LedgerAccountResolver::class);
 
-    return Invoice::create(array_merge([
-        'tenant_id' => $tenantId, 'contact_id' => $tenantId === test()->tenant->id ? test()->customer->id : test()->foreignCustomer->id,
-        'invoice_number' => $number, 'date' => $date, 'currency' => 'EUR', 'total_net' => $net, 'total_tax' => $tax,
-        'total_gross' => $gross ?? round($net + $tax, 2), 'invoice_type' => 'standard',
-    ], $overrides));
+    return match ($code) {
+        '1100' => $resolver->receivables($tenantId),
+        '2000' => $resolver->payables($tenantId),
+        '2200' => $resolver->outputVat($tenantId),
+        '1400' => $resolver->inputVat($tenantId),
+        '1020' => $resolver->bank($tenantId),
+        default => ChartOfAccount::withoutGlobalScopes()->firstOrCreate(
+            ['tenant_id' => $tenantId, 'account_code' => $code],
+            ['id' => (string) Str::uuid7(), 'name' => $name ?? "Account {$code}", 'account_class' => 'expense', 'account_type' => 'expense', 'normal_balance' => 'debit', 'currency' => 'EUR', 'is_active' => true],
+        ),
+    };
 }
 
 /**
- * @param  array<string, mixed>  $overrides
+ * Posts an entry through the double-entry posting service, as the posting flows do.
+ *
+ * @param  list<array{0: string, 1: string, 2: string, 3?: array<string, mixed>}>  $lines  [code, debit, credit, extra]
+ * @param  array<string, mixed>  $entry  attributes of the entry (status, ledger type)
  */
-function glPassive(string $number, string $date, float $net, float $tax, array $overrides = []): PassiveInvoice
+function glPost(string $date, string $sourceType, string $documentNumber, array $lines, ?string $tenantId = null, array $entry = []): JournalEntry
 {
-    return PassiveInvoice::create(array_merge([
-        'tenant_id' => test()->tenant->id, 'supplier_id' => test()->supplier->id, 'invoice_number' => $number, 'date' => $date, 'currency' => 'EUR',
-        'total_net' => $net, 'total_tax' => $tax, 'total_amount' => round($net + $tax, 2), 'document_type' => 'TD01',
-    ], $overrides));
-}
+    $tenantId ??= test()->tenant->id;
 
-function glBankLine(BankStatement $statement, int $number, string $category, float $amount, string $direction = 'debit', array $overrides = []): BankStatementLine
-{
-    return BankStatementLine::create(array_merge([
-        'tenant_id' => $statement->tenant_id, 'bank_statement_id' => $statement->id, 'line_number' => $number, 'booking_date' => '2026-03-12', 'value_date' => '2026-03-12',
-        'amount' => $amount, 'direction' => $direction, 'description' => "Line {$number}", 'reconciled' => true, 'reconciliation_type' => 'auto_categorization', 'reconciliation_category' => $category,
-    ], $overrides));
+    return app(TenantContext::class)->runWithTenant(Tenant::findOrFail($tenantId), fn (): JournalEntry => app(DoubleEntryPostingServiceInterface::class)->createAndPost([
+        'tenant_id' => $tenantId,
+        'company_id' => $tenantId,
+        'fiscal_period_id' => app(FiscalPeriodResolver::class)->forDate($tenantId, $date)->id,
+        'source_document_type' => $sourceType,
+        'source_document_id' => (string) Str::uuid7(),
+        'document_number' => $documentNumber,
+        'posting_date' => $date,
+        'document_date' => $date,
+        'journal_type' => 'standard',
+        'description' => "{$sourceType} {$documentNumber}",
+        'bank_balance_managed' => true,
+        'lines' => array_map(static fn (array $line): array => [
+            'account_id' => glAccount($line[0], $tenantId)->id,
+            'debit_amount' => $line[1],
+            'credit_amount' => $line[2],
+            'description' => $line[3]['description'] ?? "{$documentNumber} {$line[0]}",
+        ] + ($line[3] ?? []), $lines),
+    ] + $entry));
 }
 
 /**
- * Every kind of source in March 2026, plus data of another tenant that must never show up.
+ * Entries of every kind in March 2026, one in April, and entries of another tenant that must never show up.
  */
 function glSeed(): void
 {
-    $tenant = test()->tenant;
+    $customer = ['partner_type' => 'customer', 'partner_id' => test()->customer->id];
+    $supplier = ['partner_type' => 'supplier', 'partner_id' => test()->supplier->id];
 
-    $sale = glInvoice('INV-1', '2026-03-05', 100, 22);
-    InvoiceItem::create(['invoice_id' => $sale->id, 'description' => 'Goods', 'quantity' => 1, 'unit_price' => 100, 'tax_rate' => 22, 'line_total' => 100]);
-    InvoiceItem::create(['invoice_id' => $sale->id, 'description' => 'Books', 'quantity' => 1, 'unit_price' => 0, 'tax_rate' => 4, 'line_total' => 0]);
-    glInvoice('CN-1', '2026-03-06', 10, 2.2, null, ['invoice_type' => 'credit_note']);
-    glInvoice('INV-ROUND', '2026-03-07', 100, 22, 122.05);
-    glInvoice('PRO-1', '2026-03-08', 999, 0, null, ['invoice_type' => 'proforma']);
-    glInvoice('INV-OLD', '2026-02-20', 50, 0);
-
-    glPassive('SUP-1', '2026-03-07', 200, 44);
-    glPassive('SUP-CN', '2026-03-09', 20, 4.4, ['document_type' => 'TD04']);
-
-    $received = glInvoice('INV-PAID', '2026-03-01', 150, 0);
-    $line = (string) Str::uuid();
-    Payment::create(['tenant_id' => $tenant->id, 'invoice_id' => $received->id, 'amount' => 147.50, 'paid_at' => '2026-03-10', 'type' => 'payment', 'bank_statement_line_id' => $line]);
-    Payment::create(['tenant_id' => $tenant->id, 'invoice_id' => $received->id, 'amount' => 2.50, 'paid_at' => '2026-03-10', 'type' => 'bank_fee', 'bank_statement_line_id' => $line]);
-    Payment::create(['tenant_id' => $tenant->id, 'invoice_id' => $sale->id, 'amount' => 50, 'paid_at' => '2026-03-11']);
-
-    $payable = glPassive('SUP-2', '2026-03-02', 100, 0);
-    $supplierLine = (string) Str::uuid();
-    SupplierPayment::create(['tenant_id' => $tenant->id, 'passive_invoice_id' => $payable->id, 'amount' => 99.00, 'paid_at' => '2026-03-10', 'type' => 'payment', 'bank_statement_line_id' => $supplierLine]);
-    SupplierPayment::create(['tenant_id' => $tenant->id, 'passive_invoice_id' => $payable->id, 'amount' => 1.50, 'paid_at' => '2026-03-10', 'type' => 'bank_fee', 'bank_statement_line_id' => $supplierLine]);
-    SupplierPayment::create(['tenant_id' => $tenant->id, 'passive_invoice_id' => $payable->id, 'amount' => 0.50, 'paid_at' => '2026-03-10', 'type' => 'adjustment', 'bank_statement_line_id' => $supplierLine]);
-
-    $statement = BankStatement::create(['tenant_id' => $tenant->id, 'source_format' => 'camt053', 'account_iban' => 'IT60X0542811101000000123456', 'statement_date' => '2026-03-31', 'currency' => 'EUR', 'total_entries' => 8, 'status' => 'draft']);
-    glBankLine($statement, 1, 'tax_payment', 1200.00, 'debit', ['description' => 'DELEGA F24']);
-    glBankLine($statement, 2, 'payroll', 2500.00, 'debit', ['description' => 'STIPENDI', 'ledger_account_code' => '6010', 'reconciliation_type' => 'manual_categorization']);
-    glBankLine($statement, 3, 'bank_expense', 12.50, 'debit', ['description' => 'COMPETENZE']);
-    glBankLine($statement, 4, 'internal_transfer', 900.00, 'debit', ['description' => 'To savings', 'ledger_account_code' => '1010']);
-    glBankLine($statement, 5, 'internal_transfer', 300.00, 'credit', ['description' => 'From savings']);
-    glBankLine($statement, 6, 'generic_expense', 30.00, 'debit', ['description' => 'Office', 'counterpart_name' => '=SUM(A1)']);
-    glBankLine($statement, 7, 'invoice', 99.00, 'debit', ['reconciliation_type' => 'exact']);
-    glBankLine($statement, 8, 'tax_payment', 77.00, 'debit', ['booking_date' => '2026-04-02']);
+    glAccount('4000', null, 'Sales revenue');
+    glPost('2026-03-05', 'sales_invoice', 'INV-1', [['1100', '122.00', '0', $customer], ['4000', '0', '100.00', ['vat_rate_percent' => 22]], ['2200', '0', '22.00', ['vat_rate_percent' => 22]]]);
+    glPost('2026-03-06', 'credit_note', 'CN-1', [['4000', '10.00', '0'], ['2200', '2.20', '0'], ['1100', '0', '12.20', $customer]]);
+    glPost('2026-03-07', 'vendor_invoice', 'SUP-1', [['3000', '200.00', '0'], ['1400', '44.00', '0'], ['2000', '0', '244.00', $supplier]]);
+    glPost('2026-03-10', 'customer_payment', 'INV-1', [['1020', '122.00', '0'], ['1100', '0', '122.00', $customer]]);
+    glPost('2026-03-11', 'supplier_payment', 'SUP-1', [['2000', '244.00', '0', $supplier], ['1020', '0', '244.00']]);
+    glPost('2026-03-12', 'bank_line_categorization', 'F24-03', [['6800', '1200.00', '0', ['description' => 'tax_payment: DELEGA F24']], ['1020', '0', '1200.00']]);
+    glPost('2026-03-13', 'treasury_bank_fee', 'FEE-1', [['6220', '12.50', '0', ['description' => '=SUM(A1)']], ['1020', '0', '12.50']]);
+    glPost('2026-04-02', 'bank_line_categorization', 'F24-04', [['6800', '77.00', '0'], ['1020', '0', '77.00']]);
 
     // The other tenant: nothing of this may leak.
-    $foreign = glInvoice('SECRET-INV', '2026-03-05', 5000, 1100, null, ['tenant_id' => test()->otherTenant->id]);
-    Payment::create(['tenant_id' => test()->otherTenant->id, 'invoice_id' => $foreign->id, 'amount' => 6100, 'paid_at' => '2026-03-10']);
-    $foreignStatement = BankStatement::create(['tenant_id' => test()->otherTenant->id, 'source_format' => 'cbi', 'account_iban' => 'CH4431999123000889012', 'statement_date' => '2026-03-31', 'currency' => 'EUR', 'total_entries' => 1, 'status' => 'draft']);
-    glBankLine($foreignStatement, 1, 'payroll', 4000.00, 'debit', ['description' => 'SECRET PAYROLL']);
-    DB::table('chart_of_accounts')->insert(['id' => (string) Str::uuid(), 'tenant_id' => test()->otherTenant->id, 'code' => '4000', 'name' => 'Secret revenue account', 'type' => 'revenue', 'standard' => 'it_general_ledger', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
+    glAccount('4000', test()->otherTenant->id, 'Secret revenue account');
+    glPost('2026-03-05', 'sales_invoice', 'SECRET-INV', [['1100', '6100.00', '0', ['partner_type' => 'customer', 'partner_id' => test()->foreignCustomer->id]], ['4000', '0', '6100.00']], test()->otherTenant->id);
 }
 
 /**
@@ -145,7 +155,7 @@ function glLines(array $entry): array
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Double entry
+// Double entry, read from the journal
 // ---------------------------------------------------------------------------------------------------------------
 
 test('every entry and the whole period balance exactly', function (): void {
@@ -155,7 +165,7 @@ test('every entry and the whole period balance exactly', function (): void {
     $entries = $response->json('data.entries');
     $totals = $response->json('data.totals');
 
-    expect($entries)->not->toBeEmpty()->and($totals['balanced'])->toBeTrue()->and($totals['unbalanced_entries'])->toBe([]);
+    expect($entries)->toHaveCount(7)->and($totals['balanced'])->toBeTrue()->and($totals['unbalanced_entries'])->toBe([]);
 
     $debit = 0;
     $credit = 0;
@@ -176,133 +186,122 @@ test('every entry and the whole period balance exactly', function (): void {
         ->and(array_column($entries, 'entry_number'))->toBe(array_map(fn (int $i): string => sprintf('%06d', $i), range(1, count($entries))));
 });
 
-test('sales invoices and credit notes post receivables, revenue and output VAT', function (): void {
+test('documents and payments show the accounts and figures posted in the journal', function (): void {
     glSeed();
     $entries = glEntries();
 
     $invoice = glEntry($entries, 'INV-1', 'invoice');
-    expect(glLines($invoice))->toBe([['1200', 122.0, 0.0], ['4000', 0.0, 100.0], ['2600', 0.0, 22.0]])
+    expect(glLines($invoice))->toBe([['1100', 122.0, 0.0], ['4000', 0.0, 100.0], ['2200', 0.0, 22.0]])
         ->and($invoice['entry_date'])->toBe('2026-03-05')
         ->and($invoice['counterpart_name'])->toBe('Rossi SRL')
         ->and($invoice['tax_id'])->toBe('IT00811720580')
-        ->and($invoice['lines'][1]['vat_code'])->toBe('22/4')
-        ->and($invoice['lines'][0]['ledger_account_name'])->toBe('Trade receivables');
+        ->and($invoice['lines'][1]['vat_code'])->toBe('22')
+        ->and($invoice['lines'][1]['ledger_account_name'])->toBe('Sales revenue')
+        ->and($invoice['currency'])->toBe('EUR');
 
-    $creditNote = glEntry($entries, 'CN-1', 'credit_note');
-    expect(glLines($creditNote))->toBe([['1200', 0.0, 12.2], ['4000', 10.0, 0.0], ['2600', 2.2, 0.0]]);
-
-    // A total that differs from net plus tax goes to the rounding account.
-    expect(glLines(glEntry($entries, 'INV-ROUND')))->toBe([['1200', 122.05, 0.0], ['4000', 0.0, 100.0], ['2600', 0.0, 22.0], ['7900', 0.0, 0.05]]);
-
-    // Proformas and invoices outside the period are not posted.
-    expect(glEntry($entries, 'PRO-1'))->toBeNull()->and(glEntry($entries, 'INV-OLD'))->toBeNull();
+    expect(glLines(glEntry($entries, 'CN-1', 'credit_note')))->toBe([['4000', 10.0, 0.0], ['2200', 2.2, 0.0], ['1100', 0.0, 12.2]])
+        ->and(glLines(glEntry($entries, 'SUP-1', 'supplier_invoice')))->toBe([['3000', 200.0, 0.0], ['1400', 44.0, 0.0], ['2000', 0.0, 244.0]])
+        ->and(glEntry($entries, 'SUP-1', 'supplier_invoice')['tax_id'])->toBe('FRNRPD80A01H501Z')
+        ->and(glLines(glEntry($entries, 'INV-1', 'payment')))->toBe([['1020', 122.0, 0.0], ['1100', 0.0, 122.0]])
+        ->and(glLines(glEntry($entries, 'SUP-1', 'supplier_payment')))->toBe([['2000', 244.0, 0.0], ['1020', 0.0, 244.0]]);
 });
 
-test('supplier invoices post costs and input VAT against payables', function (): void {
+test('the export holds exactly the figures of the journal, account by account', function (): void {
     glSeed();
+
+    $exported = [];
+
+    foreach (glEntries() as $entry) {
+        foreach ($entry['lines'] as $line) {
+            $exported[$line['ledger_account_code']] = ($exported[$line['ledger_account_code']] ?? 0) + (int) round(($line['debit'] - $line['credit']) * 100);
+        }
+    }
+
+    $journal = [];
+
+    foreach (JournalLine::withoutGlobalScopes()->with(['account' => fn ($query) => $query->withoutGlobalScopes()])->where('tenant_id', $this->tenant->id)->whereBetween('posting_date', ['2026-03-01', '2026-03-31'])->get() as $line) {
+        $journal[$line->account->account_code] = ($journal[$line->account->account_code] ?? 0) + (int) bcmul(bcsub((string) $line->debit_amount, (string) $line->credit_amount, 4), '100', 0);
+    }
+
+    ksort($exported);
+    ksort($journal);
+    expect($exported)->toBe($journal);
+});
+
+test('drafts, reversals and other ledgers follow the journal', function (): void {
+    glSeed();
+    $entry = glPost('2026-03-20', 'sales_invoice', 'INV-REV', [['1100', '50.00', '0'], ['4000', '0', '50.00']]);
+    app(TenantContext::class)->runWithTenant($this->tenant, fn () => app(DoubleEntryPostingServiceInterface::class)->reverseJournal((string) $entry->id, '2026-03-21', 'Wrong customer'));
+    glPost('2026-03-22', 'sales_invoice', 'INV-DRAFT', [['1100', '9.00', '0'], ['4000', '0', '9.00']], null, ['status' => 'draft']);
+    glPost('2026-03-23', 'sales_invoice', 'INV-IFRS', [['1100', '8.00', '0'], ['4000', '0', '8.00']], null, ['ledger_type' => 'ifrs']);
+
     $entries = glEntries();
 
-    $invoice = glEntry($entries, 'SUP-1', 'supplier_invoice');
-    expect(glLines($invoice))->toBe([['3000', 200.0, 0.0], ['1600', 44.0, 0.0], ['2000', 0.0, 244.0]])
-        ->and($invoice['tax_id'])->toBe('FRNRPD80A01H501Z');
-
-    expect(glLines(glEntry($entries, 'SUP-CN', 'supplier_credit_note')))->toBe([['3000', 0.0, 20.0], ['1600', 0.0, 4.4], ['2000', 24.4, 0.0]]);
+    expect(glEntry($entries, 'INV-REV', 'invoice'))->not->toBeNull()
+        ->and(glLines(glEntry($entries, 'INV-REV', 'reversal')))->toBe([['1100', 0.0, 50.0], ['4000', 50.0, 0.0]])
+        ->and(glEntry($entries, 'INV-DRAFT'))->toBeNull()
+        ->and(glEntry($entries, 'INV-IFRS'))->toBeNull();
 });
 
-test('customer payments post bank, fees and write-offs against receivables', function (): void {
-    glSeed();
-    $entries = glEntries();
+test('categorised bank lines reach the journal and the export with their category and accounts', function (): void {
+    glApi()->putJson('/api/v1/settings/preferences/banking', ['ledger_defaults' => ['tax_account_code' => '6810']])->assertOk();
+    glAccount('6810', null, 'Imposte e tasse');
+    $statement = BankStatement::create(['tenant_id' => $this->tenant->id, 'source_format' => 'camt053', 'account_iban' => 'IT60X0542811101000000123456', 'statement_date' => '2026-03-31', 'currency' => 'EUR', 'total_entries' => 1, 'status' => 'draft']);
+    $line = BankStatementLine::create(['tenant_id' => $this->tenant->id, 'bank_statement_id' => $statement->id, 'line_number' => 1, 'booking_date' => '2026-03-16', 'value_date' => '2026-03-16', 'amount' => 1200, 'direction' => 'debit', 'description' => 'DELEGA F24', 'reconciled' => false]);
 
-    expect(glLines(glEntry($entries, 'INV-PAID', 'payment')))->toBe([['1000', 147.5, 0.0], ['6220', 2.5, 0.0], ['1200', 0.0, 150.0]]);
+    glApi()->postJson("/api/v1/banking/statements/lines/{$line->id}/categorize", ['category' => 'tax_payment'])->assertOk();
 
-    $simple = glEntry($entries, 'INV-1', 'payment');
-    expect(glLines($simple))->toBe([['1000', 50.0, 0.0], ['1200', 0.0, 50.0]])
-        ->and($simple['entry_date'])->toBe('2026-03-11');
+    $entry = collect(glEntries('&source=banking'))->firstWhere('document_type', 'tax_payment');
+    expect(glLines($entry))->toBe([['6810', 1200.0, 0.0], ['1020', 0.0, 1200.0]])
+        ->and($entry['lines'][0]['ledger_account_name'])->toBe('Imposte e tasse');
 });
-
-test('supplier payments post payables, bank charges, bank and rounding income', function (): void {
-    glSeed();
-    $entry = glEntry(glEntries(), 'SUP-2', 'supplier_payment');
-
-    expect(glLines($entry))->toBe([['2000', 99.5, 0.0], ['6220', 1.5, 0.0], ['1000', 0.0, 100.5], ['7900', 0.0, 0.5]]);
-});
-
-test('categorised bank lines post taxes, payroll, bank expenses, transfers and other expenses', function (): void {
-    glSeed();
-    $entries = collect(glEntries('&source=banking'));
-
-    expect($entries->pluck('document_type')->all())->toBe(['tax_payment', 'payroll', 'bank_expense', 'internal_transfer', 'internal_transfer', 'generic_expense']);
-
-    $lines = $entries->map(fn (array $entry): array => glLines($entry))->all();
-    expect($lines[0])->toBe([['6800', 1200.0, 0.0], ['1000', 0.0, 1200.0]])
-        ->and($lines[1])->toBe([['6010', 2500.0, 0.0], ['1000', 0.0, 2500.0]])
-        ->and($lines[2])->toBe([['6220', 12.5, 0.0], ['1000', 0.0, 12.5]])
-        ->and($lines[3])->toBe([['1010', 900.0, 0.0], ['1000', 0.0, 900.0]])
-        ->and($lines[4])->toBe([['1000', 300.0, 0.0], ['1090', 0.0, 300.0]])
-        ->and($lines[5])->toBe([['6900', 30.0, 0.0], ['1000', 0.0, 30.0]]);
-
-    // Lines matched with an invoice are not repeated and lines outside the period are not posted.
-    expect($entries->pluck('description', 'document_type')->all())->not->toBeEmpty();
-    expect(collect(glEntries())->where('document_number', '')->count())->toBe(0);
-});
-
-// ---------------------------------------------------------------------------------------------------------------
-// Filters, preview and preferences
-// ---------------------------------------------------------------------------------------------------------------
 
 test('source, account and period filters select the entries', function (): void {
     glSeed();
 
     $invoices = glEntries('&source=invoices');
-    expect(collect($invoices)->pluck('document_type')->unique()->sort()->values()->all())->toBe(['credit_note', 'invoice', 'supplier_credit_note', 'supplier_invoice']);
+    expect(collect($invoices)->pluck('document_type')->unique()->sort()->values()->all())->toBe(['credit_note', 'invoice', 'supplier_invoice']);
 
     $payments = glEntries('&source=payments');
     expect(collect($payments)->pluck('document_type')->unique()->sort()->values()->all())->toBe(['payment', 'supplier_payment']);
 
-    expect(glEntries('&source=all'))->toHaveCount(count($invoices) + count($payments) + 6);
+    $banking = glEntries('&source=banking');
+    expect(collect($banking)->pluck('document_type')->sort()->values()->all())->toBe(['bank_line', 'treasury_bank_fee']);
+
+    expect(glEntries('&source=all'))->toHaveCount(count($invoices) + count($payments) + count($banking));
 
     // The account filter keeps whole entries, so they still balance.
-    $payroll = glEntries('&account_code=6010');
-    expect($payroll)->toHaveCount(1)->and($payroll[0]['document_type'])->toBe('payroll');
-    expect(collect(glEntries('&account_code=2600'))->pluck('document_number')->all())->toBe(['INV-1', 'CN-1', 'INV-ROUND']);
+    $fees = glEntries('&account_code=6220');
+    expect($fees)->toHaveCount(1)->and($fees[0]['document_type'])->toBe('treasury_bank_fee');
+    expect(collect(glEntries('&account_code=2200'))->pluck('document_number')->all())->toBe(['INV-1', 'CN-1']);
 
     // A period without activity is empty and still balanced.
     $empty = glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2025-01-01&to_date=2025-01-31')->assertOk();
     expect($empty->json('data.entries'))->toBe([])->and($empty->json('data.totals.balanced'))->toBeTrue()->and($empty->json('data.totals.total_debit'))->toEqual(0);
 
-    // The April bank line only appears in April.
-    expect(collect(glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-04-01&to_date=2026-04-30')->json('data.entries'))->pluck('document_type')->all())->toBe(['tax_payment']);
+    // The April entry only appears in April.
+    expect(collect(glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-04-01&to_date=2026-04-30')->json('data.entries'))->pluck('document_number')->all())->toBe(['F24-04']);
 });
 
 test('the preview is paginated while the totals cover the whole period', function (): void {
     glSeed();
 
     $all = glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-03-01&to_date=2026-03-31&per_page=500')->json('data');
-    $page = glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-03-01&to_date=2026-03-31&per_page=4&page=2')->assertOk()->json('data');
+    $page = glApi()->getJson('/api/v1/accounting/general-ledger?from_date=2026-03-01&to_date=2026-03-31&per_page=3&page=2')->assertOk()->json('data');
 
-    expect($page['entries'])->toHaveCount(4)
-        ->and($page['entries'][0]['entry_number'])->toBe('000005')
-        ->and($page['pagination'])->toBe(['page' => 2, 'per_page' => 4, 'total_entries' => count($all['entries']), 'last_page' => (int) ceil(count($all['entries']) / 4)])
+    expect($page['entries'])->toHaveCount(3)
+        ->and($page['entries'][0]['entry_number'])->toBe('000004')
+        ->and($page['pagination'])->toBe(['page' => 2, 'per_page' => 3, 'total_entries' => count($all['entries']), 'last_page' => (int) ceil(count($all['entries']) / 3)])
         ->and($page['totals'])->toEqual($all['totals']);
 });
 
-test('ledger accounts follow the tenant preferences and the chart of accounts', function (): void {
+test('account names come from the chart of accounts of the tenant', function (): void {
     glSeed();
-    DB::table('chart_of_accounts')->insert(['id' => (string) Str::uuid(), 'tenant_id' => $this->tenant->id, 'code' => '4000', 'name' => 'Ricavi vendite', 'type' => 'revenue', 'standard' => 'it_general_ledger', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()]);
-
-    expect(glEntry(glEntries(), 'INV-1', 'invoice')['lines'][1]['ledger_account_name'])->toBe('Ricavi vendite');
-
-    glApi()->putJson('/api/v1/settings/preferences/accounting', ['accounts' => ['revenue_account_code' => 'bad code']])->assertUnprocessable();
-    glApi()->putJson('/api/v1/settings/preferences/accounting', ['accounts' => ['revenue_account_code' => '5100', 'receivables_account_code' => '1250', 'bank_account_code' => '1010.1']])->assertOk();
-    glApi()->putJson('/api/v1/settings/preferences/accounting', ['accounts' => ['output_vat_account_code' => '2650']])->assertOk();
-    glApi()->putJson('/api/v1/settings/preferences/banking', ['ledger_defaults' => ['tax_account_code' => '6810']])->assertOk();
-
-    expect(glApi()->getJson('/api/v1/settings/preferences')->json('data.accounting.accounts'))->toHaveCount(4);
+    ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->where('account_code', '4000')->update(['name' => 'Ricavi vendite']);
 
     $entries = glEntries();
-    expect(glLines(glEntry($entries, 'INV-1', 'invoice')))->toBe([['1250', 122.0, 0.0], ['5100', 0.0, 100.0], ['2650', 0.0, 22.0]])
-        ->and(glLines(glEntry($entries, 'INV-PAID', 'payment'))[0][0])->toBe('1010.1')
-        ->and(glLines(collect($entries)->firstWhere('document_type', 'tax_payment'))[0][0])->toBe('6810');
+    expect(glEntry($entries, 'INV-1', 'invoice')['lines'][1]['ledger_account_name'])->toBe('Ricavi vendite')
+        ->and(glEntry($entries, 'INV-1', 'invoice')['lines'][0]['ledger_account_name'])->toBe('Accounts Receivable (Crediti v/Clienti)');
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -331,8 +330,8 @@ test('the CSV uses a BOM, semicolons, decimal commas and the standard header', f
         ->and($first[12])->toBe('EUR');
 
     // The invoice line: receivables 122,00 on the debit side.
-    $invoiceLine = collect($lines)->first(fn (string $line): bool => str_contains($line, ';INV-1;') && str_contains($line, ';1200;'));
-    expect(str_getcsv($invoiceLine, ';', '"', ''))->toMatchArray([1 => '2026-03-05', 2 => 'invoice', 3 => 'INV-1', 7 => '1200', 10 => '122,00', 11 => '0,00']);
+    $invoiceLine = collect($lines)->first(fn (string $line): bool => str_contains($line, ';INV-1;') && str_contains($line, ';1100;') && str_contains($line, ';invoice;'));
+    expect(str_getcsv($invoiceLine, ';', '"', ''))->toMatchArray([1 => '2026-03-05', 2 => 'invoice', 3 => 'INV-1', 7 => '1100', 10 => '122,00', 11 => '0,00']);
 
     // Every entry balances in the file as well, reading the decimal commas back.
     $sums = [];
@@ -382,7 +381,7 @@ test('data, accounts and movements of other tenants never appear', function (): 
     glSeed();
 
     $csv = glApi()->get('/api/v1/accounting/general-ledger/export?from_date=2026-03-01&to_date=2026-03-31')->assertOk()->streamedContent();
-    foreach (['SECRET', 'Stranger', 'Secret revenue account', '6100,00', '4000,00'] as $leak) {
+    foreach (['SECRET', 'Stranger', 'Secret revenue account', '6100,00'] as $leak) {
         expect($csv)->not->toContain($leak);
     }
 
@@ -391,16 +390,12 @@ test('data, accounts and movements of other tenants never appear', function (): 
     $other = glApi($this->otherTenant->id)->getJson('/api/v1/accounting/general-ledger?from_date=2026-03-01&to_date=2026-03-31&per_page=500')->assertOk()->json('data');
     $document = collect($other['entries'])->pluck('document_number')->all();
 
-    expect($document)->toContain('SECRET-INV')
-        ->and($document)->not->toContain('INV-1')
+    expect($document)->toBe(['SECRET-INV'])
         ->and($other['totals']['balanced'])->toBeTrue()
         ->and($other['totals']['total_debit'])->not->toEqual($own['totals']['total_debit']);
 
-    $revenue = collect($other['entries'])->firstWhere('document_number', 'SECRET-INV')['lines'][1];
-    expect($revenue['ledger_account_name'])->toBe('Secret revenue account');
-
-    // The first tenant keeps its own standard account name.
-    expect(glEntry($own['entries'], 'INV-1', 'invoice')['lines'][1]['ledger_account_name'])->toBe('Sales revenue');
+    expect(collect($other['entries'])->firstWhere('document_number', 'SECRET-INV')['lines'][1]['ledger_account_name'])->toBe('Secret revenue account')
+        ->and(glEntry($own['entries'], 'INV-1', 'invoice')['lines'][1]['ledger_account_name'])->toBe('Sales revenue');
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -408,14 +403,12 @@ test('data, accounts and movements of other tenants never appear', function (): 
 // ---------------------------------------------------------------------------------------------------------------
 
 test('entry numbers run over the whole period, month after month, and do not change between pages, filters and the export', function (): void {
-    glInvoice('JAN-2', '2026-01-20', 10, 0);
-    glInvoice('JAN-1', '2026-01-05', 10, 0);
-    glInvoice('FEB-1', '2026-02-10', 10, 0);
-    $paid = glInvoice('MAR-1', '2026-03-03', 100, 0);
-    // One bank line whose payments fall in two months stays one entry, dated on its first payment.
-    $line = (string) Str::uuid();
-    Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $paid->id, 'amount' => 99, 'paid_at' => '2026-02-28', 'type' => 'payment', 'bank_statement_line_id' => $line]);
-    Payment::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $paid->id, 'amount' => 1, 'paid_at' => '2026-03-02', 'type' => 'bank_fee', 'bank_statement_line_id' => $line]);
+    glAccount('4000', null, 'Sales revenue');
+    glPost('2026-01-20', 'sales_invoice', 'JAN-2', [['1100', '10.00', '0'], ['4000', '0', '10.00']]);
+    glPost('2026-01-05', 'sales_invoice', 'JAN-1', [['1100', '10.00', '0'], ['4000', '0', '10.00']]);
+    glPost('2026-02-10', 'sales_invoice', 'FEB-1', [['1100', '10.00', '0'], ['4000', '0', '10.00']]);
+    glPost('2026-02-28', 'customer_payment', 'MAR-1', [['1020', '99.00', '0'], ['6220', '1.00', '0'], ['1100', '0', '100.00']]);
+    glPost('2026-03-03', 'sales_invoice', 'MAR-1', [['1100', '100.00', '0'], ['4000', '0', '100.00']]);
 
     $period = 'from_date=2026-01-01&to_date=2026-03-31';
     $paged = [];
@@ -431,7 +424,7 @@ test('entry numbers run over the whole period, month after month, and do not cha
     }
 
     $exported = glApi()->getJson("/api/v1/accounting/general-ledger/export?{$period}&format=json")->assertOk()->json('data.entries');
-    $receivablesOnly = glApi()->getJson("/api/v1/accounting/general-ledger?{$period}&per_page=500&source=payments")->assertOk()->json('data.entries');
+    $paymentsOnly = glApi()->getJson("/api/v1/accounting/general-ledger?{$period}&per_page=500&source=payments")->assertOk()->json('data.entries');
     $numbers = static fn (array $entries): array => array_map(static fn (array $entry): string => $entry['entry_number'].' '.$entry['document_number'].' '.$entry['entry_date'], $entries);
 
     expect($numbers($paged))->toBe([
@@ -442,8 +435,8 @@ test('entry numbers run over the whole period, month after month, and do not cha
         '000005 MAR-1 2026-03-03',
     ])
         ->and($numbers($exported))->toBe($numbers($paged))
-        ->and(glLines($paged[3]))->toBe([['1000', 99.0, 0.0], ['6220', 1.0, 0.0], ['1200', 0.0, 100.0]])
-        ->and($numbers($receivablesOnly))->toBe(['000001 MAR-1 2026-02-28']);
+        ->and(glLines($paged[3]))->toBe([['1020', 99.0, 0.0], ['6220', 1.0, 0.0], ['1100', 0.0, 100.0]])
+        ->and($numbers($paymentsOnly))->toBe(['000001 MAR-1 2026-02-28']);
 
     $csv = glApi()->get("/api/v1/accounting/general-ledger/export?{$period}")->assertOk()->streamedContent();
     expect(substr_count($csv, "\r\n"))->toBe(1 + collect($exported)->sum(static fn (array $entry): int => count($entry['lines'])));

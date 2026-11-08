@@ -27,6 +27,10 @@ return [
         'category_not_for_credit' => 'Eingänge können nur als interne Umbuchung kategorisiert werden.',
         'supplier_payment_exceeds_balance' => 'Die Zahlung übersteigt den offenen Rechnungsbetrag.',
         'difference_not_accepted' => 'Der Betrag weicht um :difference vom Saldo ab.',
+        'ledger_account_not_configured' => 'Konfigurieren Sie das Sachkonto :setting in den Bankeinstellungen (banking.ledger_defaults), bevor diese Bewegung gebucht wird.',
+        'ledger_account_unknown' => 'Das Sachkonto :code ist nicht im Kontenplan.',
+        'bank_account_not_linked' => 'Das Bankkonto :iban ist mit keinem Sachkonto des Kontenplans verknüpft.',
+        'posting_period_unavailable' => 'Die Bewegung kann nicht gebucht werden: :reason',
     ],
 
     'payment_notes' => [

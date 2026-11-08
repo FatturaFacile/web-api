@@ -25,6 +25,10 @@ return [
         'category_not_for_credit' => 'Incoming lines can only be categorized as an internal transfer.',
         'supplier_payment_exceeds_balance' => 'The payment exceeds the balance of the supplier invoice.',
         'difference_not_accepted' => 'The amount differs from the balance by :difference. Choose how to handle the difference: write_off or partial.',
+        'ledger_account_not_configured' => 'Configure the ledger account :setting in the banking preferences (banking.ledger_defaults) before posting this movement.',
+        'ledger_account_unknown' => 'The ledger account :code is not in the chart of accounts.',
+        'bank_account_not_linked' => 'The bank account :iban is not linked to a ledger account of the chart of accounts.',
+        'posting_period_unavailable' => 'The movement cannot be posted: :reason',
     ],
 
     'payment_notes' => [

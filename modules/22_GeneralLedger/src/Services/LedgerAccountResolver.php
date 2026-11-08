@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Services;
 
+use App\Models\Tenant;
+use App\Services\Tenancy\TenantPreferences;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
@@ -122,8 +124,9 @@ final class LedgerAccountResolver
     }
 
     /**
-     * The ledger account of the tenant's bank account in that currency: the one on the statement when its IBAN is
-     * known, else the default one.
+     * The ledger account of the tenant's bank account in that currency: the Treasury bank account with the IBAN of the
+     * movement, else the account code mapped to that IBAN in the tenant preference `accounting.bank_accounts`, else the
+     * Treasury bank account in that currency, else the default one.
      */
     public function bank(string $tenantId, ?string $currency = null, ?string $iban = null): ChartOfAccount
     {
@@ -134,8 +137,22 @@ final class LedgerAccountResolver
             ->orderByDesc('is_default')
             ->get();
 
-        $normalized = strtoupper(str_replace(' ', '', (string) $iban));
-        $linked = $accounts->first(static fn (BankAccount $account): bool => $normalized !== '' && strtoupper(str_replace(' ', '', (string) $account->iban)) === $normalized)
+        $normalized = TenantPreferences::normalizeIban((string) $iban);
+        $byIban = $accounts->first(static fn (BankAccount $account): bool => $normalized !== '' && TenantPreferences::normalizeIban((string) $account->iban) === $normalized);
+
+        if ($byIban === null && $normalized !== '') {
+            $settings = Tenant::find($tenantId)?->getAttribute('settings');
+            $mapping = is_array($settings) ? ($settings['preferences']['accounting']['bank_accounts'] ?? null) : null;
+            $mappedCode = collect(is_array($mapping) ? $mapping : [])
+                ->mapWithKeys(static fn (mixed $code, string|int $mappedIban): array => [TenantPreferences::normalizeIban((string) $mappedIban) => $code])
+                ->get($normalized);
+
+            if (is_string($mappedCode) && $mappedCode !== '') {
+                return $this->controlAccount($tenantId, $mappedCode, "Bank {$normalized}", 'asset', 'debit', 'bank');
+            }
+        }
+
+        $linked = $byIban
             ?? $accounts->first(static fn (BankAccount $account): bool => $currency !== null && $account->currency === $currency)
             ?? $accounts->first();
 

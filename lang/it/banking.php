@@ -27,6 +27,10 @@ return [
         'category_not_for_credit' => 'I movimenti in entrata possono essere categorizzati solo come giroconti interni.',
         'supplier_payment_exceeds_balance' => 'Il pagamento supera il saldo dovuto al fornitore.',
         'difference_not_accepted' => 'L\'importo differisce dal saldo per :difference.',
+        'ledger_account_not_configured' => 'Configura il conto :setting nelle preferenze bancarie (banking.ledger_defaults) prima di registrare questo movimento.',
+        'ledger_account_unknown' => 'Il conto :code non è nel piano dei conti.',
+        'bank_account_not_linked' => 'Il conto bancario :iban non è collegato a un conto del piano dei conti.',
+        'posting_period_unavailable' => 'Il movimento non può essere registrato: :reason',
     ],
 
     'payment_notes' => [

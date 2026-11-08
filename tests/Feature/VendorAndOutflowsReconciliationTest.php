@@ -15,6 +15,9 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Models\JournalLine;
 
 uses(RefreshDatabase::class);
 
@@ -33,7 +36,27 @@ beforeEach(function (): void {
         'iban' => 'IT02 L123 4512 3451 2345 6789 012', 'vat_number' => 'IT01234567890',
     ]);
     $this->otherSupplier = Contact::create(['tenant_id' => $this->otherTenant->id, 'company_name' => 'Other Supplier', 'email' => 'os@example.com', 'type' => 'supplier', 'country' => 'IT']);
+
+    // Categorised lines are posted to the general ledger: open periods and the accounts the categories use.
+    foreach ([$this->tenant, $this->otherTenant] as $tenant) {
+        fiscalCalendar($tenant, 2026);
+
+        foreach (['6800', '6000', '6220', '1090', '6900', '6100', '7100', '7200', '7300'] as $code) {
+            ChartOfAccount::withoutGlobalScopes()->create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenant->id, 'account_code' => $code, 'name' => "Account {$code}", 'account_class' => 'expense', 'account_type' => 'expense', 'normal_balance' => 'debit', 'currency' => 'EUR', 'is_active' => true]);
+        }
+    }
 });
+
+/**
+ * The counter accounts of the categories: without them nothing is categorised, because nothing could be posted.
+ */
+function voLedgerDefaults(?string $tenantId = null): void
+{
+    voApi($tenantId)->putJson('/api/v1/settings/preferences/banking', ['ledger_defaults' => [
+        'tax_account_code' => '6800', 'payroll_account_code' => '6000', 'bank_charges_account_code' => '6220',
+        'internal_transfer_account_code' => '1090', 'generic_expense_account_code' => '6900',
+    ]])->assertOk();
+}
 
 // ---------------------------------------------------------------------------------------------------------------
 // Helpers
@@ -265,6 +288,7 @@ dataset('standard outflows', [
 ]);
 
 test('standard outflows are recognised and booked on the default ledger account', function (Closure $content, string $category, string $account): void {
+    voLedgerDefaults();
     $format = str_contains($content(), '<Document') ? 'statement.xml' : 'flow.cbi';
 
     $response = voImport($content(), $format, '?auto_reconcile=1')->assertCreated();
@@ -277,7 +301,25 @@ test('standard outflows are recognised and booked on the default ledger account'
         ->and($line['matched_document_id'])->toBeNull()
         ->and($response->json('data.statement.status'))->toBe('reconciled');
     expect(Payment::withoutGlobalScopes()->count())->toBe(0)->and(SupplierPayment::withoutGlobalScopes()->count())->toBe(0);
+
+    // The categorisation is posted: Dr the account of the category / Cr the bank.
+    $entry = JournalEntry::withoutGlobalScopes()->find($line['journal_entry_id']);
+    $postings = JournalLine::withoutGlobalScopes()->where('journal_entry_id', $entry->id)->orderBy('line_number')->get()
+        ->map(fn (JournalLine $journalLine): array => [ChartOfAccount::withoutGlobalScopes()->find($journalLine->account_id)->account_code, (float) $journalLine->debit_amount > 0 ? 'D' : 'C'])->all();
+    expect($entry->source_document_type)->toBe('bank_line_categorization')->and($postings)->toBe([[$account, 'D'], ['1020', 'C']]);
 })->with('standard outflows');
+
+test('standard outflows stay open while the account of their category is not configured', function (): void {
+    $response = voImport(voCamt053([['amount' => '1200.00', 'direction' => 'DBIT', 'description' => 'DELEGA F24']]), 'statement.xml', '?auto_reconcile=1')->assertCreated();
+
+    expect($response->json('data.reconciliation'))->toBe(['reconciled' => 0, 'unmatched' => 1])
+        ->and(JournalEntry::withoutGlobalScopes()->where('source_document_type', 'bank_line_categorization')->count())->toBe(0);
+
+    $line = $response->json('data.statement.lines.0.id');
+    voApi()->postJson("/api/v1/banking/statements/lines/{$line}/categorize", ['category' => 'tax_payment'])->assertUnprocessable()->assertJsonValidationErrors(['ledger_account_code']);
+    voApi()->postJson("/api/v1/banking/statements/lines/{$line}/categorize", ['category' => 'tax_payment', 'ledger_account_code' => '9999'])->assertUnprocessable()->assertJsonValidationErrors(['ledger_account_code']);
+    voApi()->postJson("/api/v1/banking/statements/lines/{$line}/categorize", ['category' => 'tax_payment', 'ledger_account_code' => '6800'])->assertOk()->assertJsonPath('data.reconciled', true);
+});
 
 test('unrecognised outflows stay open and incoming lines are never categorised', function (): void {
     $response = voImport(voCamt053([
@@ -322,6 +364,7 @@ test('ledger accounts and automatic categorisation follow the tenant preferences
 });
 
 test('lines are categorised manually and the categorisation can be undone', function (): void {
+    voLedgerDefaults();
     $statement = voImport(voCamt053([
         ['amount' => '500.00', 'direction' => 'DBIT', 'description' => 'Versamento imposte'],
         ['amount' => '30.00', 'direction' => 'DBIT', 'description' => 'Cancelleria'],
@@ -339,13 +382,14 @@ test('lines are categorised manually and the categorisation can be undone', func
     $custom = voApi()->postJson("/api/v1/banking/statements/lines/{$stationery}/categorize", ['category' => 'generic_expense', 'ledger_account_code' => '6100', 'notes' => 'Office supplies'])->assertOk();
     expect($custom->json('data.ledger_account_code'))->toBe('6100')->and($custom->json('data.reconciliation_notes'))->toBe('Office supplies');
 
-    expect(voApi()->postJson("/api/v1/banking/statements/lines/{$transfer}/categorize", ['category' => 'internal_transfer'])->assertOk()->json('data.ledger_account_code'))->toBeNull();
-    expect(BankStatement::find($statement['id'])->status)->toBe('partially_reconciled');
+    // Internal transfers post on the configured transfer clearing account.
+    expect(voApi()->postJson("/api/v1/banking/statements/lines/{$transfer}/categorize", ['category' => 'internal_transfer'])->assertOk()->json('data.ledger_account_code'))->toBe('1090');
+    expect(BankStatement::withoutGlobalScopes()->find($statement['id'])->status)->toBe('partially_reconciled');
 
     // Incoming lines can only be internal transfers.
     voApi()->postJson("/api/v1/banking/statements/lines/{$incoming}/categorize", ['category' => 'payroll'])->assertUnprocessable()->assertJsonValidationErrors(['category']);
     voApi()->postJson("/api/v1/banking/statements/lines/{$incoming}/categorize", ['category' => 'internal_transfer'])->assertOk();
-    expect(BankStatement::find($statement['id'])->status)->toBe('reconciled');
+    expect(BankStatement::withoutGlobalScopes()->find($statement['id'])->status)->toBe('reconciled');
 
     // Invalid input and lines that are already reconciled.
     voApi()->postJson("/api/v1/banking/statements/lines/{$tax}/categorize", ['category' => 'invoice'])->assertUnprocessable();
@@ -360,9 +404,17 @@ test('lines are categorised manually and the categorisation can be undone', func
         ->and($undone->json('data.ledger_account_code'))->toBeNull()
         ->and($undone->json('data.reconciliation_notes'))->toBeNull()
         ->and($undone->json('data.reconciliation_type'))->toBeNull()
-        ->and(BankStatement::find($statement['id'])->status)->toBe('partially_reconciled');
+        ->and(BankStatement::withoutGlobalScopes()->find($statement['id'])->status)->toBe('partially_reconciled');
 
     voApi()->postJson("/api/v1/banking/statements/lines/{$stationery}/unmatch")->assertUnprocessable();
+
+    // Undoing reversed the entry of the line; categorising it again posts a new one.
+    $entries = JournalEntry::withoutGlobalScopes()->where('source_document_type', 'bank_line_categorization')->where('source_document_id', $stationery)->get();
+    expect($entries->pluck('status')->sort()->values()->all())->toBe(['posted', 'reversed'])
+        ->and($entries->firstWhere('status', 'posted')->journal_type)->toBe('reversing');
+
+    voApi()->postJson("/api/v1/banking/statements/lines/{$stationery}/categorize", ['category' => 'generic_expense'])->assertOk()->assertJsonPath('data.ledger_account_code', '6900');
+    expect(JournalEntry::withoutGlobalScopes()->where('source_document_id', $stationery)->where('status', 'posted')->where('journal_type', 'standard')->count())->toBe(1);
 });
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -399,7 +451,7 @@ test('an outgoing line is matched manually with a supplier invoice and unmatchin
         ->and(voSupplierPayments($invoice))->toBe([]);
 
     voApi()->postJson("/api/v1/banking/statements/lines/{$two}/unmatch")->assertOk();
-    expect($partial->refresh()->payment_status)->toBe('unpaid')->and(BankStatement::find($statement['id'])->status)->toBe('draft');
+    expect($partial->refresh()->payment_status)->toBe('unpaid')->and(BankStatement::withoutGlobalScopes()->find($statement['id'])->status)->toBe('draft');
 });
 
 test('the direction of a line decides which invoices it can be matched with', function (): void {
@@ -429,6 +481,7 @@ test('the direction of a line decides which invoices it can be matched with', fu
 // ---------------------------------------------------------------------------------------------------------------
 
 test('a statement mixing receipts, supplier payments, F24 and salaries is reconciled completely', function (): void {
+    voLedgerDefaults();
     $receivable = voInvoice('INV-C-1', 150.00);
     $payable = voPassive('SUP-9', 300.00);
 
@@ -457,10 +510,12 @@ test('a statement mixing receipts, supplier payments, F24 and salaries is reconc
     // Undoing one line reopens the statement and its invoice.
     $payrollLine = collect($reconciled->json('data.statement.lines'))->firstWhere('reconciliation_category', 'payroll')['id'];
     voApi()->postJson("/api/v1/banking/statements/lines/{$payrollLine}/unmatch")->assertOk();
-    expect(BankStatement::find($statementId)->status)->toBe('partially_reconciled');
+    expect(BankStatement::withoutGlobalScopes()->find($statementId)->status)->toBe('partially_reconciled');
 });
 
 test('supplier invoices, categorisations and statements of other tenants are out of reach', function (): void {
+    voLedgerDefaults();
+    voLedgerDefaults($this->otherTenant->id);
     $foreignInvoice = voPassive('SUP-9', 300.00, ['tenant_id' => $this->otherTenant->id]);
     $file = voCamt053([
         ['amount' => '300.00', 'direction' => 'DBIT', 'description' => 'Pagamento SUP-9'],

@@ -8,30 +8,29 @@ use App\DTOs\Accounting\LedgerEntry;
 use App\DTOs\Accounting\LedgerLine;
 use App\Models\BankStatementLine;
 use App\Models\Contact;
-use App\Models\Invoice;
-use App\Models\PassiveInvoice;
-use App\Models\Payment;
-use App\Models\SupplierPayment;
+use App\Services\Banking\BankLineLedgerPosting;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Generator;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\DB;
+use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Models\JournalLine;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
 /**
- * Builds the general ledger (prima nota) of a period as balanced double-entry postings, from the operational records of
- * the current tenant:
+ * The general ledger (prima nota) of a period, read from the single ledger of the tenant: the posted entries of
+ * `journal_entries` (statutory ledger, reversals included), with their lines on the chart of accounts.
  *
- * - sales invoices and credit notes: Dr receivables / Cr revenue and output VAT;
- * - supplier invoices (and credit notes): Dr costs and input VAT / Cr payables;
- * - customer payments: Dr bank, bank fees and write-offs / Cr receivables;
- * - supplier payments: Dr payables and bank charges / Cr bank (and rounding income for forgiven debt);
- * - categorised bank lines (F24 / taxes, payroll, bank expenses, other expenses, internal transfers).
+ * Until April 2027 this export rebuilt the postings from the documents with its own default accounts (receivables 1200,
+ * bank 1000, ...), which differed from the accounts the posting services use (1100, 1020, ...) and from figures such as
+ * withholding, split payment or stamp duty. Reading the journal guarantees that the export shows exactly the figures of
+ * the ledger, on the same accounts; a document that has not reached the ledger yet (see `general-ledger:post-pending`)
+ * is not in the export either. The CSV and JSON contract is unchanged: header, numbering over the whole period, totals
+ * and balance check.
  *
- * Amounts are handled in integer cents, so every entry balances exactly; a difference between the total of a document
- * and its net plus tax (rounding, stamp duty, ...) is posted on the rounding account.
+ * Amounts are the functional-currency amounts of the lines (equal to the booked amounts for entries in the accounting
+ * currency), converted to integer cents with bcmath, so every entry balances exactly.
  */
 class GeneralLedgerExportService
 {
@@ -49,7 +48,30 @@ class GeneralLedgerExportService
 
     public const array HEADER = ['entry_number', 'entry_date', 'document_type', 'document_number', 'document_date', 'counterpart_name', 'tax_id', 'ledger_account_code', 'ledger_account_name', 'description', 'debit', 'credit', 'currency', 'vat_code'];
 
-    private const array SOURCE_RANK = [self::SOURCE_INVOICES => 1, self::SOURCE_PAYMENTS => 2, self::SOURCE_BANKING => 3];
+    /**
+     * The source document types of each `source` filter. `all` takes every posted entry, manual ones included.
+     *
+     * @var array<string, list<string>>
+     */
+    public const array SOURCE_TYPES = [
+        self::SOURCE_INVOICES => ['sales_invoice', 'credit_note', 'vendor_invoice', 'vendor_credit_note', 'vendor_invoice_reclassification'],
+        self::SOURCE_PAYMENTS => ['customer_payment', 'supplier_payment', 'treasury_payment_line', 'treasury_collection', 'riba_unpaid_fee'],
+        self::SOURCE_BANKING => [BankLineLedgerPosting::SOURCE, 'treasury_transfer', 'treasury_bank_fee', 'treasury_interest_income', 'treasury_interest_expense', 'treasury_cash_movement', 'treasury_cash_difference', 'treasury_fx_revaluation'],
+    ];
+
+    /**
+     * The document type shown for the source types of the documents (the names the export always used).
+     *
+     * @var array<string, string>
+     */
+    private const array DOCUMENT_TYPES = [
+        'sales_invoice' => 'invoice',
+        'credit_note' => 'credit_note',
+        'vendor_invoice' => 'supplier_invoice',
+        'vendor_credit_note' => 'supplier_credit_note',
+        'customer_payment' => 'payment',
+        'supplier_payment' => 'supplier_payment',
+    ];
 
     public function __construct(private readonly TenantContext $tenantContext) {}
 
@@ -63,7 +85,7 @@ class GeneralLedgerExportService
     }
 
     /**
-     * The numbered entries of the period, in date order. `$accountCode` keeps the entries that touch that account.
+     * The numbered entries of the period, in journal order. `$accountCode` keeps the entries that touch that account.
      *
      * @return array<int, LedgerEntry>
      */
@@ -73,39 +95,24 @@ class GeneralLedgerExportService
     }
 
     /**
-     * The numbered entries of the period, produced one calendar month at a time.
+     * The numbered entries of the period, read one calendar month at a time.
      *
-     * Each month is read from the database in date order and sorted on the ledger order (date, source, document), then
-     * numbered with a counter that runs over the whole period. Since the date leads the order, the months follow each
-     * other and an entry gets the same number as if the whole period had been sorted at once: the numbering is stable
-     * across pages, filters by account (applied after numbering) and the export. Memory holds one month, not the period.
+     * Each month is read in journal order (posting date, progressive journal number, creation) and numbered with a
+     * counter that runs over the whole period, so an entry keeps its number across pages, filters by account (applied
+     * after numbering) and the export. Memory holds one month, not the period.
      *
      * @return Generator<int, LedgerEntry>
      */
     public function stream(CarbonImmutable $from, CarbonImmutable $to, string $source = self::SOURCE_ALL, ?string $accountCode = null): Generator
     {
-        $accounts = LedgerAccounts::forTenant((string) $this->tenantContext->getTenantId());
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $currency = TenantAccountingCurrency::of($tenantId);
         $position = 0;
 
         for ($windowFrom = $from; $windowFrom->lessThanOrEqualTo($to); $windowFrom = $windowFrom->addMonthNoOverflow()->startOfMonth()) {
             $windowTo = $windowFrom->endOfMonth()->startOfDay()->min($to);
-            $entries = [];
 
-            if (in_array($source, [self::SOURCE_ALL, self::SOURCE_INVOICES], true)) {
-                array_push($entries, ...$this->salesInvoices($windowFrom, $windowTo, $accounts), ...$this->supplierInvoices($windowFrom, $windowTo, $accounts));
-            }
-
-            if (in_array($source, [self::SOURCE_ALL, self::SOURCE_PAYMENTS], true)) {
-                array_push($entries, ...$this->customerPayments($windowFrom, $windowTo, $from, $to, $accounts), ...$this->supplierPayments($windowFrom, $windowTo, $from, $to, $accounts));
-            }
-
-            if (in_array($source, [self::SOURCE_ALL, self::SOURCE_BANKING], true)) {
-                array_push($entries, ...$this->bankLines($windowFrom, $windowTo, $accounts));
-            }
-
-            usort($entries, fn (LedgerEntry $a, LedgerEntry $b): int => [$a->date->toDateString(), self::SOURCE_RANK[$a->source], $a->sortKey] <=> [$b->date->toDateString(), self::SOURCE_RANK[$b->source], $b->sortKey]);
-
-            foreach ($entries as $entry) {
+            foreach ($this->journalEntries($tenantId, $windowFrom, $windowTo, $source, $currency) as $entry) {
                 $entry->number = sprintf('%06d', ++$position);
 
                 if ($accountCode === null || $accountCode === '' || collect($entry->lines)->contains(fn (LedgerLine $line): bool => $line->accountCode === $accountCode)) {
@@ -217,6 +224,154 @@ class GeneralLedgerExportService
         }
     }
 
+    /**
+     * The posted entries of a window, as ledger entries in journal order.
+     *
+     * @return list<LedgerEntry>
+     */
+    private function journalEntries(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, string $source, string $currency): array
+    {
+        $journal = JournalEntry::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('status', ['posted', 'reversed'])
+            ->where('ledger_type', 'statutory')
+            ->whereBetween('posting_date', [$from->toDateString(), $to->toDateString()])
+            ->when($source !== self::SOURCE_ALL, fn ($query) => $query->whereIn('source_document_type', self::SOURCE_TYPES[$source] ?? []))
+            ->orderBy('posting_date')
+            ->orderBy('journal_number')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
+
+        $linesByEntry = $this->linesOf($tenantId, $journal->modelKeys());
+        $accounts = $this->accountsOf($tenantId, $linesByEntry->flatten(1)->pluck('account_id')->unique()->values()->all());
+        $contacts = $this->partners($linesByEntry->flatten(1)->pluck('partner_id')->filter()->unique()->values()->all());
+        $categories = $this->bankLineCategories($journal);
+
+        return $journal->map(function (JournalEntry $entry) use ($linesByEntry, $accounts, $contacts, $categories, $currency): LedgerEntry {
+            /** @var Collection<int, JournalLine> $entryLines */
+            $entryLines = $linesByEntry->get((string) $entry->id, collect());
+            $partnerId = $entryLines->first(fn (JournalLine $line): bool => in_array($line->partner_type, ['customer', 'supplier'], true) && $line->partner_id !== null)?->partner_id;
+            $contact = $partnerId === null ? null : $contacts->get($partnerId);
+
+            return new LedgerEntry(
+                CarbonImmutable::parse($entry->posting_date)->startOfDay(),
+                (string) ($entry->source_document_type ?? 'manual'),
+                (string) $entry->id,
+                $this->documentType($entry, $categories),
+                (string) ($entry->document_number ?? $entry->entry_number),
+                CarbonImmutable::parse($entry->document_date)->startOfDay(),
+                $this->contactName($contact),
+                $this->taxId($contact),
+                $currency,
+                $entryLines->map(fn (JournalLine $line): LedgerLine => $this->ledgerLine($line, $accounts[(string) $line->account_id] ?? ['code' => '', 'name' => ''], $currency))->values()->all(),
+            );
+        })->values()->all();
+    }
+
+    /**
+     * The lines of the entries, in their order, by entry id.
+     *
+     * @param  array<int, mixed>  $entryIds
+     * @return Collection<string, Collection<int, JournalLine>>
+     */
+    private function linesOf(string $tenantId, array $entryIds): Collection
+    {
+        if ($entryIds === []) {
+            return collect();
+        }
+
+        return JournalLine::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereIn('journal_entry_id', $entryIds)
+            ->orderBy('line_number')
+            ->get()
+            ->groupBy(fn (JournalLine $line): string => (string) $line->journal_entry_id)
+            ->map(fn ($lines): Collection => collect($lines->all()));
+    }
+
+    /**
+     * Code and name of the accounts of the chart, by id.
+     *
+     * @param  array<int, mixed>  $accountIds
+     * @return array<string, array{code: string, name: string}>
+     */
+    private function accountsOf(string $tenantId, array $accountIds): array
+    {
+        $accounts = [];
+
+        foreach (ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereIn('id', $accountIds)->get() as $account) {
+            $code = (string) ($account->getAttribute('account_code') ?? $account->getAttribute('code'));
+            $accounts[(string) $account->id] = ['code' => $code, 'name' => (string) ($account->getAttribute('name') ?? $code)];
+        }
+
+        return $accounts;
+    }
+
+    /**
+     * A journal line in accounting-currency cents, on the side it was booked: the booked amount for a line in the
+     * accounting currency, the functional amount of a line in another currency.
+     *
+     * @param  array{code: string, name: string}  $account
+     */
+    private function ledgerLine(JournalLine $line, array $account, string $currency): LedgerLine
+    {
+        $isDebit = bccomp((string) $line->debit_amount, '0', 4) === 1;
+        $booked = (string) ($isDebit ? $line->debit_amount : $line->credit_amount);
+        $cents = $this->cents($line->currency === $currency ? $booked : (string) $line->amount_in_functional_currency);
+
+        return new LedgerLine(
+            $account['code'],
+            $account['name'],
+            (string) $line->description,
+            $isDebit ? $cents : 0,
+            $isDebit ? 0 : $cents,
+            $line->vat_rate_percent === null ? null : rtrim(rtrim(number_format((float) $line->vat_rate_percent, 2, '.', ''), '0'), '.'),
+        );
+    }
+
+    /**
+     * The document type of an entry: the historical names for documents and payments, the category for a categorised
+     * bank line, the source type for the other postings, `reversal` for a reversal and `manual` for a manual entry.
+     *
+     * @param  Collection<string, string>  $categories
+     */
+    private function documentType(JournalEntry $entry, Collection $categories): string
+    {
+        $type = (string) $entry->source_document_type;
+
+        return match (true) {
+            $entry->journal_type === 'reversing' => 'reversal',
+            $type === BankLineLedgerPosting::SOURCE => (string) ($categories->get((string) $entry->source_document_id) ?? 'bank_line'),
+            $type === '' => (string) ($entry->journal_type === 'standard' ? 'manual' : $entry->journal_type),
+            default => self::DOCUMENT_TYPES[$type] ?? $type,
+        };
+    }
+
+    /**
+     * The contacts named by the lines of the entries, by id.
+     *
+     * @param  array<int, mixed>  $ids
+     * @return Collection<string, Contact>
+     */
+    private function partners(array $ids): Collection
+    {
+        return $ids === [] ? collect() : Contact::query()->whereIn('id', $ids)->get()->keyBy(fn (Contact $contact): string => (string) $contact->id);
+    }
+
+    /**
+     * The categories of the bank statement lines posted in the window, by line id.
+     *
+     * @param  Collection<int, JournalEntry>  $journal
+     * @return Collection<string, string>
+     */
+    private function bankLineCategories(Collection $journal): Collection
+    {
+        $ids = $journal->where('source_document_type', BankLineLedgerPosting::SOURCE)->pluck('source_document_id')->filter()->unique()->values()->all();
+
+        return $ids === [] ? collect() : BankStatementLine::query()->whereIn('id', $ids)->pluck('reconciliation_category', 'id')->map(fn (mixed $category): string => (string) $category);
+    }
+
     private function formatDate(CarbonImmutable $date, string $format): string
     {
         return $date->format($format === self::DATE_EUROPEAN ? 'd/m/Y' : 'Y-m-d');
@@ -225,6 +380,16 @@ class GeneralLedgerExportService
     private function amount(int $cents): string
     {
         return number_format($cents / 100, 2, ',', '');
+    }
+
+    /**
+     * A decimal amount in integer cents, rounded half up with bcmath.
+     */
+    private function cents(string $amount): int
+    {
+        $scaled = bcmul($amount, '100', 4);
+
+        return (int) bcadd($scaled, str_starts_with($scaled, '-') ? '-0.5' : '0.5', 0);
     }
 
     /**
@@ -238,398 +403,6 @@ class GeneralLedgerExportService
         }
 
         return preg_match('/[;"\r\n]/', $value) === 1 ? '"'.str_replace('"', '""', $value).'"' : $value;
-    }
-
-    /**
-     * @return array<int, LedgerEntry>
-     */
-    private function salesInvoices(CarbonImmutable $from, CarbonImmutable $to, LedgerAccounts $accounts): array
-    {
-        $invoices = Invoice::query()->with('contact')->where('invoice_type', '!=', 'proforma')
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])->orderBy('date')->orderBy('invoice_number')->get();
-        $rates = $this->vatCodes('invoice_items', 'invoice_id', $invoices->pluck('id')->all());
-        $entries = [];
-
-        foreach ($invoices as $invoice) {
-            $net = $this->cents($invoice->total_net);
-            $tax = $this->cents($invoice->total_tax);
-            $gross = $this->cents($invoice->total_gross);
-
-            if ($gross === 0 && $net === 0) {
-                continue;
-            }
-
-            $credit = $invoice->invoice_type === 'credit_note';
-            $number = (string) $invoice->invoice_number;
-            $vat = $rates[$invoice->id] ?? null;
-            $lines = [
-                $this->line($accounts, 'receivables', __('accounting.descriptions.receivable', ['number' => $number]), $gross, true),
-                $this->line($accounts, 'revenue', __('accounting.descriptions.revenue', ['number' => $number]), $net, false, $vat),
-            ];
-
-            if ($tax !== 0) {
-                $lines[] = $this->line($accounts, 'output_vat', __('accounting.descriptions.output_vat', ['number' => $number]), $tax, false, $vat);
-            }
-
-            $entries[] = $this->entry(
-                $invoice->date, self::SOURCE_INVOICES, "{$number}|{$invoice->id}", $credit ? 'credit_note' : 'invoice', $number, $invoice->date,
-                $this->contactName($invoice->contact), $this->taxId($invoice->contact), (string) $invoice->currency,
-                $this->balanced($accounts, $lines, $credit),
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * @return array<int, LedgerEntry>
-     */
-    private function supplierInvoices(CarbonImmutable $from, CarbonImmutable $to, LedgerAccounts $accounts): array
-    {
-        $invoices = PassiveInvoice::query()->with('supplier')->whereBetween('date', [$from->toDateString(), $to->toDateString()])->orderBy('date')->orderBy('invoice_number')->get();
-        $entries = [];
-
-        foreach ($invoices as $invoice) {
-            $gross = $this->cents($invoice->total_amount);
-            $tax = $this->cents($invoice->total_tax);
-            $net = $this->cents($invoice->total_net) ?: $gross - $tax;
-
-            if ($gross === 0 && $net === 0) {
-                continue;
-            }
-
-            $credit = $invoice->document_type === 'TD04';
-            $number = (string) $invoice->invoice_number;
-            $lines = [
-                $this->line($accounts, 'cost', __('accounting.descriptions.cost', ['number' => $number]), $net, true),
-            ];
-
-            if ($tax !== 0) {
-                $lines[] = $this->line($accounts, 'input_vat', __('accounting.descriptions.input_vat', ['number' => $number]), $tax, true);
-            }
-
-            $lines[] = $this->line($accounts, 'payables', __('accounting.descriptions.payable', ['number' => $number]), $gross, false);
-
-            $entries[] = $this->entry(
-                $invoice->date, self::SOURCE_INVOICES, "{$number}|{$invoice->id}", $credit ? 'supplier_credit_note' : 'supplier_invoice', $number, $invoice->date,
-                $this->contactName($invoice->supplier), $this->taxId($invoice->supplier), (string) $invoice->currency,
-                $this->balanced($accounts, $lines, $credit),
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * Receipts: the payments of one bank line (net amount, bank fee, write-off) form one entry.
-     *
-     * @return array<int, LedgerEntry>
-     */
-    private function customerPayments(CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $periodFrom, CarbonImmutable $periodTo, LedgerAccounts $accounts): array
-    {
-        $payments = $this->paymentsOfWindow(Payment::query()->with('invoice.contact'), $from, $to, $periodFrom, $periodTo);
-        $ibans = $this->ibansByBankLine($payments->pluck('bank_statement_line_id')->filter()->unique()->all());
-        $entries = [];
-
-        foreach ($payments->groupBy(fn (Payment $payment): string => $payment->bank_statement_line_id ?? 'payment-'.$payment->id) as $group) {
-            /** @var Payment $first */
-            $first = $group->first();
-
-            if (! $this->startsInWindow($first, $from, $to)) {
-                continue;
-            }
-            $invoice = $first->invoice;
-            $number = (string) $invoice?->invoice_number;
-            $byType = $this->sumByType($group);
-            $total = array_sum($byType);
-
-            if ($total === 0) {
-                continue;
-            }
-
-            $lines = [];
-            $description = __('accounting.descriptions.receipt', ['number' => $number]);
-
-            if ($byType['payment'] > 0) {
-                $lines[] = $this->bankLine($accounts, $ibans[$first->bank_statement_line_id] ?? null, $description, $byType['payment'], true);
-            }
-
-            if ($byType['bank_fee'] > 0) {
-                $lines[] = $this->line($accounts, 'bank_expense', __('accounting.descriptions.bank_fee', ['number' => $number]), $byType['bank_fee'], true);
-            }
-
-            if ($byType['adjustment'] > 0) {
-                $lines[] = $this->line($accounts, 'rounding', __('accounting.descriptions.write_off', ['number' => $number]), $byType['adjustment'], true);
-            }
-
-            $lines[] = $this->line($accounts, 'receivables', $description, $total, false);
-
-            $entries[] = $this->entry(
-                CarbonImmutable::parse($first->paid_at), self::SOURCE_PAYMENTS, "customer|{$number}|{$first->id}", 'payment', $number, $invoice?->date,
-                $this->contactName($invoice?->contact), $this->taxId($invoice?->contact), (string) ($invoice?->currency ?? 'EUR'), $lines,
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * Supplier payments: Dr payables for the cash paid and the debt forgiven, Dr bank charges for the fee, Cr bank for
-     * everything that left the account and Cr rounding for the forgiven debt.
-     *
-     * @return array<int, LedgerEntry>
-     */
-    private function supplierPayments(CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $periodFrom, CarbonImmutable $periodTo, LedgerAccounts $accounts): array
-    {
-        $payments = $this->paymentsOfWindow(SupplierPayment::query()->with('passiveInvoice.supplier'), $from, $to, $periodFrom, $periodTo);
-        $ibans = $this->ibansByBankLine($payments->pluck('bank_statement_line_id')->filter()->unique()->all());
-        $entries = [];
-
-        foreach ($payments->groupBy(fn (SupplierPayment $payment): string => $payment->bank_statement_line_id ?? 'payment-'.$payment->id) as $group) {
-            /** @var SupplierPayment $first */
-            $first = $group->first();
-
-            if (! $this->startsInWindow($first, $from, $to)) {
-                continue;
-            }
-            $invoice = $first->passiveInvoice;
-            $number = (string) $invoice?->invoice_number;
-            $byType = $this->sumByType($group);
-
-            if (array_sum($byType) === 0) {
-                continue;
-            }
-
-            $description = __('accounting.descriptions.supplier_payment', ['number' => $number]);
-            $lines = [$this->line($accounts, 'payables', $description, $byType['payment'] + $byType['adjustment'], true)];
-
-            if ($byType['bank_fee'] > 0) {
-                $lines[] = $this->line($accounts, 'bank_expense', __('accounting.descriptions.bank_fee', ['number' => $number]), $byType['bank_fee'], true);
-            }
-
-            $lines[] = $this->bankLine($accounts, $ibans[$first->bank_statement_line_id] ?? null, $description, $byType['payment'] + $byType['bank_fee'], false);
-
-            if ($byType['adjustment'] > 0) {
-                $lines[] = $this->line($accounts, 'rounding', __('accounting.descriptions.write_off', ['number' => $number]), $byType['adjustment'], false);
-            }
-
-            $entries[] = $this->entry(
-                CarbonImmutable::parse($first->paid_at), self::SOURCE_PAYMENTS, "supplier|{$number}|{$first->id}", 'supplier_payment', $number, $invoice?->date,
-                $this->contactName($invoice?->supplier), $this->taxId($invoice?->supplier), (string) ($invoice?->currency ?? 'EUR'), $lines,
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * Categorised bank lines (taxes, payroll, bank expenses, other expenses, internal transfers). Lines matched with an
-     * invoice are not repeated: their postings come from the payments.
-     *
-     * @return array<int, LedgerEntry>
-     */
-    private function bankLines(CarbonImmutable $from, CarbonImmutable $to, LedgerAccounts $accounts): array
-    {
-        $lines = BankStatementLine::query()->with('statement')
-            ->whereIn('reconciliation_type', [BankStatementLine::AUTO_CATEGORIZATION, BankStatementLine::MANUAL_CATEGORIZATION])
-            ->whereBetween('booking_date', [$from->toDateString(), $to->toDateString()])->orderBy('booking_date')->orderBy('line_number')->get();
-        $entries = [];
-
-        foreach ($lines as $line) {
-            $amount = $this->cents($line->amount);
-            $fee = $this->cents($line->fee_amount);
-            $category = (string) $line->reconciliation_category;
-            $label = __("accounting.categories.{$category}");
-            $description = trim($label.': '.(string) $line->description, ': ');
-            $bank = $accounts->bankCode($line->statement?->account_iban);
-            $counterAccount = $line->ledger_account_code ?: $accounts->code($this->defaultRole($category));
-            $postings = [];
-
-            if ($category === BankStatementLine::CATEGORY_INTERNAL_TRANSFER) {
-                $postings = $line->isCredit()
-                    ? [$this->raw($accounts, $bank, $description, $amount, true), $this->raw($accounts, $counterAccount, $description, $amount, false)]
-                    : [$this->raw($accounts, $counterAccount, $description, $amount, true), $this->raw($accounts, $bank, $description, $amount, false)];
-            } else {
-                $postings = [$this->raw($accounts, $counterAccount, $description, $amount, true), $this->raw($accounts, $bank, $description, $amount, false)];
-
-                if ($fee > 0) {
-                    $postings[] = $this->line($accounts, 'bank_expense', __('accounting.descriptions.bank_fee_line'), $fee, true);
-                    $postings[] = $this->raw($accounts, $bank, __('accounting.descriptions.bank_fee_line'), $fee, false);
-                }
-            }
-
-            $entries[] = $this->entry(
-                CarbonImmutable::parse($line->booking_date), self::SOURCE_BANKING, str_pad((string) $line->line_number, 8, '0', STR_PAD_LEFT)."|{$line->id}", $category,
-                (string) ($line->reference ?: $line->statement?->account_iban), null, $line->counterpart_name, null, (string) ($line->statement?->currency ?? 'EUR'), $postings,
-            );
-        }
-
-        return $entries;
-    }
-
-    /**
-     * The payments paid in a window, plus the other payments of the period that share a bank line with them: the
-     * payments of one bank line form one entry, dated on the first of them, even when they fall in different months.
-     *
-     * @template TPayment of Payment|SupplierPayment
-     *
-     * @param  Builder<TPayment>  $query
-     * @return EloquentCollection<int, TPayment>
-     */
-    private function paymentsOfWindow(Builder $query, CarbonImmutable $from, CarbonImmutable $to, CarbonImmutable $periodFrom, CarbonImmutable $periodTo): EloquentCollection
-    {
-        $window = [$from->toDateString(), $to->toDateString()];
-        $sharedLines = $query->getModel()->newQuery()->select('bank_statement_line_id')->whereNotNull('bank_statement_line_id')->whereBetween('paid_at', $window);
-
-        return $query
-            ->whereBetween('paid_at', [$periodFrom->toDateString(), $periodTo->toDateString()])
-            ->where(static fn (Builder $inWindow) => $inWindow->whereBetween('paid_at', $window)->orWhereIn('bank_statement_line_id', $sharedLines))
-            ->orderBy('paid_at')
-            ->orderBy('created_at')
-            ->get();
-    }
-
-    /**
-     * Whether the entry of a group of payments, dated on its first payment, belongs to the window.
-     */
-    private function startsInWindow(Payment|SupplierPayment $first, CarbonImmutable $from, CarbonImmutable $to): bool
-    {
-        $date = CarbonImmutable::parse($first->paid_at)->toDateString();
-
-        return $date >= $from->toDateString() && $date <= $to->toDateString();
-    }
-
-    /**
-     * A posting on the bank account the money moved through: the ledger account mapped to the IBAN of the statement of the
-     * bank line, or the default bank account when there is no line or the IBAN is not mapped.
-     */
-    private function bankLine(LedgerAccounts $accounts, ?string $iban, string $description, int $cents, bool $debit): LedgerLine
-    {
-        return $this->raw($accounts, $accounts->bankCode($iban), $description, $cents, $debit);
-    }
-
-    /**
-     * The IBAN of the bank account of each bank statement line (line id => IBAN).
-     *
-     * @param  array<int, string>  $lineIds
-     * @return array<string, string>
-     */
-    private function ibansByBankLine(array $lineIds): array
-    {
-        $ibans = [];
-
-        foreach (array_chunk($lineIds, 500) as $chunk) {
-            $ibans += DB::table('bank_statement_lines as line')
-                ->join('bank_statements as statement', 'statement.id', '=', 'line.bank_statement_id')
-                ->where('line.tenant_id', $this->tenantContext->getTenantId())
-                ->whereIn('line.id', $chunk)
-                ->pluck('statement.account_iban', 'line.id')
-                ->all();
-        }
-
-        return $ibans;
-    }
-
-    private function defaultRole(string $category): string
-    {
-        return match ($category) {
-            BankStatementLine::CATEGORY_TAX_PAYMENT => 'tax_payment',
-            BankStatementLine::CATEGORY_PAYROLL => 'payroll',
-            BankStatementLine::CATEGORY_BANK_EXPENSE => 'bank_expense',
-            BankStatementLine::CATEGORY_INTERNAL_TRANSFER => 'transfer_clearing',
-            default => 'generic_expense',
-        };
-    }
-
-    /**
-     * @param  Collection<int, Payment|SupplierPayment>  $payments
-     * @return array{payment: int, bank_fee: int, adjustment: int}
-     */
-    private function sumByType(Collection $payments): array
-    {
-        $sums = ['payment' => 0, 'bank_fee' => 0, 'adjustment' => 0];
-
-        foreach ($payments as $payment) {
-            $sums[array_key_exists($payment->type, $sums) ? $payment->type : 'payment'] += $this->cents($payment->amount);
-        }
-
-        return $sums;
-    }
-
-    /**
-     * The tax rates used by the lines of each document, as a vat code such as `22` or `22/10`.
-     *
-     * @param  array<int, string>  $ids
-     * @return array<string, string>
-     */
-    private function vatCodes(string $table, string $column, array $ids): array
-    {
-        $codes = [];
-
-        foreach (array_chunk($ids, 500) as $chunk) {
-            foreach (DB::table($table)->whereIn($column, $chunk)->select([$column, 'tax_rate'])->distinct()->orderBy('tax_rate', 'desc')->get() as $row) {
-                $rate = rtrim(rtrim(number_format((float) $row->tax_rate, 2, '.', ''), '0'), '.');
-                $codes[$row->{$column}] = isset($codes[$row->{$column}]) ? $codes[$row->{$column}].'/'.$rate : $rate;
-            }
-        }
-
-        return $codes;
-    }
-
-    /**
-     * Put the sides of the lines right for a credit note and post any difference to the rounding account, so the entry
-     * balances.
-     *
-     * @param  array<int, LedgerLine>  $lines
-     * @return array<int, LedgerLine>
-     */
-    private function balanced(LedgerAccounts $accounts, array $lines, bool $reverse): array
-    {
-        if ($reverse) {
-            $lines = array_map(fn (LedgerLine $line): LedgerLine => new LedgerLine($line->accountCode, $line->accountName, $line->description, $line->credit, $line->debit, $line->vatCode), $lines);
-        }
-
-        $difference = array_sum(array_map(fn (LedgerLine $line): int => $line->debit - $line->credit, $lines));
-
-        if ($difference !== 0) {
-            $lines[] = $this->line($accounts, 'rounding', __('accounting.descriptions.rounding'), abs($difference), $difference < 0);
-        }
-
-        return $lines;
-    }
-
-    private function line(LedgerAccounts $accounts, string $role, string $description, int $cents, bool $debit, ?string $vatCode = null): LedgerLine
-    {
-        return $this->raw($accounts, $accounts->code($role), $description, $cents, $debit, $vatCode);
-    }
-
-    private function raw(LedgerAccounts $accounts, string $code, string $description, int $cents, bool $debit, ?string $vatCode = null): LedgerLine
-    {
-        return new LedgerLine($code, $accounts->name($code), $description, $debit ? $cents : 0, $debit ? 0 : $cents, $vatCode);
-    }
-
-    /**
-     * @param  array<int, LedgerLine>  $lines
-     */
-    private function entry(CarbonImmutable|\DateTimeInterface $date, string $source, string $sortKey, string $documentType, string $documentNumber, CarbonImmutable|\DateTimeInterface|null $documentDate, ?string $counterpart, ?string $taxId, string $currency, array $lines): LedgerEntry
-    {
-        return new LedgerEntry(
-            CarbonImmutable::instance($date)->startOfDay(),
-            $source,
-            $sortKey,
-            $documentType,
-            $documentNumber,
-            $documentDate === null ? null : CarbonImmutable::instance($documentDate)->startOfDay(),
-            $counterpart,
-            $taxId,
-            $currency,
-            $lines,
-        );
-    }
-
-    private function cents(mixed $amount): int
-    {
-        return (int) round(((float) $amount) * 100);
     }
 
     private function contactName(?Contact $contact): ?string

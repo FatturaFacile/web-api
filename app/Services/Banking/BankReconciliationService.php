@@ -6,6 +6,7 @@ namespace App\Services\Banking;
 
 use App\Actions\Purchases\RecordSupplierPayment;
 use App\Actions\Sales\RecordPayment;
+use App\Models\BankReconciliationRule;
 use App\Models\BankStatement;
 use App\Models\BankStatementLine;
 use App\Models\Contact;
@@ -15,10 +16,12 @@ use App\Models\Payment;
 use App\Models\SupplierPayment;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
+use Modules\Treasury\Exceptions\TreasuryOperationException;
 
 /**
  * Reconciles the lines of a bank statement, so that the whole statement can be closed.
@@ -32,7 +35,10 @@ use Modules\GeneralLedger\Services\PaymentLedgerService;
  *  1. the supplier invoice number appears in the description or reference;
  *  2. the counterpart is a supplier with exactly one open invoice whose balance matches;
  * and otherwise, when `banking.ledger_defaults.auto_categorize_standard_codes` is on, recognised as an outflow
- * without an invoice: F24 / taxes, payroll or bank charges, which get the default ledger account of the tenant.
+ * without an invoice: F24 / taxes, payroll or bank charges, posted on the account configured for the category.
+ * Before the standard codes, the configured reconciliation rules (BankReconciliationRule) are tried by priority, for
+ * outflows and for incoming internal transfers. Every categorisation is posted to the general ledger
+ * (BankLineLedgerPosting); a category whose account is not configured is never posted nor marked reconciled.
  *
  * Amounts: for a customer invoice the effective amount is `amount + fee_amount` (the bank withheld the fee from what the
  * customer paid); for a supplier invoice it is the `amount` alone, because the fee of a transfer is a bank cost of the
@@ -75,10 +81,18 @@ class BankReconciliationService
      */
     private array $openNumbers = [];
 
+    /**
+     * Active reconciliation rules of the tenant loaded once per statement run, by ascending priority.
+     *
+     * @var Collection<int, BankReconciliationRule>|null
+     */
+    private ?Collection $rules = null;
+
     public function __construct(
         private readonly RecordPayment $payments,
         private readonly RecordSupplierPayment $supplierPayments,
         private readonly PaymentLedgerService $ledger,
+        private readonly BankLineLedgerPosting $linePosting,
     ) {}
 
     /**
@@ -91,6 +105,7 @@ class BankReconciliationService
     {
         $settings = ReconciliationSettings::forTenant($statement->tenant_id);
         $this->openNumbers = [];
+        $this->rules = null;
         $reconciled = 0;
         $unmatched = 0;
 
@@ -168,10 +183,12 @@ class BankReconciliationService
     }
 
     /**
-     * Book a line that has no invoice (taxes, payroll, bank expenses, internal transfers, other expenses). When no
-     * ledger account is given, the tenant default of the category is used.
+     * Book a line that has no invoice (taxes, payroll, bank expenses, internal transfers, other expenses) and post it
+     * to the general ledger. When no ledger account is given, the account configured for the category in
+     * `banking.ledger_defaults` is used; without one the categorisation is refused (422), no account is invented.
      *
      * @throws ValidationException
+     * @throws TreasuryOperationException when the account is not configured or not in the chart, or the period is closed
      */
     public function categorize(BankStatementLine $line, string $category, ?string $ledgerAccountCode, ?string $notes, ReconciliationSettings $settings): BankStatementLine
     {
@@ -186,14 +203,7 @@ class BankReconciliationService
                 throw ValidationException::withMessages(['category' => __('banking.errors.category_not_for_credit')]);
             }
 
-            $line->update([
-                'reconciled' => true,
-                'reconciliation_type' => BankStatementLine::MANUAL_CATEGORIZATION,
-                'reconciliation_category' => $category,
-                'ledger_account_code' => $ledgerAccountCode ?: $settings->accountFor($category),
-                'reconciliation_notes' => $notes,
-            ]);
-
+            $this->bookCategory($line, $category, $this->linePosting->counterAccountCode($category, $ledgerAccountCode, $settings), BankStatementLine::MANUAL_CATEGORIZATION, $settings, ['reconciliation_notes' => $notes]);
             $this->refreshStatus(BankStatement::findOrFail($line->bank_statement_id));
 
             return $line->refresh();
@@ -219,6 +229,10 @@ class BankReconciliationService
                 $this->revertPayments($line);
             }
 
+            if (in_array($line->reconciliation_type, [BankStatementLine::AUTO_CATEGORIZATION, BankStatementLine::MANUAL_CATEGORIZATION], true)) {
+                $this->linePosting->reverse($line);
+            }
+
             $line->update([
                 'reconciled' => false,
                 'matched_document_id' => null,
@@ -226,6 +240,8 @@ class BankReconciliationService
                 'reconciliation_category' => null,
                 'ledger_account_code' => null,
                 'reconciliation_notes' => null,
+                'journal_entry_id' => null,
+                'reconciliation_rule_id' => null,
             ]);
             $this->refreshStatus(BankStatement::findOrFail($line->bank_statement_id));
 
@@ -267,7 +283,11 @@ class BankReconciliationService
 
         $byCounterpart = $this->findByCounterpart($line, $statement, $settings, true);
 
-        return $byCounterpart !== null && $this->settle($line, $byCounterpart, $statement, $settings, false);
+        if ($byCounterpart !== null && $this->settle($line, $byCounterpart, $statement, $settings, false)) {
+            return true;
+        }
+
+        return $this->applyRules($line, $statement, $settings);
     }
 
     private function reconcileDebit(BankStatementLine $line, BankStatement $statement, ReconciliationSettings $settings): bool
@@ -280,32 +300,88 @@ class BankReconciliationService
 
         $bySupplier = $this->findByCounterpart($line, $statement, $settings, false);
 
-        if ($bySupplier !== null) {
-            return $this->settle($line, $bySupplier, $statement, $settings, false);
+        if ($bySupplier !== null && $this->settle($line, $bySupplier, $statement, $settings, false)) {
+            return true;
         }
 
-        return $settings->autoCategorize && $this->categorizeAutomatically($line, $settings);
+        if ($this->applyRules($line, $statement, $settings)) {
+            return true;
+        }
+
+        return $settings->autoCategorize && $this->categorizeAutomatically($line, $statement, $settings);
     }
 
     /**
-     * Recognise F24 / tax payments, payroll and bank charges from the transaction code or the description.
+     * The configured reconciliation rules, by ascending priority: the first rule the line satisfies categorises it on
+     * the rule account (or the account configured for the category). A rule whose account is missing, or whose period
+     * is closed, leaves the line open for the next rule and for manual handling.
      */
-    private function categorizeAutomatically(BankStatementLine $line, ReconciliationSettings $settings): bool
+    private function applyRules(BankStatementLine $line, BankStatement $statement, ReconciliationSettings $settings): bool
+    {
+        $this->rules ??= BankReconciliationRule::query()->where('is_active', true)->orderBy('priority')->orderBy('name')->get();
+
+        foreach ($this->rules as $rule) {
+            if (! $rule->matches($line)) {
+                continue;
+            }
+
+            $code = $rule->ledger_account_code ?: $settings->accountFor($rule->category);
+
+            if ($code !== null && $this->tryBookCategory($line, $statement, $rule->category, $code, $settings, ['reconciliation_rule_id' => $rule->id, 'reconciliation_notes' => "Rule: {$rule->name}"])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Recognise F24 / tax payments, payroll and bank charges from the transaction code or the description, and post
+     * them on the account configured for the category. Without a configured account the line stays open.
+     */
+    private function categorizeAutomatically(BankStatementLine $line, BankStatement $statement, ReconciliationSettings $settings): bool
     {
         $category = $this->standardCategory($line);
+        $code = $category === null ? null : $settings->accountFor($category);
 
-        if ($category === null) {
+        return $category !== null && $code !== null && $this->tryBookCategory($line, $statement, $category, $code, $settings, []);
+    }
+
+    /**
+     * Automatic categorisation in its own transaction: a refused posting leaves the line untouched and open.
+     *
+     * @param  array<string, mixed>  $extra
+     */
+    private function tryBookCategory(BankStatementLine $line, BankStatement $statement, string $category, string $code, ReconciliationSettings $settings, array $extra): bool
+    {
+        try {
+            DB::transaction(fn () => $this->bookCategory($line, $category, $code, BankStatementLine::AUTO_CATEGORIZATION, $settings, $extra, $statement));
+        } catch (TreasuryOperationException) {
+            $line->refresh();
+
             return false;
         }
 
-        $line->update([
-            'reconciled' => true,
-            'reconciliation_type' => BankStatementLine::AUTO_CATEGORIZATION,
-            'reconciliation_category' => $category,
-            'ledger_account_code' => $settings->accountFor($category),
-        ]);
-
         return true;
+    }
+
+    /**
+     * Marks the line categorised and posts it to the ledger in the same transaction.
+     *
+     * @param  array<string, mixed>  $extra
+     */
+    private function bookCategory(BankStatementLine $line, string $category, string $code, string $type, ReconciliationSettings $settings, array $extra, ?BankStatement $statement = null): void
+    {
+        $line->fill([
+            'reconciled' => true,
+            'reconciliation_type' => $type,
+            'reconciliation_category' => $category,
+            'ledger_account_code' => $code,
+        ] + $extra);
+
+        $entry = $this->linePosting->post($line, $statement ?? BankStatement::findOrFail($line->bank_statement_id), $code, $settings);
+        $line->journal_entry_id = $entry->id;
+        $line->save();
     }
 
     private function standardCategory(BankStatementLine $line): ?string

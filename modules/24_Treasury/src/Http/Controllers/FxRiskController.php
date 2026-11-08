@@ -5,18 +5,25 @@ declare(strict_types=1);
 namespace Modules\Treasury\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\Treasury\Actions\PerformFxRevaluationAction;
 use Modules\Treasury\Contracts\ForeignExchangeRiskServiceInterface;
+use Modules\Treasury\Http\Resources\FxRevaluationResource;
+use Modules\Treasury\Services\BankFxRevaluationService;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Currency exposure of the tenant and the period-end revaluation of its foreign-currency bank accounts.
+ */
 final class FxRiskController extends Controller
 {
+    use ApiResponse;
+
     public function __construct(
         private readonly ForeignExchangeRiskServiceInterface $fxService,
-        private readonly PerformFxRevaluationAction $revaluationAction
     ) {}
 
     /**
@@ -50,45 +57,37 @@ final class FxRiskController extends Controller
     }
 
     /**
-     * Revalues the balances in a foreign currency at the given spot rate and period end date.
+     * Period-end revaluation of the foreign-currency bank accounts, posted to the ledger.
      */
     #[OA\Post(
         path: '/api/v1/treasury/fx/revalue',
         operationId: 'revalueTreasuryFx',
-        description: 'Revalues the balances in a foreign currency at the given spot rate and period end date.',
-        summary: 'Revalue FX balances',
+        description: 'Revalues every active bank account in a foreign currency (optionally only one currency) at the period end: the foreign balance of its ledger account at the closing rate of the exchange-rate service (exchange_rates, latest rate on or before the date) against its book value in the accounting currency. The difference is posted as an unrealised gain (Dr bank / Cr fx_unrealised_gain_account_code) or loss (Dr fx_unrealised_loss_account_code / Cr bank), once per account and period end: a repeated call returns the revaluations already posted. Refused with 422 when a rate, a ledger account or the configured accounts are missing. The spot_rate of earlier versions is no longer accepted.',
+        summary: 'Revalue FX bank balances',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury FX'],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['currency', 'spot_rate'], properties: [new OA\Property(property: 'currency', type: 'string', minLength: 3, maxLength: 3), new OA\Property(property: 'period_end_date', type: 'string', format: 'date', nullable: true), new OA\Property(property: 'spot_rate', type: 'number'), new OA\Property(property: 'company_id')])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['period_end_date'], properties: [new OA\Property(property: 'period_end_date', type: 'string', format: 'date'), new OA\Property(property: 'currency', type: 'string', maxLength: 3, minLength: 3, nullable: true)])),
         responses: [
-            new OA\Response(response: 201, description: 'Revalue created', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryFxRevaluationModel')),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 201, description: 'Revaluations posted', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'success', type: 'boolean'),
+                new OA\Property(property: 'message', type: 'string'),
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryBankFxRevaluationResource')),
+            ])),
+            new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/TreasuryValidationError', response: 422),
         ]
     )]
-    public function revalue(Request $request, TenantContext $tenantContext): JsonResponse
+    public function revalue(Request $request, TenantContext $tenantContext, BankFxRevaluationService $revaluations): JsonResponse
     {
-        $request->validate([
-            'currency' => ['required', 'string', 'size:3'],
-            'period_end_date' => ['nullable', 'date'],
-            'spot_rate' => ['required', 'numeric', 'gt:0'],
+        $data = $request->validate([
+            'period_end_date' => ['required', 'date_format:Y-m-d'],
+            'currency' => ['nullable', 'string', 'size:3', 'alpha'],
+            'spot_rate' => ['prohibited'],
         ]);
 
-        $tenantId = $tenantContext->getTenantId();
-        $currency = strtoupper((string) $request->input('currency'));
-        $date = (string) $request->input('period_end_date', now()->toDateString());
-        $spotRate = (float) $request->input('spot_rate');
-        $companyId = $request->input('company_id');
+        $result = $revaluations->revalue((string) $tenantContext->getTenantId(), $data['period_end_date'], $data['currency'] ?? null, (string) $request->user()?->getAuthIdentifier());
 
-        $revaluation = $this->revaluationAction->execute(
-            $tenantId,
-            $currency,
-            $date,
-            $spotRate,
-            $companyId,
-            (string) $request->user()?->id
-        );
-
-        return response()->json($revaluation, 201);
+        return $this->successResponse(FxRevaluationResource::collection($result), 'FX revaluation posted', Response::HTTP_CREATED);
     }
 }

@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Treasury\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class ImportStatementRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -16,7 +19,7 @@ final class ImportStatementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'bank_account_id' => ['required', 'uuid'],
+            'bank_account_id' => ['required', 'uuid', $this->tenantOwns('bank_accounts')],
             'statement_number' => ['nullable', 'string', 'max:50'],
             'statement_date' => ['nullable', 'date'],
             'format' => ['nullable', 'string', 'in:CAMT_053,CAMT_052,MT940,MT942,CSV'],

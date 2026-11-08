@@ -208,7 +208,8 @@ final readonly class TreasuryReadinessEventListener
             amount: $event->amount,
             transferDate: now()->toDateString(),
             interestRate: 0.0250,
-            cashPoolId: null
+            cashPoolId: null,
+            post: false,
         );
     }
 }
