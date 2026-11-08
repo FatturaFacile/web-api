@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Events;
 
+/**
+ * A quality inspection passed or failed.
+ */
 final class QualityInspectionCompletedEvent extends BaseManufacturingEvent
 {
     public function __construct(
@@ -21,21 +24,35 @@ final class QualityInspectionCompletedEvent extends BaseManufacturingEvent
         parent::__construct($tenantId, $companyId, $eventId, $occurredAt);
     }
 
+    /**
+     * Aggregate type of the event.
+     */
     public function getAggregateType(): string
     {
         return 'mfg_quality_inspection';
     }
 
+    /**
+     * Aggregate id of the event.
+     */
     public function getAggregateId(): string
     {
         return $this->inspectionId;
     }
 
+    /**
+     * Name of the event in the outbox.
+     */
     public function getEventName(): string
     {
         return 'mfg.quality.inspection_completed';
     }
 
+    /**
+     * Payload of the event.
+     *
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

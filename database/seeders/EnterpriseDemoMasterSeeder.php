@@ -16,7 +16,6 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Str;
 use Modules\Manufacturing\Contracts\BillOfMaterialsServiceInterface;
-use Modules\Manufacturing\Contracts\ProductionExecutionServiceInterface;
 use Modules\Manufacturing\Contracts\ProductionPlanningServiceInterface;
 use Modules\Manufacturing\Contracts\QualityManagementServiceInterface;
 use Modules\Manufacturing\Contracts\RoutingServiceInterface;
@@ -188,7 +187,6 @@ class EnterpriseDemoMasterSeeder extends Seeder
 
         // 4. Integrated Manufacturing Flow Setup
         $planningService = app(ProductionPlanningServiceInterface::class);
-        $executionService = app(ProductionExecutionServiceInterface::class);
         $bomService = app(BillOfMaterialsServiceInterface::class);
         $routingService = app(RoutingServiceInterface::class);
         $qmService = app(QualityManagementServiceInterface::class);
@@ -225,10 +223,10 @@ class EnterpriseDemoMasterSeeder extends Seeder
                 mfgItemId: $finishedGood->id,
                 name: 'HD-500 Standard Production BOM',
                 components: [
-                    ['component_item_id' => $rawMaterial->id, 'quantity_per' => 4.0, 'scrap_percentage' => 1.5],
+                    ['component_item_id' => $rawMaterial->id, 'quantity_per' => '4', 'scrap_percentage' => '1.5'],
                 ]
             ));
-            $finishedGood->update(['default_bom_id' => $bom->id]);
+            $bomService->activate($bom);
         }
 
         $workCenter = MfgWorkCenter::firstOrCreate(
@@ -271,14 +269,11 @@ class EnterpriseDemoMasterSeeder extends Seeder
             $prodOrder = $planningService->planOrder(new CreateProductionOrderDTO(
                 tenantId: $tenant->id,
                 mfgItemId: $finishedGood->id,
-                targetQuantity: 10.0,
+                targetQuantity: '10',
                 plannedStartDate: now()->toDateString(),
                 plannedEndDate: now()->addDays(5)->toDateString(),
                 notes: 'Integrated Demo Order for Acme Solutions'
             ));
-
-            $prodOrder = $executionService->releaseOrder($prodOrder->id);
-            $prodOrder = $executionService->startOrder($prodOrder->id);
         }
 
         // Quality Inspection

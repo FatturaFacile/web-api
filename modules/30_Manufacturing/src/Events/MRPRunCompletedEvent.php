@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Events;
 
+/**
+ * An MRP run completed with its planned orders and shortages.
+ */
 final class MRPRunCompletedEvent extends BaseManufacturingEvent
 {
     public function __construct(
@@ -20,21 +23,35 @@ final class MRPRunCompletedEvent extends BaseManufacturingEvent
         parent::__construct($tenantId, $companyId, $eventId, $occurredAt);
     }
 
+    /**
+     * Aggregate type of the event.
+     */
     public function getAggregateType(): string
     {
         return 'mfg_mrp_run';
     }
 
+    /**
+     * Aggregate id of the event.
+     */
     public function getAggregateId(): string
     {
         return $this->mrpRunId;
     }
 
+    /**
+     * Name of the event in the outbox.
+     */
     public function getEventName(): string
     {
         return 'mfg.mrp.completed';
     }
 
+    /**
+     * Payload of the event.
+     *
+     * @return array<string, mixed>
+     */
     public function toPayload(): array
     {
         return [

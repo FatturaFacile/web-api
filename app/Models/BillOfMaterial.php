@@ -12,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @deprecated Bills of materials live in the manufacturing module (MfgBom, with revisions and
+ *             effective dates); the rows of this table were copied there with the same ids by
+ *             LegacyProductionOrderMigrator. Kept read-only for history.
+ */
 class BillOfMaterial extends Model
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;

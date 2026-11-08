@@ -4,37 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Contracts;
 
+use Modules\Manufacturing\Models\MfgProductionOrder;
+
+/**
+ * Standard against actual costing of production orders, from the data the order recorded.
+ */
 interface ProductionCostingServiceInterface
 {
     /**
-     * Calculates the standard cost rollup for a production order based on BOM and Routing.
+     * Cost report of the order per element (material, labor, overhead, subcontract): standard for the planned quantity,
+     * standard for the output received, actual cost charged to WIP and variance; WIP balance and the journal entries
+     * that posted the order. Amounts are decimal strings.
      *
-     * @return array{
-     *     material_cost: float,
-     *     labor_cost: float,
-     *     machine_cost: float,
-     *     overhead_cost: float,
-     *     total_standard_cost: float
-     * }
+     * @return array{production_order_id: string, status: string, currency: string, target_quantity: string, received_quantity: string, scrapped_quantity: string, standard_unit_cost: string, elements: array<string, array{standard_unit_cost: string, standard_for_target: string, standard_for_output: string, actual: string, variance: string}>, totals: array{standard_for_target: string, standard_for_output: string, actual: string, received_value: string, wip_balance: string, variance: string}, journal_entry_ids: list<string>, is_closed: bool}
      */
-    public function calculateStandardCostRollup(string $productionOrderId): array;
-
-    /**
-     * Accumulates actual costs and calculates variances against standard costs.
-     *
-     * @return array{
-     *     actual_material_cost: float,
-     *     actual_labor_cost: float,
-     *     actual_machine_cost: float,
-     *     actual_overhead_cost: float,
-     *     actual_total_cost: float,
-     *     variance_total: float,
-     *     variance_type: string
-     * }
-     */
-    public function calculateActualCostAndVariance(string $productionOrderId): array;
-
-    public function postProductionWipAccounting(string $productionOrderId): void;
-
-    public function postProductionCompletionAccounting(string $productionOrderId): void;
+    public function costReport(MfgProductionOrder $order): array;
 }

@@ -12,6 +12,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+/**
+ * @deprecated Production orders live in the manufacturing module (MfgProductionOrder,
+ *             table mfg_production_orders); the rows of this table were copied there with the same ids by
+ *             LegacyProductionOrderMigrator. Kept read-only for history.
+ */
 class ProductionOrder extends Model
 {
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;

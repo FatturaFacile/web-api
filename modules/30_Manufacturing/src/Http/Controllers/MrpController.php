@@ -7,173 +7,189 @@ namespace Modules\Manufacturing\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
 use Modules\Manufacturing\Contracts\MrpServiceInterface;
 use Modules\Manufacturing\DTOs\RunMrpDTO;
-use Modules\Manufacturing\Http\Controllers\Concerns\ResolvesTenant;
+use Modules\Manufacturing\Http\Controllers\Concerns\InteractsWithManufacturing;
+use Modules\Manufacturing\Http\Requests\MarkSuggestionConvertedRequest;
 use Modules\Manufacturing\Http\Requests\RunMrpRequest;
+use Modules\Manufacturing\Http\Requests\StoreForecastRequest;
+use Modules\Manufacturing\Http\Resources\MfgForecastResource;
 use Modules\Manufacturing\Http\Resources\MfgMrpRunResource;
+use Modules\Manufacturing\Http\Resources\MfgPlannedOrderResource;
+use Modules\Manufacturing\Http\Resources\MfgProductionOrderResource;
+use Modules\Manufacturing\Http\Resources\MfgShortageResource;
+use Modules\Manufacturing\Models\MfgDemandForecast;
 use Modules\Manufacturing\Models\MfgMrpPlannedOrder;
 use Modules\Manufacturing\Models\MfgMrpRun;
 use Modules\Manufacturing\Models\MfgMrpShortage;
 use OpenApi\Attributes as OA;
 
+/**
+ * MRP: runs, planned orders, shortages, conversion of make orders, purchase suggestions for Procurement, demand
+ * forecasts.
+ */
 final class MrpController extends Controller
 {
-    use ResolvesTenant;
+    use InteractsWithManufacturing;
 
-    public function __construct(
-        private MrpServiceInterface $mrpService
-    ) {}
+    public function __construct(private readonly MrpServiceInterface $mrp) {}
 
     /**
-     * Returns the paginated list of runs of the active tenant.
+     * Paginated MRP runs.
      */
-    #[OA\Get(
-        path: '/api/v1/manufacturing/mrp/runs',
-        operationId: 'listManufacturingMrpRuns',
-        description: 'Returns the paginated list of runs of the active tenant. Results can be narrowed with the query parameters.',
-        summary: 'List runs',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing MRP'],
-        parameters: [
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'List of runs', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ManufacturingMfgMrpRunResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function index(Request $request): JsonResponse
+    #[OA\Get(path: '/api/v1/manufacturing/mrp/runs', operationId: 'listManufacturingMrpRuns', description: 'Paginated MRP runs of the active company, newest first.', summary: 'List MRP runs', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        responses: [new OA\Response(response: 200, description: 'MRP runs', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgMrpRun'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
+    public function index(Request $request): AnonymousResourceCollection
     {
-        $tenantId = $this->resolveTenantId($request);
-        $runs = MfgMrpRun::where('tenant_id', $tenantId)->latest()->paginate(25);
-
-        return response()->json([
-            'data' => MfgMrpRunResource::collection($runs),
-            'meta' => [
-                'current_page' => $runs->currentPage(),
-                'total' => $runs->total(),
-            ],
-        ]);
+        return MfgMrpRunResource::collection(MfgMrpRun::query()->where('tenant_id', $this->tenantId())->latest('executed_at')->paginate($this->perPage($request)));
     }
 
     /**
-     * Runs material requirements planning on the given horizon.
+     * Runs MRP.
      */
-    #[OA\Post(
-        path: '/api/v1/manufacturing/mrp/runs',
-        operationId: 'runManufacturingMrpRuns',
-        description: 'Runs material requirements planning on the given horizon.',
-        summary: 'Run MRP',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing MRP'],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ManufacturingRunMrpRequest')),
-        responses: [
-            new OA\Response(response: 201, description: 'Run created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ManufacturingMfgMrpRunResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
-    )]
+    #[OA\Post(path: '/api/v1/manufacturing/mrp/runs', operationId: 'runManufacturingMrp', description: 'Runs MRP over the horizon: open sales order lines, forecasts (less the sales demand of the same month), safety stock and components of open and planned production orders are netted level by level against stock and scheduled receipts (open production orders, sent purchase orders). Earlier unconverted planned orders are superseded.', summary: 'Run MRP', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgRunMrpRequest')),
+        responses: [new OA\Response(response: 201, description: 'Run completed', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgMrpRun')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
     public function run(RunMrpRequest $request): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $validated = $request->validated();
+        $data = $request->validated();
+        $run = $this->mrp->executeMrpRun(new RunMrpDTO(
+            tenantId: $this->tenantId(),
+            horizonStartDate: (string) $data['horizon_start_date'],
+            horizonEndDate: (string) $data['horizon_end_date'],
+            runType: (string) ($data['run_type'] ?? 'regenerative'),
+            itemIds: isset($data['item_ids']) ? array_values(array_map('strval', $data['item_ids'])) : null,
+            executedBy: $this->actor($request),
+        ));
 
-        $dto = new RunMrpDTO(
-            tenantId: $tenantId,
-            horizonStartDate: $validated['horizon_start_date'],
-            horizonEndDate: $validated['horizon_end_date'],
-            runType: $validated['run_type'] ?? 'regenerative',
-            itemIds: $validated['item_ids'] ?? null,
-            executedBy: $request->user()?->id
-        );
-
-        $run = $this->mrpService->executeMrpRun($dto);
-
-        return response()->json([
-            'message' => 'MRP run executed successfully.',
-            'data' => new MfgMrpRunResource($run),
-        ], 201);
+        return (new MfgMrpRunResource($run))->response()->setStatusCode(201);
     }
 
     /**
-     * Returns the paginated planned orders of the active tenant, latest first.
+     * One MRP run with its results.
      */
-    #[OA\Get(
-        path: '/api/v1/manufacturing/mrp/planned-orders',
-        operationId: 'getPlannedOrdersManufacturingMrp',
-        description: 'Returns the paginated planned orders of the active tenant, latest first.',
-        summary: 'List MRP planned orders',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing MRP'],
-        parameters: [
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ManufacturingMfgMrpPlannedOrderModel')), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'per_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function plannedOrders(Request $request): JsonResponse
+    #[OA\Get(path: '/api/v1/manufacturing/mrp/runs/{id}', operationId: 'showManufacturingMrpRun', description: 'Returns an MRP run of the active company with its planned orders and shortages.', summary: 'Get MRP run', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        responses: [new OA\Response(response: 200, description: 'MRP run', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgMrpRun')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404)])]
+    public function show(string $id): MfgMrpRunResource
     {
-        $tenantId = $this->resolveTenantId($request);
-        $orders = MfgMrpPlannedOrder::where('tenant_id', $tenantId)->latest()->paginate(50);
-
-        return response()->json(['data' => $orders]);
+        return new MfgMrpRunResource($this->owned(MfgMrpRun::class, $id)->load(['plannedOrders', 'shortages']));
     }
 
     /**
-     * Returns the paginated material shortages of the active tenant, latest first.
+     * Paginated planned orders.
      */
-    #[OA\Get(
-        path: '/api/v1/manufacturing/mrp/shortages',
-        operationId: 'getShortagesManufacturingMrp',
-        description: 'Returns the paginated material shortages of the active tenant, latest first.',
-        summary: 'List MRP shortages',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing MRP'],
-        parameters: [
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ManufacturingMfgMrpShortageModel')), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'per_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function shortages(Request $request): JsonResponse
+    #[OA\Get(path: '/api/v1/manufacturing/mrp/planned-orders', operationId: 'listManufacturingMrpPlannedOrders', description: 'Paginated planned orders of the active company, filtered by run, type and status.', summary: 'List planned orders', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(name: 'mrp_run_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'order_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['make', 'buy'])), new OA\Parameter(ref: '#/components/parameters/MfgStatus'), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        responses: [new OA\Response(response: 200, description: 'Planned orders', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgPlannedOrder'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
+    public function plannedOrders(Request $request): AnonymousResourceCollection
     {
-        $tenantId = $this->resolveTenantId($request);
-        $shortages = MfgMrpShortage::where('tenant_id', $tenantId)->latest()->paginate(50);
+        $query = MfgMrpPlannedOrder::query()->where('tenant_id', $this->tenantId());
+        foreach (['mrp_run_id', 'order_type', 'status'] as $filter) {
+            if ($request->filled($filter)) {
+                $query->where($filter, (string) $request->query($filter));
+            }
+        }
 
-        return response()->json(['data' => $shortages]);
+        return MfgPlannedOrderResource::collection($query->orderBy('due_date')->orderBy('planned_order_number')->paginate($this->perPage($request)));
     }
 
     /**
-     * Converts a planned order into a firm order and returns its identifier.
+     * Open purchase suggestions for Procurement.
      */
-    #[OA\Post(
-        path: '/api/v1/manufacturing/mrp/planned-orders/{id}/convert',
-        operationId: 'convertPlannedOrderManufacturingMrpPlannedOrder',
-        description: 'Converts a planned order into a firm order and returns its identifier.',
-        summary: 'Convert planned order',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Manufacturing MRP'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the planned order', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'converted_order_id', type: 'string')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
+    #[OA\Get(path: '/api/v1/manufacturing/mrp/purchase-suggestions', operationId: 'listManufacturingMrpPurchaseSuggestions', description: 'Open purchase suggestions (buy planned orders not converted yet) of the active company, by due date. Data only: Procurement converts them and records its document through the procurement-link endpoint.', summary: 'List purchase suggestions', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        responses: [new OA\Response(response: 200, description: 'Purchase suggestions', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgPlannedOrder'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
+    public function purchaseSuggestions(Request $request): AnonymousResourceCollection
+    {
+        return MfgPlannedOrderResource::collection(MfgMrpPlannedOrder::query()->where('tenant_id', $this->tenantId())->where('order_type', 'buy')->where('status', 'planned')->orderBy('due_date')->paginate($this->perPage($request)));
+    }
+
+    /**
+     * Paginated shortages.
+     */
+    #[OA\Get(path: '/api/v1/manufacturing/mrp/shortages', operationId: 'listManufacturingMrpShortages', description: 'Paginated shortages of the active company, filtered by run.', summary: 'List shortages', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(name: 'mrp_run_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        responses: [new OA\Response(response: 200, description: 'Shortages', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgShortage'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
+    public function shortages(Request $request): AnonymousResourceCollection
+    {
+        $query = MfgMrpShortage::query()->where('tenant_id', $this->tenantId());
+        if ($request->filled('mrp_run_id')) {
+            $query->where('mrp_run_id', (string) $request->query('mrp_run_id'));
+        }
+
+        return MfgShortageResource::collection($query->orderBy('required_date')->paginate($this->perPage($request)));
+    }
+
+    /**
+     * Converts a make planned order into a production order.
+     */
+    #[OA\Post(path: '/api/v1/manufacturing/mrp/planned-orders/{id}/convert', operationId: 'convertManufacturingMrpPlannedOrder', description: 'Converts a make planned order into a planned production order with its dates, BOM and routing. Purchase suggestions are refused: Procurement converts them.', summary: 'Convert planned order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        responses: [new OA\Response(response: 201, description: 'Production order created', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgProductionOrder')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
     public function convertPlannedOrder(Request $request, string $id): JsonResponse
     {
-        $convertedId = $this->mrpService->convertPlannedOrder($id);
+        $order = $this->mrp->convertPlannedOrder($this->owned(MfgMrpPlannedOrder::class, $id), $this->actor($request));
 
-        return response()->json([
-            'message' => 'Planned order converted successfully.',
-            'converted_order_id' => $convertedId,
-        ]);
+        return (new MfgProductionOrderResource($order))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Records the procurement document of a purchase suggestion.
+     */
+    #[OA\Post(path: '/api/v1/manufacturing/mrp/planned-orders/{id}/procurement-link', operationId: 'linkManufacturingMrpPurchaseSuggestion', description: 'Records the purchase requisition or order Procurement converted the suggestion into; the suggestion leaves the open list.', summary: 'Link purchase suggestion', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgProcurementLinkRequest')),
+        responses: [new OA\Response(response: 200, description: 'Suggestion linked', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgPlannedOrder')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
+    public function linkProcurement(MarkSuggestionConvertedRequest $request, string $id): MfgPlannedOrderResource
+    {
+        $data = $request->validated();
+
+        return new MfgPlannedOrderResource($this->mrp->markPurchaseSuggestionConverted($this->owned(MfgMrpPlannedOrder::class, $id), (string) $data['procurement_document_type'], (string) $data['procurement_document_id'], $this->actor($request)));
+    }
+
+    /**
+     * Paginated demand forecasts.
+     */
+    #[OA\Get(path: '/api/v1/manufacturing/mrp/forecasts', operationId: 'listManufacturingMrpForecasts', description: 'Paginated demand forecasts of the active company, filtered by item.', summary: 'List demand forecasts', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgItemFilter'), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        responses: [new OA\Response(response: 200, description: 'Forecasts', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgForecast'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
+    public function forecasts(Request $request): AnonymousResourceCollection
+    {
+        $query = MfgDemandForecast::query()->where('tenant_id', $this->tenantId());
+        if ($request->filled('mfg_item_id')) {
+            $query->where('mfg_item_id', (string) $request->query('mfg_item_id'));
+        }
+
+        return MfgForecastResource::collection($query->orderBy('forecast_date')->paginate($this->perPage($request)));
+    }
+
+    /**
+     * Creates a demand forecast.
+     */
+    #[OA\Post(path: '/api/v1/manufacturing/mrp/forecasts', operationId: 'storeManufacturingMrpForecast', description: 'Records an expected demand of an item on a date; MRP nets it less the sales demand of the same month.', summary: 'Create demand forecast', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/MfgStoreForecastRequest')),
+        responses: [new OA\Response(response: 201, description: 'Forecast created', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/MfgForecast')])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgUnprocessable', response: 422)])]
+    public function storeForecast(StoreForecastRequest $request): JsonResponse
+    {
+        $forecast = MfgDemandForecast::create([...$request->validated(), 'tenant_id' => $this->tenantId(), 'created_by' => $this->actor($request)]);
+
+        return (new MfgForecastResource($forecast))->response()->setStatusCode(201);
+    }
+
+    /**
+     * Deletes a demand forecast.
+     */
+    #[OA\Delete(path: '/api/v1/manufacturing/mrp/forecasts/{id}', operationId: 'deleteManufacturingMrpForecast', description: 'Deletes a demand forecast of the active company (the next MRP run no longer plans it).', summary: 'Delete demand forecast', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing MRP'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgId')],
+        responses: [new OA\Response(response: 204, description: 'Forecast deleted'), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401), new OA\Response(ref: '#/components/responses/MfgForbidden', response: 403), new OA\Response(ref: '#/components/responses/MfgNotFound', response: 404)])]
+    public function destroyForecast(string $id): Response
+    {
+        $this->owned(MfgDemandForecast::class, $id)->delete();
+
+        return response()->noContent();
     }
 }

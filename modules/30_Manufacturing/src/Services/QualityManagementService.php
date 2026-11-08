@@ -4,148 +4,224 @@ declare(strict_types=1);
 
 namespace Modules\Manufacturing\Services;
 
-use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
-use Enterprise\EventBus\Contracts\EventBusInterface;
+use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Manufacturing\Contracts\QualityManagementServiceInterface;
 use Modules\Manufacturing\DTOs\RecordQualityInspectionDTO;
 use Modules\Manufacturing\Events\NonConformanceDetectedEvent;
 use Modules\Manufacturing\Events\QualityInspectionCompletedEvent;
+use Modules\Manufacturing\Exceptions\ManufacturingOperationException;
+use Modules\Manufacturing\Models\MfgMaterialMovement;
+use Modules\Manufacturing\Models\MfgProductionOrder;
+use Modules\Manufacturing\Models\MfgProductionOrderOperation;
 use Modules\Manufacturing\Models\MfgQualityCharacteristic;
 use Modules\Manufacturing\Models\MfgQualityInspection;
 use Modules\Manufacturing\Models\MfgQualityNonConformance;
 use Modules\Manufacturing\Models\MfgQualityPlan;
+use Modules\Manufacturing\Support\Money;
 
+/**
+ * Quality management. An inspection fails when a critical characteristic is out of tolerance or the defects (entered
+ * plus measurements out of tolerance) exceed the defect limit of the plan; a failed inspection raises a non-conformance
+ * on the rejected quantity. Non-conformances are closed with a disposition and a corrective action.
+ */
 final readonly class QualityManagementService implements QualityManagementServiceInterface
 {
-    public function __construct(
-        private EventBusInterface $eventBus,
-        private AuditLedgerInterface $auditLedger
-    ) {}
+    /** Dispositions that close a non-conformance. */
+    public const array FinalDispositions = ['use_as_is', 'rework', 'scrap', 'return_to_supplier'];
+
+    public function __construct(private EventDispatcher $dispatcher) {}
+
+    public function createPlan(string $tenantId, array $data): MfgQualityPlan
+    {
+        return DB::transaction(function () use ($tenantId, $data): MfgQualityPlan {
+            $plan = MfgQualityPlan::create([
+                'tenant_id' => $tenantId,
+                'plan_code' => $data['plan_code'],
+                'name' => $data['name'],
+                'inspection_type' => $data['inspection_type'] ?? 'final',
+                'mfg_item_id' => $data['mfg_item_id'] ?? null,
+                'description' => $data['description'] ?? null,
+                'acceptance_defect_limit' => (int) ($data['acceptance_defect_limit'] ?? 0),
+                'is_active' => (bool) ($data['is_active'] ?? true),
+            ]);
+
+            foreach ((array) ($data['characteristics'] ?? []) as $index => $characteristic) {
+                if (isset($characteristic['min_tolerance'], $characteristic['max_tolerance']) && Money::compare($characteristic['max_tolerance'], $characteristic['min_tolerance']) < 0) {
+                    throw new ManufacturingOperationException('The upper tolerance must not be below the lower one.', "characteristics.{$index}.max_tolerance");
+                }
+
+                MfgQualityCharacteristic::create([
+                    'tenant_id' => $tenantId,
+                    'quality_plan_id' => $plan->id,
+                    'characteristic_name' => $characteristic['characteristic_name'],
+                    'target_value' => isset($characteristic['target_value']) ? Money::round($characteristic['target_value'], 4) : null,
+                    'min_tolerance' => isset($characteristic['min_tolerance']) ? Money::round($characteristic['min_tolerance'], 4) : null,
+                    'max_tolerance' => isset($characteristic['max_tolerance']) ? Money::round($characteristic['max_tolerance'], 4) : null,
+                    'uom' => $characteristic['uom'] ?? 'MM',
+                    'inspection_method' => $characteristic['inspection_method'] ?? null,
+                    'is_critical' => (bool) ($characteristic['is_critical'] ?? false),
+                ]);
+            }
+
+            return $plan->load('characteristics');
+        });
+    }
 
     public function executeInspection(RecordQualityInspectionDTO $dto): MfgQualityInspection
     {
         return DB::transaction(function () use ($dto): MfgQualityInspection {
-            $plan = MfgQualityPlan::with('characteristics')->findOrFail($dto->qualityPlanId);
-            $inspectionNumber = 'INS-'.strtoupper((string) Str::random(8));
+            $plan = MfgQualityPlan::query()->with('characteristics')->where('tenant_id', $dto->tenantId)->findOrFail($dto->qualityPlanId);
+            $order = $dto->productionOrderId !== null ? MfgProductionOrder::query()->where('tenant_id', $dto->tenantId)->findOrFail($dto->productionOrderId) : null;
 
-            $defectCount = $dto->defectCount;
-            $hasCriticalDefect = false;
-
-            // Evaluate characteristics against tolerance criteria
-            foreach ($dto->characteristicResults as $result) {
-                if (! ($result['is_conforming'] ?? true)) {
-                    $defectCount++;
-                    $char = MfgQualityCharacteristic::find($result['characteristic_id'] ?? null);
-                    if ($char && $char->is_critical) {
-                        $hasCriticalDefect = true;
-                    }
-                }
+            if ($dto->productionOrderOperationId !== null && ($order === null || ! MfgProductionOrderOperation::query()->where('production_order_id', $order->id)->whereKey($dto->productionOrderOperationId)->exists())) {
+                throw new ManufacturingOperationException('The operation does not belong to the production order.', 'production_order_operation_id');
+            }
+            if ($dto->materialMovementId !== null && ($order === null || ! MfgMaterialMovement::query()->where('production_order_id', $order->id)->where('movement_type', MfgMaterialMovement::Receipt)->whereKey($dto->materialMovementId)->exists())) {
+                throw new ManufacturingOperationException('The receipt does not belong to the production order.', 'material_movement_id');
             }
 
-            $status = ($defectCount === 0) ? 'passed' : ($hasCriticalDefect ? 'failed' : 'conditional_pass');
+            $results = [];
+            $outOfTolerance = 0;
+            $criticalFailure = false;
+            foreach ($dto->characteristicResults as $result) {
+                $characteristic = $plan->characteristics->firstWhere('id', $result['characteristic_id']);
+                if (! $characteristic instanceof MfgQualityCharacteristic) {
+                    throw new ManufacturingOperationException('The characteristic does not belong to the inspection plan.', 'characteristic_results');
+                }
+
+                $conforming = $characteristic->isWithinTolerance($result['measured_value']);
+                if (! $conforming) {
+                    $outOfTolerance++;
+                    $criticalFailure = $criticalFailure || $characteristic->is_critical;
+                }
+                $results[] = [
+                    'characteristic_id' => (string) $characteristic->id,
+                    'characteristic_name' => $characteristic->characteristic_name,
+                    'measured_value' => Money::round($result['measured_value'], 4),
+                    'min_tolerance' => $characteristic->min_tolerance,
+                    'max_tolerance' => $characteristic->max_tolerance,
+                    'is_critical' => $characteristic->is_critical,
+                    'is_conforming' => $conforming,
+                ];
+            }
+
+            $defects = $dto->defectCount + $outOfTolerance;
+            $failed = $criticalFailure || $defects > $plan->acceptance_defect_limit;
+            $inspected = Money::qty($dto->quantityInspected);
+            $rejected = Money::qty($dto->quantityRejected ?? ($failed ? $inspected : '0'));
+            if (Money::compare($rejected, $inspected) > 0) {
+                throw new ManufacturingOperationException('The rejected quantity cannot exceed the quantity inspected.', 'quantity_rejected');
+            }
 
             $inspection = MfgQualityInspection::create([
                 'tenant_id' => $dto->tenantId,
-                'inspection_number' => $inspectionNumber,
-                'quality_plan_id' => $dto->qualityPlanId,
-                'production_order_id' => $dto->productionOrderId,
-                'operation_id' => $dto->operationId,
-                'inspector_id' => $dto->inspectorId,
+                'inspection_number' => 'QI-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
+                'quality_plan_id' => $plan->id,
+                'inspection_point' => $dto->inspectionPoint,
+                'production_order_id' => $order?->id,
+                'production_order_operation_id' => $dto->productionOrderOperationId,
+                'material_movement_id' => $dto->materialMovementId,
+                'mfg_item_id' => $order->mfg_item_id ?? $plan->mfg_item_id,
+                'inspector_id' => $this->uuidOrNull($dto->inspectorId),
                 'sample_size' => $dto->sampleSize,
-                'defect_count' => $defectCount,
-                'status' => $status,
+                'defect_count' => $defects,
+                'quantity_inspected' => $inspected,
+                'quantity_accepted' => Money::qty(Money::sub($inspected, $rejected)),
+                'quantity_rejected' => $rejected,
+                'status' => $failed ? 'failed' : 'passed',
                 'inspected_at' => now(),
                 'notes' => $dto->notes,
-                'characteristic_results' => $dto->characteristicResults,
+                'characteristic_results' => $results,
             ]);
 
-            $this->auditLedger->record(
-                'mfg.quality.inspection_completed',
-                $inspection,
-                null,
-                ['status' => $status, 'defects' => $defectCount],
-                '30_Manufacturing'
-            );
+            if ($failed) {
+                $this->recordNonConformance($dto->tenantId, [
+                    'quality_inspection_id' => $inspection->id,
+                    'production_order_id' => $order?->id,
+                    'production_order_operation_id' => $dto->productionOrderOperationId,
+                    'mfg_item_id' => $inspection->mfg_item_id,
+                    'severity' => $criticalFailure ? 'critical' : 'major',
+                    'defect_type' => $criticalFailure ? 'critical_characteristic_out_of_tolerance' : 'defects_above_limit',
+                    'description' => "Inspection {$inspection->inspection_number} failed: {$defects} defect(s), limit {$plan->acceptance_defect_limit}.",
+                    'quantity' => $rejected,
+                ], $dto->inspectorId);
+            }
 
-            $this->eventBus->dispatch(new QualityInspectionCompletedEvent(
-                inspectionId: $inspection->id,
-                inspectionNumber: $inspection->inspectionNumber ?? $inspectionNumber,
-                qualityPlanId: $inspection->quality_plan_id,
-                productionOrderId: $inspection->production_order_id,
-                status: $status,
-                defectCount: $defectCount,
+            $this->dispatcher->publishAndDispatch(new QualityInspectionCompletedEvent(
+                inspectionId: (string) $inspection->id,
+                inspectionNumber: $inspection->inspection_number,
+                qualityPlanId: (string) $plan->id,
+                productionOrderId: $order?->id !== null ? (string) $order->id : null,
+                status: $inspection->status,
+                defectCount: $defects,
                 tenantId: $dto->tenantId
             ));
 
-            // Automatically open Non-Conformance report if inspection failed
-            if ($status === 'failed') {
-                $this->recordNonConformance(
-                    tenantId: $dto->tenantId,
-                    qualityInspectionId: $inspection->id,
-                    productionOrderId: $dto->productionOrderId,
-                    severity: 'critical',
-                    defectType: 'Critical Quality Tolerance Failure',
-                    description: "Failed inspection {$inspectionNumber} with {$defectCount} defect(s).",
-                    disposition: 'rework'
-                );
-            }
-
-            return $inspection;
+            return $inspection->load('nonConformances');
         });
     }
 
-    public function recordNonConformance(
-        string $tenantId,
-        ?string $qualityInspectionId,
-        ?string $productionOrderId,
-        string $severity,
-        string $defectType,
-        string $description,
-        string $disposition = 'investigating'
-    ): MfgQualityNonConformance {
-        $ncNumber = 'NCR-'.strtoupper((string) Str::random(8));
-
-        $nc = MfgQualityNonConformance::create([
+    public function recordNonConformance(string $tenantId, array $data, ?string $reportedBy = null): MfgQualityNonConformance
+    {
+        $nonConformance = MfgQualityNonConformance::create([
             'tenant_id' => $tenantId,
-            'nc_number' => $ncNumber,
-            'quality_inspection_id' => $qualityInspectionId,
-            'production_order_id' => $productionOrderId,
-            'severity' => $severity,
-            'defect_type' => $defectType,
-            'description' => $description,
-            'disposition' => $disposition,
+            'nc_number' => 'NC-'.now()->format('Ymd').'-'.strtoupper(Str::random(6)),
+            'quality_inspection_id' => $data['quality_inspection_id'] ?? null,
+            'production_order_id' => $data['production_order_id'] ?? null,
+            'production_order_operation_id' => $data['production_order_operation_id'] ?? null,
+            'mfg_item_id' => $data['mfg_item_id'] ?? null,
+            'severity' => $data['severity'] ?? 'major',
+            'defect_type' => $data['defect_type'],
+            'description' => $data['description'],
+            'quantity' => Money::qty($data['quantity'] ?? '0'),
+            'disposition' => 'investigating',
             'status' => 'open',
+            'reported_by' => $this->uuidOrNull($reportedBy),
         ]);
 
-        $this->auditLedger->record('mfg.quality.ncr_created', $nc, null, ['nc_number' => $nc->nc_number, 'severity' => $severity], '30_Manufacturing');
-
-        $this->eventBus->dispatch(new NonConformanceDetectedEvent(
-            nonConformanceId: $nc->id,
-            ncNumber: $nc->nc_number,
-            qualityInspectionId: $qualityInspectionId,
-            productionOrderId: $productionOrderId,
-            severity: $severity,
-            defectType: $defectType,
+        $this->dispatcher->publishAndDispatch(new NonConformanceDetectedEvent(
+            nonConformanceId: (string) $nonConformance->id,
+            ncNumber: $nonConformance->nc_number,
+            qualityInspectionId: $nonConformance->quality_inspection_id,
+            productionOrderId: $nonConformance->production_order_id,
+            severity: $nonConformance->severity,
+            defectType: $nonConformance->defect_type,
             tenantId: $tenantId
         ));
 
-        return $nc;
+        return $nonConformance;
     }
 
-    public function resolveNonConformance(string $ncId, string $resolution, string $resolvedBy): MfgQualityNonConformance
+    public function resolveNonConformance(MfgQualityNonConformance $nonConformance, string $disposition, ?string $correctiveAction, ?string $resolvedBy): MfgQualityNonConformance
     {
-        $nc = MfgQualityNonConformance::findOrFail($ncId);
-        $nc->update([
-            'status' => 'resolved',
-            'corrective_action' => $resolution,
-            'resolved_by' => $resolvedBy,
-            'resolved_at' => now(),
-        ]);
+        return DB::transaction(function () use ($nonConformance, $disposition, $correctiveAction, $resolvedBy): MfgQualityNonConformance {
+            $locked = MfgQualityNonConformance::query()->whereKey($nonConformance->id)->lockForUpdate()->firstOrFail();
+            if ($locked->status !== 'open') {
+                throw new ManufacturingOperationException("Non-conformance [{$locked->nc_number}] is already {$locked->status}.", 'status');
+            }
+            if (! in_array($disposition, self::FinalDispositions, true)) {
+                throw new ManufacturingOperationException('The disposition must be one of: '.implode(', ', self::FinalDispositions).'.', 'disposition');
+            }
 
-        $this->auditLedger->record('mfg.quality.ncr_resolved', $nc, null, ['corrective_action' => $resolution], '30_Manufacturing');
+            $locked->update([
+                'disposition' => $disposition,
+                'corrective_action' => $correctiveAction,
+                'status' => 'closed',
+                'resolved_by' => $this->uuidOrNull($resolvedBy),
+                'resolved_at' => now(),
+            ]);
 
-        return $nc;
+            return $locked->refresh();
+        });
+    }
+
+    /**
+     * The id when it is a UUID (user ids are), else null.
+     */
+    private function uuidOrNull(?string $id): ?string
+    {
+        return $id !== null && Str::isUuid($id) ? $id : null;
     }
 }
