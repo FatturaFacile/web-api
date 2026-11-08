@@ -109,7 +109,9 @@ final class DocumentVersionController extends Controller
     )]
     public function download(Request $request, string $id, string $versionId): StreamedResponse
     {
-        $version = $this->version($request, $id, $versionId);
+        $document = $this->access->findVisible($id, $request->user());
+        $version = $document->versions()->findOrFail($versionId);
+        $this->library->recordDownload($document, $version);
 
         return Storage::disk($version->disk)->download($version->path, $version->original_name, StoredFileHeaders::for($version->mime_type, (string) $version->original_name, false));
     }

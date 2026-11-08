@@ -8,6 +8,14 @@ use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * An out-of-office delegation: for a period and a scope, the delegate decides what is assigned to the delegator.
+ *
+ * @property string $delegator_user_id
+ * @property string $delegate_user_id
+ * @property string $scope
+ * @property bool $is_active
+ */
 final class WorkflowDelegation extends BaseEnterpriseModel
 {
     protected $table = 'workflow_delegations';
@@ -29,6 +37,27 @@ final class WorkflowDelegation extends BaseEnterpriseModel
     public function delegate(): BelongsTo
     {
         return $this->belongsTo(User::class, 'delegate_user_id');
+    }
+
+    /**
+     * Whether the delegation applies to an approval of this kind of record. `all` applies to everything; any other scope
+     * names a module (`procurement`, `invoicing`, `hr`...) and covers only the records the workflow configuration maps to
+     * that module. A scope with no module (`custom`, `expenses`) covers no approval at all: delegating is never wider
+     * than what the delegator chose.
+     */
+    public function coversApprovable(string $approvableType): bool
+    {
+        if ($this->scope === 'all') {
+            return true;
+        }
+
+        foreach ((array) config('workflow.approvables', []) as $definition) {
+            if (($definition['class'] ?? null) === $approvableType) {
+                return ($definition['module'] ?? null) === $this->scope;
+            }
+        }
+
+        return false;
     }
 
     public function isEffectiveNow(): bool

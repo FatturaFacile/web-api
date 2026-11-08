@@ -7,6 +7,7 @@ use Modules\Documents\Http\Controllers\AiSettingController;
 use Modules\Documents\Http\Controllers\DocumentController;
 use Modules\Documents\Http\Controllers\DocumentExtractionController;
 use Modules\Documents\Http\Controllers\DocumentFolderController;
+use Modules\Documents\Http\Controllers\DocumentLifecycleController;
 use Modules\Documents\Http\Controllers\DocumentTagController;
 use Modules\Documents\Http\Controllers\DocumentVersionController;
 use Modules\Documents\Http\Controllers\RetentionPolicyController;
@@ -38,10 +39,16 @@ Route::prefix('api/v1/dms')
         Route::get('documents/{id}', [DocumentController::class, 'show'])->whereUuid('id')->name('dms.documents.show');
         Route::put('documents/{id}', [DocumentController::class, 'update'])->whereUuid('id')->name('dms.documents.update');
         Route::delete('documents/{id}', [DocumentController::class, 'destroy'])->whereUuid('id')->name('dms.documents.destroy');
+        Route::get('documents/{id}/links', [DocumentController::class, 'linkedRecords'])->whereUuid('id')->name('dms.documents.links.index');
         Route::post('documents/{id}/links', [DocumentController::class, 'link'])->whereUuid('id')->name('dms.documents.link');
         Route::delete('documents/{id}/links/{linkId}', [DocumentController::class, 'unlink'])->whereUuid(['id', 'linkId'])->name('dms.documents.unlink');
         Route::post('documents/{id}/legal-hold', [DocumentController::class, 'placeLegalHold'])->whereUuid('id')->name('dms.documents.legal-hold.place');
         Route::delete('documents/{id}/legal-hold', [DocumentController::class, 'releaseLegalHold'])->whereUuid('id')->name('dms.documents.legal-hold.release');
+
+        Route::post('documents/{id}/check-out', [DocumentLifecycleController::class, 'checkOut'])->whereUuid('id')->name('dms.documents.check-out');
+        Route::delete('documents/{id}/check-out', [DocumentLifecycleController::class, 'cancelCheckOut'])->whereUuid('id')->name('dms.documents.check-out.cancel');
+        Route::post('documents/{id}/check-in', [DocumentLifecycleController::class, 'checkIn'])->whereUuid('id')->name('dms.documents.check-in');
+        Route::get('documents/{id}/audit-trail', [DocumentLifecycleController::class, 'auditTrail'])->whereUuid('id')->name('dms.documents.audit-trail');
 
         Route::get('documents/{id}/versions', [DocumentVersionController::class, 'index'])->whereUuid('id')->name('dms.versions.index');
         Route::post('documents/{id}/versions', [DocumentVersionController::class, 'store'])->whereUuid('id')->name('dms.versions.store');

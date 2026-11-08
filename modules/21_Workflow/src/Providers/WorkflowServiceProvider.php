@@ -17,10 +17,12 @@ use Modules\Workflow\Events\ApprovalTokenGeneratedEvent;
 use Modules\Workflow\Events\FiscalDocumentLockedEvent;
 use Modules\Workflow\Events\WorkflowDecisionRecordedEvent;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
+use Modules\Workflow\Events\WorkflowInstanceExpiredEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Events\WorkflowInstanceStartedEvent;
 use Modules\Workflow\Events\WorkflowStepAssignedEvent;
 use Modules\Workflow\Events\WorkflowStepEscalatedEvent;
+use Modules\Workflow\Events\WorkflowStepReminderEvent;
 use Modules\Workflow\Listeners\DispatchOutboxOnWorkflowEventListener;
 use Modules\Workflow\Listeners\LockFiscalDocumentOnCompletionListener;
 use Modules\Workflow\Models\WorkflowDefinition;
@@ -35,8 +37,10 @@ use Modules\Workflow\Services\BusinessCalendarCalculationService;
 use Modules\Workflow\Services\DocumentLockingBridgeService;
 use Modules\Workflow\Services\ExternalActionTokenService;
 use Modules\Workflow\Services\VotingThresholdEvaluationService;
+use Modules\Workflow\Services\WorkflowAssigneeResolver;
 use Modules\Workflow\Services\WorkflowAuditLedgerService;
 use Modules\Workflow\Services\WorkflowEngineService;
+use Modules\Workflow\Services\WorkflowTimeoutProcessor;
 use Modules\Workflow\Services\WorkflowWebhookDispatcherService;
 
 final class WorkflowServiceProvider extends ServiceProvider
@@ -61,6 +65,8 @@ final class WorkflowServiceProvider extends ServiceProvider
         $this->app->singleton(VotingThresholdEvaluationService::class);
         $this->app->singleton(WorkflowAuditLedgerService::class);
         $this->app->singleton(DocumentLockingBridgeService::class);
+        $this->app->singleton(WorkflowAssigneeResolver::class);
+        $this->app->singleton(WorkflowTimeoutProcessor::class);
     }
 
     public function boot(): void
@@ -85,6 +91,8 @@ final class WorkflowServiceProvider extends ServiceProvider
         Event::listen(WorkflowInstanceCompletedEvent::class, DispatchOutboxOnWorkflowEventListener::class);
         Event::listen(WorkflowInstanceRejectedEvent::class, DispatchOutboxOnWorkflowEventListener::class);
         Event::listen(WorkflowStepEscalatedEvent::class, DispatchOutboxOnWorkflowEventListener::class);
+        Event::listen(WorkflowStepReminderEvent::class, DispatchOutboxOnWorkflowEventListener::class);
+        Event::listen(WorkflowInstanceExpiredEvent::class, DispatchOutboxOnWorkflowEventListener::class);
         Event::listen(FiscalDocumentLockedEvent::class, DispatchOutboxOnWorkflowEventListener::class);
         Event::listen(ApprovalTokenGeneratedEvent::class, DispatchOutboxOnWorkflowEventListener::class);
 

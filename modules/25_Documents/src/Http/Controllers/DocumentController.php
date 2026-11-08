@@ -19,6 +19,7 @@ use Modules\Documents\Http\Resources\DocumentResource;
 use Modules\Documents\Models\DmsDocument;
 use Modules\Documents\Services\DocumentAccess;
 use Modules\Documents\Services\DocumentLibrary;
+use Modules\Documents\Services\DocumentLinkRegistry;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -35,6 +36,7 @@ final class DocumentController extends Controller
     public function __construct(
         private readonly DocumentAccess $access,
         private readonly DocumentLibrary $library,
+        private readonly DocumentLinkRegistry $links,
     ) {}
 
     /**
@@ -55,6 +57,9 @@ final class DocumentController extends Controller
             new OA\Parameter(name: 'tag', in: 'query', required: false, description: 'Tag name', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'linkable_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'linkable_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'metadata_key', in: 'query', required: false, description: 'Top-level metadata key; combine with `metadata_value` to find documents whose metadata has exactly that value', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'metadata_value', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'checked_out', in: 'query', required: false, description: 'Only documents currently checked out (true) or not (false)', schema: new OA\Schema(type: 'boolean')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
@@ -71,6 +76,8 @@ final class DocumentController extends Controller
             ->when($request->filled('document_type'), fn ($query) => $query->where('document_type', $request->query('document_type')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->when($request->filled('tag'), fn ($query) => $query->whereHas('tags', fn ($tags) => $tags->whereRaw('lower(name) = lower(?)', [(string) $request->query('tag')])))
+            ->when($request->filled('metadata_key') && $request->filled('metadata_value'), fn ($query) => $query->whereRaw('dms_documents.metadata ->> ? = ?', [(string) $request->query('metadata_key'), (string) $request->query('metadata_value')]))
+            ->when($request->filled('checked_out'), fn ($query) => $request->boolean('checked_out') ? $query->whereNotNull('checked_out_by') : $query->whereNull('checked_out_by'))
             ->when($request->filled('linkable_id'), fn ($query) => $query->whereHas('links', fn ($links) => $links->where('linkable_id', $request->query('linkable_id'))->where('linkable_type', $request->query('linkable_type'))))
             ->latest()
             ->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
@@ -213,7 +220,7 @@ final class DocumentController extends Controller
     {
         $document = $this->access->findVisible($id, $request->user());
         $attributes = collect($request->validated())->except('tag_ids')->all();
-        $document = $this->library->update($document, $attributes, $request->validated('tag_ids'));
+        $document = $this->library->update($document, $attributes, $request->validated('tag_ids'), $request->user());
 
         return $this->successResponse(new DocumentResource($document->load('tags')), 'Document updated');
     }
@@ -240,6 +247,30 @@ final class DocumentController extends Controller
         $this->library->delete($this->access->findVisible($id, $request->user()));
 
         return $this->successResponse(null, 'Document deleted');
+    }
+
+    /**
+     * List the records a document is linked to.
+     */
+    #[OA\Get(
+        path: '/api/v1/dms/documents/{id}/links',
+        operationId: 'listDmsDocumentLinks',
+        description: 'The business records the document is attached to, each resolved in the active company with a readable label. A record deleted since linking is shown with `record_exists: false`, so the link can be removed. To find the documents of a record use `GET /dms/documents?linkable_type=&linkable_id=`.',
+        summary: 'List document links',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Document Management'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Links', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/DmsResolvedLink'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Not found or not visible to this role', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function linkedRecords(Request $request, string $id): JsonResponse
+    {
+        $document = $this->access->findVisible($id, $request->user());
+
+        return $this->successResponse($document->links()->get()->map(fn ($link): array => $this->links->describe($link))->all(), 'Links');
     }
 
     /**
@@ -289,7 +320,8 @@ final class DocumentController extends Controller
     )]
     public function unlink(Request $request, string $id, string $linkId): JsonResponse
     {
-        $this->access->findVisible($id, $request->user())->links()->findOrFail($linkId)->delete();
+        $document = $this->access->findVisible($id, $request->user());
+        $this->library->unlink($document, $document->links()->findOrFail($linkId));
 
         return $this->successResponse(null, 'Link removed');
     }

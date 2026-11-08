@@ -136,7 +136,7 @@ final class WorkflowDefinitionManager
             'id' => (string) Str::uuid7(),
             'tenant_id' => $definition->tenant_id,
             'workflow_definition_id' => $definition->id,
-            ...Arr::only($data, ['node_key', 'name', 'node_type', 'approval_type', 'assignee_type', 'assignee_id', 'timeout_hours', 'ui_metadata']),
+            ...Arr::only($data, ['node_key', 'name', 'node_type', 'approval_type', 'assignee_type', 'assignee_id', 'timeout_hours', 'escalation_rule_id', 'ui_metadata']),
         ]);
     }
 
@@ -146,7 +146,7 @@ final class WorkflowDefinitionManager
     public function updateNode(WorkflowDefinition $definition, WorkflowNode $node, array $data): WorkflowNode
     {
         $this->assertDraft($definition);
-        $node->update(Arr::only($data, ['node_key', 'name', 'node_type', 'approval_type', 'assignee_type', 'assignee_id', 'timeout_hours', 'ui_metadata']));
+        $node->update(Arr::only($data, ['node_key', 'name', 'node_type', 'approval_type', 'assignee_type', 'assignee_id', 'timeout_hours', 'escalation_rule_id', 'ui_metadata']));
 
         return $node;
     }

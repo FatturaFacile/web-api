@@ -8,6 +8,8 @@ use Modules\Workflow\Http\Controllers\WorkflowDecisionController;
 use Modules\Workflow\Http\Controllers\WorkflowDefinitionController;
 use Modules\Workflow\Http\Controllers\WorkflowDefinitionGraphController;
 use Modules\Workflow\Http\Controllers\WorkflowDelegationController;
+use Modules\Workflow\Http\Controllers\WorkflowEscalationRuleController;
+use Modules\Workflow\Http\Controllers\WorkflowInboxController;
 use Modules\Workflow\Http\Controllers\WorkflowInstanceController;
 
 Route::prefix('api/v1/workflows')
@@ -23,9 +25,15 @@ Route::prefix('api/v1/workflows')
         Route::post('instances', [WorkflowInstanceController::class, 'store'])->name('workflows.instances.store');
         Route::post('instances/{id}/cancel', [WorkflowInstanceController::class, 'cancel'])->name('workflows.instances.cancel');
         Route::get('instances/{id}/audit-trail', [WorkflowInstanceController::class, 'auditTrail'])->name('workflows.instances.audit-trail');
+        Route::get('instances/{id}/audit-trail/verify', [WorkflowInstanceController::class, 'verifyAuditTrail'])->name('workflows.instances.audit-trail.verify');
 
         // Pending Decisions & Actions
         Route::get('my-pending', [WorkflowDecisionController::class, 'myPending'])->name('workflows.decisions.my-pending');
+        Route::get('my-tasks', [WorkflowInboxController::class, 'myTasks'])->name('workflows.inbox.my-tasks');
+        Route::get('my-history', [WorkflowInboxController::class, 'myHistory'])->name('workflows.inbox.my-history');
+        Route::get('my-requests', [WorkflowInboxController::class, 'myRequests'])->name('workflows.inbox.my-requests');
+        Route::get('sla-report', [WorkflowInboxController::class, 'slaReport'])->name('workflows.inbox.sla-report');
+        Route::get('escalation-rules', [WorkflowEscalationRuleController::class, 'index'])->name('workflows.escalation-rules.index');
         Route::post('steps/{stepId}/decide', [WorkflowDecisionController::class, 'decide'])->name('workflows.decisions.decide');
 
         // Delegations
@@ -55,6 +63,16 @@ Route::prefix('api/v1/workflows/definitions')
         Route::put('{id}/transitions/{transitionId}', [WorkflowDefinitionGraphController::class, 'updateTransition'])->name('workflows.definitions.transitions.update');
         Route::patch('{id}/transitions/{transitionId}', [WorkflowDefinitionGraphController::class, 'updateTransition'])->name('workflows.definitions.transitions.patch');
         Route::delete('{id}/transitions/{transitionId}', [WorkflowDefinitionGraphController::class, 'destroyTransition'])->name('workflows.definitions.transitions.destroy');
+    });
+
+// Escalation rules change like definitions: owners and administrators only.
+Route::prefix('api/v1/workflows/escalation-rules')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:workflow_design'])
+    ->whereUuid('id')
+    ->group(function (): void {
+        Route::post('/', [WorkflowEscalationRuleController::class, 'store'])->name('workflows.escalation-rules.store');
+        Route::put('{id}', [WorkflowEscalationRuleController::class, 'update'])->name('workflows.escalation-rules.update');
+        Route::delete('{id}', [WorkflowEscalationRuleController::class, 'destroy'])->name('workflows.escalation-rules.destroy');
     });
 
 // Remote Action Token Endpoint (Signed single-use URL without user session requirement)

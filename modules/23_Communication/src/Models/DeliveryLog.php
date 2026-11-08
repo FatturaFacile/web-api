@@ -20,5 +20,5 @@ class DeliveryLog extends Model
     /** @use HasFactory<DeliveryLogFactory> */
     use BelongsToTenant, HasFactory, HasUuids;
 
-    protected $fillable = ['tenant_id', 'channel', 'driver', 'document_type', 'document_id', 'recipient', 'status', 'provider_reference', 'error', 'sent_by'];
+    protected $fillable = ['tenant_id', 'channel', 'driver', 'document_type', 'document_id', 'recipient', 'status', 'provider_reference', 'error', 'sent_by', 'message_type', 'subject', 'template_code', 'locale'];
 }

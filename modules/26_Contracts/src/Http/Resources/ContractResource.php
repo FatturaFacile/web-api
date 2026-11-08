@@ -4,11 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\Contracts\Http\Resources;
 
+use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Contracts\Enums\ContractKind;
+use Modules\Contracts\Enums\ContractStatus;
 use Modules\ServiceManagement\Models\ServiceContract;
 
 /**
@@ -29,6 +31,10 @@ final class ContractResource extends JsonResource
             ? $row->getAttribute($isCustomer ? $customerField : $supplierField)
             : $row->{$rowField};
 
+        $status = ContractStatus::fromStored((string) $row->status);
+        $noticeDeadline = $row->notice_deadline;
+        $today = app(TenantClock::class)->today();
+
         return [
             'kind' => $isCustomer ? ContractKind::Customer->value : ContractKind::Supplier->value,
             'id' => (string) $row->id,
@@ -46,6 +52,10 @@ final class ContractResource extends JsonResource
             'alert_days_before' => (int) $row->alert_days_before,
             'notice_deadline' => $this->dateOf($row->notice_deadline),
             'notice_given_at' => $row->notice_given_at,
+            'lifecycle_status' => $status?->value,
+            'allowed_transitions' => array_map(static fn (ContractStatus $next): string => $next->value, $status?->next() ?? []),
+            'days_to_notice_deadline' => $noticeDeadline === null || $status?->isInForce() !== true ? null : (int) $today->diffInDays(CarbonImmutable::parse($noticeDeadline)->startOfDay(), false),
+            'notice_given_late' => $row->notice_given_at !== null && $noticeDeadline !== null && CarbonImmutable::parse($row->notice_given_at)->toDateString() > CarbonImmutable::parse($noticeDeadline)->toDateString(),
         ];
     }
 

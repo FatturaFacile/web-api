@@ -11,7 +11,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Modules\Contracts\Enums\ContractKind;
+use Modules\Contracts\Enums\ContractStatus;
 use Modules\Contracts\Models\ContractRenewal;
+use Modules\Contracts\Models\ContractStatusChange;
 use Modules\Procurement\Models\SupplierContract;
 use Modules\ServiceManagement\Models\ServiceContract;
 use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
@@ -122,6 +124,11 @@ final readonly class ContractRegister
             $column = $kind->endColumn();
             $locked = $kind->modelClass()::withoutGlobalScopes()->lockForUpdate()->findOrFail($contract->getKey());
             $currentEnd = $locked->getAttribute($column);
+            $status = ContractStatus::fromStored((string) $locked->getAttribute('status'));
+
+            if (in_array($status, [ContractStatus::Draft, ContractStatus::Review, ContractStatus::Terminated], true)) {
+                throw new ConflictHttpException("A contract in status {$status->value} cannot be renewed.");
+            }
 
             if ($currentEnd === null) {
                 throw new ConflictHttpException('This contract has no end date to extend.');
@@ -149,6 +156,21 @@ final readonly class ContractRegister
 
             $locked->update([$column => $newEnd, 'notice_given_at' => null]);
             $this->refreshNoticeDeadline($kind, $locked);
+
+            // A contract in renewal, or one that lapsed, is in force again with the new end date.
+            if (in_array($status, [ContractStatus::Renewal, ContractStatus::Expired], true)) {
+                $locked->update(['status' => ContractStatus::Active->value]);
+
+                ContractStatusChange::create([
+                    'tenant_id' => $locked->getAttribute('tenant_id'),
+                    'contract_kind' => $kind->value,
+                    'contract_id' => $locked->getKey(),
+                    'from_status' => $status->value,
+                    'to_status' => ContractStatus::Active->value,
+                    'reason' => "Renewed until {$newEnd}",
+                    'changed_by' => $userId,
+                ]);
+            }
 
             return $locked;
         });

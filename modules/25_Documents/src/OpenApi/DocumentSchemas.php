@@ -27,6 +27,10 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'retention_until', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'legal_hold', type: 'boolean'),
         new OA\Property(property: 'legal_hold_reason', type: 'string', nullable: true),
+        new OA\Property(property: 'is_checked_out', type: 'boolean', description: 'While true only the holder can add versions, change or delete the document'),
+        new OA\Property(property: 'checked_out_by', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'checked_out_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'checkout_note', type: 'string', nullable: true),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'object')),
         new OA\Property(property: 'links', type: 'array', items: new OA\Items(type: 'object')),
         new OA\Property(property: 'versions', type: 'array', items: new OA\Items(ref: '#/components/schemas/DmsDocumentVersionResource')),
@@ -163,6 +167,30 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'linkable_type', type: 'string', description: 'Alias of the business record, such as invoice, project or journal_entry'),
         new OA\Property(property: 'linkable_id', type: 'string', format: 'uuid'),
+    ]
+)]
+#[OA\Schema(schema: 'DmsCheckOutRequest', type: 'object', properties: [new OA\Property(property: 'note', type: 'string', maxLength: 500, nullable: true, example: 'Updating the supplier terms')])]
+#[OA\Schema(
+    schema: 'DmsResolvedLink',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'linkable_type', type: 'string', example: 'invoice'),
+        new OA\Property(property: 'linkable_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'label', type: 'string', nullable: true, example: 'INV-2027-0012'),
+        new OA\Property(property: 'record_exists', type: 'boolean', description: 'False when the record was deleted after linking'),
+        new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'DmsAuditEntry',
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'action', type: 'string', example: 'DOCUMENT_CHECKED_OUT'),
+        new OA\Property(property: 'actor_user_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'occurred_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'ip_address', type: 'string', nullable: true),
+        new OA\Property(property: 'details', type: 'object', additionalProperties: true),
     ]
 )]
 #[OA\Schema(schema: 'DmsPlaceLegalHoldRequest', required: ['reason'], type: 'object', properties: [new OA\Property(property: 'reason', type: 'string', maxLength: 500)])]

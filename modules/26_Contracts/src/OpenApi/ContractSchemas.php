@@ -30,6 +30,10 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'alert_days_before', type: 'integer'),
         new OA\Property(property: 'notice_deadline', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'notice_given_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'lifecycle_status', type: 'string', nullable: true, enum: ['draft', 'review', 'active', 'renewal', 'expired', 'terminated'], description: '`status` read as a lifecycle status (`pending_approval` is review, `cancelled` is terminated); null for a status outside the lifecycle'),
+        new OA\Property(property: 'allowed_transitions', type: 'array', items: new OA\Items(type: 'string'), description: 'Statuses reachable with POST .../transition'),
+        new OA\Property(property: 'days_to_notice_deadline', type: 'integer', nullable: true, description: 'Negative once the deadline passed; only for contracts in force'),
+        new OA\Property(property: 'notice_given_late', type: 'boolean', description: 'Notice was recorded after the notice deadline, so it may not stop this term'),
     ]
 )]
 #[OA\Schema(

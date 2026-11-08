@@ -6,11 +6,29 @@ namespace Modules\Workflow\Models;
 
 use App\Services\Tenancy\TenantContext;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * One running (or finished) approval of a record.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property ?string $company_id
+ * @property string $workflow_definition_id
+ * @property string $approvable_type
+ * @property string $approvable_id
+ * @property ?string $current_node_id
+ * @property string $status pending, in_progress, approved, rejected, cancelled or expired
+ * @property ?array<string, mixed> $context_snapshot
+ * @property ?string $created_by
+ * @property ?Carbon $started_at
+ * @property ?Carbon $completed_at
+ */
 final class WorkflowInstance extends BaseEnterpriseModel
 {
     protected $table = 'workflow_instances';
@@ -83,16 +101,25 @@ final class WorkflowInstance extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return MorphTo<Model, $this>
+     */
     public function approvable(): MorphTo
     {
         return $this->morphTo();
     }
 
+    /**
+     * @return BelongsTo<WorkflowDefinition, $this>
+     */
     public function definition(): BelongsTo
     {
         return $this->belongsTo(WorkflowDefinition::class, 'workflow_definition_id');
     }
 
+    /**
+     * @return BelongsTo<WorkflowNode, $this>
+     */
     public function currentNode(): BelongsTo
     {
         return $this->belongsTo(WorkflowNode::class, 'current_node_id');

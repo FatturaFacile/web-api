@@ -14,15 +14,15 @@ final class CreateDelegationRequest extends FormRequest
     }
 
     /**
-     * @return array<string, array<int, string>>
+     * @return array<string, mixed>
      */
     public function rules(): array
     {
         return [
-            'delegate_user_id' => ['required', 'uuid', 'different:delegator_user_id'],
+            'delegate_user_id' => ['required', 'uuid', 'not_in:'.$this->user()?->id, TenantRule::member()],
             'scope' => ['required', 'string', 'in:all,procurement,expenses,invoicing,hr,custom'],
             'starts_at' => ['required', 'date'],
-            'ends_at' => ['required', 'date', 'after:starts_at'],
+            'ends_at' => ['required', 'date', 'after:starts_at', 'after:now'],
             'reason' => ['nullable', 'string', 'max:1000'],
         ];
     }

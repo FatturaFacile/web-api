@@ -83,6 +83,7 @@ final readonly class DocumentLibrary
     public function addVersion(DmsDocument $document, UploadedFile $file, ?string $comment, User $user): DmsDocumentVersion
     {
         $this->assertNotOnHold($document);
+        $this->assertNotCheckedOutByOther($document, $user);
         $hash = (string) hash_file('sha256', (string) $file->getRealPath());
         $current = $document->versions()->first();
 
@@ -96,8 +97,10 @@ final readonly class DocumentLibrary
             return DB::transaction(function () use ($document, $stored, $file, $hash, $comment, $user): DmsDocumentVersion {
                 $locked = DmsDocument::query()->lockForUpdate()->findOrFail($document->id);
                 $this->assertNotOnHold($locked);
+                $this->assertNotCheckedOutByOther($locked, $user);
                 $version = $this->addVersionRow($locked, $stored, $file->getClientOriginalName(), (string) $file->getMimeType(), (int) $file->getSize(), $hash, $comment, $user);
                 $this->refreshSearchText($locked);
+                $this->audit('DOCUMENT_VERSION_ADDED', $locked, ['version_number' => $version->version_number, 'sha256' => $hash, 'original_name' => $version->original_name]);
 
                 return $version;
             });
@@ -169,9 +172,10 @@ final readonly class DocumentLibrary
      * @param  array<string, mixed>  $attributes
      * @param  list<string>|null  $tagIds
      */
-    public function update(DmsDocument $document, array $attributes, ?array $tagIds): DmsDocument
+    public function update(DmsDocument $document, array $attributes, ?array $tagIds, ?User $user = null): DmsDocument
     {
         $this->assertNotOnHold($document);
+        $this->assertNotCheckedOutByOther($document, $user);
 
         return DB::transaction(function () use ($document, $attributes, $tagIds): DmsDocument {
             $document->update($attributes);
@@ -196,6 +200,10 @@ final readonly class DocumentLibrary
     public function delete(DmsDocument $document): void
     {
         $this->assertNotOnHold($document);
+
+        if ($document->isCheckedOut()) {
+            throw new ConflictHttpException('This document is checked out: check it in or cancel the check-out first.');
+        }
 
         if ($document->retention_until !== null && $document->retention_until->isFuture()) {
             throw new ConflictHttpException("This document is under retention until {$document->retention_until->toDateString()}.");
@@ -237,10 +245,135 @@ final readonly class DocumentLibrary
             throw ValidationException::withMessages(['linkable_id' => 'This record does not exist.']);
         }
 
-        return DmsDocumentLink::firstOrCreate(
+        $link = DmsDocumentLink::firstOrCreate(
             ['tenant_id' => $document->tenant_id, 'document_id' => $document->id, 'linkable_type' => $alias, 'linkable_id' => $recordId],
             ['created_by' => $user->id]
         );
+
+        if ($link->wasRecentlyCreated) {
+            $this->audit('DOCUMENT_LINKED', $document, ['linkable_type' => $alias, 'linkable_id' => $recordId]);
+        }
+
+        return $link;
+    }
+
+    /**
+     * Removes the link between a document and a business record.
+     */
+    public function unlink(DmsDocument $document, DmsDocumentLink $link): void
+    {
+        $this->audit('DOCUMENT_UNLINKED', $document, ['linkable_type' => $link->linkable_type, 'linkable_id' => (string) $link->linkable_id]);
+        $link->delete();
+    }
+
+    /**
+     * Takes the document out for editing: until it is checked in or the check-out is cancelled nobody else can add a
+     * version, change it or delete it. Asking again as the holder changes nothing.
+     *
+     * @throws ConflictHttpException when somebody else holds it or a legal hold freezes it
+     */
+    public function checkOut(DmsDocument $document, User $user, ?string $note): DmsDocument
+    {
+        return DB::transaction(function () use ($document, $user, $note): DmsDocument {
+            $locked = DmsDocument::query()->lockForUpdate()->findOrFail($document->id);
+            $this->assertNotOnHold($locked);
+
+            if ($locked->isCheckedOut()) {
+                $this->assertNotCheckedOutByOther($locked, $user);
+
+                return $locked;
+            }
+
+            $locked->update(['checked_out_by' => $user->id, 'checked_out_at' => now(), 'checkout_note' => $note]);
+            $this->audit('DOCUMENT_CHECKED_OUT', $locked, ['note' => $note]);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Gives the document back, with the edited file as a new version when there is one. A file equal to the current
+     * version is refused, and the document stays checked out so the holder can cancel instead.
+     *
+     * @throws ConflictHttpException when the document is not checked out by the caller
+     * @throws DuplicateDocumentException when the file equals the current version
+     */
+    public function checkIn(DmsDocument $document, User $user, ?UploadedFile $file, ?string $comment): DmsDocument
+    {
+        $current = DmsDocument::query()->findOrFail($document->id);
+
+        if (! $current->isCheckedOut()) {
+            throw new ConflictHttpException('This document is not checked out.');
+        }
+
+        $this->assertNotCheckedOutByOther($current, $user);
+
+        if ($file !== null) {
+            $this->addVersion($current, $file, $comment, $user);
+        }
+
+        return $this->release($document, 'DOCUMENT_CHECKED_IN', ['new_version' => $file !== null]);
+    }
+
+    /**
+     * Drops a check-out without a new version. The holder does it, or an owner or administrator when the holder is
+     * not available.
+     *
+     * @throws ConflictHttpException when the document is not checked out, or by somebody else and the caller is no manager
+     */
+    public function cancelCheckOut(DmsDocument $document, User $user, bool $asManager): DmsDocument
+    {
+        $current = DmsDocument::query()->findOrFail($document->id);
+
+        if (! $current->isCheckedOut()) {
+            throw new ConflictHttpException('This document is not checked out.');
+        }
+
+        if (! $asManager) {
+            $this->assertNotCheckedOutByOther($current, $user);
+        }
+
+        return $this->release($document, 'DOCUMENT_CHECK_OUT_CANCELLED', ['held_by' => (string) $current->checked_out_by, 'forced' => $asManager && (string) $current->checked_out_by !== (string) $user->id]);
+    }
+
+    /**
+     * Records that the file of a version was downloaded: reading a confidential document is part of the audit trail.
+     */
+    public function recordDownload(DmsDocument $document, DmsDocumentVersion $version): void
+    {
+        $this->audit('DOCUMENT_DOWNLOADED', $document, ['version_number' => $version->version_number, 'sha256' => $version->sha256]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function release(DmsDocument $document, string $action, array $payload): DmsDocument
+    {
+        return DB::transaction(function () use ($document, $action, $payload): DmsDocument {
+            $locked = DmsDocument::query()->lockForUpdate()->findOrFail($document->id);
+            $locked->update(['checked_out_by' => null, 'checked_out_at' => null, 'checkout_note' => null]);
+            $this->audit($action, $locked, $payload);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * @throws ConflictHttpException
+     */
+    private function assertNotCheckedOutByOther(DmsDocument $document, ?User $user): void
+    {
+        if ($document->isCheckedOut() && ($user === null || (string) $document->checked_out_by !== (string) $user->id)) {
+            throw new ConflictHttpException('This document is checked out by another user.');
+        }
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     */
+    private function audit(string $action, DmsDocument $document, array $payload): void
+    {
+        $this->auditLedger->record($action, $document, null, $payload, self::ModuleCode);
     }
 
     /**
