@@ -9,9 +9,6 @@
 .editorconfig
 .spectral.yaml
 qodana.yaml
-sonar-project.properties
-.sonar/
-.scannerwork/
 
 # Ambiente e credenziali (mai includere nel build context)
 .env

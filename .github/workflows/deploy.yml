@@ -3,7 +3,7 @@ name: Build, Publish and Deploy
 on:
   workflow_run:
     workflows:
-      - CI & SonarCloud Quality Gate
+      - Enterprise ERP CI Pipeline
     types:
       - completed
     branches:
