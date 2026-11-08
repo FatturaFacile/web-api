@@ -42,6 +42,7 @@ class StoreInvoiceRequest extends FormRequest
             'due_date' => ['nullable', 'date', 'after_or_equal:date'],
             'currency' => ['required', 'string', 'size:3'],
             'exchange_rate' => ['nullable', 'numeric', 'min:0.000001'],
+            'payment_term_id' => ['nullable', 'uuid', Rule::exists('payment_terms', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'jurisdiction' => ['required', Rule::in(['IT', 'CH'])],
             'split_payment' => ['nullable', 'boolean'],
             'reverse_charge' => ['nullable', 'boolean'],

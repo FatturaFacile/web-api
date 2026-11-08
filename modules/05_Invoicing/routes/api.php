@@ -3,14 +3,18 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Invoicing\Http\Controllers\BillingPlanController;
 use Modules\Invoicing\Http\Controllers\CreditNoteController;
 use Modules\Invoicing\Http\Controllers\CustomerCreditController;
 use Modules\Invoicing\Http\Controllers\CustomerLedgerController;
+use Modules\Invoicing\Http\Controllers\DebitNoteController;
 use Modules\Invoicing\Http\Controllers\DeclarationOfIntentController;
 use Modules\Invoicing\Http\Controllers\DeliveryNoteController;
 use Modules\Invoicing\Http\Controllers\InvoiceController;
+use Modules\Invoicing\Http\Controllers\OrderBillingController;
 use Modules\Invoicing\Http\Controllers\SalesOrderController;
 use Modules\Invoicing\Http\Controllers\SalesQuoteController;
+use Modules\Invoicing\Http\Controllers\SalesReportController;
 
 Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:invoicing'])->group(function (): void {
     // Quotes (Order-To-Cash)
@@ -43,13 +47,30 @@ Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 
     Route::post('invoices', [InvoiceController::class, 'store'])->name('invoicing.invoices.store');
     Route::post('invoices/from-order/{orderId}', [InvoiceController::class, 'fromOrder'])->name('invoicing.invoices.from-order');
     Route::post('invoices/from-delivery/{deliveryNoteId}', [InvoiceController::class, 'fromDeliveryNote'])->name('invoicing.invoices.from-delivery');
+    Route::post('invoices/deferred', [OrderBillingController::class, 'deferred'])->name('invoicing.invoices.deferred');
+    Route::post('invoices/deferred-run', [OrderBillingController::class, 'deferredRun'])->name('invoicing.invoices.deferred-run');
     Route::get('invoices/{id}', [InvoiceController::class, 'show'])->name('invoicing.invoices.show');
+    Route::get('invoices/{id}/installments', [SalesReportController::class, 'installments'])->whereUuid('id')->name('invoicing.invoices.installments');
     Route::post('invoices/{id}/approve', [InvoiceController::class, 'approve'])->name('invoicing.invoices.approve');
     Route::post('invoices/{id}/post', [InvoiceController::class, 'post'])->name('invoicing.invoices.post');
 
-    // Credit Notes
+    // Order billing: down payments and billing plans (milestone billing)
+    Route::post('orders/{orderId}/down-payment-invoices', [OrderBillingController::class, 'downPayment'])->whereUuid('orderId')->name('invoicing.orders.down-payment-invoices');
+    Route::get('billing-plans', [BillingPlanController::class, 'index'])->name('invoicing.billing-plans.index');
+    Route::post('billing-plans', [BillingPlanController::class, 'store'])->name('invoicing.billing-plans.store');
+    Route::post('billing-plans/run', [BillingPlanController::class, 'run'])->name('invoicing.billing-plans.run');
+    Route::get('billing-plans/{id}', [BillingPlanController::class, 'show'])->whereUuid('id')->name('invoicing.billing-plans.show');
+    Route::post('billing-plans/{id}/items/{itemId}/invoice', [BillingPlanController::class, 'invoiceItem'])->whereUuid(['id', 'itemId'])->name('invoicing.billing-plans.items.invoice');
+    Route::post('billing-plans/{id}/cancel', [BillingPlanController::class, 'cancel'])->whereUuid('id')->name('invoicing.billing-plans.cancel');
+
+    // Credit and debit notes
     Route::post('credit-notes', [CreditNoteController::class, 'store'])->name('invoicing.credit-notes.store');
     Route::post('credit-notes/{creditNoteId}/apply', [CreditNoteController::class, 'apply'])->name('invoicing.credit-notes.apply');
+    Route::post('debit-notes', [DebitNoteController::class, 'store'])->name('invoicing.debit-notes.store');
+
+    // Sales reports (issued documents only)
+    Route::get('reports/sales-register', [SalesReportController::class, 'salesRegister'])->name('invoicing.reports.sales-register');
+    Route::get('reports/receivables-aging', [SalesReportController::class, 'receivablesAging'])->name('invoicing.reports.receivables-aging');
 
     // Declarations of Intent (Lettere di intento)
     Route::get('declarations-of-intent', [DeclarationOfIntentController::class, 'index'])->name('invoicing.declarations-of-intent.index');

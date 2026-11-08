@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace Modules\Invoicing\Services;
 
 use App\Enums\DeliveryNoteStatus;
+use App\Enums\InvoiceStatus;
 use App\Enums\SalesOrderStatus;
 use App\Models\Tenant;
 use App\Services\ItalianSdi\InvoiceFiscalService;
 use App\Services\Sales\DocumentNumberingService;
+use App\Services\Sales\DocumentTotalsCalculator;
 use App\Services\Sales\VatSummaryCalculator;
 use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
@@ -25,11 +27,11 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Inventory\Services\ProductChargeCalculator;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
-use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
 use Modules\Invoicing\Events\InvoiceApprovedEvent;
 use Modules\Invoicing\Events\InvoiceDraftedEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
+use Modules\Invoicing\Models\BillingSchedule;
 use Modules\Invoicing\Models\InvoiceCreditApplication;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
@@ -38,6 +40,14 @@ use Modules\Invoicing\Models\SalesOrder;
 use Modules\SDI\Enums\TipoDocumento;
 use RoundingMode;
 
+/**
+ * The single writer of the sales documents of the `invoices` table: invoices, credit and debit notes, proformas and
+ * down payments of every flow (the sales API of the app, the invoicing module, subscriptions, projects, service reports)
+ * are created and issued here. A draft gets a placeholder number; the emission assigns the gapless fiscal number,
+ * freezes the exchange rate, applies the Italian fiscal rules and the cash rounding, fixes the payment schedule and
+ * posts the ledger entry, all in one transaction: a refused emission (closed period, missing rate, plafond exhausted)
+ * leaves neither the document nor a gap in the numbering. Amounts are computed in decimal arithmetic.
+ */
 final class InvoicingService implements InvoicingServiceInterface
 {
     private const string DRAFT_PREFIX = 'DRAFT-';
@@ -53,8 +63,20 @@ final class InvoicingService implements InvoicingServiceInterface
      */
     public const array SOURCE_OVERRIDE_FIELDS = ['date', 'due_date', 'notes', 'payment_method', 'payment_terms', 'bank_name', 'bank_iban', 'created_by'];
 
+    /**
+     * Links of a document to its origin that a flow may state on creation, besides the source documents.
+     *
+     * @var list<string>
+     */
+    private const array LINK_FIELDS = ['quote_id', 'proforma_id', 'subscription_id', 'related_invoice_id', 'payment_term_id', 'vat_payability'];
+
+    private readonly SalesBillingLines $billingLines;
+
+    private readonly InvoiceExchangeRateResolver $exchangeRates;
+
+    private readonly InvoiceInstallmentService $installments;
+
     public function __construct(
-        private readonly PricingAndDiscountServiceInterface $pricingService,
         private readonly CustomerLedgerServiceInterface $ledgerService,
         private readonly EventDispatcherInterface $eventDispatcher,
         private readonly DocumentNumberingService $numbering,
@@ -62,52 +84,93 @@ final class InvoicingService implements InvoicingServiceInterface
         private readonly DeclarationOfIntentService $declarations,
         private readonly ProductChargeCalculator $charges = new ProductChargeCalculator,
         private readonly VatSummaryCalculator $vat = new VatSummaryCalculator,
-        private readonly ?TenantClock $clock = null
-    ) {}
+        private readonly ?TenantClock $clock = null,
+        private readonly DocumentTotalsCalculator $totals = new DocumentTotalsCalculator,
+        ?SalesBillingLines $billingLines = null,
+        ?InvoiceExchangeRateResolver $exchangeRates = null,
+        ?InvoiceInstallmentService $installments = null,
+    ) {
+        $this->billingLines = $billingLines ?? app(SalesBillingLines::class);
+        $this->exchangeRates = $exchangeRates ?? app(InvoiceExchangeRateResolver::class);
+        $this->installments = $installments ?? app(InvoiceInstallmentService::class);
+    }
 
     /**
+     * Creates a draft sales document from its header and lines. The lines and totals are computed in decimal arithmetic
+     * (VAT per rate on the summed net, like the summary of the electronic invoice); a proforma is numbered from its own
+     * series at once, any other document gets its fiscal number at emission. Lines linked to sales order lines bill
+     * those lines (their invoiced quantity and the billing status of the order follow).
+     *
      * @param  array<string, mixed>  $data
      * @param  array<int, array<string, mixed>>  $items
      */
     public function createInvoice(array $data, array $items): SalesInvoice
     {
+        return DB::transaction(fn (): SalesInvoice => $this->createDraft($data, $items));
+    }
+
+    /**
+     * Creates and issues a sales document in one transaction (see createInvoice and postInvoice).
+     *
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    public function issueInvoice(array $data, array $items, string $userId): SalesInvoice
+    {
+        return DB::transaction(fn (): SalesInvoice => $this->postInvoice($this->createDraft($data, $items), $userId));
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @param  array<int, array<string, mixed>>  $items
+     */
+    private function createDraft(array $data, array $items): SalesInvoice
+    {
         $tenantId = (string) $data['tenant_id'];
         $invoiceId = (string) Str::uuid7();
         $today = $this->today($tenantId);
         $data['date'] ??= $today->toDateString();
+        $invoiceType = (string) ($data['invoice_type'] ?? 'standard');
 
         $this->assertTaxRates($items);
-        $items = [...$items, ...$this->chargeLines($data, $items, $tenantId)];
-        $totals = $this->pricingService->calculateOrderTotals($items);
 
-        // The fiscal number is assigned at emission: a draft only carries a placeholder.
-        $invoiceNumber = $this->ownDocumentNumber($data) ?? self::DRAFT_PREFIX.strtoupper(Str::random(12));
+        if (empty($data['skip_charge_lines'])) {
+            $items = [...$items, ...$this->chargeLines($data, $items, $tenantId)];
+        }
+
+        $computed = $this->totals->calculateDecimal($items);
+        [$invoiceNumber, $fiscalYear, $sequential] = $this->draftNumber($data, $invoiceType, $tenantId);
+        $statedRate = isset($data['exchange_rate']) && $data['exchange_rate'] !== '' ? DocumentTotalsCalculator::decimal($data['exchange_rate']) : null;
 
         $invoice = SalesInvoice::create([
             'id' => $invoiceId,
             'tenant_id' => $tenantId,
             'contact_id' => (string) $data['contact_id'],
-            'invoice_type' => $data['invoice_type'] ?? 'standard',
-            'status' => 'draft',
+            'invoice_type' => $invoiceType,
+            'status' => InvoiceStatus::Draft->value,
             'invoice_number' => $invoiceNumber,
+            'fiscal_year' => $fiscalYear,
+            'sequential_number' => $sequential,
             'date' => $data['date'],
-            'due_date' => $data['due_date'] ?? $today->addDays(30)->toDateString(),
-            'currency' => $data['currency'] ?? 'EUR',
-            'exchange_rate' => (float) ($data['exchange_rate'] ?? 1.0),
-            'subtotal' => $totals['subtotal'],
-            'discount_amount' => $totals['discount_total'],
-            'total_net' => $totals['net_total'],
-            'total_tax' => $totals['tax_total'],
-            'total_gross' => $totals['gross_total'],
-            'receivable_amount' => $totals['gross_total'],
-            'total_paid' => 0.0,
+            'due_date' => array_key_exists('due_date', $data) ? $data['due_date'] : $today->addDays(30)->toDateString(),
+            'currency' => strtoupper((string) ($data['currency'] ?? 'EUR')),
+            'exchange_rate' => $statedRate ?? '1',
+            'exchange_rate_source' => $statedRate !== null ? InvoiceExchangeRateResolver::SOURCE_DOCUMENT : null,
+            'subtotal' => $computed['subtotal'],
+            'discount_amount' => $computed['discount_total'],
+            'total_net' => $computed['total_net'],
+            'total_tax' => $computed['total_tax'],
+            'total_gross' => $computed['total_gross'],
+            'receivable_amount' => $computed['total_gross'],
+            'total_paid' => '0',
             'payment_status' => 'unpaid',
             'jurisdiction' => $data['jurisdiction'] ?? 'IT',
             'split_payment' => (bool) ($data['split_payment'] ?? false),
             'reverse_charge' => (bool) ($data['reverse_charge'] ?? false),
             'sdi_excluded' => (bool) ($data['sdi_excluded'] ?? false),
-            'payment_method' => $data['payment_method'] ?? 'MP05',
-            'payment_terms' => $data['payment_terms'] ?? 'TP02',
+            'is_deposit' => (bool) ($data['is_deposit'] ?? false),
+            'payment_method' => array_key_exists('payment_method', $data) ? $data['payment_method'] : 'MP05',
+            'payment_terms' => array_key_exists('payment_terms', $data) ? $data['payment_terms'] : 'TP02',
             'bank_name' => $data['bank_name'] ?? null,
             'bank_iban' => $data['bank_iban'] ?? null,
             'sales_order_id' => $data['sales_order_id'] ?? null,
@@ -117,17 +180,14 @@ final class InvoicingService implements InvoicingServiceInterface
             'customer_agreement_id' => $data['customer_agreement_id'] ?? null,
             'notes' => $data['notes'] ?? null,
             'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
+            ...array_filter(Arr::only($data, self::LINK_FIELDS), static fn (mixed $value): bool => $value !== null),
             ...Arr::only($data, InvoiceFiscalService::INPUT_FIELDS),
         ]);
 
         $actualInvoiceId = (string) $invoice->id;
 
-        foreach ($items as $item) {
-            $qty = (float) ($item['quantity'] ?? 1.0);
-            $unitPrice = (float) ($item['unit_price'] ?? 0.0);
-            $taxRate = (float) $item['tax_rate'];
-            $discountPct = (float) ($item['discount_percentage'] ?? 0.0);
-            $lineNet = round(($qty * $unitPrice) * (1 - ($discountPct / 100.0)), 2);
+        foreach ($computed['items'] as $index => $line) {
+            $item = $items[$index];
 
             SalesInvoiceItem::create([
                 'id' => (string) Str::uuid7(),
@@ -135,13 +195,14 @@ final class InvoicingService implements InvoicingServiceInterface
                 'invoice_id' => $actualInvoiceId,
                 'sales_order_item_id' => $item['sales_order_item_id'] ?? null,
                 'delivery_note_item_id' => $item['delivery_note_item_id'] ?? null,
+                'deducted_invoice_item_id' => $item['deducted_invoice_item_id'] ?? null,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? 'Invoice item',
-                'quantity' => $qty,
-                'unit_price' => $unitPrice,
-                'tax_rate' => $taxRate,
-                'discount_percentage' => $discountPct,
-                'line_total' => $lineNet,
+                'quantity' => $line['quantity'],
+                'unit_price' => $line['unit_price'],
+                'tax_rate' => $line['tax_rate'],
+                'discount_percentage' => $line['discount_percentage'],
+                'line_total' => $line['line_total'],
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
                 'tax_account_id' => $item['tax_account_id'] ?? null,
                 'cost_center_id' => $item['cost_center_id'] ?? null,
@@ -149,6 +210,10 @@ final class InvoicingService implements InvoicingServiceInterface
                 'uom' => $item['uom'] ?? 'EA',
                 'notes' => $item['notes'] ?? null,
             ]);
+        }
+
+        if ($invoiceType !== 'proforma' && $invoiceType !== 'credit_note') {
+            $this->billingLines->recordBilledQuantities($items);
         }
 
         $this->fiscal->apply($invoice);
@@ -168,31 +233,71 @@ final class InvoicingService implements InvoicingServiceInterface
     }
 
     /**
-     * Invoices what is left to invoice on a sales order, once: the order row is locked for the whole operation, so two
-     * concurrent requests cannot both bill it.
+     * The number of a new draft: the register number of a document outside SDI, the next proforma number of a proforma,
+     * else a placeholder replaced by the fiscal number at emission.
      *
-     * @param  array<string, mixed>  $overrides  only the keys in SOURCE_OVERRIDE_FIELDS are used
+     * @param  array<string, mixed>  $data
+     * @return array{0: string, 1: int|null, 2: int|null}
+     */
+    private function draftNumber(array $data, string $invoiceType, string $tenantId): array
+    {
+        $own = $this->ownDocumentNumber($data);
+
+        if ($own !== null) {
+            return [$own, null, null];
+        }
+
+        if ($invoiceType === 'proforma') {
+            $number = $this->numbering->next('proforma', CarbonImmutable::parse((string) $data['date'])->year, $tenantId);
+
+            return [$number['number'], $number['fiscal_year'], $number['sequential_number']];
+        }
+
+        return [self::DRAFT_PREFIX.strtoupper(Str::random(12)), null, null];
+    }
+
+    /**
+     * Invoices what is left to invoice on a sales order, or only the requested quantities of some lines
+     * (`$overrides['lines']`: list of sales_order_item_id and quantity). The order row is locked for the whole
+     * operation, so two concurrent requests cannot bill the same quantities. The invoice that closes the order deducts
+     * what is left of its down payments. An order billed by an active billing plan is not billed by quantity.
      *
-     * @throws ValidationException when the order is cancelled, already billed or has nothing left to invoice
+     * @param  array<string, mixed>  $overrides  the keys in SOURCE_OVERRIDE_FIELDS and `lines`
+     *
+     * @throws ValidationException when the order is cancelled, already billed, billed by a plan or has nothing left
      */
     public function createInvoiceFromOrder(SalesOrder $order, array $overrides = []): SalesInvoice
     {
         return DB::transaction(function () use ($order, $overrides): SalesInvoice {
             $locked = SalesOrder::withoutGlobalScope(TenantScope::class)->whereKey($order->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->status === SalesOrderStatus::Cancelled->value) {
+            if (in_array($locked->status, [SalesOrderStatus::Cancelled->value, SalesOrderStatus::Rejected->value], true)) {
                 throw ValidationException::withMessages(['sales_order' => __('sales.order_cancelled')]);
             }
 
-            if ($locked->billing_status === 'billed') {
+            if ($locked->billing_status === SalesBillingLines::STATUS_BILLED) {
                 throw ValidationException::withMessages(['sales_order' => __('sales.order_already_invoiced')]);
             }
 
+            if (BillingSchedule::withoutGlobalScope(TenantScope::class)->where('sales_order_id', $locked->id)->where('status', OrderBillingService::PLAN_ACTIVE)->exists()) {
+                throw ValidationException::withMessages(['sales_order' => __('sales.order_billed_by_plan')]);
+            }
+
             $invoice = $this->invoiceLockedOrder($locked, $overrides);
-            $order->setRawAttributes($locked->getAttributes(), true);
+            $order->setRawAttributes($locked->fresh()?->getAttributes() ?? $locked->getAttributes(), true);
 
             return $invoice;
         });
+    }
+
+    /**
+     * Invoices a sales order (see createInvoiceFromOrder) and issues the invoice in the same transaction.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public function issueInvoiceFromOrder(SalesOrder $order, array $overrides, string $userId): SalesInvoice
+    {
+        return DB::transaction(fn (): SalesInvoice => $this->postInvoice($this->createInvoiceFromOrder($order, $overrides), $userId));
     }
 
     /**
@@ -203,28 +308,15 @@ final class InvoicingService implements InvoicingServiceInterface
         $order->load('items');
         $tenantId = (string) $order->tenant_id;
         $today = $this->today($tenantId);
-
-        $items = [];
-        foreach ($order->items as $orderItem) {
-            $toInvoice = (float) $orderItem->quantity - (float) $orderItem->quantity_invoiced;
-            if ($toInvoice <= 0) {
-                continue;
-            }
-
-            $items[] = [
-                'sales_order_item_id' => (string) $orderItem->id,
-                'product_id' => $orderItem->product_id,
-                'description' => (string) $orderItem->description,
-                'quantity' => $toInvoice,
-                'unit_price' => (float) $orderItem->unit_price,
-                'tax_rate' => (float) $orderItem->tax_rate,
-                'discount_percentage' => (float) $orderItem->discount_percentage,
-                'uom' => (string) $orderItem->uom,
-            ];
-        }
+        $requested = isset($overrides['lines']) && is_array($overrides['lines']) ? array_values($overrides['lines']) : null;
+        $items = $this->billingLines->openOrderLines($order, $requested);
 
         if ($items === []) {
             throw ValidationException::withMessages(['sales_order' => __('sales.nothing_to_invoice')]);
+        }
+
+        if ($this->billingLines->closesOrder($order, $items)) {
+            $items = [...$items, ...$this->billingLines->downPaymentDeductions($order)];
         }
 
         $data = array_merge([
@@ -236,26 +328,15 @@ final class InvoicingService implements InvoicingServiceInterface
             'tenant_id' => $tenantId,
             'contact_id' => (string) $order->contact_id,
             'sales_order_id' => (string) $order->id,
+            'quote_id' => $overrides['quote_id'] ?? null,
         ]);
 
-        $invoice = $this->createInvoice($data, $items);
-
-        // Update items invoiced quantity and order billing status
-        foreach ($order->items as $orderItem) {
-            $orderItem->update([
-                'quantity_invoiced' => $orderItem->quantity,
-            ]);
-        }
-
-        $order->update([
-            'billing_status' => 'billed',
-        ]);
-
-        return $invoice;
+        return $this->createDraft($data, $items);
     }
 
     /**
-     * Invoices a delivery note, once: the note row is locked for the whole operation.
+     * Invoices a delivery note, once: the note row is locked for the whole operation. Lines without a price take it
+     * from their order line; the order lines are billed by the invoiced quantities.
      *
      * @param  array<string, mixed>  $overrides  only the keys in SOURCE_OVERRIDE_FIELDS are used
      *
@@ -266,10 +347,7 @@ final class InvoicingService implements InvoicingServiceInterface
         return DB::transaction(function () use ($deliveryNote, $overrides): SalesInvoice {
             $locked = SalesDeliveryNote::withoutGlobalScope(TenantScope::class)->whereKey($deliveryNote->id)->lockForUpdate()->firstOrFail();
 
-            $alreadyInvoiced = $locked->status === DeliveryNoteStatus::Invoiced->value
-                || SalesInvoice::withoutGlobalScope(TenantScope::class)->where('delivery_note_id', $locked->id)->exists();
-
-            if ($alreadyInvoiced) {
+            if ($locked->status === DeliveryNoteStatus::Invoiced->value || $this->billingLines->deliveryNoteBilled($locked)) {
                 throw ValidationException::withMessages(['delivery_note' => __('sales.delivery_note_already_invoiced')]);
             }
 
@@ -281,49 +359,48 @@ final class InvoicingService implements InvoicingServiceInterface
     }
 
     /**
+     * Invoices a delivery note (see createInvoiceFromDeliveryNote) and issues the invoice in the same transaction.
+     *
+     * @param  array<string, mixed>  $overrides
+     */
+    public function issueInvoiceFromDeliveryNote(SalesDeliveryNote $deliveryNote, array $overrides, string $userId): SalesInvoice
+    {
+        return DB::transaction(fn (): SalesInvoice => $this->postInvoice($this->createInvoiceFromDeliveryNote($deliveryNote, $overrides), $userId));
+    }
+
+    /**
      * @param  array<string, mixed>  $overrides
      */
     private function invoiceLockedDeliveryNote(SalesDeliveryNote $deliveryNote, array $overrides): SalesInvoice
     {
-        $deliveryNote->load('items');
         $tenantId = (string) $deliveryNote->tenant_id;
         $today = $this->today($tenantId);
-
-        $items = [];
-        foreach ($deliveryNote->items as $dnItem) {
-            $items[] = [
-                'delivery_note_item_id' => (string) $dnItem->id,
-                'sales_order_item_id' => $dnItem->sales_order_item_id,
-                'product_id' => $dnItem->product_id,
-                'description' => (string) $dnItem->description,
-                'quantity' => (float) $dnItem->quantity,
-                'unit_price' => (float) $dnItem->unit_price,
-                'tax_rate' => (float) $dnItem->tax_rate,
-                'discount_percentage' => 0.0,
-                'uom' => $dnItem->uom ?? 'EA',
-            ];
-        }
+        $items = $this->billingLines->deliveryNoteLines($deliveryNote);
 
         if ($items === []) {
             throw ValidationException::withMessages(['delivery_note' => __('sales.nothing_to_invoice')]);
         }
 
+        $currency = $deliveryNote->sales_order_id !== null
+            ? SalesOrder::withoutGlobalScope(TenantScope::class)->whereKey($deliveryNote->sales_order_id)->value('currency')
+            : null;
+
         $data = array_merge([
             'date' => $today->toDateString(),
             'due_date' => $today->addDays(30)->toDateString(),
             'notes' => 'Generated from Delivery Note '.$deliveryNote->ddt_number,
-        ], $this->sourceOverrides($overrides), [
+        ], $currency !== null ? ['currency' => $currency] : [], $this->sourceOverrides($overrides), [
             'tenant_id' => $tenantId,
             'contact_id' => (string) $deliveryNote->contact_id,
             'sales_order_id' => $deliveryNote->sales_order_id,
             'delivery_note_id' => (string) $deliveryNote->id,
         ]);
 
-        $invoice = $this->createInvoice($data, $items);
+        $invoice = $this->createDraft($data, $items);
 
-        $deliveryNote->update([
-            'status' => DeliveryNoteStatus::Invoiced->value,
-        ]);
+        DeliveryNoteStatus::assertTransition($deliveryNote->status, DeliveryNoteStatus::Invoiced);
+        SalesDeliveryNote::withoutGlobalScope(TenantScope::class)->whereKey($deliveryNote->id)->update(['status' => DeliveryNoteStatus::Invoiced->value]);
+        $deliveryNote->status = DeliveryNoteStatus::Invoiced->value;
 
         return $invoice;
     }
@@ -351,42 +428,59 @@ final class InvoicingService implements InvoicingServiceInterface
         $items = [
             [
                 'description' => $description,
-                'quantity' => 1.0,
-                'unit_price' => $amount,
+                'quantity' => '1',
+                'unit_price' => DocumentTotalsCalculator::decimal($amount),
                 'tax_rate' => $taxRate,
-                'discount_percentage' => 0.0,
+                'discount_percentage' => '0',
             ],
         ];
 
         return $this->createInvoice($data, $items);
     }
 
+    /**
+     * Approves a draft. The row is locked, so an approval and an emission cannot cross.
+     *
+     * @throws LedgerPostingException when the document is not a draft
+     */
     public function approveInvoice(SalesInvoice $invoice, string $userId): SalesInvoice
     {
-        if ($invoice->status !== 'draft') {
-            throw new LedgerPostingException("Invoice in status [{$invoice->status}] cannot be approved.");
-        }
+        $approved = DB::transaction(function () use ($invoice, $userId): SalesInvoice {
+            $locked = SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
-        $invoice->update([
-            'status' => 'approved',
-        ]);
+            if ($locked->status !== InvoiceStatus::Draft->value || ! InvoiceStatus::allows($locked->status, InvoiceStatus::Approved)) {
+                throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be approved.");
+            }
 
-        $this->dispatchDomainEvent(new InvoiceApprovedEvent(
-            invoiceId: (string) $invoice->id,
-            approvedBy: $userId,
-            tenantId: (string) $invoice->tenant_id,
-            companyId: (string) $invoice->tenant_id
-        ));
+            $locked->status = InvoiceStatus::Approved->value;
+            $locked->save();
+
+            $this->dispatchDomainEvent(new InvoiceApprovedEvent(
+                invoiceId: (string) $locked->id,
+                approvedBy: $userId,
+                tenantId: (string) $locked->tenant_id,
+                companyId: (string) $locked->tenant_id
+            ));
+
+            return $locked;
+        });
+
+        $invoice->setRawAttributes($approved->getAttributes(), true);
 
         return $invoice;
     }
 
+    /**
+     * Issues a draft or approved document (see the class description). Posting an issued document again returns it.
+     *
+     * @throws LedgerPostingException when the document is a proforma or in a status that cannot be posted
+     */
     public function postInvoice(SalesInvoice $invoice, string $userId): SalesInvoice
     {
         $posted = DB::transaction(function () use ($invoice, $userId): SalesInvoice {
             $locked = SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
-            if ($locked->status === 'posted') {
+            if ($locked->status === InvoiceStatus::Posted->value) {
                 return $locked->load('items');
             }
 
@@ -394,7 +488,7 @@ final class InvoicingService implements InvoicingServiceInterface
                 throw new LedgerPostingException('A proforma is not a fiscal document and cannot be posted.');
             }
 
-            if (! in_array($locked->status, ['draft', 'approved'], true)) {
+            if (! InvoiceStatus::allows($locked->status, InvoiceStatus::Posted)) {
                 throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be posted.");
             }
 
@@ -404,6 +498,50 @@ final class InvoicingService implements InvoicingServiceInterface
         $invoice->setRawAttributes($posted->getAttributes(), true);
 
         return $invoice->setRelation('items', $posted->items);
+    }
+
+    /**
+     * Issues a debit note (TD05) adjusting an issued invoice upwards: same customer, currency, exchange rate,
+     * jurisdiction and VAT regime as the invoice, linked to it (DatiFattureCollegate), posted as a receivable.
+     *
+     * @param  array<string, mixed>  $data  date, due_date, notes
+     * @param  array<int, array<string, mixed>>  $items
+     *
+     * @throws ValidationException when the original is not an issued invoice
+     */
+    public function issueDebitNote(SalesInvoice $originalInvoice, array $data, array $items, string $userId): SalesInvoice
+    {
+        return DB::transaction(function () use ($originalInvoice, $data, $items, $userId): SalesInvoice {
+            $original = SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($originalInvoice->id)->lockForUpdate()->firstOrFail();
+            $type = TipoDocumento::ofInvoice($original);
+
+            if ($original->status !== InvoiceStatus::Posted->value || $original->invoice_type === 'proforma' || $original->isCreditNote() || $type->isSelfInvoice() || $type === TipoDocumento::Td05) {
+                throw ValidationException::withMessages(['original_invoice_id' => __('sales.debit_note_original_not_issued')]);
+            }
+
+            return $this->postInvoice($this->createDraft([
+                'tenant_id' => (string) $original->tenant_id,
+                'contact_id' => (string) $original->contact_id,
+                'invoice_type' => 'standard',
+                'document_type' => TipoDocumento::Td05->value,
+                'related_invoice_id' => (string) $original->id,
+                'date' => $data['date'] ?? null,
+                ...(array_key_exists('due_date', $data) && $data['due_date'] !== null ? ['due_date' => $data['due_date']] : []),
+                'currency' => $original->currency,
+                'exchange_rate' => (string) $original->exchange_rate,
+                'jurisdiction' => $original->jurisdiction,
+                'split_payment' => (bool) $original->split_payment,
+                'reverse_charge' => (bool) $original->reverse_charge,
+                'sdi_excluded' => (bool) $original->sdi_excluded,
+                'payment_method' => $original->payment_method,
+                'payment_terms' => $original->payment_terms,
+                'bank_name' => $original->bank_name,
+                'bank_iban' => $original->bank_iban,
+                'notes' => $data['notes'] ?? 'Debit note for invoice '.$original->invoice_number,
+                'skip_charge_lines' => true,
+                'created_by' => $userId,
+            ], $items), $userId);
+        });
     }
 
     /**
@@ -431,7 +569,7 @@ final class InvoicingService implements InvoicingServiceInterface
      */
     private function applyCashRounding(SalesInvoice $invoice): void
     {
-        if ($invoice->currency !== 'CHF' || (float) $invoice->rounding_amount !== 0.0) {
+        if ($invoice->currency !== 'CHF' || ! Decimal::isZero((string) ($invoice->rounding_amount ?? '0'))) {
             return;
         }
 
@@ -452,6 +590,7 @@ final class InvoicingService implements InvoicingServiceInterface
 
         $this->fiscal->apply($invoice, atIssue: true);
         $this->fiscal->assertIssuable($invoice);
+        $this->exchangeRates->freeze($invoice);
 
         if ($invoice->declaration_of_intent_id !== null) {
             $this->declarations->consume($invoice);
@@ -485,7 +624,7 @@ final class InvoicingService implements InvoicingServiceInterface
             ];
         }
 
-        if ($invoice->fund_enabled && (float) $invoice->fund_vat_amount !== 0.0) {
+        if ($invoice->fund_enabled && ! Decimal::isZero((string) ($invoice->fund_vat_amount ?? '0'))) {
             $taxLines[] = [
                 'line_id' => null,
                 'account_id' => null,
@@ -500,8 +639,9 @@ final class InvoicingService implements InvoicingServiceInterface
 
         $this->assignFiscalNumber($invoice, $documentType->numberingSeries());
         $this->applyCashRounding($invoice);
+        $this->installments->scheduleAtIssue($invoice);
 
-        $invoice->status = 'posted';
+        $invoice->status = InvoiceStatus::Posted->value;
         $invoice->posted_at = now();
         $invoice->posted_by = $postedUserId;
         $invoice->save();
@@ -556,6 +696,7 @@ final class InvoicingService implements InvoicingServiceInterface
         $original = $creditNote->related_invoice_id === null ? null : SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($creditNote->related_invoice_id)->lockForUpdate()->first();
         $this->fiscal->applyToCreditNote($creditNote, $original);
         $this->fiscal->assertIssuable($creditNote);
+        $this->inheritExchangeRate($creditNote, $original);
         $this->assignFiscalNumber($creditNote, 'credit_note');
         $this->applyCashRounding($creditNote);
 
@@ -563,12 +704,12 @@ final class InvoicingService implements InvoicingServiceInterface
             $this->assertCreditWithinOriginal($original, $creditNote);
         }
 
-        $creditNote->status = 'posted';
+        $creditNote->status = InvoiceStatus::Posted->value;
         $creditNote->posted_at = now();
         $creditNote->posted_by = Str::isUuid($userId) ? $userId : null;
         $creditNote->total_paid = $creditNote->total_gross;
         $creditNote->payment_status = 'paid';
-        $creditNote->receivable_amount = 0.0;
+        $creditNote->setAttribute('receivable_amount', '0');
         $creditNote->split_payment = $creditNote->split_payment || (bool) $original?->split_payment;
         $creditNote->save();
 
@@ -579,7 +720,7 @@ final class InvoicingService implements InvoicingServiceInterface
             'discount_percentage' => $item->discount_percentage,
         ])->all(), $userId);
 
-        $settlesOriginal = $original !== null && $original->status === 'posted' && ! $original->isCreditNote()
+        $settlesOriginal = $original !== null && $original->status === InvoiceStatus::Posted->value && ! $original->isCreditNote()
             && (string) $original->contact_id === (string) $creditNote->contact_id;
 
         if ($settlesOriginal) {
@@ -593,6 +734,27 @@ final class InvoicingService implements InvoicingServiceInterface
         }
 
         return $creditNote->refresh()->load('items');
+    }
+
+    /**
+     * A credit note takes the rate of the invoice it credits, so both reach the ledger at the same rate; without an
+     * invoice its rate is frozen like any document's.
+     */
+    private function inheritExchangeRate(SalesInvoice $creditNote, ?SalesInvoice $original): void
+    {
+        if ($creditNote->exchange_rate_source !== null) {
+            return;
+        }
+
+        if ($original !== null && $original->currency === $creditNote->currency) {
+            $creditNote->setAttribute('exchange_rate', (string) $original->exchange_rate);
+            $creditNote->exchange_rate_source = $original->exchange_rate_source ?? InvoiceExchangeRateResolver::SOURCE_DOCUMENT;
+            $creditNote->exchange_rate_date = $original->exchange_rate_date;
+
+            return;
+        }
+
+        $this->exchangeRates->freeze($creditNote);
     }
 
     /**
@@ -694,11 +856,12 @@ final class InvoicingService implements InvoicingServiceInterface
         $alreadyCredited = SalesInvoice::withoutGlobalScope(TenantScope::class)
             ->where('related_invoice_id', $original->id)
             ->where('invoice_type', 'credit_note')
-            ->where('status', 'posted')
+            ->where('status', InvoiceStatus::Posted->value)
             ->whereKeyNot($creditNote->id)
-            ->sum('total_gross');
+            ->pluck('total_gross')
+            ->reduce(static fn (string $sum, mixed $gross): string => Decimal::add($sum, DocumentTotalsCalculator::decimal($gross)), '0');
 
-        $credited = Decimal::add(number_format((float) $alreadyCredited, 2, '.', ''), (string) $creditNote->total_gross);
+        $credited = Decimal::add($alreadyCredited, (string) $creditNote->total_gross);
 
         if (Decimal::compare($credited, (string) $original->total_gross) > 0) {
             throw ValidationException::withMessages(['items' => __('sales.credit_note_exceeds_invoice')]);
@@ -735,7 +898,7 @@ final class InvoicingService implements InvoicingServiceInterface
         // The original is locked for the whole emission: two credit notes on the same invoice are checked one at a time.
         $lockedOriginal = SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($originalInvoice->id)->lockForUpdate()->firstOrFail();
 
-        if ($lockedOriginal->status !== 'posted' || $lockedOriginal->invoice_type === 'proforma' || $lockedOriginal->isCreditNote()) {
+        if ($lockedOriginal->status !== InvoiceStatus::Posted->value || $lockedOriginal->invoice_type === 'proforma' || $lockedOriginal->isCreditNote()) {
             throw ValidationException::withMessages(['original_invoice_id' => __('sales.credit_note_original_not_issued')]);
         }
 
@@ -751,14 +914,14 @@ final class InvoicingService implements InvoicingServiceInterface
         $actorId = ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null;
 
         $this->assertTaxRates($items);
-        $totals = $this->pricingService->calculateOrderTotals($items);
+        $computed = $this->totals->calculateDecimal($items);
 
         $creditNote = SalesInvoice::create([
             'id' => $creditNoteId,
             'tenant_id' => $tenantId,
             'contact_id' => (string) $originalInvoice->contact_id,
             'invoice_type' => 'credit_note',
-            'status' => 'posted',
+            'status' => InvoiceStatus::Posted->value,
             'invoice_number' => $creditNumber,
             'fiscal_year' => $number['fiscal_year'] ?? null,
             'sequential_number' => $number['sequential_number'] ?? null,
@@ -769,14 +932,16 @@ final class InvoicingService implements InvoicingServiceInterface
             'date' => $date,
             'due_date' => $today->toDateString(),
             'currency' => $originalInvoice->currency ?? 'EUR',
-            'exchange_rate' => (float) ($originalInvoice->exchange_rate ?? 1.0),
-            'subtotal' => $totals['subtotal'],
-            'discount_amount' => $totals['discount_total'],
-            'total_net' => $totals['net_total'],
-            'total_tax' => $totals['tax_total'],
-            'total_gross' => $totals['gross_total'],
-            'receivable_amount' => 0.0,
-            'total_paid' => $totals['gross_total'],
+            'exchange_rate' => (string) ($originalInvoice->exchange_rate ?? '1'),
+            'exchange_rate_source' => $originalInvoice->exchange_rate_source ?? InvoiceExchangeRateResolver::SOURCE_DOCUMENT,
+            'exchange_rate_date' => $originalInvoice->exchange_rate_date,
+            'subtotal' => $computed['subtotal'],
+            'discount_amount' => $computed['discount_total'],
+            'total_net' => $computed['total_net'],
+            'total_tax' => $computed['total_tax'],
+            'total_gross' => $computed['total_gross'],
+            'receivable_amount' => '0',
+            'total_paid' => $computed['total_gross'],
             'payment_status' => 'paid',
             'posted_at' => now(),
             'posted_by' => $actorId,
@@ -786,10 +951,8 @@ final class InvoicingService implements InvoicingServiceInterface
 
         $actualCreditNoteId = (string) $creditNote->id;
 
-        foreach ($items as $item) {
-            $quantity = (float) ($item['quantity'] ?? 1.0);
-            $unitPrice = (float) ($item['unit_price'] ?? 0.0);
-            $discount = (float) ($item['discount_percentage'] ?? 0.0);
+        foreach ($computed['items'] as $index => $line) {
+            $item = $items[$index];
 
             SalesInvoiceItem::create([
                 'id' => (string) Str::uuid7(),
@@ -797,11 +960,11 @@ final class InvoicingService implements InvoicingServiceInterface
                 'invoice_id' => $actualCreditNoteId,
                 'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'] ?? 'Credit item',
-                'quantity' => $quantity,
-                'unit_price' => $unitPrice,
-                'tax_rate' => (float) $item['tax_rate'],
-                'discount_percentage' => $discount,
-                'line_total' => round($quantity * $unitPrice * (1 - $discount / 100.0), 2),
+                'quantity' => $line['quantity'],
+                'unit_price' => $line['unit_price'],
+                'tax_rate' => $line['tax_rate'],
+                'discount_percentage' => $line['discount_percentage'],
+                'line_total' => $line['line_total'],
                 'revenue_account_id' => $item['revenue_account_id'] ?? null,
                 'cost_center_id' => $item['cost_center_id'] ?? null,
             ]);
@@ -872,11 +1035,11 @@ final class InvoicingService implements InvoicingServiceInterface
      */
     private function assertCreditApplicable(SalesInvoice $note, SalesInvoice $target, string $amount): void
     {
-        if (! $note->isCreditNote() || $note->status !== 'posted') {
+        if (! $note->isCreditNote() || $note->status !== InvoiceStatus::Posted->value) {
             throw ValidationException::withMessages(['credit_note' => __('sales.credit_note_not_applicable')]);
         }
 
-        if ($target->isCreditNote() || $target->invoice_type === 'proforma' || $target->status !== 'posted') {
+        if ($target->isCreditNote() || $target->invoice_type === 'proforma' || $target->status !== InvoiceStatus::Posted->value) {
             throw ValidationException::withMessages(['target_invoice_id' => __('sales.credit_note_target_not_issued')]);
         }
 
@@ -888,8 +1051,10 @@ final class InvoicingService implements InvoicingServiceInterface
             throw ValidationException::withMessages(['amount' => __('sales.credit_note_amount_positive')]);
         }
 
-        $applied = InvoiceCreditApplication::withoutGlobalScope(TenantScope::class)->where('credit_note_id', $note->id)->sum('applied_amount');
-        $available = Decimal::sub($note->amountDue(), number_format((float) $applied, 2, '.', ''));
+        $applied = InvoiceCreditApplication::withoutGlobalScope(TenantScope::class)->where('credit_note_id', $note->id)
+            ->pluck('applied_amount')
+            ->reduce(static fn (string $sum, mixed $value): string => Decimal::add($sum, DocumentTotalsCalculator::decimal($value)), '0');
+        $available = Decimal::sub($note->amountDue(), $applied);
 
         if (Decimal::compare($amount, $available) > 0) {
             throw ValidationException::withMessages(['amount' => __('sales.credit_note_exceeds_available')]);
@@ -900,9 +1065,11 @@ final class InvoicingService implements InvoicingServiceInterface
         }
     }
 
+    /**
+     * Stores the event in the outbox and dispatches it to the listeners of the request, in one call.
+     */
     private function dispatchDomainEvent(DomainEventInterface $event): void
     {
-        $this->eventDispatcher->publish($event);
-        $this->eventDispatcher->dispatch($event);
+        $this->eventDispatcher->publishAndDispatch($event);
     }
 }

@@ -11,9 +11,12 @@ use App\Services\Sales\VatSummaryCalculator;
 use Carbon\Carbon;
 use DOMDocument;
 use DOMElement;
+use Enterprise\MultiTenant\Scopes\TenantScope;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\Invoicing\Models\DeclarationOfIntent;
+use Modules\Invoicing\Models\InvoiceInstallment;
 use Modules\SDI\Enums\CausalePagamento;
 use Modules\SDI\Enums\NaturaIva;
 use Modules\SDI\Enums\RegimeFiscale;
@@ -439,6 +442,10 @@ class FatturaPaBuilderService
             $datiGenerali->appendChild($linked);
         }
 
+        foreach ($this->transportDocuments($dom, $invoice) as $transportDocument) {
+            $datiGenerali->appendChild($transportDocument);
+        }
+
         return $datiGenerali;
     }
 
@@ -568,6 +575,60 @@ class FatturaPaBuilderService
         return $linked;
     }
 
+    /**
+     * DatiDDT: the delivery notes billed by the lines of the invoice (a deferred invoice lists every note it collects),
+     * each with its number, date and the numbers of the invoice lines (in the order of DettaglioLinee) that bill it.
+     *
+     * @return list<DOMElement>
+     */
+    private function transportDocuments(DOMDocument $dom, Invoice $invoice): array
+    {
+        $lineNumbers = [];
+
+        foreach ($invoice->items->values() as $index => $item) {
+            $noteItemId = $item->getAttribute('delivery_note_item_id');
+
+            if ($noteItemId !== null && $noteItemId !== '') {
+                $lineNumbers[(string) $noteItemId][] = $index + 1;
+            }
+        }
+
+        if ($lineNumbers === []) {
+            return [];
+        }
+
+        $notes = DB::table('delivery_note_items')
+            ->join('delivery_notes', 'delivery_notes.id', '=', 'delivery_note_items.delivery_note_id')
+            ->where('delivery_notes.tenant_id', $invoice->tenant_id)
+            ->whereIn('delivery_note_items.id', array_keys($lineNumbers))
+            ->orderBy('delivery_notes.date')
+            ->orderBy('delivery_notes.ddt_number')
+            ->get(['delivery_note_items.id as item_id', 'delivery_notes.id as note_id', 'delivery_notes.ddt_number', 'delivery_notes.date']);
+        $byNote = [];
+
+        foreach ($notes as $row) {
+            $byNote[(string) $row->note_id] ??= ['number' => (string) $row->ddt_number, 'date' => (string) $row->date, 'lines' => []];
+            array_push($byNote[(string) $row->note_id]['lines'], ...$lineNumbers[(string) $row->item_id]);
+        }
+
+        $elements = [];
+
+        foreach ($byNote as $note) {
+            $element = $dom->createElement('DatiDDT');
+            $element->appendChild($dom->createElement('NumeroDDT', htmlspecialchars(mb_substr($note['number'], 0, 20))));
+            $element->appendChild($dom->createElement('DataDDT', Carbon::parse($note['date'])->format('Y-m-d')));
+            sort($note['lines']);
+
+            foreach (array_unique($note['lines']) as $lineNumber) {
+                $element->appendChild($dom->createElement('RiferimentoNumeroLinea', (string) $lineNumber));
+            }
+
+            $elements[] = $element;
+        }
+
+        return $elements;
+    }
+
     private function goodsAndServices(DOMDocument $dom, Invoice $invoice): DOMElement
     {
         $datiBeniServizi = $dom->createElement('DatiBeniServizi');
@@ -673,23 +734,32 @@ class FatturaPaBuilderService
     {
         $tenant = $invoice->tenant;
 
+        // The payment schedule fixed at emission: several installments are a payment in instalments (TP01), each with its
+        // own due date and amount; otherwise the payment is in full (TP02) on the due date of the document.
+        $installments = InvoiceInstallment::withoutGlobalScope(TenantScope::class)->where('invoice_id', $invoice->id)->orderBy('sequence')->get();
+        $rows = $installments->count() > 1
+            ? $installments->map(static fn (InvoiceInstallment $row): array => ['due_date' => $row->due_date->format('Y-m-d'), 'amount' => Decimal::round2((string) $row->amount)])->all()
+            : [['due_date' => $invoice->due_date?->format('Y-m-d'), 'amount' => $invoice->amountDue()]];
+
         $datiPagamento = $dom->createElement('DatiPagamento');
-        $datiPagamento->appendChild($dom->createElement('CondizioniPagamento', 'TP02')); // Completo
+        $datiPagamento->appendChild($dom->createElement('CondizioniPagamento', count($rows) > 1 ? 'TP01' : 'TP02'));
 
-        $dettaglioPagamento = $dom->createElement('DettaglioPagamento');
-        $dettaglioPagamento->appendChild($dom->createElement('ModalitaPagamento', $this->paymentMode($invoice)));
+        foreach ($rows as $row) {
+            $dettaglioPagamento = $dom->createElement('DettaglioPagamento');
+            $dettaglioPagamento->appendChild($dom->createElement('ModalitaPagamento', $this->paymentMode($invoice)));
 
-        if ($invoice->due_date) {
-            $dettaglioPagamento->appendChild($dom->createElement('DataScadenzaPagamento', $invoice->due_date->format('Y-m-d')));
+            if ($row['due_date'] !== null) {
+                $dettaglioPagamento->appendChild($dom->createElement('DataScadenzaPagamento', $row['due_date']));
+            }
+
+            $dettaglioPagamento->appendChild($dom->createElement('ImportoPagamento', $row['amount']));
+
+            if (! empty($tenant->iban)) {
+                $dettaglioPagamento->appendChild($dom->createElement('IBAN', preg_replace('/\s+/', '', $tenant->iban)));
+            }
+
+            $datiPagamento->appendChild($dettaglioPagamento);
         }
-
-        $dettaglioPagamento->appendChild($dom->createElement('ImportoPagamento', $invoice->amountDue()));
-
-        if (! empty($tenant->iban)) {
-            $dettaglioPagamento->appendChild($dom->createElement('IBAN', preg_replace('/\s+/', '', $tenant->iban)));
-        }
-
-        $datiPagamento->appendChild($dettaglioPagamento);
 
         return $datiPagamento;
     }

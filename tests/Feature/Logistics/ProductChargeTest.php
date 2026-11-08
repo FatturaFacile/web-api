@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Contact;
+use App\Models\ExchangeRate;
 use App\Models\Product;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -26,6 +27,9 @@ beforeEach(function (): void {
     $this->account = ChartOfAccount::create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'account_code' => '4800', 'name' => 'Charges', 'account_class' => 'revenue', 'account_type' => 'revenue', 'normal_balance' => 'credit', 'currency' => 'CHF', 'is_active' => true]);
     $this->product = Product::create(['sku' => 'P-'.Str::random(6), 'name' => 'Frigo', 'sale_price' => 100]);
     $this->contact = Contact::create(['company_name' => 'Cliente']);
+
+    // Franc invoices of a company without an accounting currency (euro) take the rate of the exchange-rate service.
+    ExchangeRate::query()->create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2026-01-01']);
 });
 
 /**

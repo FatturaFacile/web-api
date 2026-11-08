@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
+use App\Enums\InvoiceStatus;
 use App\Exceptions\QrBillGenerationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreInvoiceRequest;
+use App\Http\Requests\UpdateInvoiceRequest;
 use App\Http\Resources\InvoiceResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
@@ -17,6 +19,8 @@ use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 use Modules\SDI\Services\SdiPreflight;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -166,7 +170,8 @@ class InvoiceController extends Controller
                     new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-10-25'),
                     new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true, example: '2026-11-24'),
                     new OA\Property(property: 'currency', type: 'string', example: 'CHF'),
-                    new OA\Property(property: 'exchange_rate', type: 'number', format: 'float', nullable: true, example: 1.0),
+                    new OA\Property(property: 'exchange_rate', description: 'Units of the accounting currency for one unit of the document currency. When omitted for a foreign currency, the rate of the exchange-rate service on the document date is frozen at emission (422 when none is published).', type: 'number', format: 'float', nullable: true, example: 1.0),
+                    new OA\Property(property: 'payment_term_id', description: 'Payment term of the company: its installments become the payment schedule of the invoice at emission.', type: 'string', format: 'uuid', nullable: true),
                     new OA\Property(property: 'jurisdiction', type: 'string', enum: ['IT', 'CH'], example: 'CH'),
                     new OA\Property(property: 'split_payment', type: 'boolean', nullable: true, example: false),
                     new OA\Property(property: 'reverse_charge', type: 'boolean', nullable: true, example: false),
@@ -487,7 +492,7 @@ class InvoiceController extends Controller
     #[OA\Put(
         path: '/api/v1/sales/invoices/{id}',
         operationId: 'updateInvoice',
-        description: 'Update notes or due date for an existing invoice.',
+        description: 'Updates the notes of a sales document, and the due date of a document not yet issued (proforma or draft). The due date of an issued invoice is part of its ledger entry and payment schedule: changing it is refused with 422.',
         summary: 'Update invoice',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Invoices', 'Sales'],
@@ -507,14 +512,29 @@ class InvoiceController extends Controller
             new OA\Response(response: 200, description: 'Invoice updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Invoice not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error, or due date of an issued invoice', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function update(Request $request, string $id): JsonResponse
+    public function update(UpdateInvoiceRequest $request, string $id): JsonResponse
     {
         $invoice = Invoice::findOrFail($id);
         $this->authorize('update', $invoice);
 
-        $invoice->update($request->only(['notes', 'due_date']));
+        $changes = $request->validated();
+
+        if (array_key_exists('due_date', $changes)) {
+            if ($invoice->status === InvoiceStatus::Posted->value) {
+                throw ValidationException::withMessages(['due_date' => __('sales.issued_due_date_locked')]);
+            }
+
+            $invoiceDate = Carbon::parse((string) $invoice->getAttribute('date'))->startOfDay();
+
+            if ($changes['due_date'] !== null && $invoiceDate->gt(Carbon::parse((string) $changes['due_date']))) {
+                throw ValidationException::withMessages(['due_date' => __('validation.after_or_equal', ['attribute' => 'due date', 'date' => $invoiceDate->toDateString()])]);
+            }
+        }
+
+        $invoice->update($changes);
 
         return $this->successResponse(new InvoiceResource($invoice->fresh()), 'Invoice updated successfully');
     }

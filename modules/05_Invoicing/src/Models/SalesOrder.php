@@ -48,6 +48,9 @@ final class SalesOrder extends BaseEnterpriseModel
         return $this->belongsTo(CustomerAgreement::class, 'customer_agreement_id');
     }
 
+    /**
+     * @return HasMany<SalesOrderItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class, 'sales_order_id');

@@ -97,6 +97,7 @@ class Invoice extends Model
             'reverse_charge' => 'boolean',
             'total_paid' => 'decimal:2',
             'is_deposit' => 'boolean',
+            'exchange_rate_date' => 'date',
             'withholding_tax_enabled' => 'boolean',
             'withholding_tax_percent' => 'decimal:2',
             'withholding_tax_amount' => 'decimal:2',

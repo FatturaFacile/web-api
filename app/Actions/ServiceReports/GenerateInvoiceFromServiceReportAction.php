@@ -9,18 +9,18 @@ use App\Models\Invoice;
 use App\Models\InvoiceServiceReport;
 use App\Models\LookupItem;
 use App\Models\ServiceReport;
-use App\Services\Sales\DocumentNumberingService;
+use App\Services\Invoicing\InvoiceService;
 use App\Services\Sales\DocumentTotalsCalculator;
+use App\Services\Tenancy\TenantClock;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Modules\Invoicing\Actions\PostInvoiceAction;
 
 class GenerateInvoiceFromServiceReportAction
 {
     public function __construct(
-        private readonly DocumentNumberingService $numbering,
-        private readonly DocumentTotalsCalculator $totalsCalculator,
+        private readonly InvoiceService $invoices,
+        private readonly TenantClock $clock,
     ) {}
 
     /**
@@ -60,40 +60,24 @@ class GenerateInvoiceFromServiceReportAction
             $lineItems = $billableLines->map(fn ($line): array => [
                 'product_id' => $line->item_id,
                 'description' => $line->description,
-                'quantity' => (float) $line->quantity,
-                'unit_price' => (float) $line->unit_price,
-                'tax_rate' => (float) $line->tax_rate,
-                'discount_percentage' => (float) $line->discount_percent,
+                'quantity' => DocumentTotalsCalculator::decimal($line->quantity),
+                'unit_price' => DocumentTotalsCalculator::decimal($line->unit_price),
+                'tax_rate' => DocumentTotalsCalculator::decimal($line->tax_rate),
+                'discount_percentage' => DocumentTotalsCalculator::decimal($line->discount_percent),
             ])->values()->all();
 
-            $calculatedTotals = $this->totalsCalculator->calculate($lineItems);
-            $year = (int) now()->format('Y');
-            $numberData = $this->numbering->next('invoice', $year);
             $currency = $report->contact?->currency ?? $report->tenant?->default_currency ?? 'EUR';
+            $today = $this->clock->today($report->tenant);
 
-            /** @var Invoice $invoice */
-            $invoice = Invoice::create([
-                'tenant_id' => $report->tenant_id,
-                'contact_id' => $report->contact_id,
+            $invoice = $this->invoices->issue([
+                'tenant_id' => (string) $report->tenant_id,
+                'contact_id' => (string) $report->contact_id,
                 'invoice_type' => 'standard',
-                'invoice_number' => $numberData['number'],
-                'fiscal_year' => $numberData['fiscal_year'],
-                'sequential_number' => $numberData['sequential_number'],
-                'date' => now()->toDateString(),
-                'due_date' => now()->addDays(30)->toDateString(),
+                'date' => $today->toDateString(),
+                'due_date' => $today->addDays(30)->toDateString(),
                 'currency' => $currency,
-                'total_net' => $calculatedTotals['total_net'],
-                'total_tax' => $calculatedTotals['total_tax'],
-                'total_gross' => $calculatedTotals['total_gross'],
-                'payment_status' => 'unpaid',
                 'notes' => "Generated from Service Report {$report->report_number}",
-            ]);
-
-            foreach ($calculatedTotals['items'] as $itemData) {
-                $invoice->items()->create($itemData);
-            }
-
-            app(PostInvoiceAction::class)->issue((string) $invoice->id);
+            ], $lineItems);
 
             InvoiceServiceReport::create([
                 'tenant_id' => $report->tenant_id,
