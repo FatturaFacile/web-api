@@ -21,4 +21,9 @@ return [
     'stage_negotiation' => 'Negoziazione contratto',
     'stage_won' => 'Chiusa vinta',
     'stage_lost' => 'Chiusa persa',
+    'campaign_opt_out_notice' => 'Ricevi questo messaggio perché hai acconsentito alle nostre comunicazioni commerciali. Rispondi a questa email per non riceverle più.',
+    'activity_reminder' => [
+        'subject' => 'Promemoria: :subject',
+        'body' => 'L\'attività ":subject" è in scadenza il :due.',
+    ],
 ];

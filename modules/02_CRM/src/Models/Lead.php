@@ -8,7 +8,19 @@ use App\Models\Contact;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
+/**
+ * A prospect captured before qualification; converted into an account, a contact of the party master and an
+ * optional opportunity.
+ *
+ * @property array{model?: string, items?: list<array{rule: string, points: int, reason: string}>}|null $score_breakdown
+ * @property array<string, mixed>|null $custom_fields
+ * @property Carbon|null $score_calculated_at
+ * @property Carbon|null $converted_at
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ */
 final class Lead extends BaseEnterpriseModel
 {
     protected $table = 'crm_leads';
@@ -21,9 +33,14 @@ final class Lead extends BaseEnterpriseModel
             'converted_at' => 'datetime',
             'tags' => 'array',
             'custom_fields' => 'array',
+            'score_breakdown' => 'array',
+            'score_calculated_at' => 'datetime',
         ];
     }
 
+    /**
+     * @return BelongsTo<LeadSource, $this>
+     */
     public function leadSource(): BelongsTo
     {
         return $this->belongsTo(LeadSource::class, 'lead_source_id');

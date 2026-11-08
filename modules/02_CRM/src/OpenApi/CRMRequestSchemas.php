@@ -15,6 +15,7 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'existing_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'existing_contact_id', type: 'string', format: 'uuid', nullable: true, description: 'Contact of the party master to link; otherwise matched by email/VAT number or created'),
         new OA\Property(property: 'new_account_name', type: 'string', maxLength: 200, nullable: true),
         new OA\Property(property: 'account_tier', type: 'string', nullable: true, enum: ['strategic', 'enterprise', 'mid_market', 'smb', 'standard']),
         new OA\Property(property: 'contact_role', type: 'string', nullable: true, enum: ['decision_maker', 'influencer', 'champion', 'evaluator', 'blocker', 'economic_buyer', 'technical_buyer']),
@@ -93,6 +94,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'type', type: 'string', enum: ['task', 'call', 'meeting', 'note', 'email', 'follow_up']),
         new OA\Property(property: 'priority', type: 'string', nullable: true, enum: ['low', 'medium', 'high', 'urgent']),
         new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'reminder_at', type: 'string', format: 'date-time', nullable: true, description: 'When the assignee is reminded'),
         new OA\Property(property: 'assigned_user_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'related_type', type: 'string', nullable: true, enum: ['lead', 'account', 'contact', 'opportunity', 'campaign']),
         new OA\Property(property: 'related_id', type: 'string', format: 'uuid', nullable: true),

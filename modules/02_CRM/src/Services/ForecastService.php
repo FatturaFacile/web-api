@@ -48,7 +48,10 @@ final readonly class ForecastService implements ForecastServiceInterface
                 $cat = (string) $opp->forecast_category;
                 $status = (string) $opp->status;
 
-                $weightedAmount += $expected;
+                // Lost and cancelled deals carry no expected revenue into the weighted forecast.
+                if (! in_array($status, ['lost', 'cancelled'], true)) {
+                    $weightedAmount += $expected;
+                }
 
                 if ($status === 'won') {
                     $closedAmount += $amt;

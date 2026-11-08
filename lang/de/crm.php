@@ -21,4 +21,9 @@ return [
     'stage_negotiation' => 'Vertragsverhandlung',
     'stage_won' => 'Erfolgreich abgeschlossen',
     'stage_lost' => 'Verloren',
+    'campaign_opt_out_notice' => 'Sie erhalten diese Nachricht, weil Sie unseren Marketingmitteilungen zugestimmt haben. Antworten Sie auf diese E-Mail, um keine weiteren zu erhalten.',
+    'activity_reminder' => [
+        'subject' => 'Erinnerung: :subject',
+        'body' => 'Die Aktivität ":subject" ist am :due fällig.',
+    ],
 ];

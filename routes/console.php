@@ -16,6 +16,7 @@ use Modules\Associations\Jobs\SendFeeRemindersJob;
 use Modules\Associations\Jobs\SendRenewalRemindersJob;
 use Modules\Associations\Jobs\SendVolunteerAlertsJob;
 use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
+use Modules\CRM\Jobs\SendCrmActivityRemindersJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
@@ -80,6 +81,7 @@ $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedu
 $forEachTenant('workflow:webhooks', static fn (): object => new DispatchOutboundWebhooksJob)->everyMinute();
 $forEachTenant('workflow:timeouts', static fn (): object => new ProcessBusinessCalendarTimeoutsJob)->everyFifteenMinutes();
 $forEachTenant('workflow:prune-tokens', static fn (): object => new PruneExpiredApprovalTokensJob)->dailyAt('03:20');
+$forEachTenant('crm:activity-reminders', static fn (Tenant $tenant): object => new SendCrmActivityRemindersJob($tenant->id))->everyFiveMinutes();
 $forEachTenant('esm:sla-breaches', static fn (Tenant $tenant): object => new ScanSLABreachesJob($tenant->id))->everyFiveMinutes();
 $forEachTenant('esm:support-mailboxes', static fn (Tenant $tenant): object => new PollSupportMailboxesJob($tenant->id))->everyTwoMinutes();
 $forEachTenant('esm:contract-renewals', static fn (Tenant $tenant): object => new ProcessServiceContractRenewalsJob($tenant->id))->dailyAt('05:00');

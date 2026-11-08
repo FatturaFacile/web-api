@@ -19,6 +19,7 @@ final readonly class CreateActivityDTO
         public ?int $durationMinutes = null,
         public ?string $location = null,
         public ?string $notes = null,
-        public array $metadata = []
+        public array $metadata = [],
+        public ?string $reminderAt = null
     ) {}
 }
