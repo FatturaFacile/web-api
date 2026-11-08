@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\Workflow\Policies;
 
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
+use Modules\Workflow\Models\WorkflowDelegation;
 use Modules\Workflow\Models\WorkflowInstance;
 use Modules\Workflow\Models\WorkflowInstanceStep;
 
@@ -45,6 +47,14 @@ final class WorkflowInstancePolicy
     }
 
     /**
+     * The SLA report compares how fast people decide: owners and administrators of the company only.
+     */
+    public function viewSla(User $user): bool
+    {
+        return in_array($user->getRoleInTenant((string) app(TenantContext::class)->getTenantId()), ['owner', 'admin'], true);
+    }
+
+    /**
      * Roles live on the tenant membership. Owners and administrators hold every role, as in the engine.
      */
     private function holdsRole(User $user, string $tenantId, string $role): bool
@@ -70,12 +80,16 @@ final class WorkflowInstancePolicy
 
         // Active delegation
         if ($step->assigned_user_id !== null) {
-            return $user->incomingDelegations()
+            $approvableType = (string) $step->instance?->approvable_type;
+
+            return WorkflowDelegation::query()
+                ->where('delegate_user_id', $user->id)
                 ->where('delegator_user_id', $step->assigned_user_id)
                 ->where('is_active', true)
                 ->where('starts_at', '<=', now())
                 ->where('ends_at', '>=', now())
-                ->exists();
+                ->get()
+                ->contains(static fn ($delegation): bool => $delegation->coversApprovable($approvableType));
         }
 
         return false;

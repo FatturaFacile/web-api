@@ -8,12 +8,15 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Modules\Workflow\Actions\RecordDecisionAction;
 use Modules\Workflow\DTOs\RecordDecisionDTO;
 use Modules\Workflow\Http\Requests\RecordDecisionRequest;
 use Modules\Workflow\Http\Resources\WorkflowInstanceStepResource;
 use Modules\Workflow\Models\WorkflowInstanceStep;
+use Modules\Workflow\Services\WorkflowInboxService;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 final class WorkflowDecisionController extends Controller
 {
@@ -23,10 +26,11 @@ final class WorkflowDecisionController extends Controller
     #[OA\Get(
         path: '/api/v1/workflows/my-pending',
         operationId: 'getMyPendingWorkflow',
-        description: 'Returns the pending workflow steps assigned to the authenticated user, directly or through one of the user roles.',
+        description: 'Deprecated: use `GET /workflows/my-tasks`, which also lists the steps of colleagues who delegated to you and carries the deadline state. Returns the pending workflow steps assigned to the authenticated user directly or through the role the user holds in the active company (the same list as my-tasks without filters).',
         summary: 'List my pending approvals',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Workflow My Pending'],
+        deprecated: true,
         parameters: [
             new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 25)),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
@@ -37,18 +41,9 @@ final class WorkflowDecisionController extends Controller
         ]
     )]
     #[EnterpriseEndpoint(summary: 'Retrieve user pending approvals worklist', tags: ['Workflow Engine'])]
-    public function myPending(Request $request): JsonResponse
+    public function myPending(Request $request, WorkflowInboxService $inbox): JsonResponse
     {
-        $userId = auth()->id();
-
-        $steps = WorkflowInstanceStep::where('status', 'pending')
-            ->where(function ($q) use ($userId): void {
-                $q->where('assigned_user_id', $userId)
-                    ->orWhereIn('assigned_role', auth()->user()?->roles->pluck('name') ?? []);
-            })
-            ->with(['instance.approvable', 'node'])
-            ->orderBy('due_at', 'asc')
-            ->paginate((int) $request->query('per_page', 25));
+        $steps = $inbox->tasks($request->user())->paginate(min(100, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json(WorkflowInstanceStepResource::collection($steps)->response()->getData(true));
     }
@@ -91,7 +86,12 @@ final class WorkflowDecisionController extends Controller
             signaturePayload: $request->input('signature_payload')
         );
 
-        $step = $action->execute($dto);
+        try {
+            $step = $action->execute($dto);
+        } catch (InvalidArgumentException $exception) {
+            // The step was already decided, skipped or timed out, or its instance ended: nothing left to decide.
+            throw new ConflictHttpException($exception->getMessage(), $exception);
+        }
 
         return response()->json(new WorkflowInstanceStepResource($step));
     }

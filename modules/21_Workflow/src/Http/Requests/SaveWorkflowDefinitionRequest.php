@@ -43,6 +43,7 @@ final class SaveWorkflowDefinitionRequest extends FormRequest
             'nodes.*.assignee_type' => ['nullable', Rule::in(WorkflowGraphValidator::AssigneeTypes)],
             'nodes.*.assignee_id' => ['nullable', 'string', 'max:255'],
             'nodes.*.timeout_hours' => ['nullable', 'integer', 'min:1', 'max:8760'],
+            'nodes.*.escalation_rule_id' => ['nullable', 'uuid', TenantRule::exists('workflow_escalation_rules')],
 
             'transitions' => [$isCreate ? 'sometimes' : 'prohibited', 'array', 'max:300'],
             'transitions.*.from' => ['required', 'string', 'max:100'],

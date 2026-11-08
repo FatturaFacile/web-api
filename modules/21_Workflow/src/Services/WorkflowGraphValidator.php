@@ -26,7 +26,11 @@ final class WorkflowGraphValidator
 
     public const array ApprovalTypes = ['single', 'and_parallel', 'or_parallel', 'majority', 'supermajority', 'unanimous'];
 
-    public const array AssigneeTypes = ['direct_user', 'role', 'reporting_manager', 'matrix_lookup', 'matrix_sequential'];
+    /**
+     * `user_list` approvers decide in parallel (the voting rule of the node applies), `user_list_sequential` one after the
+     * other in the order of the list; `assignee_id` holds their ids, comma separated.
+     */
+    public const array AssigneeTypes = ['direct_user', 'role', 'reporting_manager', 'matrix_lookup', 'matrix_sequential', 'user_list', 'user_list_sequential'];
 
     public const array ActionTriggers = ['start', 'approved', 'rejected', 'timeout', 'condition_true', 'condition_false', '*'];
 
@@ -71,6 +75,10 @@ final class WorkflowGraphValidator
             if ($node->node_type === 'approval') {
                 if (empty($node->assignee_type) || (empty($node->assignee_id) && ! in_array($node->assignee_type, ['reporting_manager', 'matrix_lookup', 'matrix_sequential'], true))) {
                     $problems[] = "The approval node [{$node->node_key}] needs an assignee.";
+                }
+
+                if (in_array($node->assignee_type, ['user_list', 'user_list_sequential'], true) && app(WorkflowAssigneeResolver::class)->userList($node->assignee_id) === []) {
+                    $problems[] = "The approval node [{$node->node_key}] needs at least one valid user id in its list.";
                 }
 
                 if (array_intersect($triggers, ['approved', '*']) === []) {

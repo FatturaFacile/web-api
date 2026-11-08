@@ -7,27 +7,32 @@ namespace Modules\Communication\Services;
 use App\Models\Invoice;
 use App\Models\Quote;
 use App\Services\Pdf\DocumentPdfService;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Validation\ValidationException;
 use Modules\Communication\Contracts\DeliveryDriver;
 use Modules\Communication\Drivers\LocalDriver;
 use Modules\Communication\Drivers\MailDriver;
+use Modules\Communication\Drivers\SmtpDriver;
 use Modules\Communication\Drivers\TelegramDriver;
 use Modules\Communication\Drivers\TwilioDriver;
 use Modules\Communication\DTOs\DeliveryMessage;
-use Modules\Communication\Exceptions\DeliveryFailedException;
-use Modules\Communication\Models\CommunicationChannel;
 use Modules\Communication\Models\DeliveryLog;
 
 /**
- * Sends a document on a channel and logs the attempt, successful or not. Without a configuration a channel uses the
- * local driver, except e-mail, which uses the mailer of the installation.
+ * Sends an invoice or a quote on a channel and logs the attempt. The text comes from the template `document.invoice` or
+ * `document.quote` of the company in the requested language when there is one, otherwise from the standard wording.
  */
 final readonly class DocumentSender
 {
     /**
      * Inject the collaborators.
      */
-    public function __construct(private DocumentPdfService $pdf) {}
+    public function __construct(
+        private DocumentPdfService $pdf,
+        private MessageDispatcher $dispatcher,
+        private TemplateRenderer $templates,
+        private TenantContext $tenantContext,
+    ) {}
 
     /**
      * @return array<string, class-string<DeliveryDriver>>
@@ -35,7 +40,7 @@ final readonly class DocumentSender
     public static function driversOf(string $channel): array
     {
         return match ($channel) {
-            'email' => ['mail' => MailDriver::class, 'local' => LocalDriver::class],
+            'email' => ['mail' => MailDriver::class, 'smtp' => SmtpDriver::class, 'local' => LocalDriver::class],
             'telegram' => ['telegram' => TelegramDriver::class, 'local' => LocalDriver::class],
             default => ['twilio' => TwilioDriver::class, 'local' => LocalDriver::class],
         };
@@ -43,15 +48,13 @@ final readonly class DocumentSender
 
     /**
      * Send the message.
+     *
+     * @throws ValidationException when the channel is off or the document has nobody to send to
      */
-    public function send(string $documentType, string $documentId, string $channel, ?string $recipient, ?string $note, ?string $userId): DeliveryLog
+    public function send(string $documentType, string $documentId, string $channel, ?string $recipient, ?string $note, ?string $userId, ?string $locale = null): DeliveryLog
     {
         $document = $documentType === 'invoice' ? Invoice::with('contact')->findOrFail($documentId) : Quote::with('contact')->findOrFail($documentId);
-        $settings = CommunicationChannel::where('channel', $channel)->first();
-
-        if ($settings !== null && ! $settings->is_enabled) {
-            throw ValidationException::withMessages(['channel' => __('sales.delivery_channel_disabled')]);
-        }
+        $settings = $this->dispatcher->settings($channel);
 
         $recipient ??= match ($channel) {
             'email' => $document->contact?->email,
@@ -63,22 +66,25 @@ final readonly class DocumentSender
             throw ValidationException::withMessages(['recipient' => __('sales.delivery_no_recipient')]);
         }
 
-        $drivers = self::driversOf($channel);
-        $driverName = $settings->driver ?? ($channel === 'email' ? 'mail' : 'local');
-        $driver = app($drivers[$driverName]);
         $number = (string) ($documentType === 'invoice' ? $document->invoice_number : $document->quote_number);
-        $subject = __('sales.delivery_subject', ['number' => $number]);
-        $rendered = $channel === 'email' ? $this->pdf->render($document) : null;
+        $templateCode = "document.{$documentType}";
+        $template = $this->templates->resolve($templateCode, $channel, $locale);
+        $rendered = $template === null ? null : $this->templates->render($template, [
+            'number' => $number,
+            'note' => (string) $note,
+            'contact_name' => (string) ($document->contact?->company_name ?: trim($document->contact?->first_name.' '.$document->contact?->last_name)),
+            'company_name' => (string) $this->tenantContext->getTenant()?->name,
+        ]);
 
-        $message = new DeliveryMessage($channel, $recipient, $subject, trim($subject."\n\n".(string) $note), $rendered?->filename, $rendered?->content);
-        $log = ['channel' => $channel, 'driver' => $driver->name(), 'document_type' => $documentType, 'document_id' => $documentId, 'recipient' => $recipient, 'sent_by' => $userId];
+        $subject = $rendered['subject'] ?? __('sales.delivery_subject', ['number' => $number]);
+        $body = $rendered['body'] ?? trim($subject."\n\n".(string) $note);
+        $pdf = $channel === 'email' ? $this->pdf->render($document) : null;
 
-        try {
-            $result = $driver->send($message, $settings->credentials ?? []);
-        } catch (DeliveryFailedException $e) {
-            return DeliveryLog::create([...$log, 'status' => 'failed', 'error' => mb_substr($e->getMessage(), 0, 1000)]);
-        }
-
-        return DeliveryLog::create([...$log, 'status' => $result['status'], 'provider_reference' => $result['reference']]);
+        return $this->dispatcher->dispatch(
+            $channel,
+            new DeliveryMessage($channel, $recipient, $subject, $body, $pdf?->filename, $pdf?->content),
+            ['message_type' => 'document', 'document_type' => $documentType, 'document_id' => $documentId, 'sent_by' => $userId, 'template_code' => $template === null ? null : $templateCode, 'locale' => $template?->locale],
+            $settings
+        );
     }
 }

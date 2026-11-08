@@ -28,6 +28,7 @@ final class WorkflowNodeResource extends JsonResource
             'assignee_type' => $this->assignee_type,
             'assignee_id' => $this->assignee_id,
             'timeout_hours' => $this->timeout_hours,
+            'escalation_rule_id' => $this->escalation_rule_id,
             'ui_metadata' => $this->ui_metadata,
         ];
     }

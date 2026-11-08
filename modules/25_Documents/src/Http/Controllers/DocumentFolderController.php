@@ -6,6 +6,7 @@ namespace Modules\Documents\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Documents\Http\Requests\StoreFolderRequest;
@@ -69,7 +70,13 @@ final class DocumentFolderController extends Controller
     )]
     public function store(StoreFolderRequest $request): JsonResponse
     {
-        $folder = DmsFolder::create([...$request->validated(), 'access_roles' => $request->validated('access_roles', []), 'created_by' => $request->user()->id]);
+        $this->assertNameFree($request->validated('name'), $request->validated('parent_id'));
+
+        try {
+            $folder = DmsFolder::create([...$request->validated(), 'access_roles' => $request->validated('access_roles', []), 'created_by' => $request->user()->id]);
+        } catch (UniqueConstraintViolationException) {
+            throw new ConflictHttpException('A folder with this name already exists here.');
+        }
 
         return $this->successResponse(new FolderResource($folder), 'Folder created', Response::HTTP_CREATED);
     }
@@ -95,7 +102,14 @@ final class DocumentFolderController extends Controller
     public function update(StoreFolderRequest $request, string $id): JsonResponse
     {
         $folder = $this->visibleFolder($request, $id);
-        $folder->update($request->validated());
+        $this->assertNoCycle($folder, $request->validated('parent_id'));
+        $this->assertNameFree($request->validated('name'), $request->validated('parent_id'), (string) $folder->id);
+
+        try {
+            $folder->update($request->validated());
+        } catch (UniqueConstraintViolationException) {
+            throw new ConflictHttpException('A folder with this name already exists here.');
+        }
 
         return $this->successResponse(new FolderResource($folder), 'Folder updated');
     }
@@ -128,6 +142,46 @@ final class DocumentFolderController extends Controller
         $folder->delete();
 
         return $this->successResponse(null, 'Folder deleted');
+    }
+
+    /**
+     * Folder names are unique per parent, ignoring case. Checked up front for a clear answer; the unique index still
+     * guards the race between two requests.
+     *
+     * @throws ConflictHttpException
+     */
+    private function assertNameFree(string $name, ?string $parentId, ?string $ignoreId = null): void
+    {
+        $taken = DmsFolder::query()
+            ->whereRaw('lower(name) = lower(?)', [$name])
+            ->when($parentId === null, static fn ($query) => $query->whereNull('parent_id'), static fn ($query) => $query->where('parent_id', $parentId))
+            ->when($ignoreId !== null, static fn ($query) => $query->where('id', '!=', $ignoreId))
+            ->exists();
+
+        if ($taken) {
+            throw new ConflictHttpException('A folder with this name already exists here.');
+        }
+    }
+
+    /**
+     * A folder cannot move into itself or into one of its own subfolders: the tree would lose its root.
+     *
+     * @throws ConflictHttpException
+     */
+    private function assertNoCycle(DmsFolder $folder, ?string $parentId): void
+    {
+        $cursor = $parentId;
+        $seen = [];
+
+        while ($cursor !== null && ! in_array($cursor, $seen, true)) {
+            if ($cursor === (string) $folder->id) {
+                throw new ConflictHttpException('A folder cannot be moved into itself or into one of its subfolders.');
+            }
+
+            $seen[] = $cursor;
+            $cursor = DmsFolder::query()->whereKey($cursor)->value('parent_id');
+            $cursor = $cursor === null ? null : (string) $cursor;
+        }
     }
 
     private function visibleFolder(Request $request, string $id): DmsFolder

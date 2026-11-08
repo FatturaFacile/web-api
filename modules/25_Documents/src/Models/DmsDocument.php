@@ -8,9 +8,15 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * Eloquent model of the dms document (tenant scoped where it has a tenant_id).
+ *
+ * @property ?Carbon $retention_until
+ * @property ?string $checked_out_by
+ * @property ?Carbon $checked_out_at
+ * @property ?string $checkout_note
  */
 final class DmsDocument extends BaseEnterpriseModel
 {
@@ -31,8 +37,17 @@ final class DmsDocument extends BaseEnterpriseModel
             'retention_until' => 'date',
             'legal_hold' => 'boolean',
             'legal_hold_at' => 'datetime',
+            'checked_out_at' => 'datetime',
             'current_version' => 'integer',
         ];
+    }
+
+    /**
+     * Whether somebody has the document checked out, which keeps everybody else from changing it.
+     */
+    public function isCheckedOut(): bool
+    {
+        return $this->checked_out_by !== null;
     }
 
     /**

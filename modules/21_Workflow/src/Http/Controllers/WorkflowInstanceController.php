@@ -12,15 +12,18 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
+use InvalidArgumentException;
 use Modules\Workflow\Actions\StartWorkflowAction;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
 use Modules\Workflow\Http\Requests\StartWorkflowRequest;
 use Modules\Workflow\Http\Resources\WorkflowAuditEntryResource;
 use Modules\Workflow\Http\Resources\WorkflowInstanceResource;
 use Modules\Workflow\Models\WorkflowInstance;
+use Modules\Workflow\Services\WorkflowAuditLedgerService;
 use Modules\Workflow\Services\WorkflowEngineService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 final class WorkflowInstanceController extends Controller
 {
@@ -137,7 +140,12 @@ final class WorkflowInstanceController extends Controller
             initiatorUserId: (string) auth()->id()
         );
 
-        $instance = $action->execute($dto);
+        try {
+            $instance = $action->execute($dto);
+        } catch (InvalidArgumentException $exception) {
+            // No active definition with that code, or an approval of this record is already running.
+            throw new ConflictHttpException($exception->getMessage(), $exception);
+        }
 
         return response()->json(new WorkflowInstanceResource($instance), 201);
     }
@@ -199,5 +207,31 @@ final class WorkflowInstanceController extends Controller
         $entries = $instance->auditEntries()->get();
 
         return response()->json(WorkflowAuditEntryResource::collection($entries));
+    }
+
+    /**
+     * Verifies the hash chain of the audit trail of an instance.
+     */
+    #[OA\Get(
+        path: '/api/v1/workflows/instances/{id}/audit-trail/verify',
+        operationId: 'verifyAuditTrailWorkflowsInstance',
+        description: 'Recomputes the signature chain of the audit trail of an instance and reports whether every entry is intact and in sequence. Entries written before the chain had a sequence are counted as `legacy_unverifiable`. Same visibility as the audit trail itself.',
+        summary: 'Verify workflow audit trail',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Workflow Instances'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Verification result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/WorkflowAuditVerification')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Instance not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function verifyAuditTrail(string $id, WorkflowAuditLedgerService $ledger): JsonResponse
+    {
+        $instance = WorkflowInstance::findOrFail($id);
+        $this->authorize('viewAuditTrail', $instance);
+
+        return response()->json(['success' => true, 'message' => 'Audit trail verified', 'data' => $ledger->verify($instance)]);
     }
 }
