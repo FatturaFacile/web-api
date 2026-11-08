@@ -26,7 +26,7 @@ final class JournalNumberSequence
             return;
         }
 
-        $fiscalYearId = FiscalPeriod::withoutGlobalScopes()->whereKey($entry->getAttribute('fiscal_period_id'))->value('fiscal_year_id');
+        $fiscalYearId = FiscalPeriod::withoutGlobalScopes()->whereKey($entry->getAttribute('fiscal_period_id'))->sharedLock()->value('fiscal_year_id');
 
         if ($fiscalYearId === null) {
             return;

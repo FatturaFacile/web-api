@@ -144,7 +144,7 @@ test('postings read their fiscal period FOR SHARE, so they wait for a closing in
     $this->postingService->postDraft((string) $draft->id);
 
     expect($posted->status)->toBe('posted')
-        ->and($periodReads)->toHaveCount(3)
+        ->and($periodReads)->toHaveCount(5) // three reads of the posting checks, two of the journal numbering
         ->and(collect($periodReads)->every(fn (string $sql): bool => str_ends_with($sql, 'for share')))->toBeTrue();
 
     $this->closingService->closePeriod((string) $this->period->id, 'admin');
