@@ -133,11 +133,17 @@ the OpenAPI file on http://localhost:8000/docs/api-docs.json. Demo login (via `P
   `deploy/local/.env`, which is not committed.
 - The image has no PHP Redis extension, so this stack has no Redis: cache, sessions and queue use the database and
   emails go to the log.
+- Port 8000 busy (for example by `php artisan serve`)? Set `API_PORT` in `deploy/local/.env` before `up`.
+- The stack is called `fatturafacile-demo` whatever the folder: a second clone run with the same command reuses the same
+  containers and database. To keep two apart, add `-p <name>` to every `docker compose` command.
+- Verified from a clean state (fresh volumes): `up --wait` takes a few seconds, then `/up`, the Swagger UI, `api-docs.json`
+  and the demo login all answer.
 - Stop and keep the data: `docker compose -f deploy/local/compose.yaml stop`. Remove everything, data included:
   `docker compose -f deploy/local/compose.yaml down -v`.
 
 > `docker compose up` without `-f` starts `compose.yaml` (the Laravel Sail development stack), and
-> `docker-compose.yml` is the production stack (nginx on 80/443, certbot, a mandatory `.env`): neither is for a first trial.
+> `docker-compose.yml` is the production stack (nginx on 80/443, certbot, a mandatory `.env` that must define `DB_PASSWORD`
+> and `REDIS_PASSWORD`: without them it refuses to start): neither is for a first trial.
 
 ### Develop (you change the code)
 
