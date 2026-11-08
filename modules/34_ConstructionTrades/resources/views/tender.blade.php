@@ -14,6 +14,10 @@
     </style>
 </head>
 <body>
+@php
+    /* Amounts are decimal strings: round with bcmath and group the thousands, never through a float. */
+    $money = static fn (mixed $amount): string => preg_replace('/\B(?=(\d{3})+(?!\d))/', "'", Modules\GeneralLedger\Services\Tax\Decimal::round2((string) $amount)) ?? '';
+@endphp
     <p>{{ $tenant?->legal_name ?? $tenant?->name }}</p>
     <h1>{{ $bid->title }}</h1>
     <p>{{ $bid->bid_number }} &middot; {{ $bid->contact?->company_name ?? trim(($bid->contact?->first_name ?? '').' '.($bid->contact?->last_name ?? '')) }} &middot; {{ $bid->currency }}</p>
@@ -42,8 +46,8 @@
                     <td class="num">{{ rtrim(rtrim((string) $position->quantity, '0'), '.') }}</td>
                     <td>{{ $position->unit }}</td>
                     @if ($withPrices)
-                        <td class="num">{{ number_format((float) $position->unit_price, 2, '.', "'") }}</td>
-                        <td class="num">{{ number_format((float) $position->total, 2, '.', "'") }}</td>
+                        <td class="num">{{ $money($position->unit_price) }}</td>
+                        <td class="num">{{ $money($position->total) }}</td>
                     @else
                         <td class="num"><span class="blank">&nbsp;</span></td>
                         <td class="num"><span class="blank">&nbsp;</span></td>
@@ -55,7 +59,7 @@
             <tfoot>
                 <tr>
                     <td colspan="5" class="num">{{ $bid->currency }} (net)</td>
-                    <td class="num">{{ number_format((float) $netTotal, 2, '.', "'") }}</td>
+                    <td class="num">{{ $money($netTotal) }}</td>
                 </tr>
             </tfoot>
         @endif

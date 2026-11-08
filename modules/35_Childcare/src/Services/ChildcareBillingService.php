@@ -94,7 +94,9 @@ final class ChildcareBillingService
 
     private function billChild(Child $child, string $period, CarbonImmutable $start, CarbonImmutable $end, string $invoiceDate): ?MonthlyBill
     {
-        if (MonthlyBill::query()->where('child_id', $child->id)->where('period', $period)->lockForUpdate()->exists()) {
+        Child::query()->whereKey($child->id)->lockForUpdate()->firstOrFail();
+
+        if (MonthlyBill::query()->where('child_id', $child->id)->where('period', $period)->exists()) {
             return null;
         }
 

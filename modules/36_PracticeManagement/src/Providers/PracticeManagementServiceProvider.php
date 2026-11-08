@@ -9,8 +9,14 @@ use Illuminate\Support\ServiceProvider;
 use Modules\PracticeManagement\Models\PeriodClosing;
 use Modules\PracticeManagement\Policies\PracticePolicy;
 
+/**
+ * Registers the practice management module: routes and the closing policy.
+ */
 final class PracticeManagementServiceProvider extends ServiceProvider
 {
+    /**
+     * Loads the module routes once the application is booted and registers the closing policy.
+     */
     public function boot(): void
     {
         $this->app->booted(function (): void {

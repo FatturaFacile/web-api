@@ -8,12 +8,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\Storage;
 use Modules\Childcare\Http\Requests\ChildRecordRequest;
 use Modules\Childcare\Http\Resources\ChildcareResource;
 use Modules\Childcare\Models\Child;
 use Modules\Childcare\Models\ChildDocument;
 use Modules\Childcare\Models\DocumentRequirement;
+use Modules\Childcare\Services\ChildDocumentDownload;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -22,6 +22,11 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
  */
 final class ChildDocumentController extends Controller
 {
+    public function __construct(private readonly ChildDocumentDownload $files) {}
+
+    /**
+     * Return the forms every child must return.
+     */
     #[OA\Get(path: '/api/v1/childcare/document-requirements', operationId: 'listChildcareDocumentRequirements', description: 'Return the forms every child must return.', summary: 'List required forms', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Required forms', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -34,6 +39,9 @@ final class ChildDocumentController extends Controller
         return ChildcareResource::collection(DocumentRequirement::query()->orderBy('name')->get());
     }
 
+    /**
+     * Define a form every child must return, signed or not.
+     */
     #[OA\Post(path: '/api/v1/childcare/document-requirements', operationId: 'storeChildcareDocumentRequirement', description: 'Define a form every child must return, signed or not.', summary: 'Define required form', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRequirementRequest')), tags: ['Childcare'], responses: [
         new OA\Response(response: 201, description: 'Form defined', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -47,6 +55,9 @@ final class ChildDocumentController extends Controller
         return (new ChildcareResource(DocumentRequirement::query()->create($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return the virtual folder of a child.
+     */
     #[OA\Get(path: '/api/v1/childcare/children/{id}/documents', operationId: 'listChildcareChildDocuments', description: 'Return the virtual folder of a child.', summary: 'List child documents', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'Documents', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -60,6 +71,10 @@ final class ChildDocumentController extends Controller
         return ChildcareResource::collection(ChildDocument::query()->where('child_id', $child->id)->latest()->get());
     }
 
+    /**
+     * Put a document in the folder of a child: with a file it is returned, without one it is requested from the
+     * family.
+     */
     #[OA\Post(path: '/api/v1/childcare/children/{id}/documents', operationId: 'storeChildcareChildDocument', description: 'Put a document in the folder of a child: with a file it is returned, without one it is requested from the family.', summary: 'Add child document', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/ChildcareDocumentRequest'))), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 201, description: 'Document added', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -87,6 +102,9 @@ final class ChildDocumentController extends Controller
         return (new ChildcareResource($document))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Download the file of a document.
+     */
     #[OA\Get(path: '/api/v1/childcare/documents/{id}/download', operationId: 'downloadChildcareChildDocument', description: 'Download the file of a document.', summary: 'Download child document', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
         new OA\Response(response: 200, description: 'File', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -97,11 +115,13 @@ final class ChildDocumentController extends Controller
     {
         $document = ChildDocument::query()->findOrFail($id);
         $this->authorize('manageRecords', $document);
-        abort_if($document->file_path === null, Response::HTTP_NOT_FOUND);
 
-        return Storage::disk((string) config('childcare.documents_disk'))->download($document->file_path, preg_replace('/[^A-Za-z0-9._-]/', '_', $document->title).'.'.pathinfo($document->file_path, PATHINFO_EXTENSION));
+        return $this->files->respond($document);
     }
 
+    /**
+     * Return, per active child, the mandatory forms not yet returned or signed.
+     */
     #[OA\Get(path: '/api/v1/childcare/documents/outstanding', operationId: 'childcareOutstandingDocuments', description: 'Return, per active child, the mandatory forms not yet returned or signed.', summary: 'Outstanding forms', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Outstanding forms', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareDataResponse')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),

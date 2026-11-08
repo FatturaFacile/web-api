@@ -22,6 +22,7 @@ Route::prefix('api/v1/hospitality')
         Route::post('/orders/{id}/items', [OrderController::class, 'storeItems'])->name('orders.items.store');
         Route::post('/orders/{id}/fire', [OrderController::class, 'fire'])->name('orders.fire');
         Route::post('/orders/{id}/move', [OrderController::class, 'move'])->name('orders.move');
+        Route::post('/orders/{id}/cancel', [OrderController::class, 'cancel'])->name('orders.cancel');
         Route::get('/orders/{id}/bill', [OrderController::class, 'bill'])->name('orders.bill');
         Route::post('/orders/{id}/payments', [OrderController::class, 'pay'])->name('orders.payments.store');
         Route::post('/order-items/{id}/void', [OrderController::class, 'void'])->name('items.void');

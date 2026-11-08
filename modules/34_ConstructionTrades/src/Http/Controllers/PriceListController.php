@@ -23,6 +23,9 @@ use OpenApi\Attributes as OA;
  */
 final class PriceListController extends Controller
 {
+    /**
+     * Return the price lists of the company and the generic ones.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/price-lists', operationId: 'listTradesPriceLists', description: 'Return the price lists of the company and the generic ones.', summary: 'List price lists', security: [['bearerAuth' => []]], tags: ['Construction Trades'], responses: [
         new OA\Response(response: 200, description: 'Price lists', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordCollection')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -35,6 +38,9 @@ final class PriceListController extends Controller
         return TradesResource::collection(PriceList::query()->orderBy('name')->paginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
+    /**
+     * Create a price list. A list from a licensed catalogue records its licence.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/price-lists', operationId: 'storeTradesPriceList', description: 'Create a price list. A list from a licensed catalogue records its licence.', summary: 'Create price list', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesPriceListRequest')), tags: ['Construction Trades'], responses: [
         new OA\Response(response: 201, description: 'Price list created', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -52,6 +58,9 @@ final class PriceListController extends Controller
         return (new TradesResource($list))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return a price list with its positions.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/price-lists/{id}', operationId: 'showTradesPriceList', description: 'Return a price list with its positions.', summary: 'Show price list', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Price list', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -66,6 +75,9 @@ final class PriceListController extends Controller
         return new TradesResource($list->load('items'));
     }
 
+    /**
+     * Change a price list of the company; generic lists are read-only.
+     */
     #[OA\Put(path: '/api/v1/construction-trades/price-lists/{id}', operationId: 'updateTradesPriceList', description: 'Change a price list of the company; generic lists are read-only.', summary: 'Change price list', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesPriceListRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Price list changed', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -82,6 +94,9 @@ final class PriceListController extends Controller
         return new TradesResource($list);
     }
 
+    /**
+     * Add a position to a price list of the company.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/price-lists/{id}/items', operationId: 'storeTradesPriceItem', description: 'Add a position to a price list of the company.', summary: 'Add price position', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesPriceItemRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 201, description: 'Position added', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -101,6 +116,10 @@ final class PriceListController extends Controller
         return (new TradesResource($item))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Import or update positions from a CSV in the neutral layout of the module. No proprietary catalogue is
+     * shipped: a licensed catalogue is exported to this layout by its licence holder.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/price-lists/{id}/import', operationId: 'importTradesPriceList', description: 'Import or update positions from a CSV in the neutral layout of the module. No proprietary catalogue is shipped: a licensed catalogue is exported to this layout by its licence holder.', summary: 'Import price positions', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/TradesImportRequest'))), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Import summary', content: new OA\JsonContent(ref: '#/components/schemas/TradesImportResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),

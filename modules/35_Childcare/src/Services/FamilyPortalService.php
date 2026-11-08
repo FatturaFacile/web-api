@@ -10,6 +10,7 @@ use App\Models\PortalAccessToken;
 use App\Services\Portal\PortalTokenService;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Modules\Childcare\Mail\FamilyAccessMail;
 use Modules\Childcare\Models\Child;
@@ -67,21 +68,31 @@ final class FamilyPortalService
         return Child::query()->whereIn('id', $childIds)->orderBy('reference_code')->get();
     }
 
+    /**
+     * Returns the child of the guardian or answers 404, so a guardian never reaches another family.
+     */
     public function childOf(Contact $contact, string $childId): Child
     {
         return $this->childrenOf($contact)->firstWhere('id', $childId) ?? abort(404);
     }
 
+    /**
+     * Signs a document of one of the guardian's children with the typed name, once.
+     */
     public function sign(Contact $contact, ChildDocument $document, string $signedName): ChildDocument
     {
         $this->childOf($contact, $document->child_id);
 
-        if ($document->status === 'signed') {
-            throw new BusinessRuleException('The document is already signed.');
-        }
+        return DB::transaction(function () use ($contact, $document, $signedName): ChildDocument {
+            $locked = ChildDocument::query()->lockForUpdate()->findOrFail($document->id);
 
-        $document->update(['status' => 'signed', 'signed_name' => $signedName, 'signed_at' => now(), 'signed_by_contact_id' => $contact->id]);
+            if ($locked->status === 'signed') {
+                throw new BusinessRuleException('The document is already signed.');
+            }
 
-        return $document;
+            $locked->update(['status' => 'signed', 'signed_name' => $signedName, 'signed_at' => now(), 'signed_by_contact_id' => $contact->id]);
+
+            return $locked;
+        });
     }
 }

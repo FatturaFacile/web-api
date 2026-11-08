@@ -17,6 +17,10 @@ final class HospitalityRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;
@@ -55,7 +59,7 @@ final class HospitalityRequest extends FormRequest
             ],
             'orders.fire' => ['course' => ['required', 'integer', 'min:1', 'max:9']],
             'orders.move' => ['table_id' => ['required', 'uuid', $this->tenantOwns('hosp_tables')]],
-            'items.void' => ['reason' => ['required', 'string', 'min:3', 'max:255']],
+            'orders.cancel', 'items.void' => ['reason' => ['required', 'string', 'min:3', 'max:255']],
             'orders.payments.store' => [
                 'pos_session_id' => ['required', 'uuid', Rule::exists('pos_sessions', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId))],
                 'mode' => ['required', 'string', 'in:items,equal'],

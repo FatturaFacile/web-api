@@ -156,38 +156,55 @@ final class PracticeService
     }
 
     /**
+     * Opens the closing of a period for a client, once per client and period, with its checklist.
+     *
      * @param  array<string, mixed>  $data
      */
     public function openClosing(array $data): PeriodClosing
     {
-        if (PeriodClosing::query()->where('client_id', $data['client_id'])->whereDate('period_start', $data['period_start'])->whereDate('period_end', $data['period_end'])->exists()) {
-            throw new BusinessRuleException('The client already has a closing for this period.');
-        }
+        return DB::transaction(function () use ($data): PeriodClosing {
+            Contact::query()->whereKey($data['client_id'])->lockForUpdate()->firstOrFail();
 
-        $closing = new PeriodClosing;
-        $closing->fill([
-            ...$data,
-            'status' => 'open',
-            'checklist' => array_map(static fn (array $item): array => ['key' => $item['key'], 'label' => $item['label'], 'done' => (bool) ($item['done'] ?? false)], $data['checklist']),
-        ]);
-        $closing->save();
+            if (PeriodClosing::query()->where('client_id', $data['client_id'])->whereDate('period_start', $data['period_start'])->whereDate('period_end', $data['period_end'])->exists()) {
+                throw new BusinessRuleException('The client already has a closing for this period.');
+            }
 
-        return $closing;
+            $closing = new PeriodClosing;
+            $closing->fill([
+                ...$data,
+                'status' => 'open',
+                'checklist' => array_map(static fn (array $item): array => ['key' => $item['key'], 'label' => $item['label'], 'done' => (bool) ($item['done'] ?? false)], $data['checklist']),
+            ]);
+            $closing->save();
+
+            return $closing;
+        });
     }
 
     /**
+     * Ticks or unticks checks of an open closing; an unknown check key is refused so a typo cannot pass unnoticed.
+     *
      * @param  list<array{key: string, done: bool}>  $items
      */
     public function updateChecklist(PeriodClosing $closing, array $items, ?string $notes): PeriodClosing
     {
-        $this->assertOpen($closing);
-        $done = collect($items)->pluck('done', 'key');
-        $closing->checklist = array_map(static fn (array $item): array => [...$item, 'done' => (bool) ($done[$item['key']] ?? $item['done'])], $closing->checklist);
-        $closing->status = 'in_review';
-        $closing->notes = $notes ?? $closing->notes;
-        $closing->save();
+        return DB::transaction(function () use ($closing, $items, $notes): PeriodClosing {
+            $locked = $this->lock($closing);
+            $this->assertOpen($locked);
+            $done = collect($items)->pluck('done', 'key');
+            $known = collect($locked->checklist)->pluck('key');
 
-        return $closing;
+            if ($done->keys()->diff($known)->isNotEmpty()) {
+                throw new BusinessRuleException('Some checks do not belong to the closing.');
+            }
+
+            $locked->checklist = array_map(static fn (array $item): array => [...$item, 'done' => (bool) ($done[$item['key']] ?? $item['done'])], $locked->checklist);
+            $locked->status = 'in_review';
+            $locked->notes = $notes ?? $locked->notes;
+            $locked->save();
+
+            return $locked;
+        });
     }
 
     /**
@@ -195,39 +212,54 @@ final class PracticeService
      */
     public function close(PeriodClosing $closing, ?string $userId, bool $allowUnbilled, ?string $reason): PeriodClosing
     {
-        $this->assertOpen($closing);
+        return DB::transaction(function () use ($closing, $userId, $allowUnbilled, $reason): PeriodClosing {
+            $locked = $this->lock($closing);
+            $this->assertOpen($locked);
 
-        if (collect($closing->checklist)->contains('done', false)) {
-            throw new BusinessRuleException('Some checks of the closing are not done.');
-        }
+            if (collect($locked->checklist)->contains('done', false)) {
+                throw new BusinessRuleException('Some checks of the closing are not done.');
+            }
 
-        $caseIds = LegalCase::query()->where('client_id', $closing->client_id)->pluck('id');
-        $unbilled = BillableActivity::query()->whereIn('legal_case_id', $caseIds)->where('is_billed', false)
-            ->whereBetween('date', [$closing->period_start->toDateString(), $closing->period_end->toDateString()])->count();
+            $caseIds = LegalCase::query()->where('client_id', $locked->client_id)->pluck('id');
+            $unbilled = BillableActivity::query()->whereIn('legal_case_id', $caseIds)->where('is_billed', false)
+                ->whereBetween('date', [$locked->period_start->toDateString(), $locked->period_end->toDateString()])->count();
 
-        if ($unbilled > 0 && ! $allowUnbilled) {
-            throw new BusinessRuleException("{$unbilled} activities of the period are not billed.");
-        }
+            if ($unbilled > 0 && ! $allowUnbilled) {
+                throw new BusinessRuleException("{$unbilled} activities of the period are not billed.");
+            }
 
-        $closing->update([
-            'status' => 'closed',
-            'closed_by' => $userId,
-            'closed_at' => now(),
-            'notes' => $unbilled > 0 ? trim(($closing->notes ?? '')."\nClosed with {$unbilled} unbilled activities: {$reason}") : $closing->notes,
-        ]);
+            $locked->update([
+                'status' => 'closed',
+                'closed_by' => $userId,
+                'closed_at' => now(),
+                'notes' => $unbilled > 0 ? trim(($locked->notes ?? '')."\nClosed with {$unbilled} unbilled activities: {$reason}") : $locked->notes,
+            ]);
 
-        return $closing;
+            return $locked;
+        });
     }
 
+    /**
+     * Reopens a closed period for correction; the checklist is kept and the status goes back to in review.
+     */
     public function reopen(PeriodClosing $closing): PeriodClosing
     {
-        if ($closing->status !== 'closed') {
-            throw new BusinessRuleException('Only a closed period is reopened.');
-        }
+        return DB::transaction(function () use ($closing): PeriodClosing {
+            $locked = $this->lock($closing);
 
-        $closing->update(['status' => 'in_review', 'closed_by' => null, 'closed_at' => null]);
+            if ($locked->status !== 'closed') {
+                throw new BusinessRuleException('Only a closed period is reopened.');
+            }
 
-        return $closing;
+            $locked->update(['status' => 'in_review', 'closed_by' => null, 'closed_at' => null]);
+
+            return $locked;
+        });
+    }
+
+    private function lock(PeriodClosing $closing): PeriodClosing
+    {
+        return PeriodClosing::query()->lockForUpdate()->findOrFail($closing->id);
     }
 
     /**

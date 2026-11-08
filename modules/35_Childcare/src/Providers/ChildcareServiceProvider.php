@@ -24,13 +24,22 @@ use Modules\Childcare\Models\SubsidyRule;
 use Modules\Childcare\Models\WeeklyPlan;
 use Modules\Childcare\Policies\ChildcarePolicy;
 
+/**
+ * Registers the childcare module: configuration, routes and the policy of its models.
+ */
 final class ChildcareServiceProvider extends ServiceProvider
 {
+    /**
+     * Merges the module configuration.
+     */
     public function register(): void
     {
         $this->mergeConfigFrom(__DIR__.'/../../config/childcare.php', 'childcare');
     }
 
+    /**
+     * Loads the module routes once the application is booted and registers the policy of every childcare model.
+     */
     public function boot(): void
     {
         $this->app->booted(function (): void {

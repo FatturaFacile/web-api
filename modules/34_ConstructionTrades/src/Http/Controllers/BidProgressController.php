@@ -22,6 +22,9 @@ final class BidProgressController extends Controller
 {
     public function __construct(private readonly TradesService $trades) {}
 
+    /**
+     * Record a measured quantity of a position of an accepted bid.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids/{id}/measurements', operationId: 'storeTradesMeasurement', description: 'Record a measured quantity of a position of an accepted bid.', summary: 'Record measurement', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesMeasurementRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 201, description: 'Measurement recorded', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -36,6 +39,9 @@ final class BidProgressController extends Controller
         return (new TradesResource($measurement))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return the settlement: measured quantities per position valued at the bid prices.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids/{id}/settlement', operationId: 'showTradesSettlement', description: 'Return the settlement: measured quantities per position valued at the bid prices.', summary: 'Show settlement', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Settlement', content: new OA\JsonContent(ref: '#/components/schemas/TradesSettlementResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -47,6 +53,9 @@ final class BidProgressController extends Controller
         return response()->json(['data' => $this->trades->settlement($this->find($id, 'view'))]);
     }
 
+    /**
+     * Approve the settlement: measurements close and the final account can be issued.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids/{id}/settlement/approve', operationId: 'approveTradesSettlement', description: 'Approve the settlement: measurements close and the final account can be issued.', summary: 'Approve settlement', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Settlement approved', content: new OA\JsonContent(ref: '#/components/schemas/TradesSettlementResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -61,6 +70,9 @@ final class BidProgressController extends Controller
         return response()->json(['data' => $this->trades->settlement($bid)]);
     }
 
+    /**
+     * Return the partial billings and the final account of a bid.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids/{id}/billings', operationId: 'listTradesBillings', description: 'Return the partial billings and the final account of a bid.', summary: 'List billings', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Billings', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordCollection')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -72,6 +84,10 @@ final class BidProgressController extends Controller
         return TradesResource::collection($this->find($id, 'view')->billings()->get());
     }
 
+    /**
+     * Issue a partial billing (percentage of the bid or measured quantities, less retention) or the final account
+     * (approved settlement less previous billings), as an invoice.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids/{id}/billings', operationId: 'storeTradesBilling', description: 'Issue a partial billing (percentage of the bid or measured quantities, less retention) or the final account (approved settlement less previous billings), as an invoice.', summary: 'Issue billing', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesBillingRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 201, description: 'Billing issued', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -86,6 +102,9 @@ final class BidProgressController extends Controller
         return (new TradesResource($billing))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return the site costs of a bid.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids/{id}/site-costs', operationId: 'listTradesSiteCosts', description: 'Return the site costs of a bid.', summary: 'List site costs', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Site costs', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordCollection')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -99,6 +118,9 @@ final class BidProgressController extends Controller
         return TradesResource::collection(SiteCost::query()->where('bid_id', $bid->id)->orderByDesc('cost_date')->paginate(100));
     }
 
+    /**
+     * Record worker hours, material or machine costs of the site.
+     */
     #[OA\Post(path: '/api/v1/construction-trades/bids/{id}/site-costs', operationId: 'storeTradesSiteCost', description: 'Record worker hours, material or machine costs of the site.', summary: 'Record site cost', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TradesSiteCostRequest')), tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 201, description: 'Cost recorded', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -111,6 +133,9 @@ final class BidProgressController extends Controller
         return (new TradesResource($this->trades->recordCost($this->find($id, 'update'), $request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Return budget, actual costs, measured progress and variance per position.
+     */
     #[OA\Get(path: '/api/v1/construction-trades/bids/{id}/budget-control', operationId: 'showTradesBudgetControl', description: 'Return budget, actual costs, measured progress and variance per position.', summary: 'Budget control', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Budget control', content: new OA\JsonContent(ref: '#/components/schemas/TradesBudgetResponse')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),

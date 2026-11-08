@@ -34,6 +34,9 @@ final class OrderItem extends HospitalityRecord
         return ['quantity' => 'decimal:4', 'unit_price' => 'decimal:4', 'tax_rate' => 'decimal:2', 'paid_quantity' => 'decimal:4', 'course' => 'integer', 'sent_at' => 'immutable_datetime'];
     }
 
+    /**
+     * Quantity still to be paid: nothing for a voided item, otherwise ordered less paid.
+     */
     public function remainingQuantity(): string
     {
         return $this->status === 'voided' ? '0' : Decimal::sub((string) $this->quantity, (string) $this->paid_quantity);

@@ -11,6 +11,10 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 final class FamilyRequest extends FormRequest
 {
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

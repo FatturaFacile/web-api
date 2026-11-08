@@ -17,6 +17,9 @@ use Modules\Childcare\Models\ReferencePerson;
  */
 final class AttendanceService
 {
+    /**
+     * Checks a child in for the day of the moment, once per day and only while enrolled.
+     */
     public function checkIn(Child $child, ?string $at, ?string $temperature, ?string $userId): Attendance
     {
         $moment = $at === null ? CarbonImmutable::now() : CarbonImmutable::parse($at);
@@ -36,49 +39,60 @@ final class AttendanceService
         });
     }
 
+    /**
+     * Checks a child out, handing it to a person authorised to pick it up; locked so a child leaves once.
+     */
     public function checkOut(Child $child, ?string $at, string $referencePersonId, ?string $userId): Attendance
     {
         $moment = $at === null ? CarbonImmutable::now() : CarbonImmutable::parse($at);
-        $attendance = Attendance::query()->where('child_id', $child->id)->whereDate('date', $moment->toDateString())->first();
 
-        if ($attendance === null || $attendance->check_in_at === null) {
-            throw new BusinessRuleException('The child is not checked in today.');
-        }
+        return DB::transaction(function () use ($child, $moment, $referencePersonId, $userId): Attendance {
+            $attendance = Attendance::query()->lockForUpdate()->where('child_id', $child->id)->whereDate('date', $moment->toDateString())->first();
 
-        if ($attendance->check_out_at !== null) {
-            throw new BusinessRuleException('The child is already checked out.');
-        }
+            if ($attendance === null || $attendance->check_in_at === null) {
+                throw new BusinessRuleException('The child is not checked in today.');
+            }
 
-        $person = ReferencePerson::query()->where('child_id', $child->id)->find($referencePersonId);
+            if ($attendance->check_out_at !== null) {
+                throw new BusinessRuleException('The child is already checked out.');
+            }
 
-        if ($person === null || ! $person->can_pick_up) {
-            throw new BusinessRuleException('This person is not authorised to pick the child up.');
-        }
+            $person = ReferencePerson::query()->where('child_id', $child->id)->find($referencePersonId);
 
-        if ($moment->lt($attendance->check_in_at)) {
-            throw new BusinessRuleException('The check-out precedes the check-in.');
-        }
+            if ($person === null || ! $person->can_pick_up) {
+                throw new BusinessRuleException('This person is not authorised to pick the child up.');
+            }
 
-        $attendance->update(['check_out_at' => $moment, 'checked_out_by' => $userId, 'picked_up_by' => $person->id]);
+            if ($moment->lt($attendance->check_in_at)) {
+                throw new BusinessRuleException('The check-out precedes the check-in.');
+            }
 
-        return $attendance;
+            $attendance->update(['check_out_at' => $moment, 'checked_out_by' => $userId, 'picked_up_by' => $person->id]);
+
+            return $attendance;
+        });
     }
 
+    /**
+     * Records the absence of a child for a day, with the reason; a checked-in child is corrected instead.
+     */
     public function markAbsent(Child $child, string $date, string $reason): Attendance
     {
         $day = CarbonImmutable::parse($date);
         $this->assertEnrolled($child, $day);
 
-        $attendance = Attendance::query()->firstOrNew(['child_id' => $child->id, 'date' => $day->toDateString()]);
+        return DB::transaction(function () use ($child, $day, $reason): Attendance {
+            $attendance = Attendance::query()->lockForUpdate()->firstOrNew(['child_id' => $child->id, 'date' => $day->toDateString()]);
 
-        if ($attendance->check_in_at !== null) {
-            throw new BusinessRuleException('A checked-in child is corrected, not marked absent.');
-        }
+            if ($attendance->check_in_at !== null) {
+                throw new BusinessRuleException('A checked-in child is corrected, not marked absent.');
+            }
 
-        $attendance->fill(['status' => 'absent', 'absence_reason' => $reason]);
-        $attendance->save();
+            $attendance->fill(['status' => 'absent', 'absence_reason' => $reason]);
+            $attendance->save();
 
-        return $attendance;
+            return $attendance;
+        });
     }
 
     /**
@@ -89,6 +103,8 @@ final class AttendanceService
     public function correct(Attendance $attendance, array $changes, string $reason, ?string $userId): Attendance
     {
         return DB::transaction(function () use ($attendance, $changes, $reason, $userId): Attendance {
+            $attendance = Attendance::query()->lockForUpdate()->findOrFail($attendance->id);
+
             foreach (array_intersect_key($changes, array_flip(Attendance::CorrectableFields)) as $field => $value) {
                 $old = $attendance->getAttribute($field);
                 $oldText = $old instanceof CarbonImmutable ? $old->toIso8601String() : ($old === null ? null : (string) $old);

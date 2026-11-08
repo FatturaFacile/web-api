@@ -16,6 +16,10 @@ final class BidOperationRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

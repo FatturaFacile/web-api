@@ -49,6 +49,9 @@ final class Child extends ChildcareRecord
         ];
     }
 
+    /**
+     * Whether the child is enrolled on the given day (between enrolment and leaving dates).
+     */
     public function isEnrolledOn(CarbonImmutable $date): bool
     {
         return $this->enrolled_on->lte($date) && ($this->left_on === null || $this->left_on->gte($date));

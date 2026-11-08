@@ -9,10 +9,17 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Workshop\Models\WorkshopFolder;
 
+/**
+ * Validates a workshop folder: vehicle, kind, currency and reception data.
+ */
 final class SaveFolderRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

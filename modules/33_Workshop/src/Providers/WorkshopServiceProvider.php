@@ -14,8 +14,14 @@ use Modules\Workshop\Models\WorkshopFolder;
 use Modules\Workshop\Models\WorkshopFolderLine;
 use Modules\Workshop\Policies\WorkshopPolicy;
 
+/**
+ * Registers the workshop module: routes and the policy of its models.
+ */
 final class WorkshopServiceProvider extends ServiceProvider
 {
+    /**
+     * Loads the module routes once the application is booted and registers the policy of every workshop model.
+     */
     public function boot(): void
     {
         $this->app->booted(function (): void {

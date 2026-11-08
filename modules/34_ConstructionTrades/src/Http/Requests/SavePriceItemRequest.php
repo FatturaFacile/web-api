@@ -7,8 +7,15 @@ namespace Modules\ConstructionTrades\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validates an item of a price list; position codes are unique within the list.
+ */
 final class SavePriceItemRequest extends FormRequest
 {
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

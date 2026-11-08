@@ -9,10 +9,17 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Workshop\Models\WorkshopFolderLine;
 
+/**
+ * Validates a labour, part or other line of a workshop folder.
+ */
 final class StoreFolderLineRequest extends FormRequest
 {
     use TenantScopedRules;
 
+    /**
+     * Always allowed here: who may call the endpoint is decided by the module.access middleware and the policy check
+     * of the controller.
+     */
     public function authorize(): bool
     {
         return true;

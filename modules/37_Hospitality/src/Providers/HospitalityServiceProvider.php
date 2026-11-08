@@ -14,8 +14,14 @@ use Modules\Hospitality\Models\OrderPayment;
 use Modules\Hospitality\Models\Room;
 use Modules\Hospitality\Policies\HospitalityPolicy;
 
+/**
+ * Registers the hospitality module: routes and the policy of its models.
+ */
 final class HospitalityServiceProvider extends ServiceProvider
 {
+    /**
+     * Loads the module routes once the application is booted and registers the policy of every hospitality model.
+     */
     public function boot(): void
     {
         $this->app->booted(function (): void {

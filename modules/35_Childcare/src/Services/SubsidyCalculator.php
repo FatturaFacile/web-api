@@ -22,6 +22,9 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
  */
 final class SubsidyCalculator
 {
+    /**
+     * Subsidy of the month from a verified rule, never above the cap or the gross fees, in decimal strings.
+     */
     public function calculate(SubsidyRule $rule, Child $child, int $attendedDays, string $grossFees): string
     {
         if (! $rule->isVerified()) {

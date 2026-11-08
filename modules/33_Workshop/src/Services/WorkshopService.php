@@ -68,52 +68,73 @@ final class WorkshopService
      */
     public function updateFolder(WorkshopFolder $folder, array $data): WorkshopFolder
     {
-        $this->assertEditable($folder);
-        $folder->update($data);
+        return DB::transaction(function () use ($folder, $data): WorkshopFolder {
+            $locked = $this->lock($folder);
+            $this->assertEditable($locked);
+            $locked->update($data);
 
-        return $folder;
+            return $locked;
+        });
     }
 
     /**
+     * Adds a line to an editable folder. The folder is locked so a line cannot slip in while it is being invoiced.
+     *
      * @param  array<string, mixed>  $data
      */
     public function addLine(WorkshopFolder $folder, array $data): WorkshopFolderLine
     {
-        $this->assertEditable($folder);
+        return DB::transaction(function () use ($folder, $data): WorkshopFolderLine {
+            $locked = $this->lock($folder);
+            $this->assertEditable($locked);
 
-        $line = new WorkshopFolderLine;
-        $line->fill([
-            ...$data,
-            'folder_id' => $folder->id,
-            'discount_percentage' => (string) ($data['discount_percentage'] ?? '0'),
-            'line_total' => $this->lineTotal((string) $data['quantity'], (string) $data['unit_price'], (string) ($data['discount_percentage'] ?? '0')),
-            'sort_order' => (int) $folder->lines()->max('sort_order') + 1,
-        ]);
-        $line->save();
+            $line = new WorkshopFolderLine;
+            $line->fill([
+                ...$data,
+                'folder_id' => $locked->id,
+                'discount_percentage' => (string) ($data['discount_percentage'] ?? '0'),
+                'line_total' => $this->lineTotal((string) $data['quantity'], (string) $data['unit_price'], (string) ($data['discount_percentage'] ?? '0')),
+                'sort_order' => (int) $locked->lines()->max('sort_order') + 1,
+            ]);
+            $line->save();
 
-        return $line;
+            return $line;
+        });
     }
 
+    /**
+     * Removes a line of an editable folder.
+     */
     public function removeLine(WorkshopFolder $folder, WorkshopFolderLine $line): void
     {
-        $this->assertEditable($folder);
+        DB::transaction(function () use ($folder, $line): void {
+            $locked = $this->lock($folder);
+            $this->assertEditable($locked);
 
-        if ($line->folder_id !== $folder->id) {
-            throw new BusinessRuleException('The line belongs to another folder.');
-        }
+            if ($line->folder_id !== $locked->id) {
+                throw new BusinessRuleException('The line belongs to another folder.');
+            }
 
-        $line->delete();
+            $line->delete();
+        });
     }
 
+    /**
+     * Moves the folder along its workflow (see WorkshopFolder::Transitions); the mileage at hand-over is kept.
+     */
     public function transition(WorkshopFolder $folder, string $target, ?int $mileageOut = null): WorkshopFolder
     {
-        if (! in_array($target, WorkshopFolder::Transitions[$folder->status] ?? [], true)) {
-            throw new BusinessRuleException("A folder cannot move from {$folder->status} to {$target}.");
-        }
+        return DB::transaction(function () use ($folder, $target, $mileageOut): WorkshopFolder {
+            $locked = $this->lock($folder);
 
-        $folder->update(array_filter(['status' => $target, 'mileage_out' => $mileageOut], static fn (mixed $value): bool => $value !== null));
+            if (! in_array($target, WorkshopFolder::Transitions[$locked->status] ?? [], true)) {
+                throw new BusinessRuleException("A folder cannot move from {$locked->status} to {$target}.");
+            }
 
-        return $folder;
+            $locked->update(array_filter(['status' => $target, 'mileage_out' => $mileageOut], static fn (mixed $value): bool => $value !== null));
+
+            return $locked;
+        });
     }
 
     /**
@@ -340,6 +361,10 @@ final class WorkshopService
         return $service->load('subscription');
     }
 
+    /**
+     * Net amount of a folder line: quantity times unit price less the percentage discount, rounded to cents with
+     * bcmath.
+     */
     public function lineTotal(string $quantity, string $unitPrice, string $discountPercentage): string
     {
         $gross = Decimal::mul($quantity, $unitPrice);
