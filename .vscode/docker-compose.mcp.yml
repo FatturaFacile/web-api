@@ -2,7 +2,7 @@ services:
   postgres-mcp:
     image: crystaldba/postgres-mcp
     environment:
-      DATABASE_URI: postgresql://${DB_USERNAME:-erp_user}:${DB_PASSWORD:-SecretStrongPassword2026}@postgres:5432/${DB_DATABASE:-erp_db}
+      DATABASE_URI: postgresql://${DB_USERNAME:-erp_user}:${DB_PASSWORD:?DB_PASSWORD must be set}@postgres:5432/${DB_DATABASE:-erp_db}
     command: ["--access-mode=restricted"]
     depends_on:
       postgres:

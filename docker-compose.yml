@@ -88,7 +88,7 @@ services:
     environment:
       POSTGRES_DB: ${DB_DATABASE:-erp_db}
       POSTGRES_USER: ${DB_USERNAME:-erp_user}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecretStrongPassword2026}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD must be set}
     volumes:
       - pg_data:/var/lib/postgresql/data
     healthcheck:
@@ -103,11 +103,11 @@ services:
     image: redis:7-alpine
     container_name: erp_redis
     restart: always
-    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-RedisStrongPass2026}
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD must be set}
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-RedisStrongPass2026}", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?REDIS_PASSWORD must be set}", "ping"]
       interval: 5s
       timeout: 5s
       retries: 5

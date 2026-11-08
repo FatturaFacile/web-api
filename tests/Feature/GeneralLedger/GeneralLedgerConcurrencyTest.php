@@ -130,7 +130,8 @@ test('pessimistic lock on period close prevents race conditions', function () {
 test('postings read their fiscal period FOR SHARE, so they wait for a closing in progress and then see it closed', function () {
     $periodReads = [];
     DB::listen(function (QueryExecuted $query) use (&$periodReads): void {
-        if (str_contains($query->sql, 'from "fiscal_periods"')) {
+        // The journal number sequence also looks up the fiscal year of the period (a plain read, no lock to wait for): skip it
+        if (str_contains($query->sql, 'from "fiscal_periods"') && ! str_starts_with($query->sql, 'select "fiscal_year_id"')) {
             $periodReads[] = $query->sql;
         }
     });
