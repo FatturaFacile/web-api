@@ -7,136 +7,119 @@ namespace Modules\Projects\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\Projects\Actions\ExecuteChangeOrderAction;
 use Modules\Projects\Contracts\ProjectChangeOrderServiceInterface;
 use Modules\Projects\DTOs\ChangeOrderDTO;
+use Modules\Projects\Http\Controllers\Concerns\PaginatesProjectRecords;
+use Modules\Projects\Http\Requests\RejectionRequest;
 use Modules\Projects\Http\Requests\StoreChangeOrderRequest;
 use Modules\Projects\Http\Resources\ProjectChangeOrderResource;
 use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectChangeOrder;
+use Modules\Projects\Support\Money;
 use OpenApi\Attributes as OA;
 
+/**
+ * Change orders of a project: registration, approval (applied to contract value, budget and schedule) and rejection.
+ */
 final class ProjectChangeOrderController extends Controller
 {
-    public function __construct(
-        private readonly ProjectChangeOrderServiceInterface $changeOrderService
-    ) {}
+    use PaginatesProjectRecords;
+
+    public function __construct(private readonly ProjectChangeOrderServiceInterface $changeOrderService) {}
 
     /**
-     * Returns the paginated list of projects of the active tenant.
+     * Change orders of the project, optionally by status.
      */
-    #[OA\Get(
-        path: '/api/v1/projects/{id}/change-orders',
-        operationId: 'listProjectsChangeOrders',
-        description: 'Returns the paginated list of projects of the active tenant. Results can be narrowed with the query parameters.',
-        summary: 'List projects',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Projects'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
-            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 15)),
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
-        ],
+    #[OA\Get(path: '/api/v1/projects/{id}/change-orders', operationId: 'projectsChangeOrdersList', summary: 'List project change orders', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId'), new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(ref: '#/components/parameters/ProjectsPerPage'), new OA\Parameter(ref: '#/components/parameters/ProjectsPage')],
         responses: [
-            new OA\Response(response: 200, description: 'List of projects', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsProjectChangeOrderResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function index(string $projectId, Request $request): JsonResponse
+            new OA\Response(response: 200, description: 'Change orders', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsChangeOrder')), new OA\Property(property: 'meta', ref: '#/components/schemas/ProjectsPaginationMeta')])),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+        ])]
+    public function index(string $id, Request $request): JsonResponse
     {
-        $project = Project::findOrFail($projectId);
+        $project = Project::findOrFail($id);
+        $orders = ProjectChangeOrder::query()
+            ->where('project_id', $project->id)
+            ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
+            ->with('lines')
+            ->orderByDesc('created_at')
+            ->paginate($this->perPage($request, 15));
 
-        $query = ProjectChangeOrder::where('project_id', $project->id)
-            ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
-            ->orderBy('created_at', 'desc');
-
-        $orders = $query->paginate((int) $request->query('per_page', 15));
-
-        return response()->json([
-            'data' => ProjectChangeOrderResource::collection($orders),
-            'meta' => [
-                'current_page' => $orders->currentPage(),
-                'last_page' => $orders->lastPage(),
-                'total' => $orders->total(),
-            ],
-        ]);
+        return $this->paginated($orders, ProjectChangeOrderResource::class);
     }
 
     /**
-     * Creates a new project in the active tenant.
+     * Registers a change order (submitted, or pending the workflow when configured).
      */
-    #[OA\Post(
-        path: '/api/v1/projects/{id}/change-orders',
-        operationId: 'createProjectsChangeOrder',
-        description: 'Creates a new project in the active tenant.',
-        summary: 'Create project',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Projects'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+    #[OA\Post(path: '/api/v1/projects/{id}/change-orders', operationId: 'projectsChangeOrdersCreate', summary: 'Create project change order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId')],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsStoreChangeOrderRequest')),
         responses: [
-            new OA\Response(response: 201, description: 'Project created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectChangeOrderResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
-    )]
-    public function store(string $projectId, StoreChangeOrderRequest $request): JsonResponse
+            new OA\Response(response: 201, description: 'Change order registered', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsChangeOrder')])),
+            new OA\Response(response: 403, ref: '#/components/responses/ProjectsForbidden'),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+            new OA\Response(response: 409, ref: '#/components/responses/ProjectsConflict'),
+            new OA\Response(response: 422, ref: '#/components/responses/ProjectsValidationError'),
+        ])]
+    public function store(string $id, StoreChangeOrderRequest $request): JsonResponse
     {
-        $project = Project::findOrFail($projectId);
+        $project = Project::findOrFail($id);
+        $this->authorize('manage', $project);
+        $data = $request->validated();
 
-        $dto = new ChangeOrderDTO(
+        $changeOrder = $this->changeOrderService->createChangeOrder(new ChangeOrderDTO(
             projectId: $project->id,
-            orderNumber: $request->validated('order_number'),
-            title: $request->validated('title'),
-            scopeDescription: $request->validated('scope_description'),
-            costImpactAmount: (float) $request->validated('cost_impact_amount'),
-            revenueImpactAmount: (float) ($request->validated('revenue_impact_amount') ?? 0.0),
-            scheduleImpactDays: (int) ($request->validated('schedule_impact_days') ?? 0),
-            lines: $request->validated('lines', []),
-            userId: (string) auth()->id()
-        );
+            orderNumber: $data['order_number'],
+            title: $data['title'],
+            scopeDescription: $data['scope_description'],
+            costImpactAmount: Money::of($data['cost_impact_amount']),
+            revenueImpactAmount: Money::of($data['revenue_impact_amount'] ?? 0),
+            scheduleImpactDays: (int) ($data['schedule_impact_days'] ?? 0),
+            lines: $data['lines'] ?? [],
+            userId: (string) $request->user()?->getKey(),
+        ));
 
-        $changeOrder = $this->changeOrderService->createChangeOrder($dto);
-
-        return response()->json([
-            'message' => 'Project change order created successfully',
-            'data' => new ProjectChangeOrderResource($changeOrder->load('lines')),
-        ], 201);
+        return response()->json(['message' => 'Change order registered', 'data' => new ProjectChangeOrderResource($changeOrder)], 201);
     }
 
     /**
-     * Approves a change order and updates the project baseline.
+     * Approves the change order and applies it.
      */
-    #[OA\Post(
-        path: '/api/v1/projects/change-orders/{orderId}/approve',
-        operationId: 'approveProjectsChangeOrder',
-        description: 'Approves a change order and updates the project baseline.',
-        summary: 'Approve project change order',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Projects'],
-        parameters: [
-            new OA\Parameter(name: 'orderId', in: 'path', required: true, description: 'Identifier of the order', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+    #[OA\Post(path: '/api/v1/projects/change-orders/{orderId}/approve', operationId: 'projectsChangeOrdersApprove', summary: 'Approve project change order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsChangeOrderId')],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectChangeOrderResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function approve(string $id, ExecuteChangeOrderAction $action): JsonResponse
+            new OA\Response(response: 200, description: 'Change order approved and applied', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsChangeOrder')])),
+            new OA\Response(response: 403, ref: '#/components/responses/ProjectsForbidden'),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+            new OA\Response(response: 409, ref: '#/components/responses/ProjectsConflict'),
+        ])]
+    public function approve(string $orderId, Request $request): JsonResponse
     {
-        $changeOrder = ProjectChangeOrder::findOrFail($id);
+        $order = ProjectChangeOrder::findOrFail($orderId);
+        $this->authorize('approve', $order);
 
-        $approvedOrder = $action->execute($changeOrder, (string) auth()->id());
+        return response()->json(['message' => 'Change order approved and applied', 'data' => new ProjectChangeOrderResource($this->changeOrderService->approveChangeOrder($order, (string) $request->user()?->getKey())->load('lines'))]);
+    }
 
-        return response()->json([
-            'message' => 'Project change order approved and baseline updated',
-            'data' => new ProjectChangeOrderResource($approvedOrder),
-        ]);
+    /**
+     * Rejects the change order; nothing is applied.
+     */
+    #[OA\Post(path: '/api/v1/projects/change-orders/{orderId}/reject', operationId: 'projectsChangeOrdersReject', summary: 'Reject project change order', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsChangeOrderId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsRejectionRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Change order rejected', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsChangeOrder')])),
+            new OA\Response(response: 403, ref: '#/components/responses/ProjectsForbidden'),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+            new OA\Response(response: 409, ref: '#/components/responses/ProjectsConflict'),
+            new OA\Response(response: 422, ref: '#/components/responses/ProjectsValidationError'),
+        ])]
+    public function reject(string $orderId, RejectionRequest $request): JsonResponse
+    {
+        $order = ProjectChangeOrder::findOrFail($orderId);
+        $this->authorize('reject', $order);
+
+        return response()->json(['message' => 'Change order rejected', 'data' => new ProjectChangeOrderResource($this->changeOrderService->rejectChangeOrder($order, (string) $request->user()?->getKey(), (string) $request->validated('reason')))]);
     }
 }

@@ -7,6 +7,9 @@ namespace Modules\Projects\Actions;
 use Modules\Projects\Contracts\ProjectTimesheetServiceInterface;
 use Modules\Projects\Models\ProjectTimesheet;
 
+/**
+ * Approves a submitted timesheet, locking it and booking its labour cost on the project.
+ */
 final readonly class ApproveProjectTimesheetAction
 {
     public function __construct(

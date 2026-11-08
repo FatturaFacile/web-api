@@ -8,41 +8,39 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Modules\Projects\Contracts\ProjectForecastServiceInterface;
 use Modules\Projects\Models\Project;
+use Modules\Projects\Services\ProjectProfitabilityService;
 use OpenApi\Attributes as OA;
 
+/**
+ * Read-only reports of a project: forecast to completion and profitability.
+ */
 final class ProjectForecastController extends Controller
 {
-    public function __construct(
-        private readonly ProjectForecastServiceInterface $forecastService
-    ) {}
+    /**
+     * Forecast to completion: EVM estimate, remaining budget by category, expected billing and outflows.
+     */
+    #[OA\Get(path: '/api/v1/projects/{id}/forecast', operationId: 'projectsForecast', summary: 'Project forecast', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Forecast', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsForecast')])),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+        ])]
+    public function show(string $id, ProjectForecastServiceInterface $forecasts): JsonResponse
+    {
+        return response()->json(['data' => $forecasts->generateProjectForecast(Project::findOrFail($id))]);
+    }
 
     /**
-     * Returns a single project of the active tenant.
+     * Profitability: revenue billed and recognised, cost by category, commitments, margin, forecast and hours.
      */
-    #[OA\Get(
-        path: '/api/v1/projects/{id}/forecast',
-        operationId: 'getProjectsForecast',
-        description: 'Returns a single project of the active tenant.',
-        summary: 'Get project',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Projects'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+    #[OA\Get(path: '/api/v1/projects/{id}/profitability', operationId: 'projectsProfitability', summary: 'Project profitability report', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId')],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'project_id', type: 'string'), new OA\Property(property: 'project_number', type: 'string'), new OA\Property(property: 'bac', type: 'number'), new OA\Property(property: 'ac', type: 'number'), new OA\Property(property: 'cpi', type: 'number'), new OA\Property(property: 'spi', type: 'number'), new OA\Property(property: 'eac', type: 'number'), new OA\Property(property: 'etc', type: 'number'), new OA\Property(property: 'vac', type: 'number'), new OA\Property(property: 'projected_margin_amount', type: 'number'), new OA\Property(property: 'projected_margin_percentage', type: 'number'), new OA\Property(property: 'cash_inflows', type: 'array', items: new OA\Items(type: 'object', properties: [new OA\Property(property: 'milestone_name', type: 'string'), new OA\Property(property: 'date', type: 'string'), new OA\Property(property: 'amount', type: 'number')])), new OA\Property(property: 'cash_outflows', type: 'array', items: new OA\Items(type: 'object', properties: [new OA\Property(property: 'category', type: 'string'), new OA\Property(property: 'date', type: 'string'), new OA\Property(property: 'amount', type: 'number')])), new OA\Property(property: 'net_cash_flow', type: 'number')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function show(string $projectId): JsonResponse
+            new OA\Response(response: 200, description: 'Profitability', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProfitability')])),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+        ])]
+    public function profitability(string $id, ProjectProfitabilityService $profitability): JsonResponse
     {
-        $project = Project::with(['financialSummary', 'milestones', 'phases'])->findOrFail($projectId);
-
-        $forecast = $this->forecastService->generateProjectForecast($project);
-
-        return response()->json([
-            'data' => $forecast,
-        ]);
+        return response()->json(['data' => $profitability->report(Project::findOrFail($id))]);
     }
 }

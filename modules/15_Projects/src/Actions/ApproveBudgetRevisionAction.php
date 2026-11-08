@@ -7,6 +7,9 @@ namespace Modules\Projects\Actions;
 use Modules\Projects\Contracts\ProjectBudgetServiceInterface;
 use Modules\Projects\Models\ProjectBudget;
 
+/**
+ * Approves a budget revision and freezes its baseline.
+ */
 final readonly class ApproveBudgetRevisionAction
 {
     public function __construct(
@@ -15,6 +18,6 @@ final readonly class ApproveBudgetRevisionAction
 
     public function execute(ProjectBudget $budget, string $approvedBy): ProjectBudget
     {
-        return $this->budgetService->baselineBudget($budget, $approvedBy);
+        return $this->budgetService->approveBudget($budget, $approvedBy);
     }
 }

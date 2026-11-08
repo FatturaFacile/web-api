@@ -7,13 +7,21 @@ namespace Modules\Projects\Events;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Illuminate\Support\Str;
 
+/**
+ * An approved cost of a project whose revenue is recognised over time or at completion: the General Ledger capitalises
+ * it into contract work in progress (debit WIP, credit the capitalised cost offset), so the cost by nature already
+ * booked by its source document does not hit the result before the related revenue is recognised.
+ */
 final readonly class ProjectCostReadyEvent implements DomainEventInterface
 {
+    /**
+     * @param  string  $totalCost  decimal string with two decimals
+     */
     public function __construct(
         public string $costEntryId,
         public string $projectId,
         public string $costCategory,
-        public float $totalCost,
+        public string $totalCost,
         public string $debitAccountCode,
         public string $creditAccountCode,
         public string $incurredDate,
@@ -30,12 +38,12 @@ final readonly class ProjectCostReadyEvent implements DomainEventInterface
 
     public function getAggregateType(): string
     {
-        return 'project_cost_entry';
+        return 'project';
     }
 
     public function getAggregateId(): string
     {
-        return $this->costEntryId;
+        return $this->projectId;
     }
 
     public function getEventName(): string

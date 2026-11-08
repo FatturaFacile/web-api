@@ -17,7 +17,9 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Inventory\Events\ProjectMaterialConsumptionEvent;
-use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
+use Modules\Procurement\Events\GoodsReceivedEvent;
+use Modules\Procurement\Models\PurchaseOrder;
+use Modules\Procurement\Models\PurchaseOrderLine;
 use Modules\Projects\Events\ProjectCostReadyEvent;
 use Modules\Projects\Events\ProjectCreatedEvent;
 use Modules\Projects\Events\ProjectRevenueReadyEvent;
@@ -27,6 +29,7 @@ use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectCostEntry;
 use Modules\Projects\Models\ProjectFinancialSummary;
 use Modules\Projects\Models\ProjectTask;
+use Modules\Projects\Services\ProjectCommitmentService;
 
 uses(DatabaseTransactions::class);
 
@@ -163,7 +166,7 @@ test('inventory integration listener records material direct cost on consumption
 
     $costEntry = ProjectCostEntry::where('project_id', $this->project->id)
         ->where('cost_category', 'material')
-        ->where('cost_source_id', $event->getAggregateId())
+        ->where('cost_source_type', 'StockMovement')
         ->first();
 
     expect($costEntry)->not->toBeNull()
@@ -175,23 +178,30 @@ test('inventory integration listener records material direct cost on consumption
         ->and((float) $this->summary->actual_material_cost)->toBe(6000.00);
 });
 
-test('procurement integration listener updates committed PO encumbrance on approval', function (): void {
-    $listener = app(ProcurementIntegrationListener::class);
+test('open purchase orders of the project are commitments and goods receipts become supplier cost', function (): void {
+    $order = PurchaseOrder::factory()->create(['tenant_id' => $this->tenant->id, 'status' => 'approved']);
+    $order->forceFill(['project_id' => $this->project->id])->save();
+    $line = PurchaseOrderLine::factory()->create(['tenant_id' => $this->tenant->id, 'purchase_order_id' => $order->id, 'quantity_ordered' => 10, 'quantity_received' => 0, 'unit_price' => 100]);
 
-    $event = new PurchaseOrderApprovedEvent(
-        purchaseOrderId: (string) Str::uuid7(),
-        poNumber: 'PO-SUB-2027-01',
-        supplierId: (string) Str::uuid7(),
-        totalAmount: 45000.00,
+    expect(app(ProjectCommitmentService::class)->openCommitments($this->project))->toBe('1000.00');
+
+    $receiptId = (string) Str::uuid7();
+    app(ProcurementIntegrationListener::class)->handleGoodsReceived(new GoodsReceivedEvent(
+        receiptId: $receiptId,
+        receiptNumber: 'GR-0001',
+        purchaseOrderId: $order->id,
+        supplierDeliveryNoteRef: 'DDT 15',
+        receivedLines: [['purchase_order_line_id' => $line->id, 'quantity_received' => 4.0, 'quantity_accepted' => 4.0]],
         tenantId: $this->tenant->id,
-        companyId: $this->tenant->id,
-        projectId: $this->project->id
-    );
+        companyId: $this->tenant->id
+    ));
+    $line->update(['quantity_received' => 4]);
 
-    $listener->handlePurchaseOrderApproved($event);
-
-    $this->summary->refresh();
-    expect((float) $this->summary->committed_po_cost)->toBe(45000.00);
+    $entry = ProjectCostEntry::where('project_id', $this->project->id)->where('cost_source_id', $receiptId)->first();
+    expect($entry)->not->toBeNull()
+        ->and($entry->cost_category)->toBe('supplier')
+        ->and($entry->total_cost)->toBe('400.00')
+        ->and(app(ProjectCommitmentService::class)->openCommitments($this->project))->toBe('600.00');
 });
 
 test('accounting readiness events are properly constructed and emitted', function (): void {
@@ -204,9 +214,9 @@ test('accounting readiness events are properly constructed and emitted', functio
         costEntryId: (string) Str::uuid7(),
         projectId: $this->project->id,
         costCategory: 'material',
-        totalCost: 8500.00,
-        debitAccountCode: '3100',
-        creditAccountCode: '1400',
+        totalCost: '8500.00',
+        debitAccountCode: '1250',
+        creditAccountCode: '5900',
         incurredDate: now()->toDateString(),
         tenantId: $this->tenant->id,
         companyId: $this->tenant->id

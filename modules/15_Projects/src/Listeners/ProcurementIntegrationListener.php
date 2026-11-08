@@ -4,96 +4,71 @@ declare(strict_types=1);
 
 namespace Modules\Projects\Listeners;
 
+use App\Models\Tenant;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Modules\Procurement\Events\GoodsReceivedEvent;
-use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
-use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
+use Modules\Procurement\Models\PurchaseOrder;
+use Modules\Procurement\Models\PurchaseOrderLine;
 use Modules\Projects\Contracts\JobCostingAccumulationServiceInterface;
 use Modules\Projects\DTOs\RecordJobCostDTO;
 use Modules\Projects\Models\Project;
-use Modules\Projects\Models\ProjectFinancialSummary;
+use Modules\Projects\Support\Money;
 
+/**
+ * Turns goods received on a purchase order charged to a project into actual supplier cost of that project, valued at
+ * the order price of the accepted quantities. The open part of the order stays a commitment
+ * (ProjectCommitmentService); the supplier invoice is not booked again, so receipt and invoice never count twice.
+ */
 final readonly class ProcurementIntegrationListener implements ShouldQueueAfterCommit
 {
     public function __construct(
-        private JobCostingAccumulationServiceInterface $costingService
+        private JobCostingAccumulationServiceInterface $costingService,
+        private TenantContext $tenantContext,
     ) {}
-
-    public function handlePurchaseOrderApproved(PurchaseOrderApprovedEvent $event): void
-    {
-        // If PO has project association in payload or context
-        $projectId = $event->projectId ?? null;
-        if (! $projectId) {
-            return;
-        }
-
-        $project = Project::find($projectId);
-        if (! $project) {
-            return;
-        }
-
-        // Increment committed PO cost on financial summary
-        $summary = ProjectFinancialSummary::firstOrCreate(
-            ['project_id' => $project->id],
-            [
-                'tenant_id' => $project->tenant_id,
-                'company_id' => $project->company_id,
-                'total_contract_revenue' => $project->contract_value,
-            ]
-        );
-
-        $summary->increment('committed_po_cost', (float) $event->totalAmount);
-    }
 
     public function handleGoodsReceived(GoodsReceivedEvent $event): void
     {
-        $projectId = $event->projectId ?? null;
-        if (! $projectId) {
+        $tenant = Tenant::query()->find($event->tenantId);
+
+        if ($tenant === null) {
             return;
         }
 
-        $project = Project::find($projectId);
-        if (! $project) {
-            return;
-        }
+        $this->tenantContext->runWithTenant($tenant, function () use ($event): void {
+            $order = PurchaseOrder::query()->find($event->purchaseOrderId);
+            $projectId = $order?->getAttribute('project_id');
 
-        $this->costingService->recordCost(new RecordJobCostDTO(
-            projectId: $projectId,
-            costCategory: 'supplier',
-            costSourceType: 'PurchaseReceipt',
-            costSourceId: $event->receiptId,
-            quantity: 1.0,
-            unitCost: (float) ($event->receivedAmount ?? 0.0),
-            totalCost: (float) ($event->receivedAmount ?? 0.0),
-            incurredDate: now()->toDateString(),
-            uom: 'EA',
-            isBillable: true
-        ));
-    }
+            if ($projectId === null || ! Project::query()->whereKey($projectId)->exists()) {
+                return;
+            }
 
-    public function handlePurchaseLiability(PurchaseLiabilityReadyEvent $event): void
-    {
-        $projectId = $event->projectId ?? null;
-        if (! $projectId) {
-            return;
-        }
+            $prices = PurchaseOrderLine::query()
+                ->whereIn('id', array_column($event->receivedLines, 'purchase_order_line_id'))
+                ->pluck('unit_price', 'id');
+            $value = Money::of(0);
 
-        $project = Project::find($projectId);
-        if (! $project) {
-            return;
-        }
+            foreach ($event->receivedLines as $line) {
+                $value = Money::add($value, Money::mul((string) $line['quantity_accepted'], (string) ($prices[$line['purchase_order_line_id']] ?? '0')));
+            }
 
-        $this->costingService->recordCost(new RecordJobCostDTO(
-            projectId: $projectId,
-            costCategory: 'supplier',
-            costSourceType: 'PurchaseLiability',
-            costSourceId: $event->liabilityId,
-            quantity: 1.0,
-            unitCost: (float) $event->totalAmount,
-            totalCost: (float) $event->totalAmount,
-            incurredDate: now()->toDateString(),
-            uom: 'EA',
-            isBillable: true
-        ));
+            if (! Money::isPositive($value)) {
+                return;
+            }
+
+            $this->costingService->recordCost(new RecordJobCostDTO(
+                projectId: (string) $projectId,
+                costCategory: 'supplier',
+                costSourceType: 'PurchaseReceipt',
+                costSourceId: $event->receiptId,
+                quantity: '1',
+                unitCost: Money::amount($value),
+                totalCost: Money::amount($value),
+                incurredDate: now()->toDateString(),
+                uom: 'EA',
+                isBillable: true,
+                description: "Goods receipt {$event->receiptNumber}",
+            ));
+        });
     }
 }

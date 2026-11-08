@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Projects\Services;
 
-use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -15,112 +14,126 @@ use Modules\Projects\Events\ProjectExpenseApprovedEvent;
 use Modules\Projects\Events\ProjectExpensePostingReadyEvent;
 use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectCostEntry;
-use Modules\Workflow\Contracts\WorkflowEngineInterface;
-use Modules\Workflow\DTOs\StartWorkflowDTO;
+use Modules\Projects\Support\Money;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
+/**
+ * Out-of-pocket project expenses (travel, permits, rentals...). An expense is recorded as a pending cost entry and
+ * counts in the project cost only once approved by a manager, or by the PROJECT_EXPENSE_APPROVAL workflow when the
+ * company configured it. On approval the General Ledger books the cost by nature against the reimbursement payable.
+ */
 final readonly class ProjectExpenseService implements ProjectExpenseServiceInterface
 {
+    /** Ledger accounts of the by-nature posting of an approved expense. */
+    public const string ExpenseAccountCode = '5200';
+
+    public const string ReimbursementPayableAccountCode = '2100';
+
+    /** Expense types that are not plain expenses in the cost categories of the budget. */
+    private const array CategoryOfType = ['subcontractor' => 'supplier', 'equipment' => 'equipment'];
+
     public function __construct(
         private JobCostingAccumulationServiceInterface $costingService,
         private EventDispatcher $dispatcher,
-        private AuditLedgerInterface $auditLedger,
-        private WorkflowEngineInterface $workflowEngine
+        private ProjectApprovalRouter $approvals,
     ) {}
 
+    /**
+     * @param  array{project_id: string, expense_category: string, description: string, amount: string|int|float, incurred_date: string, phase_id?: string|null, task_id?: string|null, receipt_document_id?: string|null, is_billable?: bool|null, userId: string}  $data
+     */
     public function recordExpense(array $data): ProjectCostEntry
     {
         return DB::transaction(function () use ($data): ProjectCostEntry {
-            /** @var Project $project */
-            $project = Project::findOrFail($data['project_id']);
+            $project = Project::query()->whereKey($data['project_id'])->firstOrFail();
+            $amount = Money::amount($data['amount']);
+            $type = $data['expense_category'];
 
-            $amount = (float) $data['amount'];
-            $costCategory = $data['expense_category'] ?? 'expense';
-            $requiresApproval = $amount > 500.00;
-
-            $costDto = new RecordJobCostDTO(
-                projectId: $project->id,
-                costCategory: $costCategory,
+            $entry = $this->costingService->recordCost(new RecordJobCostDTO(
+                projectId: (string) $project->id,
+                costCategory: self::CategoryOfType[$type] ?? 'expense',
                 costSourceType: 'project_expense',
                 costSourceId: $data['receipt_document_id'] ?? (string) Str::uuid7(),
-                quantity: 1.0,
+                quantity: '1',
                 unitCost: $amount,
                 totalCost: $amount,
-                incurredDate: $data['incurred_date'] ?? now()->toDateString(),
+                incurredDate: $data['incurred_date'],
                 phaseId: $data['phase_id'] ?? null,
                 taskId: $data['task_id'] ?? null,
                 uom: 'PCE',
                 isBillable: (bool) ($data['is_billable'] ?? true),
-                userId: $data['userId'] ?? (string) auth()->id(),
-                companyId: (string) ($project->company_id ?? $project->tenant_id)
+                userId: $data['userId'],
+                companyId: (string) ($project->company_id ?? $project->tenant_id),
+                description: "[{$type}] {$data['description']}",
+                approvalStatus: 'pending',
+            ));
+
+            $this->approvals->routeIfConfigured(
+                ProjectApprovalRouter::ExpenseWorkflow,
+                $entry,
+                ['cost_entry_id' => $entry->id, 'project_id' => $project->id, 'amount' => $amount, 'category' => $type, 'description' => $data['description']],
+                (string) $project->tenant_id,
+                $project->company_id,
+                $data['userId']
             );
 
-            $costEntry = $this->costingService->recordCost($costDto);
-
-            if ($requiresApproval) {
-                try {
-                    $this->workflowEngine->start(new StartWorkflowDTO(
-                        workflowCode: 'PROJECT_EXPENSE_APPROVAL',
-                        approvable: $costEntry,
-                        contextSnapshot: [
-                            'cost_entry_id' => $costEntry->id,
-                            'project_id' => $project->id,
-                            'amount' => $amount,
-                            'category' => $costCategory,
-                            'description' => $data['description'] ?? '',
-                        ],
-                        tenantId: (string) $project->tenant_id,
-                        companyId: (string) ($project->company_id ?? $project->tenant_id),
-                        initiatorUserId: $data['userId'] ?? (string) auth()->id()
-                    ));
-                } catch (\Throwable $e) {
-                    logger()->warning('Workflow engine could not start PROJECT_EXPENSE_APPROVAL: '.$e->getMessage());
-                }
-            }
-
-            return $costEntry;
+            return $entry;
         });
     }
 
+    /**
+     * Approves a pending expense: it enters the project cost and the ledger.
+     *
+     * @throws ConflictHttpException when the entry is not a pending expense
+     */
     public function approveExpense(ProjectCostEntry $costEntry, string $approverUserId): ProjectCostEntry
     {
         return DB::transaction(function () use ($costEntry, $approverUserId): ProjectCostEntry {
-            $costEntry->loadMissing('project');
-            $project = $costEntry->project;
+            $this->assertExpense($costEntry);
+            $approved = $this->costingService->approveEntry($costEntry, $approverUserId);
+            $project = Project::query()->whereKey($approved->project_id)->firstOrFail();
+            $companyId = (string) ($project->company_id ?? $project->tenant_id);
 
-            // Audit recording
-            $this->auditLedger->record(
-                action: 'EXPENSE_APPROVED',
-                model: $costEntry,
-                payloadBefore: ['status' => 'pending'],
-                payloadAfter: ['status' => 'approved', 'approved_by' => $approverUserId],
-                moduleCode: 'projects'
-            );
-
-            // Dispatch domain event
             $this->dispatcher->publishAndDispatch(new ProjectExpenseApprovedEvent(
-                expenseId: (string) $costEntry->id,
+                costEntryId: (string) $approved->id,
                 projectId: (string) $project->id,
-                expenseCategory: (string) $costEntry->cost_category,
-                amount: (float) $costEntry->total_cost,
-                approvedBy: $approverUserId,
+                expenseCategory: (string) $approved->cost_category,
+                totalCost: (float) $approved->total_cost,
+                isBillable: (bool) $approved->is_billable,
+                incurredDate: $approved->incurred_date->toDateString(),
                 tenantId: (string) $project->tenant_id,
-                companyId: (string) ($project->company_id ?? $project->tenant_id)
+                companyId: $companyId
             ));
 
-            // Accounting readiness event
             $this->dispatcher->publishAndDispatch(new ProjectExpensePostingReadyEvent(
-                costEntryId: (string) $costEntry->id,
+                costEntryId: (string) $approved->id,
                 projectId: (string) $project->id,
-                expenseCategory: (string) $costEntry->cost_category,
-                amount: (float) $costEntry->total_cost,
-                debitAccountCode: '5200',
-                creditAccountCode: '2100',
-                incurredDate: $costEntry->incurred_date?->toDateString() ?? now()->toDateString(),
+                expenseCategory: (string) $approved->cost_category,
+                amount: Money::amount($approved->total_cost),
+                debitAccountCode: self::ExpenseAccountCode,
+                creditAccountCode: self::ReimbursementPayableAccountCode,
+                incurredDate: $approved->incurred_date->toDateString(),
                 tenantId: (string) $project->tenant_id,
-                companyId: (string) ($project->company_id ?? $project->tenant_id)
+                companyId: $companyId
             ));
 
-            return $costEntry;
+            return $approved;
         });
+    }
+
+    /**
+     * Rejects a pending expense; it never counts in the project cost.
+     */
+    public function rejectExpense(ProjectCostEntry $costEntry, string $approverUserId, string $reason): ProjectCostEntry
+    {
+        $this->assertExpense($costEntry);
+
+        return $this->costingService->rejectEntry($costEntry, $approverUserId, $reason);
+    }
+
+    private function assertExpense(ProjectCostEntry $costEntry): void
+    {
+        if ($costEntry->cost_source_type !== 'project_expense') {
+            throw new ConflictHttpException('This cost entry is not a project expense.');
+        }
     }
 }

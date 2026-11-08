@@ -11,8 +11,6 @@ use Modules\Inventory\Events\ProjectInventoryIssueEvent;
 use Modules\Inventory\Events\ProjectInventoryReservationEvent;
 use Modules\Inventory\Events\ProjectMaterialConsumptionEvent;
 use Modules\Procurement\Events\GoodsReceivedEvent;
-use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
-use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Projects\Contracts\EarnedValueCalculationServiceInterface;
 use Modules\Projects\Contracts\JobCostingAccumulationServiceInterface;
 use Modules\Projects\Contracts\ProjectBudgetServiceInterface;
@@ -77,6 +75,10 @@ use Modules\Projects\Services\ProjectTimesheetService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
+/**
+ * Wires the Projects module (commesse): service bindings, policies, the outbox relay of its domain events, the
+ * listeners on Inventory, Procurement and Workflow events, and its API routes.
+ */
 final class ProjectsServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -154,9 +156,9 @@ final class ProjectsServiceProvider extends ServiceProvider
         Event::listen(ProjectInventoryReservationEvent::class, [InventoryIntegrationListener::class, 'handleInventoryReservation']);
 
         // Cross-Module Procurement Integrations
-        Event::listen(PurchaseOrderApprovedEvent::class, [ProcurementIntegrationListener::class, 'handlePurchaseOrderApproved']);
+        // Goods receipts become actual cost; open purchase orders are read live as commitments
+        // (ProjectCommitmentService) and supplier invoices are not booked again.
         Event::listen(GoodsReceivedEvent::class, [ProcurementIntegrationListener::class, 'handleGoodsReceived']);
-        Event::listen(PurchaseLiabilityReadyEvent::class, [ProcurementIntegrationListener::class, 'handlePurchaseLiability']);
 
         // Cross-Module Workflow Approvals
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalProjectListener::class, 'handleCompleted']);

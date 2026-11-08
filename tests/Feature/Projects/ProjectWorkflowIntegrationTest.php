@@ -25,6 +25,8 @@ use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Models\WorkflowDefinition;
 use Modules\Workflow\Models\WorkflowInstance;
+use Modules\Workflow\Models\WorkflowNode;
+use Modules\Workflow\Models\WorkflowTransition;
 
 uses(DatabaseTransactions::class);
 
@@ -100,22 +102,22 @@ beforeEach(function (): void {
     ]);
 });
 
-test('high value budget over 10k triggers workflow engine and enters pending approval', function (): void {
-    $budgetService = app(ProjectBudgetServiceInterface::class);
+test('a configured budget workflow takes the decision: the budget waits for it in pending approval', function (): void {
+    $start = WorkflowNode::create(['tenant_id' => $this->tenant->id, 'workflow_definition_id' => $this->budgetDefinition->id, 'node_key' => 'start', 'name' => 'Start', 'node_type' => 'start']);
+    $approval = WorkflowNode::create(['tenant_id' => $this->tenant->id, 'workflow_definition_id' => $this->budgetDefinition->id, 'node_key' => 'cfo', 'name' => 'CFO approval', 'node_type' => 'approval', 'approval_type' => 'single', 'assignee_type' => 'direct_user', 'assignee_id' => $this->user->id, 'timeout_hours' => 48]);
+    WorkflowTransition::create(['tenant_id' => $this->tenant->id, 'workflow_definition_id' => $this->budgetDefinition->id, 'from_node_id' => $start->id, 'to_node_id' => $approval->id, 'action_trigger' => 'start']);
 
-    $budgetDto = new ProjectBudgetDTO(
+    $budget = app(ProjectBudgetServiceInterface::class)->createOrUpdateBudget(new ProjectBudgetDTO(
         projectId: $this->project->id,
-        totalRevenueBudget: 300000.00,
-        totalCostBudget: 220000.00, // > €10,000 threshold
-        labourBudget: 100000.00,
-        materialBudget: 80000.00,
-        supplierBudget: 40000.00,
+        totalRevenueBudget: '300000.00',
+        labourBudget: '100000.00',
+        materialBudget: '80000.00',
+        supplierBudget: '40000.00',
         userId: $this->user->id
-    );
-
-    $budget = $budgetService->createOrUpdateBudget($budgetDto);
+    ));
 
     expect($budget)->toBeInstanceOf(ProjectBudget::class)
+        ->and($budget->total_cost_budget)->toBe('220000.00')
         ->and($budget->status)->toBe('pending_approval');
 });
 
@@ -156,7 +158,7 @@ test('budget workflow completion listener baseline freezes and approves budget',
         ->and($budget->current_version_number)->toBeGreaterThanOrEqual(1);
 });
 
-test('budget workflow rejection listener marks budget as superseded', function (): void {
+test('budget workflow rejection listener marks budget as rejected', function (): void {
     $budget = ProjectBudget::factory()->create([
         'tenant_id' => $this->tenant->id,
         'company_id' => $this->tenant->id,
@@ -186,7 +188,7 @@ test('budget workflow rejection listener marks budget as superseded', function (
     $listener->handleRejected($event);
 
     $budget->refresh();
-    expect($budget->status)->toBe('superseded');
+    expect($budget->status)->toBe('rejected');
 });
 
 test('change order workflow approval updates status to customer approved and adjusts contract value', function (): void {
@@ -238,6 +240,9 @@ test('project closure workflow approval marks project closed and emits accountin
         ProjectClosedEvent::class,
         ProjectClosureReadyEvent::class,
     ]);
+
+    // The closure request sent the project to the workflow, which now approves it.
+    $this->project->update(['status' => 'pending_closure']);
 
     $instance = WorkflowInstance::create([
         'id' => (string) Str::uuid7(),
