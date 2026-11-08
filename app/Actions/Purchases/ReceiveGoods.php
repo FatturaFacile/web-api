@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Purchases;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Models\GoodsReceipt;
 use App\Models\Product;
 use App\Models\PurchaseOrder;
@@ -34,7 +35,7 @@ class ReceiveGoods
         return DB::transaction(function () use ($order, $lines, $attributes): GoodsReceipt {
             $order = PurchaseOrder::lockForUpdate()->findOrFail($order->id);
 
-            if (! in_array($order->status, ['sent', 'partially_received'], true)) {
+            if (! in_array((string) $order->status, PurchaseOrderStatus::receivableValues(), true)) {
                 throw ValidationException::withMessages(['order' => __('purchases.order_not_receivable')]);
             }
 
@@ -85,7 +86,9 @@ class ReceiveGoods
             $this->stock->recordForLines('in', $receipt, $receipt->items()->get());
 
             $complete = ! $order->items()->whereColumn('quantity_received', '<', 'quantity')->exists();
-            $order->update(['status' => $complete ? 'received' : 'partially_received']);
+            $target = $complete ? PurchaseOrderStatus::Received : PurchaseOrderStatus::PartiallyReceived;
+            PurchaseOrderStatus::assertTransition((string) $order->status, $target);
+            $order->update(['status' => $target->value]);
             $this->events->record($order, 'goods_received', ['goods_receipt_id' => $receipt->id]);
 
             return $receipt->load('items');

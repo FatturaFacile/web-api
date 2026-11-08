@@ -7,7 +7,7 @@ namespace Modules\Procurement\DTOs;
 final readonly class CreatePurchaseOrderDTO
 {
     /**
-     * @param  array<int, array{description: string, quantity_ordered: float, unit_price: float, uom: string, tax_rate?: float, supplier_catalog_id?: ?string}>  $lines
+     * @param  array<int, array<string, mixed>>  $lines  description, quantity_ordered, unit_price, uom, tax_rate, supplier_catalog_id, supplier_contract_line_id, unit_weight, expected_delivery_date
      * @param  array<string, mixed>  $shippingAddress
      */
     public function __construct(

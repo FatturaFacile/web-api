@@ -11,6 +11,7 @@ final readonly class GoodsReceivedEvent implements DomainEventInterface
 {
     /**
      * @param  array<int, array{purchase_order_line_id: string, quantity_received: float, quantity_accepted: float, lot_number?: ?string}>  $receivedLines
+     * @param  list<string>  $stockBookedLineIds  order lines whose stock the procurement module already booked in the receipt transaction
      */
     public function __construct(
         public string $receiptId,
@@ -21,7 +22,8 @@ final readonly class GoodsReceivedEvent implements DomainEventInterface
         public string $tenantId,
         public string $companyId,
         public string $eventId = '',
-        public string $occurredAt = ''
+        public string $occurredAt = '',
+        public array $stockBookedLineIds = []
     ) {}
 
     public function getEventId(): string

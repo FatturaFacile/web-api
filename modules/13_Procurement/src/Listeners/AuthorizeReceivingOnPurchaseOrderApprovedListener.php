@@ -11,6 +11,10 @@ use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
 use Modules\Procurement\Events\PurchaseOrderCommittedEvent;
 use Modules\Procurement\Models\PurchaseOrder;
 
+/**
+ * Once an order is approved it can be received; the commitment towards the supplier is announced to accounting (a
+ * management-ledger encumbrance). The status itself is set by the approval, never here.
+ */
 final readonly class AuthorizeReceivingOnPurchaseOrderApprovedListener implements ShouldQueueAfterCommit
 {
     public function __construct(
@@ -21,28 +25,18 @@ final readonly class AuthorizeReceivingOnPurchaseOrderApprovedListener implement
     public function handle(PurchaseOrderApprovedEvent $event): void
     {
         $order = PurchaseOrder::find($event->purchaseOrderId);
-        if ($order === null) {
+        if ($order === null || $order->status === 'cancelled') {
             return;
         }
-
-        $beforeState = ['status' => $order->status, 'is_locked' => $order->is_locked];
-
-        // Ensure unlocked and ready for warehouse dock receipt
-        $order->update([
-            'status' => 'approved',
-            'is_locked' => false,
-            'is_budget_encumbered' => true,
-        ]);
 
         $this->auditLedger?->record(
             action: 'PURCHASE_ORDER_RECEIVING_AUTHORIZED',
             model: $order,
-            payloadBefore: $beforeState,
-            payloadAfter: ['status' => 'approved', 'is_budget_encumbered' => true],
+            payloadBefore: null,
+            payloadAfter: ['status' => $order->status, 'is_budget_encumbered' => (bool) $order->is_budget_encumbered],
             moduleCode: 'PROCUREMENT'
         );
 
-        // Dispatch Accounting Commitment Event
         $this->eventDispatcher->dispatch(new PurchaseOrderCommittedEvent(
             purchaseOrderId: (string) $order->id,
             poNumber: (string) ($order->po_number ?? $order->order_number),

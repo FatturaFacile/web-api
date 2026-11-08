@@ -72,6 +72,8 @@ final class PurchaseReceiptController extends Controller
                     new OA\Property(property: 'supplier_delivery_note_ref', type: 'string', example: 'DDT-2026-991'),
                     new OA\Property(property: 'received_date', type: 'string', format: 'date', example: '2026-10-28'),
                     new OA\Property(property: 'inspection_status', type: 'string', example: 'passed', enum: ['passed', 'failed', 'conditional']),
+                    new OA\Property(property: 'inspection_required', type: 'boolean', description: 'Receive into the quarantine bin of the warehouse until the quality inspection'),
+                    new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid', nullable: true),
                     new OA\Property(property: 'lines', type: 'array', items: new OA\Items(
                         properties: [
                             new OA\Property(property: 'purchase_order_line_id', type: 'string', format: 'uuid'),
@@ -79,6 +81,8 @@ final class PurchaseReceiptController extends Controller
                             new OA\Property(property: 'quantity_accepted', type: 'number', example: 50),
                             new OA\Property(property: 'quantity_rejected', type: 'number', example: 0),
                             new OA\Property(property: 'lot_number', type: 'string', example: 'LOT-2026-A1'),
+                            new OA\Property(property: 'serial_numbers', type: 'array', items: new OA\Items(type: 'string')),
+                            new OA\Property(property: 'warehouse_bin_id', type: 'string', format: 'uuid', nullable: true),
                         ]
                     )),
                 ]
@@ -101,11 +105,11 @@ final class PurchaseReceiptController extends Controller
             supplierDeliveryNoteRef: $request->string('supplier_delivery_note_ref')->value(),
             receivedDate: $request->string('received_date')->value(),
             receivedByUserId: (string) auth()->id(),
-            lines: (array) $request->input('lines'),
-            receiptNumber: $request->input('receipt_number'),
+            lines: (array) $request->validated('lines'),
             warehouseId: $request->input('warehouse_id'),
             inspectionStatus: $request->string('inspection_status', 'passed')->value(),
-            notes: $request->input('notes')
+            notes: $request->input('notes'),
+            inspectionRequired: $request->boolean('inspection_required')
         );
 
         $receipt = $action->execute($dto);

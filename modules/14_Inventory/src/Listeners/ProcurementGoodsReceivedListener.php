@@ -51,7 +51,8 @@ final readonly class ProcurementGoodsReceivedListener implements ShouldQueueAfte
         foreach ($event->receivedLines as $line) {
             $acceptedQty = (float) ($line['quantity_accepted'] ?? $line['quantity_received'] ?? 0);
 
-            if ($acceptedQty <= 0) {
+            // The procurement module books its receipts in the same transaction (SupplierReceiptStockService).
+            if ($acceptedQty <= 0 || in_array((string) $line['purchase_order_line_id'], $event->stockBookedLineIds, true)) {
                 continue;
             }
 

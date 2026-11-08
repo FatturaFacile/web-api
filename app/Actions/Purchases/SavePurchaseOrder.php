@@ -4,19 +4,27 @@ declare(strict_types=1);
 
 namespace App\Actions\Purchases;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Models\PurchaseOrder;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Procurement\Models\PurchaseOrder as ProcurementOrder;
+use Modules\Procurement\Services\ProcurementApprovalService;
 
+/**
+ * Purchase orders of the purchasing API of the app: numbered from the shared gapless series and moved through the shared
+ * status vocabulary (App\Enums\PurchaseOrderStatus) with the procurement module.
+ */
 class SavePurchaseOrder
 {
     public function __construct(
         private readonly DocumentNumberingService $numbering,
         private readonly DocumentTotalsCalculator $totals,
         private readonly DocumentEventRecorder $events,
+        private readonly ProcurementApprovalService $approvals,
     ) {}
 
     /**
@@ -31,7 +39,7 @@ class SavePurchaseOrder
             $order = new PurchaseOrder;
             $order->fill($data);
             $order->order_number = $this->numbering->next('purchase_order', (int) date('Y', strtotime((string) $data['date'])))['number'];
-            $order->status = 'draft';
+            $order->status = PurchaseOrderStatus::Draft->value;
             $this->fillTotals($order, $items);
             $order->save();
 
@@ -49,7 +57,7 @@ class SavePurchaseOrder
      */
     public function update(PurchaseOrder $order, array $data): PurchaseOrder
     {
-        if (! in_array($order->status, ['draft', 'sent'], true)) {
+        if (! in_array($order->status, [PurchaseOrderStatus::Draft->value, PurchaseOrderStatus::Sent->value], true)) {
             throw ValidationException::withMessages(['order' => __('purchases.order_locked')]);
         }
 
@@ -72,13 +80,22 @@ class SavePurchaseOrder
         });
     }
 
+    /**
+     * Sends a draft order to the supplier, or an order approved by the procurement workflow. A draft that an approval
+     * matrix or workflow of the company would have to approve must be submitted for approval first.
+     */
     public function confirm(PurchaseOrder $order): PurchaseOrder
     {
-        if ($order->status !== 'draft') {
+        $status = (string) $order->status;
+        $approvable = $status === PurchaseOrderStatus::Draft->value ? ProcurementOrder::query()->find($order->id) : null;
+
+        if (! in_array($status, [PurchaseOrderStatus::Draft->value, PurchaseOrderStatus::Approved->value], true)
+            || ($approvable !== null && $this->approvals->requiresApproval($approvable))) {
             throw ValidationException::withMessages(['order' => __('purchases.order_not_confirmable')]);
         }
 
-        $order->update(['status' => 'sent']);
+        PurchaseOrderStatus::assertTransition($status, PurchaseOrderStatus::Sent);
+        $order->update(['status' => PurchaseOrderStatus::Sent->value]);
         $this->events->record($order, 'confirmed');
 
         return $order;
@@ -93,6 +110,8 @@ class SavePurchaseOrder
         $order->total_net = $computed['total_net'];
         $order->total_tax = $computed['total_tax'];
         $order->total_gross = $computed['total_gross'];
+        // The procurement module reads the same order through these columns (approval matrices, analytics).
+        $order->forceFill(['net_amount' => $computed['total_net'], 'tax_amount' => $computed['total_tax'], 'total_amount' => $computed['total_gross']]);
     }
 
     /**

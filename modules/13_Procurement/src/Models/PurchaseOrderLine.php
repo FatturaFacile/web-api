@@ -6,7 +6,35 @@ namespace Modules\Procurement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * A line of a purchase order: ordered, received, invoiced and returned quantities at the order unit price.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $purchase_order_id
+ * @property int $line_number
+ * @property string|null $supplier_catalog_id
+ * @property string|null $supplier_contract_line_id
+ * @property string $description
+ * @property string $quantity_ordered
+ * @property string $quantity_received
+ * @property string $quantity_invoiced
+ * @property string $quantity_cancelled
+ * @property string $quantity_returned
+ * @property string $uom
+ * @property string $unit_price
+ * @property string|null $list_unit_price
+ * @property string|null $unit_weight
+ * @property string $tax_rate
+ * @property string|null $line_net_amount
+ * @property string|null $line_tax_amount
+ * @property string|null $line_total_amount
+ * @property Carbon|null $expected_delivery_date
+ * @property bool $is_closed
+ * @property PurchaseOrder|null $purchaseOrder
+ */
 final class PurchaseOrderLine extends BaseEnterpriseModel
 {
     protected $table = 'purchase_order_lines';
@@ -35,6 +63,10 @@ final class PurchaseOrderLine extends BaseEnterpriseModel
             'quantity_received' => 'decimal:4',
             'quantity_invoiced' => 'decimal:4',
             'quantity_cancelled' => 'decimal:4',
+            'quantity_returned' => 'decimal:4',
+            'unit_weight' => 'decimal:4',
+            'list_unit_price' => 'decimal:4',
+            'expected_delivery_date' => 'date',
             'unit_price' => 'decimal:4',
             'tax_rate' => 'decimal:2',
             'line_net_amount' => 'decimal:2',
@@ -44,11 +76,17 @@ final class PurchaseOrderLine extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<PurchaseOrder, $this>
+     */
     public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class, 'purchase_order_id');
     }
 
+    /**
+     * @return BelongsTo<SupplierCatalog, $this>
+     */
     public function catalog(): BelongsTo
     {
         return $this->belongsTo(SupplierCatalog::class, 'supplier_catalog_id');

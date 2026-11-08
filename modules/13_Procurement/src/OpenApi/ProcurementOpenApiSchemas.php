@@ -62,26 +62,42 @@ class ProcurementPurchaseOrderSchema
     #[OA\Property(format: 'uuid')]
     public string $id;
 
-    #[OA\Property(example: 'PO-20261028-001')]
+    #[OA\Property(description: 'Gapless number of the purchase_order series, shared with the purchasing API of the app', example: 'PO-2027-0001')]
     public string $po_number;
 
     #[OA\Property(format: 'uuid')]
     public string $supplier_id;
 
-    #[OA\Property(example: 'approved', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'partially_received', 'received', 'closed', 'cancelled'])]
+    #[OA\Property(example: 'approved', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'sent', 'partially_received', 'received', 'closed', 'cancelled'])]
     public string $status;
+
+    #[OA\Property(example: 'standard', enum: ['standard', 'blanket_release', 'subcontract'])]
+    public string $order_type;
 
     #[OA\Property(example: 'EUR')]
     public string $currency;
 
-    #[OA\Property(example: 12500.00)]
-    public float $net_amount;
+    #[OA\Property(description: 'Decimal string', example: '12500.00')]
+    public string $net_amount;
 
-    #[OA\Property(example: 2750.00)]
-    public float $tax_amount;
+    #[OA\Property(description: 'Decimal string', example: '2750.00')]
+    public string $tax_amount;
 
-    #[OA\Property(example: 15250.00)]
-    public float $total_amount;
+    #[OA\Property(description: 'Decimal string', example: '15250.00')]
+    public string $total_amount;
+
+    #[OA\Property(format: 'uuid', nullable: true)]
+    public ?string $workflow_instance_id;
+
+    #[OA\Property(format: 'uuid', nullable: true)]
+    public ?string $supplier_contract_id;
+
+    #[OA\Property(format: 'uuid', nullable: true)]
+    public ?string $rfq_id;
+
+    /** @var list<array<string, mixed>> */
+    #[OA\Property(description: 'Order lines with ordered, received, returned and invoiced quantities (decimal strings)', type: 'array', items: new OA\Items(type: 'object'))]
+    public array $lines;
 
     #[OA\Property(example: true)]
     public bool $is_budget_encumbered;
@@ -104,7 +120,7 @@ class ProcurementPurchaseRequisitionSchema
     #[OA\Property(example: 'REQ-20261028-001')]
     public string $requisition_number;
 
-    #[OA\Property(example: 'draft', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'converted_to_po', 'cancelled'])]
+    #[OA\Property(example: 'draft', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'sourcing', 'converted_to_po', 'cancelled'])]
     public string $status;
 
     #[OA\Property(example: 4500.00)]
@@ -131,8 +147,15 @@ class ProcurementGoodsReceiptSchema
     #[OA\Property(example: 'DDT-991')]
     public string $supplier_delivery_note_ref;
 
-    #[OA\Property(example: 'passed', enum: ['passed', 'failed', 'conditional'])]
+    #[OA\Property(example: 'passed', enum: ['pending', 'passed', 'failed', 'conditional'])]
     public string $inspection_status;
+
+    #[OA\Property(example: false)]
+    public bool $inspection_required;
+
+    /** @var list<array<string, mixed>> */
+    #[OA\Property(description: 'Receipt lines with accepted, rejected, released and returned quantities, unit cost, lot and serial numbers', type: 'array', items: new OA\Items(type: 'object'))]
+    public array $lines;
 }
 
 #[OA\Schema(

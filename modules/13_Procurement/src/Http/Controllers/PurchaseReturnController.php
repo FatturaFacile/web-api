@@ -67,11 +67,11 @@ final class PurchaseReturnController extends Controller
             supplierId: $request->string('supplier_id')->value(),
             returnDate: $request->string('return_date')->value(),
             returnedByUserId: (string) auth()->id(),
-            lines: (array) $request->input('lines'),
+            lines: (array) $request->validated('lines'),
             purchaseReceiptId: $request->input('purchase_receipt_id'),
-            returnNumber: $request->input('return_number'),
             reason: $request->input('reason'),
-            notes: $request->input('notes')
+            notes: $request->input('notes'),
+            returnType: $request->string('return_type', 'credit')->value()
         );
 
         $return = $action->execute($dto);

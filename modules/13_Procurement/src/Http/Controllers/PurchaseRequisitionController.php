@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Procurement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,6 +17,8 @@ use Modules\Procurement\Http\Requests\UpdatePurchaseRequisitionRequest;
 use Modules\Procurement\Http\Requests\WorkflowActionRequest;
 use Modules\Procurement\Http\Resources\PurchaseRequisitionResource;
 use Modules\Procurement\Models\PurchaseRequisition;
+use Modules\Procurement\Services\ProcurementApprovalService;
+use Modules\Procurement\Services\ProcurementService;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Procurement Requisitions', description: 'Internal procurement requisitions and authorization workflows')]
@@ -122,7 +125,7 @@ final class PurchaseRequisitionController extends Controller
             title: $request->string('title')->value(),
             requestorUserId: (string) auth()->id(),
             requiredByDate: $request->string('required_by_date')->value(),
-            lines: (array) $request->input('lines'),
+            lines: (array) $request->validated('lines'),
             urgency: $request->string('urgency', 'medium')->value(),
             projectId: $request->input('project_id'),
             costCenterId: $request->input('cost_center_id'),
@@ -178,10 +181,9 @@ final class PurchaseRequisitionController extends Controller
         $requisition = PurchaseRequisition::findOrFail($id);
         $this->authorize('update', $requisition);
 
-        $validated = $request->validated();
-        $requisition->update(collect($validated)->except('lines')->toArray());
+        $updated = app(ProcurementService::class)->updateRequisition($requisition, $request->validated());
 
-        return response()->json(new PurchaseRequisitionResource($requisition->fresh(['requestor', 'lines'])));
+        return response()->json(new PurchaseRequisitionResource($updated->load(['requestor', 'lines'])));
     }
 
     #[OA\Delete(
@@ -251,14 +253,9 @@ final class PurchaseRequisitionController extends Controller
         $requisition = PurchaseRequisition::findOrFail($id);
         $this->authorize('approve', $requisition);
 
-        $requisition->update([
-            'status' => 'approved',
-            'is_locked' => false,
-            'approved_at' => now(),
-            'approved_by' => auth()->id(),
-        ]);
+        $decided = app(ProcurementApprovalService::class)->decideManually($requisition, $this->user($request), true);
 
-        return response()->json(new PurchaseRequisitionResource($requisition->fresh(['requestor', 'lines'])));
+        return response()->json(new PurchaseRequisitionResource($decided->load(['requestor', 'lines'])));
     }
 
     #[OA\Post(
@@ -279,13 +276,9 @@ final class PurchaseRequisitionController extends Controller
         $requisition = PurchaseRequisition::findOrFail($id);
         $this->authorize('reject', $requisition);
 
-        $requisition->update([
-            'status' => 'rejected',
-            'is_locked' => false,
-            'rejection_reason' => $request->string('reason')->value(),
-        ]);
+        $decided = app(ProcurementApprovalService::class)->decideManually($requisition, $this->user($request), false);
 
-        return response()->json(new PurchaseRequisitionResource($requisition->fresh(['requestor', 'lines'])));
+        return response()->json(new PurchaseRequisitionResource($decided->load(['requestor', 'lines'])));
     }
 
     #[OA\Post(
@@ -306,11 +299,14 @@ final class PurchaseRequisitionController extends Controller
         $requisition = PurchaseRequisition::findOrFail($id);
         $this->authorize('cancel', $requisition);
 
-        $requisition->update([
-            'status' => 'cancelled',
-            'is_locked' => false,
-        ]);
+        return response()->json(new PurchaseRequisitionResource(app(ProcurementService::class)->cancelRequisition($requisition)->load(['requestor', 'lines'])));
+    }
 
-        return response()->json(new PurchaseRequisitionResource($requisition->fresh(['requestor', 'lines'])));
+    private function user(Request $request): User
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        return $user;
     }
 }

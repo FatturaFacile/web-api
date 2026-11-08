@@ -20,11 +20,17 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
     use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
 
     /**
-     * Approval states in which the invoice cannot be paid: on the way to approval, or refused.
+     * Approval states in which the invoice cannot be paid: on the way to approval, refused, or blocked because it does
+     * not match the purchase order and the goods received (three-way match beyond tolerance).
      *
      * @var list<string>
      */
-    public const PaymentBlockingStatuses = ['pending', 'in_approval', 'rejected'];
+    public const PaymentBlockingStatuses = ['pending', 'in_approval', 'rejected', self::MatchBlockedStatus];
+
+    /**
+     * Approval status of an invoice blocked by the three-way match; the status it had is kept aside.
+     */
+    public const MatchBlockedStatus = 'match_blocked';
 
     /**
      * @var list<string>
@@ -63,6 +69,9 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
         'approval_workflow_instance_id',
         'approval_submitted_by',
         'approval_decided_at',
+        'purchase_order_id',
+        'match_status',
+        'approval_status_before_block',
     ];
 
     protected function casts(): array
@@ -94,13 +103,39 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
      */
     public function onWorkflowOutcome(WorkflowInstance $instance, string $outcome): void
     {
+        $statusKey = $this->approval_status === self::MatchBlockedStatus ? 'approval_status_before_block' : 'approval_status';
+
         $this->update([
-            'approval_status' => match ($outcome) {
+            $statusKey => match ($outcome) {
                 'approved' => 'approved',
                 'rejected' => 'rejected',
                 default => 'pending',
             },
             'approval_decided_at' => $outcome === 'cancelled' ? null : now(),
+        ]);
+    }
+
+    /**
+     * Blocks the payment because the three-way match failed, keeping the approval status aside.
+     */
+    public function blockForMatch(string $matchStatus): void
+    {
+        $this->update([
+            'match_status' => $matchStatus,
+            'approval_status_before_block' => $this->approval_status === self::MatchBlockedStatus ? $this->approval_status_before_block : $this->approval_status,
+            'approval_status' => self::MatchBlockedStatus,
+        ]);
+    }
+
+    /**
+     * Lifts the block of the three-way match: the invoice gets back the approval status it had.
+     */
+    public function releaseMatchBlock(string $matchStatus): void
+    {
+        $this->update([
+            'match_status' => $matchStatus,
+            'approval_status' => $this->approval_status === self::MatchBlockedStatus ? ($this->approval_status_before_block ?? 'not_required') : $this->approval_status,
+            'approval_status_before_block' => null,
         ]);
     }
 

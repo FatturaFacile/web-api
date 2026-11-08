@@ -4,109 +4,70 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Listeners;
 
-use Enterprise\EventBus\Contracts\EventDispatcherInterface;
+use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
-use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
-use Modules\Procurement\Events\PurchaseRequisitionApprovedEvent;
-use Modules\Procurement\Events\ThreeWayMatchPassedEvent;
 use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Procurement\Models\PurchaseRequisition;
 use Modules\Procurement\Models\ThreeWayMatchLog;
+use Modules\Procurement\Services\ProcurementApprovalService;
+use Modules\Procurement\Services\ThreeWayMatchingService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * Applies the end of a workflow to its procurement document when the engine did not already do it in the decision
+ * (instances written by other paths): orders and requisitions waiting for approval are approved or rejected, a match
+ * discrepancy approved through a workflow releases the supplier invoice. An approved order or requisition is unlocked
+ * again after the fiscal lock of the workflow.
+ */
 final readonly class WorkflowApprovalProcurementListener implements ShouldQueueAfterCommit
 {
     public function __construct(
-        private EventDispatcherInterface $eventDispatcher
+        private ProcurementApprovalService $approvals,
+        private ThreeWayMatchingService $matching,
     ) {}
 
     public function handleCompleted(WorkflowInstanceCompletedEvent $event): void
     {
-        $instance = WorkflowInstance::find($event->instanceId);
-        if ($instance === null) {
-            return;
-        }
-
-        if ($instance->subject_type === PurchaseOrder::class) {
-            $order = PurchaseOrder::find($instance->subject_id);
-            if ($order !== null) {
-                $order->update([
-                    'status' => 'approved',
-                    'is_locked' => false,
-                ]);
-
-                $this->eventDispatcher->dispatch(new PurchaseOrderApprovedEvent(
-                    purchaseOrderId: (string) $order->id,
-                    poNumber: (string) ($order->po_number ?? $order->order_number),
-                    approvedByUserId: (string) ($instance->assigned_to_user_id ?? $order->created_by ?? 'system'),
-                    totalAmount: (float) $order->total_amount,
-                    currency: (string) $order->currency,
-                    tenantId: (string) $order->tenant_id,
-                    companyId: (string) ($order->company_id ?? '')
-                ));
-            }
-        } elseif ($instance->subject_type === PurchaseRequisition::class) {
-            $requisition = PurchaseRequisition::find($instance->subject_id);
-            if ($requisition !== null) {
-                $requisition->update([
-                    'status' => 'approved',
-                    'is_locked' => false,
-                ]);
-
-                $this->eventDispatcher->dispatch(new PurchaseRequisitionApprovedEvent(
-                    requisitionId: (string) $requisition->id,
-                    requisitionNumber: (string) $requisition->requisition_number,
-                    approvedByUserId: (string) ($instance->assigned_to_user_id ?? $requisition->requester_id ?? 'system'),
-                    tenantId: (string) $requisition->tenant_id,
-                    companyId: (string) ($requisition->company_id ?? '')
-                ));
-            }
-        } elseif ($instance->subject_type === ThreeWayMatchLog::class) {
-            $matchLog = ThreeWayMatchLog::find($instance->subject_id);
-            if ($matchLog !== null) {
-                $matchLog->update(['match_status' => 'matched', 'approved_by' => $instance->assigned_to_user_id]);
-
-                $this->eventDispatcher->dispatch(new ThreeWayMatchPassedEvent(
-                    matchLogId: (string) $matchLog->id,
-                    purchaseOrderId: (string) $matchLog->purchase_order_id,
-                    supplierId: (string) (PurchaseOrder::find($matchLog->purchase_order_id)?->supplier_id ?? ''),
-                    matchedAmount: (float) $matchLog->invoice_total_amount,
-                    tenantId: (string) $matchLog->tenant_id,
-                    companyId: (string) ($matchLog->company_id ?? '')
-                ));
-            }
-        }
+        $this->apply($event->instanceId, 'approved');
     }
 
     public function handleRejected(WorkflowInstanceRejectedEvent $event): void
     {
-        $instance = WorkflowInstance::find($event->instanceId);
+        $this->apply($event->instanceId, 'rejected');
+    }
+
+    private function apply(string $instanceId, string $outcome): void
+    {
+        $instance = WorkflowInstance::find($instanceId);
         if ($instance === null) {
             return;
         }
 
-        if ($instance->subject_type === PurchaseOrder::class) {
-            $order = PurchaseOrder::find($instance->subject_id);
-            if ($order !== null) {
-                $order->update([
-                    'status' => 'rejected',
-                    'is_locked' => false,
-                ]);
+        $document = match ($instance->subject_type) {
+            PurchaseOrder::class => PurchaseOrder::find($instance->subject_id),
+            PurchaseRequisition::class => PurchaseRequisition::find($instance->subject_id),
+            ThreeWayMatchLog::class => ThreeWayMatchLog::find($instance->subject_id),
+            default => null,
+        };
+
+        if ($document instanceof ThreeWayMatchLog) {
+            if ($outcome === 'approved' && in_array($document->match_status, ['price_variance', 'quantity_variance', 'escalated_to_workflow'], true)) {
+                $this->matching->approveVariance($document, User::find($instance->assigned_to_user_id), 'Approved through workflow');
+            } elseif ($outcome === 'rejected') {
+                $document->update(['match_status' => 'rejected']);
             }
-        } elseif ($instance->subject_type === PurchaseRequisition::class) {
-            $requisition = PurchaseRequisition::find($instance->subject_id);
-            if ($requisition !== null) {
-                $requisition->update([
-                    'status' => 'rejected',
-                    'is_locked' => false,
-                ]);
-            }
-        } elseif ($instance->subject_type === ThreeWayMatchLog::class) {
-            $matchLog = ThreeWayMatchLog::find($instance->subject_id);
-            if ($matchLog !== null) {
-                $matchLog->update(['match_status' => 'rejected']);
+
+            return;
+        }
+
+        if ($document instanceof PurchaseOrder || $document instanceof PurchaseRequisition) {
+            $this->approvals->applyOutcome($document, $instance, $outcome);
+
+            // The fiscal lock of the workflow freezes documents; an approved order or requisition must stay workable.
+            if ($document->status === 'approved' && $document->is_locked) {
+                $document->update(['is_locked' => false]);
             }
         }
     }
