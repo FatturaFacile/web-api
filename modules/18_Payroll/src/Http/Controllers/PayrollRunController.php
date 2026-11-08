@@ -191,12 +191,40 @@ final class PayrollRunController extends PayrollController
     }
 
     /**
+     * Approve a calculated run.
+     */
+    #[OA\Post(
+        path: '/api/v1/payroll/runs/{id}/approve',
+        operationId: 'approvePayrollRun',
+        description: 'Approve a calculated run (status Calculated → Approved). An approved run cannot be recalculated until the approval is revoked with the reopen action; only an approved run can be closed.',
+        summary: 'Approve payroll run',
+        security: [['bearerAuth' => []]],
+        tags: ['Payroll'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Run approved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/PayrollConflict', response: 409),
+            new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
+        ]
+    )]
+    public function approve(Request $request, string $id): PayrollRecordResource
+    {
+        $run = PayrollRun::query()->findOrFail($id);
+        $this->authorize('approve', $run);
+
+        return new PayrollRecordResource($this->runs->approve($run, $this->actor($request)));
+    }
+
+    /**
      * Close a run.
      */
     #[OA\Post(
         path: '/api/v1/payroll/runs/{id}/finalize',
         operationId: 'finalizePayrollRun',
-        description: 'Close a calculated run: from now on it and its payslips are immutable. Publishes the accounting.payroll.run_finalized domain event.',
+        description: 'Close an approved run: from now on it and its payslips are immutable. Publishes the accounting.payroll.run_finalized domain event.',
         summary: 'Close payroll run',
         security: [['bearerAuth' => []]],
         tags: ['Payroll'],
@@ -224,7 +252,7 @@ final class PayrollRunController extends PayrollController
     #[OA\Post(
         path: '/api/v1/payroll/runs/{id}/reopen',
         operationId: 'reopenPayrollRun',
-        description: 'Bring the latest closed run back to draft. The reason is mandatory and stays in the immutable history of the run. Publishes the accounting.payroll.run_reopened domain event.',
+        description: 'Revoke the approval of an approved run (back to Calculated), or bring the latest closed run back to Draft. The reason is mandatory and stays in the immutable history of the run. Publishes the accounting.payroll.run_reopened domain event.',
         summary: 'Reopen payroll run',
         security: [['bearerAuth' => []]],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollReopenRequest')),

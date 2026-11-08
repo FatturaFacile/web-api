@@ -106,6 +106,7 @@ test('reopening needs a reason and leaves a trace', function (): void {
 
 test('after a reopening the database protection is back at once', function (): void {
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$this->run->id}/reopen", ['reason' => 'Correzione'])->assertOk();
+    payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$this->run->id}/approve")->assertOk();
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$this->run->id}/finalize")->assertOk();
 
     payrollRejectedByDatabase(fn () => DB::table('payroll_runs')->where('id', $this->run->id)->update(['status' => 'Draft']));

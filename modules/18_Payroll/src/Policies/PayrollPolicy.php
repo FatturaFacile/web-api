@@ -62,6 +62,14 @@ class PayrollPolicy
         return $this->canWrite($user);
     }
 
+    /**
+     * Approving a calculated run is a write on the payroll of the company.
+     */
+    public function approve(User $user, Model $run): bool
+    {
+        return $this->canWrite($user) && $this->isOwn($run);
+    }
+
     public function finalize(User $user, Model $run): bool
     {
         return $this->canWrite($user) && $this->isOwn($run);

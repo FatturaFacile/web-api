@@ -7,6 +7,7 @@ use Modules\Payroll\Http\Controllers\CollectiveAgreementController;
 use Modules\Payroll\Http\Controllers\EmployeePayrollDataController;
 use Modules\Payroll\Http\Controllers\PayrollExportController;
 use Modules\Payroll\Http\Controllers\PayrollLegalTablesController;
+use Modules\Payroll\Http\Controllers\PayrollReportController;
 use Modules\Payroll\Http\Controllers\PayrollRunController;
 use Modules\Payroll\Http\Controllers\PayrollSettingsController;
 use Modules\Payroll\Http\Controllers\PayslipController;
@@ -43,9 +44,12 @@ Route::prefix('api/v1/payroll')
         Route::get('/runs', [PayrollRunController::class, 'index'])->name('runs.index');
         Route::post('/runs/calculate', [PayrollRunController::class, 'calculate'])->name('runs.calculate');
         Route::get('/runs/{id}', [PayrollRunController::class, 'show'])->name('runs.show');
+        Route::post('/runs/{id}/approve', [PayrollRunController::class, 'approve'])->name('runs.approve');
         Route::post('/runs/{id}/finalize', [PayrollRunController::class, 'finalize'])->name('runs.finalize');
         Route::post('/runs/{id}/reopen', [PayrollRunController::class, 'reopen'])->name('runs.reopen');
         Route::get('/runs/{id}/labour-book', [PayrollRunController::class, 'labourBook'])->name('runs.labour-book');
+        Route::get('/runs/{id}/cost-allocation', [PayrollReportController::class, 'costAllocation'])->name('runs.cost-allocation');
+        Route::get('/reports/year-end', [PayrollReportController::class, 'yearEnd'])->name('reports.year-end');
 
         // Salary certificates of the whole company
         Route::post('/salary-certificates/generate', [SalaryCertificateController::class, 'generate'])->name('salary-certificates.generate');

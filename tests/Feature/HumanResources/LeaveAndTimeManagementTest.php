@@ -15,6 +15,7 @@ use Modules\HumanResources\Events\LeaveLiabilityReadyEvent;
 use Modules\HumanResources\Events\LeaveRequestedEvent;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\LeaveType;
+use Modules\HumanResources\Models\OvertimeRule;
 
 uses(DatabaseTransactions::class);
 
@@ -98,6 +99,9 @@ test('attendance recording and project timesheet approval calculate labor cost w
         'tenant_id' => $tenant->id,
         'hourly_cost_rate' => 40.00,
     ]);
+
+    // The overtime premium is company data: a sample rule of 25% (not a legal rate).
+    OvertimeRule::factory()->create(['tenant_id' => $tenant->id, 'premium_percent' => '25.00']);
 
     $service = app(LeaveAndTimeServiceInterface::class);
 

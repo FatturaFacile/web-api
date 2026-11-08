@@ -23,6 +23,7 @@ use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
+use Modules\HumanResources\Jobs\PurgeExpiredEmployeeDocumentsJob;
 use Modules\HumanResources\Jobs\ScanExpiringCertificationsJob;
 use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
 use Modules\Inventory\Jobs\ExpireStaleReservationsJob;
@@ -95,6 +96,7 @@ $forEachTenant('hr:expiring-certifications', static fn (Tenant $tenant): object 
 $forEachTenant('eam:expiring-coverage', static fn (Tenant $tenant): object => new NotifyExpiringAssetCoverageJob($tenant->id))->dailyAt('05:35');
 $forEachTenant('hr:leave-accruals', static fn (Tenant $tenant): object => new ProcessMonthlyLeaveAccrualsJob($tenant->id, now()->year))->monthlyOn(1, '05:40');
 $forEachTenant('hr:purge-applications', static fn (Tenant $tenant): object => new PurgeExpiredApplicationsJob($tenant->id))->dailyAt('03:40');
+$forEachTenant('hr:purge-employee-documents', static fn (Tenant $tenant): object => new PurgeExpiredEmployeeDocumentsJob($tenant->id))->dailyAt('03:45');
 $forEachTenant('subscriptions:metered-usage', static fn (Tenant $tenant): object => new AggregateMeteredUsageJob($tenant->id))->dailyAt('01:45');
 $forEachTenant('manufacturing:mrp', static fn (Tenant $tenant): object => new ProcessMrpRunJob($tenant->id, now()->toDateString(), now()->addDays(90)->toDateString()))->dailyAt('02:15');
 $forEachTenant('manufacturing:capacity', static fn (Tenant $tenant): object => new ProcessWorkCenterCapacityJob($tenant->id, now()->toDateString()))->dailyAt('02:30');

@@ -6,6 +6,7 @@ namespace Modules\Payroll\Services;
 
 use App\Models\Tenant;
 use App\Models\User;
+use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Payroll\Calculation\Dec;
@@ -20,14 +21,20 @@ use Modules\Payroll\Models\Payslip;
 use Modules\Payroll\Models\PayslipLine;
 
 /**
- * The life of a monthly run: calculated and recalculated while it is a draft, closed, reopened explicitly.
+ * The life of a monthly run: Draft → Calculated (recalculated at will) → Approved → Final (immutable, posted to the
+ * General Ledger through the domain event). Reopening an approved run revokes the approval; reopening a closed run
+ * brings it back to Draft. Every step is in the append-only history with its actor, and the reasons of reopenings.
  */
 final class PayrollRunService
 {
-    public function __construct(private readonly PayrollCalculator $calculator) {}
+    public function __construct(
+        private readonly PayrollCalculator $calculator,
+        private readonly EventDispatcher $dispatcher,
+    ) {}
 
     /**
-     * Calculates (or recalculates) the run of a month.
+     * Calculates (or recalculates) the run of a month. An approved run has to be reopened first, so an approval always
+     * refers to the payslips it saw.
      */
     public function calculate(Tenant $tenant, User $actor, int $year, int $month, ?string $paymentDate): PayrollRun
     {
@@ -39,6 +46,7 @@ final class PayrollRunService
                 $this->store($run, $result);
             }
 
+            $run->status = PayrollRun::StatusCalculated;
             $run->calculated_at = now();
             $run->save();
             $this->history($run, PayrollRunEvent::Calculated, $actor, null);
@@ -48,7 +56,34 @@ final class PayrollRunService
     }
 
     /**
-     * Closes a run: from now on it is immutable, and accounting learns about it through the domain event.
+     * Approves a calculated run: the payslips are frozen for closing until the approval is revoked.
+     */
+    public function approve(PayrollRun $run, User $actor): PayrollRun
+    {
+        return DB::transaction(function () use ($run, $actor): PayrollRun {
+            $locked = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
+
+            if ($locked->isFinal()) {
+                throw new PayrollRunClosedException("L'elaborazione è già chiusa.");
+            }
+
+            if ($locked->status === PayrollRun::StatusApproved) {
+                throw new PayrollRunClosedException("L'elaborazione è già approvata.");
+            }
+
+            if ($locked->calculated_at === null || ! $locked->payslips()->exists()) {
+                throw new PayrollException("Calcolare l'elaborazione prima di approvarla.");
+            }
+
+            $locked->forceFill(['status' => PayrollRun::StatusApproved, 'approved_at' => now(), 'approved_by' => $actor->id])->save();
+            $this->history($locked, PayrollRunEvent::Approved, $actor, null);
+
+            return $locked;
+        });
+    }
+
+    /**
+     * Closes an approved run: from now on it is immutable, and accounting learns about it through the domain event.
      */
     public function finalize(PayrollRun $run, User $actor): PayrollRun
     {
@@ -63,6 +98,10 @@ final class PayrollRunService
                 throw new PayrollException("Calcolare l'elaborazione prima di chiuderla.");
             }
 
+            if ($locked->status !== PayrollRun::StatusApproved) {
+                throw new PayrollException("Approvare l'elaborazione prima di chiuderla.");
+            }
+
             $locked->status = PayrollRun::StatusFinal;
             $locked->finalized_at = now();
             $locked->finalized_by = $actor->id;
@@ -71,7 +110,7 @@ final class PayrollRunService
             $totals = $this->totals($locked);
             $this->history($locked, PayrollRunEvent::Finalized, $actor, null, $totals);
 
-            event(new PayrollRunFinalizedEvent(
+            $this->dispatcher->publishAndDispatch(new PayrollRunFinalizedEvent(
                 payrollRunId: $locked->id,
                 year: $locked->year,
                 month: $locked->month,
@@ -87,15 +126,23 @@ final class PayrollRunService
     }
 
     /**
-     * Reopens the latest run. The reason is mandatory and stays in the history.
+     * Reopens a run with a mandatory reason that stays in the history: an approved run goes back to Calculated (the
+     * approval is revoked), the latest closed run goes back to Draft and accounting reverses its posting.
      */
     public function reopen(PayrollRun $run, User $actor, string $reason): PayrollRun
     {
         return DB::transaction(function () use ($run, $actor, $reason): PayrollRun {
             $locked = PayrollRun::query()->lockForUpdate()->findOrFail($run->id);
 
+            if ($locked->status === PayrollRun::StatusApproved) {
+                $locked->forceFill(['status' => PayrollRun::StatusCalculated, 'approved_at' => null, 'approved_by' => null])->save();
+                $this->history($locked, PayrollRunEvent::ApprovalRevoked, $actor, $reason);
+
+                return $locked;
+            }
+
             if (! $locked->isFinal()) {
-                throw new PayrollException("L'elaborazione non è chiusa.");
+                throw new PayrollException("L'elaborazione non è chiusa né approvata.");
             }
 
             $periodIndex = ($locked->year * 12) + $locked->month;
@@ -107,7 +154,7 @@ final class PayrollRunService
             $this->withReopenGuardLifted(fn () => $locked->markReopened((string) $actor->id, $reason));
             $this->history($locked, PayrollRunEvent::Reopened, $actor, $reason, $this->totals($locked));
 
-            event(new PayrollRunReopenedEvent($locked->id, $locked->year, $locked->month, $reason, $locked->tenant_id));
+            $this->dispatcher->publishAndDispatch(new PayrollRunReopenedEvent($locked->id, $locked->year, $locked->month, $reason, $locked->tenant_id));
 
             return $locked;
         });
@@ -130,6 +177,10 @@ final class PayrollRunService
 
         if ($run->isFinal()) {
             throw PayrollRunClosedException::forPeriod($year, $month);
+        }
+
+        if ($run->status === PayrollRun::StatusApproved) {
+            throw new PayrollRunClosedException("L'elaborazione è approvata: revocare l'approvazione (riapertura con motivo) prima di ricalcolarla.");
         }
 
         $run->payment_date = $paymentDate ?? $run->payment_date;

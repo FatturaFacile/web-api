@@ -93,6 +93,7 @@ test('after a closed month is recalculated the next statement reverses the old l
     $api->postJson("/api/v1/payroll/runs/{$run->id}/reopen", ['reason' => 'Correzione del salario'])->assertOk();
     payrollApi($this->manager, $this->tenant)->putJson("/api/v1/payroll/employee-profiles/{$this->employee->id}", ['withholding_tax_rate_percent' => '12'])->assertOk();
     $id = payrollCalculate($this->tenant, $this->manager, 2026, 1)->assertCreated()->json('data.id');
+    payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$id}/approve")->assertOk();
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$id}/finalize")->assertOk();
     payrollClosedRun($this->tenant, $this->manager, 2026, 2);
 

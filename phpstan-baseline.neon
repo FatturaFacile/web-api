@@ -439,18 +439,6 @@ parameters:
 			path: app/Http/Controllers/Api/V1/TimeAttendanceController.php
 
 		-
-			message: '#^Property App\\Models\\TimeEntry\:\:\$clock_in \(string\) does not accept Carbon\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Http/Controllers/Api/V1/TimeAttendanceController.php
-
-		-
-			message: '#^Property App\\Models\\TimeEntry\:\:\$clock_out \(string\|null\) does not accept Carbon\\Carbon\.$#'
-			identifier: assign.propertyType
-			count: 1
-			path: app/Http/Controllers/Api/V1/TimeAttendanceController.php
-
-		-
 			message: '#^Using nullsafe property access "\?\-\>country" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
 			identifier: nullsafe.neverNull
 			count: 2
@@ -8143,34 +8131,16 @@ parameters:
 			path: modules/18_HumanResources/src/Models/TimeRecordingProfile.php
 
 		-
-			message: '#^Call to an undefined method Modules\\Workflow\\Contracts\\WorkflowEngineInterface\:\:startWorkflow\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: modules/18_HumanResources/src/Services/EmployeeLifecycleService.php
-
-		-
 			message: '#^Call to function is_array\(\) with string\|null will always evaluate to false\.$#'
 			identifier: function.impossibleType
 			count: 1
 			path: modules/18_HumanResources/src/Services/EmployeeLifecycleService.php
 
 		-
-			message: '#^Call to an undefined method Modules\\Workflow\\Contracts\\WorkflowEngineInterface\:\:startWorkflow\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: modules/18_HumanResources/src/Services/LeaveAndTimeService.php
-
-		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
-			count: 3
-			path: modules/18_HumanResources/src/Services/LeaveAndTimeService.php
-
-		-
-			message: '#^Call to an undefined method Modules\\Workflow\\Contracts\\WorkflowEngineInterface\:\:startWorkflow\(\)\.$#'
-			identifier: method.notFound
 			count: 1
-			path: modules/18_HumanResources/src/Services/PerformanceManagementService.php
+			path: modules/18_HumanResources/src/Services/LeaveAndTimeService.php
 
 		-
 			message: '#^Cannot call method format\(\) on string\.$#'
@@ -8279,18 +8249,6 @@ parameters:
 			identifier: argument.type
 			count: 3
 			path: modules/18_HumanResources/src/Services/TimeTracking/PayrollTimeViewService.php
-
-		-
-			message: '#^Call to an undefined method Modules\\Workflow\\Contracts\\WorkflowEngineInterface\:\:startWorkflow\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: modules/18_HumanResources/src/Services/TrainingAndCertificationService.php
-
-		-
-			message: '#^Cannot call method format\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: modules/18_HumanResources/src/Services/TrainingAndCertificationService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$category\.$#'

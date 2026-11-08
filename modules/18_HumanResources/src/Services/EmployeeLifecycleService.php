@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Services;
 
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
@@ -24,6 +25,7 @@ use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\EmployeeLifecycleEvent;
 use Modules\HumanResources\Models\EmploymentContract;
 use Modules\HumanResources\Models\Position;
+use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
 use Modules\Workflow\Models\WorkflowDefinition;
@@ -165,8 +167,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: $dto->tenantId,
                 companyId: $dto->companyId
             );
-            $this->dispatcher->publish($hiredEvent);
-            event($hiredEvent);
+            $this->dispatcher->publishAndDispatch($hiredEvent);
 
             $monthlyGross = round($dto->baseAnnualSalary / 12.0, 2);
             $monthlyContrib = round($monthlyGross * 0.35, 2);
@@ -183,8 +184,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: $dto->tenantId,
                 companyId: $dto->companyId
             );
-            $this->dispatcher->publish($costReadyEvent);
-            event($costReadyEvent);
+            $this->dispatcher->publishAndDispatch($costReadyEvent);
 
             $forecastEvent = new EmployeeCostForecastEvent(
                 employeeId: (string) $employee->id,
@@ -195,8 +195,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: $dto->tenantId,
                 companyId: $dto->companyId
             );
-            $this->dispatcher->publish($forecastEvent);
-            event($forecastEvent);
+            $this->dispatcher->publishAndDispatch($forecastEvent);
 
             return $employee->fresh();
         });
@@ -344,8 +343,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: (string) $locked->tenant_id,
                 companyId: (string) ($locked->company_id ?? $locked->tenant_id)
             );
-            $this->dispatcher->publish($promotedEvent);
-            event($promotedEvent);
+            $this->dispatcher->publishAndDispatch($promotedEvent);
 
             $monthlyTotal = round(($dto->newBaseAnnualSalary / 12.0) * 1.35, 2);
             $forecastEvent = new EmployeeCostForecastEvent(
@@ -357,8 +355,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: (string) $locked->tenant_id,
                 companyId: (string) ($locked->company_id ?? $locked->tenant_id)
             );
-            $this->dispatcher->publish($forecastEvent);
-            event($forecastEvent);
+            $this->dispatcher->publishAndDispatch($forecastEvent);
 
             return $lifecycleEvent->fresh();
         });
@@ -439,8 +436,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: (string) $locked->tenant_id,
                 companyId: (string) ($locked->company_id ?? $locked->tenant_id)
             );
-            $this->dispatcher->publish($transferredEvent);
-            event($transferredEvent);
+            $this->dispatcher->publishAndDispatch($transferredEvent);
 
             return $lifecycleEvent->fresh();
         });
@@ -514,8 +510,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 tenantId: (string) $locked->tenant_id,
                 companyId: (string) ($locked->company_id ?? $locked->tenant_id)
             );
-            $this->dispatcher->publish($termEvent);
-            event($termEvent);
+            $this->dispatcher->publishAndDispatch($termEvent);
 
             return $locked->fresh();
         });
@@ -604,9 +599,15 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
         });
     }
 
+    /**
+     * Start the approval workflow of the record when the company has an active definition. A failure to start is not
+     * swallowed: the change rolls back instead of skipping its approval.
+     *
+     * @param  array<string, mixed>  $context
+     */
     private function tryStartWorkflowIfDefined(
         string $workflowCode,
-        object $approvable,
+        Model $approvable,
         array $context,
         string $tenantId,
         ?string $actorUserId
@@ -624,24 +625,19 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
             return false;
         }
 
-        try {
-            $initiatorId = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7();
-            $instance = $this->workflowEngine->startWorkflow(new StartWorkflowDTO(
-                workflowCode: $workflowCode,
-                approvable: $approvable,
-                contextSnapshot: $context,
-                tenantId: $tenantId,
-                companyId: $tenantId,
-                initiatorUserId: $initiatorId
-            ));
+        $instance = $this->workflowEngine->start(new StartWorkflowDTO(
+            workflowCode: $workflowCode,
+            approvable: $approvable,
+            contextSnapshot: $context,
+            tenantId: $tenantId,
+            companyId: $tenantId,
+            initiatorUserId: ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : null,
+        ));
 
-            if (method_exists($approvable, 'lockByWorkflow')) {
-                $approvable->lockByWorkflow($instance);
-            }
-
-            return true;
-        } catch (\Throwable) {
-            return false;
+        if ($approvable instanceof LockableByWorkflowInterface) {
+            $approvable->lockByWorkflow($instance);
         }
+
+        return true;
     }
 }

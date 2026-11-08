@@ -10,12 +10,18 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Modules\HumanResources\Contracts\OrganizationManagementServiceInterface;
+use Modules\HumanResources\Exceptions\HumanResourcesException;
+use Modules\HumanResources\Http\Requests\SaveDepartmentRequest;
+use Modules\HumanResources\Http\Requests\SavePositionRequest;
 use Modules\HumanResources\Http\Resources\DepartmentResource;
 use Modules\HumanResources\Http\Resources\PositionResource;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Position;
 use OpenApi\Attributes as OA;
 
+/**
+ * Org chart of the company: departments, positions, successors and the payroll forecast.
+ */
 final class OrganizationController extends Controller
 {
     public function __construct(
@@ -62,23 +68,54 @@ final class OrganizationController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function storeDepartment(Request $request): JsonResponse
+    public function storeDepartment(SaveDepartmentRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
         $dept = Department::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $tenant->id,
             'company_id' => $tenant->id,
-            'parent_id' => $request->input('parent_id'),
-            'business_unit_id' => $request->input('business_unit_id'),
-            'cost_center_id' => $request->input('cost_center_id'),
-            'manager_employee_id' => $request->input('manager_employee_id'),
-            'code' => (string) $request->input('code'),
-            'name' => (string) $request->input('name'),
             'is_active' => true,
+            ...$request->validated(),
         ]);
 
         return response()->json(['data' => new DepartmentResource($dept)], 201);
+    }
+
+    /**
+     * Changes a department of the org chart.
+     */
+    #[OA\Put(
+        path: '/api/v1/hr/departments/{id}',
+        operationId: 'updateHrDepartment',
+        description: 'Changes code, name, parent, business unit, cost centre, manager or state of a department. A department cannot become its own ancestor.',
+        summary: 'Update department',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Departments'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/HrRecordId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'code', type: 'string'), new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'parent_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'business_unit_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'cost_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'manager_employee_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'is_active', type: 'boolean')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Department updated', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesDepartmentResource')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
+    public function updateDepartment(SaveDepartmentRequest $request, string $id): JsonResponse
+    {
+        $department = Department::query()->findOrFail($id);
+        $parentId = $request->validated('parent_id');
+
+        for ($ancestor = $parentId; $ancestor !== null; $ancestor = Department::query()->whereKey($ancestor)->value('parent_id')) {
+            if ($ancestor === $department->id) {
+                throw new HumanResourcesException('Un reparto non può dipendere da un proprio sottoreparto.');
+            }
+        }
+
+        $department->update($request->validated());
+
+        return response()->json(['data' => new DepartmentResource($department)]);
     }
 
     /**
@@ -120,23 +157,48 @@ final class OrganizationController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function storePosition(Request $request): JsonResponse
+    public function storePosition(SavePositionRequest $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
         $position = Position::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $tenant->id,
             'company_id' => $tenant->id,
-            'department_id' => $request->input('department_id'),
-            'job_grade_id' => $request->input('job_grade_id'),
-            'code' => (string) $request->input('code'),
-            'title' => (string) $request->input('title'),
-            'headcount_budget' => (int) $request->input('headcount_budget', 1),
-            'is_critical_role' => (bool) $request->input('is_critical_role', false),
+            'headcount_budget' => 1,
+            'is_critical_role' => false,
             'is_active' => true,
+            ...$request->validated(),
         ]);
 
         return response()->json(['data' => new PositionResource($position)], 201);
+    }
+
+    /**
+     * Changes a position of the org chart.
+     */
+    #[OA\Put(
+        path: '/api/v1/hr/positions/{id}',
+        operationId: 'updateHrPosition',
+        description: 'Changes code, title, department, grade, reporting line, headcount budget or state of a position.',
+        summary: 'Update position',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Positions'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/HrRecordId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'code', type: 'string'), new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'department_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'job_grade_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'reports_to_position_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'headcount_budget', type: 'integer'), new OA\Property(property: 'is_critical_role', type: 'boolean'), new OA\Property(property: 'is_active', type: 'boolean')])),
+        responses: [
+            new OA\Response(response: 200, description: 'Position updated', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesPositionResource')])),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
+        ]
+    )]
+    public function updatePosition(SavePositionRequest $request, string $id): JsonResponse
+    {
+        $position = Position::query()->findOrFail($id);
+        $position->update($request->validated());
+
+        return response()->json(['data' => new PositionResource($position)]);
     }
 
     /**

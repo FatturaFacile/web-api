@@ -179,6 +179,7 @@ test('reopening reverses the entry and closing again posts a new one', function 
         ->and(payrollBalance($tenant, '2300'))->toBe('0.00');
 
     payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$run->id}/reopen", ['reason' => 'Di nuovo'])->assertStatus(422);
+    payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$run->id}/approve")->assertOk();
     payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$run->id}/finalize")->assertOk();
 
     $live = JournalEntry::withoutGlobalScopes()->where('source_document_id', $run->id)->where('status', 'posted')->where('journal_type', '!=', 'reversing')->sole();
@@ -215,6 +216,7 @@ test('a run reopened before it was posted leaves the queue', function (): void {
     expect(payrollPosting($run->id)->status)->toBe('withdrawn')
         ->and(PayrollRun::query()->withoutGlobalScopes()->findOrFail($run->id)->status)->not->toBe('Final');
 
+    payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$run->id}/approve")->assertOk();
     payrollApi($manager, $tenant)->postJson("/api/v1/payroll/runs/{$run->id}/finalize")->assertOk();
 
     expect(payrollPosting($run->id)->status)->toBe('pending');

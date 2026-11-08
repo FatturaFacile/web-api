@@ -8,9 +8,11 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use InvalidArgumentException;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
 use Modules\HumanResources\DTOs\RecordTimesheetDTO;
 use Modules\HumanResources\DTOs\SubmitLeaveRequestDTO;
+use Modules\HumanResources\Exceptions\HumanResourcesException;
 use Modules\HumanResources\Http\Requests\SubmitLeaveRequestFormRequest;
 use Modules\HumanResources\Http\Requests\SubmitTimesheetRequest;
 use Modules\HumanResources\Http\Resources\LeaveBalanceResource;
@@ -64,16 +66,20 @@ final class LeaveAndTimeController extends Controller
         $tenant = $this->tenantContext->getTenant();
         $actorId = (string) ($request->user()?->id ?? '');
 
-        $leaveRequest = $this->leaveAndTimeService->submitLeaveRequest(new SubmitLeaveRequestDTO(
-            tenantId: (string) $tenant->id,
-            employeeId: (string) $request->input('employee_id'),
-            leaveTypeId: (string) $request->input('leave_type_id'),
-            startDate: (string) $request->input('start_date'),
-            endDate: (string) $request->input('end_date'),
-            totalHours: (float) $request->input('total_hours'),
-            reason: $request->input('reason'),
-            medicalCertificateRef: $request->input('medical_certificate_ref')
-        ), $actorId);
+        try {
+            $leaveRequest = $this->leaveAndTimeService->submitLeaveRequest(new SubmitLeaveRequestDTO(
+                tenantId: (string) $tenant->id,
+                employeeId: (string) $request->input('employee_id'),
+                leaveTypeId: (string) $request->input('leave_type_id'),
+                startDate: (string) $request->input('start_date'),
+                endDate: (string) $request->input('end_date'),
+                totalHours: (float) $request->input('total_hours'),
+                reason: $request->input('reason'),
+                medicalCertificateRef: $request->input('medical_certificate_ref')
+            ), $actorId);
+        } catch (InvalidArgumentException $exception) {
+            throw new HumanResourcesException($exception->getMessage());
+        }
 
         return response()->json(['data' => new LeaveRequestResource($leaveRequest)], 201);
     }
@@ -108,7 +114,8 @@ final class LeaveAndTimeController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
         $fiscalYear = (int) $request->input('fiscal_year', (int) date('Y'));
-        $processed = $this->leaveAndTimeService->runMonthlyAccruals((string) $tenant->id, $fiscalYear);
+        $month = $request->integer('month');
+        $processed = $this->leaveAndTimeService->runMonthlyAccruals((string) $tenant->id, $fiscalYear, $month >= 1 && $month <= 12 ? $month : null);
 
         return response()->json(['data' => ['balances_accrued' => $processed]]);
     }
