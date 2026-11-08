@@ -41,6 +41,9 @@ final class ChurnPrediction extends Model
         return null;
     }
 
+    /**
+     * @return BelongsTo<Subscription, $this>
+     */
     public function subscription(): BelongsTo
     {
         return $this->belongsTo(Subscription::class, 'subscription_id');

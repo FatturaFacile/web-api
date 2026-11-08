@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use App\Actions\Subscriptions\RunSubscriptionBilling;
 use App\Models\DeliveryNote;
 use App\Models\Invoice;
 use App\Models\Quote;
@@ -12,6 +11,7 @@ use App\Models\Vehicle;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\Workshop\Models\VehicleStockUnit;
 use Modules\Workshop\Models\WorkshopFolder;
 
@@ -113,7 +113,8 @@ test('yearly tyre storage is billed automatically through the subscriptions', fu
     $subscription = Subscription::query()->findOrFail($service->json('data.subscription_id'));
     expect((string) $subscription->contact_id)->toBe((string) $this->customer->id);
 
-    app(RunSubscriptionBilling::class)->execute($subscription, CarbonImmutable::parse('2027-11-08'));
+    $this->travelTo('2027-11-08 09:00:00');
+    app(RecurringBillingServiceInterface::class)->billSubscription((string) $subscription->id, CarbonImmutable::parse('2027-11-08'));
 
     expect(Invoice::query()->where('subscription_id', $subscription->id)->count())->toBe(2);
 

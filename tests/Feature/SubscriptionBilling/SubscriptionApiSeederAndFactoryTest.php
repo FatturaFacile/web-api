@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -55,7 +56,7 @@ beforeEach(function () {
 });
 
 test('Subscription API endpoints provide authenticated CRUD, plan upgrade, and usage recording', function () {
-    $customerId = (string) Str::uuid7();
+    $customerId = (string) Contact::create(['tenant_id' => $this->tenant->id, 'company_name' => 'Factory Customer', 'type' => 'customer'])->id;
 
     // 1. Create Subscription via API
     $createResponse = $this->postJson('/api/v1/sub/contracts', [
@@ -89,6 +90,8 @@ test('Subscription API endpoints provide authenticated CRUD, plan upgrade, and u
     ]);
     $planResponse->assertStatus(201);
 
+    // Usage goes only to metered items: the plan item refuses it.
+
     // 5. Record Usage via API
     $item = SubscriptionItem::where('subscription_id', $subId)->first();
     if ($item) {
@@ -97,7 +100,7 @@ test('Subscription API endpoints provide authenticated CRUD, plan upgrade, and u
             'metric_code' => 'API_REQUESTS',
             'quantity' => 120,
         ]);
-        $usageResponse->assertStatus(201);
+        $usageResponse->assertStatus(422);
     }
 });
 

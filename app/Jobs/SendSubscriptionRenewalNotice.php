@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace App\Jobs;
 
 use App\Mail\SubscriptionRenewalMail;
-use App\Models\Subscription;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
+use Modules\SubscriptionBilling\Models\Subscription;
 
+/**
+ * Mails the renewal notice of a subscription to its customer, once (no retry, so no duplicate mail).
+ */
 class SendSubscriptionRenewalNotice implements ShouldQueue
 {
     use Queueable;
@@ -24,13 +27,13 @@ class SendSubscriptionRenewalNotice implements ShouldQueue
     public function handle(): void
     {
         $subscription = Subscription::withoutGlobalScopes()
-            ->with(['contact' => fn ($q) => $q->withoutGlobalScopes()])
+            ->with(['customer' => fn ($query) => $query->withoutGlobalScopes()])
             ->find($this->subscriptionId);
 
-        if ($subscription?->contact?->email === null) {
+        if ($subscription?->customer?->email === null) {
             return;
         }
 
-        Mail::to($subscription->contact->email)->send(new SubscriptionRenewalMail($subscription));
+        Mail::to($subscription->customer->email)->send(new SubscriptionRenewalMail($subscription));
     }
 }

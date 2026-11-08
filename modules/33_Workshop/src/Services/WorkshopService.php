@@ -17,6 +17,9 @@ use App\Services\Invoicing\InvoiceService;
 use App\Services\Sales\DocumentNumberingService;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\SubscriptionBilling\Contracts\SubscriptionLifecycleServiceInterface;
+use Modules\SubscriptionBilling\DTOs\CancelSubscriptionDTO;
+use Modules\SubscriptionBilling\Models\Subscription as EngineSubscription;
 use Modules\Workshop\Models\RecurringService;
 use Modules\Workshop\Models\VehicleSale;
 use Modules\Workshop\Models\VehicleStockUnit;
@@ -35,6 +38,7 @@ final class WorkshopService
         private readonly SaveSubscription $subscriptions,
         private readonly InvoiceService $invoices,
         private readonly StockService $stock,
+        private readonly SubscriptionLifecycleServiceInterface $subscriptionLifecycle,
     ) {}
 
     /**
@@ -283,7 +287,8 @@ final class WorkshopService
     }
 
     /**
-     * A service billed at every period: a subscription of the sales module for the owner of the vehicle.
+     * A service billed at every period: a subscription of the subscription engine for the owner of the vehicle (with
+     * its carrier row in `subscriptions`, the table the recurring services reference).
      *
      * @param  array<string, mixed>  $data
      */
@@ -331,11 +336,26 @@ final class WorkshopService
     }
 
     /**
-     * Stops the billing of a recurring service from the next period on.
+     * Stops the billing of a recurring service from the next period on: the engine subscription is cancelled at the
+     * end of the billed period and its carrier row is marked cancelled.
      */
     public function stopRecurringService(RecurringService $service): RecurringService
     {
-        $service->subscription()->update(['status' => 'cancelled', 'next_billing_date' => null]);
+        DB::transaction(function () use ($service): void {
+            $engine = EngineSubscription::query()->whereKey($service->subscription_id)->first();
+
+            if ($engine !== null && ! $engine->isCancelled() && ! $engine->cancel_at_period_end) {
+                $this->subscriptionLifecycle->cancelSubscription(new CancelSubscriptionDTO(
+                    subscriptionId: (string) $engine->id,
+                    reason: 'Recurring workshop service stopped',
+                    reasonCode: 'other',
+                    cancellationType: 'end_of_term',
+                    refund: false,
+                ));
+            }
+
+            $service->subscription()->update(['status' => 'cancelled', 'next_billing_date' => null]);
+        });
 
         return $service->load('subscription');
     }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\SubscriptionBilling\Listeners;
 
+use App\Models\Contact;
 use Enterprise\EventBus\Models\TransactionalInbox;
 use Illuminate\Support\Str;
 use Modules\CRM\Events\OpportunityWonEvent;
@@ -11,24 +12,25 @@ use Modules\SubscriptionBilling\Contracts\SubscriptionLifecycleServiceInterface;
 use Modules\SubscriptionBilling\DTOs\CreateSubscriptionDTO;
 use Modules\SubscriptionBilling\Models\SubscriptionPlan;
 
+/**
+ * A won opportunity provisions a subscription only when the company opted in: the plan to use is the one active plan
+ * flagged `metadata.auto_provision_on_opportunity_won`, and the customer must be a contact of the company. Nothing is
+ * guessed otherwise. Processed once per event.
+ */
 final readonly class CRMSubscriptionListener
 {
-    public function __construct(
-        private SubscriptionLifecycleServiceInterface $lifecycleService
-    ) {}
+    public function __construct(private SubscriptionLifecycleServiceInterface $lifecycle) {}
 
     public function handle(OpportunityWonEvent $event): void
     {
-        $inboxId = (string) Str::uuid7();
         $messageId = $event->getEventId();
 
-        $alreadyProcessed = TransactionalInbox::where('message_id', $messageId)->exists();
-        if ($alreadyProcessed) {
+        if (TransactionalInbox::where('message_id', $messageId)->exists()) {
             return;
         }
 
         TransactionalInbox::create([
-            'id' => $inboxId,
+            'id' => (string) Str::uuid7(),
             'tenant_id' => $event->tenantId,
             'message_id' => $messageId,
             'event_type' => $event->getEventName(),
@@ -38,34 +40,25 @@ final readonly class CRMSubscriptionListener
             'processed_at' => now(),
         ]);
 
-        $plan = SubscriptionPlan::where('tenant_id', $event->tenantId)
+        $plans = SubscriptionPlan::withoutGlobalScopes()
+            ->where('tenant_id', $event->tenantId)
             ->where('is_active', true)
-            ->first();
-
-        if ($plan === null) {
-            return;
-        }
+            ->where('metadata->auto_provision_on_opportunity_won', true)
+            ->get();
 
         $customerId = $event->contactId ?: $event->accountId;
 
-        $dto = new CreateSubscriptionDTO(
+        if ($plans->count() !== 1 || ! Contact::withoutGlobalScopes()->where('tenant_id', $event->tenantId)->whereKey($customerId)->exists()) {
+            return;
+        }
+
+        $this->lifecycle->createSubscription(new CreateSubscriptionDTO(
             tenantId: $event->tenantId,
             companyId: $event->companyId,
-            customerId: $customerId,
-            planId: $plan->id,
+            customerId: (string) $customerId,
+            planId: (string) $plans->first()->id,
             startDate: now()->toDateString(),
-            contractTermMonths: 12,
-            autoRenew: true,
-            billingDayOfMonth: (int) now()->format('j'),
-            paymentTermsDays: 30,
-            paymentMethod: 'sepa_direct_debit',
-            metadata: [
-                'origin' => 'crm_opportunity',
-                'opportunity_id' => $event->opportunityId,
-                'won_amount' => $event->amount,
-            ]
-        );
-
-        $this->lifecycleService->createSubscription($dto, $event->actorUserId);
+            metadata: ['origin' => 'crm_opportunity', 'opportunity_id' => $event->opportunityId, 'won_amount' => number_format($event->amount, 2, '.', '')],
+        ), Str::isUuid($event->actorUserId) ? $event->actorUserId : null);
     }
 }

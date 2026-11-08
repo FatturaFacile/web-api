@@ -68,8 +68,8 @@ Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverla
 Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->onOneServer()->when(fn (): bool => (bool) config('app.demo_reset'));
 
 // Outbox of the domain events and the jobs of the modules. Jobs of a company run once per tenant, in its context.
-// Recurring billing, revenue recognition and depreciation stay manual: they write fiscal data and need the invoicing
-// consolidation (subscriptions:process above still issues the real invoices).
+// Depreciation stays manual: it posts fiscal entries closed by the accountant. Subscription billing and revenue
+// recognition run on the subscription engine (real invoices, idempotent per period): see config/subscription_billing.php.
 Schedule::job(new RelayOutboxEventsJob)->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::job(new MaintainOutboxLifecycleJob)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
 
@@ -115,9 +115,9 @@ $forEachTenant('fiscal-retail:retry-transmissions', static fn (Tenant $tenant): 
 |
 | Kept apart from the entries above. Every entry runs once per active tenant, in its context, on one server.
 | - subscriptions:renewals extends the module subscriptions that renew by themselves (no fiscal data).
-| - subscriptions:billing-run and subscriptions:revenue-recognition run only with SUBSCRIPTION_BILLING_SCHEDULED=true
-|   (config/subscription_billing.php): they write receivables and revenue for module invoices that are not issued
-|   fiscal documents, so they stay manual by default.
+| - subscriptions:billing-run (a retry pass after subscriptions:process) and subscriptions:revenue-recognition run
+|   unless SUBSCRIPTION_BILLING_SCHEDULED=false (config/subscription_billing.php): the engine issues real invoices
+|   through the invoicing services and bills each period once, however many runs there are.
 | - inventory:expire-lots quarantines the lots past their expiration date (LotExpiredEvent).
 | - appointments:reminders queues the reminders of the appointments within appointments.reminder_lead_minutes.
 | Depreciation (ExecuteMonthly/Quarterly/YearlyDepreciationJob) stays manual: it posts fiscal entries and is closed by

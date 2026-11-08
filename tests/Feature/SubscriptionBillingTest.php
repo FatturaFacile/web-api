@@ -10,6 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
+use Modules\SubscriptionBilling\Models\InvoiceSchedule;
 
 uses(RefreshDatabase::class);
 
@@ -54,6 +55,15 @@ function subscriptionPayload(array $overrides = []): array
     ], $overrides);
 }
 
+/**
+ * Invoices of a subscription: the deprecated API runs on the subscription engine, which links each billed period to its
+ * invoice in sub_invoice_schedules.
+ */
+function legacySubscriptionInvoices(string $subscriptionId)
+{
+    return Invoice::withoutGlobalScopes()->whereIn('id', InvoiceSchedule::withoutGlobalScopes()->where('subscription_id', $subscriptionId)->whereNotNull('invoice_id')->select('invoice_id'));
+}
+
 function subscriptionsApi()
 {
     return test()->withHeader('X-Tenant-Id', test()->tenant->id);
@@ -81,7 +91,7 @@ test('billing catches up missed periods, is idempotent and sets invoice dates an
     $bill = subscriptionsApi()->postJson("/api/v1/subscriptions/{$id}/bill")->assertOk();
     expect($bill->json('data.invoices_created'))->toBe(3);
 
-    $invoices = Invoice::where('subscription_id', $id)->orderBy('date')->get();
+    $invoices = legacySubscriptionInvoices($id)->orderBy('date')->get();
     expect($invoices->pluck('date')->map->toDateString()->all())->toBe(['2026-01-15', '2026-02-15', '2026-03-15'])
         ->and($invoices->pluck('invoice_number')->all())->toBe(['INV-2026-0001', 'INV-2026-0002', 'INV-2026-0003'])
         ->and((float) $invoices->first()->total_gross)->toBe(122.0)
@@ -122,7 +132,7 @@ test('month-end start dates do not overflow', function (): void {
     $id = subscriptionsApi()->postJson('/api/v1/subscriptions', subscriptionPayload(['start_date' => '2026-01-31']))->json('data.id');
 
     subscriptionsApi()->postJson("/api/v1/subscriptions/{$id}/bill")->assertJsonPath('data.invoices_created', 3);
-    expect(Invoice::where('subscription_id', $id)->orderBy('date')->get()->pluck('date')->map->toDateString()->all())
+    expect(legacySubscriptionInvoices($id)->orderBy('date')->get()->pluck('date')->map->toDateString()->all())
         ->toBe(['2026-01-31', '2026-02-28', '2026-03-31']);
 });
 
@@ -134,7 +144,7 @@ test('scheduled command bills due subscriptions across tenants and sends renewal
     $this->artisan('subscriptions:process')->assertSuccessful();
     $this->artisan('subscriptions:process')->assertSuccessful();
 
-    expect(Invoice::withoutGlobalScopes()->where('subscription_id', $id)->count())->toBe(1);
+    expect(legacySubscriptionInvoices($id)->count())->toBe(1);
 
     $events = DB::table('document_events')->where('eventable_id', $id)->pluck('event')->all();
     expect(array_count_values($events)['renewal_notice'])->toBe(1);

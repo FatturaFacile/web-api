@@ -19,11 +19,17 @@ final class SubscriptionProduct extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return HasMany<SubscriptionPlan, $this>
+     */
     public function plans(): HasMany
     {
         return $this->hasMany(SubscriptionPlan::class, 'product_id');
     }
 
+    /**
+     * @return HasMany<SubscriptionItem, $this>
+     */
     public function subscriptionItems(): HasMany
     {
         return $this->hasMany(SubscriptionItem::class, 'product_id');

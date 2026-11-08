@@ -11,14 +11,12 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\Quote;
 use App\Models\SalesOrder;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\WorkOrder;
 use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
 use App\Services\Tenancy\TenantClock;
-use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -147,20 +145,6 @@ class ConvertToInvoice
 
             return $invoice;
         });
-    }
-
-    /**
-     * Invoice one billing period of a subscription, dated on the billing date.
-     */
-    public function fromSubscription(Subscription $subscription, CarbonInterface $billingDate): Invoice
-    {
-        $termDays = $subscription->contact?->payment_terms_days;
-
-        return $this->build($subscription, $subscription->items->all(), ['subscription_id' => $subscription->id], 'invoiced_from_subscription', array_filter([
-            'date' => $billingDate->toDateString(),
-            'due_date' => $termDays !== null ? $billingDate->copy()->addDays((int) $termDays)->toDateString() : null,
-            'notes' => $subscription->name,
-        ]));
     }
 
     /**

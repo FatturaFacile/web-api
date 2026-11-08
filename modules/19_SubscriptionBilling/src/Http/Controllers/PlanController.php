@@ -8,181 +8,160 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Modules\SubscriptionBilling\Http\Requests\CreatePlanRequest;
+use Modules\SubscriptionBilling\Http\Requests\UpdatePlanRequest;
 use Modules\SubscriptionBilling\Http\Resources\PlanResource;
 use Modules\SubscriptionBilling\Models\PlanFeature;
 use Modules\SubscriptionBilling\Models\PricingTier;
 use Modules\SubscriptionBilling\Models\SubscriptionPlan;
+use Modules\SubscriptionBilling\Support\Money;
 use OpenApi\Attributes as OA;
 
+/**
+ * Plans of the active company with their price tiers and metered features. A plan's price model and tiers are fixed
+ * once created (new prices are new plans, reached by upgrade or downgrade); names, availability, VAT rate, trial,
+ * renewal increase and accounts can change.
+ */
 final class PlanController extends Controller
 {
-    public function __construct(
-        private readonly TenantContext $tenantContext
-    ) {}
+    public function __construct(private readonly TenantContext $tenantContext) {}
 
     /**
-     * Returns the paginated list of plans of the active tenant.
+     * Paginated plans, filtered by interval and availability.
      */
-    #[OA\Get(
-        path: '/api/v1/subscriptions/plans',
-        operationId: 'listSubscriptionsPlans',
-        description: 'Returns the paginated list of plans of the active tenant. Results can be narrowed with the query parameters.',
-        summary: 'List plans',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Subscriptions Plans'],
-        parameters: [
-            new OA\Parameter(name: 'interval', in: 'query', required: false, description: 'Filter by interval', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'is_active', in: 'query', required: false, description: 'Filter by is active', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'List of plans', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingPlanResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
+    #[OA\Get(path: '/api/v1/subscriptions/plans', operationId: 'listSubscriptionsPlans', summary: 'List plans', description: 'Paginated plans of the active company.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Plans'], parameters: [
+        new OA\Parameter(name: 'interval', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(name: 'is_active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        new OA\Parameter(ref: '#/components/parameters/SubscriptionBillingPage'),
+    ], responses: [
+        new OA\Response(response: 200, description: 'Plans', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingPlanResource')), new OA\Property(property: 'meta', ref: '#/components/schemas/SubscriptionBillingPaginationMeta')])),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingForbidden', response: 403),
+    ])]
     public function index(Request $request): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $query = SubscriptionPlan::where('tenant_id', $tenantId);
-
-        if ($request->has('interval')) {
-            $query->where('billing_interval', $request->query('interval'));
-        }
-
-        if ($request->has('is_active')) {
-            $query->where('is_active', filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN));
-        }
-
-        $plans = $query->orderBy('name')->paginate(25);
+        $plans = SubscriptionPlan::query()
+            ->with(['pricingTiers', 'features'])
+            ->when($request->filled('interval'), fn ($query) => $query->where('billing_interval', (string) $request->query('interval')))
+            ->when($request->has('is_active'), fn ($query) => $query->where('is_active', filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN)))
+            ->orderBy('name')
+            ->paginate(25);
 
         return response()->json([
-            'data' => PlanResource::collection($plans),
-            'meta' => [
-                'current_page' => $plans->currentPage(),
-                'total' => $plans->total(),
-            ],
+            'data' => PlanResource::collection($plans->getCollection())->resolve(),
+            'meta' => ['current_page' => $plans->currentPage(), 'last_page' => $plans->lastPage(), 'total' => $plans->total()],
         ]);
     }
 
     /**
-     * Creates a new plan in the active tenant.
+     * Creates a plan with its tiers and features.
      */
-    #[OA\Post(
-        path: '/api/v1/subscriptions/plans',
-        operationId: 'createSubscriptionsPlan',
-        description: 'Creates a new plan in the active tenant.',
-        summary: 'Create plan',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Subscriptions Plans'],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingCreatePlanRequest')),
-        responses: [
-            new OA\Response(response: 201, description: 'Plan created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingPlanResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
-    )]
+    #[OA\Post(path: '/api/v1/subscriptions/plans', operationId: 'createSubscriptionsPlan', summary: 'Create plan', description: 'Creates a plan: flat, per seat, tiered (graduated), volume or metered pricing, with trial, setup fee, VAT rate, renewal increase and ledger accounts.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Plans'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingCreatePlanRequest')), responses: [
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingPlan', response: 201),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnprocessable', response: 422),
+    ])]
     public function store(CreatePlanRequest $request): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $validated = $request->validated();
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $data = $request->validated();
 
-        $plan = SubscriptionPlan::create([
-            'tenant_id' => $tenantId,
-            'company_id' => $tenantId,
-            'product_id' => $validated['product_id'] ?? null,
-            'plan_code' => $validated['plan_code'],
-            'name' => $validated['name'],
-            'description' => $validated['description'] ?? null,
-            'billing_interval' => $validated['billing_interval'],
-            'interval_count' => (int) ($validated['interval_count'] ?? 1),
-            'pricing_model' => $validated['pricing_model'] ?? 'flat_fee',
-            'currency' => $validated['currency'] ?? 'EUR',
-            'setup_fee' => (float) ($validated['setup_fee'] ?? 0.00),
-            'base_price' => (float) $validated['base_price'],
-            'trial_period_days' => (int) ($validated['trial_period_days'] ?? 0),
-            'min_commitment_cycles' => (int) ($validated['min_commitment_cycles'] ?? 1),
-            'is_active' => true,
-            'translations' => $validated['translations'] ?? null,
-            'metadata' => $validated['metadata'] ?? null,
-        ]);
+        $plan = DB::transaction(function () use ($tenantId, $data): SubscriptionPlan {
+            $plan = SubscriptionPlan::create([
+                'tenant_id' => $tenantId,
+                'company_id' => $tenantId,
+                'product_id' => $data['product_id'] ?? null,
+                'plan_code' => $data['plan_code'],
+                'name' => $data['name'],
+                'description' => $data['description'] ?? null,
+                'billing_interval' => $data['billing_interval'],
+                'interval_count' => (int) ($data['interval_count'] ?? 1),
+                'billing_alignment' => $data['billing_alignment'] ?? 'anniversary',
+                'pricing_model' => ($data['pricing_model'] ?? 'flat_fee') === 'per_seat' ? 'per_unit' : ($data['pricing_model'] ?? 'flat_fee'),
+                'currency' => strtoupper($data['currency'] ?? 'EUR'),
+                'setup_fee' => Money::round2((string) ($data['setup_fee'] ?? '0')),
+                'base_price' => Money::round4((string) $data['base_price']),
+                'tax_rate' => isset($data['tax_rate']) ? Money::round2((string) $data['tax_rate']) : null,
+                'trial_period_days' => (int) ($data['trial_period_days'] ?? 0),
+                'min_commitment_cycles' => (int) ($data['min_commitment_cycles'] ?? 1),
+                'renewal_price_increase_percent' => Money::round((string) ($data['renewal_price_increase_percent'] ?? '0'), 4),
+                'revenue_account_id' => $data['revenue_account_id'] ?? null,
+                'deferred_revenue_account_id' => $data['deferred_revenue_account_id'] ?? null,
+                'is_active' => true,
+                'translations' => $data['translations'] ?? null,
+                'metadata' => $data['metadata'] ?? null,
+            ]);
 
-        if (! empty($validated['tiers'])) {
-            foreach ($validated['tiers'] as $tier) {
+            $tiers = collect($data['tiers'] ?? [])->sortBy(fn (array $tier): float => (float) $tier['from_quantity'])->values();
+
+            foreach ($tiers as $index => $tier) {
                 PricingTier::create([
                     'tenant_id' => $tenantId,
                     'plan_id' => $plan->id,
-                    'tier_number' => (int) ($tier['tier_number'] ?? 1),
-                    'from_quantity' => (float) ($tier['from_quantity'] ?? 0),
-                    'to_quantity' => isset($tier['to_quantity']) ? (float) $tier['to_quantity'] : null,
-                    'unit_price' => (float) ($tier['unit_price'] ?? 0),
-                    'flat_fee' => (float) ($tier['flat_fee'] ?? 0),
+                    'tier_number' => $index + 1,
+                    'from_quantity' => Money::round4((string) $tier['from_quantity']),
+                    'to_quantity' => isset($tier['to_quantity']) ? Money::round4((string) $tier['to_quantity']) : null,
+                    'unit_price' => Money::round4((string) $tier['unit_price']),
+                    'flat_fee' => Money::round2((string) ($tier['flat_fee'] ?? '0')),
                 ]);
             }
-        }
 
-        if (! empty($validated['features'])) {
-            foreach ($validated['features'] as $feature) {
+            foreach ($data['features'] ?? [] as $feature) {
                 PlanFeature::create([
                     'tenant_id' => $tenantId,
                     'plan_id' => $plan->id,
                     'feature_code' => $feature['feature_code'],
                     'name' => $feature['name'],
                     'metric_type' => $feature['metric_type'] ?? 'metered_quota',
-                    'included_quantity' => (float) ($feature['included_quantity'] ?? 0),
-                    'overage_unit_price' => (float) ($feature['overage_unit_price'] ?? 0),
+                    'included_quantity' => Money::round4((string) ($feature['included_quantity'] ?? '0')),
+                    'overage_unit_price' => Money::round4((string) ($feature['overage_unit_price'] ?? '0')),
                     'is_active' => true,
                 ]);
             }
-        }
 
-        return response()->json([
-            'message' => 'Subscription plan created successfully',
-            'data' => new PlanResource($plan),
-        ], 201);
+            return $plan;
+        });
+
+        return response()->json(['message' => 'Subscription plan created successfully', 'data' => (new PlanResource($plan->load(['pricingTiers', 'features'])))->resolve()], 201);
     }
 
     /**
-     * Returns a single plan of the active tenant.
+     * A plan with its tiers and features.
      */
-    #[OA\Get(
-        path: '/api/v1/subscriptions/plans/{id}',
-        operationId: 'getSubscriptionsPlan',
-        description: 'Returns a single plan of the active tenant.',
-        summary: 'Get plan',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Subscriptions Plans'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the plan', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingPlanResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function show(Request $request, string $id): JsonResponse
+    #[OA\Get(path: '/api/v1/subscriptions/plans/{id}', operationId: 'getSubscriptionsPlan', summary: 'Get plan', description: 'A plan of the active company with its tiers and features.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Plans'], parameters: [new OA\Parameter(ref: '#/components/parameters/SubscriptionBillingPlanId')], responses: [
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingPlan', response: 200),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingNotFound', response: 404),
+    ])]
+    public function show(string $id): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $plan = SubscriptionPlan::with(['pricingTiers', 'features'])
-            ->where('tenant_id', $tenantId)
-            ->where('id', $id)
-            ->firstOrFail();
-
-        return response()->json([
-            'data' => new PlanResource($plan),
-        ]);
+        return response()->json(['message' => 'Plan retrieved', 'data' => (new PlanResource(SubscriptionPlan::query()->with(['pricingTiers', 'features'])->findOrFail($id)))->resolve()]);
     }
 
-    private function resolveTenantId(Request $request): string
+    /**
+     * Updates the changeable fields of a plan.
+     */
+    #[OA\Put(path: '/api/v1/subscriptions/plans/{id}', operationId: 'updateSubscriptionsPlan', summary: 'Update plan', description: 'Changes name, description, availability, VAT rate of the next invoices, trial, renewal increase and accounts. Prices and tiers do not change: create a new plan.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Plans'], parameters: [new OA\Parameter(ref: '#/components/parameters/SubscriptionBillingPlanId')], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingUpdatePlanRequest')), responses: [
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingPlan', response: 200),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnprocessable', response: 422),
+    ])]
+    public function update(UpdatePlanRequest $request, string $id): JsonResponse
     {
-        $tenant = $this->tenantContext->getTenant();
-        if ($tenant) {
-            return (string) $tenant->id;
+        $plan = SubscriptionPlan::query()->findOrFail($id);
+        $data = $request->validated();
+
+        foreach (['tax_rate' => 2, 'renewal_price_increase_percent' => 4] as $field => $scale) {
+            if (array_key_exists($field, $data) && $data[$field] !== null) {
+                $data[$field] = Money::round((string) $data[$field], $scale);
+            }
         }
 
-        $user = $request->user();
+        $plan->update($data);
 
-        return (string) ($user?->current_tenant_id ?? $user?->tenant_id ?? '019318b7-0000-7000-8000-000000000001');
+        return response()->json(['message' => 'Subscription plan updated successfully', 'data' => (new PlanResource($plan->load(['pricingTiers', 'features'])))->resolve()]);
     }
 }

@@ -4,239 +4,221 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1;
 
-use App\Actions\Subscriptions\RunSubscriptionBilling;
-use App\Actions\Subscriptions\SaveSubscription;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Subscriptions\StoreSubscriptionRequest;
-use App\Http\Resources\SubscriptionResource;
 use App\Http\Responses\ApiResponse;
-use App\Models\Subscription;
-use App\Services\Sales\DocumentEventRecorder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
+use Modules\SubscriptionBilling\Models\Subscription;
+use Modules\SubscriptionBilling\Services\LegacySubscriptionBridge;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
-#[OA\Tag(name: 'Subscriptions', description: 'Recurring billing subscriptions, billing cycles, pause/resume, and invoices')]
+/**
+ * Deprecated recurring billing API. It keeps its request and response contract, but every subscription lives in the
+ * subscription engine of modules/19_SubscriptionBilling (sub_subscriptions) and is billed by it through the
+ * invoicing services; the successor is /api/v1/sub/contracts.
+ */
+#[OA\Tag(name: 'Subscriptions', description: 'Deprecated recurring billing API, kept for compatibility on the subscription engine: use /api/v1/sub/contracts')]
 class SubscriptionController extends Controller
 {
     use ApiResponse;
 
-    public function __construct(
-        private readonly SaveSubscription $save,
-        private readonly RunSubscriptionBilling $billing,
-        private readonly DocumentEventRecorder $events,
-    ) {}
+    public function __construct(private readonly LegacySubscriptionBridge $bridge) {}
 
     /**
      * List paginated subscriptions with optional status filter.
      */
     #[OA\Get(
         path: '/api/v1/subscriptions',
-        summary: 'List subscriptions',
-        description: 'Get paginated list of subscriptions with optional status filter',
+        operationId: 'legacyListSubscriptions',
+        description: 'Deprecated: use GET /api/v1/sub/contracts. Paginated subscriptions of the active company.',
+        summary: 'List subscriptions (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
+        deprecated: true,
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
-            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer', minimum: 5, maximum: 100)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Subscriptions retrieved successfully'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscriptions retrieved', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/LegacySubscription'))])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'The role cannot read subscriptions', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function index(Request $request): JsonResponse
     {
-        $query = Subscription::with('contact')->latest('start_date');
-
-        if ($request->filled('status')) {
-            $query->where('status', $request->query('status'));
-        }
-
-        $subscriptions = $query->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $subscriptions = $this->bridge->paginate($request->filled('status') ? (string) $request->query('status') : null, min(100, max(5, (int) $request->query('per_page', 15))));
 
         return $this->successResponse(
-            data: SubscriptionResource::collection($subscriptions),
+            data: collect($subscriptions->items())->map(fn (Subscription $subscription): array => $this->bridge->present($subscription))->all(),
             message: __('subscriptions.messages.list'),
             meta: ['current_page' => $subscriptions->currentPage(), 'last_page' => $subscriptions->lastPage(), 'per_page' => $subscriptions->perPage(), 'total' => $subscriptions->total()]
         );
     }
 
+    /**
+     * Create a subscription billed by the subscription engine.
+     */
     #[OA\Post(
         path: '/api/v1/subscriptions',
-        summary: 'Create subscription',
-        description: 'Create a new recurring subscription plan',
+        operationId: 'legacyCreateSubscription',
+        description: 'Deprecated: use POST /api/v1/sub/contracts. Creates a subscription whose charges are its items.',
+        summary: 'Create subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                required: ['contact_id', 'frequency', 'start_date'],
-                properties: [
-                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'frequency', type: 'string'),
-                    new OA\Property(property: 'start_date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
-                ]
-            )
-        ),
+        deprecated: true,
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/LegacySubscriptionRequest')),
         responses: [
-            new OA\Response(response: 201, description: 'Subscription created successfully'),
-            new OA\Response(response: 422, description: 'Validation error'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 201, description: 'Subscription created', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/LegacySubscription')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'The role cannot write subscriptions', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function store(StoreSubscriptionRequest $request): JsonResponse
     {
-        return $this->successResponse(
-            new SubscriptionResource($this->save->create($request->validated())),
-            __('subscriptions.messages.created'),
-            Response::HTTP_CREATED
-        );
+        $subscription = $this->bridge->create($request->validated(), $this->actorId($request));
+
+        return $this->successResponse($this->bridge->present($subscription, true), __('subscriptions.messages.created'), Response::HTTP_CREATED);
     }
 
+    /**
+     * Retrieve a subscription with its items and billed periods.
+     */
     #[OA\Get(
         path: '/api/v1/subscriptions/{id}',
-        summary: 'Get subscription',
-        description: 'Retrieve details, items, and billing runs for a subscription',
+        operationId: 'legacyGetSubscription',
+        description: 'Deprecated: use GET /api/v1/sub/contracts/{id}.',
+        summary: 'Get subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Subscription details retrieved'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscription details', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/LegacySubscription')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function show(string $id): JsonResponse
     {
-        $subscription = Subscription::with(['contact', 'items', 'runs'])->findOrFail($id);
-
-        return $this->successResponse(new SubscriptionResource($subscription), __('subscriptions.messages.retrieved'));
+        return $this->successResponse($this->bridge->present(Subscription::query()->findOrFail($id), true), __('subscriptions.messages.retrieved'));
     }
 
+    /**
+     * Update the terms or replace the charges (future periods only).
+     */
     #[OA\Put(
         path: '/api/v1/subscriptions/{id}',
-        summary: 'Update subscription',
-        description: 'Update subscription terms, items, or parameters',
+        operationId: 'legacyUpdateSubscription',
+        description: 'Deprecated: use the plan, quantity and cancellation actions of /api/v1/sub/contracts/{id}. Replacing the items affects the periods not billed yet.',
+        summary: 'Update subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        requestBody: new OA\RequestBody(
-            required: true,
-            content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'frequency', type: 'string'),
-                    new OA\Property(property: 'start_date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
-                ]
-            )
-        ),
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/LegacySubscriptionRequest')),
         responses: [
-            new OA\Response(response: 200, description: 'Subscription updated successfully'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 422, description: 'Validation error'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscription updated', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/LegacySubscription')])),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function update(StoreSubscriptionRequest $request, string $id): JsonResponse
     {
-        $subscription = $this->save->update(Subscription::findOrFail($id), $request->validated());
+        Subscription::query()->findOrFail($id);
+        $subscription = $this->bridge->update($id, $request->validated(), $this->actorId($request));
 
-        return $this->successResponse(new SubscriptionResource($subscription), __('subscriptions.messages.updated'));
+        return $this->successResponse($this->bridge->present($subscription, true), __('subscriptions.messages.updated'));
     }
 
+    /**
+     * Soft-delete a subscription (its invoices and history are kept).
+     */
     #[OA\Delete(
         path: '/api/v1/subscriptions/{id}',
-        summary: 'Delete subscription',
-        description: 'Delete a subscription',
+        operationId: 'legacyDeleteSubscription',
+        description: 'Deprecated: cancel through POST /api/v1/sub/contracts/{id}/cancel. The subscription is soft-deleted; its invoices stay.',
+        summary: 'Delete subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Subscription deleted successfully'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscription deleted', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function destroy(string $id): JsonResponse
     {
-        Subscription::findOrFail($id)->delete();
+        Subscription::query()->findOrFail($id)->delete();
 
         return $this->successResponse(null, __('subscriptions.messages.deleted'));
     }
 
     #[OA\Post(
         path: '/api/v1/subscriptions/{id}/pause',
-        summary: 'Pause subscription',
-        description: 'Pause an active subscription',
+        operationId: 'legacyPauseSubscription',
+        description: 'Deprecated: use POST /api/v1/sub/contracts/{id}/pause.',
+        summary: 'Pause subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Subscription paused'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 422, description: 'Invalid state transition'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscription paused', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/LegacySubscription')])),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid state transition', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function pause(string $id): JsonResponse
+    public function pause(Request $request, string $id): JsonResponse
     {
-        return $this->transition($id, ['active'], 'paused', 'paused');
+        return $this->transition($request, $id, 'pause', 'paused');
     }
 
     #[OA\Post(
         path: '/api/v1/subscriptions/{id}/resume',
-        summary: 'Resume subscription',
-        description: 'Resume a paused subscription',
+        operationId: 'legacyResumeSubscription',
+        description: 'Deprecated: use POST /api/v1/sub/contracts/{id}/reactivate.',
+        summary: 'Resume subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Subscription resumed'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 422, description: 'Invalid state transition'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscription resumed', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/LegacySubscription')])),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid state transition', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function resume(string $id): JsonResponse
+    public function resume(Request $request, string $id): JsonResponse
     {
-        return $this->transition($id, ['paused'], 'active', 'resumed');
+        return $this->transition($request, $id, 'resume', 'resumed');
     }
 
     #[OA\Post(
         path: '/api/v1/subscriptions/{id}/cancel',
-        summary: 'Cancel subscription',
-        description: 'Cancel an active or paused subscription',
+        operationId: 'legacyCancelSubscription',
+        description: 'Deprecated: use POST /api/v1/sub/contracts/{id}/cancel (reasons, end of term, refunds). Cancels at once without refund.',
+        summary: 'Cancel subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Subscription cancelled'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 422, description: 'Invalid state transition'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Subscription cancelled', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/LegacySubscription')])),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid state transition', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function cancel(string $id): JsonResponse
+    public function cancel(Request $request, string $id): JsonResponse
     {
-        return $this->transition($id, ['active', 'paused'], 'cancelled', 'cancelled');
+        return $this->transition($request, $id, 'cancel', 'cancelled');
     }
 
     /**
@@ -244,66 +226,57 @@ class SubscriptionController extends Controller
      */
     #[OA\Post(
         path: '/api/v1/subscriptions/{id}/bill',
-        summary: 'Bill subscription',
-        description: 'Manually generate invoices for all due periods of this subscription',
+        operationId: 'legacyBillSubscription',
+        description: 'Deprecated: use POST /api/v1/sub/contracts/{id}/bill. Issues one invoice per due period through the invoicing services; idempotent.',
+        summary: 'Bill subscription (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Billing executed successfully'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Billing executed', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'invoices_created', type: 'integer'), new OA\Property(property: 'invoice_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'))], type: 'object')])),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function bill(string $id): JsonResponse
+    public function bill(Request $request, string $id): JsonResponse
     {
-        $subscription = Subscription::findOrFail($id);
-        $runs = $this->billing->execute($subscription);
+        $result = $this->bridge->bill($id, $this->actorId($request));
 
-        return $this->successResponse(
-            ['invoices_created' => count($runs), 'invoice_ids' => array_map(fn ($run): ?string => $run->invoice_id, $runs)],
-            trans_choice('subscriptions.messages.billed', count($runs))
-        );
+        return $this->successResponse($result, trans_choice('subscriptions.messages.billed', $result['invoices_created']));
     }
 
     #[OA\Get(
         path: '/api/v1/subscriptions/{id}/runs',
-        summary: 'List subscription billing runs',
-        description: 'Get historical billing executions for a subscription',
+        operationId: 'legacyListSubscriptionRuns',
+        description: 'Deprecated: use GET /api/v1/sub/contracts/{id}/invoices.',
+        summary: 'List subscription billing runs (deprecated)',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Subscriptions'],
-        security: [['sanctum' => []]],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        deprecated: true,
+        parameters: [new OA\Parameter(ref: '#/components/parameters/LegacySubscriptionId')],
         responses: [
-            new OA\Response(response: 200, description: 'Billing runs retrieved'),
-            new OA\Response(response: 404, description: 'Subscription not found'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Billing runs', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/LegacySubscriptionRun'))])),
+            new OA\Response(response: 404, description: 'Subscription not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function runs(string $id): JsonResponse
     {
-        $runs = Subscription::findOrFail($id)->runs()->orderByDesc('period_start')->get();
-
-        return $this->successResponse($runs->map(fn ($run): array => $run->toArray())->all(), __('subscriptions.messages.runs'));
+        return $this->successResponse($this->bridge->runs(Subscription::query()->findOrFail($id)), __('subscriptions.messages.runs'));
     }
 
-    /**
-     * @param  array<int, string>  $allowedFrom
-     */
-    private function transition(string $id, array $allowedFrom, string $to, string $event): JsonResponse
+    private function transition(Request $request, string $id, string $action, string $event): JsonResponse
     {
-        $subscription = Subscription::findOrFail($id);
+        $subscription = $this->bridge->transition($id, $action, $this->actorId($request));
 
-        if (! in_array($subscription->status, $allowedFrom, true)) {
-            throw ValidationException::withMessages(['status' => __('subscriptions.invalid_transition', ['status' => $subscription->status, 'action' => __("subscriptions.actions.{$event}")])]);
-        }
+        return $this->successResponse($this->bridge->present($subscription), __("subscriptions.messages.{$event}"));
+    }
 
-        $subscription->update(['status' => $to]);
-        $this->events->record($subscription, $event);
+    private function actorId(Request $request): ?string
+    {
+        $id = $request->user()?->getAuthIdentifier();
 
-        return $this->successResponse(new SubscriptionResource($subscription), __("subscriptions.messages.{$event}"));
+        return $id !== null ? (string) $id : null;
     }
 }
