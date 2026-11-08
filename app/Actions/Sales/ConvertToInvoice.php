@@ -4,103 +4,71 @@ declare(strict_types=1);
 
 namespace App\Actions\Sales;
 
-use App\Enums\DeliveryNoteStatus;
 use App\Enums\QuoteStatus;
 use App\Models\DeliveryNote;
 use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\Tenant;
 use App\Models\WorkOrder;
+use App\Services\Invoicing\InvoiceService;
+use App\Services\ItalianSdi\InvoiceFiscalService;
 use App\Services\Sales\DocumentEventRecorder;
-use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
 use App\Services\Tenancy\TenantClock;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Modules\Inventory\Services\ProductChargeCalculator;
-use Modules\Invoicing\Actions\PostInvoiceAction;
+use Modules\Invoicing\Contracts\InvoicingServiceInterface;
+use Modules\Invoicing\Models\SalesDeliveryNote;
+use Modules\Invoicing\Models\SalesOrder as ModuleSalesOrder;
+use Modules\Invoicing\Services\OrderBillingService;
 
+/**
+ * Turns the documents of the sales API of the app (orders, delivery notes, quotes, proformas, work reports) into issued
+ * invoices. It decides which source can be invoiced and records the conversion on the source; the invoice itself is
+ * always created and issued by the invoicing service (orders and delivery notes through its billing of sources, so
+ * partial billing, down-payment deduction and order billing status are the same as in the invoicing module).
+ */
 class ConvertToInvoice
 {
     public function __construct(
-        private readonly DocumentNumberingService $numbering,
-        private readonly DocumentTotalsCalculator $totals,
         private readonly DocumentEventRecorder $events,
-        private readonly PostInvoiceAction $postInvoice,
-        private readonly ProductChargeCalculator $charges,
+        private readonly InvoiceService $invoices,
+        private readonly InvoicingServiceInterface $invoicing,
+        private readonly OrderBillingService $orderBilling,
         private readonly TenantClock $clock,
     ) {}
 
     /**
-     * Invoice a sales order (all lines) or a delivery note (delivered lines).
+     * Invoices what is left to invoice on a sales order. The invoice that closes the order deducts its down payments
+     * line by line, at their VAT rate.
      */
     public function fromOrder(SalesOrder $order): Invoice
     {
         return DB::transaction(function () use ($order): Invoice {
-            $lockedOrder = SalesOrder::where('id', $order->id)->lockForUpdate()->firstOrFail();
+            $issued = $this->invoicing->issueInvoiceFromOrder(ModuleSalesOrder::query()->findOrFail($order->id), ['notes' => $order->notes], $this->actor());
+            $invoice = Invoice::query()->with('items')->findOrFail($issued->id);
+            $this->events->record($invoice, 'invoiced_from_order', ['source_id' => $order->getKey()]);
 
-            if (Invoice::where('sales_order_id', $lockedOrder->id)->where('is_deposit', false)->exists()) {
-                throw ValidationException::withMessages(['order' => __('sales.order_already_invoiced')]);
-            }
-
-            // Final invoice: previously issued deposit invoices are deducted line by line, keeping each tax rate.
-            $deductions = Invoice::with('items')
-                ->where('sales_order_id', $lockedOrder->id)
-                ->where('is_deposit', true)
-                ->orderBy('date')
-                ->get()
-                ->flatMap(fn (Invoice $deposit): array => $deposit->items->map(fn ($item): InvoiceItem => new InvoiceItem([
-                    'description' => __('sales.deposit_deduction', ['number' => $deposit->invoice_number]),
-                    'quantity' => 1,
-                    'unit_price' => -1 * (float) $item->line_total,
-                    'tax_rate' => $item->tax_rate,
-                ]))->all())
-                ->all();
-
-            return $this->build($lockedOrder, array_merge($lockedOrder->items->all(), $deductions), ['sales_order_id' => $lockedOrder->id], 'invoiced_from_order');
+            return $invoice;
         });
     }
 
     /**
-     * Issue a deposit invoice for a percentage of the order, split per tax rate.
-     * The sum of all deposits can never exceed the order net total.
+     * Issues a down-payment invoice for a percentage of the order net total, split per VAT rate. The down payments of an
+     * order can never exceed its net total.
      */
-    public function depositFromOrder(SalesOrder $order, float $percentage): Invoice
+    public function depositFromOrder(SalesOrder $order, float|string $percentage): Invoice
     {
         return DB::transaction(function () use ($order, $percentage): Invoice {
-            $lockedOrder = SalesOrder::where('id', $order->id)->lockForUpdate()->firstOrFail();
+            $issued = $this->orderBilling->issueDownPayment(ModuleSalesOrder::query()->findOrFail($order->id), DocumentTotalsCalculator::decimal($percentage), null, [], $this->actor());
+            $invoice = Invoice::query()->with('items')->findOrFail($issued->id);
+            $this->events->record($invoice, 'deposit_invoiced_from_order', ['source_id' => $order->getKey()]);
 
-            if ($lockedOrder->status === 'cancelled') {
-                throw ValidationException::withMessages(['order' => __('sales.order_cancelled')]);
-            }
-
-            if (Invoice::where('sales_order_id', $lockedOrder->id)->where('is_deposit', false)->exists()) {
-                throw ValidationException::withMessages(['order' => __('sales.order_already_invoiced')]);
-            }
-
-            $alreadyRequested = (float) Invoice::where('sales_order_id', $lockedOrder->id)->where('is_deposit', true)->sum('total_net');
-            $lines = $lockedOrder->items->groupBy(fn ($item): string => number_format((float) $item->tax_rate, 2, '.', ''))
-                ->map(fn ($group, string $rate): InvoiceItem => new InvoiceItem([
-                    'description' => __('sales.deposit_line', ['number' => $lockedOrder->order_number, 'percentage' => number_format($percentage, 2, '.', '')
-                            |> (fn ($x) => rtrim($x, '0'))
-                            |> (fn ($x) => rtrim($x, '.'))]),
-                    'quantity' => 1,
-                    'unit_price' => round((float) $group->sum('line_total') * $percentage / 100, 2),
-                    'tax_rate' => (float) $rate,
-                ]))
-                ->values()
-                ->all();
-
-            $requested = array_sum(array_map(fn (InvoiceItem $line): float => (float) $line->unit_price, $lines));
-
-            if ($alreadyRequested + $requested > (float) $lockedOrder->total_net + 0.01) {
-                throw ValidationException::withMessages(['percentage' => __('sales.deposit_exceeds_order')]);
-            }
-
-            return $this->build($lockedOrder, $lines, ['sales_order_id' => $lockedOrder->id], 'deposit_invoiced_from_order', ['is_deposit' => true]);
+            return $invoice;
         });
     }
 
@@ -127,28 +95,24 @@ class ConvertToInvoice
         });
     }
 
+    /**
+     * Invoices a delivery note, once. Lines without a price take it from their order line, and the order lines are
+     * billed by the delivered quantities.
+     */
     public function fromDeliveryNote(DeliveryNote $note): Invoice
     {
         return DB::transaction(function () use ($note): Invoice {
-            $lockedNote = DeliveryNote::where('id', $note->id)->lockForUpdate()->firstOrFail();
-
-            if ($lockedNote->status === DeliveryNoteStatus::Invoiced->value) {
-                throw ValidationException::withMessages(['delivery_note' => __('sales.delivery_note_already_invoiced')]);
-            }
-
-            $invoice = $this->build($lockedNote, $lockedNote->items->all(), [
-                'sales_order_id' => $lockedNote->sales_order_id,
-                'delivery_note_id' => $lockedNote->id,
-            ], 'invoiced_from_delivery_note');
-
-            $lockedNote->update(['status' => DeliveryNoteStatus::Invoiced->value]);
+            $issued = $this->invoicing->issueInvoiceFromDeliveryNote(SalesDeliveryNote::query()->findOrFail($note->id), ['notes' => $note->notes], $this->actor());
+            $invoice = Invoice::query()->with('items')->findOrFail($issued->id);
+            $this->events->record($invoice, 'invoiced_from_delivery_note', ['source_id' => $note->getKey()]);
 
             return $invoice;
         });
     }
 
     /**
-     * Turn a proforma into a standard invoice with its own number, linking back to the proforma.
+     * Turns a proforma into an invoice with its own number, linked to the proforma: the customer, currency, VAT regime,
+     * payment details and Italian fiscal data (withholding, pension fund, stamp duty, declaration of intent) carry over.
      */
     public function fromProforma(Invoice $proforma): Invoice
     {
@@ -163,56 +127,19 @@ class ConvertToInvoice
                 throw ValidationException::withMessages(['invoice' => __('sales.proforma_already_converted')]);
             }
 
+            $fiscal = array_filter(Arr::only($lockedProforma->getAttributes(), InvoiceFiscalService::INPUT_FIELDS), static fn (mixed $value): bool => $value !== null);
+
             return $this->build($lockedProforma, $lockedProforma->items->all(), ['proforma_id' => $lockedProforma->id], 'converted_from_proforma', [
+                ...$fiscal,
                 'jurisdiction' => $lockedProforma->jurisdiction,
-                'split_payment' => $lockedProforma->split_payment,
-                'reverse_charge' => $lockedProforma->reverse_charge,
+                'split_payment' => (bool) $lockedProforma->split_payment,
+                'reverse_charge' => (bool) $lockedProforma->reverse_charge,
+                'sdi_excluded' => (bool) $lockedProforma->sdi_excluded,
+                'payment_method' => $lockedProforma->payment_method,
+                'payment_terms' => $lockedProforma->payment_terms,
+                'bank_name' => $lockedProforma->bank_name,
+                'bank_iban' => $lockedProforma->bank_iban,
             ]);
-        });
-    }
-
-    /**
-     * @param  array<int, Model>  $lines
-     * @param  array<string, mixed>  $links
-     * @param  array<string, mixed>  $extra
-     */
-    private function build(Model $source, array $lines, array $links, string $event, array $extra = []): Invoice
-    {
-        return DB::transaction(function () use ($source, $lines, $links, $event, $extra): Invoice {
-            $date = (string) ($extra['date'] ?? $this->clock->today(Tenant::query()->find($source->tenant_id))->toDateString());
-            $payload = array_map(
-                fn (Model $line): array => $line->only(['product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage']),
-                $lines
-            );
-
-            if (empty($extra['is_deposit'])) {
-                $payload = [...$payload, ...$this->charges->linesFor($payload, $date, (string) ($source->currency ?? 'EUR'), (string) $source->tenant_id)];
-            }
-
-            $computed = $this->totals->calculate($payload);
-            $number = $this->numbering->next('invoice', (int) date('Y', strtotime($date)));
-
-            $invoice = Invoice::create(array_merge([
-                'tenant_id' => $source->tenant_id,
-                'contact_id' => $source->contact_id,
-                'invoice_type' => 'standard',
-                'invoice_number' => $number['number'],
-                'fiscal_year' => $number['fiscal_year'],
-                'sequential_number' => $number['sequential_number'],
-                'date' => $date,
-                'currency' => $source->currency ?? 'EUR',
-                'total_net' => $computed['total_net'],
-                'total_tax' => $computed['total_tax'],
-                'total_gross' => $computed['total_gross'],
-                'payment_status' => 'unpaid',
-                'notes' => $source->notes,
-            ], $links, $extra));
-
-            $invoice->items()->createMany($computed['items']);
-            $this->events->record($invoice, $event, ['source_id' => $source->getKey()]);
-            $this->postInvoice->issue((string) $invoice->id);
-
-            return $invoice->refresh()->load('items');
         });
     }
 
@@ -237,5 +164,39 @@ class ConvertToInvoice
 
             return $invoice;
         });
+    }
+
+    /**
+     * Issues an invoice from the lines of a source document through the invoicing service and records the conversion.
+     *
+     * @param  array<int, Model>  $lines
+     * @param  array<string, mixed>  $links
+     * @param  array<string, mixed>  $extra
+     */
+    private function build(Model $source, array $lines, array $links, string $event, array $extra = []): Invoice
+    {
+        $date = (string) ($extra['date'] ?? $this->clock->today(Tenant::query()->find($source->tenant_id))->toDateString());
+        $payload = array_map(
+            static fn (Model $line): array => $line->only(['product_id', 'description', 'quantity', 'unit_price', 'tax_rate', 'discount_percentage']),
+            $lines
+        );
+
+        $invoice = $this->invoices->issue(array_merge([
+            'tenant_id' => (string) $source->tenant_id,
+            'contact_id' => (string) $source->contact_id,
+            'invoice_type' => 'standard',
+            'date' => $date,
+            'currency' => $source->currency ?? 'EUR',
+            'notes' => $source->notes,
+        ], $links, $extra), $payload);
+
+        $this->events->record($invoice, $event, ['source_id' => $source->getKey()]);
+
+        return $invoice;
+    }
+
+    private function actor(): string
+    {
+        return (string) (Auth::id() ?? 'system');
     }
 }

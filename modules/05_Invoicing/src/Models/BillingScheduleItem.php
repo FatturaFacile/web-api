@@ -21,6 +21,9 @@ final class BillingScheduleItem extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<BillingSchedule, $this>
+     */
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(BillingSchedule::class, 'billing_schedule_id');

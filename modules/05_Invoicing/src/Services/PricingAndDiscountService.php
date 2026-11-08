@@ -6,6 +6,7 @@ namespace Modules\Invoicing\Services;
 
 use App\Models\Product;
 use App\Services\Catalog\PriceResolver;
+use App\Services\Sales\DocumentTotalsCalculator;
 use App\Services\Sales\VatSummaryCalculator;
 use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Models\CustomerGroup;
@@ -99,36 +100,16 @@ final class PricingAndDiscountService implements PricingAndDiscountServiceInterf
      */
     public function calculateOrderTotals(array $items, ?string $discountPolicyId = null): array
     {
-        $subtotal = 0.0;
-        $discountTotal = 0.0;
-        $vatEntries = [];
-
-        foreach ($items as $item) {
-            $qty = (float) ($item['quantity'] ?? 1.0);
-            $unitPrice = (float) ($item['unit_price'] ?? 0.0);
-            $discountPct = (float) ($item['discount_percentage'] ?? 0.0);
-            $taxRate = (float) ($item['tax_rate'] ?? 0.0);
-
-            $lineRaw = $qty * $unitPrice;
-            $lineDiscount = round(($lineRaw * $discountPct) / 100.0, 2);
-            $lineNet = round($lineRaw - $lineDiscount, 2);
-            $vatEntries[] = ['rate' => $taxRate, 'taxable' => $lineNet];
-
-            $subtotal += $lineRaw;
-            $discountTotal += $lineDiscount;
-        }
-
-        $taxTotal = (float) $this->vat->totalTax($vatEntries);
-
-        $netTotal = round($subtotal - $discountTotal, 2);
-        $grossTotal = round($netTotal + $taxTotal, 2);
+        // One computation for every sales document: the decimal one of the totals calculator, so an order, a quote and
+        // the invoice of the same lines always show the same line nets and totals.
+        $totals = (new DocumentTotalsCalculator($this->vat))->calculateDecimal($items);
 
         return [
-            'subtotal' => round($subtotal, 2),
-            'discount_total' => round($discountTotal, 2),
-            'net_total' => round($netTotal, 2),
-            'tax_total' => round($taxTotal, 2),
-            'gross_total' => round($grossTotal, 2),
+            'subtotal' => (float) $totals['subtotal'],
+            'discount_total' => (float) $totals['discount_total'],
+            'net_total' => (float) $totals['total_net'],
+            'tax_total' => (float) $totals['total_tax'],
+            'gross_total' => (float) $totals['total_gross'],
         ];
     }
 }

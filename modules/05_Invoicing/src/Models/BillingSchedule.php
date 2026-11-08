@@ -40,6 +40,9 @@ final class BillingSchedule extends BaseEnterpriseModel
         return $this->belongsTo(CustomerAgreement::class, 'customer_agreement_id');
     }
 
+    /**
+     * @return HasMany<BillingScheduleItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(BillingScheduleItem::class, 'billing_schedule_id');

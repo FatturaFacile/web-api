@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Contact;
+use App\Models\ExchangeRate;
 use App\Models\Invoice;
 use App\Models\Tenant;
 use App\Services\Invoicing\InvoiceService;
@@ -22,6 +23,9 @@ beforeEach(function (): void {
 
     app(TenantContext::class)->setTenant($this->tenant);
     fiscalCalendar($this->tenant);
+
+    // A franc invoice of a euro company takes the rate of the exchange-rate service at emission.
+    ExchangeRate::query()->create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2027-01-01']);
 });
 
 /**

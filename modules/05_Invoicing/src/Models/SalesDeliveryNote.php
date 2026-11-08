@@ -42,6 +42,9 @@ final class SalesDeliveryNote extends BaseEnterpriseModel
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
+    /**
+     * @return HasMany<SalesDeliveryNoteItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(SalesDeliveryNoteItem::class, 'delivery_note_id');

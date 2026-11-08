@@ -55,6 +55,8 @@ final class SalesInvoice extends BaseEnterpriseModel
             'enasarco_base' => 'decimal:2',
             'enasarco_percent' => 'decimal:2',
             'enasarco_amount' => 'decimal:2',
+            'is_deposit' => 'boolean',
+            'exchange_rate_date' => 'date',
         ];
     }
 
@@ -88,6 +90,9 @@ final class SalesInvoice extends BaseEnterpriseModel
         return $this->belongsTo(ProjectMilestone::class, 'project_milestone_id');
     }
 
+    /**
+     * @return HasMany<SalesInvoiceItem, $this>
+     */
     public function items(): HasMany
     {
         return $this->hasMany(SalesInvoiceItem::class, 'invoice_id');
@@ -111,6 +116,16 @@ final class SalesInvoice extends BaseEnterpriseModel
     public function glJournalEntry(): BelongsTo
     {
         return $this->belongsTo(JournalEntry::class, 'gl_journal_entry_id');
+    }
+
+    /**
+     * The payment schedule (scadenze) fixed at emission from the payment term of the document.
+     *
+     * @return HasMany<InvoiceInstallment, $this>
+     */
+    public function installments(): HasMany
+    {
+        return $this->hasMany(InvoiceInstallment::class, 'invoice_id')->orderBy('sequence');
     }
 
     public function isCreditNote(): bool

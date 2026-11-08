@@ -15,7 +15,6 @@ use Illuminate\Support\Str;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
-use Modules\Invoicing\Contracts\PricingAndDiscountServiceInterface;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Models\CustomerLedgerEntry;
@@ -88,7 +87,6 @@ test('posts invoice from sales order, records customer ledger entry, and dispatc
         }
     };
     $invoicingService = new InvoicingService(
-        app(PricingAndDiscountServiceInterface::class),
         app(CustomerLedgerServiceInterface::class),
         $mockDispatcher,
         app(DocumentNumberingService::class),
