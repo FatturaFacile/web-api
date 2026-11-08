@@ -37,7 +37,7 @@ jobs:
     services:
       # Isolated PostgreSQL service container with tmpfs for zero disk I/O latency
       postgres:
-        image: postgres:17-alpine
+        image: postgres:16-alpine
         env:
           POSTGRES_DB: fatturafacile_test
           POSTGRES_USER: ff_admin

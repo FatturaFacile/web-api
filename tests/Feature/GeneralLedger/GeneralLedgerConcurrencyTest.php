@@ -130,6 +130,7 @@ test('pessimistic lock on period close prevents race conditions', function () {
 test('postings read their fiscal period FOR SHARE, so they wait for a closing in progress and then see it closed', function () {
     $periodReads = [];
     DB::listen(function (QueryExecuted $query) use (&$periodReads): void {
+        // The journal number sequence reads the period too, FOR SHARE like the posting checks, so it is counted.
         if (str_contains($query->sql, 'from "fiscal_periods"')) {
             $periodReads[] = $query->sql;
         }
