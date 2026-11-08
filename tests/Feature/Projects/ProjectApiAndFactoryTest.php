@@ -102,7 +102,7 @@ test('can create project through rest api and receive 201', function (): void {
 
     $response->assertStatus(201)
         ->assertJsonPath('data.name', 'Subsea Cable Route Survey')
-        ->assertJsonPath('data.contract_value', 180000);
+        ->assertJsonPath('data.contract_value', '180000.00');
 
     $this->assertDatabaseHas('projects', [
         'tenant_id' => $this->tenant->id,
@@ -135,12 +135,14 @@ test('can show and update project', function (): void {
 
     $updateResponse = $this->putJson("/api/v1/projects/{$project->id}", [
         'name' => 'Updated Modernized Title',
-        'status' => 'active',
+        'progress_percentage' => 25,
     ]);
 
+    // The status moves only through the lifecycle endpoints, never through the master data update.
     $updateResponse->assertStatus(200)
         ->assertJsonPath('data.name', 'Updated Modernized Title')
-        ->assertJsonPath('data.status', 'active');
+        ->assertJsonPath('data.progress_percentage', '25.00')
+        ->assertJsonPath('data.status', 'planned');
 });
 
 test('can verify all project factory states', function (): void {

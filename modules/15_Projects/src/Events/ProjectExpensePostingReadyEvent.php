@@ -7,13 +7,20 @@ namespace Modules\Projects\Events;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Illuminate\Support\Str;
 
+/**
+ * An approved out-of-pocket project expense: the General Ledger books the cost by nature against the reimbursement
+ * payable, since no other document records it.
+ */
 final readonly class ProjectExpensePostingReadyEvent implements DomainEventInterface
 {
+    /**
+     * @param  string  $amount  decimal string with two decimals
+     */
     public function __construct(
         public string $costEntryId,
         public string $projectId,
         public string $expenseCategory,
-        public float $amount,
+        public string $amount,
         public string $debitAccountCode,
         public string $creditAccountCode,
         public string $incurredDate,
@@ -30,12 +37,12 @@ final readonly class ProjectExpensePostingReadyEvent implements DomainEventInter
 
     public function getAggregateType(): string
     {
-        return 'project_expense';
+        return 'project';
     }
 
     public function getAggregateId(): string
     {
-        return $this->costEntryId;
+        return $this->projectId;
     }
 
     public function getEventName(): string

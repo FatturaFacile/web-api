@@ -5,117 +5,94 @@ declare(strict_types=1);
 namespace Modules\Projects\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Projects\Actions\RecordJobCostEntryAction;
 use Modules\Projects\DTOs\RecordJobCostDTO;
+use Modules\Projects\Http\Controllers\Concerns\PaginatesProjectRecords;
 use Modules\Projects\Http\Requests\StoreProjectCostEntryRequest;
 use Modules\Projects\Http\Resources\ProjectCostEntryResource;
 use Modules\Projects\Models\Project;
 use Modules\Projects\Models\ProjectCostEntry;
+use Modules\Projects\Support\Money;
 use OpenApi\Attributes as OA;
 
+/**
+ * Job costing of a project: the list of booked costs and manual cost entries.
+ */
 final class ProjectCostEntryController extends Controller
 {
+    use PaginatesProjectRecords;
+
     /**
-     * Returns the paginated list of projects of the active tenant.
+     * Cost entries of the project, filtered by category, task or approval status.
      */
-    #[OA\Get(
-        path: '/api/v1/projects/{id}/costs',
-        operationId: 'listProjectsCosts',
-        description: 'Returns the paginated list of projects of the active tenant. Results can be narrowed with the query parameters.',
-        summary: 'List projects',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Projects'],
+    #[OA\Get(path: '/api/v1/projects/{id}/costs', operationId: 'projectsCostsList', summary: 'List project costs', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
         parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
-            new OA\Parameter(name: 'cost_category', in: 'query', required: false, description: 'Filter by cost category', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'task_id', in: 'query', required: false, description: 'Filter by task', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 20)),
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(ref: '#/components/parameters/ProjectsId'),
+            new OA\Parameter(name: 'cost_category', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'task_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'approval_status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['pending', 'approved', 'rejected'])),
+            new OA\Parameter(ref: '#/components/parameters/ProjectsPerPage'),
+            new OA\Parameter(ref: '#/components/parameters/ProjectsPage'),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of projects', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsProjectCostEntryResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function index(string $projectId, Request $request): JsonResponse
+            new OA\Response(response: 200, description: 'Cost entries', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsCostEntry')), new OA\Property(property: 'meta', ref: '#/components/schemas/ProjectsPaginationMeta')])),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+        ])]
+    public function index(string $id, Request $request): JsonResponse
     {
-        $project = Project::findOrFail($projectId);
+        $project = Project::findOrFail($id);
+        $entries = ProjectCostEntry::query()
+            ->where('project_id', $project->id)
+            ->when($request->query('cost_category'), fn ($query, $category) => $query->where('cost_category', $category))
+            ->when($request->query('task_id'), fn ($query, $taskId) => $query->where('project_task_id', $taskId))
+            ->when($request->query('approval_status'), fn ($query, $status) => $query->where('approval_status', $status))
+            ->orderByDesc('incurred_date')
+            ->paginate($this->perPage($request));
 
-        $query = ProjectCostEntry::where('project_id', $project->id)
-            ->when($request->query('cost_category'), fn ($q, $cat) => $q->where('cost_category', $cat))
-            ->when($request->query('task_id'), fn ($q, $taskId) => $q->where('task_id', $taskId))
-            ->orderBy('incurred_date', 'desc');
-
-        $entries = $query->paginate((int) $request->query('per_page', 20));
-
-        return response()->json([
-            'data' => ProjectCostEntryResource::collection($entries),
-            'meta' => [
-                'current_page' => $entries->currentPage(),
-                'last_page' => $entries->lastPage(),
-                'total' => $entries->total(),
-            ],
-        ]);
+        return $this->paginated($entries, ProjectCostEntryResource::class);
     }
 
     /**
-     * Creates a new project in the active tenant.
+     * Books a manual cost entry referencing its source document (managers only).
      */
-    #[OA\Post(
-        path: '/api/v1/projects/{id}/costs',
-        operationId: 'createProjectsCost',
-        description: 'Creates a new project in the active tenant.',
-        summary: 'Create project',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Projects'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the project', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsStoreProjectCostEntryRequest')),
+    #[OA\Post(path: '/api/v1/projects/{id}/costs', operationId: 'projectsCostsCreate', summary: 'Record project cost', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId')],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/ProjectsStoreCostEntryRequest')),
         responses: [
-            new OA\Response(response: 201, description: 'Project created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsProjectCostEntryResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
-    )]
-    public function store(
-        string $projectId,
-        StoreProjectCostEntryRequest $request,
-        RecordJobCostEntryAction $action,
-        TenantContext $tenantContext
-    ): JsonResponse {
-        $project = Project::findOrFail($projectId);
-        $tenant = $tenantContext->getTenant();
-        $companyId = (string) ($tenant ? $tenant->id : $project->company_id);
+            new OA\Response(response: 201, description: 'Cost booked (or the existing entry of the same source document)', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ProjectsCostEntry')])),
+            new OA\Response(response: 403, ref: '#/components/responses/ProjectsForbidden'),
+            new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
+            new OA\Response(response: 409, ref: '#/components/responses/ProjectsConflict'),
+            new OA\Response(response: 422, ref: '#/components/responses/ProjectsValidationError'),
+        ])]
+    public function store(string $id, StoreProjectCostEntryRequest $request, RecordJobCostEntryAction $action): JsonResponse
+    {
+        $project = Project::findOrFail($id);
+        $this->authorize('manage', $project);
+        $data = $request->validated();
+        $total = isset($data['total_cost']) ? Money::of($data['total_cost']) : Money::amount(Money::mul($data['quantity'], $data['unit_cost']));
 
-        $dto = new RecordJobCostDTO(
+        $entry = $action->execute(new RecordJobCostDTO(
             projectId: $project->id,
-            costCategory: $request->validated('cost_category'),
-            costSourceType: $request->validated('cost_source_type'),
-            costSourceId: $request->validated('cost_source_id'),
-            quantity: (float) $request->validated('quantity'),
-            unitCost: (float) $request->validated('unit_cost'),
-            totalCost: (float) $request->validated('total_cost'),
-            incurredDate: $request->validated('incurred_date'),
-            phaseId: $request->validated('phase_id'),
-            taskId: $request->validated('task_id'),
-            uom: $request->validated('uom', 'PCE'),
-            isBillable: (bool) $request->validated('is_billable', true),
-            allocations: $request->validated('allocations', []),
-            userId: (string) auth()->id(),
-            companyId: $companyId
-        );
+            costCategory: $data['cost_category'],
+            costSourceType: $data['cost_source_type'],
+            costSourceId: $data['cost_source_id'],
+            quantity: Money::of($data['quantity']),
+            unitCost: Money::of($data['unit_cost']),
+            totalCost: $total,
+            incurredDate: $data['incurred_date'],
+            phaseId: $data['phase_id'] ?? null,
+            taskId: $data['task_id'] ?? null,
+            uom: $data['uom'] ?? 'PCE',
+            isBillable: (bool) ($data['is_billable'] ?? true),
+            allocations: $data['allocations'] ?? [],
+            userId: (string) $request->user()?->getKey(),
+            companyId: $project->company_id,
+            description: $data['description'] ?? null,
+        ));
 
-        $costEntry = $action->execute($dto);
-
-        return response()->json([
-            'message' => 'Cost entry accumulated successfully',
-            'data' => new ProjectCostEntryResource($costEntry->load('allocations')),
-        ], 201);
+        return response()->json(['message' => 'Cost recorded', 'data' => new ProjectCostEntryResource($entry->load('allocations'))], 201);
     }
 }

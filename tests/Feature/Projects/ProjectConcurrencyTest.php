@@ -106,9 +106,9 @@ test('concurrent cost accumulation prevents lost updates and locks financial sum
             costCategory: $batch['category'],
             costSourceType: 'manual_posting',
             costSourceId: (string) Str::uuid7(),
-            quantity: 1.0,
-            unitCost: $batch['amount'],
-            totalCost: $batch['amount'],
+            quantity: '1',
+            unitCost: (string) $batch['amount'],
+            totalCost: (string) $batch['amount'],
             incurredDate: now()->toDateString(),
             userId: $this->user->id,
             companyId: $this->tenant->id

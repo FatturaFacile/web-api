@@ -9,6 +9,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Projects\Models\ProjectTimesheet;
 
 /**
+ * API representation of a timesheet (schema ProjectsTimesheet).
+ *
  * @mixin ProjectTimesheet
  */
 final class ProjectTimesheetResource extends JsonResource
@@ -18,22 +20,31 @@ final class ProjectTimesheetResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var ProjectTimesheet $timesheet */
+        $timesheet = $this->resource;
+
         return [
-            'id' => $this->id,
-            'project_id' => $this->project_id,
-            'project_task_id' => $this->project_task_id,
-            'user_id' => $this->user_id,
-            'work_date' => $this->work_date?->toDateString(),
-            'hours_worked' => (float) $this->hours_worked,
-            'overtime_hours' => (float) $this->overtime_hours,
-            'is_billable' => (bool) $this->is_billable,
-            'cost_rate' => (float) $this->cost_rate,
-            'charge_rate' => (float) $this->charge_rate,
-            'total_cost' => (float) $this->total_cost,
-            'total_charge' => (float) $this->total_charge,
-            'status' => $this->status,
-            'approved_at' => $this->approved_at?->toIso8601String(),
-            'work_summary' => $this->work_summary,
+            'id' => $timesheet->id,
+            'project_id' => $timesheet->project_id,
+            'project_task_id' => $timesheet->project_task_id,
+            'user_id' => $timesheet->user_id,
+            'role' => $timesheet->role,
+            'work_date' => $timesheet->work_date->toDateString(),
+            'hours_worked' => (string) $timesheet->hours_worked,
+            'overtime_hours' => (string) $timesheet->overtime_hours,
+            'is_billable' => $timesheet->is_billable,
+            'cost_rate' => (string) $timesheet->cost_rate,
+            'charge_rate' => (string) $timesheet->charge_rate,
+            'total_cost' => (string) $timesheet->total_cost,
+            'total_charge' => (string) $timesheet->total_charge,
+            'status' => $timesheet->status,
+            'submitted_at' => $timesheet->submitted_at?->toIso8601String(),
+            'approved_by' => $timesheet->approved_by,
+            'approved_at' => $timesheet->approved_at?->toIso8601String(),
+            'rejection_reason' => $timesheet->rejection_reason,
+            'invoice_id' => $timesheet->invoice_id,
+            'is_locked' => ! $timesheet->isEditable(),
+            'work_summary' => $timesheet->work_summary,
         ];
     }
 }

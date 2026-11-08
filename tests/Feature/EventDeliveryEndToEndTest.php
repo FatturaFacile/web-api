@@ -109,16 +109,17 @@ test('a goods receipt over HTTP posts the GR/IR accrual and is recorded once in 
 });
 
 test('a project cost recorded through the costing service posts a WIP journal entry', function (): void {
-    $project = Project::factory()->create(['tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'status' => 'active']);
+    // Only projects that recognise revenue over time or at completion capitalise their costs into WIP.
+    $project = Project::factory()->create(['tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'status' => 'active', 'revenue_recognition_method' => 'percentage_of_completion']);
 
     $costEntry = app(JobCostingAccumulationService::class)->recordCost(new RecordJobCostDTO(
         projectId: (string) $project->id,
         costCategory: 'material',
         costSourceType: 'manual',
         costSourceId: (string) Str::uuid7(),
-        quantity: 3.0,
-        unitCost: 20.0,
-        totalCost: 60.0,
+        quantity: '3',
+        unitCost: '20',
+        totalCost: '60.00',
         incurredDate: now()->toDateString(),
     ));
 

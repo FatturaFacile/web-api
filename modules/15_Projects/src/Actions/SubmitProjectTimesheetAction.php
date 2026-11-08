@@ -8,6 +8,9 @@ use Modules\Projects\Contracts\ProjectTimesheetServiceInterface;
 use Modules\Projects\DTOs\TimesheetEntryDTO;
 use Modules\Projects\Models\ProjectTimesheet;
 
+/**
+ * Logs hours on a project as a draft, or submitted for approval when the entry asks for it.
+ */
 final readonly class SubmitProjectTimesheetAction
 {
     public function __construct(

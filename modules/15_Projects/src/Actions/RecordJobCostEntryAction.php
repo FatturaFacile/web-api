@@ -8,6 +8,9 @@ use Modules\Projects\Contracts\JobCostingAccumulationServiceInterface;
 use Modules\Projects\DTOs\RecordJobCostDTO;
 use Modules\Projects\Models\ProjectCostEntry;
 
+/**
+ * Books a cost on a project through job costing.
+ */
 final readonly class RecordJobCostEntryAction
 {
     public function __construct(
