@@ -10,13 +10,14 @@ use Closure;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
+use Modules\Invoicing\Services\CustomerCreditService;
 
 /**
  * Typed, whitelisted per-tenant preferences stored under `tenants.settings.preferences.<group>.<key>`.
  */
 class TenantPreferences
 {
-    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking', 'visitors'];
+    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking', 'visitors', 'sales'];
 
     /**
      * Preference keys that hold a group of options, merged option by option when updated.
@@ -132,6 +133,12 @@ class TenantPreferences
             ],
             'visitors' => [
                 'retention_days' => ['nullable', 'integer', 'min:'.config('visitors.retention_min_days'), 'max:'.config('visitors.retention_max_days')],
+            ],
+            // Credit management of the sales orders (see CustomerCreditService): what confirming an order does when the
+            // customer is over its credit limit, and after how many days an overdue invoice blocks new orders (none by default).
+            'sales' => [
+                'credit_check_mode' => ['nullable', Rule::in(CustomerCreditService::MODES)],
+                'credit_block_overdue_days' => ['nullable', 'integer', 'min:1', 'max:3650'],
             ],
             'work_orders' => [
                 'auto_invoice' => ['nullable', 'boolean'],

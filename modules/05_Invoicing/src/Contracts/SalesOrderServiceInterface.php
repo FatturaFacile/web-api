@@ -20,5 +20,10 @@ interface SalesOrderServiceInterface
 
     public function reserveInventory(SalesOrder $order): SalesOrder;
 
+    /**
+     * Reserves the open quantities of the stock-relevant lines in a warehouse (the primary one when null).
+     */
+    public function reserveInventoryIn(SalesOrder $order, ?string $warehouseId, ?string $userId): SalesOrder;
+
     public function cancelOrder(SalesOrder $order, string $reason, string $userId): SalesOrder;
 }

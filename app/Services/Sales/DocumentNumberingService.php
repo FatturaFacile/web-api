@@ -27,6 +27,7 @@ class DocumentNumberingService
         'quote' => 'QT-',
         'sales_order' => 'SO-',
         'delivery_note' => 'DDT-',
+        'sales_return' => 'RMA-',
         'work_order' => 'WO-',
         'pos_receipt' => 'REC-',
         'purchase_order' => 'PO-',

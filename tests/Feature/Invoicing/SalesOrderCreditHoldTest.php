@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Models\Contact;
 use App\Models\Product;
 use App\Models\Tenant;
+use App\Models\Warehouse;
+use App\Services\Inventory\StockService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
@@ -100,6 +102,11 @@ test('releases credit hold and transitions order to confirmed status', function 
 });
 
 test('reserves inventory and updates line item reservation quantities', function (): void {
+    // Reservations are made by the inventory module on the stock of a tracked product in a warehouse.
+    $warehouse = Warehouse::create(['tenant_id' => $this->tenant->id, 'code' => 'MAIN', 'name' => 'Main warehouse', 'is_primary' => true]);
+    $this->product->update(['track_inventory' => true]);
+    app(StockService::class)->record((string) $this->product->id, 'in', 5.0, null, $warehouse);
+
     $order = $this->orderService->createOrder([
         'tenant_id' => (string) $this->tenant->id,
         'contact_id' => (string) $this->customer->id,

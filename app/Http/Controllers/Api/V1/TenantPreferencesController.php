@@ -42,7 +42,7 @@ class TenantPreferencesController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Settings', 'Tenants'],
         parameters: [
-            new OA\Parameter(name: 'group', in: 'path', required: true, description: 'Preference group name (e.g. sdi, qr_bill, general)', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'group', in: 'path', required: true, description: 'Preference group: invoice, email, sdi, work_orders, company, labels, inventory, banking, accounting, time_tracking, visitors or sales (sales: credit_check_mode block|warn|off, credit_block_overdue_days)', schema: new OA\Schema(type: 'string', enum: ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'time_tracking', 'visitors', 'sales'])),
         ],
         requestBody: new OA\RequestBody(
             required: true,

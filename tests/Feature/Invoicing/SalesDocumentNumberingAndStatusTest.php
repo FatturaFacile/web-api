@@ -72,7 +72,7 @@ test('quotes and orders share one gapless series between the sales API and the i
 test('delivery notes are progressive across the sales API route and the invoicing module, and the client cannot pick the number', function (): void {
     $appOrder = numberingApi()->postJson('/api/v1/sales/orders', ['contact_id' => $this->contact->id, 'date' => '2026-03-10', 'currency' => 'EUR', 'status' => 'confirmed', 'items' => $this->lines])->assertCreated();
     $appLine = $appOrder->json('data.items.0.id');
-    $moduleOrder = app(SalesOrderServiceInterface::class)->createOrder(moduleHeader(), $this->lines);
+    $moduleOrder = app(SalesOrderServiceInterface::class)->submitOrder(app(SalesOrderServiceInterface::class)->createOrder(moduleHeader(), $this->lines), 'tester');
     $moduleLine = (string) $moduleOrder->items->first()->id;
 
     $first = numberingApi()->postJson("/api/v1/sales/orders/{$appOrder->json('data.id')}/delivery-notes", ['lines' => [$appLine => 1]])->assertCreated();
@@ -93,6 +93,7 @@ test('delivery notes are progressive across the sales API route and the invoicin
 
 test('the year of the series is the year of the document date', function (): void {
     $order = app(SalesOrderServiceInterface::class)->createOrder(moduleHeader(['date' => '2025-12-30']), $this->lines);
+    app(SalesOrderServiceInterface::class)->submitOrder($order, 'tester');
     $note = app(DeliveryFulfillmentServiceInterface::class)->createDeliveryNote($order, ['date' => '2025-12-31'], [['sales_order_item_id' => (string) $order->items->first()->id, 'quantity' => 1.0]]);
     $current = app(SalesOrderServiceInterface::class)->createOrder(moduleHeader(), $this->lines);
 
@@ -127,7 +128,7 @@ test('an order on credit hold or already shipped cannot receive a delivery note,
 });
 
 test('a delivery note is dispatched once', function (): void {
-    $order = app(SalesOrderServiceInterface::class)->createOrder(moduleHeader(), $this->lines);
+    $order = app(SalesOrderServiceInterface::class)->submitOrder(app(SalesOrderServiceInterface::class)->createOrder(moduleHeader(), $this->lines), 'tester');
     $note = app(DeliveryFulfillmentServiceInterface::class)->createDeliveryNote($order, [], [['sales_order_item_id' => (string) $order->items->first()->id, 'quantity' => 1.0]]);
 
     $dispatched = app(DeliveryFulfillmentServiceInterface::class)->dispatchDelivery($note, 'warehouse');

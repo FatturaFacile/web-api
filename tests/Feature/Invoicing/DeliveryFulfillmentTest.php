@@ -49,6 +49,7 @@ test('creates delivery note, dispatches goods and tracks fulfillment progress', 
         ],
     ]);
 
+    $order = $this->orderService->submitOrder($order, 'sales-rep');
     $orderItem = $order->items->first();
 
     // Partial fulfillment: deliver 4 out of 10

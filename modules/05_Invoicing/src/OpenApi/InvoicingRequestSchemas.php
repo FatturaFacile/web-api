@@ -24,7 +24,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'payment_terms', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'shipping_terms', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
-        new OA\Property(property: 'items', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['description', 'quantity'], properties: [new OA\Property(property: 'product_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'description', type: 'string', maxLength: 255), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'unit_price', type: 'number', minimum: 0, nullable: true), new OA\Property(property: 'tax_rate', type: 'number', minimum: 0, nullable: true), new OA\Property(property: 'discount_percentage', type: 'number', minimum: 0, maximum: 100, nullable: true), new OA\Property(property: 'uom', type: 'string', maxLength: 20, nullable: true)])),
+        new OA\Property(property: 'items', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['description', 'quantity', 'tax_rate'], properties: [new OA\Property(property: 'product_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'description', type: 'string', maxLength: 255), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'unit_price', type: 'number', minimum: 0, nullable: true, description: 'Omitted for a product: priced by the price determination (price lists, customer list, promotions)'), new OA\Property(property: 'tax_rate', type: 'number', minimum: 0, maximum: 100), new OA\Property(property: 'discount_percentage', type: 'number', minimum: 0, maximum: 100, nullable: true), new OA\Property(property: 'uom', type: 'string', maxLength: 20, nullable: true)])),
     ]
 )]
 #[OA\Schema(
@@ -48,7 +48,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'billing_address', type: 'string', nullable: true),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
         new OA\Property(property: 'auto_submit', type: 'boolean', nullable: true),
-        new OA\Property(property: 'items', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['description', 'quantity'], properties: [new OA\Property(property: 'product_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'description', type: 'string', maxLength: 255), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'unit_price', type: 'number', minimum: 0, nullable: true), new OA\Property(property: 'tax_rate', type: 'number', minimum: 0, nullable: true), new OA\Property(property: 'discount_percentage', type: 'number', minimum: 0, maximum: 100, nullable: true), new OA\Property(property: 'uom', type: 'string', maxLength: 20, nullable: true)])),
+        new OA\Property(property: 'items', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['description', 'quantity', 'tax_rate'], properties: [new OA\Property(property: 'product_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'description', type: 'string', maxLength: 255), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'unit_price', type: 'number', minimum: 0, nullable: true, description: 'Omitted for a product: priced by the price determination (price lists, customer list, promotions)'), new OA\Property(property: 'tax_rate', type: 'number', minimum: 0, maximum: 100), new OA\Property(property: 'discount_percentage', type: 'number', minimum: 0, maximum: 100, nullable: true), new OA\Property(property: 'uom', type: 'string', maxLength: 20, nullable: true)])),
     ]
 )]
 #[OA\Schema(
@@ -66,11 +66,15 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'gross_weight_kg', type: 'number', minimum: 0, nullable: true),
         new OA\Property(property: 'carrier_name', type: 'string', maxLength: 255, nullable: true),
         new OA\Property(property: 'carrier_license_plate', type: 'string', maxLength: 30, nullable: true),
+        new OA\Property(property: 'net_weight_kg', type: 'number', minimum: 0, nullable: true),
+        new OA\Property(property: 'departure_time', type: 'string', format: 'date-time', nullable: true, description: 'Start of transport; the dispatch time when omitted'),
+        new OA\Property(property: 'shipping_terms', type: 'string', maxLength: 100, nullable: true, example: 'Franco', description: 'Porto, as free text'),
+        new OA\Property(property: 'transport_by', type: 'string', enum: ['sender', 'recipient', 'carrier'], nullable: true, description: 'Who carries the goods'),
         new OA\Property(property: 'shipping_address', type: 'string', nullable: true),
         new OA\Property(property: 'courier', type: 'string', maxLength: 255, nullable: true),
         new OA\Property(property: 'tracking_number', type: 'string', maxLength: 100, nullable: true),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
-        new OA\Property(property: 'items', type: 'array', minItems: 1, items: new OA\Items(type: 'object', required: ['sales_order_item_id', 'quantity'], properties: [new OA\Property(property: 'sales_order_item_id', type: 'string', format: 'uuid'), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'batch_number', type: 'string', maxLength: 100, nullable: true), new OA\Property(property: 'serial_number', type: 'string', maxLength: 100, nullable: true)])),
+        new OA\Property(property: 'items', type: 'array', minItems: 1, description: 'Order lines shipped, each within its open quantity (ordered less delivered)', items: new OA\Items(type: 'object', required: ['sales_order_item_id', 'quantity'], properties: [new OA\Property(property: 'sales_order_item_id', type: 'string', format: 'uuid'), new OA\Property(property: 'quantity', type: 'number', minimum: 0.0001), new OA\Property(property: 'batch_number', type: 'string', maxLength: 100, nullable: true), new OA\Property(property: 'serial_number', type: 'string', maxLength: 100, nullable: true)])),
     ]
 )]
 #[OA\Schema(

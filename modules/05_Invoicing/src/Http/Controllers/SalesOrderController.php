@@ -134,7 +134,7 @@ final class SalesOrderController extends Controller
     #[OA\Post(
         path: '/api/v1/invoicing/orders/{id}/approve',
         operationId: 'approveInvoicingOrder',
-        description: 'Approves a sales order.',
+        description: 'Internal approval of a sales order (sales managers only), through the order state machine.',
         summary: 'Approve sales order',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Invoicing Orders'],
@@ -144,12 +144,15 @@ final class SalesOrderController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(ref: '#/components/schemas/InvoicingSalesOrderResource')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Only the sales managers of the company (owner, admin, sales_manager) approve orders', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'The order cannot be approved from its status', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function approve(string $id, SalesOrderServiceInterface $orderService, Request $request): JsonResponse
     {
         $order = SalesOrder::findOrFail($id);
+        $this->authorize('approve', $order);
         $userId = (string) ($request->user()?->id ?? 'system');
 
         $approved = $orderService->approveOrder($order, $userId);
@@ -163,7 +166,7 @@ final class SalesOrderController extends Controller
     #[OA\Post(
         path: '/api/v1/invoicing/orders/{id}/reserve',
         operationId: 'reserveInvoicingOrder',
-        description: 'Reserves the stock needed by a sales order.',
+        description: 'Reserves in the inventory module the open quantity of every line of a product with inventory tracking, in the primary warehouse, as far as the stock allows; inventory_status becomes reserved, partially_reserved, not_reserved or not_required.',
         summary: 'Reserve sales order stock',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Invoicing Orders'],
@@ -190,7 +193,7 @@ final class SalesOrderController extends Controller
     #[OA\Post(
         path: '/api/v1/invoicing/orders/{id}/cancel',
         operationId: 'cancelInvoicingOrder',
-        description: 'Cancels a sales order.',
+        description: 'Cancels an open sales order (not yet shipped) and releases the stock reserved for it.',
         summary: 'Cancel sales order',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Invoicing Orders'],

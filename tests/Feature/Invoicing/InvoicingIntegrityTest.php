@@ -327,7 +327,8 @@ function integrityOrder(): mixed
 
 function integrityDeliveryNote(): mixed
 {
-    $order = integrityOrder();
+    // Only a confirmed order can be shipped.
+    $order = app(SalesOrderServiceInterface::class)->submitOrder(integrityOrder(), 'tester');
 
     return app(DeliveryFulfillmentServiceInterface::class)->createDeliveryNote($order, ['ddt_number' => 'DDT-'.Str::random(6)], [
         ['sales_order_item_id' => (string) $order->items->first()->id, 'quantity' => 2.0],

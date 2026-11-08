@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class CreateSalesOrderRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -23,11 +26,11 @@ final class CreateSalesOrderRequest extends FormRequest
         $tenantId = app(TenantContext::class)->getTenantId();
 
         return [
-            'contact_id' => ['required', 'uuid'],
-            'quote_id' => ['nullable', 'uuid'],
-            'customer_agreement_id' => ['nullable', 'uuid'],
+            'contact_id' => ['required', 'uuid', $this->tenantOwns('contacts')],
+            'quote_id' => ['nullable', 'uuid', $this->tenantOwns('quotes')],
+            'customer_agreement_id' => ['nullable', 'uuid', $this->tenantOwns('customer_agreements')],
             'price_list_id' => ['nullable', 'uuid', Rule::exists('price_lists', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
-            'discount_policy_id' => ['nullable', 'uuid'],
+            'discount_policy_id' => ['nullable', 'uuid', $this->tenantOwns('discount_policies')],
             'sales_rep_id' => ['nullable', 'uuid', Rule::exists('sales_representatives', 'id')->where(fn ($query) => $query->where('tenant_id', $tenantId)->orWhereNull('tenant_id'))],
             'date' => ['nullable', 'date'],
             'due_date' => ['nullable', 'date'],
@@ -39,11 +42,11 @@ final class CreateSalesOrderRequest extends FormRequest
             'notes' => ['nullable', 'string'],
             'auto_submit' => ['nullable', 'boolean'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.product_id' => ['nullable', 'uuid'],
+            'items.*.product_id' => ['nullable', 'uuid', $this->tenantExists('products')],
             'items.*.description' => ['required', 'string', 'max:255'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.0001'],
             'items.*.unit_price' => ['nullable', 'numeric', 'min:0'],
-            'items.*.tax_rate' => ['nullable', 'numeric', 'min:0'],
+            'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'items.*.uom' => ['nullable', 'string', 'max:20'],
         ];

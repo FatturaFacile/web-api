@@ -10,10 +10,17 @@ use Modules\Invoicing\Models\SalesOrderHold;
 
 interface CustomerCreditServiceInterface
 {
-    public function evaluateCredit(string $customerId, string $tenantId): CustomerCreditProfile;
+    /**
+     * Recomputes and stores the exposure of the customer (open receivables plus committed unbilled orders), optionally
+     * leaving one order out.
+     */
+    public function evaluateCredit(string $customerId, string $tenantId, ?string $excludeOrderId = null): CustomerCreditProfile;
 
     /**
-     * @return array{approved: bool, status: string, reason: ?string, exposure: float, limit: float}
+     * Credit check of an order before confirmation, following the credit check mode of the company. Amounts are decimal
+     * strings.
+     *
+     * @return array{approved: bool, status: string, reason: ?string, exposure: string, limit: string}
      */
     public function checkOrderCredit(SalesOrder $order): array;
 
@@ -21,5 +28,5 @@ interface CustomerCreditServiceInterface
 
     public function releaseHold(SalesOrderHold $hold, string $userId, ?string $notes = null): SalesOrderHold;
 
-    public function updateCreditLimit(string $customerId, float $newLimit, string $userId, string $tenantId): CustomerCreditProfile;
+    public function updateCreditLimit(string $customerId, string|float $newLimit, string $userId, string $tenantId): CustomerCreditProfile;
 }
