@@ -9,12 +9,17 @@ cd "$(dirname "$0")"
 mkdir -p fe inglorious
 
 docker compose pull app queue_worker scheduler
+# Stop the scheduler and the queue worker first: the scheduler runs demo:reset every 30 minutes and a reset that
+# overlaps this one drops tables under it (SQLSTATE 42P01). They are started again after the rebuild.
+docker compose stop scheduler queue_worker
 docker compose up -d postgres
 docker compose up -d --remove-orphans app web
 
 docker compose exec -T app sh -c '
   set -e
   php artisan config:cache
+  # The image CMD already ran route:cache, and caching again over a cached collection raises a TypeError
+  php artisan route:clear
   php artisan route:cache
   php -d memory_limit=512M artisan demo:reset
   php -d memory_limit=1G artisan l5-swagger:generate
