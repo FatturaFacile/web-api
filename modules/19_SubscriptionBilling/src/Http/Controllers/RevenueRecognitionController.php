@@ -8,137 +8,75 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Modules\SubscriptionBilling\Actions\RecognizeRevenueAction;
+use Modules\SubscriptionBilling\Contracts\RevenueRecognitionServiceInterface;
 use Modules\SubscriptionBilling\DTOs\RecognizeRevenueDTO;
 use Modules\SubscriptionBilling\Http\Requests\RecognizeRevenueRequest;
 use Modules\SubscriptionBilling\Http\Resources\RevenueContractResource;
 use Modules\SubscriptionBilling\Models\RevenueContract;
 use OpenApi\Attributes as OA;
 
+/**
+ * IFRS 15 revenue contracts of the subscriptions and the recognition posted to the General Ledger.
+ */
 final class RevenueRecognitionController extends Controller
 {
     public function __construct(
-        private readonly RecognizeRevenueAction $recognizeAction,
-        private readonly TenantContext $tenantContext
+        private readonly RevenueRecognitionServiceInterface $revenue,
+        private readonly TenantContext $tenantContext,
     ) {}
 
     /**
-     * Returns the paginated revenue contracts of the active tenant, optionally filtered by status.
+     * Paginated revenue contracts.
      */
-    #[OA\Get(
-        path: '/api/v1/subscriptions/revenue-contracts',
-        operationId: 'listContractsSubscriptionsRevenueContracts',
-        description: 'Returns the paginated revenue contracts of the active tenant, optionally filtered by status.',
-        summary: 'List revenue contracts',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Subscriptions Revenue Contracts'],
-        parameters: [
-            new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
-            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingRevenueContractResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
+    #[OA\Get(path: '/api/v1/subscriptions/revenue-contracts', operationId: 'listContractsSubscriptionsRevenueContracts', summary: 'List revenue contracts', description: 'Revenue contracts of the active company, by status.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Revenue Recognition'], parameters: [
+        new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(ref: '#/components/parameters/SubscriptionBillingPage'),
+    ], responses: [
+        new OA\Response(response: 200, description: 'Revenue contracts', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingRevenueContractResource')), new OA\Property(property: 'meta', ref: '#/components/schemas/SubscriptionBillingPaginationMeta')])),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnauthenticated', response: 401),
+    ])]
     public function listContracts(Request $request): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $query = RevenueContract::where('tenant_id', $tenantId);
-
-        if ($request->has('status')) {
-            $query->where('status', $request->query('status'));
-        }
-
-        $contracts = $query->orderByDesc('inception_date')->paginate(25);
+        $contracts = RevenueContract::query()
+            ->when($request->filled('status'), fn ($query) => $query->where('status', (string) $request->query('status')))
+            ->orderByDesc('inception_date')
+            ->paginate(25);
 
         return response()->json([
-            'data' => RevenueContractResource::collection($contracts),
-            'meta' => [
-                'current_page' => $contracts->currentPage(),
-                'total' => $contracts->total(),
-            ],
+            'data' => RevenueContractResource::collection($contracts->getCollection())->resolve(),
+            'meta' => ['current_page' => $contracts->currentPage(), 'last_page' => $contracts->lastPage(), 'total' => $contracts->total()],
         ]);
     }
 
     /**
-     * Returns a revenue contract with its performance obligations and revenue schedules.
+     * A revenue contract with its obligations and slices.
      */
-    #[OA\Get(
-        path: '/api/v1/subscriptions/revenue-contracts/{id}',
-        operationId: 'getShowContractSubscriptionsRevenueContracts',
-        description: 'Returns a revenue contract with its performance obligations and revenue schedules.',
-        summary: 'Get revenue contract',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Subscriptions Revenue Contracts'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the revenue contract', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingRevenueContractResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-        ]
-    )]
-    public function showContract(Request $request, string $id): JsonResponse
+    #[OA\Get(path: '/api/v1/subscriptions/revenue-contracts/{id}', operationId: 'getShowContractSubscriptionsRevenueContracts', summary: 'Get revenue contract', description: 'A revenue contract with its performance obligations and monthly slices.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Revenue Recognition'], parameters: [new OA\Parameter(ref: '#/components/parameters/SubscriptionBillingRevenueContractId')], responses: [
+        new OA\Response(response: 200, description: 'Revenue contract', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingRevenueContractResource')])),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingNotFound', response: 404),
+    ])]
+    public function showContract(string $id): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $contract = RevenueContract::with(['performanceObligations.revenueSchedules'])
-            ->where('tenant_id', $tenantId)
-            ->where('id', $id)
-            ->firstOrFail();
+        $contract = RevenueContract::query()->with(['performanceObligations.revenueSchedules'])->findOrFail($id);
 
-        return response()->json([
-            'data' => new RevenueContractResource($contract),
-        ]);
+        return response()->json(['data' => (new RevenueContractResource($contract))->resolve()]);
     }
 
     /**
-     * Recognizes the revenue due at the given period date.
+     * Posts the deferred revenue due up to the period date.
      */
-    #[OA\Post(
-        path: '/api/v1/subscriptions/revenue-recognition/recognize',
-        operationId: 'recognizeBatchSubscriptionsRevenueRecognitionRecognize',
-        description: 'Recognizes the revenue due at the given period date.',
-        summary: 'Recognize revenue batch',
-        security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['Subscriptions Revenue Recognition'],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingRecognizeRevenueRequest')),
-        responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
-        ]
-    )]
+    #[OA\Post(path: '/api/v1/subscriptions/revenue-recognition/recognize', operationId: 'recognizeBatchSubscriptionsRevenueRecognitionRecognize', summary: 'Recognize revenue', description: 'Posts one journal entry per month (Dr deferred revenue, Cr revenue) through the General Ledger posting service for the slices of issued documents due up to period_date. Running it again posts nothing twice; a closed period is reported in errors.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Revenue Recognition'], requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/SubscriptionBillingRecognizeRevenueRequest')), responses: [
+        new OA\Response(response: 200, description: 'Recognition result', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/SubscriptionBillingRecognitionResult')])),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/SubscriptionBillingUnprocessable', response: 422),
+    ])]
     public function recognizeBatch(RecognizeRevenueRequest $request): JsonResponse
     {
-        $tenantId = $this->resolveTenantId($request);
-        $validated = $request->validated();
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $userId = $request->user()?->getAuthIdentifier();
 
-        $dto = new RecognizeRevenueDTO(
-            tenantId: $tenantId,
-            companyId: $tenantId,
-            periodDate: $validated['period_date'] ?? null,
-            executedBy: $request->user()?->id
-        );
+        $result = $this->revenue->recognizeRevenue(new RecognizeRevenueDTO($tenantId, $tenantId, $request->validated('period_date'), $userId !== null ? (string) $userId : null));
 
-        $result = $this->recognizeAction->execute($dto);
-
-        return response()->json([
-            'message' => 'Revenue recognized successfully',
-            'data' => $result,
-        ]);
-    }
-
-    private function resolveTenantId(Request $request): string
-    {
-        $tenant = $this->tenantContext->getTenant();
-        if ($tenant) {
-            return (string) $tenant->id;
-        }
-
-        $user = $request->user();
-
-        return (string) ($user?->current_tenant_id ?? $user?->tenant_id ?? '019318b7-0000-7000-8000-000000000001');
+        return response()->json(['message' => 'Revenue recognized', 'data' => $result]);
     }
 }

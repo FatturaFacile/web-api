@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Actions\Subscriptions\NotifyUpcomingRenewals;
-use App\Actions\Subscriptions\RunSubscriptionBilling;
 use App\Jobs\Appointments\SendAppointmentReminderJob;
 use App\Jobs\GenerateTenantBackupJob;
 use App\Models\Appointment;
@@ -22,6 +20,9 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Mockery;
+use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
+use Modules\SubscriptionBilling\Contracts\RenewalServiceInterface;
+use Modules\SubscriptionBilling\Models\BillingRun;
 
 uses(RefreshDatabase::class);
 
@@ -136,14 +137,16 @@ test('tenant backup command validates arguments and dispatches jobs', function (
 test('process subscriptions command iterates tenants and triggers billing and renewals', function (): void {
     $tenant = Tenant::create(['name' => 'Sub Tenant', 'legal_name' => 'Sub Tenant SRL', 'country' => 'IT']);
 
-    $mockBilling = Mockery::mock(RunSubscriptionBilling::class);
-    $mockRenewals = Mockery::mock(NotifyUpcomingRenewals::class);
+    $mockBilling = Mockery::mock(RecurringBillingServiceInterface::class);
+    $mockRenewals = Mockery::mock(RenewalServiceInterface::class);
 
-    $mockRenewals->shouldReceive('execute')->andReturn(1);
+    $mockRenewals->shouldReceive('processExpiringSubscriptions')->once()->with((string) $tenant->id)->andReturn(['notices_sent' => 1]);
+    $mockBilling->shouldReceive('executeBillingRun')->once()->andReturn(new BillingRun(['successful_invoices_count' => 2]));
 
-    app()->instance(RunSubscriptionBilling::class, $mockBilling);
-    app()->instance(NotifyUpcomingRenewals::class, $mockRenewals);
+    app()->instance(RecurringBillingServiceInterface::class, $mockBilling);
+    app()->instance(RenewalServiceInterface::class, $mockRenewals);
 
     $exitCode = Artisan::call('subscriptions:process');
-    expect($exitCode)->toBe(0);
+    expect($exitCode)->toBe(0)
+        ->and(Artisan::output())->toContain('Invoices generated: 2; renewal notices: 1');
 });

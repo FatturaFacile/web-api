@@ -2,115 +2,73 @@
 
 declare(strict_types=1);
 
-use App\Models\Tenant;
-use App\Models\User;
-use App\Services\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Str;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Modules\SubscriptionBilling\Contracts\UsageBillingServiceInterface;
 use Modules\SubscriptionBilling\DTOs\RecordUsageDTO;
 use Modules\SubscriptionBilling\Models\PlanFeature;
+use Modules\SubscriptionBilling\Models\PricingTier;
 use Modules\SubscriptionBilling\Models\Subscription;
 use Modules\SubscriptionBilling\Models\SubscriptionItem;
-use Modules\SubscriptionBilling\Models\SubscriptionPlan;
 use Modules\SubscriptionBilling\Models\UsageEvent;
 use Modules\SubscriptionBilling\Models\UsageMetric;
+use Tests\Feature\SubscriptionBilling\Support\SubscriptionScenario;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    $this->tenant = Tenant::factory()->create();
-    app(TenantContext::class)->setTenant($this->tenant);
-    $this->user = User::factory()->create();
-    $this->actingAs($this->user);
-
-    $this->plan = SubscriptionPlan::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'billing_interval' => 'monthly',
-        'base_price' => 50.00,
+beforeEach(function (): void {
+    $this->travelTo('2026-03-15 09:00:00');
+    $this->tenant = SubscriptionScenario::company();
+    $this->metric = UsageMetric::create(['tenant_id' => $this->tenant->id, 'metric_code' => 'STORAGE_GB', 'name' => 'Storage', 'aggregation_type' => 'max']);
+    $this->plan = SubscriptionScenario::plan($this->tenant, ['pricing_model' => 'metered', 'base_price' => '0']);
+    $this->subscription = Subscription::create([
+        'tenant_id' => $this->tenant->id, 'subscription_number' => 'SUB-USG-1', 'customer_id' => SubscriptionScenario::customer($this->tenant)->id, 'plan_id' => $this->plan->id,
+        'status' => 'active', 'start_date' => '2026-03-01', 'current_period_start' => '2026-04-01', 'current_period_end' => '2026-04-30', 'currency' => 'EUR',
     ]);
-
-    $this->feature = PlanFeature::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'plan_id' => $this->plan->id,
-        'feature_code' => 'API_CALLS',
-        'included_quantity' => 1000.0,
-        'overage_unit_price' => 0.05,
-    ]);
-
-    $this->metric = UsageMetric::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'metric_code' => 'API_CALLS',
-        'aggregation_type' => 'sum',
-    ]);
-
-    $this->subscription = Subscription::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'plan_id' => $this->plan->id,
-        'status' => 'active',
-    ]);
-
-    $this->item = SubscriptionItem::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'subscription_id' => $this->subscription->id,
-        'item_type' => 'usage_meter',
-        'metric_id' => $this->metric->id,
-        'description' => 'API Calls Meter',
-    ]);
-
-    $this->usageService = app(UsageBillingServiceInterface::class);
+    $this->item = SubscriptionItem::create(['tenant_id' => $this->tenant->id, 'subscription_id' => $this->subscription->id, 'item_type' => 'usage_meter', 'description' => 'Storage', 'quantity' => '0', 'unit_price' => '0.5', 'metric_id' => $this->metric->id, 'price_factor' => '1']);
+    $this->usage = app(UsageBillingServiceInterface::class);
 });
 
-test('usage billing records events idempotently and avoids duplicates', function () {
-    $idempotencyKey = 'IDEMP-'.Str::random(16);
+function usageRecord(string $quantity, string $key, string $at): UsageEvent
+{
+    return test()->usage->recordUsage(new RecordUsageDTO((string) test()->tenant->id, (string) test()->tenant->id, test()->subscription->id, test()->item->id, 'STORAGE_GB', $quantity, $at, $key));
+}
 
-    $dto = new RecordUsageDTO(
-        tenantId: $this->tenant->id,
-        companyId: $this->tenant->id,
-        subscriptionId: $this->subscription->id,
-        subscriptionItemId: $this->item->id,
-        metricCode: 'API_CALLS',
-        quantity: 250.0,
-        idempotencyKey: $idempotencyKey
-    );
+test('usage records are idempotent on their key', function (): void {
+    $first = usageRecord('10', 'k-1', '2026-03-02 10:00:00');
+    $again = usageRecord('99', 'k-1', '2026-03-03 10:00:00');
 
-    $event1 = $this->usageService->recordUsage($dto);
-    $event2 = $this->usageService->recordUsage($dto);
-
-    expect($event1->id)->toBe($event2->id)
-        ->and(UsageEvent::where('idempotency_key', $idempotencyKey)->count())->toBe(1);
+    expect($again->id)->toBe($first->id)
+        ->and((string) $first->quantity)->toBe('10.0000')
+        ->and(UsageEvent::query()->count())->toBe(1);
 });
 
-test('usage billing aggregates consumption, applies allowance, and rates overage', function () {
-    $periodStart = now()->startOfMonth();
-    $periodEnd = now()->endOfMonth();
+test('aggregation follows the metric, applies the allowance and rates the overage; a billed aggregation never changes', function (): void {
+    PlanFeature::create(['tenant_id' => $this->tenant->id, 'plan_id' => $this->plan->id, 'feature_code' => 'STORAGE_GB', 'name' => 'Storage', 'included_quantity' => '50', 'overage_unit_price' => '0.2500', 'is_active' => true]);
+    usageRecord('40', 'k-1', '2026-03-02 10:00:00');
+    usageRecord('180', 'k-2', '2026-03-10 10:00:00');
+    usageRecord('120', 'k-3', '2026-03-20 10:00:00');
 
-    // Ingest 3 batches of usage = 500 + 700 + 400 = 1600 units
-    // Included allowance = 1000 units => Overage = 600 units
-    // Rate = 0.05 EUR => Billable amount = 30.00 EUR
-    foreach ([500.0, 700.0, 400.0] as $qty) {
-        $this->usageService->recordUsage(new RecordUsageDTO(
-            tenantId: $this->tenant->id,
-            companyId: $this->tenant->id,
-            subscriptionId: $this->subscription->id,
-            subscriptionItemId: $this->item->id,
-            metricCode: 'API_CALLS',
-            quantity: $qty,
-            eventTimestamp: now()->toDateString()
-        ));
-    }
+    $aggregation = $this->usage->aggregateUsage($this->item->id, CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31'));
 
-    $aggregation = $this->usageService->aggregateUsage($this->item->id, $periodStart, $periodEnd);
+    // max = 180, 50 included, 130 x 0.25.
+    expect((string) $aggregation->total_consumed)->toBe('180.0000')
+        ->and((string) $aggregation->billable_overage)->toBe('130.0000')
+        ->and($this->usage->rateUsage($aggregation))->toBe('32.50')
+        ->and(UsageEvent::query()->where('is_processed', true)->count())->toBe(3);
 
-    expect((float) $aggregation->total_consumed)->toBe(1600.0)
-        ->and((float) $aggregation->included_allowance)->toBe(1000.0)
-        ->and((float) $aggregation->billable_overage)->toBe(600.0)
-        ->and((float) $aggregation->billable_amount)->toBe(30.00);
+    $aggregation->update(['is_billed' => true]);
+    usageRecord('500', 'k-4', '2026-03-21 10:00:00');
+    expect((string) $this->usage->aggregateUsage($this->item->id, CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31'))->billable_amount)->toBe('32.50');
+});
 
-    // Verify all processed events are marked as processed
-    $unprocessed = UsageEvent::where('subscription_item_id', $this->item->id)
-        ->where('is_processed', false)
-        ->count();
+test('a metered plan with tiers rates the usage through its graduated tiers', function (): void {
+    PricingTier::create(['tenant_id' => $this->tenant->id, 'plan_id' => $this->plan->id, 'tier_number' => 1, 'from_quantity' => '0', 'to_quantity' => '100', 'unit_price' => '1', 'flat_fee' => '0']);
+    PricingTier::create(['tenant_id' => $this->tenant->id, 'plan_id' => $this->plan->id, 'tier_number' => 2, 'from_quantity' => '100', 'to_quantity' => null, 'unit_price' => '0.5', 'flat_fee' => '0']);
+    $this->metric->update(['aggregation_type' => 'sum']);
+    usageRecord('150', 'k-1', '2026-03-02 10:00:00');
 
-    expect($unprocessed)->toBe(0);
+    $aggregation = $this->usage->aggregateUsage($this->item->id, CarbonImmutable::parse('2026-03-01'), CarbonImmutable::parse('2026-03-31'));
+
+    expect((string) $aggregation->billable_amount)->toBe('125.00');
 });

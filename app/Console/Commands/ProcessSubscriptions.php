@@ -4,39 +4,45 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Actions\Subscriptions\NotifyUpcomingRenewals;
-use App\Actions\Subscriptions\RunSubscriptionBilling;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Command;
+use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
+use Modules\SubscriptionBilling\Contracts\RenewalServiceInterface;
+use Modules\SubscriptionBilling\DTOs\ExecuteBillingRunDTO;
+use Modules\SubscriptionBilling\Services\DunningService;
 
+/**
+ * Daily subscription processing of every tenant, on the subscription engine: renewal notices, renewals, expirations
+ * and the other due transitions, then the billing of the due periods (unless SUBSCRIPTION_BILLING_SCHEDULED=false)
+ * and the dunning of the overdue subscription invoices.
+ */
 class ProcessSubscriptions extends Command
 {
     protected $signature = 'subscriptions:process';
 
-    protected $description = 'Invoice all due subscriptions and log upcoming renewal notices for every tenant';
+    protected $description = 'Renew, invoice and dun the subscriptions of every tenant (subscription engine)';
 
-    public function handle(TenantContext $tenantContext, RunSubscriptionBilling $billing, NotifyUpcomingRenewals $renewals): int
+    public function handle(TenantContext $tenantContext, RecurringBillingServiceInterface $billing, RenewalServiceInterface $renewals, DunningService $dunning): int
     {
         $invoiced = 0;
         $notified = 0;
+        $escalated = 0;
+        $billingEnabled = (bool) config('subscription_billing.scheduled_billing');
 
-        Tenant::query()->each(function (Tenant $tenant) use ($tenantContext, $billing, $renewals, &$invoiced, &$notified): void {
-            $tenantContext->runWithTenant($tenant, function () use ($billing, $renewals, &$invoiced, &$notified): void {
-                Subscription::query()
-                    ->where('status', 'active')
-                    ->whereDate('next_billing_date', '<=', now())
-                    ->get()
-                    ->each(function (Subscription $subscription) use ($billing, &$invoiced): void {
-                        $invoiced += count($billing->execute($subscription));
-                    });
+        Tenant::query()->each(function (Tenant $tenant) use ($tenantContext, $billing, $renewals, $dunning, $billingEnabled, &$invoiced, &$notified, &$escalated): void {
+            $tenantContext->runWithTenant($tenant, function () use ($tenant, $billing, $renewals, $dunning, $billingEnabled, &$invoiced, &$notified, &$escalated): void {
+                $notified += $renewals->processExpiringSubscriptions((string) $tenant->id)['notices_sent'];
 
-                $notified += $renewals->execute();
+                if ($billingEnabled) {
+                    $invoiced += (int) $billing->executeBillingRun(new ExecuteBillingRunDTO(tenantId: (string) $tenant->id, companyId: (string) $tenant->id))->successful_invoices_count;
+                }
+
+                $escalated += $dunning->processDunning((string) $tenant->id)['escalations'];
             });
         });
 
-        $this->info("Invoices generated: {$invoiced}; renewal notices: {$notified}");
+        $this->info("Invoices generated: {$invoiced}; renewal notices: {$notified}; dunning escalations: {$escalated}");
 
         return self::SUCCESS;
     }

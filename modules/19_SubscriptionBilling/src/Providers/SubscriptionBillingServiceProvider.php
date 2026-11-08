@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\ServiceManagement\Events\CustomerSatisfactionUpdatedEvent;
+use Modules\SubscriptionBilling\Console\MigrateLegacySubscriptionsCommand;
 use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\SubscriptionBilling\Contracts\RenewalServiceInterface;
 use Modules\SubscriptionBilling\Contracts\RevenueRecognitionServiceInterface;
@@ -29,6 +30,7 @@ use Modules\SubscriptionBilling\Events\RevenueRecognizedEvent;
 use Modules\SubscriptionBilling\Events\SubscriptionActivatedEvent;
 use Modules\SubscriptionBilling\Events\SubscriptionCancelledEvent;
 use Modules\SubscriptionBilling\Events\SubscriptionCashForecastEvent;
+use Modules\SubscriptionBilling\Events\SubscriptionCollectionFailedEvent;
 use Modules\SubscriptionBilling\Events\SubscriptionCreatedEvent;
 use Modules\SubscriptionBilling\Events\SubscriptionDowngradedEvent;
 use Modules\SubscriptionBilling\Events\SubscriptionReactivatedEvent;
@@ -59,6 +61,9 @@ use Modules\SubscriptionBilling\Services\SubscriptionLifecycleService;
 use Modules\SubscriptionBilling\Services\UsageBillingService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 
+/**
+ * The subscription engine: service bindings, policies, routes, the legacy migration command and the event listeners.
+ */
 final class SubscriptionBillingServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -76,6 +81,10 @@ final class SubscriptionBillingServiceProvider extends ServiceProvider
         $this->registerPolicies();
         $this->registerRoutes();
         $this->registerEventListeners();
+
+        if ($this->app->runningInConsole()) {
+            $this->commands([MigrateLegacySubscriptionsCommand::class]);
+        }
     }
 
     private function registerPolicies(): void
@@ -120,6 +129,7 @@ final class SubscriptionBillingServiceProvider extends ServiceProvider
             RecurringRevenueForecastEvent::class,
             MRRForecastEvent::class,
             ARRForecastEvent::class,
+            SubscriptionCollectionFailedEvent::class,
         ];
 
         foreach ($events as $eventClass) {

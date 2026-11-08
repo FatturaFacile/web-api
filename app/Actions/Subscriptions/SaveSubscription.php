@@ -9,13 +9,20 @@ use App\Services\Sales\DocumentEventRecorder;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Sales\DocumentTotalsCalculator;
 use Illuminate\Support\Facades\DB;
+use Modules\SubscriptionBilling\Services\LegacySubscriptionMigrator;
 
+/**
+ * Creates a carrier subscription row (`subscriptions`) for the records that reference that table by foreign key
+ * (the recurring services of the workshop), together with its copy in the subscription engine under the same id: the
+ * engine bills it, and its invoices keep pointing at the carrier through `invoices.subscription_id`.
+ */
 class SaveSubscription
 {
     public function __construct(
         private readonly DocumentNumberingService $numbering,
         private readonly DocumentTotalsCalculator $totals,
         private readonly DocumentEventRecorder $events,
+        private readonly LegacySubscriptionMigrator $engine,
     ) {}
 
     /**
@@ -36,27 +43,7 @@ class SaveSubscription
 
             $subscription->items()->createMany($computed['items']);
             $this->events->record($subscription, 'created');
-
-            return $subscription->load(['items', 'contact']);
-        });
-    }
-
-    /**
-     * Update header fields; replacing items affects future billing runs only.
-     *
-     * @param  array<string, mixed>  $data
-     */
-    public function update(Subscription $subscription, array $data): Subscription
-    {
-        return DB::transaction(function () use ($subscription, $data): Subscription {
-            if (isset($data['items'])) {
-                $subscription->items()->delete();
-                $subscription->items()->createMany($this->totals->calculate($data['items'])['items']);
-                unset($data['items']);
-            }
-
-            $subscription->update($data);
-            $this->events->record($subscription, 'updated');
+            $this->engine->copyOne($subscription->refresh());
 
             return $subscription->load(['items', 'contact']);
         });

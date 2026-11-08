@@ -10,7 +10,18 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * The usage of a metered item in a billing period, rated.
+ *
+ * @property string $id
+ * @property string $subscription_item_id
+ * @property Carbon|null $period_start
+ * @property Carbon|null $period_end
+ * @property bool $is_billed
+ * @property string|null $invoice_schedule_id
+ */
 final class UsageAggregation extends Model
 {
     use BelongsToTenant, HasFactory, HasUuidV7;
@@ -48,6 +59,9 @@ final class UsageAggregation extends Model
         return null;
     }
 
+    /**
+     * @return BelongsTo<SubscriptionItem, $this>
+     */
     public function subscriptionItem(): BelongsTo
     {
         return $this->belongsTo(SubscriptionItem::class, 'subscription_item_id');

@@ -42,6 +42,9 @@ final class RevenueRecognitionEntry extends Model
         return null;
     }
 
+    /**
+     * @return BelongsTo<PerformanceObligation, $this>
+     */
     public function performanceObligation(): BelongsTo
     {
         return $this->belongsTo(PerformanceObligation::class, 'performance_obligation_id');

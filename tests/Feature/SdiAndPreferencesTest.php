@@ -11,13 +11,14 @@ use App\Models\Contact;
 use App\Models\EiInboundLog;
 use App\Models\Invoice;
 use App\Models\PaymentReminder;
-use App\Models\Subscription;
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\SubscriptionBilling\Models\Subscription;
+use Modules\SubscriptionBilling\Models\SubscriptionPlan;
 
 uses(RefreshDatabase::class);
 
@@ -248,12 +249,13 @@ test('reminder and renewal emails render English text from translation keys', fu
         ->assertSeeInHtml('Outstanding amount: <strong>122.00 EUR</strong>', false)
         ->assertSeeInHtml('Kind regards');
 
+    $plan = SubscriptionPlan::create(['tenant_id' => $this->tenant->id, 'plan_code' => 'HOST', 'name' => 'Hosting', 'billing_interval' => 'monthly', 'base_price' => '10']);
     $subscription = Subscription::create([
-        'tenant_id' => $this->tenant->id, 'contact_id' => $this->contact->id, 'subscription_number' => 'SUB-2026-0001',
-        'name' => 'Hosting', 'interval' => 'monthly', 'currency' => 'EUR', 'start_date' => '2026-01-01', 'end_date' => '2026-04-01',
-        'auto_renew' => true,
+        'tenant_id' => $this->tenant->id, 'customer_id' => $this->contact->id, 'plan_id' => $plan->id, 'subscription_number' => 'SUB-2026-0001',
+        'name' => 'Hosting', 'currency' => 'EUR', 'start_date' => '2026-01-01', 'current_period_start' => '2026-01-01', 'current_period_end' => '2026-01-31',
+        'term_end_date' => '2026-04-01', 'auto_renew' => true,
     ]);
-    $renewal = new SubscriptionRenewalMail($subscription->load('contact'));
+    $renewal = new SubscriptionRenewalMail($subscription->load('customer'));
     expect($renewal->envelope()->subject)->toBe('Subscription renewal SUB-2026-0001');
     $renewal->assertSeeInHtml('It will be renewed automatically.');
 });

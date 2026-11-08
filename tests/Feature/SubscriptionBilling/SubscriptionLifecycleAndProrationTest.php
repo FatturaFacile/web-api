@@ -2,146 +2,77 @@
 
 declare(strict_types=1);
 
-use App\Models\Tenant;
-use App\Models\User;
-use App\Services\Tenancy\TenantContext;
-use Illuminate\Foundation\Testing\DatabaseTransactions;
-use Illuminate\Support\Str;
+use Carbon\CarbonImmutable;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\SubscriptionBilling\Contracts\SubscriptionLifecycleServiceInterface;
 use Modules\SubscriptionBilling\DTOs\CancelSubscriptionDTO;
 use Modules\SubscriptionBilling\DTOs\CreateSubscriptionDTO;
 use Modules\SubscriptionBilling\DTOs\UpgradeSubscriptionDTO;
-use Modules\SubscriptionBilling\Models\SubscriptionPlan;
+use Modules\SubscriptionBilling\Models\Subscription;
 use Modules\SubscriptionBilling\Models\SubscriptionVersion;
+use Tests\Feature\SubscriptionBilling\Support\SubscriptionScenario;
 
-uses(DatabaseTransactions::class);
+uses(RefreshDatabase::class);
 
-beforeEach(function () {
-    $this->tenant = Tenant::factory()->create();
-    app(TenantContext::class)->setTenant($this->tenant);
-    $this->user = User::factory()->create();
-    $this->actingAs($this->user);
-
-    $this->starterPlan = SubscriptionPlan::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'plan_code' => 'TEST-STARTER',
-        'name' => 'Starter Plan',
-        'billing_interval' => 'monthly',
-        'base_price' => 50.00,
-    ]);
-
-    $this->proPlan = SubscriptionPlan::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'plan_code' => 'TEST-PRO',
-        'name' => 'Pro Plan',
-        'billing_interval' => 'monthly',
-        'base_price' => 150.00,
-    ]);
-
+beforeEach(function (): void {
+    $this->travelTo('2026-03-01 09:00:00');
+    $this->tenant = SubscriptionScenario::company();
+    $this->customer = SubscriptionScenario::customer($this->tenant);
+    $this->starterPlan = SubscriptionScenario::plan($this->tenant, ['name' => 'Starter', 'base_price' => '50.0000']);
+    $this->proPlan = SubscriptionScenario::plan($this->tenant, ['name' => 'Pro', 'base_price' => '150.0000']);
     $this->service = app(SubscriptionLifecycleServiceInterface::class);
 });
 
-test('subscription lifecycle service creates active subscription with items and initial version', function () {
-    $customerId = (string) Str::uuid7();
+function lifecycleCreate(string $planId): Subscription
+{
+    return test()->service->createSubscription(new CreateSubscriptionDTO(
+        tenantId: (string) test()->tenant->id,
+        companyId: (string) test()->tenant->id,
+        customerId: (string) test()->customer->id,
+        planId: $planId,
+        startDate: '2026-03-01',
+    ));
+}
 
-    $dto = new CreateSubscriptionDTO(
-        tenantId: $this->tenant->id,
-        companyId: $this->tenant->id,
-        customerId: $customerId,
-        planId: $this->starterPlan->id,
-        startDate: now()->toDateString(),
-        contractTermMonths: 12,
-        autoRenew: true,
-        items: [
-            ['item_type' => 'addon', 'description' => 'Extra 100GB Storage', 'quantity' => 1, 'unit_price' => 20.00],
-        ]
-    );
+test('the lifecycle service creates an active subscription with its plan item and initial version', function (): void {
+    $subscription = lifecycleCreate($this->starterPlan->id);
 
-    $sub = $this->service->createSubscription($dto, (string) $this->user->id);
-
-    expect($sub->status)->toBe('active')
-        ->and($sub->plan_id)->toBe($this->starterPlan->id)
-        ->and((float) $sub->mrr)->toBe(50.00)
-        ->and((float) $sub->arr)->toBe(600.00)
-        ->and($sub->items()->count())->toBe(2);
-
-    $version = SubscriptionVersion::where('subscription_id', $sub->id)->first();
-    expect($version)->not->toBeNull()
-        ->and($version->version_number)->toBe(1)
-        ->and($version->change_type)->toBe('initial')
-        ->and((float) $version->mrr_delta)->toBe(50.00);
+    expect($subscription->status)->toBe('active')
+        ->and((string) $subscription->mrr)->toBe('50.00')
+        ->and((string) $subscription->arr)->toBe('600.00')
+        ->and($subscription->items)->toHaveCount(1)
+        ->and($subscription->term_end_date->toDateString())->toBe('2027-02-28')
+        ->and(SubscriptionVersion::query()->where('subscription_id', $subscription->id)->value('change_type'))->toBe('initial');
 });
 
-test('subscription upgrade calculates proration and increments version number', function () {
-    $customerId = (string) Str::uuid7();
+test('an upgrade in a billed period records the proration on a new version', function (): void {
+    $subscription = lifecycleCreate($this->starterPlan->id);
+    app(RecurringBillingServiceInterface::class)->billSubscription($subscription->id, CarbonImmutable::today());
 
-    $start = now()->startOfMonth();
-    $dto = new CreateSubscriptionDTO(
-        tenantId: $this->tenant->id,
-        companyId: $this->tenant->id,
-        customerId: $customerId,
-        planId: $this->starterPlan->id,
-        startDate: $start->toDateString(),
-    );
+    $this->travelTo('2026-03-17 09:00:00');
+    $upgraded = $this->service->upgradeSubscription(new UpgradeSubscriptionDTO($subscription->id, $this->proPlan->id));
+    $version = SubscriptionVersion::query()->where('subscription_id', $subscription->id)->orderByDesc('version_number')->first();
 
-    $sub = $this->service->createSubscription($dto);
-
-    // Upgrade halfway through month
-    $midMonth = $start->copy()->addDays(15);
-    $upgradeDto = new UpgradeSubscriptionDTO(
-        subscriptionId: $sub->id,
-        newPlanId: $this->proPlan->id,
-        effectiveDate: $midMonth->toDateString(),
-        changeReason: 'Team expansion upgrade'
-    );
-
-    $upgraded = $this->service->upgradeSubscription($upgradeDto);
-
+    // (150 - 50) x 15 / 31 days.
     expect($upgraded->plan_id)->toBe($this->proPlan->id)
-        ->and((float) $upgraded->mrr)->toBe(150.00)
-        ->and((float) $upgraded->arr)->toBe(1800.00);
-
-    $latestVersion = SubscriptionVersion::where('subscription_id', $sub->id)
-        ->where('version_number', 2)
-        ->first();
-
-    expect($latestVersion)->not->toBeNull()
-        ->and($latestVersion->change_type)->toBe('upgrade')
-        ->and((float) $latestVersion->mrr_before)->toBe(50.00)
-        ->and((float) $latestVersion->mrr_after)->toBe(150.00)
-        ->and((float) $latestVersion->mrr_delta)->toBe(100.00)
-        ->and((float) $latestVersion->proration_amount)->toBeGreaterThan(0.00);
+        ->and($version->version_number)->toBe(2)
+        ->and((string) $version->mrr_before)->toBe('50.00')
+        ->and((string) $version->mrr_after)->toBe('150.00')
+        ->and((string) $version->proration_amount)->toBe('48.39');
 });
 
-test('subscription pause, reactivate, and cancel transitions state cleanly', function () {
-    $customerId = (string) Str::uuid7();
-    $dto = new CreateSubscriptionDTO(
-        tenantId: $this->tenant->id,
-        companyId: $this->tenant->id,
-        customerId: $customerId,
-        planId: $this->starterPlan->id,
-        startDate: now()->toDateString(),
-    );
+test('suspend, reactivate and cancel move the status and the MRR', function (): void {
+    $subscription = lifecycleCreate($this->starterPlan->id);
 
-    $sub = $this->service->createSubscription($dto);
+    expect($this->service->suspendSubscription($subscription->id, 'Billing hold')->status)->toBe('paused')
+        ->and($this->service->reactivateSubscription($subscription->id)->status)->toBe('active');
 
-    // 1. Suspend
-    $suspended = $this->service->suspendSubscription($sub->id, 'Delinquent billing hold');
-    expect($suspended->status)->toBe('paused');
+    $cancelled = $this->service->cancelSubscription(new CancelSubscriptionDTO(subscriptionId: $subscription->id, reason: 'Customer request', reasonCode: 'unused'));
 
-    // 2. Reactivate
-    $reactivated = $this->service->reactivateSubscription($sub->id);
-    expect($reactivated->status)->toBe('active');
-
-    // 3. Cancel
-    $cancelDto = new CancelSubscriptionDTO(
-        subscriptionId: $sub->id,
-        reason: 'Customer requested cancellation'
-    );
-
-    $cancelled = $this->service->cancelSubscription($cancelDto);
     expect($cancelled->status)->toBe('cancelled')
         ->and($cancelled->cancelled_at)->not->toBeNull()
-        ->and((float) $cancelled->mrr)->toBe(0.00)
-        ->and((float) $cancelled->arr)->toBe(0.00);
+        ->and($cancelled->cancellation_reason_code)->toBe('unused')
+        ->and((string) $cancelled->mrr)->toBe('0.00')
+        ->and((string) $cancelled->arr)->toBe('0.00');
 });

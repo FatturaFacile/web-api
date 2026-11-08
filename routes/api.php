@@ -234,16 +234,17 @@ Route::prefix('v1')->group(function (): void {
             Route::apiResource('payment-terms', PaymentTermController::class)->parameters(['payment-terms' => 'id']);
         });
 
-        // 4c. Subscriptions (recurring billing)
-        Route::middleware('module.access:subscriptions')->group(function (): void {
-            Route::prefix('subscriptions')->name('subscriptions.')->group(function (): void {
+        // 4c. Subscriptions (recurring billing): deprecated, served by the subscription engine of modules/19_SubscriptionBilling.
+        Route::middleware(['module.access:subscriptions', 'deprecated:/api/v1/sub/contracts'])->group(function (): void {
+            // Only UUIDs: /subscriptions/plans, /usage, /metrics... belong to the subscription engine.
+            Route::prefix('subscriptions')->name('subscriptions.')->whereUuid('id')->group(function (): void {
                 Route::post('/{id}/pause', [SubscriptionController::class, 'pause'])->name('pause');
                 Route::post('/{id}/resume', [SubscriptionController::class, 'resume'])->name('resume');
                 Route::post('/{id}/cancel', [SubscriptionController::class, 'cancel'])->name('cancel');
                 Route::post('/{id}/bill', [SubscriptionController::class, 'bill'])->name('bill');
                 Route::get('/{id}/runs', [SubscriptionController::class, 'runs'])->name('runs');
             });
-            Route::apiResource('subscriptions', SubscriptionController::class)->parameters(['subscriptions' => 'id']);
+            Route::apiResource('subscriptions', SubscriptionController::class)->parameters(['subscriptions' => 'id'])->where(['id' => '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}']);
         });
         // 4d. Alerts & Loyalty cards
         // Alerts sit on contacts and sales documents; loyalty cards are part of the sales cycle.

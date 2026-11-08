@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\SubscriptionBilling\DTOs;
 
+/**
+ * Move to a lower plan (and optionally a new quantity), prorated from the effective date.
+ */
 final readonly class DowngradeSubscriptionDTO
 {
     public function __construct(
@@ -11,6 +14,7 @@ final readonly class DowngradeSubscriptionDTO
         public string $newPlanId,
         public ?string $effectiveDate = null,
         public ?string $changeReason = null,
-        public ?string $actorUserId = null
+        public ?string $actorUserId = null,
+        public ?string $quantity = null,
     ) {}
 }

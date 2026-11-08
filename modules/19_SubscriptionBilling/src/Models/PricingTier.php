@@ -45,6 +45,9 @@ final class PricingTier extends Model
         return null;
     }
 
+    /**
+     * @return BelongsTo<SubscriptionPlan, $this>
+     */
     public function plan(): BelongsTo
     {
         return $this->belongsTo(SubscriptionPlan::class, 'plan_id');

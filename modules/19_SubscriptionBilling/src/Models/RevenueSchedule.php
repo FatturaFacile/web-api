@@ -10,7 +10,19 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * A monthly revenue slice of a performance obligation.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property string $performance_obligation_id
+ * @property Carbon|null $period_date
+ * @property bool $is_recognized
+ * @property Carbon|null $recognized_at
+ * @property string|null $journal_entry_id
+ */
 final class RevenueSchedule extends Model
 {
     use BelongsToTenant, HasFactory, HasUuidV7;
@@ -44,6 +56,9 @@ final class RevenueSchedule extends Model
         return null;
     }
 
+    /**
+     * @return BelongsTo<PerformanceObligation, $this>
+     */
     public function performanceObligation(): BelongsTo
     {
         return $this->belongsTo(PerformanceObligation::class, 'performance_obligation_id');
