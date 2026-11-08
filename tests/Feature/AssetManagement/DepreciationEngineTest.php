@@ -25,6 +25,7 @@ beforeEach(function (): void {
         ['name' => 'EAM Depreciation Tenant', 'legal_name' => 'EAM Depreciation Tenant SpA']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    fiscalCalendar($this->tenant, (int) date('Y'));
 
     $this->user = User::firstOrCreate(
         ['email' => 'eam.accountant@example.com'],
@@ -64,8 +65,8 @@ test('calculates straight line, declining balance, double declining balance, and
         'useful_life_months' => 60,
     ]);
 
-    expect($this->depreciationEngine->calculateAssetDepreciationAmount($slAsset, 'monthly'))->toBe(1000.00)
-        ->and($this->depreciationEngine->calculateAssetDepreciationAmount($slAsset, 'yearly'))->toBe(12000.00);
+    expect($this->depreciationEngine->calculateAssetDepreciationAmount($slAsset, 'monthly'))->toBe('1000.00')
+        ->and($this->depreciationEngine->calculateAssetDepreciationAmount($slAsset, 'yearly'))->toBe('12000.00');
 
     // 2. Declining Balance: Carrying 48,000, Rate 20% -> Yearly = 9,600, Monthly = 800
     $dbAsset = FixedAsset::factory()->capitalized()->create([
@@ -81,8 +82,8 @@ test('calculates straight line, declining balance, double declining balance, and
         'useful_life_years' => 5,
     ]);
 
-    expect($this->depreciationEngine->calculateAssetDepreciationAmount($dbAsset, 'yearly'))->toBe(9600.00)
-        ->and($this->depreciationEngine->calculateAssetDepreciationAmount($dbAsset, 'monthly'))->toBe(800.00);
+    expect($this->depreciationEngine->calculateAssetDepreciationAmount($dbAsset, 'yearly'))->toBe('9600.00')
+        ->and($this->depreciationEngine->calculateAssetDepreciationAmount($dbAsset, 'monthly'))->toBe('800.00');
 
     // 3. Double Declining Balance (DDB): Carrying 60,000, Life 5 years (DDB rate = 40%) -> Yearly = 24,000, Monthly = 2,000
     $ddbAsset = FixedAsset::factory()->capitalized()->create([
@@ -97,8 +98,8 @@ test('calculates straight line, declining balance, double declining balance, and
         'useful_life_years' => 5,
     ]);
 
-    expect($this->depreciationEngine->calculateAssetDepreciationAmount($ddbAsset, 'yearly'))->toBe(24000.00)
-        ->and($this->depreciationEngine->calculateAssetDepreciationAmount($ddbAsset, 'monthly'))->toBe(2000.00);
+    expect($this->depreciationEngine->calculateAssetDepreciationAmount($ddbAsset, 'yearly'))->toBe('24000.00')
+        ->and($this->depreciationEngine->calculateAssetDepreciationAmount($ddbAsset, 'monthly'))->toBe('2000.00');
 
     // 4. Units of Production: Depreciable Base 50,000, Expected Units 10,000 (€5/unit), Produced = 350 -> 1,750
     $uopAsset = FixedAsset::factory()->capitalized()->create([
@@ -113,7 +114,7 @@ test('calculates straight line, declining balance, double declining balance, and
         'total_expected_units' => 10000.00,
     ]);
 
-    expect($this->depreciationEngine->calculateAssetDepreciationAmount($uopAsset, 'monthly', 350.0))->toBe(1750.00);
+    expect($this->depreciationEngine->calculateAssetDepreciationAmount($uopAsset, 'monthly', 350.0))->toBe('1750.00');
 });
 
 test('enforces salvage value floor and marks asset as fully depreciated', function (): void {
@@ -129,11 +130,12 @@ test('enforces salvage value floor and marks asset as fully depreciated', functi
         'depreciation_method' => 'straight_line',
         'useful_life_years' => 4,
         'useful_life_months' => 48,
+        'in_service_date' => '2023-01-01',
     ]);
 
     $schedule = $this->depreciationEngine->calculateSingleAssetDepreciation(
         asset: $asset,
-        periodCode: '2026-10',
+        periodCode: date('Y'),
         periodType: 'yearly',
         ledgerType: 'statutory',
         autoPostToGl: true,

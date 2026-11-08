@@ -7,16 +7,23 @@ namespace Modules\AssetManagement\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
 use Modules\AssetManagement\DTOs\RunDepreciationDTO;
+use Modules\AssetManagement\Http\Requests\DepreciationPreviewRequest;
 use Modules\AssetManagement\Http\Requests\RunDepreciationRequest;
 use Modules\AssetManagement\Http\Resources\DepreciationRunResource;
 use Modules\AssetManagement\Http\Resources\DepreciationScheduleResource;
 use Modules\AssetManagement\Models\DepreciationRun;
 use Modules\AssetManagement\Models\DepreciationSchedule;
 use Modules\AssetManagement\Models\FixedAsset;
+use Modules\AssetManagement\Support\AssetLedger;
 use OpenApi\Attributes as OA;
 
+/**
+ * Depreciation: period runs (manual, one per period and ledger), simulations, asset schedules and previews.
+ */
 final class DepreciationController extends Controller
 {
     public function __construct(
@@ -25,128 +32,203 @@ final class DepreciationController extends Controller
     ) {}
 
     /**
-     * Returns the paginated depreciation runs of the active tenant, latest first.
+     * Paginated depreciation runs, latest first.
      */
     #[OA\Get(
         path: '/api/v1/eam/depreciation/runs',
         operationId: 'getIndexRunsEamDepreciationRuns',
-        description: 'Returns the paginated depreciation runs of the active tenant, latest first.',
+        description: 'Paginated depreciation runs of the active company, latest first, optionally of one ledger.',
         summary: 'List depreciation runs',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['EAM Depreciation'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/EamLedgerType'), new OA\Parameter(ref: '#/components/parameters/EamPage'), new OA\Parameter(ref: '#/components/parameters/EamPerPage')],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationRunResource')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 200, description: 'Runs', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationRunResource'))])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
         ]
     )]
-    public function indexRuns(): JsonResponse
+    public function indexRuns(Request $request): AnonymousResourceCollection
     {
-        $tenant = $this->tenantContext->getTenant();
-        $runs = DepreciationRun::where('tenant_id', $tenant->id)
-            ->orderByDesc('executed_at')
-            ->paginate(25);
+        $query = DepreciationRun::where('tenant_id', $this->tenantContext->getTenantId());
 
-        return response()->json([
-            'data' => DepreciationRunResource::collection($runs),
-            'meta' => [
-                'current_page' => $runs->currentPage(),
-                'total' => $runs->total(),
-            ],
-        ]);
+        if ($request->filled('ledger_type')) {
+            $query->where('ledger_type', AssetLedger::normalize((string) $request->query('ledger_type')));
+        }
+
+        return DepreciationRunResource::collection($query->orderByDesc('executed_at')->paginate(max(1, min(100, (int) $request->query('per_page', '25')))));
     }
 
     /**
-     * Executes a depreciation run for the given period.
+     * Executes the depreciation run of a period and ledger.
      */
     #[OA\Post(
         path: '/api/v1/eam/depreciation/runs',
         operationId: 'executeRunEamDepreciationRuns',
-        description: 'Executes a depreciation run for the given period.',
+        description: 'Depreciates every depreciable asset for a period (2026-03 monthly, 2026-Q1 quarterly, 2026 yearly) and ledger, once per period. Only the statutory (civil) ledger is posted to the General Ledger, dated on the last day of the period; assets locked by a workflow are skipped and listed in summary_metrics.',
         summary: 'Execute depreciation run',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['EAM Depreciation'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AssetManagementRunDepreciationRequest')),
         responses: [
-            new OA\Response(response: 201, description: 'Run created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationRunResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 201, description: 'Run executed', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationRunResource')])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/EamForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/EamUnprocessable', response: 422),
         ]
     )]
     public function executeRun(RunDepreciationRequest $request): JsonResponse
     {
-        $tenant = $this->tenantContext->getTenant();
-        $actorId = (string) ($request->user()?->id ?? '');
+        $run = $this->depreciationEngine->executeDepreciationRun($this->runDto($request), $this->actor($request));
 
-        $run = $this->depreciationEngine->executeDepreciationRun(new RunDepreciationDTO(
-            tenantId: (string) $tenant->id,
-            companyId: (string) $tenant->id,
-            periodCode: (string) $request->input('period_code'),
-            periodType: (string) $request->input('period_type', 'monthly'),
-            ledgerType: (string) $request->input('ledger_type', 'statutory'),
-            singleAssetId: $request->input('single_asset_id'),
-            unitsProducedByAssetId: $request->input('units_produced_by_asset_id', []),
-            autoPostToGl: (bool) $request->input('auto_post_to_gl', true)
-        ), $actorId);
-
-        return response()->json(['data' => new DepreciationRunResource($run)], 201);
+        return (new DepreciationRunResource($run))->response()->setStatusCode(201);
     }
 
     /**
-     * Returns a depreciation run of the active tenant.
+     * Simulates a depreciation run without writing anything.
+     */
+    #[OA\Post(
+        path: '/api/v1/eam/depreciation/simulate',
+        operationId: 'simulateEamDepreciationRun',
+        description: 'What a run of the period and ledger would charge asset by asset, optionally for one category or asset. Nothing is written or posted.',
+        summary: 'Simulate depreciation run',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Depreciation'],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AssetManagementRunDepreciationRequest')),
+        responses: [
+            new OA\Response(response: 200, description: 'Simulation', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationSimulation')])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/EamForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/EamUnprocessable', response: 422),
+        ]
+    )]
+    public function simulate(RunDepreciationRequest $request): JsonResponse
+    {
+        return response()->json(['data' => $this->depreciationEngine->simulateRun($this->runDto($request), $request->validated('category_id'))]);
+    }
+
+    /**
+     * One depreciation run.
      */
     #[OA\Get(
         path: '/api/v1/eam/depreciation/runs/{id}',
         operationId: 'getShowRunEamDepreciationRuns',
-        description: 'Returns a depreciation run of the active tenant.',
+        description: 'Returns a depreciation run of the active company.',
         summary: 'Get depreciation run',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['EAM Depreciation'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the run', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/EamRunId')],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationRunResource')])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 200, description: 'Run', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/AssetManagementDepreciationRunResource')])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/EamNotFound', response: 404),
         ]
     )]
-    public function showRun(string $id): JsonResponse
+    public function showRun(string $id): DepreciationRunResource
     {
-        $tenant = $this->tenantContext->getTenant();
-        $run = DepreciationRun::where('tenant_id', $tenant->id)->findOrFail($id);
-
-        return response()->json(['data' => new DepreciationRunResource($run)]);
+        return new DepreciationRunResource(DepreciationRun::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id));
     }
 
     /**
-     * Returns the depreciation schedules of a fixed asset ordered by period.
+     * Depreciation charged to an asset, by period.
      */
     #[OA\Get(
         path: '/api/v1/eam/assets/{id}/depreciation-schedules',
         operationId: 'getAssetSchedulesEamAsset',
-        description: 'Returns the depreciation schedules of a fixed asset ordered by period.',
+        description: 'Depreciation charged to the asset, by period, optionally of one ledger.',
         summary: 'List asset depreciation schedules',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        tags: ['EAM Assets'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the asset', schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        tags: ['EAM Depreciation'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/EamAssetId'), new OA\Parameter(ref: '#/components/parameters/EamLedgerType')],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationScheduleResource'))])),
-            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 200, description: 'Schedules', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationScheduleResource'))])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/EamNotFound', response: 404),
         ]
     )]
-    public function assetSchedules(string $assetId): JsonResponse
+    public function assetSchedules(Request $request, string $id): AnonymousResourceCollection
     {
-        $tenant = $this->tenantContext->getTenant();
-        FixedAsset::where('tenant_id', $tenant->id)->findOrFail($assetId);
+        $asset = $this->asset($id);
+        $query = DepreciationSchedule::where('tenant_id', $asset->tenant_id)->where('asset_id', $asset->id);
 
-        $schedules = DepreciationSchedule::where('tenant_id', $tenant->id)
-            ->where('asset_id', $assetId)
-            ->orderBy('period_code')
-            ->get();
+        if ($request->filled('ledger_type')) {
+            $query->where('ledger_type', AssetLedger::normalize((string) $request->query('ledger_type')));
+        }
 
-        return response()->json(['data' => DepreciationScheduleResource::collection($schedules)]);
+        return DepreciationScheduleResource::collection($query->orderBy('ledger_type')->orderBy('period_code')->limit(1200)->get());
+    }
+
+    /**
+     * Projected depreciation schedule of an asset book.
+     */
+    #[OA\Get(
+        path: '/api/v1/eam/assets/{id}/depreciation-preview',
+        operationId: 'previewEamAssetDepreciation',
+        description: 'Projected depreciation of an asset book from the next period until it is fully depreciated (at most `periods`), with the method, rate and pro-rata convention of the book. Nothing is written.',
+        summary: 'Preview asset depreciation schedule',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['EAM Depreciation'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/EamAssetId'),
+            new OA\Parameter(ref: '#/components/parameters/EamLedgerType'),
+            new OA\Parameter(name: 'period_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['monthly', 'quarterly', 'yearly'])),
+            new OA\Parameter(name: 'periods', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 600, minimum: 1)),
+            new OA\Parameter(name: 'units_per_period', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'decimal')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Projected schedule', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationPreviewRow'))])),
+            new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/EamNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/EamUnprocessable', response: 422),
+        ]
+    )]
+    public function preview(DepreciationPreviewRequest $request, string $id): JsonResponse
+    {
+        $data = $request->validated();
+
+        return response()->json(['data' => $this->depreciationEngine->previewSchedule(
+            $this->asset($id),
+            (string) ($data['ledger_type'] ?? AssetLedger::Statutory),
+            (string) ($data['period_type'] ?? 'yearly'),
+            (int) ($data['periods'] ?? 60),
+            (string) ($data['units_per_period'] ?? '0')
+        )]);
+    }
+
+    /**
+     * The run parameters of a validated request.
+     */
+    private function runDto(RunDepreciationRequest $request): RunDepreciationDTO
+    {
+        $data = $request->validated();
+        $tenantId = (string) $this->tenantContext->getTenantId();
+
+        return new RunDepreciationDTO(
+            tenantId: $tenantId,
+            companyId: $tenantId,
+            periodCode: (string) $data['period_code'],
+            periodType: (string) ($data['period_type'] ?? 'monthly'),
+            ledgerType: AssetLedger::normalize($data['ledger_type'] ?? null),
+            singleAssetId: $data['single_asset_id'] ?? null,
+            unitsProducedByAssetId: array_map('strval', $data['units_produced_by_asset_id'] ?? []),
+            autoPostToGl: (bool) ($data['auto_post_to_gl'] ?? true)
+        );
+    }
+
+    /**
+     * The asset of the active company, 404 otherwise.
+     */
+    private function asset(string $id): FixedAsset
+    {
+        return FixedAsset::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
+    }
+
+    /**
+     * The authenticated user id.
+     */
+    private function actor(Request $request): ?string
+    {
+        $id = $request->user()?->getAuthIdentifier();
+
+        return $id !== null ? (string) $id : null;
     }
 }

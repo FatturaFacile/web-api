@@ -7,9 +7,37 @@ namespace Modules\AssetManagement\Models;
 use App\Models\User;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * Eloquent model of the asset transfer records of the asset management module.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property string|null $asset_id
+ * @property string|null $transfer_number
+ * @property string|null $from_location_id
+ * @property string|null $to_location_id
+ * @property string|null $from_custodian_id
+ * @property string|null $to_custodian_id
+ * @property string|null $from_project_id
+ * @property string|null $to_project_id
+ * @property Carbon|null $transfer_date
+ * @property string|null $status
+ * @property string|null $workflow_instance_id
+ * @property bool $is_locked
+ * @property string|null $reason
+ * @property string|null $initiated_by_user_id
+ * @property Carbon|null $completed_at
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property string|null $from_cost_center_id
+ * @property string|null $to_cost_center_id
+ */
 final class AssetTransfer extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'eam_asset_transfers';

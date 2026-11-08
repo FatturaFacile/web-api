@@ -8,6 +8,9 @@ use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
 use Modules\AssetManagement\DTOs\RunDepreciationDTO;
 use Modules\AssetManagement\Models\DepreciationRun;
 
+/**
+ * Single-purpose action (execute depreciation run) delegating to the asset services.
+ */
 final readonly class ExecuteDepreciationRunAction
 {
     public function __construct(

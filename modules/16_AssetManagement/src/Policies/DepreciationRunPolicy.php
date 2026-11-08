@@ -7,6 +7,9 @@ namespace Modules\AssetManagement\Policies;
 use App\Models\User;
 use Modules\AssetManagement\Models\DepreciationRun;
 
+/**
+ * Record-level authorization of the depreciation run records; role access is decided by the module.access middleware.
+ */
 final class DepreciationRunPolicy
 {
     public function viewAny(?User $user): bool

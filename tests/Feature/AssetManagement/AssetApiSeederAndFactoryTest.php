@@ -24,6 +24,7 @@ beforeEach(function (): void {
         ['name' => 'EAM API & Seeder Tenant', 'legal_name' => 'EAM API & Seeder Tenant SpA']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    fiscalCalendar($this->tenant, (int) date('Y'));
 
     $this->user = User::firstOrCreate(
         ['email' => 'eam.api@example.com'],
@@ -111,13 +112,13 @@ test('enforces authentication and executes full asset lifecycle via REST API', f
 
     // 4. Execute Depreciation Run via API
     $deprResponse = $this->postJson('/api/v1/eam/depreciation/runs', [
-        'period_code' => '2026-10',
+        'period_code' => date('Y-m'),
         'period_type' => 'monthly',
         'ledger_type' => 'statutory',
         'single_asset_id' => $assetId,
     ]);
     $deprResponse->assertStatus(201)
-        ->assertJsonPath('data.total_depreciation_amount', 500);
+        ->assertJsonPath('data.total_depreciation_amount', '500.00');
 
     // 5. Create & Complete Maintenance Work Order via API
     $woResponse = $this->postJson('/api/v1/eam/maintenance/work-orders', [

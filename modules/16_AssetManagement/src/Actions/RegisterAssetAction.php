@@ -8,6 +8,9 @@ use Modules\AssetManagement\Contracts\AssetLifecycleServiceInterface;
 use Modules\AssetManagement\DTOs\RegisterAssetDTO;
 use Modules\AssetManagement\Models\FixedAsset;
 
+/**
+ * Single-purpose action (register asset) delegating to the asset services.
+ */
 final readonly class RegisterAssetAction
 {
     public function __construct(

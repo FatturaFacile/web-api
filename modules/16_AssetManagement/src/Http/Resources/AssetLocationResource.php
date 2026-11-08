@@ -6,7 +6,13 @@ namespace Modules\AssetManagement\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\AssetManagement\Models\AssetLocation;
 
+/**
+ * A physical location of assets (site, building, room). Amounts are decimal strings.
+ *
+ * @mixin AssetLocation
+ */
 final class AssetLocationResource extends JsonResource
 {
     /**
@@ -17,6 +23,7 @@ final class AssetLocationResource extends JsonResource
         return [
             'id' => $this->id,
             'parent_id' => $this->parent_id,
+            'warehouse_id' => $this->warehouse_id,
             'code' => $this->code,
             'name' => $this->name,
             'location_type' => $this->location_type,

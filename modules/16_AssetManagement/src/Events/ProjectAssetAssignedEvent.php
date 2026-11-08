@@ -7,6 +7,9 @@ namespace Modules\AssetManagement\Events;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Illuminate\Support\Str;
 
+/**
+ * Domain event "project asset assigned" of the asset management module, recorded in the outbox and dispatched in process.
+ */
 final readonly class ProjectAssetAssignedEvent implements DomainEventInterface
 {
     public function __construct(

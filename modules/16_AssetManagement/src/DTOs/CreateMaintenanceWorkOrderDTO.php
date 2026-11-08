@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\AssetManagement\DTOs;
 
+/**
+ * Data of a new maintenance work order for an asset.
+ */
 final readonly class CreateMaintenanceWorkOrderDTO
 {
     public function __construct(
@@ -15,6 +18,6 @@ final readonly class CreateMaintenanceWorkOrderDTO
         public ?string $planId = null,
         public ?string $assignedTechnicianId = null,
         public ?string $problemDescription = null,
-        public float $estimatedCost = 0.0
+        public string|int|float $estimatedCost = 0.0
     ) {}
 }

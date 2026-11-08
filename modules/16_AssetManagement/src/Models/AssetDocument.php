@@ -6,7 +6,26 @@ namespace Modules\AssetManagement\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 
+/**
+ * Eloquent model of the asset document records of the asset management module.
+ *
+ * @property string $id
+ * @property string $tenant_id
+ * @property string|null $asset_id
+ * @property string|null $document_type
+ * @property string|null $title
+ * @property string|null $document_number
+ * @property string|null $file_path
+ * @property Carbon|null $issue_date
+ * @property Carbon|null $expiry_date
+ * @property string|null $uploaded_by_user_id
+ * @property array<string, mixed>|null $metadata
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ */
 final class AssetDocument extends BaseEnterpriseModel
 {
     protected $table = 'eam_asset_documents';

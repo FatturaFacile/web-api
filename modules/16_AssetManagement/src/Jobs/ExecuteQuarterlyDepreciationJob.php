@@ -12,6 +12,9 @@ use Illuminate\Queue\SerializesModels;
 use Modules\AssetManagement\Contracts\DepreciationEngineServiceInterface;
 use Modules\AssetManagement\DTOs\RunDepreciationDTO;
 
+/**
+ * Queued depreciation run of a quarterly period. Depreciation is manual by design: the job is dispatched by the accountant, never scheduled.
+ */
 final class ExecuteQuarterlyDepreciationJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;

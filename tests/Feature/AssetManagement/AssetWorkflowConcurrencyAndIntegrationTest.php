@@ -35,6 +35,7 @@ beforeEach(function (): void {
         ['name' => 'EAM Integration Tenant', 'legal_name' => 'EAM Integration Tenant SpA']
     );
     app(TenantContext::class)->setTenant($this->tenant);
+    fiscalCalendar($this->tenant, (int) date('Y'));
     app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->format('Y'));
 
     $this->user = User::firstOrCreate(
@@ -199,7 +200,7 @@ test('allocates equipment to project, attributes utilization cost, and releases 
         ->and($asset->fresh()->project_id)->toBeNull();
 });
 
-test('handles WorkflowInstanceCompletedEvent and PeriodClosedEvent', function (): void {
+test('handles WorkflowInstanceCompletedEvent and does not depreciate on PeriodClosedEvent', function (): void {
     $workflowInstanceId = (string) Str::uuid7();
     $asset = FixedAsset::factory()->capitalized()->create([
         'tenant_id' => $this->tenant->id,
@@ -219,7 +220,7 @@ test('handles WorkflowInstanceCompletedEvent and PeriodClosedEvent', function ()
     expect($asset->fresh()->approval_status)->toBe('approved')
         ->and($asset->fresh()->is_locked)->toBeFalse();
 
-    // PeriodClosedEvent triggers monthly depreciation run if not yet executed
+    // Depreciation is manual by design: closing a period does not start a run behind the accountant's back.
     event(new PeriodClosedEvent(
         fiscalPeriodId: (string) Str::uuid7(),
         fiscalYearId: (string) Str::uuid7(),
@@ -230,5 +231,5 @@ test('handles WorkflowInstanceCompletedEvent and PeriodClosedEvent', function ()
         companyId: (string) $this->tenant->id
     ));
 
-    expect($asset->fresh()->depreciationSchedules()->count())->toBeGreaterThanOrEqual(1);
+    expect($asset->fresh()->depreciationSchedules()->count())->toBe(0);
 });
