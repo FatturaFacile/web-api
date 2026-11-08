@@ -114,7 +114,7 @@ test('backfill is idempotent and never crosses tenants', function (): void {
 
 test('the consolidation migration can run again without changing anything', function (): void {
     ($this->insertAccount)(['name' => 'Migrated Customer Srl']);
-    $migration = require base_path('database/migrations/2027_04_12_000100_link_crm_accounts_to_party_master.php');
+    $migration = require base_path('database/migrations/2027_04_12_000500_link_crm_accounts_to_party_master.php');
 
     $migration->up();
     $linked = DB::table('crm_accounts')->whereNotNull('contact_id')->count();
@@ -125,7 +125,7 @@ test('the consolidation migration can run again without changing anything', func
         ->and(DB::table('crm_accounts')->whereNotNull('contact_id')->count())->toBe(1)
         ->and(DB::table('contacts')->count())->toBe($contacts);
 
-    $engagement = require base_path('database/migrations/2027_04_12_000200_create_crm_engagement_tables.php');
+    $engagement = require base_path('database/migrations/2027_04_12_000600_create_crm_engagement_tables.php');
     $engagement->up();
     expect(true)->toBeTrue();
 });
