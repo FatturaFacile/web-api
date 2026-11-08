@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "b3500bc7-603e-48dc-b115-4cfa74b69938",
+        "_postman_id": "e16c1c12-794b-4316-aa07-b00af7c5cb10",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -18,7 +18,7 @@
     "variable": [
         {
             "key": "baseUrl",
-            "value": "http://localhost",
+            "value": "http://localhost:8000",
             "type": "string"
         },
         {
@@ -93,6 +93,50 @@
                             }
                         }
                     ]
+                },
+                {
+                    "name": "Exchange the challenge of a login with two factors for a Sanctum Bearer token",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/two-factor-challenge",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "two-factor-challenge"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Exchange the challenge of a login with two factors for a Sanctum Bearer token",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"challenge_token\": \"string\",\n    \"code\": \"string\",\n    \"recovery_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
                 },
                 {
                     "name": "Revoke current access token",
@@ -562,6 +606,337 @@
                             }
                         }
                     }
+                },
+                {
+                    "name": "GET /v1/auth/sessions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/sessions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "sessions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/auth/sessions/revoke-others",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/sessions/revoke-others",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "sessions",
+                                "revoke-others"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/auth/sessions/:kind/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/sessions/:kind/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "sessions",
+                                ":kind",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "kind",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/auth/two-factor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/two-factor",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "two-factor"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/auth/two-factor/enable",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/two-factor/enable",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "two-factor",
+                                "enable"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/auth/two-factor/confirm",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/two-factor/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "two-factor",
+                                "confirm"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/auth/two-factor/recovery-codes",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/two-factor/recovery-codes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "two-factor",
+                                "recovery-codes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/auth/two-factor/disable",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/two-factor/disable",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "two-factor",
+                                "disable"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"string\",\n    \"code\": \"string\",\n    \"recovery_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
                 }
             ]
         },
@@ -603,7 +978,7 @@
                         "description": "Creates a new credit note in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"original_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_number\": \"string\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5\n        }\n    ]\n}",
+                            "raw": "{\n    \"original_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -624,6 +999,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -648,7 +1027,16 @@
                                 }
                             ]
                         },
-                        "description": "Applies a credit note to a target sales invoice"
+                        "description": "Applies a credit note to a target sales invoice",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"target_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"amount\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -1191,7 +1579,7 @@
                         "description": "Creates a new delivery note in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"sales_order_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ddt_number\": \"string\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"carrier_license_plate\": \"string\",\n    \"shipping_address\": \"string\",\n    \"courier\": \"string\",\n    \"tracking_number\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity\": 1.5,\n            \"batch_number\": \"string\",\n            \"serial_number\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"sales_order_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"carrier_license_plate\": \"string\",\n    \"shipping_address\": \"string\",\n    \"courier\": \"string\",\n    \"tracking_number\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity\": 1.5,\n            \"batch_number\": \"string\",\n            \"serial_number\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1528,7 +1916,7 @@
                         "description": "Creates a new invoice in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_number\": \"string\",\n    \"invoice_type\": \"standard\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"payment_method\": \"string\",\n    \"payment_terms\": \"string\",\n    \"bank_name\": \"string\",\n    \"bank_iban\": \"string\",\n    \"sales_order_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"delivery_note_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"project_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"project_milestone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"delivery_note_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"revenue_account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"tax_account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"uom\": \"string\"\n        }\n    ],\n    \"document_type\": \"TD01\",\n    \"vat_nature\": \"N1\",\n    \"source_passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"linked_document_number\": \"string\",\n    \"linked_document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"declaration_of_intent_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"skip_declaration_of_intent\": false,\n    \"withholding_tax_enabled\": false,\n    \"withholding_tax_percent\": 1.5,\n    \"withholding_tax_type\": \"RT01\",\n    \"withholding_tax_reason\": \"A\",\n    \"withholding_tax_base_percent\": 1.5,\n    \"stamp_duty_applied\": false,\n    \"stamp_duty_charged\": false,\n    \"fund_enabled\": false,\n    \"fund_type\": \"TC01\",\n    \"fund_percent\": 1.5,\n    \"fund_vat_rate\": 1.5,\n    \"fund_subject_to_withholding\": false,\n    \"enasarco_enabled\": false,\n    \"enasarco_agent_type\": \"single_mandate\"\n}",
+                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_type\": \"standard\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"exchange_rate\": 1.5,\n    \"jurisdiction\": \"IT\",\n    \"split_payment\": false,\n    \"reverse_charge\": false,\n    \"payment_method\": \"string\",\n    \"payment_terms\": \"string\",\n    \"bank_name\": \"string\",\n    \"bank_iban\": \"string\",\n    \"sales_order_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"delivery_note_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"project_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"project_milestone_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"delivery_note_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"revenue_account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"tax_account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"uom\": \"string\"\n        }\n    ],\n    \"document_type\": \"TD01\",\n    \"vat_nature\": \"N1\",\n    \"source_passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"linked_document_number\": \"string\",\n    \"linked_document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"declaration_of_intent_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"skip_declaration_of_intent\": false,\n    \"withholding_tax_enabled\": false,\n    \"withholding_tax_percent\": 1.5,\n    \"withholding_tax_type\": \"RT01\",\n    \"withholding_tax_reason\": \"A\",\n    \"withholding_tax_base_percent\": 1.5,\n    \"stamp_duty_applied\": false,\n    \"stamp_duty_charged\": false,\n    \"fund_enabled\": false,\n    \"fund_type\": \"TC01\",\n    \"fund_percent\": 1.5,\n    \"fund_vat_rate\": 1.5,\n    \"fund_subject_to_withholding\": false,\n    \"enasarco_enabled\": false,\n    \"enasarco_agent_type\": \"single_mandate\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -1549,6 +1937,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -1573,7 +1965,16 @@
                                 }
                             ]
                         },
-                        "description": "Creates a sales invoice from a sales order"
+                        "description": "Creates a sales invoice from a sales order",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"payment_method\": \"string\",\n    \"payment_terms\": \"string\",\n    \"bank_name\": \"string\",\n    \"bank_iban\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -1588,6 +1989,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -1612,7 +2017,16 @@
                                 }
                             ]
                         },
-                        "description": "Creates a sales invoice from a delivery note"
+                        "description": "Creates a sales invoice from a delivery note",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"payment_method\": \"string\",\n    \"payment_terms\": \"string\",\n    \"bank_name\": \"string\",\n    \"bank_iban\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -2002,7 +2416,7 @@
                                 }
                             ]
                         },
-                        "description": "Produces a placeholder slip. Use GET /api/v1/sales/invoices/{id}/qr-bill for the real Swiss QR code."
+                        "description": "Alias of GET /api/v1/sales/invoices/{id}/qr-bill (same read-only response); use that endpoint."
                     }
                 },
                 {
@@ -2041,7 +2455,7 @@
                                 }
                             ]
                         },
-                        "description": "Serves a placeholder slip. Use GET /api/v1/sales/invoices/{id}/qr-bill or the invoice PDF instead."
+                        "description": "Serves the SVG of the real QR-bill. Use GET /api/v1/sales/invoices/{id}/qr-bill or the invoice PDF instead."
                     }
                 },
                 {
@@ -4188,7 +4602,7 @@
                         "description": "Creates a new order in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quote_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"price_list_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"discount_policy_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"sales_rep_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"order_number\": \"string\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"payment_terms\": \"string\",\n    \"shipping_method\": \"string\",\n    \"shipping_address\": \"string\",\n    \"billing_address\": \"string\",\n    \"notes\": \"string\",\n    \"auto_submit\": false,\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"uom\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quote_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_agreement_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"price_list_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"discount_policy_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"sales_rep_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"due_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"payment_terms\": \"string\",\n    \"shipping_method\": \"string\",\n    \"shipping_address\": \"string\",\n    \"billing_address\": \"string\",\n    \"notes\": \"string\",\n    \"auto_submit\": false,\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"uom\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4820,7 +5234,7 @@
                         "description": "Creates a new quote in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quote_number\": \"string\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"price_list_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"discount_policy_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"payment_terms\": \"string\",\n    \"shipping_terms\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"uom\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\",\n    \"price_list_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"discount_policy_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"payment_terms\": \"string\",\n    \"shipping_terms\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5,\n            \"uom\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4865,6 +5279,136 @@
                             ]
                         },
                         "description": "Returns a single quote of the active tenant"
+                    }
+                },
+                {
+                    "name": "Puts a draft quote up for internal approval",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/invoicing/quotes/:id/submit-for-approval",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoicing",
+                                "quotes",
+                                ":id",
+                                "submit-for-approval"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Puts a draft quote up for internal approval"
+                    }
+                },
+                {
+                    "name": "Approves a quote waiting for approval when no workflow takes the decision",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/invoicing/quotes/:id/approve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoicing",
+                                "quotes",
+                                ":id",
+                                "approve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Approves a quote waiting for approval when no workflow takes the decision"
+                    }
+                },
+                {
+                    "name": "Rejects a quote waiting for approval when no workflow takes the decision",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/invoicing/quotes/:id/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "invoicing",
+                                "quotes",
+                                ":id",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Rejects a quote waiting for approval when no workflow takes the decision",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -5376,7 +5920,7 @@
             "name": "Banking",
             "item": [
                 {
-                    "name": "Statements, newest first; filter with `status`, `source_format` and `iban`",
+                    "name": "Statements, newest first, 25 per page (`per_page` up to 100); filter with `status`, `source_format` and `iban`.\n`data` stays the list of statements, the page counters are in `meta`",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -5418,11 +5962,17 @@
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
                         },
-                        "description": "Statements, newest first; filter with `status`, `source_format` and `iban`"
+                        "description": "Statements, newest first, 25 per page (`per_page` up to 100); filter with `status`, `source_format` and `iban`.\n`data` stays the list of statements, the page counters are in `meta`"
                     }
                 },
                 {
@@ -5838,7 +6388,7 @@
                     }
                 },
                 {
-                    "name": "Preview of the entries of a period; the totals and the balance check cover the whole period, not just the page",
+                    "name": "Preview of the entries of a period of at most one year; the totals and the balance check cover the whole period,\nnot just the page. The period is read month by month and only the entries of the page are kept, so the memory\ndoes not grow with the period; entry numbers are positions in the whole period and do not change between pages",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -5914,7 +6464,7 @@
                             ],
                             "variable": []
                         },
-                        "description": "Preview of the entries of a period; the totals and the balance check cover the whole period, not just the page"
+                        "description": "Preview of the entries of a period of at most one year; the totals and the balance check cover the whole period,\nnot just the page. The period is read month by month and only the entries of the page are kept, so the memory\ndoes not grow with the period; entry numbers are positions in the whole period and do not change between pages"
                     }
                 },
                 {
@@ -18680,6 +19230,50 @@
                     }
                 },
                 {
+                    "name": "POST /v1/automotive/vehicles",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/automotive/vehicles",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "automotive",
+                                "vehicles"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"license_plate\": \"string\",\n    \"vin_chassis\": \"string\",\n    \"make\": \"string\",\n    \"model\": \"string\",\n    \"year\": 1,\n    \"registration_date\": \"2026-01-31T12:00:00+00:00\",\n    \"mileage_km\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/automotive/tire-hotel/check-in",
                     "request": {
                         "method": "POST",
@@ -18877,6 +19471,184 @@
                                 }
                             }
                         }
+                    }
+                },
+                {
+                    "name": "GET /v1/automotive/vehicles/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/automotive/vehicles/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "automotive",
+                                "vehicles",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "PUT /v1/automotive/vehicles/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/automotive/vehicles/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "automotive",
+                                "vehicles",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"license_plate\": \"string\",\n    \"vin_chassis\": \"string\",\n    \"make\": \"string\",\n    \"model\": \"string\",\n    \"year\": 1,\n    \"registration_date\": \"2026-01-31T12:00:00+00:00\",\n    \"mileage_km\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH /v1/automotive/vehicles/:id",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/automotive/vehicles/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "automotive",
+                                "vehicles",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"license_plate\": \"string\",\n    \"vin_chassis\": \"string\",\n    \"make\": \"string\",\n    \"model\": \"string\",\n    \"year\": 1,\n    \"registration_date\": \"2026-01-31T12:00:00+00:00\",\n    \"mileage_km\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/automotive/vehicles/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/automotive/vehicles/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "automotive",
+                                "vehicles",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
                     }
                 }
             ]
@@ -21942,6 +22714,50 @@
                     }
                 },
                 {
+                    "name": "POST /v1/construction/sites",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction/sites",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction",
+                                "sites"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"address\": \"string\",\n    \"sia_norm_reference\": \"string\",\n    \"npk_code\": \"string\",\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"estimated_end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"status\": \"planning\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "GET /v1/construction/sal",
                     "request": {
                         "method": "GET",
@@ -22043,6 +22859,184 @@
                             ],
                             "query": [],
                             "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/construction/sites/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction/sites/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction",
+                                "sites",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "PUT /v1/construction/sites/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction/sites/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction",
+                                "sites",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"address\": \"string\",\n    \"sia_norm_reference\": \"string\",\n    \"npk_code\": \"string\",\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"estimated_end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"status\": \"planning\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH /v1/construction/sites/:id",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction/sites/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction",
+                                "sites",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"client_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"address\": \"string\",\n    \"sia_norm_reference\": \"string\",\n    \"npk_code\": \"string\",\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"estimated_end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"status\": \"planning\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/construction/sites/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction/sites/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction",
+                                "sites",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
                         },
                         "description": ""
                     }
@@ -31486,7 +32480,7 @@
                         "description": "Create a channel. The webhook secret is generated when not given and returned in this response only",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"driver\": \"woocommerce\",\n    \"api_url\": \"string\",\n    \"credentials\": [\n        \"string\"\n    ],\n    \"webhook_secret\": \"string\",\n    \"is_active\": false,\n    \"sync_stock_enabled\": false,\n    \"sync_orders_enabled\": false,\n    \"settings\": {\n        \"order_status_map\": [\n            \"draft\"\n        ],\n        \"location_id\": \"string\",\n        \"api_version\": \"string\",\n        \"currency\": \"string\",\n        \"language_id\": 1,\n        \"category_id\": 1\n    }\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"driver\": \"woocommerce\",\n    \"api_url\": \"string\",\n    \"credentials\": {\n        \"shop_domain\": \"string\"\n    },\n    \"webhook_secret\": \"string\",\n    \"is_active\": false,\n    \"sync_stock_enabled\": false,\n    \"sync_orders_enabled\": false,\n    \"settings\": {\n        \"order_status_map\": [\n            \"draft\"\n        ],\n        \"location_id\": \"string\",\n        \"api_version\": \"string\",\n        \"currency\": \"string\",\n        \"language_id\": 1,\n        \"category_id\": 1\n    }\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -31575,7 +32569,7 @@
                         "description": "Update a channel. Credentials and settings sent are merged into the stored ones",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"driver\": \"woocommerce\",\n    \"api_url\": \"string\",\n    \"credentials\": [\n        \"string\"\n    ],\n    \"webhook_secret\": \"string\",\n    \"is_active\": false,\n    \"sync_stock_enabled\": false,\n    \"sync_orders_enabled\": false,\n    \"settings\": {\n        \"order_status_map\": [\n            \"draft\"\n        ],\n        \"location_id\": \"string\",\n        \"api_version\": \"string\",\n        \"currency\": \"string\",\n        \"language_id\": 1,\n        \"category_id\": 1\n    }\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"driver\": \"woocommerce\",\n    \"api_url\": \"string\",\n    \"credentials\": {\n        \"shop_domain\": \"string\"\n    },\n    \"webhook_secret\": \"string\",\n    \"is_active\": false,\n    \"sync_stock_enabled\": false,\n    \"sync_orders_enabled\": false,\n    \"settings\": {\n        \"order_status_map\": [\n            \"draft\"\n        ],\n        \"location_id\": \"string\",\n        \"api_version\": \"string\",\n        \"currency\": \"string\",\n        \"language_id\": 1,\n        \"category_id\": 1\n    }\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -34684,7 +35678,7 @@
                         "description": "Adds a support mailbox",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"email_address\": \"user@example.com\",\n    \"imap_host\": \"string\",\n    \"imap_port\": 1,\n    \"imap_username\": \"string\",\n    \"imap_password\": \"string\",\n    \"default_team_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_priority\": \"low\",\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"email_address\": \"user@example.com\",\n    \"imap_host\": \"string\",\n    \"imap_port\": \"993\",\n    \"imap_username\": \"string\",\n    \"imap_password\": \"string\",\n    \"default_team_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_priority\": \"low\",\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -34736,7 +35730,7 @@
                         "description": "Changes a support mailbox",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"email_address\": \"user@example.com\",\n    \"imap_host\": \"string\",\n    \"imap_port\": 1,\n    \"imap_username\": \"string\",\n    \"imap_password\": \"string\",\n    \"default_team_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_priority\": \"low\",\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"email_address\": \"user@example.com\",\n    \"imap_host\": \"string\",\n    \"imap_port\": \"993\",\n    \"imap_username\": \"string\",\n    \"imap_password\": \"string\",\n    \"default_team_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"default_priority\": \"low\",\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -35910,7 +36904,14 @@
                                 ":attachmentId",
                                 "download"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "inline",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": [
                                 {
                                     "key": "id",
@@ -38261,6 +39262,57 @@
                             ]
                         },
                         "description": "Runs the closing of the fiscal year and returns the closing run"
+                    }
+                },
+                {
+                    "name": "GET /v1/general-ledger/journal-book/export",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/journal-book/export?fiscal_year_id=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "journal-book",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "fiscal_year_id",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": ""
                     }
                 },
                 {
@@ -44732,6 +45784,743 @@
             ]
         },
         {
+            "name": "Intrastat",
+            "item": [
+                {
+                    "name": "GET /v1/intrastat/codes",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/codes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "codes"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/intrastat/declarations",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/intrastat/declarations",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"flow\": \"sales\",\n    \"year\": 1,\n    \"periodicity\": \"M\",\n    \"period\": 1,\n    \"reference_number\": 1,\n    \"content_code\": \"0\",\n    \"special_case_code\": \"0\",\n    \"obligated_vat_number\": \"string\",\n    \"delegate_vat_number\": \"string\",\n    \"includes_statistical_data\": false,\n    \"has_annual_flows_above_20_million\": false,\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/intrastat/declarations/generate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/generate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                "generate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"flow\": \"sales\",\n    \"year\": 1,\n    \"periodicity\": \"M\",\n    \"period\": 1,\n    \"reference_number\": 1,\n    \"content_code\": \"0\",\n    \"special_case_code\": \"0\",\n    \"obligated_vat_number\": \"string\",\n    \"delegate_vat_number\": \"string\",\n    \"includes_statistical_data\": false,\n    \"has_annual_flows_above_20_million\": false,\n    \"notes\": \"string\",\n    \"unclassified_as\": \"goods\",\n    \"defaults\": {\n        \"transaction_nature_a\": \"1\",\n        \"transaction_nature_b\": \"string\",\n        \"delivery_terms\": \"E\",\n        \"transport_mode\": \"1\",\n        \"province_code\": \"string\",\n        \"payment_country_code\": \"string\",\n        \"service_code\": \"string\"\n    }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/intrastat/declarations/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "PUT /v1/intrastat/declarations/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"flow\": \"sales\",\n    \"year\": 1,\n    \"periodicity\": \"M\",\n    \"period\": 1,\n    \"reference_number\": 1,\n    \"content_code\": \"0\",\n    \"special_case_code\": \"0\",\n    \"obligated_vat_number\": \"string\",\n    \"delegate_vat_number\": \"string\",\n    \"includes_statistical_data\": false,\n    \"has_annual_flows_above_20_million\": false,\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/intrastat/declarations/:id",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/intrastat/declarations/:id/validate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id/validate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id",
+                                "validate"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/intrastat/declarations/:id/submit",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id/submit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id",
+                                "submit"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"protocol_number\": \"string\",\n    \"submitted_at\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/intrastat/declarations/:id/lines",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id/lines",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id",
+                                "lines"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"section\": 1,\n    \"partner_country_code\": \"string\",\n    \"partner_vat_number\": \"string\",\n    \"amount_eur\": 1,\n    \"amount_currency\": 1,\n    \"transaction_nature_a\": \"1\",\n    \"transaction_nature_b\": \"string\",\n    \"cn8_code\": \"string\",\n    \"net_mass_kg\": 1,\n    \"supplementary_units\": 1,\n    \"statistical_value_eur\": 1,\n    \"delivery_terms\": \"E\",\n    \"transport_mode\": \"1\",\n    \"goods_country_code\": \"string\",\n    \"origin_country_code\": \"string\",\n    \"province_code\": \"string\",\n    \"invoice_number\": \"string\",\n    \"invoice_date\": \"2026-01-31T12:00:00+00:00\",\n    \"service_code\": \"string\",\n    \"supply_mode\": \"I\",\n    \"payment_method\": \"B\",\n    \"payment_country_code\": \"string\",\n    \"corrected_month\": 1,\n    \"corrected_quarter\": 1,\n    \"corrected_year\": 1,\n    \"sign\": \"+\",\n    \"corrected_customs_section\": \"string\",\n    \"corrected_protocol_year\": 1,\n    \"corrected_protocol_number\": \"string\",\n    \"corrected_line_number\": 1,\n    \"is_cancellation\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/intrastat/declarations/:id/lines/:lineId",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id/lines/:lineId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id",
+                                "lines",
+                                ":lineId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "lineId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"section\": 1,\n    \"partner_country_code\": \"string\",\n    \"partner_vat_number\": \"string\",\n    \"amount_eur\": 1,\n    \"amount_currency\": 1,\n    \"transaction_nature_a\": \"1\",\n    \"transaction_nature_b\": \"string\",\n    \"cn8_code\": \"string\",\n    \"net_mass_kg\": 1,\n    \"supplementary_units\": 1,\n    \"statistical_value_eur\": 1,\n    \"delivery_terms\": \"E\",\n    \"transport_mode\": \"1\",\n    \"goods_country_code\": \"string\",\n    \"origin_country_code\": \"string\",\n    \"province_code\": \"string\",\n    \"invoice_number\": \"string\",\n    \"invoice_date\": \"2026-01-31T12:00:00+00:00\",\n    \"service_code\": \"string\",\n    \"supply_mode\": \"I\",\n    \"payment_method\": \"B\",\n    \"payment_country_code\": \"string\",\n    \"corrected_month\": 1,\n    \"corrected_quarter\": 1,\n    \"corrected_year\": 1,\n    \"sign\": \"+\",\n    \"corrected_customs_section\": \"string\",\n    \"corrected_protocol_year\": 1,\n    \"corrected_protocol_number\": \"string\",\n    \"corrected_line_number\": 1,\n    \"is_cancellation\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/intrastat/declarations/:id/lines/:lineId",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/declarations/:id/lines/:lineId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "declarations",
+                                ":id",
+                                "lines",
+                                ":lineId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "lineId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/intrastat/exports",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/exports",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "exports"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"declaration_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"channel\": \"entratel\",\n    \"user_code\": \"string\",\n    \"customs_section_code\": \"string\",\n    \"sender_code\": \"string\",\n    \"site_progressive\": 1,\n    \"transmission_date\": \"2026-01-31T12:00:00+00:00\",\n    \"sequence\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/intrastat/periodicity",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/periodicity?year=&quarter=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "periodicity"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "quarter",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/intrastat/product-profiles",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/product-profiles",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "product-profiles"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "PUT /v1/intrastat/product-profiles/:productId",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/product-profiles/:productId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "product-profiles",
+                                ":productId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "productId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"supply_kind\": \"goods\",\n    \"cn8_code\": \"string\",\n    \"net_mass_kg\": 1.5,\n    \"supplementary_units_per_unit\": 1.5,\n    \"service_code\": \"string\",\n    \"origin_country_code\": \"string\",\n    \"origin_province_code\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/intrastat/product-profiles/:productId",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/intrastat/product-profiles/:productId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "intrastat",
+                                "product-profiles",
+                                ":productId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "productId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                }
+            ]
+        },
+        {
             "name": "Inventory",
             "item": [
                 {
@@ -46675,7 +48464,7 @@
                         "description": "",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"driver\": \"local\",\n    \"contract_number\": \"string\",\n    \"credentials\": [\n        \"string\"\n    ],\n    \"tracking_url_template\": \"string\"\n}",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"driver\": \"local\",\n    \"contract_number\": \"string\",\n    \"credentials\": {\n        \"username\": \"string\",\n        \"password\": \"string\",\n        \"service_code\": \"string\",\n        \"base_url\": \"string\",\n        \"sender\": [\n            \"string\"\n        ]\n    },\n    \"tracking_url_template\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -49538,7 +51327,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"lookup_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"locale\": \"string\",\n    \"label\": \"string\",\n    \"short_label\": \"string\",\n    \"description\": \"string\",\n    \"tenant_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "raw": "{\n    \"lookup_item_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"locale\": \"string\",\n    \"label\": \"string\",\n    \"short_label\": \"string\",\n    \"description\": \"string\",\n    \"tenant_id\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -52666,50 +54455,6 @@
                     }
                 },
                 {
-                    "name": "Simulate a hiring",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/payroll/hiring-simulations",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "payroll",
-                                "hiring-simulations"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "Simulate a hiring",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"year\": 1,\n    \"annual_gross\": 1.5,\n    \"target_net_monthly\": 1.5,\n    \"date_of_birth\": \"2026-01-31\",\n    \"fte_ratio\": 1.5,\n    \"salary_installments_per_year\": 1,\n    \"withholding_tax_rate_percent\": 1.5,\n    \"pension_fund_employee_rate_percent\": 1.5,\n    \"residence_country\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
                     "name": "Tell the employees that their payslips are ready",
                     "request": {
                         "method": "POST",
@@ -52900,6 +54645,50 @@
                             "variable": []
                         },
                         "description": "The allowance of each child"
+                    }
+                },
+                {
+                    "name": "Simulate a hiring",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/hiring-simulations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "hiring-simulations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Simulate a hiring",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"annual_gross\": 1.5,\n    \"target_net_monthly\": 1.5,\n    \"date_of_birth\": \"2026-01-31\",\n    \"fte_ratio\": 1.5,\n    \"salary_installments_per_year\": 1,\n    \"withholding_tax_rate_percent\": 1.5,\n    \"pension_fund_employee_rate_percent\": 1.5,\n    \"residence_country\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -53233,89 +55022,6 @@
                     }
                 },
                 {
-                    "name": "List the monthly runs of the company",
-                    "request": {
-                        "method": "GET",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/payroll/runs",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "payroll",
-                                "runs"
-                            ],
-                            "query": [
-                                {
-                                    "key": "year",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                }
-                            ],
-                            "variable": []
-                        },
-                        "description": "List the monthly runs of the company"
-                    }
-                },
-                {
-                    "name": "Calculate or recalculate the run of a month",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/payroll/runs/calculate",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "payroll",
-                                "runs",
-                                "calculate"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "Calculate or recalculate the run of a month",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"payment_date\": \"2026-01-31\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
                     "name": "Run the monthly engine without saving anything",
                     "request": {
                         "method": "POST",
@@ -53397,6 +55103,89 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"employee_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"target_month\": \"2026-01-31\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "List the monthly runs of the company",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List the monthly runs of the company"
+                    }
+                },
+                {
+                    "name": "Calculate or recalculate the run of a month",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/runs/calculate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "runs",
+                                "calculate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Calculate or recalculate the run of a month",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"payment_date\": \"2026-01-31\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -53948,51 +55737,6 @@
                     }
                 },
                 {
-                    "name": "Generate the certificates of a year from the closed runs",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/payroll/salary-certificates/generate",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "payroll",
-                                "salary-certificates",
-                                "generate"
-                            ],
-                            "query": [],
-                            "variable": []
-                        },
-                        "description": "Generate the certificates of a year from the closed runs",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"year\": 1\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
                     "name": "Show a certificate",
                     "request": {
                         "method": "GET",
@@ -54067,6 +55811,51 @@
                             ]
                         },
                         "description": "Print a certificate"
+                    }
+                },
+                {
+                    "name": "Generate the certificates of a year from the closed runs",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/salary-certificates/generate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "salary-certificates",
+                                "generate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Generate the certificates of a year from the closed runs",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -57932,7 +59721,7 @@
                         "description": "",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"supplier_code\": \"string\",\n    \"company_name\": \"string\",\n    \"vat_number\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"supplier_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"currency\": \"string\",\n    \"payment_terms_code\": \"string\",\n    \"incoterms\": \"string\",\n    \"credit_limit\": 1.5,\n    \"rating\": \"A\",\n    \"is_approved_vendor\": false,\n    \"status\": \"string\",\n    \"metadata\": [\n        \"string\"\n    ]\n}",
+                            "raw": "{\n    \"supplier_code\": \"string\",\n    \"company_name\": \"string\",\n    \"vat_number\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"supplier_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"currency\": \"string\",\n    \"payment_terms_code\": \"string\",\n    \"incoterms\": \"string\",\n    \"credit_limit\": 1.5,\n    \"rating\": \"A\",\n    \"is_approved_vendor\": false,\n    \"status\": \"string\",\n    \"suspension_reason\": \"string\",\n    \"metadata\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -61202,7 +62991,7 @@
                         "description": "Choose the SDI channel of the active tenant and store its credentials",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"channel\": \"pec\",\n    \"environment\": \"production\",\n    \"pec_email\": \"user@example.com\",\n    \"pec_smtp_host\": \"string\",\n    \"pec_smtp_port\": 1,\n    \"pec_imap_host\": \"string\",\n    \"pec_imap_port\": 1,\n    \"pec_username\": \"string\",\n    \"pec_password\": \"string\",\n    \"pec_address\": \"user@example.com\",\n    \"credentials\": {\n        \"token\": \"string\",\n        \"email\": \"user@example.com\",\n        \"password\": \"string\",\n        \"api_key\": \"string\"\n    },\n    \"webhook_secret\": \"string\",\n    \"sign_outgoing\": false,\n    \"zero_rate_nature\": \"string\",\n    \"ade_telematic_address_registered\": false,\n    \"ade_conservation_agreement_at\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "raw": "{\n    \"channel\": \"pec\",\n    \"environment\": \"production\",\n    \"pec_email\": \"user@example.com\",\n    \"pec_smtp_host\": \"string\",\n    \"pec_smtp_port\": \"465\",\n    \"pec_imap_host\": \"string\",\n    \"pec_imap_port\": \"993\",\n    \"pec_username\": \"string\",\n    \"pec_password\": \"string\",\n    \"pec_address\": \"user@example.com\",\n    \"credentials\": {\n        \"token\": \"string\",\n        \"email\": \"user@example.com\",\n        \"password\": \"string\",\n        \"api_key\": \"string\"\n    },\n    \"webhook_secret\": \"string\",\n    \"sign_outgoing\": false,\n    \"zero_rate_nature\": \"string\",\n    \"ade_telematic_address_registered\": false,\n    \"ade_conservation_agreement_at\": \"2026-01-31T12:00:00+00:00\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -61241,6 +63030,78 @@
                             "variable": []
                         },
                         "description": "Queue a read of the channel now, without waiting for the scheduler"
+                    }
+                },
+                {
+                    "name": "Inbound messages kept aside because they could not be read or trusted",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/sdi-channel/quarantine",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "sdi-channel",
+                                "quarantine"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Inbound messages kept aside because they could not be read or trusted"
+                    }
+                },
+                {
+                    "name": "Read a quarantined message again",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/sdi-channel/quarantine/:log/retry",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "sdi-channel",
+                                "quarantine",
+                                ":log",
+                                "retry"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "log",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Read a quarantined message again"
                     }
                 },
                 {
@@ -61542,6 +63403,123 @@
                             "variable": [
                                 {
                                     "key": "group",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/security/two-factor",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/security/two-factor",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "security",
+                                "two-factor"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "PUT /v1/settings/security/two-factor",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/security/two-factor",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "security",
+                                "two-factor"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"require_two_factor\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/users/:userId/two-factor/reset",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/users/:userId/two-factor/reset",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "users",
+                                ":userId",
+                                "two-factor",
+                                "reset"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "userId",
                                     "value": "",
                                     "description": ""
                                 }
@@ -61888,6 +63866,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -61912,7 +63894,16 @@
                                 }
                             ]
                         },
-                        "description": "Suspends a subscription, recording the reason"
+                        "description": "Suspends a subscription, recording the reason",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -62198,235 +64189,6 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"period_date\": \"2026-01-31T12:00:00+00:00\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "Activates a subscription",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/subscriptions/:id/activate",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "subscriptions",
-                                ":id",
-                                "activate"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Activates a subscription"
-                    }
-                },
-                {
-                    "name": "Suspends a subscription, recording the reason",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/subscriptions/:id/suspend",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "subscriptions",
-                                ":id",
-                                "suspend"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Suspends a subscription, recording the reason",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"reason\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "Reactivates a suspended subscription",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/subscriptions/:id/reactivate",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "subscriptions",
-                                ":id",
-                                "reactivate"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Reactivates a suspended subscription"
-                    }
-                },
-                {
-                    "name": "Moves a subscription to a higher plan",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/subscriptions/:id/upgrade",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "subscriptions",
-                                ":id",
-                                "upgrade"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Moves a subscription to a higher plan",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"new_plan_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"effective_date\": \"2026-01-31T12:00:00+00:00\",\n    \"change_reason\": \"string\"\n}",
-                            "options": {
-                                "raw": {
-                                    "language": "json"
-                                }
-                            }
-                        }
-                    }
-                },
-                {
-                    "name": "Moves a subscription to a lower plan",
-                    "request": {
-                        "method": "POST",
-                        "header": [
-                            {
-                                "key": "Accept",
-                                "value": "application/json"
-                            },
-                            {
-                                "key": "X-Tenant-Id",
-                                "value": "{{tenantId}}"
-                            },
-                            {
-                                "key": "Content-Type",
-                                "value": "application/json"
-                            }
-                        ],
-                        "url": {
-                            "raw": "{{baseUrl}}/api/v1/subscriptions/:id/downgrade",
-                            "host": [
-                                "{{baseUrl}}"
-                            ],
-                            "path": [
-                                "api",
-                                "v1",
-                                "subscriptions",
-                                ":id",
-                                "downgrade"
-                            ],
-                            "query": [],
-                            "variable": [
-                                {
-                                    "key": "id",
-                                    "value": "",
-                                    "description": ""
-                                }
-                            ]
-                        },
-                        "description": "Moves a subscription to a lower plan",
-                        "body": {
-                            "mode": "raw",
-                            "raw": "{\n    \"new_plan_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"effective_date\": \"2026-01-31T12:00:00+00:00\",\n    \"change_reason\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -63474,14 +65236,7 @@
                                 "translations",
                                 ":locale"
                             ],
-                            "query": [
-                                {
-                                    "key": "tenant_id",
-                                    "value": "",
-                                    "disabled": true,
-                                    "description": ""
-                                }
-                            ],
+                            "query": [],
                             "variable": [
                                 {
                                     "key": "locale",
@@ -63530,7 +65285,7 @@
                         "description": "Store or update a translation string",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"locale\": \"string\",\n    \"key\": \"string\",\n    \"value\": \"string\"\n}",
+                            "raw": "{\n    \"tenant_id\": \"string\",\n    \"locale\": \"string\",\n    \"key\": \"string\",\n    \"value\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -66837,6 +68592,50 @@
                     }
                 },
                 {
+                    "name": "Creates a draft definition, optionally with its graph and published at once",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Creates a draft definition, optionally with its graph and published at once",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"target_entity_type\": \"string\",\n    \"configuration\": [\n        \"string\"\n    ],\n    \"is_active\": false,\n    \"nodes\": [\n        {\n            \"node_key\": \"string\",\n            \"name\": \"string\",\n            \"node_type\": \"start\",\n            \"approval_type\": \"single\",\n            \"assignee_type\": \"direct_user\",\n            \"assignee_id\": \"string\",\n            \"timeout_hours\": 1\n        }\n    ],\n    \"transitions\": [\n        {\n            \"from\": \"string\",\n            \"to\": \"string\",\n            \"action_trigger\": \"start\",\n            \"priority\": 1,\n            \"condition_rules\": [\n                \"string\"\n            ]\n        }\n    ],\n    \"publish\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Returns a single definition of the active tenant",
                     "request": {
                         "method": "GET",
@@ -66872,6 +68671,611 @@
                             ]
                         },
                         "description": "Returns a single definition of the active tenant"
+                    }
+                },
+                {
+                    "name": "Changes the metadata of a definition, or activates and deactivates it",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Changes the metadata of a definition, or activates and deactivates it",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"target_entity_type\": \"string\",\n    \"configuration\": [\n        \"string\"\n    ],\n    \"is_active\": false,\n    \"nodes\": [\n        {\n            \"node_key\": \"string\",\n            \"name\": \"string\",\n            \"node_type\": \"start\",\n            \"approval_type\": \"single\",\n            \"assignee_type\": \"direct_user\",\n            \"assignee_id\": \"string\",\n            \"timeout_hours\": 1\n        }\n    ],\n    \"transitions\": [\n        {\n            \"from\": \"string\",\n            \"to\": \"string\",\n            \"action_trigger\": \"start\",\n            \"priority\": 1,\n            \"condition_rules\": [\n                \"string\"\n            ]\n        }\n    ],\n    \"publish\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Changes the metadata of a definition, or activates and deactivates it",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Changes the metadata of a definition, or activates and deactivates it",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"target_entity_type\": \"string\",\n    \"configuration\": [\n        \"string\"\n    ],\n    \"is_active\": false,\n    \"nodes\": [\n        {\n            \"node_key\": \"string\",\n            \"name\": \"string\",\n            \"node_type\": \"start\",\n            \"approval_type\": \"single\",\n            \"assignee_type\": \"direct_user\",\n            \"assignee_id\": \"string\",\n            \"timeout_hours\": 1\n        }\n    ],\n    \"transitions\": [\n        {\n            \"from\": \"string\",\n            \"to\": \"string\",\n            \"action_trigger\": \"start\",\n            \"priority\": 1,\n            \"condition_rules\": [\n                \"string\"\n            ]\n        }\n    ],\n    \"publish\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Archives a definition without running instances",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Archives a definition without running instances"
+                    }
+                },
+                {
+                    "name": "Validates the graph and makes the definition the active version of its code",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/publish",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "publish"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Validates the graph and makes the definition the active version of its code"
+                    }
+                },
+                {
+                    "name": "POST /v1/workflows/definitions/:id/nodes",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/nodes",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "nodes"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"node_key\": \"string\",\n    \"name\": \"string\",\n    \"node_type\": \"start\",\n    \"approval_type\": \"single\",\n    \"assignee_type\": \"direct_user\",\n    \"assignee_id\": \"string\",\n    \"timeout_hours\": 1,\n    \"ui_metadata\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/workflows/definitions/:id/nodes/:nodeId",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/nodes/:nodeId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "nodes",
+                                ":nodeId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "nodeId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"node_key\": \"string\",\n    \"name\": \"string\",\n    \"node_type\": \"start\",\n    \"approval_type\": \"single\",\n    \"assignee_type\": \"direct_user\",\n    \"assignee_id\": \"string\",\n    \"timeout_hours\": 1,\n    \"ui_metadata\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH /v1/workflows/definitions/:id/nodes/:nodeId",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/nodes/:nodeId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "nodes",
+                                ":nodeId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "nodeId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"node_key\": \"string\",\n    \"name\": \"string\",\n    \"node_type\": \"start\",\n    \"approval_type\": \"single\",\n    \"assignee_type\": \"direct_user\",\n    \"assignee_id\": \"string\",\n    \"timeout_hours\": 1,\n    \"ui_metadata\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/workflows/definitions/:id/nodes/:nodeId",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/nodes/:nodeId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "nodes",
+                                ":nodeId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "nodeId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/workflows/definitions/:id/transitions",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/transitions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "transitions"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"from_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"to_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"action_trigger\": \"start\",\n    \"priority\": 1,\n    \"condition_rules\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/workflows/definitions/:id/transitions/:transitionId",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/transitions/:transitionId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "transitions",
+                                ":transitionId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "transitionId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"from_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"to_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"action_trigger\": \"start\",\n    \"priority\": 1,\n    \"condition_rules\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PATCH /v1/workflows/definitions/:id/transitions/:transitionId",
+                    "request": {
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/transitions/:transitionId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "transitions",
+                                ":transitionId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "transitionId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"from_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"to_node_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"action_trigger\": \"start\",\n    \"priority\": 1,\n    \"condition_rules\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "DELETE /v1/workflows/definitions/:id/transitions/:transitionId",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workflows/definitions/:id/transitions/:transitionId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workflows",
+                                "definitions",
+                                ":id",
+                                "transitions",
+                                ":transitionId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "transitionId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
                     }
                 },
                 {
@@ -67072,7 +69476,7 @@
                         "description": "Creates a new instance in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"workflow_code\": \"string\",\n    \"approvable_type\": \"string\",\n    \"approvable_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"context_snapshot\": [\n        \"string\"\n    ]\n}",
+                            "raw": "{\n    \"workflow_code\": \"string\",\n    \"approvable_type\": \"sales_quote\",\n    \"approvable_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"context_snapshot\": [\n        \"string\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
