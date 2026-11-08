@@ -9,8 +9,14 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
+/**
+ * Validates the input of the store tag operation (authorization is decided by module.access).
+ */
 final class StoreTagRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

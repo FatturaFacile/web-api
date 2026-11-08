@@ -23,6 +23,9 @@ use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
  */
 final readonly class DocumentExtractionService
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private DocumentExtractorInterface $extractor,
         private TextRecognizerInterface $recognizer,
@@ -81,6 +84,9 @@ final readonly class DocumentExtractionService
         });
     }
 
+    /**
+     * Reject.
+     */
     public function reject(DmsExtraction $extraction, User $user): DmsExtraction
     {
         return DB::transaction(function () use ($extraction, $user): DmsExtraction {

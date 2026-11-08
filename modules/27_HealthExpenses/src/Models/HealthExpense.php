@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * A document flagged as a health expense; the patient fiscal code is encrypted and hidden from API output.
+ */
 #[UseFactory(HealthExpenseFactory::class)]
 class HealthExpense extends Model
 {

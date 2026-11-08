@@ -26,6 +26,8 @@ final class HealthExpenseExporter
     ];
 
     /**
+     * Rows of the expenses paid in the given year of the tenant.
+     *
      * @return list<array<string, string>>
      */
     public function rows(Tenant $tenant, int $year): array

@@ -22,12 +22,18 @@ final class AiSettingController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly DocumentAccess $access,
         private readonly TenantContext $tenantContext,
         private readonly AuditLedgerInterface $auditLedger,
     ) {}
 
+    /**
+     * Show AI settings.
+     */
     #[OA\Get(
         path: '/api/v1/dms/ai-settings',
         operationId: 'getDmsAiSettings',
@@ -47,6 +53,9 @@ final class AiSettingController extends Controller
         return $this->successResponse(['external_providers_enabled' => (bool) TenantAiSetting::query()->value('external_providers_enabled')]);
     }
 
+    /**
+     * Update AI settings.
+     */
     #[OA\Put(
         path: '/api/v1/dms/ai-settings',
         operationId: 'updateDmsAiSettings',

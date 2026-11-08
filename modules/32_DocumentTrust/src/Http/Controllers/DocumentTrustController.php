@@ -20,10 +20,16 @@ use Modules\DocumentTrust\Services\DocumentTrustService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Signs and preserves the stored XML of invoices and configures the signing driver of the tenant.
+ */
 final class DocumentTrustController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the trust service.
+     */
     public function __construct(private readonly DocumentTrustService $trust) {}
 
     #[OA\Post(path: '/api/v1/document-trust/signatures', operationId: 'signDocument', description: 'Signs the stored XML of a document with the driver of the tenant. `sha256-integrity` is only a fingerprint with no legal value; `cades-bes-p7m` uses the certificate of the tenant.', summary: 'Sign a document', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['document_type', 'document_id'], properties: [new OA\Property(property: 'document_type', type: 'string', enum: ['invoice', 'passive_invoice']), new OA\Property(property: 'document_id', type: 'string', format: 'uuid')])), tags: ['Document Trust'], responses: [
@@ -31,6 +37,9 @@ final class DocumentTrustController extends Controller
         new OA\Response(response: 404, description: 'Document not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         new OA\Response(response: 422, description: 'No XML, or no certificate', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
     ])]
+    /**
+     * Sign the stored XML of a tenant document.
+     */
     public function sign(Request $request): JsonResponse
     {
         $data = $this->documentReference($request);
@@ -41,6 +50,9 @@ final class DocumentTrustController extends Controller
     #[OA\Get(path: '/api/v1/document-trust/signatures', operationId: 'listDocumentSignatures', description: 'Signatures of a document.', summary: 'List signatures', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'document_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
         new OA\Response(response: 200, description: 'The signatures', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
     ])]
+    /**
+     * List the signatures of a document.
+     */
     public function signatures(Request $request): JsonResponse
     {
         $validated = $request->validate(['document_id' => ['required', 'uuid']]);
@@ -53,6 +65,9 @@ final class DocumentTrustController extends Controller
         new OA\Response(response: 404, description: 'Document not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         new OA\Response(response: 422, description: 'No XML, or driver unavailable', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
     ])]
+    /**
+     * Hand a document to the preservation driver.
+     */
     public function preserve(Request $request): JsonResponse
     {
         $data = $this->documentReference($request);
@@ -63,11 +78,27 @@ final class DocumentTrustController extends Controller
     #[OA\Get(path: '/api/v1/document-trust/preservation', operationId: 'listPreservationRecords', description: 'Preservation records of a document.', summary: 'List preservation records', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'document_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
         new OA\Response(response: 200, description: 'The records', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
     ])]
+    /**
+     * List the preservation records of a document.
+     */
     public function preservationRecords(Request $request): JsonResponse
     {
         $validated = $request->validate(['document_id' => ['required', 'uuid']]);
 
         return $this->successResponse(PreservationRecord::where('document_id', $validated['document_id'])->latest()->get(), 'Preservation records retrieved');
+    }
+
+    #[OA\Get(path: '/api/v1/document-trust/settings', operationId: 'getDocumentSigningSettings', description: 'For owners and admins. The driver and the certificate expiry; certificate, key and passphrase are never returned.', summary: 'Show document signing settings', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], responses: [
+        new OA\Response(response: 200, description: 'The settings', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+    ])]
+    /**
+     * Show the signing settings without any secret.
+     */
+    public function settings(TenantContext $tenantContext): JsonResponse
+    {
+        $settings = DocumentSigningSetting::firstOrNew(['tenant_id' => $tenantContext->getTenantId()], ['driver' => 'local']);
+
+        return $this->successResponse($settings, 'Signing settings retrieved');
     }
 
     #[OA\Put(path: '/api/v1/document-trust/settings', operationId: 'updateDocumentSigningSettings', description: 'For owners and admins. Chooses the signature driver and stores the PEM certificate and key encrypted. The pair must match and the certificate must be valid today.', summary: 'Configure document signing', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['driver'], properties: [
@@ -79,6 +110,9 @@ final class DocumentTrustController extends Controller
         new OA\Response(response: 200, description: 'Settings saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
         new OA\Response(response: 422, description: 'Invalid certificate', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
     ])]
+    /**
+     * Choose the signing driver and store the validated certificate pair (encrypted).
+     */
     public function updateSettings(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $data = $request->validate([
@@ -91,15 +125,18 @@ final class DocumentTrustController extends Controller
         $settings = DocumentSigningSetting::firstOrNew(['tenant_id' => $tenantContext->getTenantId()]);
         $settings->fill($data);
 
-        if ($data['driver'] === 'cades') {
-            $settings->certificate_expires_at = $this->validatedExpiry($data['certificate'], $data['private_key'], $data['passphrase'] ?? '');
-        }
+        $settings->certificate_expires_at = $data['driver'] === 'cades'
+            ? $this->validatedExpiry($data['certificate'], $data['private_key'], $data['passphrase'] ?? '')
+            : null;
 
         $settings->save();
 
         return $this->successResponse($settings, 'Signing settings saved');
     }
 
+    /**
+     * Check the certificate and key match and are valid today; return the expiry.
+     */
     private function validatedExpiry(string $certificate, string $privateKey, string $passphrase): Carbon
     {
         $parsed = @openssl_x509_parse($certificate);

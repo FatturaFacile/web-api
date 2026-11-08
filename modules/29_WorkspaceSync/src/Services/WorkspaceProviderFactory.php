@@ -9,6 +9,9 @@ use Modules\WorkspaceSync\Providers\GoogleWorkspaceProvider;
 use Modules\WorkspaceSync\Providers\MicrosoftGraphProvider;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
+/**
+ * Workspace provider factory (WorkspaceSync module).
+ */
 final class WorkspaceProviderFactory
 {
     /**

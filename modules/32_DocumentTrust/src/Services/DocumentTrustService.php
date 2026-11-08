@@ -24,8 +24,14 @@ use Modules\DocumentTrust\Models\PreservationRecord;
  */
 final readonly class DocumentTrustService
 {
+    /**
+     * Inject the tenant context.
+     */
     public function __construct(private TenantContext $tenantContext) {}
 
+    /**
+     * Sign the XML of a tenant document with the driver of the tenant and store the result.
+     */
     public function sign(string $documentType, string $documentId): DocumentSignature
     {
         $content = $this->content($documentType, $documentId);
@@ -42,6 +48,9 @@ final readonly class DocumentTrustService
         ]);
     }
 
+    /**
+     * Preserve the XML of a tenant document through the configured driver and store the record.
+     */
     public function preserve(string $documentType, string $documentId): PreservationRecord
     {
         $content = $this->content($documentType, $documentId);
@@ -56,6 +65,9 @@ final readonly class DocumentTrustService
         ]);
     }
 
+    /**
+     * The stored XML of the document, resolved within the active tenant.
+     */
     private function content(string $documentType, string $documentId): string
     {
         $content = $documentType === 'passive_invoice'
@@ -65,11 +77,17 @@ final readonly class DocumentTrustService
         return $content ?? throw new DocumentTrustException('The document has no stored XML file.');
     }
 
+    /**
+     * Resolve the signature driver by name.
+     */
     private function signatureDriver(string $driver): SignatureDriver
     {
         return app($driver === 'cades' ? CadesCertificateDriver::class : LocalIntegrityDriver::class);
     }
 
+    /**
+     * Resolve the preservation driver from the configuration.
+     */
     private function preservationDriver(): PreservationDriver
     {
         return app(config('services.preservation.driver') === 'accredited' ? AccreditedPreservationDriver::class : LocalPreservationDriver::class);

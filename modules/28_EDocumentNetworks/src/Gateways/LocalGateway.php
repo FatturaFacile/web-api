@@ -17,18 +17,30 @@ use Modules\EDocumentNetworks\Exceptions\NetworkNotAvailableException;
  */
 final readonly class LocalGateway implements EDocumentGateway
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private Network $network) {}
 
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return "local-{$this->network->value}";
     }
 
+    /**
+     * Whether the driver can run.
+     */
     public function isAvailable(): bool
     {
         return ! app()->isProduction();
     }
 
+    /**
+     * Send the message.
+     */
     public function send(Tenant $tenant, EDocumentEnvelope $envelope): array
     {
         if (! $this->isAvailable()) {

@@ -6,8 +6,14 @@ namespace Modules\EDocumentNetworks\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validates the input of the send edocument operation (authorization is decided by module.access).
+ */
 final class SendEDocumentRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

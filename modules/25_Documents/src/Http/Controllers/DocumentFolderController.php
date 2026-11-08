@@ -23,8 +23,14 @@ final class DocumentFolderController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly DocumentAccess $access) {}
 
+    /**
+     * List folders.
+     */
     #[OA\Get(
         path: '/api/v1/dms/folders',
         operationId: 'listDmsFolders',
@@ -44,6 +50,9 @@ final class DocumentFolderController extends Controller
         return $this->successResponse(FolderResource::collection(DmsFolder::query()->whereNotIn('id', $denied)->orderBy('name')->get()));
     }
 
+    /**
+     * Create folder.
+     */
     #[OA\Post(
         path: '/api/v1/dms/folders',
         operationId: 'createDmsFolder',
@@ -65,6 +74,9 @@ final class DocumentFolderController extends Controller
         return $this->successResponse(new FolderResource($folder), 'Folder created', Response::HTTP_CREATED);
     }
 
+    /**
+     * Update folder.
+     */
     #[OA\Put(
         path: '/api/v1/dms/folders/{id}',
         operationId: 'updateDmsFolder',
@@ -88,6 +100,9 @@ final class DocumentFolderController extends Controller
         return $this->successResponse(new FolderResource($folder), 'Folder updated');
     }
 
+    /**
+     * Delete folder.
+     */
     #[OA\Delete(
         path: '/api/v1/dms/folders/{id}',
         operationId: 'deleteDmsFolder',

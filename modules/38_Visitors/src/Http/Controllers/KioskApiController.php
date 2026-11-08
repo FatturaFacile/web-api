@@ -24,8 +24,14 @@ use OpenApi\Attributes as OA;
  */
 final class KioskApiController extends Controller
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly VisitorService $visits) {}
 
+    /**
+     * Kiosk: expected today.
+     */
     #[OA\Get(path: '/api/v1/visitor-kiosk/expected', operationId: 'kioskExpectedVisits', description: 'Visits expected today (company time zone) that have not checked in yet, by first name and initial, for the visitor to pick theirs.', summary: 'Kiosk: expected today', tags: ['Visitors'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/VisitorsKioskKey'),
         new OA\Parameter(ref: '#/components/parameters/VisitorsKioskSecret'),
@@ -45,6 +51,9 @@ final class KioskApiController extends Controller
             ->get());
     }
 
+    /**
+     * Kiosk: check in.
+     */
     #[OA\Post(path: '/api/v1/visitor-kiosk/check-in', operationId: 'kioskCheckIn', description: 'Check in an expected visit of the company of the kiosk, or a walk-in visitor with the host to call. The host is told by mail.', summary: 'Kiosk: check in', requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsKioskCheckInRequest')), tags: ['Visitors'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/VisitorsKioskKey'),
         new OA\Parameter(ref: '#/components/parameters/VisitorsKioskSecret'),
@@ -66,6 +75,9 @@ final class KioskApiController extends Controller
         return (new KioskVisitResource($visit))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Kiosk: check out.
+     */
     #[OA\Post(path: '/api/v1/visitor-kiosk/check-out', operationId: 'kioskCheckOut', description: 'Check out the visitor wearing the badge given back.', summary: 'Kiosk: check out', requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsKioskCheckOutRequest')), tags: ['Visitors'], parameters: [
         new OA\Parameter(ref: '#/components/parameters/VisitorsKioskKey'),
         new OA\Parameter(ref: '#/components/parameters/VisitorsKioskSecret'),

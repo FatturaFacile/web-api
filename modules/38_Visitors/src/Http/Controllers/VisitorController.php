@@ -20,6 +20,9 @@ use OpenApi\Attributes as OA;
  */
 final class VisitorController extends Controller
 {
+    /**
+     * List visitors.
+     */
     #[OA\Get(path: '/api/v1/visitors/visitors', operationId: 'listVisitors', description: 'Return the visitors, most recent visit first. Reception sees every visitor, other members only those of the visits they host. Optional filter by CRM contact.', summary: 'List visitors', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [
         new OA\Parameter(name: 'contact_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
     ], responses: [
@@ -42,6 +45,9 @@ final class VisitorController extends Controller
         return VisitorResource::collection($visitors);
     }
 
+    /**
+     * Create visitor.
+     */
     #[OA\Post(path: '/api/v1/visitors/visitors', operationId: 'storeVisitor', description: 'Register a visitor. Reception only. Personal data are stored encrypted.', summary: 'Create visitor', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitorRequest')), tags: ['Visitors'], responses: [
         new OA\Response(response: 201, description: 'Visitor created', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitorResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -55,6 +61,9 @@ final class VisitorController extends Controller
         return (new VisitorResource(Visitor::query()->create($request->validated())))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Show visitor.
+     */
     #[OA\Get(path: '/api/v1/visitors/visitors/{id}', operationId: 'showVisitor', description: 'Return a visitor.', summary: 'Show visitor', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'Visitor', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitorResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -69,6 +78,9 @@ final class VisitorController extends Controller
         return new VisitorResource($visitor);
     }
 
+    /**
+     * Update visitor.
+     */
     #[OA\Put(path: '/api/v1/visitors/visitors/{id}', operationId: 'updateVisitor', description: 'Correct the data of a visitor. Reception only.', summary: 'Update visitor', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitorRequest')), tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'Visitor updated', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsVisitorResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -85,6 +97,9 @@ final class VisitorController extends Controller
         return new VisitorResource($visitor);
     }
 
+    /**
+     * Erase visitor.
+     */
     #[OA\Delete(path: '/api/v1/visitors/visitors/{id}', operationId: 'deleteVisitor', description: 'Erase a visitor and all their visits at once, for example on a request of the person. Refused while the visitor is on site. Reception only.', summary: 'Erase visitor', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 204, description: 'Visitor erased'),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),

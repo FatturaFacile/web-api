@@ -19,8 +19,14 @@ use OpenApi\Attributes as OA;
  */
 final class KioskController extends Controller
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private readonly VisitorKioskService $kiosks) {}
 
+    /**
+     * List kiosks.
+     */
     #[OA\Get(path: '/api/v1/visitors/kiosks', operationId: 'listVisitorKiosks', description: 'Return the reception kiosks. Their secrets are never shown again.', summary: 'List kiosks', security: [['bearerAuth' => []]], tags: ['Visitors'], responses: [
         new OA\Response(response: 200, description: 'Kiosks', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsKioskCollection')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -33,6 +39,9 @@ final class KioskController extends Controller
         return KioskResource::collection(VisitorKiosk::query()->orderBy('name')->get());
     }
 
+    /**
+     * Register kiosk.
+     */
     #[OA\Post(path: '/api/v1/visitors/kiosks', operationId: 'storeVisitorKiosk', description: 'Register a kiosk. The answer carries its secret, once: only its hash is stored.', summary: 'Register kiosk', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/VisitorsKioskRequest')), tags: ['Visitors'], responses: [
         new OA\Response(response: 201, description: 'Kiosk registered, with its secret', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsKioskResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -47,6 +56,9 @@ final class KioskController extends Controller
         return (new KioskResource($registered['kiosk'], $registered['secret']))->response()->setStatusCode(Response::HTTP_CREATED);
     }
 
+    /**
+     * Rotate kiosk secret.
+     */
     #[OA\Post(path: '/api/v1/visitors/kiosks/{id}/rotate-secret', operationId: 'rotateVisitorKioskSecret', description: 'Replace the secret of a kiosk; the old one stops working at once. The answer carries the new secret, once.', summary: 'Rotate kiosk secret', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 200, description: 'New secret', content: new OA\JsonContent(ref: '#/components/schemas/VisitorsKioskResponse')),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),
@@ -61,6 +73,9 @@ final class KioskController extends Controller
         return new KioskResource($kiosk, $this->kiosks->rotateSecret($kiosk));
     }
 
+    /**
+     * Retire kiosk.
+     */
     #[OA\Delete(path: '/api/v1/visitors/kiosks/{id}', operationId: 'deleteVisitorKiosk', description: 'Retire a kiosk: it can no longer authenticate.', summary: 'Retire kiosk', security: [['bearerAuth' => []]], tags: ['Visitors'], parameters: [new OA\Parameter(ref: '#/components/parameters/VisitorsId')], responses: [
         new OA\Response(response: 204, description: 'Kiosk retired'),
         new OA\Response(ref: '#/components/responses/VisitorsUnauthenticated', response: 401),

@@ -11,6 +11,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * Sistema Tessera Sanitaria settings of a tenant; the owner fiscal code is encrypted and hidden.
+ */
 #[UseFactory(HealthExpenseSettingFactory::class)]
 class HealthExpenseSetting extends Model
 {

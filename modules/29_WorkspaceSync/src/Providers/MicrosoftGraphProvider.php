@@ -10,19 +10,31 @@ use Modules\WorkspaceSync\Contracts\WorkspaceProvider;
 use Modules\WorkspaceSync\DTOs\OAuthTokens;
 use Modules\WorkspaceSync\DTOs\SyncedItemData;
 
+/**
+ * Microsoft graph (WorkspaceSync module).
+ */
 final readonly class MicrosoftGraphProvider implements WorkspaceProvider
 {
     private const string AuthorityUrl = 'https://login.microsoftonline.com/common/oauth2/v2.0';
 
     private const array Scopes = ['calendar' => 'Calendars.Read', 'mail' => 'Mail.ReadBasic'];
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private string $clientId, private string $clientSecret) {}
 
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'microsoft';
     }
 
+    /**
+     * Authorization url.
+     */
     public function authorizationUrl(array $scopes, string $state, string $redirectUri): string
     {
         return self::AuthorityUrl.'/authorize?'.http_build_query([
@@ -35,16 +47,25 @@ final readonly class MicrosoftGraphProvider implements WorkspaceProvider
         ]);
     }
 
+    /**
+     * Exchange code.
+     */
     public function exchangeCode(string $code, string $redirectUri): OAuthTokens
     {
         return $this->tokens(['grant_type' => 'authorization_code', 'code' => $code, 'redirect_uri' => $redirectUri]);
     }
 
+    /**
+     * Refresh.
+     */
     public function refresh(string $refreshToken): OAuthTokens
     {
         return $this->tokens(['grant_type' => 'refresh_token', 'refresh_token' => $refreshToken]);
     }
 
+    /**
+     * Calendar events.
+     */
     public function calendarEvents(string $accessToken, CarbonImmutable $since): array
     {
         $body = Http::withToken($accessToken)->timeout(30)
@@ -66,6 +87,9 @@ final readonly class MicrosoftGraphProvider implements WorkspaceProvider
         ), $body['value'] ?? []);
     }
 
+    /**
+     * Custom validation messages.
+     */
     public function messages(string $accessToken, CarbonImmutable $since): array
     {
         $body = Http::withToken($accessToken)->timeout(30)

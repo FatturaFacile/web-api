@@ -31,6 +31,9 @@ final class WorkspaceConnection extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * Is active.
+     */
     public function isActive(): bool
     {
         return $this->revoked_at === null && $this->access_token !== null;

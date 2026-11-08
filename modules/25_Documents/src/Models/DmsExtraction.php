@@ -8,6 +8,9 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\Documents\Enums\ExtractionStatus;
 
+/**
+ * Eloquent model of the dms extraction (tenant scoped where it has a tenant_id).
+ */
 final class DmsExtraction extends BaseEnterpriseModel
 {
     protected $table = 'dms_extractions';

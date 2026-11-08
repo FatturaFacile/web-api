@@ -108,6 +108,8 @@ test('renewing without a term needs a date, and the date wins', function (): voi
 
     $this->postJson("/api/v1/contract-register/supplier/{$id}/renew")->assertConflict();
     $this->postJson("/api/v1/contract-register/supplier/{$id}/renew", ['new_end_date' => '2027-03-31'])->assertOk()->assertJsonPath('data.end_date', '2027-03-31');
+    $this->postJson("/api/v1/contract-register/supplier/{$id}/renew", ['new_end_date' => '2027-03-31'])->assertConflict();
+    $this->postJson("/api/v1/contract-register/supplier/{$id}/renew", ['new_end_date' => '2026-01-01'])->assertConflict();
 });
 
 test('alerts come before the notice deadline and the end, once each', function (): void {
@@ -164,6 +166,9 @@ test('the register is limited to contract roles', function (): void {
 
     $this->getJson('/api/v1/contract-register')->assertForbidden();
     $this->postJson('/api/v1/contract-register', customerPayload())->assertForbidden();
+    $this->getJson('/api/v1/contract-register/alerts')->assertForbidden();
+    $this->postJson('/api/v1/contract-register/alerts/'.Str::uuid().'/acknowledge')->assertForbidden();
+    $this->postJson('/api/v1/contract-register/customer/'.Str::uuid().'/notice')->assertForbidden();
 });
 
 test('tenants never reach the contracts or counterparties of each other', function (): void {

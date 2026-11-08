@@ -34,6 +34,9 @@ final class Visitor extends VisitorsRecord
         ];
     }
 
+    /**
+     * Full name.
+     */
     public function fullName(): string
     {
         return trim($this->first_name.' '.$this->last_name);

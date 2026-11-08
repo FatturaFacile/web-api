@@ -232,3 +232,24 @@ test('another tenant sees nothing', function (): void {
     $this->getJson('/api/v1/workspace/connections')->assertOk()->assertJsonPath('data', []);
     $this->postJson("/api/v1/workspace/connections/{$id}/sync")->assertNotFound();
 });
+
+test('a failed code exchange answers 502 and stores nothing', function (): void {
+    $url = $this->postJson('/api/v1/workspace/connections/google/authorize', ['consent' => true, 'scopes' => ['calendar']])->assertOk()->json('data.authorization_url');
+    parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+
+    Http::fake(['*' => Http::response([], 500)]);
+    $this->postJson('/api/v1/workspace/connections/google/callback', ['code' => 'abc', 'state' => $query['state']])->assertStatus(502);
+    expect(WorkspaceConnection::query()->count())->toBe(0);
+});
+
+test('a provider refusing the refresh during a sync answers 502', function (): void {
+    Http::fake([
+        'oauth2.googleapis.com/token' => Http::sequence()
+            ->push(['access_token' => 'google-access', 'refresh_token' => 'google-refresh', 'expires_in' => 3600])
+            ->push([], 500),
+    ]);
+    $id = connectGoogle(['calendar']);
+    WorkspaceConnection::query()->findOrFail($id)->update(['token_expires_at' => now()->subMinute()]);
+
+    $this->postJson("/api/v1/workspace/connections/{$id}/sync")->assertStatus(502);
+});

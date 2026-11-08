@@ -16,11 +16,17 @@ use Modules\Communication\Exceptions\DeliveryFailedException;
  */
 final class TwilioDriver implements DeliveryDriver
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'twilio';
     }
 
+    /**
+     * Send the message.
+     */
     public function send(DeliveryMessage $message, array $credentials): array
     {
         $accountSid = $credentials['account_sid'] ?? null;

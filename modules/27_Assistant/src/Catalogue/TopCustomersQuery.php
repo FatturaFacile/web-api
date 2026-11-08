@@ -7,28 +7,46 @@ namespace Modules\Assistant\Catalogue;
 use App\Models\Invoice;
 use Modules\Assistant\Contracts\CatalogueQuery;
 
+/**
+ * Catalogue query: top customers.
+ */
 final class TopCustomersQuery implements CatalogueQuery
 {
+    /**
+     * Stable key of the query.
+     */
     public function key(): string
     {
         return 'top_customers';
     }
 
+    /**
+     * Module key whose read access gates the query.
+     */
     public function module(): string
     {
         return 'invoicing';
     }
 
+    /**
+     * Human description of the query.
+     */
     public function description(): string
     {
         return 'Customers with the highest invoiced amount in a year';
     }
 
+    /**
+     * Phrases that select this query.
+     */
     public function keywords(): array
     {
         return ['migliori clienti', 'clienti principali', 'top clienti', 'top customers', 'best customers', 'beste kunden', 'meilleurs clients'];
     }
 
+    /**
+     * Declared parameters with their bounds.
+     */
     public function parameters(): array
     {
         return [
@@ -37,6 +55,9 @@ final class TopCustomersQuery implements CatalogueQuery
         ];
     }
 
+    /**
+     * Run the query for the tenant.
+     */
     public function run(string $tenantId, array $parameters): array
     {
         return Invoice::query()

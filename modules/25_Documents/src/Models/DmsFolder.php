@@ -8,6 +8,9 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Eloquent model of the dms folder (tenant scoped where it has a tenant_id).
+ */
 final class DmsFolder extends BaseEnterpriseModel
 {
     protected $table = 'dms_folders';

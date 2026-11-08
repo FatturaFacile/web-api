@@ -18,8 +18,14 @@ use Modules\Assistant\DTOs\ResolvedIntent;
  */
 final readonly class ModelIntentResolver implements IntentResolver
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(private AiProviderGuard $guard) {}
 
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'model:'.(string) config('ai.assistant_driver');

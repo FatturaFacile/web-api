@@ -25,11 +25,17 @@ final class VisitorsPolicy
     /** @var list<string> */
     private const array KioskRoles = ['owner', 'admin'];
 
+    /**
+     * View any.
+     */
     public function viewAny(User $user): bool
     {
         return $this->isMember($user);
     }
 
+    /**
+     * View.
+     */
     public function view(User $user, Model $record): bool
     {
         if (! $this->isMember($user) || ! $this->isOwnRecord($record)) {
@@ -39,16 +45,25 @@ final class VisitorsPolicy
         return $this->isReception($user) || $this->hosts($user, $record);
     }
 
+    /**
+     * Create.
+     */
     public function create(User $user): bool
     {
         return $this->isMember($user);
     }
 
+    /**
+     * Update a record.
+     */
     public function update(User $user, Model $record): bool
     {
         return $this->isOwnRecord($record) && $this->isReception($user);
     }
 
+    /**
+     * Delete.
+     */
     public function delete(User $user, Model $record): bool
     {
         return $this->isOwnRecord($record) && $this->isReception($user);
@@ -70,11 +85,17 @@ final class VisitorsPolicy
         return $this->isOwnRecord($visit) && ($this->isReception($user) || $this->hosts($user, $visit));
     }
 
+    /**
+     * Manage kiosks.
+     */
     public function manageKiosks(User $user, ?Model $record = null): bool
     {
         return $this->hasRoleOrPermission($user, self::KioskRoles, ['visitors.kiosks']) && ($record === null || $this->isOwnRecord($record));
     }
 
+    /**
+     * Is reception.
+     */
     public function isReception(User $user): bool
     {
         return $this->hasRoleOrPermission($user, self::ReceptionRoles, ['visitors.manage']);

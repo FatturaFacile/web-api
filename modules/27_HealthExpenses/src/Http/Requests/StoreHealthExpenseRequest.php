@@ -6,8 +6,14 @@ namespace Modules\HealthExpenses\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Validates the flagging of a document as a health expense.
+ */
 final class StoreHealthExpenseRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

@@ -21,10 +21,16 @@ use Modules\HealthExpenses\Services\HealthExpenseExporter;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * Tessera Sanitaria: settings, flagged health expenses and the yearly data export of the active tenant.
+ */
 final class HealthExpenseController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the tenant context.
+     */
     public function __construct(private readonly TenantContext $tenantContext) {}
 
     #[OA\Get(
@@ -39,6 +45,9 @@ final class HealthExpenseController extends Controller
             new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    /**
+     * Show the settings of the active tenant (the owner fiscal code is hidden).
+     */
     public function settings(): JsonResponse
     {
         return $this->successResponse($this->currentSettings(), 'Settings retrieved');
@@ -64,6 +73,9 @@ final class HealthExpenseController extends Controller
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    /**
+     * Update the settings of the active tenant.
+     */
     public function updateSettings(Request $request): JsonResponse
     {
         $validated = $request->validate([
@@ -91,6 +103,9 @@ final class HealthExpenseController extends Controller
         parameters: [new OA\Parameter(name: 'year', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
         responses: [new OA\Response(response: 200, description: 'Paginated list', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse'))]
     )]
+    /**
+     * List the flagged expenses, optionally of one payment year.
+     */
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate(['year' => ['nullable', 'integer', 'min:2014', 'max:2100'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
@@ -129,6 +144,9 @@ final class HealthExpenseController extends Controller
             new OA\Response(response: 422, description: 'Flow disabled or invalid data', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    /**
+     * Flag a tenant invoice or commercial document as a health expense.
+     */
     public function store(StoreHealthExpenseRequest $request): JsonResponse
     {
         if (! $this->currentSettings()->is_enabled) {
@@ -171,6 +189,9 @@ final class HealthExpenseController extends Controller
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
+    /**
+     * Remove the flag from a document.
+     */
     public function destroy(string $id): JsonResponse
     {
         HealthExpense::findOrFail($id)->delete();
@@ -194,6 +215,9 @@ final class HealthExpenseController extends Controller
             new OA\Response(response: 422, description: 'Invalid period', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
+    /**
+     * Export the expenses paid in a year as JSON rows or CSV.
+     */
     public function export(Request $request, HealthExpenseExporter $exporter, ExcelCsvWriter $csv): JsonResponse|HttpResponse
     {
         $validated = $request->validate(['year' => ['required', 'integer', 'min:2014', 'max:2100'], 'format' => ['nullable', 'in:json,csv']]);
@@ -210,6 +234,9 @@ final class HealthExpenseController extends Controller
         return $this->successResponse(['format_status' => HealthExpenseExporter::FormatStatus, 'year' => (int) $validated['year'], 'rows' => $rows], 'Health expense data exported');
     }
 
+    /**
+     * The settings row of the tenant, unsaved with defaults when none exists yet.
+     */
     private function currentSettings(): HealthExpenseSetting
     {
         return HealthExpenseSetting::firstOrNew(['tenant_id' => $this->tenantContext->getTenantId()], ['is_enabled' => false, 'subject_type' => 'professional']);

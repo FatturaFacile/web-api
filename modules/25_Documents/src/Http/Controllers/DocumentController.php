@@ -29,11 +29,17 @@ final class DocumentController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private readonly DocumentAccess $access,
         private readonly DocumentLibrary $library,
     ) {}
 
+    /**
+     * Search documents.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents',
         operationId: 'listDmsDocuments',
@@ -76,6 +82,9 @@ final class DocumentController extends Controller
         );
     }
 
+    /**
+     * Create document.
+     */
     #[OA\Post(
         path: '/api/v1/dms/documents',
         operationId: 'createDmsDocument',
@@ -111,6 +120,9 @@ final class DocumentController extends Controller
         return $this->successResponse(new DocumentResource($document->load(['tags', 'versions'])), 'Document created', Response::HTTP_CREATED);
     }
 
+    /**
+     * List duplicates.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents/duplicates',
         operationId: 'listDmsDuplicates',
@@ -130,6 +142,9 @@ final class DocumentController extends Controller
         return $this->successResponse($this->library->duplicateGroups($visible));
     }
 
+    /**
+     * Import attachment.
+     */
     #[OA\Post(
         path: '/api/v1/dms/documents/import-attachment',
         operationId: 'importDmsAttachment',
@@ -152,6 +167,9 @@ final class DocumentController extends Controller
         return $this->successResponse(new DocumentResource($document->load(['links', 'versions'])), 'Attachment imported', Response::HTTP_CREATED);
     }
 
+    /**
+     * Show document.
+     */
     #[OA\Get(
         path: '/api/v1/dms/documents/{id}',
         operationId: 'getDmsDocument',
@@ -172,6 +190,9 @@ final class DocumentController extends Controller
         return $this->successResponse(new DocumentResource($document->load(['tags', 'links', 'versions'])));
     }
 
+    /**
+     * Update document.
+     */
     #[OA\Put(
         path: '/api/v1/dms/documents/{id}',
         operationId: 'updateDmsDocument',
@@ -197,6 +218,9 @@ final class DocumentController extends Controller
         return $this->successResponse(new DocumentResource($document->load('tags')), 'Document updated');
     }
 
+    /**
+     * Delete document.
+     */
     #[OA\Delete(
         path: '/api/v1/dms/documents/{id}',
         operationId: 'deleteDmsDocument',
@@ -218,6 +242,9 @@ final class DocumentController extends Controller
         return $this->successResponse(null, 'Document deleted');
     }
 
+    /**
+     * Link document.
+     */
     #[OA\Post(
         path: '/api/v1/dms/documents/{id}/links',
         operationId: 'linkDmsDocument',
@@ -241,6 +268,9 @@ final class DocumentController extends Controller
         return $this->successResponse(new DocumentResource($document->load('links')), 'Link created', Response::HTTP_CREATED);
     }
 
+    /**
+     * Unlink document.
+     */
     #[OA\Delete(
         path: '/api/v1/dms/documents/{id}/links/{linkId}',
         operationId: 'unlinkDmsDocument',
@@ -264,6 +294,9 @@ final class DocumentController extends Controller
         return $this->successResponse(null, 'Link removed');
     }
 
+    /**
+     * Place legal hold.
+     */
     #[OA\Post(
         path: '/api/v1/dms/documents/{id}/legal-hold',
         operationId: 'placeDmsLegalHold',
@@ -287,6 +320,9 @@ final class DocumentController extends Controller
         return $this->successResponse(new DocumentResource($document), 'Legal hold placed');
     }
 
+    /**
+     * Release legal hold.
+     */
     #[OA\Delete(
         path: '/api/v1/dms/documents/{id}/legal-hold',
         operationId: 'releaseDmsLegalHold',

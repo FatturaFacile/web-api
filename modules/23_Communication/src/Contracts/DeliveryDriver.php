@@ -7,6 +7,9 @@ namespace Modules\Communication\Contracts;
 use Modules\Communication\DTOs\DeliveryMessage;
 use Modules\Communication\Exceptions\DeliveryFailedException;
 
+/**
+ * Contract for delivery in the Communication module.
+ */
 interface DeliveryDriver
 {
     /**

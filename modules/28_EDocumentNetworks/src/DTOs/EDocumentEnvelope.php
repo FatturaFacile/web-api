@@ -9,6 +9,9 @@ namespace Modules\EDocumentNetworks\DTOs;
  */
 final readonly class EDocumentEnvelope
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         public string $documentReference,
         public string $recipientIdentifier,

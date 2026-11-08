@@ -20,11 +20,17 @@ final class CadesCertificateDriver implements SignatureDriver
     /** DER of the OID 1.2.840.113549.1.9.16.2.47, signing-certificate-v2 */
     private const string SigningCertificateV2Oid = '2a864886f70d010910022f';
 
+    /**
+     * Driver name.
+     */
     public function name(): string
     {
         return 'cades';
     }
 
+    /**
+     * Sign the content with the certificate of the tenant.
+     */
     public function sign(string $content, ?DocumentSigningSetting $settings): array
     {
         if (empty($settings?->certificate) || empty($settings->private_key)) {

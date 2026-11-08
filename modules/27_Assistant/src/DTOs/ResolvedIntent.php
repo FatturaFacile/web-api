@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Assistant\DTOs;
 
+/**
+ * Immutable data carrier: resolved intent.
+ */
 final readonly class ResolvedIntent
 {
     /**

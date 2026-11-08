@@ -15,17 +15,23 @@ use Modules\Communication\Exceptions\DeliveryFailedException;
  */
 final class TelegramDriver implements DeliveryDriver
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'telegram';
     }
 
+    /**
+     * Send the message.
+     */
     public function send(DeliveryMessage $message, array $credentials): array
     {
         $token = $credentials['bot_token'] ?? throw new DeliveryFailedException('The Telegram bot token is not configured.');
 
         try {
-            $response = Http::timeout(15)->asJson()->post("https://api.telegram.org/bot{$token}/sendMessage", [
+            $response = Http::timeout(15)->asJson()->post('https://api.telegram.org/bot'.strtr(rawurlencode($token), ['%3A' => ':']).'/sendMessage', [
                 'chat_id' => $message->recipient,
                 'text' => $message->body,
             ]);

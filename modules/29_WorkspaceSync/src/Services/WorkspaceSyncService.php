@@ -25,6 +25,9 @@ final readonly class WorkspaceSyncService
 
     private const int FirstSyncDays = 30;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private WorkspaceProviderFactory $providers,
         private TenantContext $tenantContext,
@@ -108,6 +111,9 @@ final readonly class WorkspaceSyncService
         return count($items);
     }
 
+    /**
+     * Revoke.
+     */
     public function revoke(WorkspaceConnection $connection): void
     {
         DB::transaction(function () use ($connection): void {

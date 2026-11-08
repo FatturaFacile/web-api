@@ -97,3 +97,11 @@ test('health data is closed to members and to the read-only accountant', functio
 
     $this->getJson('/api/v1/tessera-sanitaria/export?year=2027')->assertForbidden();
 })->with(['member', 'accountant_readonly']);
+
+test('writes on health data are closed to roles outside the module', function (string $role): void {
+    actingAsMember($this->tenant, $role);
+
+    $this->putJson('/api/v1/tessera-sanitaria/settings', ['is_enabled' => true])->assertForbidden();
+    $this->postJson('/api/v1/tessera-sanitaria/expenses', healthPayload())->assertForbidden();
+    $this->getJson('/api/v1/tessera-sanitaria/expenses')->assertForbidden();
+})->with(['member', 'accountant_readonly']);

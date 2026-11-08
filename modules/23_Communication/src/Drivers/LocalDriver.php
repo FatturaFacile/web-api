@@ -13,11 +13,17 @@ use Modules\Communication\DTOs\DeliveryMessage;
  */
 final class LocalDriver implements DeliveryDriver
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'local';
     }
 
+    /**
+     * Send the message.
+     */
     public function send(DeliveryMessage $message, array $credentials): array
     {
         return ['status' => 'simulated', 'reference' => 'LOCAL-'.Str::uuid()];

@@ -7,10 +7,16 @@ namespace Modules\Documents\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Modules\Documents\Http\Requests\Concerns\ValidatesDocumentFields;
 
+/**
+ * Validates the input of the import attachment operation (authorization is decided by module.access).
+ */
 final class ImportAttachmentRequest extends FormRequest
 {
     use ValidatesDocumentFields;
 
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

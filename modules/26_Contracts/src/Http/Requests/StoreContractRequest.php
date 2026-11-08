@@ -10,8 +10,14 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Contracts\Enums\ContractKind;
 
+/**
+ * Validates the input of the store contract operation (authorization is decided by module.access).
+ */
 final class StoreContractRequest extends FormRequest
 {
+    /**
+     * Access is decided by the module.access middleware.
+     */
     public function authorize(): bool
     {
         return true;

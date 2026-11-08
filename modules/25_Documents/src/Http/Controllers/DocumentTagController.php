@@ -13,10 +13,16 @@ use Modules\Documents\Models\DmsTag;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
+/**
+ * HTTP endpoints of the document tag flows of the Documents module.
+ */
 final class DocumentTagController extends Controller
 {
     use ApiResponse;
 
+    /**
+     * List tags.
+     */
     #[OA\Get(
         path: '/api/v1/dms/tags',
         operationId: 'listDmsTags',
@@ -34,6 +40,9 @@ final class DocumentTagController extends Controller
         return $this->successResponse(TagResource::collection(DmsTag::query()->orderBy('name')->get()));
     }
 
+    /**
+     * Create tag.
+     */
     #[OA\Post(
         path: '/api/v1/dms/tags',
         operationId: 'createDmsTag',
@@ -52,6 +61,9 @@ final class DocumentTagController extends Controller
         return $this->successResponse(new TagResource(DmsTag::create($request->validated())), 'Tag created', Response::HTTP_CREATED);
     }
 
+    /**
+     * Delete tag.
+     */
     #[OA\Delete(
         path: '/api/v1/dms/tags/{id}',
         operationId: 'deleteDmsTag',

@@ -9,6 +9,9 @@ use Illuminate\Http\Resources\Json\JsonResource;
 use Modules\Documents\Models\DmsDocumentLink;
 use Modules\Documents\Models\DmsTag;
 
+/**
+ * API representation of the document.
+ */
 final class DocumentResource extends JsonResource
 {
     /**

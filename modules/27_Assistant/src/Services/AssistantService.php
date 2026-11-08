@@ -23,6 +23,9 @@ use Throwable;
  */
 final readonly class AssistantService
 {
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private QueryCatalogue $catalogue,
         private KeywordIntentResolver $keywords,

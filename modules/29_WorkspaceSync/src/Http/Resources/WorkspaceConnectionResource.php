@@ -7,6 +7,9 @@ namespace Modules\WorkspaceSync\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * API representation of the workspace connection.
+ */
 final class WorkspaceConnectionResource extends JsonResource
 {
     /**

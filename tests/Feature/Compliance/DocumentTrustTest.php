@@ -92,6 +92,20 @@ test('keys are encrypted, hidden, and must match a valid certificate', function 
         ->and(DB::table('document_signing_settings')->value('private_key'))->not->toContain('PRIVATE KEY');
 });
 
+test('the settings can be read without any secret and go back to local', function (): void {
+    expect($this->getJson('/api/v1/document-trust/settings')->assertOk()->json('data.driver'))->toBe('local');
+
+    $this->putJson('/api/v1/document-trust/settings', ['driver' => 'cades', ...selfSignedPair()])->assertOk();
+    $shown = $this->getJson('/api/v1/document-trust/settings')->assertOk();
+    expect($shown->json('data.driver'))->toBe('cades')->and($shown->json('data.certificate_expires_at'))->not->toBeNull()
+        ->and($shown->getContent())->not->toContain('PRIVATE KEY')->not->toContain('BEGIN CERTIFICATE');
+
+    $this->putJson('/api/v1/document-trust/settings', ['driver' => 'local'])->assertOk()->assertJsonPath('data.certificate_expires_at', null);
+
+    actingAsMember($this->tenant, 'accountant');
+    $this->getJson('/api/v1/document-trust/settings')->assertForbidden();
+});
+
 test('a certificate that is not valid today is refused', function (): void {
     $pair = selfSignedPair(1);
     $this->travel(5)->days();

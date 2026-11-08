@@ -30,6 +30,9 @@ final readonly class DocumentLibrary
 {
     private const string ModuleCode = 'MODULE_25_DOCUMENTS';
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(
         private TenantContext $tenantContext,
         private AuditLedgerInterface $auditLedger,
@@ -201,6 +204,9 @@ final readonly class DocumentLibrary
         $document->delete();
     }
 
+    /**
+     * Place legal hold.
+     */
     public function placeLegalHold(DmsDocument $document, string $reason, User $user): DmsDocument
     {
         $before = $document->only(['legal_hold', 'legal_hold_reason']);
@@ -210,6 +216,9 @@ final readonly class DocumentLibrary
         return $document;
     }
 
+    /**
+     * Release legal hold.
+     */
     public function releaseLegalHold(DmsDocument $document): DmsDocument
     {
         $before = $document->only(['legal_hold', 'legal_hold_reason']);

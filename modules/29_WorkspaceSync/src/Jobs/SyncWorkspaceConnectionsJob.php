@@ -21,11 +21,17 @@ final class SyncWorkspaceConnectionsJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
+    /**
+     * Inject the collaborators.
+     */
     public function __construct(public readonly string $tenantId)
     {
         $this->afterCommit();
     }
 
+    /**
+     * Run the unit of work.
+     */
     public function handle(WorkspaceSyncService $sync): void
     {
         $connections = WorkspaceConnection::withoutGlobalScopes()

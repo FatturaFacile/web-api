@@ -7,8 +7,14 @@ namespace Modules\DocumentTrust\Contracts;
 use Modules\DocumentTrust\Exceptions\DocumentTrustException;
 use Modules\DocumentTrust\Models\DocumentSigningSetting;
 
+/**
+ * Produces a signature for a document.
+ */
 interface SignatureDriver
 {
+    /**
+     * Driver name.
+     */
     public function name(): string;
 
     /**

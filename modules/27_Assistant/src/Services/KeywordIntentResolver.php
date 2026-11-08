@@ -12,11 +12,17 @@ use Modules\Assistant\DTOs\ResolvedIntent;
  */
 final class KeywordIntentResolver implements IntentResolver
 {
+    /**
+     * Driver or resolver name.
+     */
     public function name(): string
     {
         return 'keywords';
     }
 
+    /**
+     * Resolve the intent of a question.
+     */
     public function resolve(string $tenantId, string $question, array $queries): ?ResolvedIntent
     {
         $text = mb_strtolower($question);
