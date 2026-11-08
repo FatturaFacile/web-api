@@ -8,10 +8,17 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Concerns\TenantScopedRules;
 use App\Http\Responses\ApiResponse;
 use App\Models\ChartOfAccount;
-use App\Models\GeneralLedgerEntry;
 use App\Models\VatSettlement;
+use App\Services\Accounting\LegacyLedgerBridge;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use InvalidArgumentException;
+use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
+use Modules\GeneralLedger\Http\Resources\JournalEntryResource;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -38,10 +45,15 @@ class AccountingController extends Controller
         return $this->successResponse(data: $accounts, message: 'Chart of accounts retrieved');
     }
 
+    /**
+     * Legacy listing of the ledger. It reads the journal entries of the General Ledger module (the one ledger of the
+     * application), so it shows the same entries and figures as `/api/v1/general-ledger/journals`, in the legacy row
+     * shape plus the journal fields (`journal_number`, `fiscal_period_id`, `status`, `total_amount`).
+     */
     #[OA\Get(
         path: '/api/v1/accounting/ledger-entries',
         operationId: 'getLedgerEntries',
-        description: 'Get paginated general ledger entries.',
+        description: 'Get paginated general ledger entries. Reads the journal entries of the General Ledger module (posted and reversed; drafts are excluded) in the legacy row shape, with `journal_entry_id`, `journal_number`, `fiscal_period_id`, `status` and `total_amount` added. Prefer GET /api/v1/general-ledger/journals.',
         summary: 'List ledger entries',
         security: [['bearerAuth' => []]],
         tags: ['Accounting'],
@@ -53,26 +65,34 @@ class AccountingController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function ledgerEntries(): JsonResponse
+    public function ledgerEntries(Request $request, LegacyLedgerBridge $ledger, TenantContext $tenantContext): JsonResponse
     {
-        $entries = GeneralLedgerEntry::latest('date')->paginate(25);
+        $entries = $ledger->paginate($this->ledgerTenantId($request, $tenantContext));
 
         return $this->successResponse(data: $entries, message: 'General ledger entries retrieved');
     }
 
+    /**
+     * Legacy posting of a ledger entry, kept with the same request contract but delegated to the posting service of
+     * the General Ledger module: the entry lands in `journal_entries`, in the fiscal period of its date (refused when
+     * that period is missing, closed or locked), with an exact balance check and the libro giornale number.
+     *
+     * @deprecated Use POST /api/v1/general-ledger/journals.
+     */
     #[OA\Post(
         path: '/api/v1/accounting/ledger-entries',
         operationId: 'createLedgerEntry',
-        description: 'Post a new double-entry general ledger journal entry (must balance debit and credit).',
-        summary: 'Post ledger entry',
+        description: 'Deprecated: use POST /api/v1/general-ledger/journals. Posts a balanced double-entry journal entry through the General Ledger module: it is booked in the fiscal period containing `date` (422 when the period is missing, closed or locked), debit and credit must balance exactly, and the entry gets its libro giornale number. The response carries the posted journal entry.',
+        summary: 'Post ledger entry (deprecated)',
         security: [['bearerAuth' => []]],
+        deprecated: true,
         tags: ['Accounting'],
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
                 required: ['entry_number', 'date', 'description', 'lines'],
                 properties: [
-                    new OA\Property(property: 'entry_number', type: 'string', example: 'GL-2026-0001'),
+                    new OA\Property(property: 'entry_number', type: 'string', maxLength: 50, example: 'GL-2026-0001'),
                     new OA\Property(property: 'date', type: 'string', format: 'date', example: '2026-10-25'),
                     new OA\Property(property: 'description', type: 'string', example: 'Monthly payroll posting'),
                     new OA\Property(
@@ -92,15 +112,17 @@ class AccountingController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'General ledger entry posted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Journal entry posted: `data.id` and `data.journal_entry.id` are the id of the journal entry', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
-            new OA\Response(response: 422, description: 'Unbalanced ledger entry or validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 422, description: 'Unbalanced entry, fiscal period missing/closed/locked, or validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function storeLedgerEntry(Request $request): JsonResponse
+    public function storeLedgerEntry(Request $request, LegacyLedgerBridge $ledger, TenantContext $tenantContext): JsonResponse
     {
+        $tenantId = $this->ledgerTenantId($request, $tenantContext);
+
         $validated = $request->validate([
-            'entry_number' => ['required', 'string'],
+            'entry_number' => ['required', 'string', 'max:50', Rule::unique('journal_entries', 'entry_number')->where('tenant_id', $tenantId)],
             'date' => ['required', 'date'],
             'description' => ['required', 'string'],
             'lines' => ['required', 'array', 'min:2'],
@@ -110,49 +132,54 @@ class AccountingController extends Controller
             'lines.*.description' => ['nullable', 'string'],
         ]);
 
-        $totalDebit = 0.0;
-        $totalCredit = 0.0;
-
-        foreach ($validated['lines'] as $line) {
-            $totalDebit += (float) $line['debit'];
-            $totalCredit += (float) $line['credit'];
+        try {
+            $journalLines = $ledger->journalLines($validated['lines']);
+        } catch (InvalidArgumentException $exception) {
+            return $this->problemDetailsResponse(title: 'Invalid Ledger Entry', detail: $exception->getMessage(), status: Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        // Enforce double-entry accounting equilibrium: sum(debit) == sum(credit)
-        if (abs($totalDebit - $totalCredit) > 0.01) {
+        $totals = $ledger->totals($journalLines);
+
+        if (! $ledger->isBalanced($journalLines)) {
             return $this->problemDetailsResponse(
                 title: 'Unbalanced Ledger Entry',
-                detail: sprintf('Total debit (%.2f) does not equal total credit (%.2f). Double entry equilibrium required.', $totalDebit, $totalCredit),
+                detail: sprintf('Total debit (%s) does not equal total credit (%s). Double entry equilibrium required.', Decimal::round2($totals['debit']), Decimal::round2($totals['credit'])),
                 status: Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
 
-        $entry = GeneralLedgerEntry::resolveConnection()->transaction(function () use ($validated): GeneralLedgerEntry {
-            $entry = GeneralLedgerEntry::create([
-                'entry_number' => $validated['entry_number'],
-                'date' => $validated['date'],
-                'description' => $validated['description'],
-            ]);
-
-            $lineNum = 1;
-            foreach ($validated['lines'] as $line) {
-                $entry->lines()->create([
-                    'account_id' => $line['account_id'],
-                    'line_number' => $lineNum++,
-                    'debit' => $line['debit'],
-                    'credit' => $line['credit'],
-                    'description' => $line['description'] ?? null,
-                ]);
-            }
-
-            return $entry;
-        });
+        try {
+            $actorId = $request->user()?->id;
+            $entry = $ledger->post($tenantId, $validated, $actorId !== null ? (string) $actorId : null);
+        } catch (FiscalPeriodException|LedgerPostingException $exception) {
+            return $exception->render();
+        } catch (InvalidArgumentException $exception) {
+            return $this->problemDetailsResponse(title: 'Ledger Entry Refused', detail: $exception->getMessage(), status: Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
 
         return $this->successResponse(
-            data: ['id' => $entry->id, 'balanced_amount' => $totalDebit],
+            data: [
+                'id' => (string) $entry->id,
+                'balanced_amount' => (float) $totals['debit'],
+                'journal_entry' => new JournalEntryResource($entry),
+            ],
             message: 'General ledger entry posted successfully',
             statusCode: Response::HTTP_CREATED
         );
+    }
+
+    /**
+     * The tenant the legacy ledger endpoints act for: the active tenant of the request, as the module endpoints do.
+     */
+    private function ledgerTenantId(Request $request, TenantContext $tenantContext): string
+    {
+        $tenantId = $tenantContext->getTenantId() ?? $request->user()?->tenant_id;
+
+        if (! $tenantId) {
+            abort(Response::HTTP_FORBIDDEN, 'Missing or unresolvable tenant context');
+        }
+
+        return (string) $tenantId;
     }
 
     #[OA\Get(

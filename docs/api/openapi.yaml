@@ -814,6 +814,8 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
     post:
       operationId: accounting.ledger-entries.store
+      description: 'Deprecated: use POST /api/v1/general-ledger/journals. Posts through the General Ledger module (fiscal period lock, exact balance, libro giornale number); the response carries the journal entry.'
+      deprecated: true
       tags:
         - Accounting
       requestBody:

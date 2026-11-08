@@ -448,7 +448,7 @@ Route::prefix('v1')->group(function (): void {
         Route::prefix('accounting')->name('accounting.')->middleware('module.access:ledger')->group(function (): void {
             Route::get('/chart-of-accounts', [AccountingController::class, 'chartOfAccounts'])->name('chart-of-accounts');
             Route::get('/ledger-entries', [AccountingController::class, 'ledgerEntries'])->name('ledger-entries');
-            Route::post('/ledger-entries', [AccountingController::class, 'storeLedgerEntry'])->name('ledger-entries.store');
+            Route::post('/ledger-entries', [AccountingController::class, 'storeLedgerEntry'])->middleware('deprecated:/api/v1/general-ledger/journals')->name('ledger-entries.store');
             Route::get('/vat-settlements', [AccountingController::class, 'vatSettlements'])->name('vat-settlements');
             Route::get('/vendor-aging', VendorAgingController::class)->name('vendor-aging');
             Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger');
