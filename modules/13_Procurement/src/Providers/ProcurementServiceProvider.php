@@ -39,8 +39,6 @@ use Modules\Procurement\Listeners\CommitBudgetOnPurchaseOrderApprovedListener;
 use Modules\Procurement\Listeners\DispatchOutboxOnProcurementEventListener;
 use Modules\Procurement\Listeners\EnforceSupplierSuspensionListener;
 use Modules\Procurement\Listeners\EscalateWorkflowOnThreeWayMatchFailedListener;
-use Modules\Procurement\Listeners\TriggerWorkflowOnPurchaseOrderSubmissionListener;
-use Modules\Procurement\Listeners\TriggerWorkflowOnRequisitionSubmissionListener;
 use Modules\Procurement\Listeners\UpdateAvlOnSupplierApprovedListener;
 use Modules\Procurement\Listeners\WorkflowApprovalProcurementListener;
 use Modules\Procurement\Models\PurchaseOrder;
@@ -57,12 +55,17 @@ use Modules\Procurement\Services\InventoryReceivingBridgeService;
 use Modules\Procurement\Services\PassiveInvoiceApprovalService;
 use Modules\Procurement\Services\ProcurementAuditLedgerService;
 use Modules\Procurement\Services\ProcurementService;
+use Modules\Procurement\Services\ProcurementSettingsService;
 use Modules\Procurement\Services\PurchaseBudgetCommitmentService;
 use Modules\Procurement\Services\SupplierEvaluationService;
 use Modules\Procurement\Services\ThreeWayMatchingService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
+/**
+ * Wires the procurement module: services, policies, routes, outbox relaying of its domain events and the listeners
+ * that connect it with workflow, budget and inventory.
+ */
 final class ProcurementServiceProvider extends ServiceProvider
 {
     public function register(): void
@@ -83,6 +86,7 @@ final class ProcurementServiceProvider extends ServiceProvider
         $this->app->singleton(InventoryReceivingBridgeService::class);
 
         $this->app->singleton(ProcurementAuditLedgerService::class);
+        $this->app->singleton(ProcurementSettingsService::class);
     }
 
     public function boot(): void
@@ -122,9 +126,7 @@ final class ProcurementServiceProvider extends ServiceProvider
         Event::listen(ThreeWayMatchDiscrepancyDetectedEvent::class, DispatchOutboxOnProcurementEventListener::class);
         Event::listen(PurchaseLiabilityReadyEvent::class, DispatchOutboxOnProcurementEventListener::class);
 
-        // Register Workflow & Process Automations
-        Event::listen(PurchaseRequisitionCreatedEvent::class, TriggerWorkflowOnRequisitionSubmissionListener::class);
-        Event::listen(PurchaseOrderCreatedEvent::class, TriggerWorkflowOnPurchaseOrderSubmissionListener::class);
+        // Process automations. Approval workflows start on submission (ProcurementApprovalService), not on creation.
         Event::listen(PurchaseOrderApprovedEvent::class, CommitBudgetOnPurchaseOrderApprovedListener::class);
         Event::listen(PurchaseOrderApprovedEvent::class, AuthorizeReceivingOnPurchaseOrderApprovedListener::class);
         Event::listen(PurchaseRequisitionApprovedEvent::class, AutoGeneratePoOnRequisitionApprovedListener::class);

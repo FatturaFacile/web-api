@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -219,6 +220,7 @@ test('supplier REST API supports full CRUD lifecycle with pagination and sorting
 });
 
 test('purchase order lifecycle endpoints operate seamlessly', function (): void {
+    fiscalCalendar($this->tenant, (int) now()->year);
     $supplier = Supplier::factory()->approved()->create(['tenant_id' => $this->tenant->id]);
 
     // Create PO
@@ -242,13 +244,9 @@ test('purchase order lifecycle endpoints operate seamlessly', function (): void 
     // Submit for approval
     $submitResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/purchase-orders/{$poId}/submit-approval");
+    // Without an approval matrix or a configured workflow the order needs no approval.
     $submitResponse->assertOk();
-
-    // Approve
-    $approveResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
-        ->postJson("/api/v1/procurement/purchase-orders/{$poId}/approve");
-    $approveResponse->assertOk();
-    expect($approveResponse->json('status'))->toBe('approved');
+    expect($submitResponse->json('status'))->toBe('approved');
 
     // Close
     $closeResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
@@ -285,14 +283,14 @@ test('purchase requisition lifecycle endpoints operate seamlessly', function ():
     // 2. Submit for approval
     $submitResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson("/api/v1/procurement/requisitions/{$prId}/submit-approval");
+    // Without an approval matrix or a configured workflow the requisition needs no approval.
     $submitResponse->assertOk();
-    expect($submitResponse->json('status'))->toBe('pending_approval');
+    expect($submitResponse->json('status'))->toBe('approved');
 
-    // 3. Approve
-    $approveResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
-        ->postJson("/api/v1/procurement/requisitions/{$prId}/approve");
-    $approveResponse->assertOk();
-    expect($approveResponse->json('status'))->toBe('approved');
+    // 3. A manual decision is only for a requisition waiting for approval
+    $this->withHeader('X-Tenant-Id', $this->tenant->id)
+        ->postJson("/api/v1/procurement/requisitions/{$prId}/approve")
+        ->assertUnprocessable();
 });
 
 test('three-way matching and evaluations endpoints operate cleanly', function (): void {
@@ -324,12 +322,16 @@ test('three-way matching and evaluations endpoints operate cleanly', function ()
         'quantity_accepted' => 10,
     ]);
 
-    // Three-way match execute
+    // Three-way match execute: the invoice of the supplier for the goods received
+    $invoice = PassiveInvoice::withoutGlobalScopes()->create([
+        'tenant_id' => $this->tenant->id, 'supplier_id' => $supplier->id, 'invoice_number' => 'FT-1', 'date' => now()->toDateString(),
+        'total_net' => '1000.00', 'total_tax' => '220.00', 'total_amount' => '1220.00', 'currency' => 'EUR', 'document_type' => 'TD01', 'payment_status' => 'unpaid', 'total_paid' => 0,
+    ]);
     $matchResponse = $this->withHeader('X-Tenant-Id', $this->tenant->id)
         ->postJson('/api/v1/procurement/three-way-match/execute', [
             'purchase_order_id' => $po->id,
             'purchase_receipt_id' => $receipt->id,
-            'passive_invoice_id' => (string) Str::uuid(),
+            'passive_invoice_id' => $invoice->id,
             'invoice_total_amount' => 1220.00,
         ]);
     $matchResponse->assertCreated();

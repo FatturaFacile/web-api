@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Procurement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -17,8 +18,14 @@ use Modules\Procurement\Http\Requests\UpdatePurchaseOrderRequest;
 use Modules\Procurement\Http\Requests\WorkflowActionRequest;
 use Modules\Procurement\Http\Resources\PurchaseOrderResource;
 use Modules\Procurement\Models\PurchaseOrder;
+use Modules\Procurement\Services\ProcurementApprovalService;
+use Modules\Procurement\Services\PurchaseOrderLifecycleService;
 use OpenApi\Attributes as OA;
 
+/**
+ * Purchase orders of the procurement module: CRUD of drafts, submission to the approval workflow, manual decisions when
+ * no workflow runs, cancellation, closing and reopening.
+ */
 #[OA\Tag(name: 'Procurement Purchase Orders', description: 'Purchase orders lifecycle, approvals, receiving, and commitments')]
 final class PurchaseOrderController extends Controller
 {
@@ -64,6 +71,7 @@ final class PurchaseOrderController extends Controller
             $search = '%'.$request->string('search')->value().'%';
             $query->where(function ($q) use ($search): void {
                 $q->where('po_number', 'like', $search)
+                    ->orWhere('order_number', 'like', $search)
                     ->orWhere('notes', 'like', $search);
             });
         }
@@ -72,13 +80,13 @@ final class PurchaseOrderController extends Controller
         $direction = str_starts_with((string) $sort, '-') ? 'desc' : 'asc';
         $column = ltrim((string) $sort, '-');
 
-        if (in_array($column, ['created_at', 'po_number', 'total_amount', 'order_date', 'expected_delivery_date'], true)) {
+        if (in_array($column, ['created_at', 'po_number', 'total_amount', 'date', 'expected_delivery_date'], true)) {
             $query->orderBy($column, $direction);
         } else {
             $query->orderBy('created_at', 'desc');
         }
 
-        $orders = $query->paginate((int) $request->query('per_page', 25));
+        $orders = $query->paginate(max(1, min(100, (int) $request->query('per_page', '25'))));
 
         return response()->json(PurchaseOrderResource::collection($orders)->response()->getData(true));
     }
@@ -121,8 +129,7 @@ final class PurchaseOrderController extends Controller
             supplierId: $request->string('supplier_id')->value(),
             orderDate: $request->string('order_date')->value(),
             expectedDeliveryDate: $request->string('expected_delivery_date')->value(),
-            lines: (array) $request->input('lines'),
-            poNumber: $request->input('po_number'),
+            lines: (array) $request->validated('lines'),
             requisitionId: $request->input('purchase_requisition_id'),
             contractId: $request->input('supplier_contract_id'),
             projectId: $request->input('project_id'),
@@ -185,10 +192,7 @@ final class PurchaseOrderController extends Controller
         $order = PurchaseOrder::findOrFail($id);
         $this->authorize('update', $order);
 
-        $validated = $request->validated();
-        $order->update(collect($validated)->except('lines')->toArray());
-
-        return response()->json(new PurchaseOrderResource($order->fresh(['supplier', 'lines', 'receipts'])));
+        return response()->json(new PurchaseOrderResource(app(PurchaseOrderLifecycleService::class)->updateDraft($order, $request->validated())));
     }
 
     #[OA\Delete(
@@ -258,14 +262,9 @@ final class PurchaseOrderController extends Controller
         $order = PurchaseOrder::findOrFail($id);
         $this->authorize('approve', $order);
 
-        $order->update([
-            'status' => 'approved',
-            'is_locked' => false,
-            'approved_at' => now(),
-            'approved_by' => auth()->id(),
-        ]);
+        $decided = app(ProcurementApprovalService::class)->decideManually($order, $this->user($request), true);
 
-        return response()->json(new PurchaseOrderResource($order->fresh(['supplier', 'lines', 'receipts'])));
+        return response()->json(new PurchaseOrderResource($decided->load(['supplier', 'lines', 'receipts'])));
     }
 
     #[OA\Post(
@@ -286,12 +285,9 @@ final class PurchaseOrderController extends Controller
         $order = PurchaseOrder::findOrFail($id);
         $this->authorize('reject', $order);
 
-        $order->update([
-            'status' => 'rejected',
-            'is_locked' => false,
-        ]);
+        $decided = app(ProcurementApprovalService::class)->decideManually($order, $this->user($request), false);
 
-        return response()->json(new PurchaseOrderResource($order->fresh(['supplier', 'lines', 'receipts'])));
+        return response()->json(new PurchaseOrderResource($decided->load(['supplier', 'lines', 'receipts'])));
     }
 
     #[OA\Post(
@@ -338,9 +334,7 @@ final class PurchaseOrderController extends Controller
         $order = PurchaseOrder::findOrFail($id);
         $this->authorize('close', $order);
 
-        $order->update(['status' => 'closed']);
-
-        return response()->json(new PurchaseOrderResource($order->fresh(['supplier', 'lines', 'receipts'])));
+        return response()->json(new PurchaseOrderResource(app(PurchaseOrderLifecycleService::class)->close($order)));
     }
 
     #[OA\Post(
@@ -361,8 +355,14 @@ final class PurchaseOrderController extends Controller
         $order = PurchaseOrder::findOrFail($id);
         $this->authorize('reopen', $order);
 
-        $order->update(['status' => 'approved']);
+        return response()->json(new PurchaseOrderResource(app(PurchaseOrderLifecycleService::class)->reopen($order)));
+    }
 
-        return response()->json(new PurchaseOrderResource($order->fresh(['supplier', 'lines', 'receipts'])));
+    private function user(Request $request): User
+    {
+        $user = $request->user();
+        abort_unless($user instanceof User, 401);
+
+        return $user;
     }
 }

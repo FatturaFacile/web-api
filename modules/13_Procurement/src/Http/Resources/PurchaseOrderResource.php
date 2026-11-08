@@ -4,16 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Http\Resources;
 
-use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Carbon;
+use Modules\Procurement\Models\PurchaseOrder;
+use Modules\Procurement\Models\PurchaseOrderLine;
 
+/**
+ * A purchase order with its lines. Amounts and quantities are decimal strings.
+ *
+ * @mixin PurchaseOrder
+ */
 final class PurchaseOrderResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
-     *
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
@@ -24,56 +27,53 @@ final class PurchaseOrderResource extends JsonResource
             'supplier_id' => $this->supplier_id,
             'status' => $this->status,
             'order_type' => $this->order_type,
-            'order_date' => $this->formatDate($this->order_date),
-            'expected_delivery_date' => $this->formatDate($this->expected_delivery_date),
+            'order_date' => $this->order_date?->toDateString(),
+            'expected_delivery_date' => $this->expected_delivery_date?->toDateString(),
             'currency' => $this->currency,
-            'exchange_rate' => (float) ($this->exchange_rate ?? 1.0),
-            'net_amount' => (float) ($this->net_amount ?? $this->total_net ?? 0.0),
-            'tax_amount' => (float) ($this->tax_amount ?? $this->total_tax ?? 0.0),
-            'total_amount' => (float) ($this->total_amount ?? $this->total_gross ?? 0.0),
+            'exchange_rate' => (string) ($this->exchange_rate ?? '1.000000'),
+            'net_amount' => (string) ($this->net_amount ?? $this->total_net ?? '0.00'),
+            'tax_amount' => (string) ($this->tax_amount ?? $this->total_tax ?? '0.00'),
+            'total_amount' => (string) ($this->total_amount ?? $this->total_gross ?? '0.00'),
             'is_budget_encumbered' => (bool) $this->is_budget_encumbered,
-            'budget_committed_amount' => (float) ($this->budget_committed_amount ?? 0.0),
+            'budget_committed_amount' => (string) ($this->budget_committed_amount ?? '0.00'),
             'is_locked' => (bool) $this->is_locked,
+            'supplier_contract_id' => $this->supplier_contract_id,
+            'purchase_requisition_id' => $this->purchase_requisition_id,
+            'rfq_id' => $this->rfq_id,
+            'cost_center_id' => $this->cost_center_id,
+            'project_id' => $this->project_id,
+            'workflow_instance_id' => $this->workflow_instance_id,
+            'submitted_at' => $this->submitted_at?->toIso8601String(),
+            'approved_at' => $this->approved_at?->toIso8601String(),
+            'approved_by' => $this->approved_by,
+            'sent_at' => $this->sent_at?->toIso8601String(),
             'payment_terms_code' => $this->payment_terms_code,
             'incoterms' => $this->incoterms,
             'shipping_address' => $this->shipping_address,
+            'notes' => $this->notes,
             'supplier' => new SupplierResource($this->whenLoaded('supplier')),
-            'lines' => $this->whenLoaded('lines'),
+            'lines' => $this->whenLoaded('lines', fn () => $this->lines->map(static fn (PurchaseOrderLine $line): array => [
+                'id' => (string) $line->id,
+                'line_number' => $line->line_number,
+                'description' => $line->description,
+                'supplier_catalog_id' => $line->supplier_catalog_id,
+                'supplier_contract_line_id' => $line->supplier_contract_line_id,
+                'quantity_ordered' => (string) $line->quantity_ordered,
+                'quantity_received' => (string) $line->quantity_received,
+                'quantity_returned' => (string) $line->quantity_returned,
+                'quantity_invoiced' => (string) $line->quantity_invoiced,
+                'uom' => $line->uom,
+                'unit_price' => (string) $line->unit_price,
+                'list_unit_price' => $line->list_unit_price !== null ? (string) $line->list_unit_price : null,
+                'tax_rate' => (string) $line->tax_rate,
+                'line_net_amount' => (string) $line->line_net_amount,
+                'line_tax_amount' => (string) $line->line_tax_amount,
+                'line_total_amount' => (string) $line->line_total_amount,
+                'is_closed' => (bool) $line->is_closed,
+            ])->all()),
             'receipts' => PurchaseReceiptResource::collection($this->whenLoaded('receipts')),
-            'created_at' => $this->formatDateTime($this->created_at),
-            'updated_at' => $this->formatDateTime($this->updated_at),
+            'created_at' => $this->created_at?->toIso8601String(),
+            'updated_at' => $this->updated_at?->toIso8601String(),
         ];
-    }
-
-    /**
-     * Formatta un valore data in formato YYYY-MM-DD.
-     */
-    private function formatDate(mixed $date): ?string
-    {
-        if ($date instanceof CarbonInterface) {
-            return $date->toDateString();
-        }
-
-        if (is_string($date) && trim($date) !== '') {
-            return substr($date, 0, 10);
-        }
-
-        return null;
-    }
-
-    /**
-     * Formatta un valore timestamp in standard ISO 8601.
-     */
-    private function formatDateTime(mixed $dateTime): ?string
-    {
-        if ($dateTime instanceof CarbonInterface) {
-            return $dateTime->toIso8601String();
-        }
-
-        if (is_string($dateTime) && trim($dateTime) !== '') {
-            return Carbon::parse($dateTime)->toIso8601String();
-        }
-
-        return null;
     }
 }

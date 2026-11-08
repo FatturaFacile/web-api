@@ -5,110 +5,81 @@ declare(strict_types=1);
 namespace Modules\Procurement\Listeners;
 
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
-use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
-use Modules\Procurement\Events\PurchaseOrderCreatedEvent;
+use Illuminate\Support\Facades\Log;
+use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
+use Modules\Procurement\Enums\PurchaseRequisitionStatus;
 use Modules\Procurement\Events\PurchaseRequisitionApprovedEvent;
-use Modules\Procurement\Models\PurchaseOrder;
-use Modules\Procurement\Models\PurchaseOrderLine;
+use Modules\Procurement\Exceptions\ProcurementRuleViolation;
 use Modules\Procurement\Models\PurchaseRequisition;
-use Modules\Procurement\Models\Supplier;
+use Modules\Procurement\Models\PurchaseRequisitionLine;
+use Modules\Procurement\Services\ProcurementService;
 
+/**
+ * An approved requisition whose lines all name a suggested supplier becomes one draft purchase order per supplier, at
+ * the estimated prices. A requisition with a line without supplier stays approved, to be sourced with a request for
+ * quotation.
+ */
 final readonly class AutoGeneratePoOnRequisitionApprovedListener implements ShouldQueueAfterCommit
 {
     public function __construct(
-        private EventDispatcherInterface $eventDispatcher,
+        private ProcurementService $procurement,
         private ?AuditLedgerInterface $auditLedger = null
     ) {}
 
     public function handle(PurchaseRequisitionApprovedEvent $event): void
     {
-        $requisition = PurchaseRequisition::with('lines')->find($event->requisitionId);
-        if ($requisition === null || $requisition->status !== 'approved') {
+        $requisition = PurchaseRequisition::withoutGlobalScopes()->with('lines')->where('tenant_id', $event->tenantId)->find($event->requisitionId);
+
+        if ($requisition === null || $requisition->status !== PurchaseRequisitionStatus::Approved->value || $requisition->lines->isEmpty()) {
             return;
         }
 
-        DB::transaction(function () use ($requisition): void {
-            // Find preferred or default approved supplier
-            $firstLine = $requisition->lines->first();
-            $supplierId = $firstLine?->suggested_supplier_id;
-            if (! $supplierId) {
-                $supplierId = Supplier::where('is_approved_vendor', true)
-                    ->where('status', 'active')
-                    ->value('id');
-            }
+        if ($requisition->lines->contains(static fn (PurchaseRequisitionLine $line): bool => $line->suggested_supplier_id === null)) {
+            return;
+        }
 
-            if (! $supplierId) {
-                return;
-            }
+        try {
+            DB::transaction(function () use ($requisition): void {
+                foreach ($requisition->lines->groupBy('suggested_supplier_id') as $supplierId => $lines) {
+                    $order = $this->procurement->createPurchaseOrder(new CreatePurchaseOrderDTO(
+                        supplierId: (string) $supplierId,
+                        orderDate: now()->toDateString(),
+                        expectedDeliveryDate: $requisition->required_by_date?->toDateString() ?? now()->addDays(14)->toDateString(),
+                        lines: $lines->map(static fn (PurchaseRequisitionLine $line): array => [
+                            'description' => (string) $line->description,
+                            'quantity_ordered' => (string) $line->quantity_requested,
+                            'unit_price' => (string) $line->estimated_unit_price,
+                            'uom' => (string) $line->uom,
+                            'supplier_catalog_id' => $line->supplier_catalog_id,
+                        ])->values()->all(),
+                        requisitionId: (string) $requisition->id,
+                        projectId: $requisition->project_id,
+                        costCenterId: $requisition->cost_center_id,
+                        departmentId: $requisition->department_id,
+                        branchId: $requisition->branch_id,
+                        currency: (string) $requisition->currency,
+                        notes: "Generated from requisition {$requisition->requisition_number}",
+                        tenantId: (string) $requisition->tenant_id,
+                        companyId: $requisition->company_id,
+                        creatorUserId: $requisition->created_by ?? $requisition->requestor_user_id,
+                    ));
 
-            $poNumber = 'PO-'.now()->format('Ymd').'-'.strtoupper(Str::random(4));
-            $estimatedTotal = (float) ($requisition->total_estimated_amount ?? $requisition->estimated_total ?? 0.0);
+                    $this->auditLedger?->record(
+                        action: 'PURCHASE_REQUISITION_AUTO_CONVERTED_TO_PO',
+                        model: $order,
+                        payloadBefore: ['requisition_id' => $requisition->id],
+                        payloadAfter: ['purchase_order_id' => $order->id, 'po_number' => $order->po_number],
+                        moduleCode: 'PROCUREMENT'
+                    );
+                }
 
-            $order = PurchaseOrder::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $requisition->tenant_id,
-                'company_id' => $requisition->company_id,
-                'supplier_id' => $supplierId,
-                'po_number' => $poNumber,
-                'order_number' => $poNumber,
-                'order_type' => 'standard',
-                'date' => now()->toDateString(),
-                'expected_delivery_date' => $requisition->required_date?->toDateString() ?? now()->addDays(14)->toDateString(),
-                'status' => 'draft',
-                'currency' => 'EUR',
-                'exchange_rate' => 1.0,
-                'net_amount' => $estimatedTotal,
-                'tax_amount' => round($estimatedTotal * 0.22, 2),
-                'total_amount' => round($estimatedTotal * 1.22, 2),
-                'is_budget_encumbered' => true,
-                'budget_committed_amount' => $estimatedTotal,
-                'is_locked' => false,
-                'created_by' => $requisition->created_by ?? $requisition->requestor_user_id ?? $event->approvedByUserId,
-            ]);
-
-            foreach ($requisition->lines as $reqLine) {
-                $qty = (float) ($reqLine->quantity_requested ?? $reqLine->quantity ?? 1.0);
-                $unitPrice = (float) ($reqLine->estimated_unit_price ?? 0.0);
-                $net = (float) ($reqLine->estimated_total_price ?? ($qty * $unitPrice));
-                PurchaseOrderLine::create([
-                    'id' => (string) Str::uuid7(),
-                    'tenant_id' => $requisition->tenant_id,
-                    'purchase_order_id' => $order->id,
-                    'product_id' => $reqLine->product_id ?? null,
-                    'description' => $reqLine->description ?? 'Item from Requisition '.$requisition->requisition_number,
-                    'quantity_ordered' => $qty,
-                    'quantity_received' => 0.0,
-                    'quantity_cancelled' => 0.0,
-                    'unit_price' => $unitPrice,
-                    'subtotal' => $net,
-                    'tax_rate' => 22.0,
-                    'tax_amount' => round($net * 0.22, 2),
-                    'total' => round($net * 1.22, 2),
-                ]);
-            }
-
-            $requisition->update(['status' => 'converted_to_po']);
-
-            $this->auditLedger?->record(
-                action: 'PURCHASE_REQUISITION_AUTO_CONVERTED_TO_PO',
-                model: $order,
-                payloadBefore: ['requisition_id' => $requisition->id],
-                payloadAfter: ['purchase_order_id' => $order->id, 'po_number' => $order->po_number],
-                moduleCode: 'PROCUREMENT'
-            );
-
-            $this->eventDispatcher->dispatch(new PurchaseOrderCreatedEvent(
-                purchaseOrderId: (string) $order->id,
-                poNumber: (string) $order->po_number,
-                supplierId: (string) $order->supplier_id,
-                totalAmount: (float) $order->total_amount,
-                currency: (string) $order->currency,
-                tenantId: (string) $order->tenant_id,
-                companyId: (string) ($order->company_id ?? '')
-            ));
-        });
+                $requisition->update(['status' => PurchaseRequisitionStatus::Ordered->value]);
+            });
+        } catch (ProcurementRuleViolation $violation) {
+            // A supplier that cannot receive orders leaves the requisition approved for manual sourcing.
+            Log::warning('Approved requisition not converted into purchase orders.', ['requisition_id' => $requisition->id, 'reason' => $violation->getMessage()]);
+        }
     }
 }

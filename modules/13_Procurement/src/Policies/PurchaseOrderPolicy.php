@@ -4,9 +4,14 @@ declare(strict_types=1);
 
 namespace Modules\Procurement\Policies;
 
+use App\Enums\PurchaseOrderStatus;
 use App\Models\User;
 use Modules\Procurement\Models\PurchaseOrder;
 
+/**
+ * Who may act on a purchase order of the active company, by status (App\Enums\PurchaseOrderStatus) and four-eyes rules:
+ * the creator of an order neither approves nor receives it.
+ */
 final class PurchaseOrderPolicy
 {
     public function viewAny(User $user): bool
@@ -67,13 +72,15 @@ final class PurchaseOrderPolicy
     public function cancel(User $user, PurchaseOrder $order): bool
     {
         return $this->checkTenant($user, $order)
-            && ! in_array($order->status, ['fully_received', 'matched', 'cancelled'], true);
+            && PurchaseOrderStatus::allows($order->status, PurchaseOrderStatus::Cancelled)
+            && $order->status !== PurchaseOrderStatus::Cancelled->value;
     }
 
     public function close(User $user, PurchaseOrder $order): bool
     {
         return $this->checkTenant($user, $order)
-            && in_array($order->status, ['approved', 'partially_received', 'received'], true);
+            && $order->status !== PurchaseOrderStatus::Closed->value
+            && PurchaseOrderStatus::allows($order->status, PurchaseOrderStatus::Closed);
     }
 
     public function reopen(User $user, PurchaseOrder $order): bool
@@ -93,7 +100,7 @@ final class PurchaseOrderPolicy
             return false;
         }
 
-        return in_array($order->status, ['approved', 'partially_received'], true);
+        return in_array($order->status, PurchaseOrderStatus::receivableValues(), true);
     }
 
     private function checkTenant(User $user, PurchaseOrder $order): bool

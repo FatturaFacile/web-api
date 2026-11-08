@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -27,6 +28,7 @@ use Modules\Procurement\Events\SupplierSuspendedEvent;
 use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Procurement\Models\PurchaseOrderLine;
 use Modules\Procurement\Models\PurchaseReceipt;
+use Modules\Procurement\Models\PurchaseReceiptLine;
 use Modules\Procurement\Models\PurchaseRequisition;
 use Modules\Procurement\Models\Supplier;
 use Modules\Procurement\Models\SupplierCategory;
@@ -139,10 +141,12 @@ test('requisition lifecycle: approval triggers automated purchase order generati
 
 test('purchase order lifecycle: approval commits budget and authorizes receiving', function (): void {
     $supplier = Supplier::factory()->approved()->create(['tenant_id' => $this->tenant->id]);
+    // The approval service sets the status; the event commits the budget and authorizes receiving.
     $order = PurchaseOrder::factory()->draft()->create([
         'supplier_id' => $supplier->id,
         'tenant_id' => $this->tenant->id,
         'total_amount' => 5000.00,
+        'status' => 'approved',
     ]);
 
     event(new PurchaseOrderApprovedEvent(
@@ -213,41 +217,48 @@ test('three-way matching: exact match passes cleanly while variance triggers dis
     $order = PurchaseOrder::factory()->approved()->create([
         'supplier_id' => $supplier->id,
         'tenant_id' => $this->tenant->id,
+        'net_amount' => 1000.00,
         'total_amount' => 1220.00,
     ]);
+    $line = PurchaseOrderLine::factory()->create(['tenant_id' => $this->tenant->id, 'purchase_order_id' => $order->id, 'quantity_ordered' => 10, 'unit_price' => 100]);
 
     $receipt = PurchaseReceipt::factory()->create([
         'purchase_order_id' => $order->id,
         'tenant_id' => $this->tenant->id,
     ]);
+    PurchaseReceiptLine::factory()->create(['tenant_id' => $this->tenant->id, 'purchase_receipt_id' => $receipt->id, 'purchase_order_line_id' => $line->id, 'quantity_received' => 5, 'quantity_accepted' => 5, 'quantity_rejected' => 0]);
 
+    $invoice = fn (string $net): PassiveInvoice => PassiveInvoice::withoutGlobalScopes()->create([
+        'tenant_id' => $this->tenant->id, 'supplier_id' => $supplier->id, 'invoice_number' => 'FT-'.Str::random(5), 'date' => now()->toDateString(),
+        'total_net' => $net, 'total_tax' => '0', 'total_amount' => $net, 'currency' => 'EUR', 'document_type' => 'TD01', 'payment_status' => 'unpaid', 'total_paid' => 0,
+    ]);
     $matchAction = app(ExecuteThreeWayMatchAction::class);
 
-    // 1. Exact Match Test
-    $exactDto = new ExecuteThreeWayMatchDTO(
+    // 1. Invoiced beyond the value of the goods received: blocked for payment.
+    $overInvoice = $invoice('600.00');
+    $discrepancyLog = $matchAction->execute(new ExecuteThreeWayMatchDTO(
         purchaseOrderId: (string) $order->id,
         purchaseReceiptId: (string) $receipt->id,
-        passiveInvoiceId: (string) Str::uuid(),
-        invoiceTotalAmount: 1220.00,
+        passiveInvoiceId: (string) $overInvoice->id,
+        invoiceTotalAmount: 600.00,
         evaluatedByUserId: (string) $this->user->id
-    );
+    ));
+    expect($discrepancyLog->match_status)->toBe('price_variance')
+        ->and($discrepancyLog->variance_amount)->toBe('100.00')
+        ->and($overInvoice->fresh()->isPaymentBlocked())->toBeTrue();
 
-    $exactLog = $matchAction->execute($exactDto);
-    expect($exactLog->match_status)->toBe('matched');
-    expect((float) $exactLog->variance_amount)->toBe(0.0);
-
-    // 2. Discrepancy Test (> 1% tolerance)
-    $discrepancyDto = new ExecuteThreeWayMatchDTO(
+    // 2. Exactly the value received: matched and payable.
+    $exactInvoice = $invoice('500.00');
+    $exactLog = $matchAction->execute(new ExecuteThreeWayMatchDTO(
         purchaseOrderId: (string) $order->id,
         purchaseReceiptId: (string) $receipt->id,
-        passiveInvoiceId: (string) Str::uuid(),
-        invoiceTotalAmount: 1400.00, // €180 over PO
+        passiveInvoiceId: (string) $exactInvoice->id,
+        invoiceTotalAmount: 500.00,
         evaluatedByUserId: (string) $this->user->id
-    );
-
-    $discrepancyLog = $matchAction->execute($discrepancyDto);
-    expect($discrepancyLog->match_status)->toBe('price_variance');
-    expect((float) $discrepancyLog->variance_amount)->toBe(180.00);
+    ));
+    expect($exactLog->match_status)->toBe('matched')
+        ->and($exactLog->variance_amount)->toBe('0.00')
+        ->and($exactInvoice->fresh()->isPaymentBlocked())->toBeFalse();
 });
 
 test('supplier suspension automatically restricts open purchase orders', function (): void {
