@@ -244,7 +244,7 @@ test('another tenant reaches neither the lots nor the stock', function (): void 
     $this->getJson('/api/v1/inventory/lots/stock')->assertOk()->assertJsonCount(0, 'data');
     $this->postJson('/api/v1/inventory/reservations', [
         'stock_item_id' => $item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 1, 'source_type' => 'sales_orders', 'source_id' => (string) Str::uuid7(),
-    ])->assertNotFound();
+    ])->assertStatus(422)->assertJsonValidationErrors(['stock_item_id', 'warehouse_id']);
 });
 
 test('a role without write access reads lots but cannot change them', function (): void {

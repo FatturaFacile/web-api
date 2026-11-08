@@ -10,10 +10,12 @@ use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Models\StockItem;
+use Modules\Inventory\Models\StockLot;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\StockShortfall;
 use Modules\Inventory\Models\WarehouseBin;
+use Modules\Inventory\Support\Quantity;
 
 /**
  * Stock of catalog products, kept by the inventory module: the one stock truth for the till, the delivery notes, the
@@ -40,6 +42,7 @@ final readonly class ProductStockLedger
         private DoubleEntryMovementServiceInterface $movements,
         private ProductStockItemResolver $stockItems,
         private WarehouseDefaultBinResolver $bins,
+        private OutboundIssuePreference $preference,
     ) {}
 
     /**
@@ -62,7 +65,9 @@ final readonly class ProductStockLedger
 
     /**
      * Take stock of a product out of a warehouse, never refusing for missing stock (see the class description).
-     * Quants of the default bin go first, then the other bins; quants without a lot before lots, oldest first.
+     * Bins preferred by the caller (OutboundIssuePreference, e.g. the shipping bin the goods were picked into) go
+     * first, then the default bin, then the other bins; quants without a lot before lots, oldest first. Stock that is
+     * not available to orders is never taken: bins of quarantine or transit zones and quarantined lots stay untouched.
      * Returns the movement that took the largest share, the one the caller reports.
      *
      * @param  array{movement_type: string, app_type: string, reference_type?: ?string, reference_id?: ?string, unit_cost?: ?float, notes?: ?string, executed_at?: ?string}  $context
@@ -72,52 +77,55 @@ final readonly class ProductStockLedger
         return DB::transaction(function () use ($product, $warehouseId, $quantity, $context): StockMovement {
             $item = $this->stockItems->resolve($product);
             $defaultBin = $this->bins->resolve($warehouseId);
-            $binIds = $this->bins->bins($warehouseId)->pluck('id')->map(static fn ($id): string => (string) $id)->all();
+            $binIds = $this->bins->issuableBins($warehouseId)->pluck('id')->map(static fn ($id): string => (string) $id)->all();
+            $preferred = array_flip($this->preference->preferredBinIds());
 
             /** @var Collection<int, StockQuant> $quants */
             $quants = StockQuant::withoutGlobalScopes()
                 ->whereNull('deleted_at')
                 ->where('stock_item_id', $item->id)
                 ->whereIn('warehouse_bin_id', $binIds)
+                ->where(static fn ($lot) => $lot->whereNull('lot_id')->orWhereNotIn('lot_id', StockLot::withoutGlobalScopes()->where('is_quarantined', true)->select('id')))
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get()
                 ->sortBy(static fn (StockQuant $quant): array => [
+                    $preferred[(string) $quant->warehouse_bin_id] ?? PHP_INT_MAX,
                     $quant->warehouse_bin_id === $defaultBin->id ? 0 : 1,
                     $quant->lot_id === null ? 0 : 1,
                     (string) $quant->created_at,
                 ])
                 ->values();
 
-            $remaining = $quantity;
-            /** @var list<array{bin: string, lot: ?string, quantity: float}> $legs */
+            $remaining = Quantity::of($quantity);
+            /** @var list<array{bin: string, lot: ?string, quantity: string}> $legs */
             $legs = [];
 
             foreach ($quants as $quant) {
-                if ($remaining <= 0.0) {
+                if (! Quantity::isPositive($remaining)) {
                     break;
                 }
 
-                $take = min($quant->quantity_available, $remaining);
+                $take = Quantity::min(StockAllocationPlanner::available($quant), $remaining);
 
-                if ($take <= 0.0) {
+                if (! Quantity::isPositive($take)) {
                     continue;
                 }
 
                 $legs[] = ['bin' => (string) $quant->warehouse_bin_id, 'lot' => $quant->lot_id, 'quantity' => $take];
-                $remaining = round($remaining - $take, 4);
+                $remaining = Quantity::sub($remaining, $take);
             }
 
             $cover = null;
 
-            if ($remaining > 0.0) {
-                $cover = $this->movements->executeTransfer($this->transfer($item, null, $defaultBin->id, $remaining, self::COVER_MOVEMENT_TYPE, null, $context));
+            if (Quantity::isPositive($remaining)) {
+                $cover = $this->movements->executeTransfer($this->transfer($item, null, $defaultBin->id, (float) $remaining, self::COVER_MOVEMENT_TYPE, null, $context));
                 $this->annotate($cover, $product, 'in', $context);
 
                 $merged = false;
                 foreach ($legs as $index => $leg) {
                     if ($leg['bin'] === $defaultBin->id && $leg['lot'] === null) {
-                        $legs[$index]['quantity'] = round($leg['quantity'] + $remaining, 4);
+                        $legs[$index]['quantity'] = Quantity::add($leg['quantity'], $remaining);
                         $merged = true;
                     }
                 }
@@ -128,13 +136,13 @@ final readonly class ProductStockLedger
             }
 
             $main = null;
-            $mainQuantity = 0.0;
+            $mainQuantity = '0';
 
             foreach ($legs as $leg) {
-                $movement = $this->movements->executeTransfer($this->transfer($item, $leg['bin'], null, $leg['quantity'], $context['movement_type'], $leg['lot'], $context));
+                $movement = $this->movements->executeTransfer($this->transfer($item, $leg['bin'], null, (float) $leg['quantity'], $context['movement_type'], $leg['lot'], $context));
                 $this->annotate($movement, $product, $context['app_type'], $context);
 
-                if ($leg['quantity'] > $mainQuantity) {
+                if (Quantity::compare($leg['quantity'], $mainQuantity) > 0) {
                     $main = $movement;
                     $mainQuantity = $leg['quantity'];
                 }
@@ -190,22 +198,22 @@ final readonly class ProductStockLedger
             ->lockForUpdate()
             ->first();
 
-        $available = $quant === null ? 0.0 : $quant->quantity_available;
-        $settled = 0.0;
+        $available = $quant === null ? '0' : StockAllocationPlanner::available($quant);
+        $settled = '0';
 
         foreach ($shortfalls as $shortfall) {
-            if ($available <= 0.0) {
+            if (! Quantity::isPositive($available)) {
                 break;
             }
 
-            $take = min((float) $shortfall->quantity_open, $available);
+            $take = Quantity::min((string) $shortfall->quantity_open, $available);
             $context = [
                 'reference_type' => $shortfall->origin_document_type,
                 'reference_id' => $shortfall->origin_document_id,
                 'notes' => 'Settles the stock sold beyond availability (shortfall '.$shortfall->id.').',
             ];
 
-            $movement = $this->movements->executeTransfer($this->transfer($item, $bin->id, null, $take, self::SETTLEMENT_MOVEMENT_TYPE, $lotId, $context));
+            $movement = $this->movements->executeTransfer($this->transfer($item, $bin->id, null, (float) $take, self::SETTLEMENT_MOVEMENT_TYPE, $lotId, $context));
 
             if ($shortfall->product_id !== null) {
                 StockMovement::withoutGlobalScopes()->whereKey($movement->id)->update([
@@ -217,18 +225,18 @@ final readonly class ProductStockLedger
                 ]);
             }
 
-            $open = round((float) $shortfall->quantity_open - $take, 4);
+            $open = Quantity::sub((string) $shortfall->quantity_open, $take);
             StockShortfall::withoutGlobalScopes()->whereKey($shortfall->id)->update([
                 'quantity_open' => $open,
-                'settled_at' => $open <= 0.0 ? now() : null,
+                'settled_at' => Quantity::isPositive($open) ? null : now(),
                 'updated_at' => now(),
             ]);
 
-            $available = round($available - $take, 4);
-            $settled = round($settled + $take, 4);
+            $available = Quantity::sub($available, $take);
+            $settled = Quantity::add($settled, $take);
         }
 
-        return $settled;
+        return (float) $settled;
     }
 
     /**

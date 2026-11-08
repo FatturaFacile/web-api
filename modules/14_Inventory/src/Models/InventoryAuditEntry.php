@@ -19,11 +19,17 @@ final class InventoryAuditEntry extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
+    /**
+     * @return BelongsTo<StockMovement, $this>
+     */
     public function movement(): BelongsTo
     {
         return $this->belongsTo(StockMovement::class, 'movement_id');

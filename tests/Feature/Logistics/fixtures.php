@@ -7,6 +7,8 @@ use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
+use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockLot;
 use Modules\Inventory\Models\StockQuant;
@@ -68,6 +70,21 @@ function logisticsItem(array $attributes = []): StockItem
 function logisticsLot(StockItem $item, array $attributes = []): StockLot
 {
     return StockLot::create($attributes + ['stock_item_id' => $item->id, 'lot_number' => 'LOT-'.Str::random(8)]);
+}
+
+/**
+ * A receipt (no source), a delivery (no destination) or a relocation booked through the movement service.
+ */
+function logisticsMove(StockItem $item, ?WarehouseBin $source, ?WarehouseBin $destination, int|float $quantity, ?StockLot $lot = null): void
+{
+    app(DoubleEntryMovementServiceInterface::class)->executeTransfer(new StockTransferDTO(
+        stockItemId: (string) $item->id,
+        sourceBinId: $source?->id,
+        destinationBinId: $destination?->id,
+        quantity: (float) $quantity,
+        movementType: $source === null ? 'receipt' : ($destination === null ? 'customer_delivery' : 'INTERNAL_TRANSFER'),
+        lotId: $lot?->id,
+    ));
 }
 
 function logisticsQuant(WarehouseBin $bin, StockItem $item, string $quantity, ?StockLot $lot = null): StockQuant

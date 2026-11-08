@@ -23,11 +23,17 @@ final class RepairOrderLine extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<RepairOrder, $this>
+     */
     public function repairOrder(): BelongsTo
     {
         return $this->belongsTo(RepairOrder::class, 'repair_order_id');
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');

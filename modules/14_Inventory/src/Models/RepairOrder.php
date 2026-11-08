@@ -37,21 +37,33 @@ final class RepairOrder extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<StockSerialNumber, $this>
+     */
     public function serial(): BelongsTo
     {
         return $this->belongsTo(StockSerialNumber::class, 'stock_serial_number_id');
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'contact_id');
     }
 
+    /**
+     * @return HasMany<RepairOrderLine, $this>
+     */
     public function lines(): HasMany
     {
         return $this->hasMany(RepairOrderLine::class, 'repair_order_id');

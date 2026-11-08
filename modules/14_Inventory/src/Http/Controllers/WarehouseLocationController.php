@@ -9,6 +9,7 @@ use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Modules\Inventory\Http\Requests\StoreWarehouseLocationRequest;
 use Modules\Inventory\Models\Warehouse;
+use Modules\Inventory\Models\WarehouseBin;
 use Modules\Inventory\Services\WarehouseLocationService;
 use OpenApi\Attributes as OA;
 
@@ -36,6 +37,8 @@ final class WarehouseLocationController extends Controller
                     new OA\Property(property: 'pick_sequence', type: 'integer', description: 'Explicit position on the picking route; overrides the aisle walk'),
                     new OA\Property(property: 'max_weight_kg', type: 'number'),
                     new OA\Property(property: 'max_volume_cbm', type: 'number'),
+                    new OA\Property(property: 'max_quantity', type: 'number', description: 'Maximum units the bin holds, checked by putaway'),
+                    new OA\Property(property: 'bin_type', type: 'string', enum: WarehouseBin::BIN_TYPES, description: 'Default: the natural type of the zone (storage for a storage zone)'),
                 ]
             )
         ),
@@ -57,6 +60,8 @@ final class WarehouseLocationController extends Controller
             'code' => $bin->code,
             'barcode' => $bin->barcode,
             'pick_sequence' => $bin->pick_sequence,
+            'bin_type' => $bin->bin_type,
+            'max_quantity' => $bin->max_quantity,
         ], 201);
     }
 }

@@ -11,86 +11,89 @@ use Modules\Inventory\Events\InventoryValuationCalculatedEvent;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockValuationSnapshot;
+use Modules\Inventory\Support\Quantity;
 
+/**
+ * Item-level costing: the moving average after a receipt, the FIFO cost of a quantity taken out of stock, and the
+ * daily valuation snapshot per warehouse (valued like the stock valuation report, StockValuationReportService).
+ * Computed with bcmath; the float signatures of the interface are kept for its existing callers.
+ */
 final class StockValuationService implements StockValuationServiceInterface
 {
     public function __construct(
-        private readonly EventDispatcher $dispatcher
+        private readonly EventDispatcher $dispatcher,
+        private readonly StockValuationReportService $report
     ) {}
 
+    /**
+     * The new moving average after receiving `inboundQuantity` units at `inboundUnitCost`, stored on the item. With no
+     * stock on hand before the receipt, the receipt cost becomes the average.
+     */
     public function computeItemMovingAverageCost(StockItem $item, float $inboundQuantity, float $inboundUnitCost): float
     {
-        $currentOnHand = $item->total_on_hand;
-        $currentMac = (float) $item->current_moving_average_cost;
+        $onHand = Quantity::of((string) $item->quants()->sum('quantity_on_hand'));
+        $inboundQuantity = Quantity::of($inboundQuantity);
+        $inboundUnitCost = Quantity::of($inboundUnitCost);
 
-        if ($currentOnHand <= 0.0) {
-            $newMac = $inboundUnitCost;
+        if (! Quantity::isPositive($onHand)) {
+            $newAverage = $inboundUnitCost;
         } else {
-            $totalExistingValuation = $currentOnHand * $currentMac;
-            $inboundValuation = $inboundQuantity * $inboundUnitCost;
-            $newTotalQuantity = $currentOnHand + $inboundQuantity;
-
-            $newMac = $newTotalQuantity > 0.0 ? ($totalExistingValuation + $inboundValuation) / $newTotalQuantity : $inboundUnitCost;
+            $existingValue = Quantity::mul($onHand, (string) $item->current_moving_average_cost, 10);
+            $inboundValue = Quantity::mul($inboundQuantity, $inboundUnitCost, 10);
+            $newAverage = Quantity::div(Quantity::add($existingValue, $inboundValue, 10), Quantity::add($onHand, $inboundQuantity)) ?? $inboundUnitCost;
         }
 
-        $newMac = round($newMac, 4);
-        $item->update(['current_moving_average_cost' => $newMac]);
+        $item->update(['current_moving_average_cost' => $newAverage]);
 
-        return $newMac;
+        return (float) $newAverage;
     }
 
+    /**
+     * The FIFO cost of taking `quantityToDeplete` units out of stock: the oldest supplier receipts first. A part not
+     * covered by recorded receipts is valued at the moving average (standard cost when there is none).
+     */
     public function calculateFifoValuation(StockItem $item, float $quantityToDeplete): float
     {
-        if ($quantityToDeplete <= 0.0) {
+        $remaining = Quantity::of($quantityToDeplete);
+
+        if (! Quantity::isPositive($remaining)) {
             return 0.0;
         }
 
-        // Retrieve historical supplier receipts in chronological FIFO order
-        $inboundMovements = StockMovement::query()
-            ->where('stock_item_id', $item->id)
-            ->where('movement_type', 'supplier_receipt')
-            ->orderBy('executed_at', 'asc')
-            ->get();
+        $value = '0';
 
-        $remainingToValue = $quantityToDeplete;
-        $accumulatedValuation = 0.0;
-
-        foreach ($inboundMovements as $mv) {
-            if ($remainingToValue <= 0.0) {
+        foreach (StockMovement::query()->where('stock_item_id', $item->id)->where('movement_type', 'supplier_receipt')->orderBy('executed_at')->orderBy('id')->cursor() as $receipt) {
+            if (! Quantity::isPositive($remaining)) {
                 break;
             }
 
-            $takeQty = min((float) $mv->quantity, $remainingToValue);
-            $accumulatedValuation += $takeQty * (float) $mv->unit_cost;
-            $remainingToValue -= $takeQty;
+            $take = Quantity::min((string) $receipt->quantity, $remaining);
+            $value = Quantity::add($value, Quantity::mul($take, (string) $receipt->unit_cost, 10), 10);
+            $remaining = Quantity::sub($remaining, $take);
         }
 
-        // If depleted quantity exceeds recorded historical receipts, fall back to moving average or standard cost
-        if ($remainingToValue > 0.0) {
-            $fallbackCost = (float) $item->current_moving_average_cost > 0.0
-                ? (float) $item->current_moving_average_cost
-                : (float) $item->standard_cost;
-            $accumulatedValuation += $remainingToValue * $fallbackCost;
+        if (Quantity::isPositive($remaining)) {
+            $fallback = Quantity::isPositive((string) $item->current_moving_average_cost) ? (string) $item->current_moving_average_cost : (string) $item->standard_cost;
+            $value = Quantity::add($value, Quantity::mul($remaining, $fallback, 10), 10);
         }
 
-        return round($accumulatedValuation, 2);
+        return (float) Quantity::of($value, 2);
     }
 
+    /**
+     * Today's valuation of the item in a warehouse, with the method of its category, stored once per day.
+     */
     public function generateDailySnapshot(StockItem $item, string $warehouseId): StockValuationSnapshot
     {
         $item->loadMissing('category');
-        $method = $item->category?->valuation_method ?? 'moving_average';
-        $quantity = (float) $item->quants()
+        $method = (string) ($item->category?->valuation_method ?? 'moving_average');
+        $quantity = Quantity::of((string) $item->quants()
             ->whereHas('bin.rack.aisle.zone', fn ($q) => $q->where('warehouse_id', $warehouseId))
-            ->sum('quantity_on_hand');
+            ->sum('quantity_on_hand'));
+        $totalOnHand = Quantity::of((string) $item->quants()->sum('quantity_on_hand'));
 
-        $unitCost = match ($method) {
-            'fifo' => $quantity > 0.0 ? round($this->calculateFifoValuation($item, $quantity) / $quantity, 4) : (float) $item->current_moving_average_cost,
-            'standard_cost' => (float) $item->standard_cost,
-            default => (float) $item->current_moving_average_cost,
-        };
-
-        $totalValuation = round($quantity * $unitCost, 2);
+        $unitCost = $this->report->unitCostAt($item, $method, Carbon::now(), $totalOnHand)['unit_cost'];
+        $totalValuation = Quantity::value($quantity, $unitCost);
 
         $snapshot = StockValuationSnapshot::updateOrCreate(
             [
@@ -108,16 +111,15 @@ final class StockValuationService implements StockValuationServiceInterface
             ]
         );
 
-        $event = new InventoryValuationCalculatedEvent(
+        $this->dispatcher->publishAndDispatch(new InventoryValuationCalculatedEvent(
             snapshotId: $snapshot->id,
             stockItemId: $item->id,
             warehouseId: $warehouseId,
             valuationMethod: $method,
-            totalValuation: $totalValuation,
+            totalValuation: (float) $totalValuation,
             tenantId: $item->tenant_id,
             companyId: (string) ($item->company_id ?? '')
-        );
-        $this->dispatcher->publishAndDispatch($event);
+        ));
 
         return $snapshot;
     }

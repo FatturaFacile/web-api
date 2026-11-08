@@ -35,13 +35,15 @@ final class InventoryAdjustmentPolicy
     {
         return (string) $user->tenant_id === (string) $adjustment->tenant_id
             && $adjustment->status === 'pending_approval'
-            && (string) $adjustment->created_by !== (string) $user->id; // Segregation of Duties
+            && (string) $adjustment->created_by !== (string) $user->id // Segregation of Duties
+            && InventoryManagers::includes($user);
     }
 
     public function reject(User $user, InventoryAdjustment $adjustment): bool
     {
         return (string) $user->tenant_id === (string) $adjustment->tenant_id
-            && $adjustment->status === 'pending_approval';
+            && $adjustment->status === 'pending_approval'
+            && InventoryManagers::includes($user);
     }
 
     public function delete(User $user, InventoryAdjustment $adjustment): bool

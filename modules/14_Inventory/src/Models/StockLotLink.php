@@ -21,11 +21,17 @@ final class StockLotLink extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<StockLot, $this>
+     */
     public function lot(): BelongsTo
     {
         return $this->belongsTo(StockLot::class, 'lot_id');
     }
 
+    /**
+     * @return BelongsTo<StockLot, $this>
+     */
     public function componentLot(): BelongsTo
     {
         return $this->belongsTo(StockLot::class, 'component_lot_id');

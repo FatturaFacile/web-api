@@ -28,44 +28,69 @@ final class StockItem extends BaseEnterpriseModel
             'units_per_carton' => 'integer',
             'cartons_per_pallet' => 'integer',
             'is_active' => 'boolean',
+            'abc_classified_at' => 'datetime',
         ];
     }
 
+    /**
+     * @return BelongsTo<Product, $this>
+     */
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class, 'product_id');
     }
 
+    /**
+     * @return BelongsTo<StockItemCategory, $this>
+     */
     public function category(): BelongsTo
     {
         return $this->belongsTo(StockItemCategory::class, 'category_id');
     }
 
+    /**
+     * @return HasMany<StockLot, $this>
+     */
     public function lots(): HasMany
     {
         return $this->hasMany(StockLot::class, 'stock_item_id');
     }
 
+    /**
+     * @return HasMany<StockSerialNumber, $this>
+     */
     public function serialNumbers(): HasMany
     {
         return $this->hasMany(StockSerialNumber::class, 'stock_item_id');
     }
 
+    /**
+     * @return HasMany<StockQuant, $this>
+     */
     public function quants(): HasMany
     {
         return $this->hasMany(StockQuant::class, 'stock_item_id');
     }
 
+    /**
+     * @return HasMany<StockMovement, $this>
+     */
     public function movements(): HasMany
     {
         return $this->hasMany(StockMovement::class, 'stock_item_id');
     }
 
+    /**
+     * @return HasMany<StockReservation, $this>
+     */
     public function reservations(): HasMany
     {
         return $this->hasMany(StockReservation::class, 'stock_item_id');
     }
 
+    /**
+     * @return HasMany<StockReorderRule, $this>
+     */
     public function reorderRules(): HasMany
     {
         return $this->hasMany(StockReorderRule::class, 'stock_item_id');

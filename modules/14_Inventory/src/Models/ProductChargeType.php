@@ -20,11 +20,17 @@ final class ProductChargeType extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return HasMany<ProductChargeRate, $this>
+     */
     public function rates(): HasMany
     {
         return $this->hasMany(ProductChargeRate::class, 'product_charge_type_id');
     }
 
+    /**
+     * @return HasMany<ProductChargeAssignment, $this>
+     */
     public function assignments(): HasMany
     {
         return $this->hasMany(ProductChargeAssignment::class, 'product_charge_type_id');

@@ -77,7 +77,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'lots', type: 'array', items: new OA\Items(ref: '#/components/schemas/InventoryLotTrace')),
 ])]
 #[OA\Schema(schema: 'InventoryAvailability', properties: [
-    new OA\Property(property: 'strategy', type: 'string', enum: ['fifo', 'fefo']),
+    new OA\Property(property: 'strategy', type: 'string', enum: ['fifo', 'fefo', 'lifo']),
     new OA\Property(property: 'quants', type: 'array', items: new OA\Items(properties: [
         new OA\Property(property: 'quant_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'warehouse_bin_id', type: 'string', format: 'uuid'),

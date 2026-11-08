@@ -33,21 +33,17 @@ final class Warehouse extends BaseEnterpriseModel implements LockableByWorkflowI
         return ! $this->is_active;
     }
 
+    /**
+     * @return HasMany<WarehouseZone, $this>
+     */
     public function zones(): HasMany
     {
         return $this->hasMany(WarehouseZone::class, 'warehouse_id');
     }
 
-    public function bins(): HasMany
-    {
-        return $this->hasMany(WarehouseBin::class, 'warehouse_id');
-    }
-
-    public function quants(): HasMany
-    {
-        return $this->hasMany(StockQuant::class, 'warehouse_id');
-    }
-
+    /**
+     * @return HasMany<StockReorderRule, $this>
+     */
     public function reorderRules(): HasMany
     {
         return $this->hasMany(StockReorderRule::class, 'warehouse_id');

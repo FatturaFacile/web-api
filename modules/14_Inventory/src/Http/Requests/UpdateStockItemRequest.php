@@ -24,7 +24,7 @@ final class UpdateStockItemRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'category_id' => ['sometimes', 'uuid'],
+            'category_id' => ['sometimes', 'uuid', $this->tenantExists('stock_item_categories')],
             'sku' => ['sometimes', 'string', 'max:100'],
             'name' => ['sometimes', 'string', 'max:255'],
             'uom' => ['sometimes', 'string', 'max:20'],

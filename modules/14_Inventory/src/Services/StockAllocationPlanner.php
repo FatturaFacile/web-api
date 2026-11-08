@@ -18,7 +18,8 @@ use Modules\Inventory\Models\Warehouse;
  * Decides which quants may serve a request and in which order. A quant is out of reach when its bin is locked, it
  * sits in a quarantine or transit area or in a warehouse that does not ship, its lot is quarantined, expired or
  * shorter than the item's minimum remaining shelf life. The rest follows the strategy of the item, then the
- * warehouse, then FIFO.
+ * warehouse, then FIFO: FIFO and FEFO take the oldest receipts first (FEFO the earliest expiry before that), LIFO the
+ * newest.
  *
  * Quants are always locked by id, whatever the strategy: two allocations on the same stock queue on the same rows in
  * the same order and cannot deadlock. The order is then applied to the values read under the lock.
@@ -187,12 +188,16 @@ final class StockAllocationPlanner
             $query->where('stock_quants.warehouse_bin_id', $binId);
         }
 
-        if ($this->strategyFor($item, $warehouse) === PickingStrategy::Fefo) {
+        $strategy = $this->strategyFor($item, $warehouse);
+
+        if ($strategy === PickingStrategy::Fefo) {
             $query->orderByRaw('l.expiration_date ASC NULLS LAST');
         }
 
+        $direction = $strategy === PickingStrategy::Lifo ? 'DESC' : 'ASC';
+
         return $query
-            ->orderByRaw('COALESCE(l.received_at, CAST(l.created_at AS date), CAST(stock_quants.created_at AS date)) ASC')
-            ->orderBy('stock_quants.id');
+            ->orderByRaw("COALESCE(l.received_at, CAST(l.created_at AS date), CAST(stock_quants.created_at AS date)) {$direction}")
+            ->orderBy('stock_quants.id', $direction === 'DESC' ? 'desc' : 'asc');
     }
 }

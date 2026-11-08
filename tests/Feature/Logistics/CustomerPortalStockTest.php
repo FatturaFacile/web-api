@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Models\Contact;
 use App\Services\Portal\PortalTokenService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Inventory\Contracts\DoubleEntryMovementServiceInterface;
+use Modules\Inventory\DTOs\StockTransferDTO;
 
 require_once __DIR__.'/fixtures.php';
 
@@ -39,7 +41,8 @@ test('the history lists the movements of its warehouses', function (): void {
     logisticsUser($this->tenant);
     $other = logisticsBin($this->warehouse, bin: 'B2');
     $this->postJson('/api/v1/inventory/movements/transfer', ['stock_item_id' => $this->item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 2, 'movement_type' => 'INTERNAL_TRANSFER', 'source_bin_id' => $this->bin->id, 'destination_bin_id' => $other->id, 'stock_lot_id' => $this->lot->id, 'unit_cost' => 1])->assertCreated();
-    $this->postJson('/api/v1/inventory/movements/transfer', ['stock_item_id' => $this->item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 1, 'movement_type' => 'SALES_DELIVERY', 'source_bin_id' => $this->bin->id, 'stock_lot_id' => $this->lot->id, 'unit_cost' => 1])->assertCreated();
+    // A delivery takes stock out through the movement service (the relocation endpoint only moves between bins).
+    app(DoubleEntryMovementServiceInterface::class)->executeTransfer(new StockTransferDTO(stockItemId: (string) $this->item->id, sourceBinId: (string) $this->bin->id, destinationBinId: null, quantity: 1.0, movementType: 'customer_delivery', lotId: (string) $this->lot->id));
 
     $response = $this->getJson("/api/v1/portal/stock-movements/{$this->token}")->assertOk()->assertJsonCount(2, 'data');
 

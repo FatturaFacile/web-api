@@ -6,7 +6,13 @@ namespace Modules\Inventory\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Inventory\Models\StockPickList;
 
+/**
+ * A pick list with its wave, shipment and lines.
+ *
+ * @mixin StockPickList
+ */
 final class StockPickListResource extends JsonResource
 {
     /**
@@ -25,6 +31,9 @@ final class StockPickListResource extends JsonResource
             'warehouse' => new WarehouseResource($this->whenLoaded('warehouse')),
             'shortages' => $this->shortages,
             'completed_at' => $this->completed_at?->toIso8601String(),
+            'pick_wave_id' => $this->pick_wave_id,
+            'delivery_note_id' => $this->delivery_note_id,
+            'shipped_at' => $this->shipped_at?->toIso8601String(),
             'lines' => $this->whenLoaded('lines'),
             'created_at' => $this->created_at?->toIso8601String(),
         ];

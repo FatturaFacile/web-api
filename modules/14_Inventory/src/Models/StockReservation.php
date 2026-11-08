@@ -21,16 +21,25 @@ final class StockReservation extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<StockItem, $this>
+     */
     public function item(): BelongsTo
     {
         return $this->belongsTo(StockItem::class, 'stock_item_id');
     }
 
+    /**
+     * @return BelongsTo<Warehouse, $this>
+     */
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class, 'warehouse_id');
     }
 
+    /**
+     * @return HasMany<StockReservationAllocation, $this>
+     */
     public function allocations(): HasMany
     {
         return $this->hasMany(StockReservationAllocation::class, 'stock_reservation_id');

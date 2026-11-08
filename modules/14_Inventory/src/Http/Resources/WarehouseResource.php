@@ -28,7 +28,6 @@ final class WarehouseResource extends JsonResource
             'country' => $this->country,
             'is_active' => (bool) $this->is_active,
             'zones' => $this->whenLoaded('zones'),
-            'bins_count' => $this->whenCounted('bins'),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];

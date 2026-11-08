@@ -27,6 +27,9 @@ final class WeighbridgeTicket extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<WeighbridgeVehicle, $this>
+     */
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(WeighbridgeVehicle::class, 'weighbridge_vehicle_id');

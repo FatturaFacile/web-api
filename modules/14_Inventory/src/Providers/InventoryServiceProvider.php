@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Providers;
 
+use App\Models\User;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -51,6 +52,7 @@ use Modules\Inventory\Models\StockReservation;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Inventory\Policies\InventoryAdjustmentPolicy;
 use Modules\Inventory\Policies\InventoryCountSessionPolicy;
+use Modules\Inventory\Policies\InventoryManagers;
 use Modules\Inventory\Policies\StockItemPolicy;
 use Modules\Inventory\Policies\StockMovementPolicy;
 use Modules\Inventory\Policies\StockReservationPolicy;
@@ -59,6 +61,7 @@ use Modules\Inventory\Services\BarcodeScannerService;
 use Modules\Inventory\Services\DoubleEntryMovementService;
 use Modules\Inventory\Services\InventoryCountService;
 use Modules\Inventory\Services\InventoryReplenishmentService;
+use Modules\Inventory\Services\OutboundIssuePreference;
 use Modules\Inventory\Services\StockReservationService;
 use Modules\Inventory\Services\StockValuationService;
 use Modules\Invoicing\Events\DeliveryNoteIssuedEvent;
@@ -91,6 +94,9 @@ final class InventoryServiceProvider extends ServiceProvider
 
         $this->app->singleton(InventoryCountServiceInterface::class, InventoryCountService::class);
         $this->app->singleton(InventoryCountService::class);
+
+        // Per request (or job): where the stock of a document without warehouse is taken from (shipment confirmation).
+        $this->app->scoped(OutboundIssuePreference::class);
     }
 
     public function boot(): void
@@ -105,6 +111,8 @@ final class InventoryServiceProvider extends ServiceProvider
         Gate::policy(StockReservation::class, StockReservationPolicy::class);
         Gate::policy(InventoryAdjustment::class, InventoryAdjustmentPolicy::class);
         Gate::policy(InventoryCountSession::class, InventoryCountSessionPolicy::class);
+        // Manager decisions of the warehouse: putaway rules, ABC classification, cycle count plans.
+        Gate::define('inventory.manage', static fn (User $user): bool => InventoryManagers::includes($user));
 
         // Register Outbox Relaying for Domain Events
         Event::listen(InventoryItemCreatedEvent::class, DispatchOutboxOnInventoryEventListener::class);

@@ -20,6 +20,9 @@ final class ProductChargeRate extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return BelongsTo<ProductChargeType, $this>
+     */
     public function type(): BelongsTo
     {
         return $this->belongsTo(ProductChargeType::class, 'product_charge_type_id');

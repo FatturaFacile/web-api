@@ -6,6 +6,7 @@ use App\Models\Contact;
 use App\Models\DeliveryNote;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\Inventory\DTOs\StockReservationDTO;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockPickLine;
@@ -254,6 +255,8 @@ test('the terminal moves stock between bins', function (): void {
 });
 
 test('terminal counts feed the session, including goods nobody expected', function (): void {
+    // Approved count differences reach the General Ledger, which needs an open fiscal year.
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->year);
     $item = logisticsItem(['tracking_type' => 'none', 'current_moving_average_cost' => 1]);
     $found = logisticsItem(['tracking_type' => 'none', 'current_moving_average_cost' => 1]);
     $bin = logisticsBin($this->warehouse);
@@ -275,14 +278,15 @@ test('terminal counts feed the session, including goods nobody expected', functi
 });
 
 test('a retroactive stocktake compares with the stock of that day and dates the adjustment there', function (): void {
+    app(OpenFiscalYearAction::class)->execute((string) $this->tenant->id, (int) now()->year);
     $item = logisticsItem(['tracking_type' => 'none']);
     $bin = logisticsBin($this->warehouse);
     $quant = logisticsQuant($bin, $item, '0');
 
     $this->travelTo(now()->subDays(20));
-    $this->postJson('/api/v1/inventory/movements/transfer', ['stock_item_id' => $item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 10, 'movement_type' => 'PURCHASE_RECEIPT', 'destination_bin_id' => $bin->id, 'unit_cost' => 1])->assertCreated();
+    logisticsMove($item, null, $bin, 10);
     $this->travelBack();
-    $this->postJson('/api/v1/inventory/movements/transfer', ['stock_item_id' => $item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 4, 'movement_type' => 'SALES_DELIVERY', 'source_bin_id' => $bin->id, 'unit_cost' => 1])->assertCreated();
+    logisticsMove($item, $bin, null, 4);
 
     $moment = now()->subDays(10)->toIso8601String();
 
@@ -299,7 +303,7 @@ test('a retroactive stocktake compares with the stock of that day and dates the 
     $this->postJson("/api/v1/inventory/counts/{$session->json('id')}/reconcile")->assertOk();
 
     expect((string) $quant->fresh()->quantity_on_hand)->toBe('5.0000')
-        ->and(StockMovement::query()->where('movement_type', 'scrap_loss')->sole()->executed_at->toDateString())->toBe(now()->subDays(10)->toDateString());
+        ->and(StockMovement::query()->where('movement_type', 'ADJUSTMENT_OUT')->sole()->executed_at->toDateString())->toBe(now()->subDays(10)->toDateString());
 
     $this->postJson('/api/v1/inventory/counts', ['warehouse_id' => $this->warehouse->id, 'count_type' => 'spot_check', 'scheduled_date' => '2026-11-07', 'effective_at' => now()->addDay()->toIso8601String()])->assertStatus(422);
 });

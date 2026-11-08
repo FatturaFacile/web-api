@@ -18,7 +18,10 @@ use Modules\Inventory\Models\WarehouseZone;
 final class WarehouseLocationService
 {
     /**
-     * @param  array{zone_code: string, zone_name?: ?string, zone_type?: ?string, aisle_code: string, rack_code: string, bin_code: string, barcode: string, pick_sequence?: ?int, max_weight_kg?: mixed, max_volume_cbm?: mixed}  $location
+     * The bin type defaults to the one its zone suggests (a quarantine zone holds quarantine bins, a shipping zone
+     * shipping bins, ...), storage otherwise.
+     *
+     * @param  array{zone_code: string, zone_name?: ?string, zone_type?: ?string, aisle_code: string, rack_code: string, bin_code: string, barcode: string, pick_sequence?: ?int, max_weight_kg?: mixed, max_volume_cbm?: mixed, max_quantity?: mixed, bin_type?: ?string}  $location
      */
     public function addBin(Warehouse $warehouse, array $location): WarehouseBin
     {
@@ -44,7 +47,25 @@ final class WarehouseLocationService
                 'pick_sequence' => $location['pick_sequence'] ?? null,
                 'max_weight_kg' => $location['max_weight_kg'] ?? null,
                 'max_volume_cbm' => $location['max_volume_cbm'] ?? null,
+                'max_quantity' => $location['max_quantity'] ?? null,
+                'bin_type' => $location['bin_type'] ?? self::binTypeOfZone((string) $zone->zone_type),
             ]);
         });
+    }
+
+    /**
+     * The natural bin type of a zone type.
+     */
+    public static function binTypeOfZone(string $zoneType): string
+    {
+        return match ($zoneType) {
+            'receiving' => 'receiving',
+            'picking' => 'picking',
+            'packing' => 'staging',
+            'shipping' => 'shipping',
+            'quarantine' => 'quarantine',
+            'transit' => 'transit',
+            default => 'storage',
+        };
     }
 }

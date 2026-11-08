@@ -10,6 +10,8 @@ use Illuminate\Http\JsonResponse;
 use Modules\Inventory\Actions\ProcessWarehouseBarcodeScanAction;
 use Modules\Inventory\DTOs\BarcodeScanDTO;
 use Modules\Inventory\Http\Requests\BarcodeScanRequest;
+use Modules\Inventory\Http\Requests\WmsQueryRequest;
+use Modules\Inventory\Services\BarcodeLookupService;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Inventory Barcode Scanner', description: 'Barcode processing for GS1-128, EAN-13, serial, lot, and bin identifiers')]
@@ -47,5 +49,26 @@ final class BarcodeController extends Controller
         $result = $action->execute($dto);
 
         return response()->json($result);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/inventory/barcode/lookup',
+        operationId: 'wmsBarcodeLookup',
+        summary: 'Look up a scanned code (handheld)',
+        description: 'Read-only resolution of a scanned code for handhelds: GS1-128 strings (AI 01 GTIN, 10 lot, 17 expiry, 21 serial; with parentheses or FNC1/GS separators, optional ]C1 prefix) are decoded first; plain codes are tried as GTIN-8/12/13/14 (on the stock item or its catalog product barcode), SKU/internal barcode, bin barcode, lot or supplier lot number and serial number. Every match is returned with its stock (on hand, reserved, available per bin; optionally of one warehouse). An unknown code returns an empty matches list.',
+        tags: ['Inventory Barcode Scanner'],
+        parameters: [
+            new OA\Parameter(name: 'code', in: 'query', required: true, schema: new OA\Schema(type: 'string', example: '(01)04006381333931(10)L-2026-01(17)271231')),
+            new OA\Parameter(ref: '#/components/parameters/WmsWarehouseFilter'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Matches of the code', content: new OA\JsonContent(ref: '#/components/schemas/WmsBarcodeLookup')),
+            new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
+        ]
+    )]
+    public function lookup(WmsQueryRequest $request, BarcodeLookupService $lookup): JsonResponse
+    {
+        return response()->json($lookup->lookup($request->string('code')->value(), $request->input('warehouse_id')));
     }
 }

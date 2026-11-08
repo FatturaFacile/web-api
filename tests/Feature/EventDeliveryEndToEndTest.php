@@ -18,7 +18,7 @@ use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockLot;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\Warehouse;
-use Modules\Inventory\Models\WarehouseBin;
+use Modules\Inventory\Services\WarehouseLocationService;
 use Modules\Procurement\Models\PurchaseOrder;
 use Modules\Procurement\Models\PurchaseOrderLine;
 use Modules\Procurement\Models\Supplier;
@@ -45,7 +45,8 @@ beforeEach(function (): void {
     $this->withHeader('X-Tenant-Id', $this->tenant->id);
 
     $this->warehouse = Warehouse::factory()->create(['tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id]);
-    $this->bin = WarehouseBin::factory()->create(['tenant_id' => $this->tenant->id]);
+    // Adjustment lines must name a bin of the adjustment warehouse.
+    $this->bin = app(WarehouseLocationService::class)->addBin($this->warehouse, ['zone_code' => 'Z1', 'aisle_code' => 'A1', 'rack_code' => 'R1', 'bin_code' => 'B1', 'barcode' => 'BIN-EVENT-1']);
     $this->item = StockItem::factory()->create(['tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'standard_cost' => 100.0, 'current_moving_average_cost' => 100.0]);
     StockQuant::create([
         'tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'warehouse_bin_id' => $this->bin->id,
