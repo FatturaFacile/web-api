@@ -34,10 +34,10 @@ final readonly class HRAvailabilityListener
                 'technician_number' => 'TECH-EMP-'.substr($event->employeeNumber, -6),
                 'first_name' => $names[0] ?? 'Technician',
                 'last_name' => $names[1] ?? '',
-                'email' => strtolower($names[0] ?? 'tech').'.'.strtolower($names[1] ?? 'field').'@service.local',
                 'status' => 'available',
-                'hourly_cost_rate' => round($event->baseAnnualSalary / 2080.0, 2),
-                'hourly_billable_rate' => round(($event->baseAnnualSalary / 2080.0) * 2.5, 2),
+                // Rates are decided by the service manager: a salary says nothing about the hours worked or the markup.
+                'hourly_cost_rate' => '0.00',
+                'hourly_billable_rate' => '0.00',
                 'is_available' => true,
             ]
         );

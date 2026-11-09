@@ -5,15 +5,21 @@ declare(strict_types=1);
 namespace Modules\ServiceManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Invoicing\Models\SalesInvoice;
 use Modules\ServiceManagement\Actions\DispatchWorkOrderAction;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CompleteWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\CreateWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\RecordVisitDTO;
 use Modules\ServiceManagement\DTOs\ScheduleAppointmentDTO;
+use Modules\ServiceManagement\Http\Requests\CompleteWorkOrderRequest;
+use Modules\ServiceManagement\Http\Requests\ConsumeWorkOrderPartRequest;
+use Modules\ServiceManagement\Http\Requests\DispatchWorkOrderRequest;
+use Modules\ServiceManagement\Http\Requests\InvoiceWorkOrderRequest;
 use Modules\ServiceManagement\Http\Requests\RecordVisitRequest;
 use Modules\ServiceManagement\Http\Requests\ScheduleAppointmentRequest;
 use Modules\ServiceManagement\Http\Requests\StoreWorkOrderRequest;
@@ -114,7 +120,7 @@ final class WorkOrderController extends Controller
             scheduledEnd: $validated['scheduled_end'] ?? null,
             locationAddress: $validated['location_address'] ?? null,
             billingType: $validated['billing_type'] ?? 'contract_included',
-            items: $request->input('items', []),
+            items: $validated['items'] ?? [],
         );
 
         $workOrder = $this->workOrderService->createWorkOrder($dto, $request->user()?->id);
@@ -171,9 +177,9 @@ final class WorkOrderController extends Controller
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function dispatch(WorkOrder $workOrder, Request $request): JsonResponse
+    public function dispatch(WorkOrder $workOrder, DispatchWorkOrderRequest $request): JsonResponse
     {
-        $technicianId = $request->input('technician_id');
+        $technicianId = $request->validated('technician_id');
         $updated = $this->dispatchAction->execute($workOrder->id, $technicianId, $request->user()?->id);
 
         return response()->json([
@@ -286,15 +292,15 @@ final class WorkOrderController extends Controller
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function complete(WorkOrder $workOrder, Request $request): JsonResponse
+    public function complete(WorkOrder $workOrder, CompleteWorkOrderRequest $request): JsonResponse
     {
         $dto = new CompleteWorkOrderDTO(
             workOrderId: $workOrder->id,
-            completionNotes: $request->input('completion_notes'),
-            resolutionSummary: $request->input('resolution_summary'),
-            customerSignatureUrl: $request->input('customer_signature_url'),
-            signedByCustomerName: $request->input('signed_by_customer_name'),
-            signedAt: $request->input('signed_at')
+            completionNotes: $request->validated('completion_notes'),
+            resolutionSummary: $request->validated('resolution_summary'),
+            customerSignatureUrl: $request->validated('customer_signature_url'),
+            signedByCustomerName: $request->validated('signed_by_customer_name'),
+            signedAt: $request->validated('signed_at')
         );
 
         $completed = $this->workOrderService->completeWorkOrder($dto, $request->user()?->id);
@@ -303,5 +309,111 @@ final class WorkOrderController extends Controller
             'message' => 'Work order completed successfully',
             'data' => new WorkOrderResource($completed),
         ]);
+    }
+
+    /**
+     * Issues a stocked part to a work order.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders/{workOrder}/parts',
+        operationId: 'consumePartEsmWorkOrder',
+        description: 'Issues a part of the company stock to a scheduled, dispatched or in-progress work order. The product is found by its SKU (`item_number`); when it tracks inventory the quantity leaves the warehouse through the inventory service. Cost and price default to the cost and sale price of the product. The work order cost and billable totals grow by the line, in exact decimal arithmetic.',
+        summary: 'Consume a part on a work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(
+            required: ['item_number', 'quantity'],
+            properties: [
+                new OA\Property(property: 'item_number', description: 'SKU of a product of the company', type: 'string', example: 'BRUSH-ALT-88'),
+                new OA\Property(property: 'quantity', type: 'string', example: '2'),
+                new OA\Property(property: 'unit_cost', description: 'Defaults to the product cost price', type: 'string', nullable: true, example: '15.00'),
+                new OA\Property(property: 'unit_price', description: 'Defaults to the product sale price', type: 'string', nullable: true, example: '35.00'),
+                new OA\Property(property: 'description', type: 'string', nullable: true),
+                new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid', nullable: true),
+            ]
+        )),
+        responses: [
+            new OA\Response(response: 201, description: 'Part consumed', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/ServiceManagementWorkOrderResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden: read-only role', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Work order not found in the active tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Unknown item number, work order not open, or invalid quantity', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    public function consumePart(WorkOrder $workOrder, ConsumeWorkOrderPartRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $product = Product::where('sku', $validated['item_number'])->first();
+
+        $this->workOrderService->consumePart(
+            workOrderId: $workOrder->id,
+            itemNumber: $validated['item_number'],
+            description: $validated['description'] ?? (string) ($product?->name ?? $validated['item_number']),
+            quantity: $validated['quantity'],
+            unitCost: $validated['unit_cost'] ?? (string) ($product?->cost_price ?? '0'),
+            unitPrice: $validated['unit_price'] ?? (string) ($product?->sale_price ?? '0'),
+            warehouseId: $validated['warehouse_id'] ?? null,
+            actorUserId: $request->user()?->id
+        );
+
+        return response()->json([
+            'message' => 'Part consumed successfully',
+            'data' => new WorkOrderResource($workOrder->refresh()),
+        ], 201);
+    }
+
+    /**
+     * Drafts the sales invoice of a completed work order.
+     */
+    #[OA\Post(
+        path: '/api/v1/esm/work-orders/{workOrder}/invoice',
+        operationId: 'invoiceEsmWorkOrder',
+        description: 'Drafts the sales invoice of a completed, billable work order through the invoicing service: one line per billable item and per consumed part, at the recorded prices, with the VAT rate stated in the request. The draft then follows the normal invoice flow (approval, posting, e-invoicing). The work order keeps `invoice_id`, is marked invoiced and refuses a second invoice.',
+        summary: 'Invoice a work order',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['ESM Work Orders'],
+        parameters: [
+            new OA\Parameter(name: 'workOrder', in: 'path', required: true, description: 'Identifier of the work order', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(
+            required: ['tax_rate'],
+            properties: [
+                new OA\Property(property: 'tax_rate', description: 'VAT rate in percent applied to every line', type: 'string', example: '22'),
+                new OA\Property(property: 'due_date', type: 'string', format: 'date', nullable: true),
+                new OA\Property(property: 'revenue_account_id', type: 'string', format: 'uuid', nullable: true),
+            ]
+        )),
+        responses: [
+            new OA\Response(response: 201, description: 'Invoice drafted', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'invoice_id', type: 'string', format: 'uuid'), new OA\Property(property: 'invoice_number', type: 'string'), new OA\Property(property: 'total_gross', type: 'string', example: '183.00')])])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden: read-only role', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Work order not found in the active tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Not completed, not billable, internal, already invoiced or nothing to invoice', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    public function invoice(WorkOrder $workOrder, InvoiceWorkOrderRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+
+        /** @var SalesInvoice $invoice */
+        $invoice = $this->workOrderService->invoiceWorkOrder(
+            $workOrder->id,
+            (string) $validated['tax_rate'],
+            $validated['due_date'] ?? null,
+            $validated['revenue_account_id'] ?? null,
+            $request->user()?->id
+        );
+
+        return response()->json([
+            'message' => 'Invoice drafted from work order',
+            'data' => [
+                'invoice_id' => $invoice->id,
+                'invoice_number' => $invoice->invoice_number,
+                'total_gross' => (string) $invoice->total_gross,
+            ],
+        ], 201);
     }
 }

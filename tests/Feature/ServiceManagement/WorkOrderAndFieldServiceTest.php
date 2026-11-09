@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Product;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -114,7 +115,8 @@ test('work order lifecycle handles items, dispatch, appointment scheduling, on-s
         'aggregate_id' => $visit->id,
     ]);
 
-    // 5. Consume Additional Part
+    // 5. Consume Additional Part (a real product of the company)
+    Product::create(['tenant_id' => $this->tenant->id, 'sku' => 'BRUSH-ALT-88', 'name' => 'Alternator brushes', 'cost_price' => '15.00', 'sale_price' => '35.00', 'tax_rate' => '22', 'track_inventory' => false, 'is_active' => true]);
     $consumption = $this->workOrderService->consumePart(
         workOrderId: $workOrder->id,
         itemNumber: 'BRUSH-ALT-88',

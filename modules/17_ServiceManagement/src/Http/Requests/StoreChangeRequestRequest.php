@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Http\Requests;
 
+use App\Http\Requests\Concerns\TenantScopedRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreChangeRequestRequest extends FormRequest
 {
+    use TenantScopedRules;
+
     public function authorize(): bool
     {
         return true;
@@ -21,7 +24,7 @@ final class StoreChangeRequestRequest extends FormRequest
             'change_type' => ['nullable', 'string', 'in:standard,normal,emergency'],
             'risk_level' => ['nullable', 'string', 'in:low,medium,high,extreme'],
             'priority' => ['nullable', 'string', 'in:low,medium,high,critical'],
-            'service_category_id' => ['nullable', 'uuid'],
+            'service_category_id' => ['nullable', 'uuid', $this->tenantExists('esm_service_categories')],
             'rollout_plan' => ['nullable', 'string'],
             'rollback_plan' => ['nullable', 'string'],
             'test_plan' => ['nullable', 'string'],
