@@ -8,6 +8,7 @@ use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Associations\Enums\DeliveryChannel;
 use Modules\Associations\Enums\DeliveryMode;
+use Modules\Associations\Support\TenantRules;
 
 /**
  * Sends a notice or minutes on a messaging channel, to everybody, to those not reached yet or to a selection.
@@ -28,7 +29,7 @@ final class SendDocumentRequest extends FormRequest
             'channel' => ['required', Rule::enum(DeliveryChannel::class)->except([DeliveryChannel::Letter])],
             'mode' => ['required', Rule::enum(DeliveryMode::class)],
             'member_ids' => ['required_if:mode,selected', 'array', 'max:5000'],
-            'member_ids.*' => ['uuid'],
+            'member_ids.*' => ['uuid', TenantRules::exists('assoc_members')],
         ];
     }
 }

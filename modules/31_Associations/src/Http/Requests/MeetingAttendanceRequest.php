@@ -7,6 +7,7 @@ namespace Modules\Associations\Http\Requests;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\Associations\Enums\AttendanceStatus;
+use Modules\Associations\Support\TenantRules;
 
 final class MeetingAttendanceRequest extends FormRequest
 {
@@ -22,7 +23,7 @@ final class MeetingAttendanceRequest extends FormRequest
     {
         return [
             'entries' => ['required', 'array', 'min:1', 'max:5000'],
-            'entries.*.participant_id' => ['required', 'uuid'],
+            'entries.*.participant_id' => ['required', 'uuid', TenantRules::exists('assoc_meeting_participants')],
             'entries.*.attendance' => ['required', Rule::enum(AttendanceStatus::class)],
         ];
     }

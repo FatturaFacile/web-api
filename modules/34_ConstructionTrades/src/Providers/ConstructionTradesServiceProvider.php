@@ -10,10 +10,15 @@ use Illuminate\Support\ServiceProvider;
 use Modules\ConstructionTrades\Models\Bid;
 use Modules\ConstructionTrades\Models\BidPosition;
 use Modules\ConstructionTrades\Models\Billing;
+use Modules\ConstructionTrades\Models\DiaryEntry;
 use Modules\ConstructionTrades\Models\Measurement;
 use Modules\ConstructionTrades\Models\PriceItem;
 use Modules\ConstructionTrades\Models\PriceList;
 use Modules\ConstructionTrades\Models\SiteCost;
+use Modules\ConstructionTrades\Models\SiteDocument;
+use Modules\ConstructionTrades\Models\Subcontract;
+use Modules\ConstructionTrades\Models\SubcontractCertification;
+use Modules\ConstructionTrades\Models\Subcontractor;
 use Modules\ConstructionTrades\Models\WorkCycle;
 use Modules\ConstructionTrades\Models\WorkCycleStep;
 use Modules\ConstructionTrades\Policies\TradesPolicy;
@@ -35,7 +40,7 @@ final class ConstructionTradesServiceProvider extends ServiceProvider
 
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'construction-trades');
 
-        foreach ([ConstructionSite::class, PriceList::class, PriceItem::class, WorkCycle::class, WorkCycleStep::class, Bid::class, BidPosition::class, Measurement::class, Billing::class, SiteCost::class] as $model) {
+        foreach ([ConstructionSite::class, PriceList::class, PriceItem::class, WorkCycle::class, WorkCycleStep::class, Bid::class, BidPosition::class, Measurement::class, Billing::class, SiteCost::class, Subcontractor::class, Subcontract::class, SubcontractCertification::class, DiaryEntry::class, SiteDocument::class] as $model) {
             Gate::policy($model, TradesPolicy::class);
         }
     }

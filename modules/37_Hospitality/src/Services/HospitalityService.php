@@ -84,14 +84,19 @@ final class HospitalityService
 
             return collect($items)->map(function (array $item) use ($order, $products): OrderItem {
                 $product = isset($item['product_id']) ? $products->get($item['product_id']) : null;
+
+                if (! isset($item['unit_price']) && $product?->sale_price === null) {
+                    throw new BusinessRuleException('The product has no sale price: enter the unit price of the item.');
+                }
+
                 $model = new OrderItem;
                 $model->fill([
                     'order_id' => $order->id,
                     'product_id' => $product?->id,
                     'description' => $item['description'] ?? $product?->name,
                     'quantity' => (string) $item['quantity'],
-                    'unit_price' => (string) ($item['unit_price'] ?? $product?->sale_price ?? '0'),
-                    'tax_rate' => (string) ($item['tax_rate'] ?? $product?->tax_rate ?? '0'),
+                    'unit_price' => (string) ($item['unit_price'] ?? $product?->sale_price),
+                    'tax_rate' => (string) ($item['tax_rate'] ?? $product?->tax_rate),
                     'course' => (int) ($item['course'] ?? 1),
                     'station' => $item['station'] ?? 'kitchen',
                     'notes' => $item['notes'] ?? null,

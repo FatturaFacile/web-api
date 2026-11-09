@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Hospitality\Http\Controllers\FloorController;
 use Modules\Hospitality\Http\Controllers\OrderController;
+use Modules\Hospitality\Http\Controllers\ReservationController;
 
 Route::prefix('api/v1/hospitality')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:hospitality'])
@@ -16,6 +17,14 @@ Route::prefix('api/v1/hospitality')
         Route::get('/rooms/{id}/plan', [FloorController::class, 'plan'])->name('rooms.plan');
         Route::post('/rooms/{id}/tables', [FloorController::class, 'storeTable'])->name('rooms.tables.store');
         Route::put('/tables/{id}', [FloorController::class, 'updateTable'])->name('tables.update');
+
+        Route::get('/reservations', [ReservationController::class, 'index'])->name('reservations.index');
+        Route::get('/reservations/availability', [ReservationController::class, 'availability'])->name('reservations.availability');
+        Route::post('/reservations', [ReservationController::class, 'store'])->name('reservations.store');
+        Route::get('/reservations/{id}', [ReservationController::class, 'show'])->name('reservations.show');
+        Route::put('/reservations/{id}', [ReservationController::class, 'update'])->name('reservations.update');
+        Route::post('/reservations/{id}/seat', [ReservationController::class, 'seat'])->name('reservations.seat');
+        Route::post('/reservations/{id}/status', [ReservationController::class, 'status'])->name('reservations.status');
 
         Route::post('/orders', [OrderController::class, 'store'])->name('orders.store');
         Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');

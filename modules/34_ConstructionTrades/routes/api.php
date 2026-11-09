@@ -7,6 +7,8 @@ use Modules\ConstructionTrades\Http\Controllers\BidController;
 use Modules\ConstructionTrades\Http\Controllers\BidProgressController;
 use Modules\ConstructionTrades\Http\Controllers\ConstructionSiteController;
 use Modules\ConstructionTrades\Http\Controllers\PriceListController;
+use Modules\ConstructionTrades\Http\Controllers\SiteLogController;
+use Modules\ConstructionTrades\Http\Controllers\SubcontractController;
 use Modules\ConstructionTrades\Http\Controllers\WorkCycleController;
 
 Route::prefix('api/v1/construction-trades')
@@ -42,6 +44,23 @@ Route::prefix('api/v1/construction-trades')
         Route::get('/bids/{id}/site-costs', [BidProgressController::class, 'siteCosts'])->name('bids.site-costs.index');
         Route::post('/bids/{id}/site-costs', [BidProgressController::class, 'storeSiteCost'])->name('bids.site-costs.store');
         Route::get('/bids/{id}/budget-control', [BidProgressController::class, 'budgetControl'])->name('bids.budget-control');
+
+        Route::get('/subcontractors', [SubcontractController::class, 'index'])->name('subcontractors.index');
+        Route::post('/subcontractors', [SubcontractController::class, 'store'])->name('subcontractors.store');
+        Route::put('/subcontractors/{id}', [SubcontractController::class, 'update'])->name('subcontractors.update');
+        Route::get('/sites/{id}/subcontracts', [SubcontractController::class, 'forSite'])->name('sites.subcontracts.index');
+        Route::post('/sites/{id}/subcontracts', [SubcontractController::class, 'storeForSite'])->name('sites.subcontracts.store');
+        Route::get('/subcontracts/{id}', [SubcontractController::class, 'show'])->name('subcontracts.show');
+        Route::post('/subcontracts/{id}/certifications', [SubcontractController::class, 'certify'])->name('subcontracts.certifications.store');
+        Route::post('/subcontracts/{id}/status', [SubcontractController::class, 'status'])->name('subcontracts.status');
+
+        Route::get('/sites/{id}/diary', [SiteLogController::class, 'diary'])->name('sites.diary.index');
+        Route::post('/sites/{id}/diary', [SiteLogController::class, 'storeDiary'])->name('sites.diary.store');
+        Route::put('/diary/{id}', [SiteLogController::class, 'updateDiary'])->name('diary.update');
+        Route::get('/sites/{id}/documents', [SiteLogController::class, 'documents'])->name('sites.documents.index');
+        Route::post('/sites/{id}/documents', [SiteLogController::class, 'storeDocument'])->name('sites.documents.store');
+        Route::get('/site-documents/expiring', [SiteLogController::class, 'expiring'])->name('site-documents.expiring');
+        Route::delete('/site-documents/{id}', [SiteLogController::class, 'destroyDocument'])->name('site-documents.destroy');
     });
 
 // Construction sites referenced by progress billings (SAL) and bids. The list is GET /api/v1/construction/sites.

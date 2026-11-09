@@ -112,6 +112,57 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'quantity', description: 'Hours for labour', type: 'string'),
     new OA\Property(property: 'unit_cost', type: 'string'),
 ])]
+#[OA\Schema(schema: 'TradesSubcontractorRequest', description: 'A subcontractor. On PUT every field is optional.', type: 'object', required: ['name'], properties: [
+    new OA\Property(property: 'name', type: 'string', example: 'Elettro Ticino SA'),
+    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'tax_id', type: 'string', nullable: true),
+    new OA\Property(property: 'trade', type: 'string', nullable: true, example: 'Impianti elettrici'),
+    new OA\Property(property: 'status', type: 'string', enum: ['active', 'suspended']),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'TradesSubcontractRequest', type: 'object', required: ['subcontractor_id', 'description', 'contract_amount'], properties: [
+    new OA\Property(property: 'subcontractor_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'bid_id', description: 'Bid whose site costs receive the certified work', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'description', type: 'string', example: 'Impianto elettrico, piani 1-3'),
+    new OA\Property(property: 'contract_amount', type: 'string', example: '18500.00'),
+    new OA\Property(property: 'starts_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'ends_on', type: 'string', format: 'date', nullable: true),
+])]
+#[OA\Schema(schema: 'TradesCertificationRequest', type: 'object', required: ['certified_on', 'amount', 'description'], properties: [
+    new OA\Property(property: 'certified_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'amount', description: 'Up to the contract amount still to certify', type: 'string', example: '6000.00'),
+    new OA\Property(property: 'description', type: 'string', example: 'SAL 1 subappaltatore'),
+])]
+#[OA\Schema(schema: 'TradesSubcontractStatusRequest', type: 'object', required: ['status'], properties: [new OA\Property(property: 'status', type: 'string', enum: ['completed', 'cancelled'])])]
+#[OA\Schema(schema: 'TradesDiaryRequest', description: 'A day of the site diary. entry_date is required on creation and cannot be changed.', type: 'object', required: ['entry_date', 'workers_present', 'work_performed'], properties: [
+    new OA\Property(property: 'entry_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'weather', type: 'string', nullable: true),
+    new OA\Property(property: 'workers_present', type: 'integer', example: 6),
+    new OA\Property(property: 'work_performed', type: 'string'),
+    new OA\Property(property: 'incidents', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'TradesSiteDocumentRequest', type: 'object', required: ['kind', 'title'], properties: [
+    new OA\Property(property: 'kind', type: 'string', enum: ['safety_plan', 'risk_assessment', 'insurance', 'compliance_certificate', 'training_certificate', 'permit', 'other']),
+    new OA\Property(property: 'title', type: 'string'),
+    new OA\Property(property: 'subcontractor_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'dms_document_id', description: 'File uploaded in the Documents module', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'issued_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'expires_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'TradesExpiringDocumentsResponse', type: 'object', properties: [
+    new OA\Property(property: 'data', type: 'array', items: new OA\Items(type: 'object', properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'construction_site_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'subcontractor_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'subcontractor_name', type: 'string', nullable: true),
+        new OA\Property(property: 'kind', type: 'string'),
+        new OA\Property(property: 'title', type: 'string'),
+        new OA\Property(property: 'expires_on', type: 'string', format: 'date'),
+        new OA\Property(property: 'expired', type: 'boolean'),
+        new OA\Property(property: 'days_left', type: 'integer'),
+    ])),
+])]
 #[OA\Schema(schema: 'ConstructionSiteRequest', description: 'A construction site. On PUT and PATCH every field is optional.', type: 'object', required: ['client_id', 'code', 'name', 'address'], properties: [
     new OA\Property(property: 'client_id', description: 'Customer contact', type: 'string', format: 'uuid'),
     new OA\Property(property: 'code', description: 'Unique in the company', type: 'string', maxLength: 50),
