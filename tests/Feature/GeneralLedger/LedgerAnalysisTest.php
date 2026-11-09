@@ -11,8 +11,10 @@ use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\CostCenter;
+use Modules\GeneralLedger\Models\DefaultPostingAccount;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
@@ -96,6 +98,7 @@ beforeEach(function (): void {
     $this->rent = ledgerAccount('6000', 'expense', 'debit');
     $this->depreciation = ledgerAccount('6500', 'expense', 'debit', ['reporting_class' => 'non_cash_expense']);
     $this->centre = CostCenter::query()->create(['tenant_id' => $this->tenant->id, 'code' => 'ADM', 'name' => 'Administration']);
+    DefaultPostingAccount::query()->create(['tenant_id' => $this->tenant->id, 'role' => PostingAccountRole::RetainedEarnings->value, 'account_id' => $this->capital->id]);
 });
 
 afterEach(fn () => app(TenantContext::class)->clear());

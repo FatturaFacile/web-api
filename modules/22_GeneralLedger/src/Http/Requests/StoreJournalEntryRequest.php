@@ -32,9 +32,9 @@ final class StoreJournalEntryRequest extends FormRequest
         return [
             'fiscal_period_id' => ['required', 'uuid', $this->tenantExists('fiscal_periods')],
             'batch_id' => ['nullable', 'uuid', $this->tenantExists('journal_batches')],
-            'entry_number' => ['nullable', 'string', 'max:50'],
             'posting_date' => ['required', 'date'],
             'document_date' => ['nullable', 'date'],
+            'auto_reverse_on' => ['nullable', 'date', 'after:posting_date'],
             'ledger_type' => ['nullable', 'string', 'in:statutory,ifrs,management'],
             'journal_type' => ['nullable', 'string', 'in:standard,reversing,opening,recurring,adjusting'],
             'description' => ['required', 'string', 'max:500'],
@@ -50,6 +50,7 @@ final class StoreJournalEntryRequest extends FormRequest
             'lines.*.profit_center_id' => ['nullable', 'uuid', $this->tenantExists('profit_centers')],
             'lines.*.partner_type' => ['nullable', 'string', 'in:customer,supplier,employee'],
             'lines.*.partner_id' => ['nullable', 'uuid'],
+            'lines.*.project_id' => ['nullable', 'uuid', $this->tenantOwns('projects')],
         ];
     }
 }

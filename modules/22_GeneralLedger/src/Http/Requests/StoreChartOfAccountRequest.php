@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Http\Requests;
 
 use App\Http\Requests\Concerns\TenantScopedRules;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Modules\GeneralLedger\Enums\ReportingClass;
@@ -24,7 +25,7 @@ final class StoreChartOfAccountRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'account_code' => ['required', 'string', 'max:50'],
+            'account_code' => ['required', 'string', 'max:50', Rule::unique('chart_of_accounts', 'account_code')->where('tenant_id', app(TenantContext::class)->getTenantId())->whereNull('deleted_at')->ignore($this->route('account'))],
             'name' => ['required', 'string', 'max:255'],
             'account_class' => ['nullable', 'string', 'max:30'],
             'account_type' => ['required', 'string', 'in:asset,liability,equity,revenue,expense,cogs,wip,memo,statistical'],

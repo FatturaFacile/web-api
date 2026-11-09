@@ -26,8 +26,15 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
     public function __construct(
         private readonly EventDispatcher $dispatcher,
         private readonly LedgerBalanceReader $balances,
+        private readonly LedgerReportService $reports,
     ) {}
 
+    /**
+     * Debit and credit per account of the posted entries of one fiscal period (statutory ledger). A reversed entry
+     * and its reversal are both read, so they cancel out. Amounts are decimal strings at 4 decimals.
+     *
+     * @return array{period_id: string, period_name: string, total_debit: string, total_credit: string, is_balanced: bool, accounts: list<array<string, mixed>>}
+     */
     public function generateTrialBalance(string $tenantId, string $fiscalPeriodId): array
     {
         $period = FiscalPeriod::findOrFail($fiscalPeriodId);
@@ -36,7 +43,9 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
             ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accounts', 'journal_lines.account_id', '=', 'chart_of_accounts.id')
             ->where('journal_entries.tenant_id', $tenantId)
-            ->where('journal_entries.status', 'posted')
+            ->whereNull('journal_entries.deleted_at')
+            ->whereNull('journal_lines.deleted_at')
+            ->whereIn('journal_entries.status', ['posted', 'reversed'])
             ->where('journal_entries.ledger_type', 'statutory')
             ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
             ->select(
@@ -48,229 +57,185 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
                 DB::raw('SUM(journal_lines.debit_amount) as total_debit'),
                 DB::raw('SUM(journal_lines.credit_amount) as total_credit')
             )
-            ->groupBy(
-                'chart_of_accounts.id',
-                'chart_of_accounts.account_code',
-                'chart_of_accounts.name',
-                'chart_of_accounts.account_type',
-                'chart_of_accounts.normal_balance'
-            )
+            ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', 'chart_of_accounts.normal_balance')
             ->orderBy('chart_of_accounts.account_code')
             ->get();
 
-        $totalDebit = 0.0;
-        $totalCredit = 0.0;
+        $totalDebit = '0';
+        $totalCredit = '0';
         $accounts = [];
 
         foreach ($results as $row) {
-            $dr = (float) $row->total_debit;
-            $cr = (float) $row->total_credit;
-            $totalDebit += $dr;
-            $totalCredit += $cr;
-
-            $netBalance = $row->normal_balance === 'debit' ? ($dr - $cr) : ($cr - $dr);
+            $debit = bcadd((string) $row->total_debit, '0', self::Scale);
+            $credit = bcadd((string) $row->total_credit, '0', self::Scale);
+            $totalDebit = bcadd($totalDebit, $debit, self::Scale);
+            $totalCredit = bcadd($totalCredit, $credit, self::Scale);
 
             $accounts[] = [
-                'account_id' => $row->account_id,
+                'account_id' => (string) $row->account_id,
                 'account_code' => $row->account_code,
                 'account_name' => $row->account_name,
                 'account_type' => $row->account_type,
                 'normal_balance' => $row->normal_balance,
-                'debit' => $dr,
-                'credit' => $cr,
-                'net_balance' => $netBalance,
+                'debit' => $debit,
+                'credit' => $credit,
+                'net_balance' => $row->normal_balance === 'debit' ? bcsub($debit, $credit, self::Scale) : bcsub($credit, $debit, self::Scale),
             ];
         }
 
-        $isBalanced = abs($totalDebit - $totalCredit) < 0.0001;
+        $isBalanced = bccomp($totalDebit, $totalCredit, self::Scale) === 0;
 
-        $event = new TrialBalanceGeneratedEvent(
-            fiscalPeriodId: $period->id,
-            totalDebit: $totalDebit,
-            totalCredit: $totalCredit,
+        $this->dispatcher->publishAndDispatch(new TrialBalanceGeneratedEvent(
+            fiscalPeriodId: (string) $period->id,
+            totalDebit: (float) $totalDebit,
+            totalCredit: (float) $totalCredit,
             isBalanced: $isBalanced,
             tenantId: $tenantId,
             companyId: (string) ($period->company_id ?? '')
-        );
-
-        $this->dispatcher->publish($event);
-        event($event);
+        ));
 
         return [
-            'period_id' => $period->id,
-            'period_name' => $period->period_name,
-            'total_debit' => round($totalDebit, 4),
-            'total_credit' => round($totalCredit, 4),
+            'period_id' => (string) $period->id,
+            'period_name' => (string) $period->period_name,
+            'total_debit' => $totalDebit,
+            'total_credit' => $totalCredit,
             'is_balanced' => $isBalanced,
             'accounts' => $accounts,
         ];
     }
 
+    /**
+     * Balance sheet at the end of a fiscal period: every posting up to that day (opening entries left out, since they
+     * repeat balances already in the ledger), classified by account type only. The result not yet closed into equity
+     * is added to equity, so the identity assets = liabilities + equity holds.
+     *
+     * @return array<string, mixed>
+     */
     public function generateBalanceSheet(string $tenantId, string $fiscalPeriodId): array
     {
-        $trialBalance = $this->generateTrialBalance($tenantId, $fiscalPeriodId);
         $period = FiscalPeriod::findOrFail($fiscalPeriodId);
+        $sheet = $this->reports->balanceSheet($tenantId, CarbonImmutable::parse($period->end_date));
+        $rows = static fn (string $section): array => array_map(static fn (array $row): array => [
+            'account_id' => $row['account_id'],
+            'account_code' => $row['account_code'],
+            'account_name' => $row['account_name'],
+            'net_balance' => $row['amount'],
+        ], $sheet['sections'][$section]['accounts']);
+        $totals = $sheet['totals'];
 
-        $assets = [];
-        $liabilities = [];
-        $equity = [];
-
-        $totalAssets = 0.0;
-        $totalLiabilities = 0.0;
-        $totalEquity = 0.0;
-
-        $incomeStmt = $this->generateIncomeStatement($tenantId, $fiscalPeriodId);
-        $netIncome = (float) $incomeStmt['net_income'];
-
-        foreach ($trialBalance['accounts'] as $acc) {
-            $type = strtolower((string) $acc['account_type']);
-            $bal = (float) $acc['net_balance'];
-
-            if ($type === 'asset' || str_starts_with((string) $acc['account_code'], '1')) {
-                $assets[] = $acc;
-                $totalAssets += $bal;
-            } elseif ($type === 'liability' || str_starts_with((string) $acc['account_code'], '2')) {
-                $liabilities[] = $acc;
-                $totalLiabilities += $bal;
-            } elseif ($type === 'equity' || str_starts_with((string) $acc['account_code'], '3')) {
-                $equity[] = $acc;
-                $totalEquity += $bal;
-            }
-        }
-
-        // Add current period net income to equity retained earnings
-        $totalEquityWithNetIncome = $totalEquity + $netIncome;
-        $isBalanced = abs($totalAssets - ($totalLiabilities + $totalEquityWithNetIncome)) < 0.01;
-
-        $event = new FinancialStatementGeneratedEvent(
+        $this->dispatcher->publishAndDispatch(new FinancialStatementGeneratedEvent(
             statementType: 'balance_sheet',
-            fiscalPeriodId: $period->id,
-            netAmount: $totalAssets,
+            fiscalPeriodId: (string) $period->id,
+            netAmount: (float) $totals['total_assets'],
             tenantId: $tenantId,
             companyId: (string) ($period->company_id ?? '')
-        );
-        $this->dispatcher->publish($event);
-        event($event);
+        ));
 
         return [
-            'period_id' => $period->id,
-            'period_name' => $period->period_name,
-            'assets' => $assets,
-            'total_assets' => round($totalAssets, 2),
-            'liabilities' => $liabilities,
-            'total_liabilities' => round($totalLiabilities, 2),
-            'equity' => $equity,
-            'total_equity_base' => round($totalEquity, 2),
-            'current_period_net_income' => round($netIncome, 2),
-            'total_equity' => round($totalEquityWithNetIncome, 2),
-            'total_liabilities_and_equity' => round($totalLiabilities + $totalEquityWithNetIncome, 2),
-            'is_balanced' => $isBalanced,
+            'period_id' => (string) $period->id,
+            'period_name' => (string) $period->period_name,
+            'as_of' => $sheet['as_of'],
+            'assets' => $rows('asset'),
+            'total_assets' => $totals['total_assets'],
+            'liabilities' => $rows('liability'),
+            'total_liabilities' => $totals['total_liabilities'],
+            'equity' => $rows('equity'),
+            'total_equity_base' => $totals['total_equity'],
+            'current_period_net_income' => $totals['result_not_yet_closed'],
+            'total_equity' => $totals['total_equity_with_result'],
+            'total_liabilities_and_equity' => $totals['total_liabilities_and_equity'],
+            'is_balanced' => $sheet['is_balanced'],
         ];
     }
 
+    /**
+     * Income statement of one fiscal period, classified by account type only (revenue, cogs, expense), without the
+     * year-end closing entry.
+     *
+     * @return array<string, mixed>
+     */
     public function generateIncomeStatement(string $tenantId, string $fiscalPeriodId): array
     {
-        $trialBalance = $this->generateTrialBalance($tenantId, $fiscalPeriodId);
         $period = FiscalPeriod::findOrFail($fiscalPeriodId);
+        $statement = $this->reports->incomeStatement($tenantId, CarbonImmutable::parse($period->start_date), CarbonImmutable::parse($period->end_date));
+        $rows = static fn (string $section): array => array_map(static fn (array $row): array => [
+            'account_id' => $row['account_id'],
+            'account_code' => $row['account_code'],
+            'account_name' => $row['account_name'],
+            'net_balance' => $row['amount'],
+        ], $statement['sections'][$section]['accounts']);
+        $totals = $statement['totals'];
 
-        $revenues = [];
-        $cogs = [];
-        $expenses = [];
-
-        $totalRevenue = 0.0;
-        $totalCogs = 0.0;
-        $totalExpenses = 0.0;
-
-        foreach ($trialBalance['accounts'] as $acc) {
-            $type = strtolower((string) $acc['account_type']);
-            $bal = (float) $acc['net_balance'];
-
-            if ($type === 'revenue' || str_starts_with((string) $acc['account_code'], '4')) {
-                $revenues[] = $acc;
-                $totalRevenue += $bal;
-            } elseif ($type === 'cogs' || str_starts_with((string) $acc['account_code'], '5')) {
-                $cogs[] = $acc;
-                $totalCogs += $bal;
-            } elseif ($type === 'expense' || str_starts_with((string) $acc['account_code'], '6')) {
-                $expenses[] = $acc;
-                $totalExpenses += $bal;
-            }
-        }
-
-        $grossProfit = $totalRevenue - $totalCogs;
-        $netIncome = $grossProfit - $totalExpenses;
-
-        $event = new FinancialStatementGeneratedEvent(
+        $this->dispatcher->publishAndDispatch(new FinancialStatementGeneratedEvent(
             statementType: 'income_statement',
-            fiscalPeriodId: $period->id,
-            netAmount: $netIncome,
+            fiscalPeriodId: (string) $period->id,
+            netAmount: (float) $totals['net_income'],
             tenantId: $tenantId,
             companyId: (string) ($period->company_id ?? '')
-        );
-        $this->dispatcher->publish($event);
-        event($event);
+        ));
 
         return [
-            'period_id' => $period->id,
-            'period_name' => $period->period_name,
-            'revenues' => $revenues,
-            'total_revenue' => round($totalRevenue, 2),
-            'cogs' => $cogs,
-            'total_cogs' => round($totalCogs, 2),
-            'gross_profit' => round($grossProfit, 2),
-            'operating_expenses' => $expenses,
-            'total_operating_expenses' => round($totalExpenses, 2),
-            'net_income' => round($netIncome, 2),
+            'period_id' => (string) $period->id,
+            'period_name' => (string) $period->period_name,
+            'revenues' => $rows('revenue'),
+            'total_revenue' => $totals['total_revenue'],
+            'cogs' => $rows('cogs'),
+            'total_cogs' => $totals['total_cogs'],
+            'gross_profit' => $totals['gross_profit'],
+            'operating_expenses' => $rows('expense'),
+            'total_operating_expenses' => $totals['total_expenses'],
+            'net_income' => $totals['net_income'],
         ];
     }
 
+    /**
+     * Indirect operating cash flow of one period: net income corrected by the change of the customer and supplier
+     * control accounts. Investing and financing flows are not derived here (null): the full statement is
+     * cashFlowStatement().
+     *
+     * @return array<string, mixed>
+     */
     public function generateCashFlowPreparation(string $tenantId, string $fiscalPeriodId): array
     {
         $period = FiscalPeriod::findOrFail($fiscalPeriodId);
-        $incomeStmt = $this->generateIncomeStatement($tenantId, $fiscalPeriodId);
-        $netIncome = (float) $incomeStmt['net_income'];
+        $netIncome = (string) $this->generateIncomeStatement($tenantId, $fiscalPeriodId)['net_income'];
 
-        // Compute AR and AP changes
-        $arChange = (float) DB::table('journal_lines')
+        $controlChange = fn (string $reconciliationType): string => bcadd((string) (DB::table('journal_lines')
             ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
             ->join('chart_of_accounts', 'journal_lines.account_id', '=', 'chart_of_accounts.id')
             ->where('journal_entries.tenant_id', $tenantId)
+            ->whereNull('journal_entries.deleted_at')
+            ->whereIn('journal_entries.status', ['posted', 'reversed'])
+            ->where('journal_entries.ledger_type', 'statutory')
             ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
-            ->where('chart_of_accounts.reconciliation_type', 'customer')
-            ->sum(DB::raw('journal_lines.debit_amount - journal_lines.credit_amount'));
+            ->where('chart_of_accounts.reconciliation_type', $reconciliationType)
+            ->selectRaw('COALESCE(SUM(journal_lines.debit_amount - journal_lines.credit_amount), 0) as change')
+            ->value('change') ?? '0'), '0', self::Scale);
 
-        $apChange = (float) DB::table('journal_lines')
-            ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
-            ->join('chart_of_accounts', 'journal_lines.account_id', '=', 'chart_of_accounts.id')
-            ->where('journal_entries.tenant_id', $tenantId)
-            ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
-            ->where('chart_of_accounts.reconciliation_type', 'supplier')
-            ->sum(DB::raw('journal_lines.credit_amount - journal_lines.debit_amount'));
+        $receivablesIncrease = $controlChange('customer');
+        $payablesIncrease = bcmul($controlChange('supplier'), '-1', self::Scale);
+        $operatingCashFlow = bcadd(bcsub($netIncome, $receivablesIncrease, self::Scale), $payablesIncrease, self::Scale);
 
-        $operatingCashFlow = $netIncome - $arChange + $apChange;
-
-        $event = new FinancialStatementGeneratedEvent(
+        $this->dispatcher->publishAndDispatch(new FinancialStatementGeneratedEvent(
             statementType: 'cash_flow',
-            fiscalPeriodId: $period->id,
-            netAmount: $operatingCashFlow,
+            fiscalPeriodId: (string) $period->id,
+            netAmount: (float) $operatingCashFlow,
             tenantId: $tenantId,
             companyId: (string) ($period->company_id ?? '')
-        );
-        $this->dispatcher->publish($event);
-        event($event);
+        ));
 
         return [
-            'period_id' => $period->id,
-            'period_name' => $period->period_name,
-            'net_income' => round($netIncome, 2),
+            'period_id' => (string) $period->id,
+            'period_name' => (string) $period->period_name,
+            'net_income' => $netIncome,
             'adjustments' => [
-                'change_in_accounts_receivable' => round(-$arChange, 2),
-                'change_in_accounts_payable' => round($apChange, 2),
+                'change_in_accounts_receivable' => bcmul($receivablesIncrease, '-1', self::Scale),
+                'change_in_accounts_payable' => $payablesIncrease,
             ],
-            'operating_cash_flow' => round($operatingCashFlow, 2),
-            'investing_cash_flow' => 0.00,
-            'financing_cash_flow' => 0.00,
-            'net_cash_flow' => round($operatingCashFlow, 2),
+            'operating_cash_flow' => $operatingCashFlow,
+            'investing_cash_flow' => null,
+            'financing_cash_flow' => null,
+            'net_cash_flow' => null,
         ];
     }
 

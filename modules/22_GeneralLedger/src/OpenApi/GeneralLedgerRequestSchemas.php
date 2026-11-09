@@ -107,16 +107,17 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'fiscal_period_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'batch_id', type: 'string', format: 'uuid', nullable: true),
-        new OA\Property(property: 'entry_number', type: 'string', maxLength: 50, nullable: true),
-        new OA\Property(property: 'posting_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'entry_number', description: 'Ignored since April 2027: the entry number and the libro giornale number are assigned by the system.', type: 'string', maxLength: 50, nullable: true, deprecated: true),
+        new OA\Property(property: 'posting_date', type: 'string', format: 'date', example: '2027-03-31'),
         new OA\Property(property: 'document_date', type: 'string', format: 'date', nullable: true),
+        new OA\Property(property: 'auto_reverse_on', description: 'Date of the automatic reversal (storno), after the posting date: the entry is reversed on that date by POST /api/v1/general-ledger/scheduled-journals/run or the daily scheduler.', type: 'string', format: 'date', nullable: true, example: '2027-04-01'),
         new OA\Property(property: 'ledger_type', type: 'string', nullable: true, enum: ['statutory', 'ifrs', 'management']),
         new OA\Property(property: 'journal_type', type: 'string', nullable: true, enum: ['standard', 'reversing', 'opening', 'recurring', 'adjusting']),
         new OA\Property(property: 'description', type: 'string', maxLength: 500),
         new OA\Property(property: 'source_document_type', type: 'string', maxLength: 50, nullable: true),
         new OA\Property(property: 'source_document_id', type: 'string', format: 'uuid', nullable: true),
-        new OA\Property(property: 'status', type: 'string', nullable: true, enum: ['draft', 'posted']),
-        new OA\Property(property: 'lines', type: 'array', minItems: 2, items: new OA\Items(type: 'object', required: ['account_id'], properties: [new OA\Property(property: 'account_id', type: 'string', format: 'uuid'), new OA\Property(property: 'debit_amount', type: 'number', minimum: 0, description: 'Required without `lines.*.credit_amount`.'), new OA\Property(property: 'credit_amount', type: 'number', minimum: 0, description: 'Required without `lines.*.debit_amount`.'), new OA\Property(property: 'description', type: 'string', maxLength: 255, nullable: true), new OA\Property(property: 'cost_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'profit_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'partner_type', type: 'string', nullable: true, enum: ['customer', 'supplier', 'employee']), new OA\Property(property: 'partner_id', type: 'string', format: 'uuid', nullable: true)])),
+        new OA\Property(property: 'status', description: 'posted (default) posts at once, or keeps the journal pending_approval when the tenant requires four-eyes approval for its amount; draft only saves it.', type: 'string', nullable: true, enum: ['draft', 'posted']),
+        new OA\Property(property: 'lines', type: 'array', minItems: 2, items: new OA\Items(type: 'object', required: ['account_id'], properties: [new OA\Property(property: 'account_id', type: 'string', format: 'uuid'), new OA\Property(property: 'debit_amount', type: 'number', minimum: 0, description: 'Required without `lines.*.credit_amount`.'), new OA\Property(property: 'credit_amount', type: 'number', minimum: 0, description: 'Required without `lines.*.debit_amount`.'), new OA\Property(property: 'description', type: 'string', maxLength: 255, nullable: true), new OA\Property(property: 'cost_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'profit_center_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'partner_type', type: 'string', nullable: true, enum: ['customer', 'supplier', 'employee']), new OA\Property(property: 'partner_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'project_id', type: 'string', format: 'uuid', nullable: true)])),
     ]
 )]
 #[OA\Schema(

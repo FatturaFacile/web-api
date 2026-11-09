@@ -8,10 +8,12 @@ use Illuminate\Foundation\Testing\DatabaseTransactions;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Services\LedgerSettingsService;
 
 uses(DatabaseTransactions::class);
 
@@ -113,6 +115,18 @@ test('posting to a closed fiscal period is rejected', function () {
 })->throws(InvalidArgumentException::class);
 
 test('year-end close zeroes out PnL accounts to retained earnings', function () {
+    $retainedEarnings = ChartOfAccount::create([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => $this->tenantId,
+        'account_code' => '3100-CLOSE',
+        'name' => 'Retained Earnings',
+        'account_class' => 'equity',
+        'account_type' => 'equity',
+        'normal_balance' => 'credit',
+        'is_active' => true,
+    ]);
+    app(LedgerSettingsService::class)->update($this->tenantId, ['posting_accounts' => [PostingAccountRole::RetainedEarnings->value => (string) $retainedEarnings->id]]);
+
     // Post revenue in period 1
     $this->postingService->createAndPost([
         'tenant_id' => $this->tenantId,

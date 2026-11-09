@@ -10,6 +10,7 @@ use Illuminate\Support\ServiceProvider;
 use Modules\GeneralLedger\Console\AdjustSplitPaymentReceivablesCommand;
 use Modules\GeneralLedger\Console\OpenFiscalYearCommand;
 use Modules\GeneralLedger\Console\PostPendingDocumentsCommand;
+use Modules\GeneralLedger\Console\RunScheduledJournalsCommand;
 use Modules\GeneralLedger\Contracts\AccountingReconciliationServiceInterface;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Contracts\FinancialStatementServiceInterface;
@@ -118,7 +119,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
     private function registerConsoleCommands(): void
     {
         if ($this->app->runningInConsole()) {
-            $this->commands([OpenFiscalYearCommand::class, PostPendingDocumentsCommand::class, AdjustSplitPaymentReceivablesCommand::class]);
+            $this->commands([OpenFiscalYearCommand::class, PostPendingDocumentsCommand::class, AdjustSplitPaymentReceivablesCommand::class, RunScheduledJournalsCommand::class]);
         }
     }
 

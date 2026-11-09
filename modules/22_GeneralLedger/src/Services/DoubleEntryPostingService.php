@@ -9,7 +9,6 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Events\BankPostingReadyEvent;
 use Modules\GeneralLedger\Events\JournalPostedEvent;
@@ -17,6 +16,8 @@ use Modules\GeneralLedger\Events\JournalReversedEvent;
 use Modules\GeneralLedger\Events\PayableReadyEvent;
 use Modules\GeneralLedger\Events\ReceivableReadyEvent;
 use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
+use Modules\GeneralLedger\Exceptions\LedgerConflictException;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\CustomerLedger;
 use Modules\GeneralLedger\Models\FiscalPeriod;
@@ -62,7 +63,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
     public function createAndPost(array $data, ?string $actorUserId = null): JournalEntry
     {
         if (($data['journal_type'] ?? '') === 'closing') {
-            throw new InvalidArgumentException('Closing entries are generated only by the fiscal year closing.');
+            throw new LedgerPostingException('Closing entries are generated only by the fiscal year closing.');
         }
 
         return $this->persist($data, $actorUserId, false);
@@ -85,7 +86,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             $lines = $data['lines'] ?? [];
 
             if (! $this->validateBalance($lines)) {
-                throw new InvalidArgumentException('Journal entry lines must balance with positive debit/credit values.');
+                throw new LedgerPostingException('Journal entry lines must balance with positive debit/credit values.');
             }
 
             $fiscalPeriod = $this->sharedLockedPeriod((string) $data['fiscal_period_id']);
@@ -100,7 +101,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             $this->assertDateInPeriod($postingDate, $fiscalPeriod);
 
             if ($fiscalPeriod->isLockedFor('GL') && ! $isYearEndClosing) {
-                throw new InvalidArgumentException("Fiscal period [{$fiscalPeriod->period_name}] is locked for General Ledger postings.");
+                throw new LedgerPostingException("Fiscal period [{$fiscalPeriod->period_name}] is locked for General Ledger postings.");
             }
 
             $totalAmount = '0';
@@ -124,6 +125,8 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 'source_document_id' => $data['source_document_id'] ?? null,
                 'document_number' => $data['document_number'] ?? null,
                 'workflow_instance_id' => $data['workflow_instance_id'] ?? null,
+                'recurring_journal_id' => $data['recurring_journal_id'] ?? null,
+                'auto_reverse_on' => isset($data['auto_reverse_on']) ? CarbonImmutable::parse($data['auto_reverse_on'])->toDateString() : null,
                 'status' => $data['status'] ?? 'posted',
                 'total_amount' => $this->ledgerAmount($totalAmount),
                 'created_by' => $actorUuid,
@@ -134,11 +137,11 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             $tenantCurrency = TenantAccountingCurrency::of((string) $entry->tenant_id);
             $lineNumber = 1;
             foreach ($lines as $line) {
-                $account = ChartOfAccount::findOrFail($line['account_id']);
+                $account = $this->tenantAccount((string) $entry->tenant_id, (string) $line['account_id']);
                 $debit = $this->ledgerAmount($line['debit_amount'] ?? 0);
                 $credit = $this->ledgerAmount($line['credit_amount'] ?? 0);
                 $currency = $line['currency'] ?? $tenantCurrency;
-                $rate = number_format((float) ($line['exchange_rate'] ?? 1.0), 6, '.', '');
+                $rate = $this->exchangeRate($line['exchange_rate'] ?? null);
                 $functionalAmt = $this->ledgerAmount(Decimal::mul(Decimal::isPositive($debit) ? $debit : $credit, $rate));
 
                 $journalLine = JournalLine::create([
@@ -160,8 +163,8 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                     'exchange_rate' => $rate,
                     'amount_in_functional_currency' => $functionalAmt,
                     'vat_code_id' => $line['vat_code_id'] ?? null,
-                    'vat_base_amount' => (float) ($line['vat_base_amount'] ?? 0.0),
-                    'vat_tax_amount' => (float) ($line['vat_tax_amount'] ?? 0.0),
+                    'vat_base_amount' => $this->ledgerAmount($line['vat_base_amount'] ?? 0),
+                    'vat_tax_amount' => $this->ledgerAmount($line['vat_tax_amount'] ?? 0),
                     'vat_rate_percent' => $line['vat_rate_percent'] ?? null,
                     'vat_treatment' => $line['vat_treatment'] ?? null,
                     'is_cleared' => (bool) ($line['is_cleared'] ?? false) || ! empty($line['settles_entry_id']),
@@ -216,19 +219,19 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 return $entry;
             }
 
-            if ($entry->status === 'reversed') {
-                throw new InvalidArgumentException('Cannot post an already reversed journal entry.');
+            if (! in_array($entry->status, ['draft', 'pending_approval'], true)) {
+                throw new LedgerConflictException("Journal entry in status [{$entry->status}] cannot be posted: only drafts and entries waiting for approval can.");
             }
 
             $fiscalPeriod = $this->sharedLockedPeriod((string) $entry->fiscal_period_id);
             $this->assertDateInPeriod(CarbonImmutable::parse($entry->posting_date)->toDateString(), $fiscalPeriod);
 
             if ($fiscalPeriod->isLockedFor('GL')) {
-                throw new InvalidArgumentException("Fiscal period [{$fiscalPeriod->period_name}] is locked for postings.");
+                throw new LedgerPostingException("Fiscal period [{$fiscalPeriod->period_name}] is locked for postings.");
             }
 
             if (! $entry->isBalanced()) {
-                throw new InvalidArgumentException('Journal entry lines must balance before posting.');
+                throw new LedgerPostingException('Journal entry lines must balance before posting.');
             }
 
             $before = $entry->toArray();
@@ -282,11 +285,11 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             $original = JournalEntry::where('id', $journalEntryId)->lockForUpdate()->firstOrFail();
 
             if ($original->status !== 'posted') {
-                throw new InvalidArgumentException('Only posted journal entries can be reversed.');
+                throw new LedgerConflictException('Only posted journal entries can be reversed.');
             }
 
             if (in_array($original->source_document_type, [VatLedgerReader::SOURCE_SETTLEMENT, VatLedgerReader::SOURCE_SETTLEMENT_PAYMENT], true)) {
-                throw new InvalidArgumentException('The entry of a posted VAT settlement cannot be reversed: correct the next period.');
+                throw new LedgerConflictException('The entry of a posted VAT settlement cannot be reversed: correct the next period.');
             }
 
             // Find target period for reversal date
@@ -301,7 +304,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             }
 
             if ($targetPeriod->isLockedFor('GL')) {
-                throw new InvalidArgumentException("Target fiscal period [{$targetPeriod->period_name}] is locked for reversals.");
+                throw new LedgerPostingException("Target fiscal period [{$targetPeriod->period_name}] is locked for reversals.");
             }
 
             $reversalEntry = JournalEntry::create([
@@ -409,6 +412,39 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         $text = is_float($value) ? number_format($value, 4, '.', '') : (string) ($value ?? '0');
 
         return bcround(Decimal::normalize($text === '' ? '0' : $text), 4, RoundingMode::HalfAwayFromZero);
+    }
+
+    /**
+     * The account of a line, read in the chart of accounts of the entry's tenant. The posting may run in a console or
+     * queue context where no tenant scope applies, so the tenant is checked explicitly: an account of another tenant
+     * never receives a line.
+     *
+     * @throws LedgerPostingException when the account does not exist in the tenant's chart of accounts
+     */
+    private function tenantAccount(string $tenantId, string $accountId): ChartOfAccount
+    {
+        $account = ChartOfAccount::withoutGlobalScopes()->whereKey($accountId)->whereNull('deleted_at')->first();
+
+        if ($account === null || (string) $account->tenant_id !== $tenantId) {
+            throw new LedgerPostingException("Ledger account [{$accountId}] does not belong to the chart of accounts of this tenant.");
+        }
+
+        return $account;
+    }
+
+    /**
+     * Exchange rate of a line at the scale of the column (6 decimals): accounting-currency units per unit of the line
+     * currency. A missing rate means the line is in the accounting currency.
+     */
+    private function exchangeRate(mixed $value): string
+    {
+        if ($value === null || $value === '') {
+            return '1.000000';
+        }
+
+        $text = is_float($value) ? number_format($value, 6, '.', '') : (string) $value;
+
+        return bcround(Decimal::normalize($text), 6, RoundingMode::HalfAwayFromZero);
     }
 
     /**
@@ -524,8 +560,9 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
             return;
         }
 
-        $amt = (float) $line->debit_amount > 0 ? (float) $line->debit_amount : (float) $line->credit_amount;
-        $dir = (float) $line->debit_amount > 0 ? 'debit' : 'credit';
+        $isDebit = Decimal::isPositive((string) $line->debit_amount);
+        $amt = (float) ($isDebit ? (string) $line->debit_amount : (string) $line->credit_amount);
+        $dir = $isDebit ? 'debit' : 'credit';
 
         $ev = new BankPostingReadyEvent(
             journalLineId: (string) $line->id,
@@ -548,7 +585,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         // 1. Accounts Receivable / Customer Subledger
         if ($account->reconciliation_type === 'customer' || $line->partner_type === 'customer') {
             if ($line->partner_id) {
-                $amount = (float) $line->debit_amount > 0 ? (float) $line->debit_amount : -((float) $line->credit_amount);
+                $amount = Decimal::isPositive((string) $line->debit_amount) ? $this->ledgerAmount((string) $line->debit_amount) : $this->ledgerAmount(Decimal::neg((string) $line->credit_amount));
 
                 $subItem = CustomerLedger::create([
                     'id' => (string) Str::uuid7(),
@@ -564,11 +601,11 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                     'status' => 'open',
                 ]);
 
-                if ($amount > 0) {
+                if (Decimal::isPositive($amount)) {
                     $ev = new ReceivableReadyEvent(
                         customerLedgerId: (string) $subItem->id,
                         customerId: (string) $line->partner_id,
-                        openAmount: $amount,
+                        openAmount: (float) $amount,
                         currency: $line->currency,
                         dueDate: (string) $subItem->due_date,
                         journalEntryId: (string) $entry->id,
@@ -584,7 +621,7 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         // 2. Accounts Payable / Supplier Subledger
         if ($account->reconciliation_type === 'supplier' || $line->partner_type === 'supplier') {
             if ($line->partner_id) {
-                $amount = (float) $line->credit_amount > 0 ? (float) $line->credit_amount : -((float) $line->debit_amount);
+                $amount = Decimal::isPositive((string) $line->credit_amount) ? $this->ledgerAmount((string) $line->credit_amount) : $this->ledgerAmount(Decimal::neg((string) $line->debit_amount));
 
                 $subItem = SupplierLedger::create([
                     'id' => (string) Str::uuid7(),
@@ -600,11 +637,11 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                     'status' => 'open',
                 ]);
 
-                if ($amount > 0) {
+                if (Decimal::isPositive($amount)) {
                     $ev = new PayableReadyEvent(
                         supplierLedgerId: (string) $subItem->id,
                         supplierId: (string) $line->partner_id,
-                        openAmount: $amount,
+                        openAmount: (float) $amount,
                         currency: $line->currency,
                         dueDate: (string) $subItem->due_date,
                         journalEntryId: (string) $entry->id,

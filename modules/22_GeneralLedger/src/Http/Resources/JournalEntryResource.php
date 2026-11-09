@@ -34,6 +34,16 @@ final class JournalEntryResource extends JsonResource
             'posted_at' => $this->posted_at?->toIso8601String(),
             'reversed_at' => $this->reversed_at?->toIso8601String(),
             'reversal_journal_entry_id' => $this->reversal_journal_entry_id ? (string) $this->reversal_journal_entry_id : null,
+            'auto_reverse_on' => LedgerDateFormat::day($this->resource->getAttribute('auto_reverse_on')),
+            'created_by' => $this->resource->getAttribute('created_by'),
+            'submitted_by' => $this->resource->getAttribute('submitted_by'),
+            'submitted_at' => LedgerDateFormat::instant($this->resource->getAttribute('submitted_at')),
+            'approved_by' => $this->resource->getAttribute('approved_by'),
+            'approved_at' => LedgerDateFormat::instant($this->resource->getAttribute('approved_at')),
+            'rejected_by' => $this->resource->getAttribute('rejected_by'),
+            'rejected_at' => LedgerDateFormat::instant($this->resource->getAttribute('rejected_at')),
+            'rejection_reason' => $this->resource->getAttribute('rejection_reason'),
+            'recurring_journal_id' => $this->resource->getAttribute('recurring_journal_id'),
             'lines' => JournalLineResource::collection($this->whenLoaded('lines')),
         ];
     }

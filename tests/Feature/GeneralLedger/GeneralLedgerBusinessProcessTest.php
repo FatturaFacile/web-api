@@ -182,8 +182,8 @@ test('trial balance accurately reflects debit and credit parity', function () {
     $tb = $this->statementService->generateTrialBalance($this->tenantId, $this->period->id);
 
     expect($tb['is_balanced'])->toBeTrue()
-        ->and($tb['total_debit'])->toBe(74000.0)
-        ->and($tb['total_credit'])->toBe(74000.0)
+        ->and($tb['total_debit'])->toBe('74000.0000')
+        ->and($tb['total_credit'])->toBe('74000.0000')
         ->and(count($tb['accounts']))->toBeGreaterThanOrEqual(6);
 });
 

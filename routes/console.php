@@ -54,6 +54,8 @@ Artisan::command('inspire', function () {
 // (database or redis, shared by every server; see docs/deployment/PRODUCTION_CHECKLIST.md).
 Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
+// Recurring journals and automatic reversals (accruals, deferrals, FX revaluations) due, per tenant business day.
+Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
 Schedule::command('sales:expire-quotes')->dailyAt('00:30')->withoutOverlapping()->onOneServer();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
