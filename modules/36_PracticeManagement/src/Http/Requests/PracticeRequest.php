@@ -64,6 +64,19 @@ final class PracticeRequest extends FormRequest
                 'items.*.done' => ['required', 'boolean'],
                 'notes' => ['nullable', 'string', 'max:5000'],
             ],
+            'retainers.index' => ['client_id' => ['sometimes', 'uuid', $this->tenantOwns('contacts')], 'status' => ['sometimes', 'string', 'in:open,exhausted,void']],
+            'retainers.store' => [
+                'client_id' => ['required', 'uuid', $this->tenantOwns('contacts')],
+                'legal_case_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('legal_cases')],
+                'received_on' => ['required', 'date'],
+                'amount' => ['required', 'decimal:0,2', 'gt:0'],
+                'reference' => ['sometimes', 'nullable', 'string', 'max:100'],
+                'notes' => ['sometimes', 'nullable', 'string', 'max:500'],
+            ],
+            'retainers.apply' => [
+                'fee_note_id' => ['required', 'uuid', $this->tenantOwns('fee_notes')],
+                'amount' => ['required', 'decimal:0,2', 'gt:0'],
+            ],
             'closings.close' => ['allow_unbilled' => ['sometimes', 'boolean'], 'reason' => ['required_if_accepted:allow_unbilled', 'nullable', 'string', 'max:500']],
             default => [],
         };

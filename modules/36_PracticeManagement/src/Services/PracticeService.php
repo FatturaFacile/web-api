@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\LegalCase;
 use App\Models\User;
 use App\Services\Sales\DocumentNumberingService;
+use App\Services\Tenancy\TenantClock;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Services\Tax\Decimal;
@@ -23,7 +24,7 @@ use Modules\PracticeManagement\Models\PeriodClosing;
  */
 final class PracticeService
 {
-    public function __construct(private readonly DocumentNumberingService $numbering) {}
+    public function __construct(private readonly DocumentNumberingService $numbering, private readonly TenantClock $clock) {}
 
     /**
      * Logged time of a period by professional and case, billed and not, with the unbilled activities older than the
@@ -39,7 +40,7 @@ final class PracticeService
             ->get();
         $cases = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->get()->keyBy('id');
         $users = User::query()->whereIn('id', $activities->pluck('user_id'))->pluck('name', 'id');
-        $staleBefore = now()->subDays($staleDays)->toDateString();
+        $staleBefore = $this->clock->today()->subDays($staleDays)->toDateString();
 
         $rows = $activities->groupBy(static fn (BillableActivity $activity): string => "{$activity->user_id}|{$activity->legal_case_id}")
             ->map(function (Collection $group) use ($cases, $users): array {

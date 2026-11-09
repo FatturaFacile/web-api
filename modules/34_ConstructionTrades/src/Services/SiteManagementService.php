@@ -101,7 +101,7 @@ final class SiteManagementService
             $remaining = Decimal::sub((string) $locked->contract_amount, $certified);
 
             if (Decimal::compare((string) $data['amount'], $remaining) > 0) {
-                throw new BusinessRuleException("The certification exceeds the remaining contract amount of {$remaining}.");
+                throw new BusinessRuleException('The certification exceeds the remaining contract amount of '.Decimal::round2($remaining).'.');
             }
 
             $cost = $locked->bid_id === null ? null : $this->trades->recordCost(Bid::query()->findOrFail($locked->bid_id), [

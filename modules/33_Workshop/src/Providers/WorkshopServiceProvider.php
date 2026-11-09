@@ -8,6 +8,7 @@ use App\Models\Vehicle;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\Workshop\Models\RecurringService;
+use Modules\Workshop\Models\TimeEntry;
 use Modules\Workshop\Models\VehicleSale;
 use Modules\Workshop\Models\VehicleStockUnit;
 use Modules\Workshop\Models\WorkshopFolder;
@@ -28,7 +29,7 @@ final class WorkshopServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         });
 
-        foreach ([Vehicle::class, WorkshopFolder::class, WorkshopFolderLine::class, VehicleStockUnit::class, VehicleSale::class, RecurringService::class] as $model) {
+        foreach ([Vehicle::class, WorkshopFolder::class, WorkshopFolderLine::class, VehicleStockUnit::class, VehicleSale::class, RecurringService::class, TimeEntry::class] as $model) {
             Gate::policy($model, WorkshopPolicy::class);
         }
     }

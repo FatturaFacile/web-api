@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Workshop\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Services\Tenancy\TenantClock;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -198,7 +199,7 @@ final class FolderController extends Controller
     public function invoice(FolderActionRequest $request, string $id): JsonResponse
     {
         $folder = $this->find($id, 'bill');
-        $invoice = $this->workshop->invoice($folder, (string) ($request->validated('date') ?? now()->toDateString()));
+        $invoice = $this->workshop->invoice($folder, (string) ($request->validated('date') ?? app(TenantClock::class)->today()->toDateString()));
 
         return $this->documentResponse($folder, 'invoice', (string) $invoice->id, (string) $invoice->invoice_number);
     }

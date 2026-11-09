@@ -32,6 +32,18 @@ use OpenApi\Attributes as OA;
     ])),
     new OA\Property(property: 'notes', type: 'string', nullable: true),
 ])]
+#[OA\Schema(schema: 'PracticeRetainerRequest', type: 'object', required: ['client_id', 'received_on', 'amount'], properties: [
+    new OA\Property(property: 'client_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'legal_case_id', description: 'Restrict the retainer to one case of the client', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'received_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'amount', type: 'string', example: '2000.00'),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'PracticeRetainerApplyRequest', type: 'object', required: ['fee_note_id', 'amount'], properties: [
+    new OA\Property(property: 'fee_note_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'amount', type: 'string', example: '500.00'),
+])]
 #[OA\Schema(schema: 'PracticeChecklistRequest', type: 'object', required: ['items'], properties: [
     new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object', properties: [new OA\Property(property: 'key', type: 'string'), new OA\Property(property: 'done', type: 'boolean')])),
     new OA\Property(property: 'notes', type: 'string', nullable: true),

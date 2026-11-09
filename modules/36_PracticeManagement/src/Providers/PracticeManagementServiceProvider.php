@@ -7,6 +7,7 @@ namespace Modules\PracticeManagement\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\PracticeManagement\Models\PeriodClosing;
+use Modules\PracticeManagement\Models\Retainer;
 use Modules\PracticeManagement\Policies\PracticePolicy;
 
 /**
@@ -24,5 +25,6 @@ final class PracticeManagementServiceProvider extends ServiceProvider
         });
 
         Gate::policy(PeriodClosing::class, PracticePolicy::class);
+        Gate::policy(Retainer::class, PracticePolicy::class);
     }
 }
