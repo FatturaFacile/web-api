@@ -118,6 +118,10 @@ jobs:
             set -e
             cd ~/api.fatturafacile.eu
 
+            # Whatever happens from here on (a failed step included), leave the services running: up -d is
+            # idempotent and the exit status of the deploy is kept. The health check at the end decides if it is green.
+            trap 'rc=$?; docker compose up -d postgres redis app queue_worker scheduler reverse-proxy >/dev/null 2>&1 || true; exit $rc' EXIT
+
             # Authenticate with GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
@@ -206,6 +210,21 @@ jobs:
 
             # Start worker daemons after migrations and cache generation succeed
             docker compose up -d queue_worker scheduler
+
+            # Health check through nginx: /up must answer 200, otherwise the job fails
+            docker compose up -d reverse-proxy
+            HEALTH=000
+            for i in $(seq 1 15); do
+              HEALTH=$(docker compose exec -T reverse-proxy curl -sk -o /dev/null -w '%{http_code}' \
+                --resolve api.fatturafacile.eu:443:127.0.0.1 https://api.fatturafacile.eu/up || true)
+              [ "$HEALTH" = "200" ] && break
+              sleep 2
+            done
+            if [ "$HEALTH" != "200" ]; then
+              echo "Deployment failed: /up answered $HEALTH"
+              docker compose logs --tail=50 app
+              exit 1
+            fi
 
             # Housekeeping: prune images older than 24h
             docker image prune -af --filter "until=24h"

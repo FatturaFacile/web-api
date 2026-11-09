@@ -12,6 +12,9 @@ docker compose pull app queue_worker scheduler
 # Stop the scheduler and the queue worker first: the scheduler runs demo:reset every 30 minutes and a reset that
 # overlaps this one drops tables under it (SQLSTATE 42P01). They are started again after the rebuild.
 docker compose stop scheduler queue_worker
+# Whatever happens from here on (a failed step included), leave the whole stack running: up -d is idempotent and the
+# exit status of the deploy is kept. The final health check below decides whether the deploy is green.
+trap 'rc=$?; docker compose up -d app web queue_worker scheduler >/dev/null 2>&1 || true; exit $rc' EXIT
 docker compose up -d postgres
 docker compose up -d --remove-orphans app web
 
