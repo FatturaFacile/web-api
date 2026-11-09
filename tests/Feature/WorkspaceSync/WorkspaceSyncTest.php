@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -252,4 +253,30 @@ test('a provider refusing the refresh during a sync answers 502', function (): v
     WorkspaceConnection::query()->findOrFail($id)->update(['token_expires_at' => now()->subMinute()]);
 
     $this->postJson("/api/v1/workspace/connections/{$id}/sync")->assertStatus(502);
+});
+
+test('items are narrowed to the exchanges with a CRM contact and paginated', function (): void {
+    fakeGoogle();
+    $id = connectGoogle();
+    $this->postJson("/api/v1/workspace/connections/{$id}/sync")->assertOk();
+    $client = Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => 'Cliente', 'email' => 'CLIENTE@example.com']);
+    $stranger = Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => 'Altro', 'email' => 'altro@example.com']);
+
+    $items = $this->getJson("/api/v1/workspace/items?contact_id={$client->id}")->assertOk()->assertJsonPath('meta.total', 1)->json('data');
+    expect($items[0]['kind'])->toBe('email')->and($items[0]['subject'])->toBe('Offerta');
+    $this->getJson("/api/v1/workspace/items?contact_id={$stranger->id}")->assertOk()->assertJsonPath('meta.total', 0);
+    $this->getJson('/api/v1/workspace/items?per_page=1')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.last_page', 2);
+    $this->getJson('/api/v1/workspace/items?kind=sms')->assertUnprocessable()->assertJsonValidationErrors('kind');
+});
+
+test('the contact filter refuses a contact of another tenant and a colleague never sees these items', function (): void {
+    fakeGoogle();
+    $id = connectGoogle();
+    $this->postJson("/api/v1/workspace/connections/{$id}/sync")->assertOk();
+    $foreign = Contact::create(['tenant_id' => Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta SA'])->id, 'type' => 'customer', 'company_name' => 'X', 'email' => 'cliente@example.com']);
+
+    $this->getJson("/api/v1/workspace/items?contact_id={$foreign->id}")->assertUnprocessable()->assertJsonValidationErrors('contact_id');
+
+    workspaceActAs(workspaceMember($this->tenant), $this->tenant);
+    $this->getJson('/api/v1/workspace/items')->assertOk()->assertJsonPath('meta.total', 0);
 });
