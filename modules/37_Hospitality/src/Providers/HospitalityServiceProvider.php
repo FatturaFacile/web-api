@@ -11,6 +11,7 @@ use Modules\Hospitality\Models\KitchenTicket;
 use Modules\Hospitality\Models\Order;
 use Modules\Hospitality\Models\OrderItem;
 use Modules\Hospitality\Models\OrderPayment;
+use Modules\Hospitality\Models\Reservation;
 use Modules\Hospitality\Models\Room;
 use Modules\Hospitality\Policies\HospitalityPolicy;
 
@@ -28,7 +29,7 @@ final class HospitalityServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         });
 
-        foreach ([Room::class, DiningTable::class, Order::class, OrderItem::class, KitchenTicket::class, OrderPayment::class] as $model) {
+        foreach ([Room::class, DiningTable::class, Order::class, OrderItem::class, KitchenTicket::class, OrderPayment::class, Reservation::class] as $model) {
             Gate::policy($model, HospitalityPolicy::class);
         }
     }

@@ -15,6 +15,7 @@ use App\Models\Vehicle;
 use App\Services\Inventory\StockService;
 use App\Services\Invoicing\InvoiceService;
 use App\Services\Sales\DocumentNumberingService;
+use App\Services\Tenancy\TenantClock;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\SubscriptionBilling\Contracts\SubscriptionLifecycleServiceInterface;
@@ -154,7 +155,7 @@ final class WorkshopService
             /** @var Quote $quote */
             $quote = $this->salesDocuments->create(Quote::class, 'quote', 'quote_number', [
                 'contact_id' => $locked->contact_id,
-                'date' => now()->toDateString(),
+                'date' => app(TenantClock::class)->today()->toDateString(),
                 'valid_until' => $validUntil,
                 'currency' => $locked->currency,
                 'status' => 'draft',

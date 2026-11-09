@@ -24,6 +24,8 @@ Route::prefix('api/v1/childcare')
         Route::post('/children', [ChildController::class, 'store'])->name('children.store');
         Route::get('/children/{id}', [ChildController::class, 'show'])->name('children.show');
         Route::put('/children/{id}', [ChildController::class, 'update'])->name('children.update');
+        Route::get('/waiting-list', [ChildController::class, 'waitingList'])->name('waiting-list');
+        Route::post('/children/{id}/admit', [ChildController::class, 'admit'])->name('children.admit');
         Route::post('/children/{id}/reference-persons', [ChildController::class, 'storeReferencePerson'])->name('children.reference-persons.store');
         Route::post('/reference-persons/{id}/portal-access', [ChildController::class, 'issuePortalAccess'])->name('reference-persons.portal-access');
         Route::post('/children/{id}/weekly-plans', [ChildController::class, 'storeWeeklyPlan'])->name('children.weekly-plans.store');

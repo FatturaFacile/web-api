@@ -106,17 +106,19 @@ final class FeeLedgerBridge
             'notes' => "Reversal of association receipt {$receipt->number}",
         ], $invoice->items->map(static fn ($item): array => [
             'description' => (string) $item->description,
-            'quantity' => (float) $item->quantity,
-            'unit_price' => (float) $item->unit_price,
-            'tax_rate' => (float) $item->tax_rate,
-            'discount_percentage' => (float) $item->discount_percentage,
+            'quantity' => (string) $item->quantity,
+            'unit_price' => (string) $item->unit_price,
+            'tax_rate' => (string) $item->tax_rate,
+            'discount_percentage' => (string) $item->discount_percentage,
             'revenue_account_id' => $item->revenue_account_id,
             'cost_center_id' => $item->cost_center_id,
         ])->all());
 
-        $credited = min((float) $invoice->outstandingAmount(), (float) $creditNote->amountDue());
+        $outstanding = Money::normalize($invoice->outstandingAmount());
+        $due = Money::normalize($creditNote->amountDue());
+        $credited = Money::compare($outstanding, $due) <= 0 ? $outstanding : $due;
 
-        if ($credited > 0) {
+        if (Money::isPositive($credited)) {
             $this->invoicing->applyCreditNote($creditNote, $invoice, $credited, (string) $actorId);
         }
 

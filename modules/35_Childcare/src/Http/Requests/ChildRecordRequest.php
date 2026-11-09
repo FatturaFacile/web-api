@@ -46,10 +46,14 @@ final class ChildRecordRequest extends FormRequest
                 'health_notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
                 'subsidy_canton' => ['sometimes', 'nullable', 'string', 'size:2', 'regex:/^[A-Z]{2}$/'],
                 'subsidy_inputs' => ['sometimes', 'nullable', 'array'],
-                'subsidy_inputs.*' => ['nullable', 'numeric'],
+                'subsidy_inputs.*' => ['nullable', 'decimal:0,2'],
                 'enrolled_on' => [$presence, 'date'],
                 'left_on' => ['sometimes', 'nullable', 'date', 'after_or_equal:enrolled_on'],
-                'status' => ['sometimes', 'string', 'in:active,left'],
+                'status' => ['sometimes', 'string', $this->isMethod('POST') ? 'in:active,waiting' : 'in:active,left,waiting'],
+            ],
+            'children.admit' => [
+                'group_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('cc_groups')],
+                'enrolled_on' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             ],
             'children.reference-persons.store' => [
                 'full_name' => ['required', 'string', 'max:150'],

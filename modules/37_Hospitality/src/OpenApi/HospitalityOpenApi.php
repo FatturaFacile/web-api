@@ -17,6 +17,22 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(schema: 'HospitalityRoomRequest', type: 'object', required: ['name'], properties: [
     new OA\Property(property: 'name', type: 'string'), new OA\Property(property: 'sort_order', type: 'integer'), new OA\Property(property: 'width', type: 'integer'), new OA\Property(property: 'height', type: 'integer'),
 ])]
+#[OA\Schema(schema: 'HospitalityReservationRequest', description: 'A table reservation. On PUT every field is optional.', type: 'object', required: ['guest_name', 'party_size', 'starts_at', 'duration_minutes'], properties: [
+    new OA\Property(property: 'table_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'guest_name', type: 'string', example: 'Famiglia Bianchi'),
+    new OA\Property(property: 'guest_phone', type: 'string', nullable: true),
+    new OA\Property(property: 'guest_email', type: 'string', format: 'email', nullable: true),
+    new OA\Property(property: 'party_size', type: 'integer', example: 4),
+    new OA\Property(property: 'starts_at', type: 'string', format: 'date-time', example: '2026-11-20T19:30:00+01:00'),
+    new OA\Property(property: 'duration_minutes', type: 'integer', example: 90),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'HospitalityReservationSeatRequest', type: 'object', properties: [new OA\Property(property: 'table_id', description: 'Table to seat at, when the booking has none or the guests move', type: 'string', format: 'uuid')])]
+#[OA\Schema(schema: 'HospitalityReservationStatusRequest', type: 'object', required: ['status'], properties: [
+    new OA\Property(property: 'status', type: 'string', enum: ['cancelled', 'no_show', 'completed']),
+    new OA\Property(property: 'reason', description: 'Required for cancelled and no_show', type: 'string', nullable: true),
+])]
 #[OA\Schema(schema: 'HospitalityTableRequest', type: 'object', required: ['name'], properties: [
     new OA\Property(property: 'name', type: 'string'),
     new OA\Property(property: 'seats', type: 'integer'),

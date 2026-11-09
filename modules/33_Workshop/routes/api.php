@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Workshop\Http\Controllers\CustomerVehicleController;
 use Modules\Workshop\Http\Controllers\FolderController;
+use Modules\Workshop\Http\Controllers\LabourTimeController;
 use Modules\Workshop\Http\Controllers\RecurringServiceController;
 use Modules\Workshop\Http\Controllers\VehicleStockController;
 
@@ -33,6 +34,13 @@ Route::prefix('api/v1/workshop')
         Route::get('/recurring-services', [RecurringServiceController::class, 'index'])->name('recurring-services.index');
         Route::post('/recurring-services', [RecurringServiceController::class, 'store'])->name('recurring-services.store');
         Route::post('/recurring-services/{id}/stop', [RecurringServiceController::class, 'stop'])->name('recurring-services.stop');
+
+        Route::get('/folders/{id}/time-entries', [LabourTimeController::class, 'index'])->name('folders.time.index');
+        Route::post('/folders/{id}/time-entries', [LabourTimeController::class, 'store'])->name('folders.time.store');
+        Route::post('/folders/{id}/time-entries/start', [LabourTimeController::class, 'start'])->name('folders.time.start');
+        Route::post('/folders/{id}/time-entries/bill', [LabourTimeController::class, 'bill'])->name('folders.time.bill');
+        Route::post('/time-entries/{id}/stop', [LabourTimeController::class, 'stop'])->name('time.stop');
+        Route::get('/vehicles/{id}/history', [LabourTimeController::class, 'history'])->name('vehicles.history');
     });
 
 // Customer vehicles referenced by folders, recurring services and the tire hotel. The list is GET /api/v1/automotive/vehicles.
