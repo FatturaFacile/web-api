@@ -17,6 +17,7 @@ use Modules\Childcare\Models\ChildFee;
 use Modules\Childcare\Models\Group;
 use Modules\Childcare\Models\ReferencePerson;
 use Modules\Childcare\Models\WeeklyPlan;
+use Modules\Childcare\Services\EnrolmentService;
 use Modules\Childcare\Services\FamilyPortalService;
 use OpenApi\Attributes as OA;
 
@@ -25,8 +26,10 @@ use OpenApi\Attributes as OA;
  */
 final class ChildController extends Controller
 {
+    public function __construct(private readonly EnrolmentService $enrolments) {}
+
     /**
-     * Return the groups of the kindergarten.
+     * Return the groups of the kindergarten with the active children they hold and the places left.
      */
     #[OA\Get(path: '/api/v1/childcare/groups', operationId: 'listChildcareGroups', description: 'Return the groups of the kindergarten.', summary: 'List groups', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
         new OA\Response(response: 200, description: 'Groups', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
@@ -37,7 +40,7 @@ final class ChildController extends Controller
     {
         $this->authorize('care', Child::class);
 
-        return ChildcareResource::collection(Group::query()->orderBy('name')->get());
+        return ChildcareResource::collection($this->enrolments->occupancy());
     }
 
     /**
@@ -61,7 +64,7 @@ final class ChildController extends Controller
      */
     #[OA\Get(path: '/api/v1/childcare/children', operationId: 'listChildcareChildren', description: 'Return the children, optionally of a group or with a status, sorted by name.', summary: 'List children', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'group_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['active', 'left'])),
+        new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['active', 'left', 'waiting'])),
     ], responses: [
         new OA\Response(response: 200, description: 'Children', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -94,11 +97,7 @@ final class ChildController extends Controller
     {
         $this->authorize('manageRecords', Child::class);
 
-        $child = new Child;
-        $child->fill([...$request->validated(), 'reference_code' => $numbering->next('childcare_child')['number'], 'status' => 'active']);
-        $child->save();
-
-        return $this->created($child);
+        return $this->created($this->enrolments->register($request->validated(), $numbering->next('childcare_child')['number']));
     }
 
     /**
@@ -132,9 +131,41 @@ final class ChildController extends Controller
     {
         $child = Child::query()->findOrFail($id);
         $this->authorize('manageRecords', $child);
-        $child->update($request->validated());
 
-        return new ChildcareResource($child);
+        return new ChildcareResource($this->enrolments->change($child, $request->validated()));
+    }
+
+    /**
+     * Return the children waiting for a place, in the order of their applications.
+     */
+    #[OA\Get(path: '/api/v1/childcare/waiting-list', operationId: 'childcareWaitingList', description: 'Return the children waiting for a place, in the order of their applications (enrolled_on is the application date), each with its position.', summary: 'Waiting list', security: [['bearerAuth' => []]], tags: ['Childcare'], responses: [
+        new OA\Response(response: 200, description: 'Waiting children', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+    ])]
+    public function waitingList(): AnonymousResourceCollection
+    {
+        $this->authorize('manageRecords', Child::class);
+
+        return ChildcareResource::collection($this->enrolments->waitingList());
+    }
+
+    /**
+     * Admit a waiting child into a group with a free place.
+     */
+    #[OA\Post(path: '/api/v1/childcare/children/{id}/admit', operationId: 'admitChildcareChild', description: 'Admit a child from the waiting list into a group (its own or the one given). The group must have a free place; the child becomes active on the date given, today by default.', summary: 'Admit from waiting list', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/ChildcareAdmitRequest')), tags: ['Childcare'], parameters: [new OA\Parameter(ref: '#/components/parameters/ChildcareId')], responses: [
+        new OA\Response(response: 200, description: 'Child admitted', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordResponse')),
+        new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/ChildcareForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/ChildcareNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/ChildcareUnprocessable', response: 422),
+    ])]
+    public function admit(ChildRecordRequest $request, string $id): ChildcareResource
+    {
+        $child = Child::query()->findOrFail($id);
+        $this->authorize('manageRecords', $child);
+
+        return new ChildcareResource($this->enrolments->admit($child, $request->validated('group_id'), $request->validated('enrolled_on')));
     }
 
     /**

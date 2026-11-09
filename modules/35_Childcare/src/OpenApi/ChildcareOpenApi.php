@@ -34,6 +34,10 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'left_on', type: 'string', format: 'date', nullable: true),
     new OA\Property(property: 'status', type: 'string', enum: ['active', 'left']),
 ])]
+#[OA\Schema(schema: 'ChildcareAdmitRequest', type: 'object', properties: [
+    new OA\Property(property: 'group_id', description: 'Group to admit into; defaults to the group of the child', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'enrolled_on', description: 'Defaults to today of the company', type: 'string', format: 'date', nullable: true),
+])]
 #[OA\Schema(schema: 'ChildcareReferencePersonRequest', type: 'object', required: ['full_name', 'relationship', 'is_guardian', 'can_pick_up'], properties: [
     new OA\Property(property: 'full_name', type: 'string'),
     new OA\Property(property: 'phone', type: 'string', nullable: true),
