@@ -60,7 +60,7 @@ jobs:
     steps:
       # Check out repository under $GITHUB_WORKSPACE, enforcing LF line endings to avoid Pint indentation mismatches
       - name: Checkout Codebase
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Ensure UNIX line endings across all PHP files to prevent false-positive Pint rule violations
       - name: Normalize Line Endings (CRLF to LF)
