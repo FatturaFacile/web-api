@@ -86,3 +86,34 @@ test('only finance roles reach the networks, and transmissions stay in their ten
     networkActAs(Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta SA']), 'admin');
     $this->getJson('/api/v1/edocument-networks/transmissions')->assertOk()->assertJsonPath('data', []);
 });
+
+test('the same document is not handed to a network twice, a changed one is', function (): void {
+    config(['edocument_networks.drivers.peppol' => 'local', 'edocument_networks.drivers.ebill' => 'local']);
+
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertCreated();
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertStatus(409);
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', [...networkPayload(), 'payload_base64' => base64_encode('<doc v="2"/>')])->assertCreated();
+    $this->postJson('/api/v1/edocument-networks/ebill/transmissions', networkPayload())->assertCreated();
+
+    expect(EDocumentTransmission::query()->count())->toBe(3);
+});
+
+test('transmissions are listed with filters and pagination and shown one by one within the tenant', function (): void {
+    config(['edocument_networks.drivers.peppol' => 'local', 'edocument_networks.drivers.ebill' => 'local']);
+    $first = $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertCreated()->json('data');
+    $this->postJson('/api/v1/edocument-networks/ebill/transmissions', [...networkPayload(), 'document_reference' => 'INV-2'])->assertCreated();
+
+    $this->getJson('/api/v1/edocument-networks/transmissions?network=peppol')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.total', 1);
+    $this->getJson('/api/v1/edocument-networks/transmissions?document_reference=INV-2')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.network', 'ebill');
+    $this->getJson('/api/v1/edocument-networks/transmissions?status=simulated&per_page=1')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('meta.last_page', 2);
+    $this->getJson('/api/v1/edocument-networks/transmissions?network=unknown')->assertUnprocessable()->assertJsonValidationErrors('network');
+
+    $this->getJson("/api/v1/edocument-networks/transmissions/{$first['id']}")->assertOk()->assertJsonPath('data.document_reference', 'INV-1');
+    $this->getJson('/api/v1/edocument-networks/transmissions/'.Str::uuid())->assertNotFound();
+
+    networkActAs(Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta SA']), 'admin');
+    $this->getJson("/api/v1/edocument-networks/transmissions/{$first['id']}")->assertNotFound();
+
+    networkActAs($this->tenant, 'member');
+    $this->getJson("/api/v1/edocument-networks/transmissions/{$first['id']}")->assertForbidden();
+});
