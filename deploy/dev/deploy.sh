@@ -31,8 +31,8 @@ docker compose exec -T web nginx -s reload
 
 docker compose exec -T app sh -c '
   set -e
-  php -d memory_limit=512M artisan demo:reset
-  php -d memory_limit=1G artisan l5-swagger:generate
+  php -d memory_limit=2048M artisan demo:reset
+  php -d memory_limit=2048M artisan l5-swagger:generate
 '
 
 docker compose up -d queue_worker scheduler

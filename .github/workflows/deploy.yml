@@ -195,13 +195,13 @@ jobs:
             # Execute cache, migrations, and swagger generation in a single shell session
             docker compose exec -T app sh -c "
               set -e
-              php -d memory_limit=256M artisan config:clear
-              php -d memory_limit=256M artisan cache:clear
-              php -d memory_limit=512M artisan migrate --force
-              php -d memory_limit=256M artisan config:cache
-              php -d memory_limit=256M artisan route:cache
-              php -d memory_limit=256M artisan view:cache
-              php -d memory_limit=1G artisan l5-swagger:generate
+              php -d memory_limit=2048M artisan config:clear
+              php -d memory_limit=2048M artisan cache:clear
+              php -d memory_limit=2048M artisan migrate --force
+              php -d memory_limit=2048M artisan config:cache
+              php -d memory_limit=2048M artisan route:cache
+              php -d memory_limit=2048M artisan view:cache
+              php -d memory_limit=2048M artisan l5-swagger:generate
             "
 
             # Start worker daemons after migrations and cache generation succeed

@@ -24,6 +24,10 @@ RUN apk add --no-cache --virtual .phpredis-build $PHPIZE_DEPS \
     && apk del .phpredis-build \
     && rm -rf /tmp/pear
 
+# The startup CMD caches about 2000 routes and the deploy runs migrations, Swagger generation and demo:reset: the
+# 128M default is not enough. Applies to both the CLI and php-fpm.
+RUN echo "memory_limit = 2048M" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
