@@ -124,7 +124,7 @@ final class ThirdSectorStatementService
             ->whereBetween('journal_entries.posting_date', [$from, $to])
             ->when($costCenterIds !== null, static fn (Builder $query) => $query->whereIn('journal_lines.cost_center_id', $costCenterIds))
             ->groupBy('journal_lines.account_id', 'journal_lines.cost_center_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type')
-            ->get(['journal_lines.account_id', 'journal_lines.cost_center_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', DB::raw('SUM(journal_lines.debit_amount) as debit'), DB::raw('SUM(journal_lines.credit_amount) as credit')]);
+            ->get(['journal_lines.account_id', 'journal_lines.cost_center_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', DB::raw('SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit'), DB::raw('SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit')]);
 
         $mappings = $this->mappings('B');
         $lines = [];
@@ -182,7 +182,7 @@ final class ThirdSectorStatementService
         $rows = $this->postedLines()
             ->where('journal_entries.posting_date', '<=', $to)
             ->groupBy('journal_lines.account_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type')
-            ->get(['journal_lines.account_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', DB::raw('SUM(journal_lines.debit_amount) as debit'), DB::raw('SUM(journal_lines.credit_amount) as credit')]);
+            ->get(['journal_lines.account_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', DB::raw('SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit'), DB::raw('SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit')]);
 
         $mappings = $this->mappings('A');
         $lines = [];
@@ -245,7 +245,7 @@ final class ThirdSectorStatementService
             $entryIds = $this->postedLines()->whereBetween('journal_entries.posting_date', [$from, $to])->whereIn('journal_lines.account_id', $liquidity)->distinct()->pluck('journal_entries.id');
             $rows = $this->postedLines()->whereIn('journal_entries.id', $entryIds)->whereNotIn('journal_lines.account_id', $liquidity)
                 ->when($costCenterIds !== null, static fn (Builder $query) => $query->whereIn('journal_lines.cost_center_id', $costCenterIds))
-                ->get(['journal_lines.account_id', 'journal_lines.cost_center_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'journal_lines.debit_amount', 'journal_lines.credit_amount']);
+                ->get(['journal_lines.account_id', 'journal_lines.cost_center_id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', DB::raw('COALESCE(journal_lines.functional_debit, journal_lines.debit_amount) as debit_amount'), DB::raw('COALESCE(journal_lines.functional_credit, journal_lines.credit_amount) as credit_amount')]);
 
             foreach ($rows as $row) {
                 $net = Money::sub(Money::normalize((string) $row->debit_amount), Money::normalize((string) $row->credit_amount));
@@ -307,7 +307,7 @@ final class ThirdSectorStatementService
         }
 
         $row = $this->postedLines()->whereIn('journal_lines.account_id', $accounts)->where('journal_entries.posting_date', '<=', $until)
-            ->first([DB::raw('COALESCE(SUM(journal_lines.debit_amount), 0) as debit'), DB::raw('COALESCE(SUM(journal_lines.credit_amount), 0) as credit')]);
+            ->first([DB::raw('COALESCE(SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)), 0) as debit'), DB::raw('COALESCE(SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)), 0) as credit')]);
 
         return Money::sub(Money::normalize((string) $row?->debit), Money::normalize((string) $row?->credit));
     }
@@ -321,7 +321,7 @@ final class ThirdSectorStatementService
             ->whereIn('chart_of_accounts.account_type', self::ProfitAndLossTypes)
             ->when($from !== null, static fn (Builder $query) => $query->where('journal_entries.posting_date', '>=', $from))
             ->where('journal_entries.posting_date', '<=', $to)
-            ->first([DB::raw('COALESCE(SUM(journal_lines.debit_amount), 0) as debit'), DB::raw('COALESCE(SUM(journal_lines.credit_amount), 0) as credit')]);
+            ->first([DB::raw('COALESCE(SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)), 0) as debit'), DB::raw('COALESCE(SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)), 0) as credit')]);
 
         return Money::sub(Money::normalize((string) $row?->credit), Money::normalize((string) $row?->debit));
     }

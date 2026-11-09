@@ -12,10 +12,12 @@ use Modules\DataExport\Services\ExcelCsvWriter;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\JournalLine;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use OpenApi\Attributes as OA;
 
 /**
- * Libro giornale: the posted entries of a fiscal year in order of date and progressive journal number, one row per line.
+ * Libro giornale: the posted entries of a fiscal year in order of date and progressive journal number, one row per line,
+ * in the accounting currency of the tenant, with the transaction currency and amounts of each line next to it.
  */
 final class JournalBookController extends Controller
 {
@@ -23,12 +25,13 @@ final class JournalBookController extends Controller
     private const array Columns = [
         'journal_number', 'posting_date', 'entry_number', 'document_date', 'document_number', 'journal_type', 'status',
         'entry_description', 'line_number', 'account_code', 'account_name', 'line_description', 'debit', 'credit', 'currency',
+        'transaction_currency', 'transaction_debit', 'transaction_credit', 'exchange_rate',
     ];
 
     #[OA\Get(
         path: '/api/v1/general-ledger/journal-book/export',
         operationId: 'exportGeneralLedgerJournalBook',
-        description: 'CSV of the libro giornale of a fiscal year of the active tenant: posted and reversed entries ordered by posting date and progressive journal number, one row per line. Semicolons, UTF-8 BOM, CRLF, decimal commas. Optional from/to dates narrow the year.',
+        description: 'CSV of the libro giornale of a fiscal year of the active tenant: posted and reversed entries ordered by posting date and progressive journal number, one row per line. debit/credit are in the accounting currency of the tenant (column currency); transaction_currency, transaction_debit, transaction_credit and exchange_rate give the line as booked in its own currency. Semicolons, UTF-8 BOM, CRLF, decimal commas. Optional from/to dates narrow the year.',
         summary: 'Export journal book (libro giornale)',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Journals'],
@@ -68,7 +71,25 @@ final class JournalBookController extends Controller
             ->orderBy('journal_number')
             ->get();
 
-        $rows = $entries->flatMap(fn (JournalEntry $entry) => $entry->lines->map(fn (JournalLine $line): array => [
+        $currency = TenantAccountingCurrency::of($tenantId);
+        $rows = $entries->flatMap(fn (JournalEntry $entry): array => $entry->lines->map(fn (JournalLine $line): array => $this->row($entry, $line, $currency))->all());
+
+        $fileName = 'libro-giornale-'.($fiscalYear->year_code ?: $fiscalYear->id).'.csv';
+
+        return response($writer->write(self::Columns, $rows), 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
+        ]);
+    }
+
+    /**
+     * One CSV row of the libro giornale: the entry, the line in the accounting currency, then the line as booked.
+     *
+     * @return list<mixed>
+     */
+    private function row(JournalEntry $entry, JournalLine $line, string $currency): array
+    {
+        return [
             $entry->journal_number,
             $entry->posting_date?->toDateString(),
             $entry->entry_number,
@@ -81,17 +102,14 @@ final class JournalBookController extends Controller
             $line->account?->account_code,
             $line->account?->name,
             $line->description,
+            $this->amount((string) ($line->functional_debit ?? $line->debit_amount)),
+            $this->amount((string) ($line->functional_credit ?? $line->credit_amount)),
+            $currency,
+            $line->currency,
             $this->amount((string) $line->debit_amount),
             $this->amount((string) $line->credit_amount),
-            $line->currency,
-        ]));
-
-        $fileName = 'libro-giornale-'.($fiscalYear->year_code ?: $fiscalYear->id).'.csv';
-
-        return response($writer->write(self::Columns, $rows), 200, [
-            'Content-Type' => 'text/csv; charset=UTF-8',
-            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
-        ]);
+            number_format((float) $line->exchange_rate, 6, ',', ''),
+        ];
     }
 
     private function amount(string $value): string

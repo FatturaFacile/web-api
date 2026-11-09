@@ -96,7 +96,7 @@ final class CustomsReconciliationService
             ->where('je.source_document_type', CustomsLedgerService::SOURCE)
             ->whereIn('je.source_document_id', $decisionIds)
             ->where('jl.account_id', $payableId)
-            ->selectRaw('coalesce(sum(jl.credit_amount), 0) as credits, coalesce(sum(jl.debit_amount), 0) as debits')
+            ->selectRaw('coalesce(sum(coalesce(jl.functional_credit, jl.credit_amount)), 0) as credits, coalesce(sum(coalesce(jl.functional_debit, jl.debit_amount)), 0) as debits')
             ->first();
 
         return Decimal::sub((string) $row->credits, (string) $row->debits);

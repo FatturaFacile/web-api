@@ -15,6 +15,7 @@ use Modules\GeneralLedger\Events\TrialBalanceGeneratedEvent;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\StatementScheme;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
 final class FinancialStatementService implements FinancialStatementServiceInterface
 {
@@ -31,9 +32,10 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
 
     /**
      * Debit and credit per account of the posted entries of one fiscal period (statutory ledger). A reversed entry
-     * and its reversal are both read, so they cancel out. Amounts are decimal strings at 4 decimals.
+     * and its reversal are both read, so they cancel out. Amounts are decimal strings at 4 decimals, in the accounting
+     * currency of the tenant (`currency`): a foreign-currency line counts at its converted value.
      *
-     * @return array{period_id: string, period_name: string, total_debit: string, total_credit: string, is_balanced: bool, accounts: list<array<string, mixed>>}
+     * @return array{period_id: string, period_name: string, currency: string, total_debit: string, total_credit: string, is_balanced: bool, accounts: list<array<string, mixed>>}
      */
     public function generateTrialBalance(string $tenantId, string $fiscalPeriodId): array
     {
@@ -54,8 +56,8 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
                 'chart_of_accounts.name as account_name',
                 'chart_of_accounts.account_type',
                 'chart_of_accounts.normal_balance',
-                DB::raw('SUM(journal_lines.debit_amount) as total_debit'),
-                DB::raw('SUM(journal_lines.credit_amount) as total_credit')
+                DB::raw('SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as total_debit'),
+                DB::raw('SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as total_credit')
             )
             ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', 'chart_of_accounts.normal_balance')
             ->orderBy('chart_of_accounts.account_code')
@@ -97,6 +99,7 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
         return [
             'period_id' => (string) $period->id,
             'period_name' => (string) $period->period_name,
+            'currency' => TenantAccountingCurrency::of($tenantId),
             'total_debit' => $totalDebit,
             'total_credit' => $totalCredit,
             'is_balanced' => $isBalanced,
@@ -134,6 +137,7 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
         return [
             'period_id' => (string) $period->id,
             'period_name' => (string) $period->period_name,
+            'currency' => $sheet['currency'],
             'as_of' => $sheet['as_of'],
             'assets' => $rows('asset'),
             'total_assets' => $totals['total_assets'],
@@ -177,6 +181,7 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
         return [
             'period_id' => (string) $period->id,
             'period_name' => (string) $period->period_name,
+            'currency' => $statement['currency'],
             'revenues' => $rows('revenue'),
             'total_revenue' => $totals['total_revenue'],
             'cogs' => $rows('cogs'),
@@ -209,7 +214,7 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
             ->where('journal_entries.ledger_type', 'statutory')
             ->where('journal_entries.fiscal_period_id', $fiscalPeriodId)
             ->where('chart_of_accounts.reconciliation_type', $reconciliationType)
-            ->selectRaw('COALESCE(SUM(journal_lines.debit_amount - journal_lines.credit_amount), 0) as change')
+            ->selectRaw('COALESCE(SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount) - COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)), 0) as change')
             ->value('change') ?? '0'), '0', self::Scale);
 
         $receivablesIncrease = $controlChange('customer');

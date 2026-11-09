@@ -309,8 +309,8 @@ class GeneralLedgerExportService
     }
 
     /**
-     * A journal line in accounting-currency cents, on the side it was booked: the booked amount for a line in the
-     * accounting currency, the functional amount of a line in another currency.
+     * A journal line in accounting-currency cents, on the side it was booked: its functional amount (for a historical
+     * line without one, the booked amount in the accounting currency or the stored conversion of a foreign line).
      *
      * @param  array{code: string, name: string}  $account
      */
@@ -318,7 +318,8 @@ class GeneralLedgerExportService
     {
         $isDebit = bccomp((string) $line->debit_amount, '0', 4) === 1;
         $booked = (string) ($isDebit ? $line->debit_amount : $line->credit_amount);
-        $cents = $this->cents($line->currency === $currency ? $booked : (string) $line->amount_in_functional_currency);
+        $functional = $isDebit ? $line->functional_debit : $line->functional_credit;
+        $cents = $this->cents($functional !== null ? (string) $functional : ($line->currency === $currency ? $booked : (string) $line->amount_in_functional_currency));
 
         return new LedgerLine(
             $account['code'],

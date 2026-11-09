@@ -58,6 +58,9 @@ final class JournalEntry extends BaseEnterpriseModel
         return $this->belongsTo(FiscalPeriod::class, 'fiscal_period_id');
     }
 
+    /**
+     * @return HasMany<JournalLine, $this>
+     */
     public function lines(): HasMany
     {
         return $this->hasMany(JournalLine::class, 'journal_entry_id')->orderBy('line_number');
@@ -83,14 +86,17 @@ final class JournalEntry extends BaseEnterpriseModel
         return $this->hasMany(AccountingAnomaly::class, 'journal_entry_id');
     }
 
+    /**
+     * Whether the lines balance in the accounting currency of the tenant, the currency every balance is read in.
+     */
     public function isBalanced(): bool
     {
         $debit = '0';
         $credit = '0';
 
-        foreach ($this->lines()->get(['debit_amount', 'credit_amount']) as $line) {
-            $debit = Decimal::add($debit, (string) $line->debit_amount);
-            $credit = Decimal::add($credit, (string) $line->credit_amount);
+        foreach ($this->lines()->get(['debit_amount', 'credit_amount', 'functional_debit', 'functional_credit']) as $line) {
+            $debit = Decimal::add($debit, (string) ($line->functional_debit ?? $line->debit_amount));
+            $credit = Decimal::add($credit, (string) ($line->functional_credit ?? $line->credit_amount));
         }
 
         return Decimal::compare($debit, $credit) === 0 && Decimal::isPositive($debit);

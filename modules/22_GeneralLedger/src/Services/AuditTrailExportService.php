@@ -38,7 +38,7 @@ final class AuditTrailExportService
             ->whereNull('deleted_at')
             ->where('tenant_id', $tenantId)
             ->groupBy('journal_entry_id')
-            ->selectRaw('journal_entry_id, SUM(debit_amount) as total_debit, SUM(credit_amount) as total_credit, COUNT(*) as line_count');
+            ->selectRaw('journal_entry_id, SUM(COALESCE(functional_debit, debit_amount)) as total_debit, SUM(COALESCE(functional_credit, credit_amount)) as total_credit, COUNT(*) as line_count');
 
         $query = DB::table('journal_entries as entry')
             ->leftJoinSub($totals, 'totals', 'totals.journal_entry_id', '=', 'entry.id')

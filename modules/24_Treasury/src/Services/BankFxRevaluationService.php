@@ -132,7 +132,26 @@ final readonly class BankFxRevaluationService
     }
 
     /**
-     * The foreign balance and the accounting-currency book value of a ledger account at a date.
+     * Debit minus credit of a line in the accounting currency: its functional amounts; for a line without them (written
+     * outside the posting service) the booked amount in the accounting currency, or the stored conversion of a foreign
+     * line, as before the functional columns.
+     */
+    private function functionalBalance(JournalLine $line, string $base): string
+    {
+        if ($line->functional_debit !== null || $line->functional_credit !== null) {
+            return bcsub((string) ($line->functional_debit ?? '0'), (string) ($line->functional_credit ?? '0'), 4);
+        }
+
+        $isDebit = bccomp((string) $line->debit_amount, '0', 4) === 1;
+        $booked = (string) ($isDebit ? $line->debit_amount : $line->credit_amount);
+        $functional = $line->currency === $base ? $booked : (string) $line->amount_in_functional_currency;
+
+        return $isDebit ? $functional : bcmul($functional, '-1', 4);
+    }
+
+    /**
+     * The foreign balance (transaction amounts of the lines in the account currency) and the accounting-currency book
+     * value (functional amounts of every line of the account, revaluations included) of a ledger account at a date.
      *
      * @return array{0: string, 1: string}
      */
@@ -149,19 +168,14 @@ final readonly class BankFxRevaluationService
             ->whereNull('entry.deleted_at')
             ->whereNull('journal_lines.deleted_at')
             ->whereDate('entry.posting_date', '<=', $date)
-            ->get(['journal_lines.debit_amount', 'journal_lines.credit_amount', 'journal_lines.currency', 'journal_lines.amount_in_functional_currency']);
+            ->get(['journal_lines.debit_amount', 'journal_lines.credit_amount', 'journal_lines.currency', 'journal_lines.functional_debit', 'journal_lines.functional_credit', 'journal_lines.amount_in_functional_currency']);
 
         foreach ($lines as $line) {
-            $isDebit = bccomp((string) $line->debit_amount, '0', 4) === 1;
-            $booked = (string) ($isDebit ? $line->debit_amount : $line->credit_amount);
-            $functional = $line->currency === $base ? $booked : (string) $line->amount_in_functional_currency;
-            $sign = $isDebit ? '1' : '-1';
-
             if ($line->currency === $currency) {
-                $foreign = bcadd($foreign, bcmul($booked, $sign, 4), 4);
+                $foreign = bcadd($foreign, bcsub((string) $line->debit_amount, (string) $line->credit_amount, 4), 4);
             }
 
-            $book = bcadd($book, bcmul($functional, $sign, 4), 4);
+            $book = bcadd($book, $this->functionalBalance($line, $base), 4);
         }
 
         return [Decimal::round2($foreign), Decimal::round2($book)];

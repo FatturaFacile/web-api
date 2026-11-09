@@ -27,7 +27,9 @@ final readonly class TreasuryLedgerPoster
     ) {}
 
     /**
-     * Posts a balanced entry, or returns the posted entry the source already has.
+     * Posts a balanced entry, or returns the posted entry the source already has. A line in a foreign currency without
+     * `exchange_rate` is converted into the accounting currency at the rate of the exchange-rate service on the date
+     * (refused when there is none): the ledger never books a foreign amount at par.
      *
      * @param  list<array{account: ChartOfAccount, debit: string, credit: string, description: string, currency?: string, exchange_rate?: string}>  $lines
      * @param  bool  $bankBalanceManaged  The caller moves the balances of the treasury bank accounts itself: the posting
@@ -66,7 +68,7 @@ final readonly class TreasuryLedgerPoster
                     'debit_amount' => $line['debit'],
                     'credit_amount' => $line['credit'],
                     'currency' => $line['currency'] ?? null,
-                    'exchange_rate' => $line['exchange_rate'] ?? '1',
+                    'exchange_rate' => $line['exchange_rate'] ?? null,
                     'description' => mb_substr($line['description'], 0, 255),
                 ], $lines),
             ], $actorUserId);
