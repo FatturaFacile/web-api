@@ -82,6 +82,8 @@ function ribaEntryLines(string $sourceType, string $sourceId): array
         ->join('chart_of_accounts', 'chart_of_accounts.id', '=', 'journal_lines.account_id')
         ->where('journal_entries.source_document_type', $sourceType)
         ->where('journal_entries.source_document_id', $sourceId)
+        ->orderByDesc('journal_lines.debit_amount')
+        ->orderBy('chart_of_accounts.account_code')
         ->get(['chart_of_accounts.account_code', 'journal_lines.debit_amount', 'journal_lines.credit_amount'])
         ->groupBy('account_code')
         ->map(fn ($lines): array => ['debit' => round((float) $lines->sum('debit_amount'), 2), 'credit' => round((float) $lines->sum('credit_amount'), 2)])
