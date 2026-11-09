@@ -42309,6 +42309,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      currency:
+                        type: string
                       from:
                         type: string
                       to:
@@ -42369,6 +42371,7 @@ paths:
                       is_balanced:
                         type: boolean
                     required:
+                      - currency
                       - from
                       - to
                       - compare_from
@@ -42493,6 +42496,8 @@ paths:
                           - name
                           - account_type
                           - normal_balance
+                      currency:
+                        type: string
                       from:
                         type: string
                       to:
@@ -42505,6 +42510,21 @@ paths:
                         type: string
                       total_credit:
                         type: string
+                      transaction_totals:
+                        type:
+                          - object
+                          - 'null'
+                        properties:
+                          currency:
+                            type: string
+                          debit:
+                            type: string
+                          credit:
+                            type: string
+                        required:
+                          - currency
+                          - debit
+                          - credit
                       lines:
                         type: array
                         items:
@@ -42548,6 +42568,14 @@ paths:
                               type: string
                             credit:
                               type: string
+                            transaction_currency:
+                              type: string
+                            transaction_debit:
+                              type: string
+                            transaction_credit:
+                              type: string
+                            exchange_rate:
+                              type: string
                             running_balance:
                               type: string
                           required:
@@ -42569,6 +42597,10 @@ paths:
                             - currency
                             - debit
                             - credit
+                            - transaction_currency
+                            - transaction_debit
+                            - transaction_credit
+                            - exchange_rate
                             - running_balance
                       meta:
                         type: object
@@ -42587,12 +42619,14 @@ paths:
                           - total
                     required:
                       - account
+                      - currency
                       - from
                       - to
                       - opening_balance
                       - closing_balance
                       - total_debit
                       - total_credit
+                      - transaction_totals
                       - lines
                       - meta
                   meta:
@@ -42644,6 +42678,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      currency:
+                        type: string
                       as_of:
                         type: string
                       compare_as_of:
@@ -42708,6 +42744,7 @@ paths:
                       is_balanced:
                         type: boolean
                     required:
+                      - currency
                       - as_of
                       - compare_as_of
                       - sections
@@ -42802,6 +42839,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      currency:
+                        type: string
                       from:
                         type: string
                       to:
@@ -42864,6 +42903,7 @@ paths:
                           -
                             type: 'null'
                     required:
+                      - currency
                       - from
                       - to
                       - compare_from
@@ -42929,6 +42969,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      currency:
+                        type: string
                       dimension:
                         type: string
                       from:
@@ -42986,6 +43028,7 @@ paths:
                       total:
                         type: string
                     required:
+                      - currency
                       - dimension
                       - from
                       - to
@@ -117347,6 +117390,14 @@ components:
           type: number
         amount_in_functional_currency:
           type: number
+        functional_debit:
+          type:
+            - number
+            - 'null'
+        functional_credit:
+          type:
+            - number
+            - 'null'
       required:
         - id
         - line_number
@@ -117362,6 +117413,8 @@ components:
         - currency
         - exchange_rate
         - amount_in_functional_currency
+        - functional_debit
+        - functional_credit
       title: JournalLineResource
     JsonResource:
       type: string
@@ -147733,6 +147786,16 @@ components:
                 - 'null'
               format: uuid
             fx_unrealised_loss:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            fx_realised_gain:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            fx_realised_loss:
               type:
                 - string
                 - 'null'

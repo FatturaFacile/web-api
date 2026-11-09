@@ -98759,7 +98759,7 @@
                     "General Ledger Financial Statements"
                 ],
                 "summary": "Get trial balance",
-                "description": "Debit and credit per account of the posted entries of the fiscal period (reversed entries and their reversals both count, so they cancel out). Amounts are decimal strings since April 2027. For a date range, opening balances, comparison and dimension filters use GET /api/v1/general-ledger/reports/trial-balance.",
+                "description": "Debit and credit per account of the posted entries of the fiscal period (reversed entries and their reversals both count, so they cancel out). Amounts are decimal strings since April 2027. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`. For a date range, opening balances, comparison and dimension filters use GET /api/v1/general-ledger/reports/trial-balance.",
                 "operationId": "getTrialBalanceGeneralLedgerFinancialStatement",
                 "parameters": [
                     {
@@ -98831,7 +98831,7 @@
                     "General Ledger Financial Statements"
                 ],
                 "summary": "Get balance sheet",
-                "description": "Balance sheet at the end of the fiscal period from every posted entry up to that day, classified by account type only (no account-code guessing); the result not yet closed into equity is added to equity. Amounts are decimal strings since April 2027. With comparison dates use GET /api/v1/general-ledger/reports/balance-sheet.",
+                "description": "Balance sheet at the end of the fiscal period from every posted entry up to that day, classified by account type only (no account-code guessing); the result not yet closed into equity is added to equity. Amounts are decimal strings since April 2027. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`. With comparison dates use GET /api/v1/general-ledger/reports/balance-sheet.",
                 "operationId": "getBalanceSheetGeneralLedgerFinancialStatement",
                 "parameters": [
                     {
@@ -98903,7 +98903,7 @@
                     "General Ledger Financial Statements"
                 ],
                 "summary": "Get income statement",
-                "description": "Income statement of the fiscal period from posted entries, classified by account type only (revenue, cogs, expense), without the year-end closing entry. Amounts are decimal strings since April 2027. With comparison ranges use GET /api/v1/general-ledger/reports/income-statement.",
+                "description": "Income statement of the fiscal period from posted entries, classified by account type only (revenue, cogs, expense), without the year-end closing entry. Amounts are decimal strings since April 2027. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`. With comparison ranges use GET /api/v1/general-ledger/reports/income-statement.",
                 "operationId": "getIncomeStatementGeneralLedgerFinancialStatement",
                 "parameters": [
                     {
@@ -99781,7 +99781,7 @@
                     "General Ledger Journals"
                 ],
                 "summary": "Export journal book (libro giornale)",
-                "description": "CSV of the libro giornale of a fiscal year of the active tenant: posted and reversed entries ordered by posting date and progressive journal number, one row per line. Semicolons, UTF-8 BOM, CRLF, decimal commas. Optional from/to dates narrow the year.",
+                "description": "CSV of the libro giornale of a fiscal year of the active tenant: posted and reversed entries ordered by posting date and progressive journal number, one row per line. debit/credit are in the accounting currency of the tenant (column currency); transaction_currency, transaction_debit, transaction_credit and exchange_rate give the line as booked in its own currency. Semicolons, UTF-8 BOM, CRLF, decimal commas. Optional from/to dates narrow the year.",
                 "operationId": "exportGeneralLedgerJournalBook",
                 "parameters": [
                     {
@@ -101524,7 +101524,7 @@
                     "General Ledger Reports"
                 ],
                 "summary": "Trial balance report",
-                "description": "Trial balance (bilancio di verifica) of a range of posting dates from posted entries only: per account the balance before the range, debit and credit of the range and the closing balance (debit minus credit), with an optional comparison range and optional cost centre, profit centre or project filter. Reversed entries and their reversals both count, so they cancel out; carried-forward opening entries are left out because they repeat balances already in the ledger. Each row carries the drill-down query of its account ledger. Amounts are decimal strings.",
+                "description": "Trial balance (bilancio di verifica) of a range of posting dates from posted entries only: per account the balance before the range, debit and credit of the range and the closing balance (debit minus credit), with an optional comparison range and optional cost centre, profit centre or project filter. Reversed entries and their reversals both count, so they cancel out; carried-forward opening entries are left out because they repeat balances already in the ledger. Each row carries the drill-down query of its account ledger. Amounts are decimal strings. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.",
                 "operationId": "getGeneralLedgerTrialBalanceReport",
                 "parameters": [
                     {
@@ -101628,7 +101628,7 @@
                     "General Ledger Reports"
                 ],
                 "summary": "Account ledger report",
-                "description": "Account ledger (mastrino) of one account for a range of posting dates: the balance before the range, the posted lines oldest first with their journal entry (for drill-down to GET /journals/{id}), source document, partner and dimensions, the running balance after each line (it includes every earlier line of the range, whatever the page) and the closing balance. 404 when the account is not in the active tenant.",
+                "description": "Account ledger (mastrino) of one account for a range of posting dates: the balance before the range, the posted lines oldest first with their journal entry (for drill-down to GET /journals/{id}), source document, partner and dimensions, the running balance after each line (it includes every earlier line of the range, whatever the page) and the closing balance. Balances and the debit/credit of each line are in the accounting currency (`currency`); each line also gives `transaction_currency`, `transaction_debit`, `transaction_credit` and `exchange_rate` as booked. 404 when the account is not in the active tenant.",
                 "operationId": "getGeneralLedgerAccountLedgerReport",
                 "parameters": [
                     {
@@ -101766,7 +101766,7 @@
                     "General Ledger Reports"
                 ],
                 "summary": "Balance sheet report",
-                "description": "Balance sheet (stato patrimoniale) at `as_of` from posted entries, by account type (asset and wip, liability, equity), amounts in the natural sign of each section; the result not yet closed into equity is reported on its own and added to equity, so `is_balanced` checks assets = liabilities + equity. With `compare_as_of` every account carries its comparison amount and the variance. For a statutory layout (art. 2424 c.c., Swiss OR) use a reclassification scheme (GET /financial-statements/reclassified).",
+                "description": "Balance sheet (stato patrimoniale) at `as_of` from posted entries, by account type (asset and wip, liability, equity), amounts in the natural sign of each section; the result not yet closed into equity is reported on its own and added to equity, so `is_balanced` checks assets = liabilities + equity. With `compare_as_of` every account carries its comparison amount and the variance. For a statutory layout (art. 2424 c.c., Swiss OR) use a reclassification scheme (GET /financial-statements/reclassified). Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.",
                 "operationId": "getGeneralLedgerBalanceSheetReport",
                 "parameters": [
                     {
@@ -101869,7 +101869,7 @@
                     "General Ledger Reports"
                 ],
                 "summary": "Income statement report",
-                "description": "Income statement (conto economico) of a range of posting dates from posted entries, by account type (revenue, cogs, expense) in the natural sign, without the year-end closing entries; gross profit and net income. With a comparison range every account carries its comparison amount and the variance; each account carries the drill-down query of its account ledger. Optional cost centre, profit centre or project filter.",
+                "description": "Income statement (conto economico) of a range of posting dates from posted entries, by account type (revenue, cogs, expense) in the natural sign, without the year-end closing entries; gross profit and net income. With a comparison range every account carries its comparison amount and the variance; each account carries the drill-down query of its account ledger. Optional cost centre, profit centre or project filter. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.",
                 "operationId": "getGeneralLedgerIncomeStatementReport",
                 "parameters": [
                     {
@@ -101973,7 +101973,7 @@
                     "General Ledger Reports"
                 ],
                 "summary": "Dimension analysis report",
-                "description": "Income statement accounts of a range grouped by cost centre, profit centre or project, from posted entries: per group the accounts with debit, credit and natural amount, and the result of the group (revenue minus costs). Lines without the dimension form a group with a null id, so the sum of the groups equals the net income of the range.",
+                "description": "Income statement accounts of a range grouped by cost centre, profit centre or project, from posted entries: per group the accounts with debit, credit and natural amount, and the result of the group (revenue minus costs). Lines without the dimension form a group with a null id, so the sum of the groups equals the net income of the range. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.",
                 "operationId": "getGeneralLedgerDimensionReport",
                 "parameters": [
                     {
@@ -102075,7 +102075,7 @@
                     "General Ledger Reports"
                 ],
                 "summary": "Export ledger audit trail",
-                "description": "Audit trail of the ledger for auditors: every journal entry with a posting date in the range, whatever its status (draft, pending_approval, posted, rejected, reversed), with who created, submitted, approved, rejected, posted and reversed it and when, the source document, the reversal link, the automatic reversal date and the debit/credit totals of its lines. CSV (semicolon separated, UTF-8 with BOM, default) or JSON.",
+                "description": "Audit trail of the ledger for auditors: every journal entry with a posting date in the range, whatever its status (draft, pending_approval, posted, rejected, reversed), with who created, submitted, approved, rejected, posted and reversed it and when, the source document, the reversal link, the automatic reversal date and the debit/credit totals of its lines in the accounting currency. CSV (semicolon separated, UTF-8 with BOM, default) or JSON.",
                 "operationId": "exportGeneralLedgerAuditTrail",
                 "parameters": [
                     {
@@ -190046,7 +190046,7 @@
             "GeneralLedgerSettingsResource": {
                 "properties": {
                     "posting_accounts": {
-                        "description": "One entry per role: sales_revenue, purchase_expense, output_vat, input_vat, receivables, payables, retained_earnings, fx_unrealised_gain, fx_unrealised_loss, rounding",
+                        "description": "One entry per role: sales_revenue, purchase_expense, output_vat, input_vat, receivables, payables, retained_earnings, fx_unrealised_gain, fx_unrealised_loss, fx_realised_gain, fx_realised_loss, rounding. The realised roles take the exchange differences of payments of foreign-currency documents (collection rate against document rate); when they are not set the unrealised accounts are used. The rounding account also takes the residual of the conversion of an entry into the accounting currency (at most 0.01 per entry)",
                         "type": "object",
                         "additionalProperties": {
                             "properties": {
@@ -190716,6 +190716,11 @@
             },
             "GeneralLedgerTrialBalanceReport": {
                 "properties": {
+                    "currency": {
+                        "description": "Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value",
+                        "type": "string",
+                        "example": "EUR"
+                    },
                     "from": {
                         "type": "string",
                         "format": "date"
@@ -190809,9 +190814,15 @@
                 "type": "object"
             },
             "GeneralLedgerAccountLedgerReport": {
+                "description": "Balances, totals and the debit/credit of each line are in the accounting currency of the tenant (currency); each line also carries its transaction currency and amounts as booked.",
                 "properties": {
                     "account": {
                         "type": "object"
+                    },
+                    "currency": {
+                        "description": "Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value",
+                        "type": "string",
+                        "example": "EUR"
                     },
                     "from": {
                         "type": "string",
@@ -190832,6 +190843,25 @@
                     },
                     "total_credit": {
                         "type": "string"
+                    },
+                    "transaction_totals": {
+                        "description": "Debit and credit of the range in the transaction currency, only when every line of the range is in the same currency (null otherwise: amounts of different currencies are not added)",
+                        "properties": {
+                            "currency": {
+                                "type": "string",
+                                "example": "USD"
+                            },
+                            "debit": {
+                                "type": "string",
+                                "example": "1000.0000"
+                            },
+                            "credit": {
+                                "type": "string",
+                                "example": "0.0000"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
                     },
                     "lines": {
                         "type": "array",
@@ -190894,15 +190924,42 @@
                                     "nullable": true
                                 },
                                 "currency": {
-                                    "type": "string"
+                                    "description": "Accounting currency of the tenant, the currency of debit, credit and running_balance (until this version it was the transaction currency: now in transaction_currency)",
+                                    "type": "string",
+                                    "example": "EUR"
                                 },
                                 "debit": {
-                                    "type": "string"
+                                    "description": "Debit in the accounting currency",
+                                    "type": "string",
+                                    "example": "920.0000"
                                 },
                                 "credit": {
-                                    "type": "string"
+                                    "description": "Credit in the accounting currency",
+                                    "type": "string",
+                                    "example": "0.0000"
+                                },
+                                "transaction_currency": {
+                                    "description": "Currency the line was booked in",
+                                    "type": "string",
+                                    "example": "USD"
+                                },
+                                "transaction_debit": {
+                                    "description": "Debit in the transaction currency",
+                                    "type": "string",
+                                    "example": "1000.0000"
+                                },
+                                "transaction_credit": {
+                                    "description": "Credit in the transaction currency",
+                                    "type": "string",
+                                    "example": "0.0000"
+                                },
+                                "exchange_rate": {
+                                    "description": "Accounting-currency units per transaction-currency unit used for the line",
+                                    "type": "string",
+                                    "example": "0.920000"
                                 },
                                 "running_balance": {
+                                    "description": "Balance after the line, in the accounting currency",
                                     "type": "string"
                                 }
                             },
@@ -190932,6 +190989,11 @@
             "GeneralLedgerStatementReport": {
                 "description": "Balance sheet (sections asset, liability, equity; as_of/compare_as_of) or income statement (sections revenue, cogs, expense; from/to/compare_from/compare_to). With a comparison, every account carries comparison_amount and variance, every section comparison_total and variance.",
                 "properties": {
+                    "currency": {
+                        "description": "Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value",
+                        "type": "string",
+                        "example": "EUR"
+                    },
                     "as_of": {
                         "type": "string",
                         "format": "date",
@@ -191026,6 +191088,11 @@
             },
             "GeneralLedgerDimensionReport": {
                 "properties": {
+                    "currency": {
+                        "description": "Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value",
+                        "type": "string",
+                        "example": "EUR"
+                    },
                     "dimension": {
                         "type": "string",
                         "enum": [
@@ -191111,9 +191178,11 @@
                         "nullable": true
                     },
                     "total_debit": {
+                        "description": "Debit total of the lines in the accounting currency of the tenant",
                         "type": "string"
                     },
                     "total_credit": {
+                        "description": "Credit total of the lines in the accounting currency of the tenant",
                         "type": "string"
                     },
                     "created_by": {
@@ -192004,19 +192073,38 @@
                         "type": "string"
                     },
                     "debit_amount": {
+                        "description": "Debit in the transaction currency of the line (`currency`)",
                         "type": "number"
                     },
                     "credit_amount": {
+                        "description": "Credit in the transaction currency of the line (`currency`)",
                         "type": "number"
                     },
                     "currency": {
-                        "type": "string"
+                        "description": "Transaction currency of the line (ISO 4217)",
+                        "type": "string",
+                        "example": "USD"
                     },
                     "exchange_rate": {
-                        "type": "number"
+                        "description": "Accounting-currency units per unit of the transaction currency; 1 for a line in the accounting currency",
+                        "type": "number",
+                        "example": 0.92
                     },
                     "amount_in_functional_currency": {
+                        "description": "Unsigned amount of the line in the accounting currency (legacy; prefer functional_debit / functional_credit)",
                         "type": "number"
+                    },
+                    "functional_debit": {
+                        "description": "Debit in the accounting currency of the tenant, the amount every balance and report sums. Null only for a historical foreign-currency line posted without a usable rate (see general-ledger:functional-currency-audit)",
+                        "type": "number",
+                        "example": 920,
+                        "nullable": true
+                    },
+                    "functional_credit": {
+                        "description": "Credit in the accounting currency of the tenant. Null only for a historical foreign-currency line posted without a usable rate",
+                        "type": "number",
+                        "example": 0,
+                        "nullable": true
                     }
                 },
                 "type": "object"

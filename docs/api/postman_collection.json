@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "d2f5b37c-5755-4ae3-b951-96b656539f86",
+        "_postman_id": "3602920d-039c-4d8f-821f-1ac940eceb32",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -48067,7 +48067,7 @@
                         "description": "Changes the settings sent",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"posting_accounts\": {\n        \"sales_revenue\": \"00000000-0000-0000-0000-000000000000\",\n        \"purchase_expense\": \"00000000-0000-0000-0000-000000000000\",\n        \"output_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"input_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"receivables\": \"00000000-0000-0000-0000-000000000000\",\n        \"payables\": \"00000000-0000-0000-0000-000000000000\",\n        \"retained_earnings\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"rounding\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    \"manual_journal_approval_required\": false,\n    \"manual_journal_approval_threshold\": 1.5\n}",
+                            "raw": "{\n    \"posting_accounts\": {\n        \"sales_revenue\": \"00000000-0000-0000-0000-000000000000\",\n        \"purchase_expense\": \"00000000-0000-0000-0000-000000000000\",\n        \"output_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"input_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"receivables\": \"00000000-0000-0000-0000-000000000000\",\n        \"payables\": \"00000000-0000-0000-0000-000000000000\",\n        \"retained_earnings\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_realised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_realised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"rounding\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    \"manual_journal_approval_required\": false,\n    \"manual_journal_approval_threshold\": 1.5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
