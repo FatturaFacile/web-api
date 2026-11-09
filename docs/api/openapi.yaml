@@ -839,6 +839,125 @@ paths:
                   - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/general-ledger/accruals:
+    get:
+      operationId: accrual.index
+      summary: 'The accruals and deferrals of the tenant'
+      tags:
+        - Accrual
+      parameters:
+        -
+          name: accrual_type
+          in: query
+          schema:
+            type: string
+        -
+          name: cutoff_date
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AccrualResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: accrual.store
+      summary: 'Computes and posts an accrual or deferral'
+      tags:
+        - Accrual
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreAccrualRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Accrual posted'
+                  data:
+                    $ref: '#/components/schemas/AccrualResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/accruals/{id}':
+    get:
+      operationId: accrual.show
+      summary: 'One accrual or deferral'
+      tags:
+        - Accrual
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    $ref: '#/components/schemas/AccrualResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/crm/activities/timeline:
     get:
       operationId: crm.activities.timeline
@@ -10567,10 +10686,10 @@ paths:
                   - data
         '403':
           $ref: '#/components/responses/AuthorizationException'
-        '401':
-          $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
     delete:
       operationId: accounts.destroy
       summary: 'Deletes a account of the active tenant'
@@ -16944,6 +17063,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CustomerCreditProfileResource'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
         '422':
@@ -16988,6 +17109,8 @@ paths:
                   - message
                   - hold_id
                   - status
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/invoicing/customer-ledger/{customerId}/statement':
@@ -20849,6 +20972,8 @@ paths:
                   - meta
         '403':
           $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/sales/delivery-notes/{id}/invoice':
@@ -21229,6 +21354,280 @@ paths:
                       - lines
                 required:
                   - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/cost-centers:
+    get:
+      operationId: dimension.indexCostCenters
+      tags:
+        - Dimension
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: dimension.storeCostCenter
+      tags:
+        - Dimension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDimensionRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: Created
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      code:
+                        type: string
+                      name:
+                        type: string
+                      is_active:
+                        type: boolean
+                    required:
+                      - id
+                      - code
+                      - name
+                      - is_active
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/cost-centers/{id}':
+    put:
+      operationId: dimension.updateCostCenter
+      tags:
+        - Dimension
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDimensionRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: Updated
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      code:
+                        type: string
+                      name:
+                        type: string
+                      is_active:
+                        type: boolean
+                    required:
+                      - id
+                      - code
+                      - name
+                      - is_active
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/profit-centers:
+    get:
+      operationId: dimension.indexProfitCenters
+      tags:
+        - Dimension
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: string
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: dimension.storeProfitCenter
+      tags:
+        - Dimension
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDimensionRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: Created
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      code:
+                        type: string
+                      name:
+                        type: string
+                      is_active:
+                        type: boolean
+                    required:
+                      - id
+                      - code
+                      - name
+                      - is_active
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/profit-centers/{id}':
+    put:
+      operationId: dimension.updateProfitCenter
+      tags:
+        - Dimension
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDimensionRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: Updated
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      code:
+                        type: string
+                      name:
+                        type: string
+                      is_active:
+                        type: boolean
+                    required:
+                      - id
+                      - code
+                      - name
+                      - is_active
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
         '422':
@@ -37715,6 +38114,131 @@ paths:
           $ref: '#/components/responses/AuthorizationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/journals/{id}/submit':
+    post:
+      operationId: journalEntry.submit
+      summary: 'Sends a draft manual journal to approval (four-eyes)'
+      tags:
+        - JournalEntry
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Journal entry submitted for approval'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/JournalEntryResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - message
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/journals/{id}/approve':
+    post:
+      operationId: journalEntry.approve
+      summary: 'Approves and posts a journal waiting for approval'
+      tags:
+        - JournalEntry
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Journal entry approved and posted'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/JournalEntryResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - message
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/journals/{id}/reject':
+    post:
+      operationId: journalEntry.reject
+      summary: 'Rejects a journal waiting for approval'
+      tags:
+        - JournalEntry
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectJournalEntryRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Journal entry rejected'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/JournalEntryResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                required:
+                  - message
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/general-ledger/journals:
     get:
       operationId: journals.index
@@ -37803,9 +38327,18 @@ paths:
                 properties:
                   message:
                     type: string
-                    const: 'Journal entry posted successfully'
+                    enum:
+                      - 'Journal entry saved and waiting for approval'
+                      - 'Journal entry saved as draft'
+                      - 'Journal entry posted successfully'
                   data:
-                    $ref: '#/components/schemas/JournalEntryResource'
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/JournalEntryResource'
+                      -
+                        type: object
+                        required:
+                          - lines
                 required:
                   - message
                   - data
@@ -40890,6 +41423,937 @@ paths:
                   - message
                   - data
                   - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/general-ledger/reports/trial-balance:
+    get:
+      operationId: ledgerReport.trialBalance
+      summary: 'Trial balance of a date range'
+      tags:
+        - LedgerReport
+      parameters:
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: compare_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: compare_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: profit_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: project_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      from:
+                        type: string
+                      to:
+                        type: string
+                      compare_from:
+                        type:
+                          - string
+                          - 'null'
+                      compare_to:
+                        type:
+                          - string
+                          - 'null'
+                      accounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            account_id:
+                              type: string
+                            account_code:
+                              type: string
+                            account_name:
+                              type: string
+                            account_type:
+                              type: string
+                            normal_balance:
+                              type: string
+                            opening_balance:
+                              type: string
+                            debit:
+                              type: string
+                            credit:
+                              type: string
+                            closing_balance:
+                              type: string
+                            drill_down:
+                              type: string
+                            comparison_debit:
+                              type: string
+                            comparison_credit:
+                              type: string
+                          required:
+                            - account_id
+                            - account_code
+                            - account_name
+                            - account_type
+                            - normal_balance
+                            - opening_balance
+                            - debit
+                            - credit
+                            - closing_balance
+                            - drill_down
+                            - comparison_debit
+                            - comparison_credit
+                      totals:
+                        type: array
+                        items: {}
+                      is_balanced:
+                        type: boolean
+                    required:
+                      - from
+                      - to
+                      - compare_from
+                      - compare_to
+                      - accounts
+                      - totals
+                      - is_balanced
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/reports/account-ledger:
+    get:
+      operationId: ledgerReport.accountLedger
+      summary: 'Ledger of one account (mastrino) with running balance'
+      tags:
+        - LedgerReport
+      parameters:
+        -
+          name: account_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 500
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: profit_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: project_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      account:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                          account_code:
+                            type:
+                              - string
+                              - 'null'
+                          name:
+                            type: string
+                          account_type:
+                            type: string
+                          normal_balance:
+                            type: string
+                        required:
+                          - id
+                          - account_code
+                          - name
+                          - account_type
+                          - normal_balance
+                      from:
+                        type: string
+                      to:
+                        type: string
+                      opening_balance:
+                        type: string
+                      closing_balance:
+                        type: string
+                      total_debit:
+                        type: string
+                      total_credit:
+                        type: string
+                      lines:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            line_id:
+                              type: string
+                            journal_entry_id:
+                              type: string
+                            entry_number:
+                              type: string
+                            journal_number:
+                              type:
+                                - integer
+                                - 'null'
+                            posting_date:
+                              type: string
+                            journal_type:
+                              type: string
+                            status:
+                              type: string
+                            source_document_type:
+                              type: string
+                            source_document_id:
+                              type: string
+                            description:
+                              type: string
+                            partner_type:
+                              type: string
+                            partner_id:
+                              type: string
+                            cost_center_id:
+                              type: string
+                            profit_center_id:
+                              type: string
+                            project_id:
+                              type: string
+                            currency:
+                              type: string
+                            debit:
+                              type: string
+                            credit:
+                              type: string
+                            running_balance:
+                              type: string
+                          required:
+                            - line_id
+                            - journal_entry_id
+                            - entry_number
+                            - journal_number
+                            - posting_date
+                            - journal_type
+                            - status
+                            - source_document_type
+                            - source_document_id
+                            - description
+                            - partner_type
+                            - partner_id
+                            - cost_center_id
+                            - profit_center_id
+                            - project_id
+                            - currency
+                            - debit
+                            - credit
+                            - running_balance
+                      meta:
+                        type: object
+                        properties:
+                          current_page:
+                            type: integer
+                          last_page: {}
+                          per_page:
+                            type: integer
+                          total:
+                            type: integer
+                        required:
+                          - current_page
+                          - last_page
+                          - per_page
+                          - total
+                    required:
+                      - account
+                      - from
+                      - to
+                      - opening_balance
+                      - closing_balance
+                      - total_debit
+                      - total_credit
+                      - lines
+                      - meta
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/reports/balance-sheet:
+    get:
+      operationId: ledgerReport.balanceSheet
+      summary: 'Balance sheet at a date'
+      tags:
+        - LedgerReport
+      parameters:
+        -
+          name: as_of
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: compare_as_of
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      as_of:
+                        type: string
+                      compare_as_of:
+                        type:
+                          - string
+                          - 'null'
+                      sections:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          additionalProperties: {}
+                      totals:
+                        type: object
+                        properties:
+                          total_assets:
+                            type: string
+                          total_liabilities:
+                            type: string
+                          total_equity:
+                            type: string
+                          result_not_yet_closed:
+                            type: string
+                          total_equity_with_result:
+                            type: string
+                          total_liabilities_and_equity:
+                            type: string
+                        required:
+                          - total_assets
+                          - total_liabilities
+                          - total_equity
+                          - result_not_yet_closed
+                          - total_equity_with_result
+                          - total_liabilities_and_equity
+                      comparison_totals:
+                        anyOf:
+                          -
+                            type: object
+                            properties:
+                              total_assets:
+                                type: string
+                              total_liabilities:
+                                type: string
+                              total_equity:
+                                type: string
+                              result_not_yet_closed:
+                                type: string
+                              total_equity_with_result:
+                                type: string
+                              total_liabilities_and_equity:
+                                type: string
+                            required:
+                              - total_assets
+                              - total_liabilities
+                              - total_equity
+                              - result_not_yet_closed
+                              - total_equity_with_result
+                              - total_liabilities_and_equity
+                          -
+                            type: string
+                          -
+                            type: 'null'
+                      is_balanced:
+                        type: boolean
+                    required:
+                      - as_of
+                      - compare_as_of
+                      - sections
+                      - totals
+                      - comparison_totals
+                      - is_balanced
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/reports/income-statement:
+    get:
+      operationId: ledgerReport.incomeStatement
+      summary: 'Income statement of a range'
+      tags:
+        - LedgerReport
+      parameters:
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: compare_from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: compare_to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: cost_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: profit_center_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: project_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      from:
+                        type: string
+                      to:
+                        type: string
+                      compare_from:
+                        type:
+                          - string
+                          - 'null'
+                      compare_to:
+                        type:
+                          - string
+                          - 'null'
+                      sections:
+                        type: object
+                        additionalProperties:
+                          type: object
+                          additionalProperties: {}
+                      totals:
+                        type: object
+                        properties:
+                          total_revenue:
+                            type: string
+                          total_cogs:
+                            type: string
+                          gross_profit:
+                            type: string
+                          total_expenses:
+                            type: string
+                          net_income:
+                            type: string
+                        required:
+                          - total_revenue
+                          - total_cogs
+                          - gross_profit
+                          - total_expenses
+                          - net_income
+                      comparison_totals:
+                        anyOf:
+                          -
+                            type: object
+                            properties:
+                              total_revenue:
+                                type: string
+                              total_cogs:
+                                type: string
+                              gross_profit:
+                                type: string
+                              total_expenses:
+                                type: string
+                              net_income:
+                                type: string
+                            required:
+                              - total_revenue
+                              - total_cogs
+                              - gross_profit
+                              - total_expenses
+                              - net_income
+                          -
+                            type: string
+                          -
+                            type: 'null'
+                    required:
+                      - from
+                      - to
+                      - compare_from
+                      - compare_to
+                      - sections
+                      - totals
+                      - comparison_totals
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/reports/dimensions:
+    get:
+      operationId: ledgerReport.dimensions
+      summary: 'Result by cost centre, profit centre or project'
+      tags:
+        - LedgerReport
+      parameters:
+        -
+          name: dimension
+          in: query
+          required: true
+          schema:
+            type: string
+            enum:
+              - cost_center
+              - profit_center
+              - project
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      dimension:
+                        type: string
+                      from:
+                        type: string
+                      to:
+                        type: string
+                      groups:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            dimension_id:
+                              type:
+                                - string
+                                - 'null'
+                            dimension_code:
+                              type: string
+                            dimension_name:
+                              type: string
+                            accounts:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  account_id:
+                                    type: string
+                                  account_code:
+                                    type: string
+                                  account_name:
+                                    type: string
+                                  account_type:
+                                    type: string
+                                  debit:
+                                    type: string
+                                  credit:
+                                    type: string
+                                  amount:
+                                    type: string
+                                required:
+                                  - account_id
+                                  - account_code
+                                  - account_name
+                                  - account_type
+                                  - debit
+                                  - credit
+                                  - amount
+                            result:
+                              type: string
+                          required:
+                            - dimension_id
+                            - dimension_code
+                            - dimension_name
+                            - accounts
+                            - result
+                      total:
+                        type: string
+                    required:
+                      - dimension
+                      - from
+                      - to
+                      - groups
+                      - total
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/audit-trail/export:
+    get:
+      operationId: ledgerReport.auditTrail
+      summary: 'Audit trail of the journal entries of a range'
+      tags:
+        - LedgerReport
+      parameters:
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: format
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - csv
+              - json
+              - null
+      responses:
+        '200':
+          description: ''
+          content:
+            'text/csv; charset=UTF-8':
+              schema:
+                type: string
+                format: binary
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+          headers:
+            Transfer-Encoding:
+              schema:
+                type: string
+                enum:
+                  - chunked
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/settings:
+    get:
+      operationId: ledgerSettings.show
+      summary: 'The settings with the account resolved for each role and where it comes from'
+      tags:
+        - LedgerSettings
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      posting_accounts:
+                        type: string
+                      manual_journal_approval_required:
+                        type: boolean
+                      manual_journal_approval_threshold:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - posting_accounts
+                      - manual_journal_approval_required
+                      - manual_journal_approval_threshold
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: ledgerSettings.update
+      summary: 'Changes the settings sent'
+      tags:
+        - LedgerSettings
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLedgerSettingsRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Ledger settings updated'
+                  data:
+                    type: object
+                    properties:
+                      posting_accounts:
+                        type: string
+                      manual_journal_approval_required:
+                        type: boolean
+                      manual_journal_approval_threshold:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - posting_accounts
+                      - manual_journal_approval_required
+                      - manual_journal_approval_threshold
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/associations/books/{book}':
@@ -47378,6 +48842,129 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/general-ledger/fx-revaluations:
+    get:
+      operationId: openItemFxRevaluation.index
+      summary: 'The revaluations already run'
+      tags:
+        - OpenItemFxRevaluation
+      parameters:
+        -
+          name: revaluation_date
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        revaluation_date:
+                          type:
+                            - string
+                            - 'null'
+                        side:
+                          type: string
+                        currency:
+                          type: string
+                        account_id:
+                          type: string
+                        closing_rate:
+                          type: string
+                        open_amount:
+                          type: string
+                        book_value:
+                          type: string
+                        revalued_value:
+                          type: string
+                        difference:
+                          type: string
+                        open_items:
+                          type: integer
+                        journal_entry_id:
+                          type:
+                            - string
+                            - 'null'
+                        reversal_date:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - id
+                        - revaluation_date
+                        - side
+                        - currency
+                        - account_id
+                        - closing_rate
+                        - open_amount
+                        - book_value
+                        - revalued_value
+                        - difference
+                        - open_items
+                        - journal_entry_id
+                        - reversal_date
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: openItemFxRevaluation.store
+      summary: 'Revalues the open items at a date'
+      tags:
+        - OpenItemFxRevaluation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreFxRevaluationRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Open items revalued'
+                  data:
+                    type: array
+                    items: {}
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/crm/opportunities/{id}/stage':
     post:
       operationId: crm.opportunities.stage
@@ -53377,6 +54964,379 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/fiscal-periods/{id}/close-checklist':
+    get:
+      operationId: periodClose.show
+      summary: 'The checklist of a period'
+      tags:
+        - PeriodClose
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      fiscal_period_id:
+                        type: string
+                      period_name:
+                        type: string
+                      status:
+                        type: string
+                      can_close:
+                        type: boolean
+                      checks:
+                        type: array
+                        prefixItems:
+                          -
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                const: no_drafts
+                              label:
+                                type: string
+                                const: 'Draft journals not yet posted'
+                              blocking:
+                                type: boolean
+                              passed:
+                                type: boolean
+                              count:
+                                type: integer
+                                minimum: 0
+                            required:
+                              - code
+                              - label
+                              - blocking
+                              - passed
+                              - count
+                          -
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                const: no_pending_approvals
+                              label:
+                                type: string
+                                const: 'Journals waiting for approval'
+                              blocking:
+                                type: boolean
+                              passed:
+                                type: boolean
+                              count:
+                                type: integer
+                                minimum: 0
+                            required:
+                              - code
+                              - label
+                              - blocking
+                              - passed
+                              - count
+                          -
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                const: recurring_journals_posted
+                              label:
+                                type: string
+                                const: 'Recurring journals due and not yet posted'
+                              blocking:
+                                type: boolean
+                              passed:
+                                type: boolean
+                              count:
+                                type: integer
+                                minimum: 0
+                            required:
+                              - code
+                              - label
+                              - blocking
+                              - passed
+                              - count
+                          -
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                const: automatic_reversals_posted
+                              label:
+                                type: string
+                                const: 'Automatic reversals due in the period and not yet posted'
+                              blocking:
+                                type: boolean
+                              passed:
+                                type: boolean
+                              count:
+                                type: integer
+                                minimum: 0
+                            required:
+                              - code
+                              - label
+                              - blocking
+                              - passed
+                              - count
+                          -
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                const: entries_balanced
+                              label:
+                                type: string
+                                const: 'Posted entries whose lines do not balance'
+                              blocking:
+                                type: boolean
+                              passed:
+                                type: boolean
+                              count:
+                                type: integer
+                                minimum: 0
+                            required:
+                              - code
+                              - label
+                              - blocking
+                              - passed
+                              - count
+                          -
+                            type: object
+                            properties:
+                              code:
+                                type: string
+                                const: subledgers_reconciled
+                              label:
+                                type: string
+                                const: 'Control accounts differing from their open items (customers, suppliers)'
+                              blocking:
+                                type: boolean
+                              passed:
+                                type: boolean
+                              count:
+                                type: integer
+                            required:
+                              - code
+                              - label
+                              - blocking
+                              - passed
+                              - count
+                        minItems: 6
+                        maxItems: 6
+                        items: {}
+                      tasks:
+                        type: array
+                        items: {}
+                    required:
+                      - fiscal_period_id
+                      - period_name
+                      - status
+                      - can_close
+                      - checks
+                      - tasks
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/fiscal-periods/{id}/close-tasks':
+    post:
+      operationId: periodClose.storeTask
+      summary: 'Adds a task to the checklist'
+      tags:
+        - PeriodClose
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StorePeriodCloseTaskRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Close task added'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      fiscal_period_id:
+                        type: string
+                      title:
+                        type: string
+                      description:
+                        type:
+                          - string
+                          - 'null'
+                      is_blocking:
+                        type: boolean
+                      status:
+                        type: string
+                      created_by:
+                        type:
+                          - string
+                          - 'null'
+                      completed_by:
+                        type:
+                          - string
+                          - 'null'
+                      completed_at:
+                        type:
+                          - string
+                          - 'null'
+                      completion_note:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - id
+                      - fiscal_period_id
+                      - title
+                      - description
+                      - is_blocking
+                      - status
+                      - created_by
+                      - completed_by
+                      - completed_at
+                      - completion_note
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/fiscal-periods/{id}/close-tasks/{taskId}/status':
+    post:
+      operationId: periodClose.updateTaskStatus
+      summary: 'Marks a task done, waived or open'
+      tags:
+        - PeriodClose
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePeriodCloseTaskStatusRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Close task updated'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      fiscal_period_id:
+                        type: string
+                      title:
+                        type: string
+                      description:
+                        type:
+                          - string
+                          - 'null'
+                      is_blocking:
+                        type: boolean
+                      status:
+                        type: string
+                      created_by:
+                        type:
+                          - string
+                          - 'null'
+                      completed_by:
+                        type:
+                          - string
+                          - 'null'
+                      completed_at:
+                        type:
+                          - string
+                          - 'null'
+                      completion_note:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - id
+                      - fiscal_period_id
+                      - title
+                      - description
+                      - is_blocking
+                      - status
+                      - created_by
+                      - completed_by
+                      - completed_at
+                      - completion_note
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/intrastat/periodicity:
     get:
       operationId: v1.intrastat.periodicity
@@ -55425,35 +57385,23 @@ paths:
                     type: string
                     const: 'Price resolved successfully'
                   data:
-                    anyOf:
-                      -
-                        type: object
-                        properties:
-                          price:
-                            type: number
-                          source:
-                            type: string
-                            const: product
-                          price_list_id:
-                            type: 'null'
-                        required:
-                          - price
-                          - source
-                          - price_list_id
-                      -
-                        type: object
-                        properties:
-                          price:
-                            type: number
-                          source:
-                            type: string
-                            const: price_list
-                          price_list_id:
-                            type: string
-                        required:
-                          - price
-                          - source
-                          - price_list_id
+                    type: object
+                    properties:
+                      price:
+                        type: number
+                      source:
+                        type: string
+                        enum:
+                          - product
+                          - price_list
+                      price_list_id:
+                        type:
+                          - string
+                          - 'null'
+                    required:
+                      - price
+                      - source
+                      - price_list_id
                   meta:
                     type: string
                 required:
@@ -65627,6 +67575,8 @@ paths:
           $ref: '#/components/responses/AuthorizationException'
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/sales/quotes/{id}/invoice':
@@ -65690,6 +67640,11 @@ paths:
           required: true
           schema:
             type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConvertToDeliveryNoteRequest'
       responses:
         '201':
           description: ''
@@ -65718,6 +67673,8 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/sales/quotes/{id}/signature':
     post:
       operationId: sales.quotes.signature
@@ -65914,6 +67871,88 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/sales/quotes/expire:
+    post:
+      operationId: sales.quotes.expire
+      summary: 'Expires the open quotes of the company past their validity date'
+      tags:
+        - QuoteRevision
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Quotes past their validity date expired'
+                  data:
+                    type: object
+                    properties:
+                      expired:
+                        type: integer
+                        const: 0
+                    required:
+                      - expired
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/quotes/{id}/revise':
+    post:
+      operationId: sales.quotes.revise
+      summary: 'Creates the next revision of an open quote'
+      tags:
+        - QuoteRevision
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviseQuoteRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Quote revision created'
+                  data:
+                    $ref: '#/components/schemas/QuoteResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/treasury/collections/aging:
     get:
       operationId: receivableCollection.aging
@@ -66680,6 +68719,303 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/general-ledger/recurring-journals:
+    get:
+      operationId: recurringJournal.index
+      summary: 'The recurring journals of the tenant'
+      tags:
+        - RecurringJournal
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RecurringJournalResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: recurringJournal.store
+      summary: 'Saves a recurring journal template'
+      tags:
+        - RecurringJournal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreRecurringJournalRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Recurring journal saved'
+                  data:
+                    $ref: '#/components/schemas/RecurringJournalResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/recurring-journals/{id}':
+    get:
+      operationId: recurringJournal.show
+      summary: 'A recurring journal with its runs'
+      tags:
+        - RecurringJournal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    $ref: '#/components/schemas/RecurringJournalResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/recurring-journals/{id}/status':
+    post:
+      operationId: recurringJournal.changeStatus
+      summary: 'Pauses, resumes or ends a template'
+      tags:
+        - RecurringJournal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChangeRecurringJournalStatusRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Recurring journal status changed'
+                  data:
+                    $ref: '#/components/schemas/RecurringJournalResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/general-ledger/recurring-journals/{id}/run':
+    post:
+      operationId: recurringJournal.run
+      summary: 'Posts the next due run of a template now'
+      tags:
+        - RecurringJournal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LedgerAsOfRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Recurring journal run posted'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/JournalEntryResource'
+                      -
+                        type: object
+                        required:
+                          - lines
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/general-ledger/scheduled-journals/run:
+    post:
+      operationId: recurringJournal.runScheduled
+      summary: 'Runs the scheduled ledger work of the tenant up to a day'
+      tags:
+        - RecurringJournal
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LedgerAsOfRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Scheduled journals processed'
+                  data:
+                    type: object
+                    properties:
+                      as_of:
+                        type: string
+                      recurring:
+                        type: object
+                        properties:
+                          posted:
+                            type: array
+                            items:
+                              type: string
+                          failed:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                recurring_journal_id:
+                                  type: string
+                                message:
+                                  type: string
+                              required:
+                                - recurring_journal_id
+                                - message
+                        required:
+                          - posted
+                          - failed
+                      reversals:
+                        type: object
+                        properties:
+                          reversed:
+                            type: array
+                            items:
+                              type: string
+                          failed:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                journal_entry_id:
+                                  type: string
+                                message:
+                                  type: string
+                              required:
+                                - journal_entry_id
+                                - message
+                        required:
+                          - reversed
+                          - failed
+                    required:
+                      - as_of
+                      - recurring
+                      - reversals
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/workshop/recurring-services:
     get:
       operationId: v1.workshop.recurring-services.index
@@ -70827,6 +73163,170 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/sales/kpis:
+    get:
+      operationId: sales.kpis
+      summary: 'Sales indicators for a period'
+      tags:
+        - SalesKpi
+      parameters:
+        -
+          name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        -
+          name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Sales indicators computed'
+                  data:
+                    type: object
+                    properties:
+                      period:
+                        type: object
+                        properties:
+                          from:
+                            type: string
+                          to:
+                            type: string
+                        required:
+                          - from
+                          - to
+                      order_backlog:
+                        type: object
+                        properties:
+                          open_orders:
+                            type: integer
+                            minimum: 0
+                          open_lines:
+                            type: integer
+                            const: 0
+                          open_net_value:
+                            type: string
+                        required:
+                          - open_orders
+                          - open_lines
+                          - open_net_value
+                      fill_rate:
+                        type: object
+                        properties:
+                          orders:
+                            type: integer
+                            minimum: 0
+                          lines:
+                            type: integer
+                          lines_fully_delivered:
+                            type: integer
+                          line_fill_rate:
+                            type:
+                              - string
+                              - 'null'
+                          quantity_ordered:
+                            type: string
+                          quantity_delivered:
+                            type: string
+                          quantity_fill_rate:
+                            type:
+                              - string
+                              - 'null'
+                        required:
+                          - orders
+                          - lines
+                          - lines_fully_delivered
+                          - line_fill_rate
+                          - quantity_ordered
+                          - quantity_delivered
+                          - quantity_fill_rate
+                      quote_conversion:
+                        type: object
+                        properties:
+                          quotes:
+                            type: integer
+                            minimum: 0
+                          accepted:
+                            type: integer
+                            const: 0
+                          rejected:
+                            type: integer
+                            const: 0
+                          expired:
+                            type: integer
+                            const: 0
+                          open:
+                            type: integer
+                            const: 0
+                          converted_to_order:
+                            type: integer
+                          quoted_net_value:
+                            type: string
+                          accepted_net_value:
+                            type: string
+                          conversion_rate:
+                            type:
+                              - string
+                              - 'null'
+                          order_conversion_rate:
+                            type:
+                              - string
+                              - 'null'
+                        required:
+                          - quotes
+                          - accepted
+                          - rejected
+                          - expired
+                          - open
+                          - converted_to_order
+                          - quoted_net_value
+                          - accepted_net_value
+                          - conversion_rate
+                          - order_conversion_rate
+                      returns:
+                        type: object
+                        properties:
+                          opened:
+                            type: integer
+                            minimum: 0
+                          credited:
+                            type: integer
+                            minimum: 0
+                        required:
+                          - opened
+                          - credited
+                    required:
+                      - period
+                      - order_backlog
+                      - fill_rate
+                      - quote_conversion
+                      - returns
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/invoicing/orders:
     get:
       operationId: invoicing.orders.index
@@ -70907,6 +73407,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/SalesOrderResource'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/invoicing/orders/{id}/reserve':
@@ -71155,6 +73657,8 @@ paths:
                   - message
                   - data
                   - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/sales/orders/{id}/delivery-notes':
@@ -71299,6 +73803,364 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  '/v1/sales/orders/{id}/confirm':
+    post:
+      operationId: sales.orders.confirm
+      summary: 'Confirms a draft order behind the credit check of the company'
+      tags:
+        - SalesOrderFulfillment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    enum:
+                      - 'The order is on credit hold'
+                      - 'Order confirmed'
+                  data:
+                    $ref: '#/components/schemas/App.Http.Resources.SalesOrderResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/orders/{id}/cancel':
+    post:
+      operationId: sales.orders.cancel
+      summary: 'Cancels an order and releases its reserved stock'
+      tags:
+        - SalesOrderFulfillment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelSalesOrderRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Order cancelled'
+                  data:
+                    $ref: '#/components/schemas/App.Http.Resources.SalesOrderResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales/orders/{id}/availability':
+    get:
+      operationId: sales.orders.availability
+      summary: 'Availability to promise of the open lines of an order'
+      tags:
+        - SalesOrderFulfillment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        -
+          name: warehouse_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Order availability computed'
+                  data:
+                    type: object
+                    properties:
+                      sales_order_id:
+                        type: string
+                      warehouse_id:
+                        type:
+                          - string
+                          - 'null'
+                      fully_available:
+                        type: boolean
+                      lines:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            sales_order_item_id:
+                              type: string
+                            product_id:
+                              type:
+                                - string
+                                - 'null'
+                            description:
+                              type: string
+                            stock_relevant:
+                              type: boolean
+                            quantity_ordered:
+                              type: string
+                            quantity_delivered:
+                              type: string
+                            quantity_open:
+                              type: string
+                            quantity_reserved:
+                              type: string
+                            quantity_available:
+                              type: string
+                            quantity_promisable:
+                              type: string
+                            shortage:
+                              type: string
+                            fully_available:
+                              type: boolean
+                          required:
+                            - sales_order_item_id
+                            - product_id
+                            - description
+                            - stock_relevant
+                            - quantity_ordered
+                            - quantity_delivered
+                            - quantity_open
+                            - quantity_reserved
+                            - quantity_available
+                            - quantity_promisable
+                            - shortage
+                            - fully_available
+                    required:
+                      - sales_order_id
+                      - warehouse_id
+                      - fully_available
+                      - lines
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales/orders/{id}/reserve':
+    post:
+      operationId: sales.orders.reserve
+      summary: 'Reserves the stock of the open lines of an order'
+      tags:
+        - SalesOrderFulfillment
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SalesOrderWarehouseRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Order stock reserved'
+                  data:
+                    $ref: '#/components/schemas/App.Http.Resources.SalesOrderResource'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/sales/backorders:
+    get:
+      operationId: sales.backorders.index
+      summary: 'Backorder: the open order lines still to be delivered'
+      tags:
+        - SalesOrderFulfillment
+      parameters:
+        -
+          name: contact_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: product_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 5
+            maximum: 100
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Backorders retrieved successfully'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        sales_order_item_id:
+                          type: string
+                        sales_order_id:
+                          type: string
+                        order_number:
+                          type: string
+                        order_date:
+                          type: string
+                        order_status:
+                          type: string
+                        contact_id:
+                          type: string
+                        product_id:
+                          type:
+                            - string
+                            - 'null'
+                        description:
+                          type: string
+                        quantity_ordered:
+                          type: string
+                        quantity_delivered:
+                          type: string
+                        quantity_open:
+                          type: string
+                        quantity_reserved:
+                          type: string
+                        open_net_value:
+                          type: string
+                      required:
+                        - sales_order_item_id
+                        - sales_order_id
+                        - order_number
+                        - order_date
+                        - order_status
+                        - contact_id
+                        - product_id
+                        - description
+                        - quantity_ordered
+                        - quantity_delivered
+                        - quantity_open
+                        - quantity_reserved
+                        - open_net_value
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+                    required:
+                      - current_page
+                      - last_page
+                      - per_page
+                      - total
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/sales/order-lines:
     get:
       operationId: sales.order-lines.index
@@ -71408,6 +74270,370 @@ paths:
                   - message
                   - data
                   - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/sales/pricing/price:
+    get:
+      operationId: sales.pricing.price
+      summary: 'Price of a product for a customer'
+      tags:
+        - SalesPricing
+      parameters:
+        -
+          name: product_id
+          in: query
+          required: true
+          schema:
+            type: string
+            format: uuid
+        -
+          name: contact_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: quantity
+          in: query
+          schema:
+            type:
+              - number
+              - 'null'
+        -
+          name: date
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date-time
+        -
+          name: price_list_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: discount_policy_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: order_amount
+          in: query
+          schema:
+            type:
+              - number
+              - 'null'
+            minimum: 0
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Price determined'
+                  data:
+                    type: object
+                    properties:
+                      list_price:
+                        type: string
+                      price_source:
+                        type: string
+                      price_list_id:
+                        type:
+                          - string
+                          - 'null'
+                      unit_price:
+                        type: string
+                      discount_percentage:
+                        type: string
+                      fixed_discount_per_unit:
+                        type: string
+                      net_unit_price:
+                        type: string
+                      applied_discounts:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            discount_policy_id:
+                              type: string
+                            code:
+                              type:
+                                - string
+                                - 'null'
+                            name:
+                              type:
+                                - string
+                                - 'null'
+                            priority:
+                              type: integer
+                            percentage:
+                              type: string
+                            fixed_amount_per_unit:
+                              type: string
+                            explicit:
+                              type: boolean
+                          required:
+                            - discount_policy_id
+                            - code
+                            - name
+                            - priority
+                            - percentage
+                            - fixed_amount_per_unit
+                            - explicit
+                    required:
+                      - list_price
+                      - price_source
+                      - price_list_id
+                      - unit_price
+                      - discount_percentage
+                      - fixed_discount_per_unit
+                      - net_unit_price
+                      - applied_discounts
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/sales/discount-policies:
+    get:
+      operationId: sales.discount-policies.index
+      summary: 'The discount policies of the company'
+      tags:
+        - SalesPricing
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Discount policies retrieved successfully'
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        -
+                          $ref: '#/components/schemas/DiscountPolicyResource'
+                        -
+                          type: object
+                          required:
+                            - rules
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: sales.discount-policies.store
+      summary: 'Creates a discount policy'
+      tags:
+        - SalesPricing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDiscountPolicyRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Discount policy created'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/DiscountPolicyResource'
+                      -
+                        type: object
+                        required:
+                          - rules
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales/discount-policies/{id}':
+    get:
+      operationId: sales.discount-policies.show
+      summary: 'A discount policy with its rules'
+      tags:
+        - SalesPricing
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Discount policy retrieved successfully'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/DiscountPolicyResource'
+                      -
+                        type: object
+                        required:
+                          - rules
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: sales.discount-policies.update
+      summary: 'Updates a discount policy'
+      tags:
+        - SalesPricing
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreDiscountPolicyRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Discount policy updated'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/DiscountPolicyResource'
+                      -
+                        type: object
+                        required:
+                          - rules
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    delete:
+      operationId: sales.discount-policies.destroy
+      summary: 'Deletes a discount policy'
+      tags:
+        - SalesPricing
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Discount policy deleted'
+                  data:
+                    type: 'null'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/invoicing/quotes:
@@ -71858,6 +75084,391 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  /v1/sales/returns:
+    get:
+      operationId: sales.returns.index
+      summary: 'Lists the returns of the company'
+      tags:
+        - SalesReturn
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Returns retrieved successfully'
+                  data:
+                    type: array
+                    items:
+                      allOf:
+                        -
+                          $ref: '#/components/schemas/SalesReturnResource'
+                        -
+                          type: object
+                          required:
+                            - contact
+                  meta:
+                    type: object
+                    properties:
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                      total:
+                        type: integer
+                    required:
+                      - current_page
+                      - last_page
+                      - per_page
+                      - total
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: sales.returns.store
+      summary: 'Records a return request'
+      tags:
+        - SalesReturn
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StoreSalesReturnRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return requested'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/returns/{id}':
+    get:
+      operationId: sales.returns.show
+      summary: 'A return with its lines'
+      tags:
+        - SalesReturn
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return retrieved successfully'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - contact
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/returns/{id}/approve':
+    post:
+      operationId: sales.returns.approve
+      summary: 'Authorises a requested return'
+      tags:
+        - SalesReturn
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return approved'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/returns/{id}/reject':
+    post:
+      operationId: sales.returns.reject
+      summary: 'Refuses a requested return'
+      tags:
+        - SalesReturn
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectSalesReturnRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return rejected'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/sales/returns/{id}/cancel':
+    post:
+      operationId: sales.returns.cancel
+      summary: 'Cancels a return not received yet'
+      tags:
+        - SalesReturn
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return cancelled'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/returns/{id}/receive':
+    post:
+      operationId: sales.returns.receive
+      summary: 'Receives an authorised return in the warehouse'
+      tags:
+        - SalesReturn
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReceiveSalesReturnRequest'
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return received'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/sales/returns/{id}/credit-note':
+    post:
+      operationId: sales.returns.credit-note
+      summary: 'Credits a received return'
+      tags:
+        - SalesReturn
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Return credited'
+                  data:
+                    allOf:
+                      -
+                        $ref: '#/components/schemas/SalesReturnResource'
+                      -
+                        type: object
+                        required:
+                          - items
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/settings/sdi-channel:
     get:
       operationId: sdi.channel.show
@@ -98272,6 +101883,88 @@ components:
         - created_at
         - updated_at
       title: AccountResource
+    AccrualResource:
+      type: object
+      properties:
+        id:
+          type: string
+        accrual_type:
+          type: string
+        description:
+          type: string
+        total_amount:
+          type: string
+        coverage_start:
+          type:
+            - string
+            - 'null'
+        coverage_end:
+          type:
+            - string
+            - 'null'
+        cutoff_date:
+          type:
+            - string
+            - 'null'
+        coverage_days:
+          type: integer
+        accrued_days:
+          type: integer
+        amount:
+          type: string
+        income_statement_account_id:
+          type: string
+        balance_sheet_account_id:
+          type: string
+        cost_center_id:
+          type:
+            - string
+            - 'null'
+        journal_entry_id:
+          type:
+            - string
+            - 'null'
+        journal_status:
+          type:
+            - string
+            - 'null'
+        reversal_date:
+          type:
+            - string
+            - 'null'
+        reversal_journal_entry_id:
+          type:
+            - string
+            - 'null'
+        created_by:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - accrual_type
+        - description
+        - total_amount
+        - coverage_start
+        - coverage_end
+        - cutoff_date
+        - coverage_days
+        - accrued_days
+        - amount
+        - income_statement_account_id
+        - balance_sheet_account_id
+        - cost_center_id
+        - journal_entry_id
+        - journal_status
+        - reversal_date
+        - reversal_journal_entry_id
+        - created_by
+        - created_at
+      title: AccrualResource
     AcquireAssetRequest:
       type: object
       description: 'Validation of an asset registered from a passive invoice line or a purchase order item.'
@@ -101415,6 +105108,16 @@ components:
       required:
         - reason
       title: CancelAppointmentRequest
+    CancelSalesOrderRequest:
+      type: object
+      description: 'Cancellation of a sales order: the reason is kept in the notes of the order.'
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+      required:
+        - reason
+      title: CancelSalesOrderRequest
     CancelSubscriptionRequest:
       type: object
       description: 'A cancellation: reason code and text, immediate or at the end of the term, refund of the unused period.'
@@ -101967,6 +105670,19 @@ components:
       required:
         - quantity
       title: ChangeQuantityRequest
+    ChangeRecurringJournalStatusRequest:
+      type: object
+      description: 'Pause, resume or end a recurring journal.'
+      properties:
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - ended
+      required:
+        - status
+      title: ChangeRecurringJournalStatusRequest
     ChangeRequestResource:
       type: object
       properties:
@@ -103532,6 +107248,9 @@ components:
       title: ConvertLeadRequest
     ConvertToDeliveryNoteRequest:
       type: object
+      description: |-
+        Delivery note (DDT) of an order or a quote: the lines to ship (order line id => quantity, every open quantity when
+        omitted), the warehouse the goods leave from and the transport data printed on the note.
       properties:
         lines:
           type:
@@ -103539,6 +107258,11 @@ components:
             - 'null'
           items:
             type: number
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
         transport_reason:
           type:
             - string
@@ -103558,17 +107282,49 @@ components:
           type:
             - number
             - 'null'
-          minimum: 0
+        net_weight_kg:
+          type:
+            - number
+            - 'null'
         carrier_name:
           type:
             - string
             - 'null'
           maxLength: 255
+        carrier_license_plate:
+          type:
+            - string
+            - 'null'
+          maxLength: 30
+        departure_time:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        shipping_terms:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
+        transport_by:
+          type:
+            - string
+            - 'null'
+          enum:
+            - sender
+            - recipient
+            - carrier
+            - null
         courier:
           type:
             - string
             - 'null'
           maxLength: 255
+        tracking_number:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
         shipping_address:
           type:
             - string
@@ -103770,6 +107526,9 @@ components:
       title: CreateDelegationRequest
     CreateDeliveryNoteRequest:
       type: object
+      description: |-
+        Draft delivery note of an order of the active company: the order lines shipped (each within its open quantity) and the
+        transport data of the DDT.
       properties:
         sales_order_id:
           type: string
@@ -103803,7 +107562,10 @@ components:
           type:
             - number
             - 'null'
-          minimum: 0
+        net_weight_kg:
+          type:
+            - number
+            - 'null'
         carrier_name:
           type:
             - string
@@ -103814,6 +107576,25 @@ components:
             - string
             - 'null'
           maxLength: 30
+        departure_time:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        shipping_terms:
+          type:
+            - string
+            - 'null'
+          maxLength: 100
+        transport_by:
+          type:
+            - string
+            - 'null'
+          enum:
+            - sender
+            - recipient
+            - carrier
+            - null
         shipping_address:
           type:
             - string
@@ -103842,7 +107623,6 @@ components:
                 format: uuid
               quantity:
                 type: number
-                minimum: 0.0001
               batch_number:
                 type:
                   - string
@@ -104885,10 +108665,9 @@ components:
                   - 'null'
                 minimum: 0
               tax_rate:
-                type:
-                  - number
-                  - 'null'
+                type: number
                 minimum: 0
+                maximum: 100
               discount_percentage:
                 type:
                   - number
@@ -104903,6 +108682,7 @@ components:
             required:
               - description
               - quantity
+              - tax_rate
           minItems: 1
       required:
         - contact_id
@@ -104976,10 +108756,9 @@ components:
                   - 'null'
                 minimum: 0
               tax_rate:
-                type:
-                  - number
-                  - 'null'
+                type: number
                 minimum: 0
+                maximum: 100
               discount_percentage:
                 type:
                   - number
@@ -104994,6 +108773,7 @@ components:
             required:
               - description
               - quantity
+              - tax_rate
           minItems: 1
       required:
         - contact_id
@@ -106736,6 +110516,14 @@ components:
           type:
             - string
             - 'null'
+        shipping_terms:
+          type:
+            - string
+            - 'null'
+        transport_by:
+          type:
+            - string
+            - 'null'
       required:
         - id
         - tenant_id
@@ -106765,6 +110553,8 @@ components:
         - tracking_number
         - created_by
         - net_weight_kg
+        - shipping_terms
+        - transport_by
       title: DeliveryNote
     DeliveryNoteResource:
       type: array
@@ -106981,6 +110771,102 @@ components:
       required:
         - current_password
       title: DisableTwoFactorRequest
+    DiscountPolicyResource:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        discount_type:
+          type: string
+        value:
+          type: string
+        min_order_amount:
+          type:
+            - string
+            - 'null'
+        min_quantity:
+          type:
+            - string
+            - 'null'
+        valid_from:
+          type:
+            - string
+            - 'null'
+        valid_to:
+          type:
+            - string
+            - 'null'
+        is_active:
+          type: boolean
+        priority:
+          type: integer
+        is_stackable:
+          type: boolean
+        auto_apply:
+          type: boolean
+        contact_id:
+          type:
+            - string
+            - 'null'
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              product_id:
+                type:
+                  - string
+                  - 'null'
+              customer_group_id:
+                type:
+                  - string
+                  - 'null'
+              contact_id:
+                type:
+                  - string
+                  - 'null'
+              min_threshold:
+                type:
+                  - string
+                  - 'null'
+              discount_percent:
+                type:
+                  - string
+                  - 'null'
+              discount_fixed_amount:
+                type:
+                  - string
+                  - 'null'
+            required:
+              - id
+              - product_id
+              - customer_group_id
+              - contact_id
+              - min_threshold
+              - discount_percent
+              - discount_fixed_amount
+      required:
+        - id
+        - code
+        - name
+        - discount_type
+        - value
+        - min_order_amount
+        - min_quantity
+        - valid_from
+        - valid_to
+        - is_active
+        - priority
+        - is_stackable
+        - auto_apply
+        - contact_id
+      title: DiscountPolicyResource
     DisposeAssetRequest:
       type: object
       description: 'Validation of a total or partial disposal (sale, scrapping, retirement, donation, loss).'
@@ -111393,6 +115279,28 @@ components:
           type:
             - string
             - 'null'
+        auto_reverse_on:
+          type:
+            - string
+            - 'null'
+        created_by: {}
+        submitted_by: {}
+        submitted_at:
+          type:
+            - string
+            - 'null'
+        approved_by: {}
+        approved_at:
+          type:
+            - string
+            - 'null'
+        rejected_by: {}
+        rejected_at:
+          type:
+            - string
+            - 'null'
+        rejection_reason: {}
+        recurring_journal_id: {}
         lines:
           type: array
           items:
@@ -111417,6 +115325,16 @@ components:
         - posted_at
         - reversed_at
         - reversal_journal_entry_id
+        - auto_reverse_on
+        - created_by
+        - submitted_by
+        - submitted_at
+        - approved_by
+        - approved_at
+        - rejected_by
+        - rejected_at
+        - rejection_reason
+        - recurring_journal_id
       title: JournalEntryResource
     JournalLineResource:
       type: object
@@ -112205,6 +116123,16 @@ components:
         - updated_at
         - deleted_at
       title: LeaveType
+    LedgerAsOfRequest:
+      type: object
+      description: 'The day up to which scheduled ledger work runs (recurring journals, automatic reversals); today when omitted.'
+      properties:
+        as_of:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      title: LedgerAsOfRequest
     LedgerBudgetResource:
       type: object
       properties:
@@ -119969,6 +123897,45 @@ components:
       required:
         - quantity
       title: ReceiveOutputRequest
+    ReceiveSalesReturnRequest:
+      type: object
+      description: |-
+        Receipt of an authorised return: optionally the warehouse and, per line, the quantity received, its condition and
+        whether it goes back into stock (every line is received in full when no line is given).
+      properties:
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              quantity_received:
+                type: number
+              condition:
+                type:
+                  - string
+                  - 'null'
+                enum:
+                  - resellable
+                  - damaged
+                  - null
+              restock:
+                type:
+                  - boolean
+                  - 'null'
+            required:
+              - id
+              - quantity_received
+          maxItems: 500
+          uniqueItems: true
+      title: ReceiveSalesReturnRequest
     ReceiveSubcontractRequest:
       type: object
       description: 'Validation of processed quantity received back from a subcontractor.'
@@ -120608,6 +124575,101 @@ components:
         - end_date
         - is_active
       title: RecurringCashItemResource
+    RecurringJournalResource:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        frequency:
+          type: string
+        start_date:
+          type:
+            - string
+            - 'null'
+        end_date:
+          type:
+            - string
+            - 'null'
+        next_run_date:
+          type:
+            - string
+            - 'null'
+        last_run_date:
+          type:
+            - string
+            - 'null'
+        reverse_next_day:
+          type: boolean
+        status:
+          type: string
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: string
+              debit_amount:
+                type: string
+              credit_amount:
+                type: string
+              description:
+                type:
+                  - string
+                  - 'null'
+              cost_center_id:
+                type:
+                  - string
+                  - 'null'
+              profit_center_id:
+                type:
+                  - string
+                  - 'null'
+            required:
+              - account_id
+              - debit_amount
+              - credit_amount
+        runs:
+          type: array
+          items:
+            type: object
+            properties:
+              run_date:
+                type:
+                  - string
+                  - 'null'
+              journal_entry_id:
+                type: string
+            required:
+              - run_date
+              - journal_entry_id
+        created_by:
+          type:
+            - string
+            - 'null'
+        created_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - name
+        - description
+        - frequency
+        - start_date
+        - end_date
+        - next_run_date
+        - last_run_date
+        - reverse_next_day
+        - status
+        - lines
+        - created_by
+        - created_at
+      title: RecurringJournalResource
     RegimeFiscale:
       type: string
       description: |
@@ -120776,6 +124838,16 @@ components:
         - updated_at
         - deleted_at
       title: RegistryAssignment
+    RejectJournalEntryRequest:
+      type: object
+      description: 'The reason of a rejected journal, kept for the audit trail.'
+      properties:
+        reason:
+          type: string
+          maxLength: 500
+      required:
+        - reason
+      title: RejectJournalEntryRequest
     RejectPortalQuoteRequest:
       type: object
       properties:
@@ -120794,6 +124866,16 @@ components:
             - 'null'
           maxLength: 1000
       title: RejectSalesQuoteRequest
+    RejectSalesReturnRequest:
+      type: object
+      description: 'Refusal of a return request, with the reason given to the customer.'
+      properties:
+        reason:
+          type: string
+          maxLength: 1000
+      required:
+        - reason
+      title: RejectSalesReturnRequest
     RejectionRequest:
       type: object
       description: 'A rejection must say why, so the author knows what to correct.'
@@ -121561,6 +125643,60 @@ components:
       required:
         - reason
       title: ReviseBomRequest
+    ReviseQuoteRequest:
+      type: object
+      description: 'What changes in a quote revision; every omitted field is taken from the revised quote (its lines included).'
+      properties:
+        date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        valid_until:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        custom_text:
+          type:
+            - string
+            - 'null'
+          maxLength: 5000
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              description:
+                type: string
+                maxLength: 1000
+              quantity:
+                type: number
+              unit_price:
+                type: number
+                minimum: 0
+              tax_rate:
+                type: number
+                minimum: 0
+                maximum: 100
+              discount_percentage:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 100
+          minItems: 1
+      title: ReviseQuoteRequest
     RfqResource:
       type: object
       properties:
@@ -123022,6 +127158,16 @@ components:
         - created_at
         - updated_at
       title: SalesOrderResource
+    SalesOrderWarehouseRequest:
+      type: object
+      description: 'The warehouse an order is checked against or reserved in (the primary warehouse of the company when omitted).'
+      properties:
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      title: SalesOrderWarehouseRequest
     SalesQuoteItem:
       type: object
       properties:
@@ -123178,6 +127324,151 @@ components:
         - created_at
         - updated_at
       title: SalesQuoteResource
+    SalesReturnResource:
+      type: object
+      properties:
+        id:
+          type: string
+        return_number:
+          type: string
+        date:
+          type: string
+        status:
+          type: string
+        contact_id:
+          type: string
+        contact:
+          type: object
+          properties:
+            id:
+              type: string
+            name:
+              type:
+                - string
+                - 'null'
+          required:
+            - id
+            - name
+        sales_order_id:
+          type:
+            - string
+            - 'null'
+        delivery_note_id:
+          type:
+            - string
+            - 'null'
+        invoice_id:
+          type:
+            - string
+            - 'null'
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+        reason:
+          type: string
+        notes:
+          type:
+            - string
+            - 'null'
+        rejection_reason:
+          type:
+            - string
+            - 'null'
+        credit_note_id:
+          type:
+            - string
+            - 'null'
+        approved_at:
+          type:
+            - string
+            - 'null'
+        received_at:
+          type:
+            - string
+            - 'null'
+        credited_at:
+          type:
+            - string
+            - 'null'
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+              delivery_note_item_id:
+                type:
+                  - string
+                  - 'null'
+              invoice_item_id:
+                type:
+                  - string
+                  - 'null'
+              sales_order_item_id:
+                type:
+                  - string
+                  - 'null'
+              product_id:
+                type:
+                  - string
+                  - 'null'
+              description:
+                type: string
+              quantity:
+                type: string
+              quantity_received:
+                type: string
+              unit_price:
+                type: string
+              tax_rate:
+                type: string
+              discount_percentage:
+                type: string
+              condition:
+                type:
+                  - string
+                  - 'null'
+              restock:
+                type: boolean
+            required:
+              - id
+              - delivery_note_item_id
+              - invoice_item_id
+              - sales_order_item_id
+              - product_id
+              - description
+              - quantity
+              - quantity_received
+              - unit_price
+              - tax_rate
+              - discount_percentage
+              - condition
+              - restock
+        created_at:
+          type:
+            - string
+            - 'null'
+      required:
+        - id
+        - return_number
+        - date
+        - status
+        - contact_id
+        - sales_order_id
+        - delivery_note_id
+        - invoice_id
+        - warehouse_id
+        - reason
+        - notes
+        - rejection_reason
+        - credit_note_id
+        - approved_at
+        - received_at
+        - credited_at
+        - created_at
+      title: SalesReturnResource
     SalesTarget:
       type: object
       properties:
@@ -129744,6 +134035,53 @@ components:
           minLength: 2
           maxLength: 2
       title: StoreAccountRequest
+    StoreAccrualRequest:
+      type: object
+      description: 'An accrual or deferral (rateo o risconto): type, amount of the whole coverage, coverage dates, cut-off and accounts.'
+      properties:
+        accrual_type:
+          type: string
+          enum:
+            - accrued_revenue
+            - accrued_expense
+            - prepaid_expense
+            - deferred_revenue
+        description:
+          type: string
+          maxLength: 255
+        total_amount:
+          type: number
+          maximum: 99999999999
+        coverage_start:
+          type: string
+          format: date-time
+        coverage_end:
+          type: string
+          format: date-time
+        cutoff_date:
+          type: string
+          format: date-time
+        income_statement_account_id:
+          type: string
+          format: uuid
+        balance_sheet_account_id:
+          type: string
+          format: uuid
+        cost_center_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - accrual_type
+        - description
+        - total_amount
+        - coverage_start
+        - coverage_end
+        - cutoff_date
+        - income_statement_account_id
+        - balance_sheet_account_id
+      title: StoreAccrualRequest
     StoreActivityRequest:
       type: object
       description: |-
@@ -131324,6 +135662,113 @@ components:
         - title
         - start_date
       title: StoreContractRequest
+    StoreDimensionRequest:
+      type: object
+      description: 'A cost centre or profit centre: code unique in the tenant, name and active flag. On update every field is optional.'
+      properties:
+        code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 255
+        is_active:
+          type: boolean
+      required:
+        - code
+        - name
+      title: StoreDimensionRequest
+    StoreDiscountPolicyRequest:
+      type: object
+      description: |-
+        A discount policy or promotion: header discount, validity, limits, priority, stacking and its rules (by product,
+        customer or customer group). On update omitted fields keep their value; `rules`, when given, replace the rules.
+      properties:
+        code:
+          type: string
+          maxLength: 50
+        name:
+          type: string
+          maxLength: 255
+        discount_type:
+          type: string
+          enum:
+            - percentage
+            - fixed_amount
+        value:
+          type: number
+        min_order_amount:
+          type:
+            - number
+            - 'null'
+        min_quantity:
+          type:
+            - number
+            - 'null'
+        valid_from:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        valid_to:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        is_active:
+          type: boolean
+        priority:
+          type: integer
+          minimum: 0
+          maximum: 100000
+        is_stackable:
+          type: boolean
+        auto_apply:
+          type: boolean
+        contact_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        rules:
+          type: array
+          items:
+            type: object
+            properties:
+              product_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              customer_group_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              contact_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              min_threshold:
+                type:
+                  - number
+                  - 'null'
+              discount_percent:
+                type:
+                  - number
+                  - 'null'
+              discount_fixed_amount:
+                type:
+                  - number
+                  - 'null'
+          maxItems: 200
+      required:
+        - code
+        - name
+        - discount_type
+        - value
+      title: StoreDiscountPolicyRequest
     StoreDocumentRequest:
       type: object
       description: 'Validates the input of the store document operation (authorization is decided by module.access).'
@@ -132257,6 +136702,22 @@ components:
         - title
         - mode
       title: StoreFormDocumentRequest
+    StoreFxRevaluationRequest:
+      type: object
+      description: 'Date and optional currency of a revaluation of open receivables and payables.'
+      properties:
+        revaluation_date:
+          type: string
+          format: date-time
+        currency:
+          type:
+            - string
+            - 'null'
+          minLength: 3
+          maxLength: 3
+      required:
+        - revaluation_date
+      title: StoreFxRevaluationRequest
     StoreHealthExpenseRequest:
       type: object
       description: 'Validates the flagging of a document as a health expense.'
@@ -132893,15 +137354,15 @@ components:
             - string
             - 'null'
           format: uuid
-        entry_number:
-          type:
-            - string
-            - 'null'
-          maxLength: 50
         posting_date:
           type: string
           format: date-time
         document_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        auto_reverse_on:
           type:
             - string
             - 'null'
@@ -132986,6 +137447,11 @@ components:
                   - employee
                   - null
               partner_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              project_id:
                 type:
                   - string
                   - 'null'
@@ -133835,6 +138301,25 @@ components:
         - code
         - name
       title: StorePaymentTermRequest
+    StorePeriodCloseTaskRequest:
+      type: object
+      description: 'A task of the close checklist of a period.'
+      properties:
+        title:
+          type: string
+          maxLength: 190
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 1000
+        is_blocking:
+          type:
+            - boolean
+            - 'null'
+      required:
+        - title
+      title: StorePeriodCloseTaskRequest
     StorePosSaleRequest:
       type: object
       properties:
@@ -135143,6 +139628,79 @@ components:
         - frequency
         - next_date
       title: StoreRecurringCashItemRequest
+    StoreRecurringJournalRequest:
+      type: object
+      description: 'A recurring journal template: frequency, first due date, optional end and balanced lines.'
+      properties:
+        name:
+          type: string
+          maxLength: 190
+        description:
+          type: string
+          maxLength: 450
+        frequency:
+          type: string
+          enum:
+            - monthly
+            - quarterly
+            - semiannual
+            - yearly
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        reverse_next_day:
+          type:
+            - boolean
+            - 'null'
+        lines:
+          type: array
+          items:
+            type: object
+            properties:
+              account_id:
+                type: string
+                format: uuid
+              debit_amount:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+              credit_amount:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+              description:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 255
+              cost_center_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              profit_center_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+            required:
+              - account_id
+          minItems: 2
+          maxItems: 200
+      required:
+        - name
+        - description
+        - frequency
+        - start_date
+        - lines
+      title: StoreRecurringJournalRequest
     StoreRecurringServiceRequest:
       type: object
       description: 'Validates a recurring service (for example yearly tyre storage) billed through a subscription.'
@@ -135491,6 +140049,77 @@ components:
         - currency
         - items
       title: StoreSalesOrderRequest
+    StoreSalesReturnRequest:
+      type: object
+      description: |-
+        A return request: the delivery note or invoice the goods came with, the reason, and the lines returned (each naming
+        the line of the source document).
+      properties:
+        delivery_note_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        invoice_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        date:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        reason:
+          type: string
+          maxLength: 500
+        notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 2000
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              delivery_note_item_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              invoice_item_id:
+                type:
+                  - string
+                  - 'null'
+                format: uuid
+              quantity:
+                type: number
+              condition:
+                type:
+                  - string
+                  - 'null'
+                enum:
+                  - resellable
+                  - damaged
+                  - null
+              restock:
+                type:
+                  - boolean
+                  - 'null'
+            required:
+              - quantity
+          minItems: 1
+          maxItems: 500
+      required:
+        - reason
+        - items
+      title: StoreSalesReturnRequest
     StoreScheduleRequest:
       type: object
       properties:
@@ -140488,13 +145117,13 @@ components:
       title: UpdateContractTermsRequest
     UpdateCreditLimitRequest:
       type: object
+      description: 'Credit limit of a customer of the active company; 0 means that no limit is set (exposure is not checked).'
       properties:
         customer_id:
           type: string
           format: uuid
         credit_limit:
           type: number
-          minimum: 0
       required:
         - customer_id
         - credit_limit
@@ -141021,6 +145650,72 @@ components:
         is_active:
           type: boolean
       title: UpdateItemRequest
+    UpdateLedgerSettingsRequest:
+      type: object
+      description: 'Default posting accounts by role and four-eyes policy of manual journals. Only the keys sent are changed.'
+      properties:
+        posting_accounts:
+          type: object
+          properties:
+            sales_revenue:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            purchase_expense:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            output_vat:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            input_vat:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            receivables:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            payables:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            retained_earnings:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            fx_unrealised_gain:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            fx_unrealised_loss:
+              type:
+                - string
+                - 'null'
+              format: uuid
+            rounding:
+              type:
+                - string
+                - 'null'
+              format: uuid
+        manual_journal_approval_required:
+          type: boolean
+        manual_journal_approval_threshold:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 99999999999
+      title: UpdateLedgerSettingsRequest
     UpdateMinutesRequest:
       type: object
       properties:
@@ -141158,6 +145853,24 @@ components:
             type: string
             format: uuid
       title: UpdatePayrollLedgerSettingRequest
+    UpdatePeriodCloseTaskStatusRequest:
+      type: object
+      description: 'Marks a close task done, waived (with the reason in the note) or open again.'
+      properties:
+        status:
+          type: string
+          enum:
+            - open
+            - done
+            - waived
+        note:
+          type:
+            - string
+            - 'null'
+          maxLength: 1000
+      required:
+        - status
+      title: UpdatePeriodCloseTaskStatusRequest
     UpdatePlanRequest:
       type: object
       description: |-
@@ -144723,6 +149436,9 @@ tags:
     name: Accounting
     description: 'Operations of the Accounting module.'
   -
+    name: Accrual
+    description: 'Operations of the Accrual module.'
+  -
     name: Activity
     description: 'Operations of the Activity module.'
   -
@@ -144951,6 +149667,9 @@ tags:
     name: Depreciation
     description: 'Operations of the Depreciation module.'
   -
+    name: Dimension
+    description: 'Operations of the Dimension module.'
+  -
     name: Document
     description: 'Operations of the Document module.'
   -
@@ -145173,6 +149892,12 @@ tags:
     name: LedgerBudget
     description: 'Operations of the LedgerBudget module.'
   -
+    name: LedgerReport
+    description: 'Operations of the LedgerReport module.'
+  -
+    name: LedgerSettings
+    description: 'Operations of the LedgerSettings module.'
+  -
     name: LegalBook
     description: 'Operations of the LegalBook module.'
   -
@@ -145235,6 +149960,9 @@ tags:
   -
     name: OpenBanking
     description: 'Operations of the OpenBanking module.'
+  -
+    name: OpenItemFxRevaluation
+    description: 'Operations of the OpenItemFxRevaluation module.'
   -
     name: Opportunity
     description: 'Operations of the Opportunity module.'
@@ -145304,6 +150032,9 @@ tags:
   -
     name: Payslip
     description: 'Operations of the Payslip module.'
+  -
+    name: PeriodClose
+    description: 'Operations of the PeriodClose module.'
   -
     name: Periodicity
     description: 'Operations of the Periodicity module.'
@@ -145455,6 +150186,9 @@ tags:
     name: Quote
     description: 'Operations of the Quote module.'
   -
+    name: QuoteRevision
+    description: 'Operations of the QuoteRevision module.'
+  -
     name: ReceivableCollection
     description: 'Operations of the ReceivableCollection module.'
   -
@@ -145463,6 +150197,9 @@ tags:
   -
     name: Recruiting
     description: 'Operations of the Recruiting module.'
+  -
+    name: RecurringJournal
+    description: 'Operations of the RecurringJournal module.'
   -
     name: RecurringService
     description: 'Operations of the RecurringService module.'
@@ -145518,17 +150255,29 @@ tags:
     name: SalesCommission
     description: 'Operations of the SalesCommission module.'
   -
+    name: SalesKpi
+    description: 'Operations of the SalesKpi module.'
+  -
     name: SalesOrder
     description: 'Operations of the SalesOrder module.'
   -
+    name: SalesOrderFulfillment
+    description: 'Operations of the SalesOrderFulfillment module.'
+  -
     name: SalesOrderLine
     description: 'Operations of the SalesOrderLine module.'
+  -
+    name: SalesPricing
+    description: 'Operations of the SalesPricing module.'
   -
     name: SalesQuote
     description: 'Operations of the SalesQuote module.'
   -
     name: SalesReport
     description: 'Operations of the SalesReport module.'
+  -
+    name: SalesReturn
+    description: 'Operations of the SalesReturn module.'
   -
     name: SdiChannel
     description: 'Operations of the SdiChannel module.'

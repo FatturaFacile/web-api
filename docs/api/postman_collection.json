@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "1e785500-1d4f-4df4-8083-efb1cdc3fbd8",
+        "_postman_id": "3f6053a6-15ee-4251-91ac-62b03a6a008d",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1879,7 +1879,7 @@
                         "description": "Creates a new delivery note in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"sales_order_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"carrier_license_plate\": \"string\",\n    \"shipping_address\": \"string\",\n    \"courier\": \"string\",\n    \"tracking_number\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity\": 1.5,\n            \"batch_number\": \"string\",\n            \"serial_number\": \"string\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"sales_order_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"net_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"carrier_license_plate\": \"string\",\n    \"departure_time\": \"2026-01-31T12:00:00+00:00\",\n    \"shipping_terms\": \"string\",\n    \"transport_by\": \"sender\",\n    \"shipping_address\": \"string\",\n    \"courier\": \"string\",\n    \"tracking_number\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"sales_order_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity\": 1.5,\n            \"batch_number\": \"string\",\n            \"serial_number\": \"string\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4492,6 +4492,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -4516,7 +4520,16 @@
                                 }
                             ]
                         },
-                        "description": "Create a delivery note directly from a quote"
+                        "description": "Create a delivery note directly from a quote",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"lines\": [\n        1.5\n    ],\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"net_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"carrier_license_plate\": \"string\",\n    \"departure_time\": \"2026-01-31T12:00:00+00:00\",\n    \"shipping_terms\": \"string\",\n    \"transport_by\": \"sender\",\n    \"courier\": \"string\",\n    \"tracking_number\": \"string\",\n    \"shipping_address\": \"string\",\n    \"show_prices\": false,\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -4563,6 +4576,90 @@
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"signed_by\": \"string\",\n    \"signature_base64\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Expires the open quotes of the company past their validity date",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/quotes/expire",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "quotes",
+                                "expire"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Expires the open quotes of the company past their validity date"
+                    }
+                },
+                {
+                    "name": "Creates the next revision of an open quote",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/quotes/:id/revise",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "quotes",
+                                ":id",
+                                "revise"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Creates the next revision of an open quote",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"valid_until\": \"2026-01-31T12:00:00+00:00\",\n    \"notes\": \"string\",\n    \"custom_text\": \"string\",\n    \"items\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_price\": 1.5,\n            \"tax_rate\": 1.5,\n            \"discount_percentage\": 1.5\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -4989,6 +5086,50 @@
                                 }
                             }
                         }
+                    }
+                },
+                {
+                    "name": "Sales indicators for a period",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/kpis?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "kpis"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Sales indicators for a period"
                     }
                 },
                 {
@@ -5473,7 +5614,7 @@
                         "description": "Create a (possibly partial) delivery note from the order",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"lines\": [\n        1.5\n    ],\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"courier\": \"string\",\n    \"shipping_address\": \"string\",\n    \"show_prices\": false,\n    \"notes\": \"string\"\n}",
+                            "raw": "{\n    \"lines\": [\n        1.5\n    ],\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"transport_reason\": \"string\",\n    \"goods_appearance\": \"string\",\n    \"packages_count\": 1,\n    \"gross_weight_kg\": 1.5,\n    \"net_weight_kg\": 1.5,\n    \"carrier_name\": \"string\",\n    \"carrier_license_plate\": \"string\",\n    \"departure_time\": \"2026-01-31T12:00:00+00:00\",\n    \"shipping_terms\": \"string\",\n    \"transport_by\": \"sender\",\n    \"courier\": \"string\",\n    \"tracking_number\": \"string\",\n    \"shipping_address\": \"string\",\n    \"show_prices\": false,\n    \"notes\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -5574,6 +5715,245 @@
                     }
                 },
                 {
+                    "name": "Confirms a draft order behind the credit check of the company",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/orders/:id/confirm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "orders",
+                                ":id",
+                                "confirm"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Confirms a draft order behind the credit check of the company"
+                    }
+                },
+                {
+                    "name": "Cancels an order and releases its reserved stock",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/orders/:id/cancel",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "orders",
+                                ":id",
+                                "cancel"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Cancels an order and releases its reserved stock",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Availability to promise of the open lines of an order",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/orders/:id/availability",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "orders",
+                                ":id",
+                                "availability"
+                            ],
+                            "query": [
+                                {
+                                    "key": "warehouse_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Availability to promise of the open lines of an order"
+                    }
+                },
+                {
+                    "name": "Reserves the stock of the open lines of an order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/orders/:id/reserve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "orders",
+                                ":id",
+                                "reserve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Reserves the stock of the open lines of an order",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Backorder: the open order lines still to be delivered",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/backorders",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "backorders"
+                            ],
+                            "query": [
+                                {
+                                    "key": "contact_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "product_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Backorder: the open order lines still to be delivered"
+                    }
+                },
+                {
                     "name": "Cross-order list of order lines. Filters: `open=1` (undelivered only), `contact_id`, `product_id`",
                     "request": {
                         "method": "GET",
@@ -5621,6 +6001,283 @@
                             "variable": []
                         },
                         "description": "Cross-order list of order lines. Filters: `open=1` (undelivered only), `contact_id`, `product_id`"
+                    }
+                },
+                {
+                    "name": "Price of a product for a customer",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/pricing/price?product_id=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "pricing",
+                                "price"
+                            ],
+                            "query": [
+                                {
+                                    "key": "product_id",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "contact_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "quantity",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "price_list_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "discount_policy_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "order_amount",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Price of a product for a customer"
+                    }
+                },
+                {
+                    "name": "The discount policies of the company",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/discount-policies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "discount-policies"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The discount policies of the company"
+                    }
+                },
+                {
+                    "name": "Creates a discount policy",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/discount-policies",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "discount-policies"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Creates a discount policy",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"discount_type\": \"percentage\",\n    \"value\": 1.5,\n    \"min_order_amount\": 1.5,\n    \"min_quantity\": 1.5,\n    \"valid_from\": \"2026-01-31T12:00:00+00:00\",\n    \"valid_to\": \"2026-01-31T12:00:00+00:00\",\n    \"is_active\": false,\n    \"priority\": 1,\n    \"is_stackable\": false,\n    \"auto_apply\": false,\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"rules\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"customer_group_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"min_threshold\": 1.5,\n            \"discount_percent\": 1.5,\n            \"discount_fixed_amount\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "A discount policy with its rules",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/discount-policies/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "discount-policies",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "A discount policy with its rules"
+                    }
+                },
+                {
+                    "name": "Updates a discount policy",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/discount-policies/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "discount-policies",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Updates a discount policy",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"discount_type\": \"percentage\",\n    \"value\": 1.5,\n    \"min_order_amount\": 1.5,\n    \"min_quantity\": 1.5,\n    \"valid_from\": \"2026-01-31T12:00:00+00:00\",\n    \"valid_to\": \"2026-01-31T12:00:00+00:00\",\n    \"is_active\": false,\n    \"priority\": 1,\n    \"is_stackable\": false,\n    \"auto_apply\": false,\n    \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"rules\": [\n        {\n            \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"customer_group_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"contact_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"min_threshold\": 1.5,\n            \"discount_percent\": 1.5,\n            \"discount_fixed_amount\": 1.5\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Deletes a discount policy",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/discount-policies/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "discount-policies",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Deletes a discount policy"
                     }
                 },
                 {
@@ -6077,6 +6734,340 @@
                             "variable": []
                         },
                         "description": "The receivables aging at a date"
+                    }
+                },
+                {
+                    "name": "Lists the returns of the company",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Lists the returns of the company"
+                    }
+                },
+                {
+                    "name": "Records a return request",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Records a return request",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"delivery_note_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"date\": \"2026-01-31T12:00:00+00:00\",\n    \"reason\": \"string\",\n    \"notes\": \"string\",\n    \"items\": [\n        {\n            \"delivery_note_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"invoice_item_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity\": 1.5,\n            \"condition\": \"resellable\",\n            \"restock\": false\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "A return with its lines",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "A return with its lines"
+                    }
+                },
+                {
+                    "name": "Authorises a requested return",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns/:id/approve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns",
+                                ":id",
+                                "approve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Authorises a requested return"
+                    }
+                },
+                {
+                    "name": "Refuses a requested return",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns/:id/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns",
+                                ":id",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Refuses a requested return",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Cancels a return not received yet",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns/:id/cancel",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns",
+                                ":id",
+                                "cancel"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Cancels a return not received yet"
+                    }
+                },
+                {
+                    "name": "Receives an authorised return in the warehouse",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns/:id/receive",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns",
+                                ":id",
+                                "receive"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Receives an authorised return in the warehouse",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"items\": [\n        {\n            \"id\": \"00000000-0000-0000-0000-000000000000\",\n            \"quantity_received\": 1.5,\n            \"condition\": \"resellable\",\n            \"restock\": false\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Credits a received return",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/sales/returns/:id/credit-note",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "sales",
+                                "returns",
+                                ":id",
+                                "credit-note"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Credits a received return"
                     }
                 },
                 {
@@ -43470,6 +44461,132 @@
             "name": "General Ledger",
             "item": [
                 {
+                    "name": "The accruals and deferrals of the tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/accruals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "accruals"
+                            ],
+                            "query": [
+                                {
+                                    "key": "accrual_type",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cutoff_date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "The accruals and deferrals of the tenant"
+                    }
+                },
+                {
+                    "name": "Computes and posts an accrual or deferral",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/accruals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "accruals"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Computes and posts an accrual or deferral",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"accrual_type\": \"accrued_revenue\",\n    \"description\": \"string\",\n    \"total_amount\": 1.5,\n    \"coverage_start\": \"2026-01-31T12:00:00+00:00\",\n    \"coverage_end\": \"2026-01-31T12:00:00+00:00\",\n    \"cutoff_date\": \"2026-01-31T12:00:00+00:00\",\n    \"income_statement_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"balance_sheet_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "One accrual or deferral",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/accruals/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "accruals",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "One accrual or deferral"
+                    }
+                },
+                {
                     "name": "Returns the root accounts of the active tenant with their sub-accounts, ordered by account code",
                     "request": {
                         "method": "GET",
@@ -43713,6 +44830,258 @@
                             ]
                         },
                         "description": "Deletes a account of the active tenant"
+                    }
+                },
+                {
+                    "name": "GET /v1/general-ledger/cost-centers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/cost-centers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "cost-centers"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/general-ledger/cost-centers",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/cost-centers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "cost-centers"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/general-ledger/cost-centers/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/cost-centers/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "cost-centers",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/general-ledger/profit-centers",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/profit-centers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "profit-centers"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/general-ledger/profit-centers",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/profit-centers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "profit-centers"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "PUT /v1/general-ledger/profit-centers/:id",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/profit-centers/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "profit-centers",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"code\": \"string\",\n    \"name\": \"string\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -44760,6 +46129,136 @@
                     }
                 },
                 {
+                    "name": "Sends a draft manual journal to approval (four-eyes)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/journals/:id/submit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "journals",
+                                ":id",
+                                "submit"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Sends a draft manual journal to approval (four-eyes)"
+                    }
+                },
+                {
+                    "name": "Approves and posts a journal waiting for approval",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/journals/:id/approve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "journals",
+                                ":id",
+                                "approve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Approves and posts a journal waiting for approval"
+                    }
+                },
+                {
+                    "name": "Rejects a journal waiting for approval",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/journals/:id/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "journals",
+                                ":id",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Rejects a journal waiting for approval",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Returns the paginated list of journals of the active tenant",
                     "request": {
                         "method": "GET",
@@ -44838,7 +46337,7 @@
                         "description": "Creates a new journal in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"fiscal_period_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"batch_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"entry_number\": \"string\",\n    \"posting_date\": \"2026-01-31T12:00:00+00:00\",\n    \"document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"ledger_type\": \"statutory\",\n    \"journal_type\": \"standard\",\n    \"description\": \"string\",\n    \"source_document_type\": \"string\",\n    \"source_document_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"status\": \"draft\",\n    \"lines\": [\n        {\n            \"account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"debit_amount\": 1.5,\n            \"credit_amount\": 1.5,\n            \"description\": \"string\",\n            \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"profit_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"partner_type\": \"customer\",\n            \"partner_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ]\n}",
+                            "raw": "{\n    \"fiscal_period_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"batch_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"posting_date\": \"2026-01-31T12:00:00+00:00\",\n    \"document_date\": \"2026-01-31T12:00:00+00:00\",\n    \"auto_reverse_on\": \"2026-01-31T12:00:00+00:00\",\n    \"ledger_type\": \"statutory\",\n    \"journal_type\": \"standard\",\n    \"description\": \"string\",\n    \"source_document_type\": \"string\",\n    \"source_document_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"status\": \"draft\",\n    \"lines\": [\n        {\n            \"account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"debit_amount\": 1.5,\n            \"credit_amount\": 1.5,\n            \"description\": \"string\",\n            \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"profit_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"partner_type\": \"customer\",\n            \"partner_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"project_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -45221,6 +46720,541 @@
                     }
                 },
                 {
+                    "name": "Trial balance of a date range",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/reports/trial-balance?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "reports",
+                                "trial-balance"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "compare_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "compare_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "profit_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "project_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Trial balance of a date range"
+                    }
+                },
+                {
+                    "name": "Ledger of one account (mastrino) with running balance",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/reports/account-ledger?account_id=&from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "reports",
+                                "account-ledger"
+                            ],
+                            "query": [
+                                {
+                                    "key": "account_id",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "profit_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "project_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Ledger of one account (mastrino) with running balance"
+                    }
+                },
+                {
+                    "name": "Balance sheet at a date",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/reports/balance-sheet?as_of=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "reports",
+                                "balance-sheet"
+                            ],
+                            "query": [
+                                {
+                                    "key": "as_of",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "compare_as_of",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Balance sheet at a date"
+                    }
+                },
+                {
+                    "name": "Income statement of a range",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/reports/income-statement?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "reports",
+                                "income-statement"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "compare_from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "compare_to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "cost_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "profit_center_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "project_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Income statement of a range"
+                    }
+                },
+                {
+                    "name": "Result by cost centre, profit centre or project",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/reports/dimensions?dimension=&from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "reports",
+                                "dimensions"
+                            ],
+                            "query": [
+                                {
+                                    "key": "dimension",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Result by cost centre, profit centre or project"
+                    }
+                },
+                {
+                    "name": "Audit trail of the journal entries of a range",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/audit-trail/export?from=&to=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "audit-trail",
+                                "export"
+                            ],
+                            "query": [
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "format",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Audit trail of the journal entries of a range"
+                    }
+                },
+                {
+                    "name": "The settings with the account resolved for each role and where it comes from",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The settings with the account resolved for each role and where it comes from"
+                    }
+                },
+                {
+                    "name": "Changes the settings sent",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/settings",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "settings"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Changes the settings sent",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"posting_accounts\": {\n        \"sales_revenue\": \"00000000-0000-0000-0000-000000000000\",\n        \"purchase_expense\": \"00000000-0000-0000-0000-000000000000\",\n        \"output_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"input_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"receivables\": \"00000000-0000-0000-0000-000000000000\",\n        \"payables\": \"00000000-0000-0000-0000-000000000000\",\n        \"retained_earnings\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"rounding\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    \"manual_journal_approval_required\": false,\n    \"manual_journal_approval_threshold\": 1.5\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "The revaluations already run",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fx-revaluations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fx-revaluations"
+                            ],
+                            "query": [
+                                {
+                                    "key": "revaluation_date",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "The revaluations already run"
+                    }
+                },
+                {
+                    "name": "Revalues the open items at a date",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fx-revaluations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fx-revaluations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Revalues the open items at a date",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"revaluation_date\": \"2026-01-31T12:00:00+00:00\",\n    \"currency\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Returns the payroll accounts of the active tenant",
                     "request": {
                         "method": "GET",
@@ -45373,6 +47407,156 @@
                     }
                 },
                 {
+                    "name": "The checklist of a period",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fiscal-periods/:id/close-checklist",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fiscal-periods",
+                                ":id",
+                                "close-checklist"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "The checklist of a period"
+                    }
+                },
+                {
+                    "name": "Adds a task to the checklist",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fiscal-periods/:id/close-tasks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fiscal-periods",
+                                ":id",
+                                "close-tasks"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Adds a task to the checklist",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"is_blocking\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Marks a task done, waived or open",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fiscal-periods/:id/close-tasks/:taskId/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fiscal-periods",
+                                ":id",
+                                "close-tasks",
+                                ":taskId",
+                                "status"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "taskId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Marks a task done, waived or open",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"open\",\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "Returns the paginated list of reconciliations of the active tenant",
                     "request": {
                         "method": "GET",
@@ -45483,6 +47667,275 @@
                             ]
                         },
                         "description": "Returns a single reconciliation of the active tenant"
+                    }
+                },
+                {
+                    "name": "The recurring journals of the tenant",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/recurring-journals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "recurring-journals"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "The recurring journals of the tenant"
+                    }
+                },
+                {
+                    "name": "Saves a recurring journal template",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/recurring-journals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "recurring-journals"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Saves a recurring journal template",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"frequency\": \"monthly\",\n    \"start_date\": \"2026-01-31T12:00:00+00:00\",\n    \"end_date\": \"2026-01-31T12:00:00+00:00\",\n    \"reverse_next_day\": false,\n    \"lines\": [\n        {\n            \"account_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"debit_amount\": 1.5,\n            \"credit_amount\": 1.5,\n            \"description\": \"string\",\n            \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\",\n            \"profit_center_id\": \"00000000-0000-0000-0000-000000000000\"\n        }\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "A recurring journal with its runs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/recurring-journals/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "recurring-journals",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "A recurring journal with its runs"
+                    }
+                },
+                {
+                    "name": "Pauses, resumes or ends a template",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/recurring-journals/:id/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "recurring-journals",
+                                ":id",
+                                "status"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Pauses, resumes or ends a template",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"status\": \"active\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Posts the next due run of a template now",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/recurring-journals/:id/run",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "recurring-journals",
+                                ":id",
+                                "run"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Posts the next due run of a template now",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"as_of\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Runs the scheduled ledger work of the tenant up to a day",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/scheduled-journals/run",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "scheduled-journals",
+                                "run"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Runs the scheduled ledger work of the tenant up to a day",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"as_of\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
