@@ -82,7 +82,7 @@ function wmsSalesOrder(array $lines, string $status = 'confirmed'): SalesOrder
     $order = SalesOrder::create(['contact_id' => $contact->id, 'order_number' => 'SO-'.uniqid(), 'date' => now()->toDateString(), 'currency' => 'EUR', 'status' => $status]);
 
     foreach ($lines as [$product, $quantity]) {
-        $order->items()->create(['product_id' => $product->id, 'description' => $product->name, 'quantity' => $quantity, 'unit_price' => 10, 'tax_rate' => 22, 'line_total' => 10]);
+        $order->items()->make(['product_id' => $product->id, 'description' => $product->name, 'quantity' => $quantity, 'unit_price' => 10, 'tax_rate' => 22, 'line_total' => 10])->forceFill(['tenant_id' => $order->tenant_id])->save();
     }
 
     return $order;
