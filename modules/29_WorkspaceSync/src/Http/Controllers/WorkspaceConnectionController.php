@@ -6,11 +6,13 @@ namespace Modules\WorkspaceSync\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Models\Contact;
 use Closure;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Modules\WorkspaceSync\Http\Requests\AuthorizeWorkspaceRequest;
 use Modules\WorkspaceSync\Http\Requests\WorkspaceCallbackRequest;
 use Modules\WorkspaceSync\Http\Resources\WorkspaceConnectionResource;
@@ -157,24 +159,51 @@ final class WorkspaceConnectionController extends Controller
         summary: 'List own items',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Workspace Sync'],
-        parameters: [new OA\Parameter(name: 'kind', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['calendar_event', 'email']))],
+        parameters: [
+            new OA\Parameter(name: 'kind', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['calendar_event', 'email'])),
+            new OA\Parameter(name: 'contact_id', description: 'Only the items exchanged with this CRM contact: the counterpart address contains the email of the contact. A contact of another tenant, or without an email, is refused.', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 200, maximum: 200)),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Items', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkspaceItemResource'))])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid filter, or unknown contact', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function items(Request $request): JsonResponse
     {
+        $filters = $request->validate([
+            'kind' => ['nullable', 'in:calendar_event,email'],
+            'contact_id' => ['nullable', 'uuid'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:200'],
+        ]);
+
+        $email = null;
+
+        if (isset($filters['contact_id'])) {
+            $email = Contact::query()->whereKey($filters['contact_id'])->value('email');
+
+            if ($email === null) {
+                throw ValidationException::withMessages(['contact_id' => __('validation.exists', ['attribute' => 'contact id'])]);
+            }
+        }
+
         $connections = WorkspaceConnection::query()->where('user_id', $request->user()->id)->pluck('id');
 
-        return $this->successResponse(WorkspaceItemResource::collection(
-            WorkspaceSyncedItem::query()
-                ->whereIn('connection_id', $connections)
-                ->when($request->query('kind'), static fn ($query, $kind) => $query->where('kind', $kind))
-                ->orderByDesc('starts_at')
-                ->limit(200)
-                ->get()
-        ));
+        $page = WorkspaceSyncedItem::query()
+            ->whereIn('connection_id', $connections)
+            ->when($filters['kind'] ?? null, static fn ($query, string $kind) => $query->where('kind', $kind))
+            // The counterpart is the address of the other party, as the provider wrote it ("Name <address>" included).
+            ->when($email, static fn ($query, string $address) => $query->whereRaw('lower(counterpart) like ?', ['%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($address)).'%']))
+            ->orderByDesc('starts_at')
+            ->paginate((int) ($filters['per_page'] ?? 200));
+
+        return $this->successResponse(
+            WorkspaceItemResource::collection($page->getCollection()),
+            'Items retrieved',
+            meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage()],
+        );
     }
 
     /**

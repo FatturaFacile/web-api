@@ -11,6 +11,20 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * A field service work order. Money columns are decimal strings (never floats); the `total_*` and `lead_*` accessors
+ * below only exist for the earlier names used by the contracts of the module.
+ *
+ * @property string $labor_cost
+ * @property string $material_cost
+ * @property string $expense_cost
+ * @property string $total_cost
+ * @property string $total_billable_amount
+ * @property string $currency
+ * @property bool $is_invoiced
+ * @property string|null $invoice_id
+ * @property string|null $customer_id
+ */
 final class WorkOrder extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'esm_work_orders';

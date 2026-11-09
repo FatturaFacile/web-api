@@ -31,7 +31,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'title', type: 'string', example: 'Emergency pump inspection'),
         new OA\Property(property: 'work_type', type: 'string', enum: ['corrective', 'preventive', 'inspection', 'installation', 'emergency', 'commissioning']),
         new OA\Property(property: 'status', type: 'string', enum: ['draft', 'approved', 'scheduled', 'dispatched', 'in_progress', 'on_hold', 'completed', 'cancelled']),
-        new OA\Property(property: 'total_cost', type: 'number', format: 'double', example: 1250.00),
+        new OA\Property(property: 'total_cost', description: 'Decimal string, never a float', type: 'string', example: '1250.00'),
     ]
 )]
 final class ServiceManagementOpenApiSchemas {}

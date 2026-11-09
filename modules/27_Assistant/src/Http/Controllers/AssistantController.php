@@ -9,7 +9,9 @@ use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Modules\Assistant\Contracts\CatalogueQuery;
+use Modules\Assistant\Enums\AnswerOutcome;
 use Modules\Assistant\Http\Requests\AskAssistantRequest;
 use Modules\Assistant\Http\Resources\AssistantLogResource;
 use Modules\Assistant\Models\AssistantQuestionLog;
@@ -86,14 +88,21 @@ final class AssistantController extends Controller
     #[OA\Get(
         path: '/api/v1/assistant/logs',
         operationId: 'getAssistantLogs',
-        description: 'Questions asked in this tenant. Owners and administrators only.',
+        description: 'Questions asked in this tenant, latest first. Owners and administrators only. Filter by `outcome` (`unmatched` shows what people asked that the catalogue cannot answer yet, `forbidden` what their role does not allow), by `user_id` and by period.',
         summary: 'List asked questions',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Assistant'],
-        parameters: [new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer'))],
+        parameters: [
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'outcome', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['answered', 'unmatched', 'forbidden', 'failed'])),
+            new OA\Parameter(name: 'user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Questions', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssistantLogResource'))])),
             new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid filter', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function logs(Request $request): JsonResponse
@@ -104,7 +113,20 @@ final class AssistantController extends Controller
             throw new AccessDeniedHttpException('Only owners and administrators can read the questions.');
         }
 
-        $logs = AssistantQuestionLog::query()->latest()->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
+        $filters = $request->validate([
+            'outcome' => ['nullable', Rule::enum(AnswerOutcome::class)],
+            'user_id' => ['nullable', 'uuid'],
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
+        ]);
+
+        $logs = AssistantQuestionLog::query()
+            ->when($filters['outcome'] ?? null, static fn ($query, string $outcome) => $query->where('outcome', $outcome))
+            ->when($filters['user_id'] ?? null, static fn ($query, string $userId) => $query->where('user_id', $userId))
+            ->when($filters['from'] ?? null, static fn ($query, string $from) => $query->whereDate('created_at', '>=', $from))
+            ->when($filters['to'] ?? null, static fn ($query, string $to) => $query->whereDate('created_at', '<=', $to))
+            ->latest()
+            ->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
 
         return $this->successResponse(
             AssistantLogResource::collection($logs->getCollection()),

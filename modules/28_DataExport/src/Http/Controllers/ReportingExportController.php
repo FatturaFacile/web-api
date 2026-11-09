@@ -26,7 +26,7 @@ final class ReportingExportController extends Controller
         security: [['bearerAuth' => []]],
         tags: ['Data Export'],
         parameters: [
-            new OA\Parameter(name: 'dataset', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['invoices', 'purchases', 'contacts'])),
+            new OA\Parameter(name: 'dataset', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['invoices', 'purchases', 'payments', 'contacts'])),
             new OA\Parameter(name: '$top', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 100, maximum: 1000)),
             new OA\Parameter(name: '$skip', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 0)),
             new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
@@ -60,12 +60,12 @@ final class ReportingExportController extends Controller
     #[OA\Get(
         path: '/api/v1/exports/csv/{dataset}',
         operationId: 'exportDatasetCsv',
-        description: 'Excel-compatible CSV (semicolons, UTF-8 BOM) of invoices, purchases or contacts, optionally for a period.',
+        description: 'Excel-compatible CSV (semicolons, UTF-8 BOM) of invoices, purchases, payments (collections received on invoices, by payment date) or contacts, optionally for a period.',
         summary: 'Export dataset to CSV',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Data Export'],
         parameters: [
-            new OA\Parameter(name: 'dataset', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['invoices', 'purchases', 'contacts'])),
+            new OA\Parameter(name: 'dataset', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['invoices', 'purchases', 'payments', 'contacts'])),
             new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
         ],

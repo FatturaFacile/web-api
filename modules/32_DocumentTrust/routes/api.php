@@ -10,6 +10,7 @@ Route::prefix('api/v1/document-trust')
     ->group(function (): void {
         Route::post('signatures', [DocumentTrustController::class, 'sign'])->name('document-trust.sign');
         Route::get('signatures', [DocumentTrustController::class, 'signatures'])->name('document-trust.signatures');
+        Route::post('signatures/{id}/verify', [DocumentTrustController::class, 'verify'])->whereUuid('id')->name('document-trust.verify');
         Route::post('preservation', [DocumentTrustController::class, 'preserve'])->name('document-trust.preserve');
         Route::get('preservation', [DocumentTrustController::class, 'preservationRecords'])->name('document-trust.preservation');
     });

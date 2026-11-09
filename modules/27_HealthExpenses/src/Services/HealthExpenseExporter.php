@@ -26,6 +26,36 @@ final class HealthExpenseExporter
     ];
 
     /**
+     * Totals of the expenses paid in a year, by expense type: what the practice is about to report, before the
+     * export. Amounts are decimal strings added with bcmath. Expenses whose patient opposed the transmission are
+     * counted apart: they are reported without the fiscal code of the citizen.
+     *
+     * @return array{year: int, count: int, total_amount: string, opposed_count: int, by_expense_type: list<array{expense_type: string, count: int, total_amount: string}>}
+     */
+    public function summary(int $year): array
+    {
+        $expenses = HealthExpense::query()->whereYear('payment_date', $year)->orderBy('expense_type')->get();
+        $byType = [];
+        $total = '0.00';
+
+        foreach ($expenses as $expense) {
+            $type = (string) $expense->expense_type;
+            $byType[$type] ??= ['expense_type' => $type, 'count' => 0, 'total_amount' => '0.00'];
+            $byType[$type]['count']++;
+            $byType[$type]['total_amount'] = bcadd($byType[$type]['total_amount'], (string) $expense->amount, 2);
+            $total = bcadd($total, (string) $expense->amount, 2);
+        }
+
+        return [
+            'year' => $year,
+            'count' => $expenses->count(),
+            'total_amount' => $total,
+            'opposed_count' => $expenses->where('patient_opposition', true)->count(),
+            'by_expense_type' => array_values($byType),
+        ];
+    }
+
+    /**
      * Rows of the expenses paid in the given year of the tenant.
      *
      * @return list<array<string, string>>

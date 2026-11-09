@@ -8,6 +8,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceSdiMetadata;
 use App\Models\PassiveInvoice;
 use App\Services\Tenancy\TenantContext;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Modules\DocumentTrust\Contracts\PreservationDriver;
 use Modules\DocumentTrust\Contracts\SignatureDriver;
 use Modules\DocumentTrust\Drivers\AccreditedPreservationDriver;
@@ -46,6 +47,45 @@ final readonly class DocumentTrustService
             'driver' => $driver->name(),
             'content_sha256' => hash('sha256', $content),
         ]);
+    }
+
+    /**
+     * Check a stored signature of the active tenant against the XML the document has now.
+     *
+     * @return array{signature_id: string, document_type: string, document_id: string, driver: string, format: string, valid: bool, reason: ?string, content_changed: bool, trust_chain_validated: bool}
+     */
+    public function verify(string $signatureId): array
+    {
+        $signature = DocumentSignature::findOrFail($signatureId);
+
+        try {
+            $content = $this->content($signature->document_type, $signature->document_id);
+        } catch (DocumentTrustException|ModelNotFoundException) {
+            return $this->verification($signature, false, 'document_missing', true);
+        }
+
+        $changed = ! hash_equals((string) $signature->content_sha256, hash('sha256', $content));
+        $result = $this->signatureDriver($signature->driver)->verify($content, $signature);
+
+        return $this->verification($signature, $result['valid'] && ! $changed, $changed ? 'content_changed' : $result['reason'], $changed);
+    }
+
+    /**
+     * @return array{signature_id: string, document_type: string, document_id: string, driver: string, format: string, valid: bool, reason: ?string, content_changed: bool, trust_chain_validated: bool}
+     */
+    private function verification(DocumentSignature $signature, bool $valid, ?string $reason, bool $changed): array
+    {
+        return [
+            'signature_id' => (string) $signature->id,
+            'document_type' => (string) $signature->document_type,
+            'document_id' => (string) $signature->document_id,
+            'driver' => (string) $signature->driver,
+            'format' => (string) $signature->format,
+            'valid' => $valid,
+            'reason' => $reason,
+            'content_changed' => $changed,
+            'trust_chain_validated' => false,
+        ];
     }
 
     /**

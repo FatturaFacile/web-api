@@ -25,11 +25,11 @@ interface TicketServiceInterface
 
     public function logTime(
         string $ticketId,
-        float $hours,
+        string|int|float $hours,
         ?string $technicianId = null,
         ?string $workDescription = null,
         bool $isBillable = true,
-        ?float $hourlyRate = null,
+        string|int|float|null $hourlyRate = null,
         ?string $actorUserId = null
     ): TicketTimeEntry;
 }

@@ -10,5 +10,6 @@ Route::prefix('api/v1/edocument-networks')
     ->group(function (): void {
         Route::get('/', [EDocumentNetworkController::class, 'index'])->name('edocument-networks.index');
         Route::get('transmissions', [EDocumentNetworkController::class, 'transmissions'])->name('edocument-networks.transmissions');
+        Route::get('transmissions/{id}', [EDocumentNetworkController::class, 'show'])->whereUuid('id')->name('edocument-networks.transmissions.show');
         Route::post('{network}/transmissions', [EDocumentNetworkController::class, 'send'])->whereIn('network', ['ebill', 'peppol', 'nso'])->name('edocument-networks.send');
     });

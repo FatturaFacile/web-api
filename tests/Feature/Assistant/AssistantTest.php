@@ -203,6 +203,26 @@ test('only administrators read the log, and only of their tenant', function (): 
     $this->getJson('/api/v1/assistant/logs')->assertOk()->assertJsonPath('data', []);
 });
 
+test('the log is filtered by outcome, user and period so unanswered questions can be found', function (): void {
+    $this->postJson('/api/v1/assistant/ask', ['question' => 'Che tempo fa domani?'])->assertOk();
+    $this->postJson('/api/v1/assistant/ask', ['question' => 'crediti aperti'])->assertOk();
+    $admin = assistantMember($this->tenant, 'admin');
+    assistantActAs($admin, $this->tenant);
+    $this->postJson('/api/v1/assistant/ask', ['question' => 'Che ore sono?'])->assertOk();
+
+    $unmatched = $this->getJson('/api/v1/assistant/logs?outcome=unmatched')->assertOk()->assertJsonPath('meta.total', 2)->json('data');
+    expect(collect($unmatched)->pluck('question')->all())->toEqualCanonicalizing(['Che tempo fa domani?', 'Che ore sono?']);
+    $this->getJson("/api/v1/assistant/logs?user_id={$admin->id}")->assertOk()->assertJsonPath('meta.total', 1);
+    $this->getJson('/api/v1/assistant/logs?outcome=answered')->assertOk()->assertJsonPath('meta.total', 1);
+    $this->getJson('/api/v1/assistant/logs?from=2999-01-01')->assertOk()->assertJsonPath('meta.total', 0);
+    $this->getJson('/api/v1/assistant/logs?from='.now()->toDateString().'&to='.now()->toDateString())->assertOk()->assertJsonPath('meta.total', 3);
+    $this->getJson('/api/v1/assistant/logs?outcome=nope')->assertUnprocessable()->assertJsonValidationErrors('outcome');
+    $this->getJson('/api/v1/assistant/logs?from=2027-02-01&to=2027-01-01')->assertUnprocessable()->assertJsonValidationErrors('to');
+
+    assistantActAs(assistantMember($this->other, 'admin'), $this->other);
+    $this->getJson('/api/v1/assistant/logs?outcome=unmatched')->assertOk()->assertJsonPath('meta.total', 0);
+});
+
 test('a model answering with SQL matches nothing and nothing runs', function (): void {
     TenantAiSetting::create(['tenant_id' => $this->tenant->id, 'external_providers_enabled' => true]);
     registerAssistantModel('SELECT * FROM users; DROP TABLE tenants;');

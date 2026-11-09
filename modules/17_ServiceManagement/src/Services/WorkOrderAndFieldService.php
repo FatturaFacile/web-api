@@ -4,11 +4,19 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Services;
 
+use App\Models\Product;
+use App\Models\Warehouse;
+use App\Services\Inventory\StockService;
+use App\Services\Tenancy\TenantClock;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\Invoicing\Contracts\InvoicingServiceInterface;
+use Modules\Invoicing\Models\SalesInvoice;
 use Modules\ServiceManagement\Contracts\WorkOrderAndFieldServiceInterface;
 use Modules\ServiceManagement\DTOs\CompleteWorkOrderDTO;
 use Modules\ServiceManagement\DTOs\CreateWorkOrderDTO;
@@ -31,7 +39,10 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
 {
     public function __construct(
         private EventDispatcher $dispatcher,
-        private AuditLedgerInterface $auditLedger
+        private AuditLedgerInterface $auditLedger,
+        private StockService $stock,
+        private InvoicingServiceInterface $invoicing,
+        private TenantClock $clock,
     ) {}
 
     public function createWorkOrder(CreateWorkOrderDTO $dto, ?string $actorUserId = null): WorkOrder
@@ -63,9 +74,12 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
             ]);
 
             foreach ($dto->items as $item) {
-                $qty = (float) ($item['quantity'] ?? 1.0);
-                $uCost = (float) ($item['unit_cost'] ?? 0.0);
-                $uPrice = (float) ($item['unit_price'] ?? 0.0);
+                $qty = ServiceAmounts::text($item['quantity'] ?? '1');
+                $uCost = ServiceAmounts::money($item['unit_cost'] ?? '0');
+                $uPrice = ServiceAmounts::money($item['unit_price'] ?? '0');
+                $lineCost = ServiceAmounts::lineTotal($qty, $uCost);
+                $linePrice = ServiceAmounts::lineTotal($qty, $uPrice);
+                $isBillable = (bool) ($item['is_billable'] ?? true);
 
                 WorkOrderItem::create([
                     'tenant_id' => $dto->tenantId,
@@ -75,19 +89,22 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
                     'description' => $item['description'] ?? 'Item',
                     'quantity' => $qty,
                     'unit_cost' => $uCost,
-                    'total_cost' => round($qty * $uCost, 2),
+                    'total_cost' => $lineCost,
                     'unit_price' => $uPrice,
-                    'total_price' => round($qty * $uPrice, 2),
-                    'is_billable' => (bool) ($item['is_billable'] ?? true),
+                    'total_price' => $linePrice,
+                    'is_billable' => $isBillable,
                 ]);
 
                 if (($item['item_type'] ?? 'labor') === 'labor') {
-                    $workOrder->labor_cost = (float) $workOrder->labor_cost + round($qty * $uCost, 2);
+                    $workOrder->labor_cost = ServiceAmounts::add($workOrder->labor_cost, $lineCost);
                 } else {
-                    $workOrder->material_cost = (float) $workOrder->material_cost + round($qty * $uCost, 2);
+                    $workOrder->material_cost = ServiceAmounts::add($workOrder->material_cost, $lineCost);
                 }
-                $workOrder->total_cost = (float) $workOrder->total_cost + round($qty * $uCost, 2);
-                $workOrder->total_billable_amount = (float) $workOrder->total_billable_amount + round($qty * $uPrice, 2);
+                $workOrder->total_cost = ServiceAmounts::add($workOrder->total_cost, $lineCost);
+
+                if ($isBillable) {
+                    $workOrder->total_billable_amount = ServiceAmounts::add($workOrder->total_billable_amount, $linePrice);
+                }
             }
             $workOrder->save();
 
@@ -158,17 +175,10 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
             $technicianId = $dto->technicianId !== '' ? $dto->technicianId : $workOrder->assigned_technician_id;
 
             if (! $technicianId) {
-                $tech = ServiceTechnician::firstOrCreate(
-                    ['tenant_id' => $workOrder->tenant_id, 'name' => 'Field Technician'],
-                    [
-                        'company_id' => $workOrder->company_id,
-                        'email' => 'tech.'.Str::random(5).'@fieldservice.local',
-                        'hourly_cost_rate' => 35.00,
-                        'hourly_billable_rate' => 85.00,
-                    ]
-                );
-                $technicianId = $tech->id;
+                throw ValidationException::withMessages(['technician_id' => __('work_orders.visit_requires_technician')]);
             }
+
+            ServiceTechnician::where('tenant_id', $workOrder->tenant_id)->findOrFail($technicianId);
 
             $checkIn = $dto->checkInAt !== '' ? $dto->checkInAt : now()->toIso8601String();
             $checkOut = $dto->checkOutAt ?? now()->toIso8601String();
@@ -217,24 +227,46 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
         string $workOrderId,
         string $itemNumber,
         string $description,
-        float $quantity,
-        float $unitCost,
-        float $unitPrice,
+        string|int|float $quantity,
+        string|int|float $unitCost,
+        string|int|float $unitPrice,
         ?string $warehouseId = null,
         ?string $actorUserId = null
     ): PartsConsumption {
         return DB::transaction(function () use ($workOrderId, $itemNumber, $description, $quantity, $unitCost, $unitPrice, $warehouseId) {
-            $workOrder = WorkOrder::findOrFail($workOrderId);
+            $workOrder = WorkOrder::whereKey($workOrderId)->lockForUpdate()->firstOrFail();
 
-            $totalCost = round($quantity * $unitCost, 2);
-            $totalPrice = round($quantity * $unitPrice, 2);
+            if (! in_array($workOrder->status, ['scheduled', 'dispatched', 'in_progress'], true)) {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.part_not_open')]);
+            }
+
+            $quantity = ServiceAmounts::text($quantity);
+
+            if (! Decimal::isPositive($quantity)) {
+                throw ValidationException::withMessages(['quantity' => __('work_orders.part_quantity_positive')]);
+            }
+
+            // The part is a real product of the company: its stock leaves through the inventory service, like every
+            // other issue, instead of a consumption that points to an identifier nobody owns.
+            $product = Product::where('tenant_id', $workOrder->tenant_id)->where('sku', $itemNumber)->first()
+                ?? throw ValidationException::withMessages(['item_number' => __('work_orders.part_unknown_product')]);
+            $warehouse = $warehouseId !== null ? Warehouse::where('tenant_id', $workOrder->tenant_id)->findOrFail($warehouseId) : null;
+
+            $movement = $product->track_inventory
+                ? $this->stock->record((string) $product->id, 'out', (float) $quantity, $workOrder, $warehouse, (float) ServiceAmounts::money($unitCost), "Service work order {$workOrder->work_order_number}")
+                : null;
+
+            $unitCost = ServiceAmounts::money($unitCost);
+            $unitPrice = ServiceAmounts::money($unitPrice);
+            $totalCost = ServiceAmounts::lineTotal($quantity, $unitCost);
+            $totalPrice = ServiceAmounts::lineTotal($quantity, $unitPrice);
 
             $consumption = PartsConsumption::create([
                 'tenant_id' => $workOrder->tenant_id,
                 'company_id' => $workOrder->company_id,
                 'work_order_id' => $workOrder->id,
-                'product_id' => (string) Str::uuid7(),
-                'warehouse_id' => $warehouseId,
+                'product_id' => $product->id,
+                'warehouse_id' => $movement !== null ? $movement->warehouse_id : $warehouse?->id,
                 'lot_number' => $itemNumber,
                 'quantity' => $quantity,
                 'unit_cost' => $unitCost,
@@ -244,12 +276,13 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
                     'description' => $description,
                     'unit_price' => $unitPrice,
                     'total_price' => $totalPrice,
+                    'stock_movement_id' => $movement?->id,
                 ],
             ]);
 
-            $workOrder->material_cost = (float) $workOrder->material_cost + $totalCost;
-            $workOrder->total_cost = (float) $workOrder->total_cost + $totalCost;
-            $workOrder->total_billable_amount = (float) $workOrder->total_billable_amount + $totalPrice;
+            $workOrder->material_cost = ServiceAmounts::add($workOrder->material_cost, $totalCost);
+            $workOrder->total_cost = ServiceAmounts::add($workOrder->total_cost, $totalCost);
+            $workOrder->total_billable_amount = ServiceAmounts::add($workOrder->total_billable_amount, $totalPrice);
             $workOrder->save();
 
             $this->auditLedger->record(
@@ -351,5 +384,79 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
                 companyId: $workOrder->company_id
             ));
         }
+    }
+
+    /**
+     * Drafts the sales invoice of a completed work order through the invoicing service: one line per billable item and
+     * per consumed part, at the prices recorded on the work order. The draft follows the normal invoice flow (approval,
+     * posting, e-invoicing); the work order keeps the link and is closed to a second invoice.
+     *
+     * @throws ValidationException when the work order is not completed, not billable, internal, already invoiced or empty
+     */
+    public function invoiceWorkOrder(string $workOrderId, string $taxRate, ?string $dueDate = null, ?string $revenueAccountId = null, ?string $actorUserId = null): SalesInvoice
+    {
+        return DB::transaction(function () use ($workOrderId, $taxRate, $dueDate, $revenueAccountId, $actorUserId): SalesInvoice {
+            $workOrder = WorkOrder::whereKey($workOrderId)->lockForUpdate()->firstOrFail();
+
+            if ($workOrder->status !== 'completed') {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.billing_not_completed')]);
+            }
+
+            if (! $workOrder->is_billable) {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.billing_not_billable')]);
+            }
+
+            if ($workOrder->is_invoiced || $workOrder->invoice_id !== null) {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.billing_already_invoiced')]);
+            }
+
+            if (blank($workOrder->customer_id)) {
+                throw ValidationException::withMessages(['customer_id' => __('work_orders.internal_not_invoiceable')]);
+            }
+
+            $lines = [];
+
+            foreach (WorkOrderItem::where('work_order_id', $workOrder->id)->where('is_billable', true)->orderBy('created_at')->get() as $item) {
+                $lines[] = ['description' => (string) $item->description, 'quantity' => (string) $item->quantity, 'unit_price' => (string) $item->unit_price];
+            }
+
+            foreach (PartsConsumption::where('work_order_id', $workOrder->id)->orderBy('created_at')->get() as $part) {
+                $meta = (array) $part->getAttribute('metadata');
+                $lines[] = [
+                    'description' => (string) (Arr::get($meta, 'description') ?? $part->lot_number),
+                    'quantity' => (string) $part->quantity,
+                    'unit_price' => ServiceAmounts::money(Arr::get($meta, 'unit_price', '0')),
+                    'product_id' => $part->product_id,
+                ];
+            }
+
+            $lines = array_values(array_filter($lines, static fn (array $line): bool => Decimal::isPositive(Decimal::mul(ServiceAmounts::text($line['quantity']), ServiceAmounts::text($line['unit_price'])))));
+
+            if ($lines === []) {
+                throw ValidationException::withMessages(['work_order' => __('work_orders.billing_nothing_to_invoice')]);
+            }
+
+            $invoice = $this->invoicing->createInvoice([
+                'tenant_id' => (string) $workOrder->tenant_id,
+                'contact_id' => (string) $workOrder->customer_id,
+                'invoice_type' => 'standard',
+                'date' => $this->clock->today()->toDateString(),
+                'due_date' => $dueDate,
+                'currency' => (string) ($workOrder->currency ?: 'EUR'),
+                'notes' => "Work order {$workOrder->work_order_number}: {$workOrder->title}",
+                'created_by' => $actorUserId !== null && Str::isUuid($actorUserId) ? $actorUserId : null,
+            ], array_map(static fn (array $line): array => [
+                ...$line,
+                'tax_rate' => $taxRate,
+                'discount_percentage' => '0',
+                'revenue_account_id' => $revenueAccountId,
+            ], $lines));
+
+            $workOrder->update(['is_invoiced' => true, 'invoice_id' => $invoice->id]);
+
+            $this->auditLedger->record('WORK_ORDER_INVOICED', $workOrder, null, ['invoice_id' => $invoice->id], 'MODULE_17_ESM');
+
+            return $invoice;
+        });
     }
 }

@@ -290,11 +290,11 @@ final readonly class TicketService implements TicketServiceInterface
 
     public function logTime(
         string $ticketId,
-        float $hours,
+        string|int|float $hours,
         ?string $technicianId = null,
         ?string $workDescription = null,
         bool $isBillable = true,
-        ?float $hourlyRate = null,
+        string|int|float|null $hourlyRate = null,
         ?string $actorUserId = null
     ): TicketTimeEntry {
         return DB::transaction(function () use ($ticketId, $hours, $technicianId, $workDescription, $isBillable, $hourlyRate) {
@@ -307,9 +307,10 @@ final readonly class TicketService implements TicketServiceInterface
             }
 
             $technician = ServiceTechnician::where('tenant_id', $ticket->tenant_id)->findOrFail($technicianId);
-            $hourlyRate ??= (float) $technician->hourly_billing_rate;
-            $hourlyCost = (float) $technician->hourly_cost_rate;
-            $laborCost = round($hours * $hourlyRate, 2);
+            $hours = ServiceAmounts::text($hours);
+            $hourlyRate = ServiceAmounts::money($hourlyRate ?? $technician->hourly_billable_rate);
+            $hourlyCost = ServiceAmounts::money($technician->hourly_cost_rate);
+            $laborCost = ServiceAmounts::lineTotal($hours, $hourlyRate);
 
             $entry = TicketTimeEntry::create([
                 'tenant_id' => $ticket->tenant_id,
@@ -319,14 +320,14 @@ final readonly class TicketService implements TicketServiceInterface
                 'hours' => $hours,
                 'hourly_rate' => $hourlyRate,
                 'hourly_cost' => $hourlyCost,
-                'total_cost' => round($hours * $hourlyCost, 2),
+                'total_cost' => ServiceAmounts::lineTotal($hours, $hourlyCost),
                 'total_charge' => $laborCost,
                 'is_billable' => $isBillable,
                 'work_date' => now()->toDateString(),
                 'description' => $workDescription,
             ]);
 
-            $ticket->actual_resolution_minutes = $ticket->actual_resolution_minutes + (int) round($hours * 60);
+            $ticket->actual_resolution_minutes = $ticket->actual_resolution_minutes + (int) bcround(bcmul($hours, '60', 4), 0);
             $ticket->save();
 
             $this->auditLedger->record(

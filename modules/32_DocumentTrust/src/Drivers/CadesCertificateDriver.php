@@ -6,6 +6,7 @@ namespace Modules\DocumentTrust\Drivers;
 
 use Modules\DocumentTrust\Contracts\SignatureDriver;
 use Modules\DocumentTrust\Exceptions\DocumentTrustException;
+use Modules\DocumentTrust\Models\DocumentSignature;
 use Modules\DocumentTrust\Models\DocumentSigningSetting;
 
 /**
@@ -65,5 +66,39 @@ final class CadesCertificateDriver implements SignatureDriver
         }
 
         return ['format' => 'cades-bes-p7m', 'signature' => base64_encode($der)];
+    }
+
+    /**
+     * The CMS must be intact and the content it envelops must be the content the document has now. The signer
+     * certificate is not validated against a trust list (`OPENSSL_CMS_NOVERIFY`).
+     *
+     * @return array{valid: bool, reason: ?string}
+     */
+    public function verify(string $content, DocumentSignature $signature): array
+    {
+        $der = base64_decode((string) $signature->signature, true);
+
+        if ($der === false) {
+            return ['valid' => false, 'reason' => 'signature_unreadable'];
+        }
+
+        $files = array_map(static fn (): string => (string) tempnam(sys_get_temp_dir(), 'cades-'), ['signed', 'content']);
+        [$signed, $enveloped] = $files;
+
+        try {
+            file_put_contents($signed, $der);
+            $intact = openssl_cms_verify($signed, OPENSSL_CMS_NOVERIFY | OPENSSL_CMS_BINARY, null, [], null, $enveloped, null, null, OPENSSL_ENCODING_DER);
+            $original = (string) file_get_contents($enveloped);
+        } finally {
+            array_map(unlink(...), $files);
+        }
+
+        if ($intact !== true) {
+            return ['valid' => false, 'reason' => 'signature_invalid'];
+        }
+
+        $matches = hash_equals($original, $content);
+
+        return ['valid' => $matches, 'reason' => $matches ? null : 'content_changed'];
     }
 }

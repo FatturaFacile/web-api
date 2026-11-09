@@ -9,6 +9,7 @@ use App\Models\Tenant;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 require_once __DIR__.'/ComplianceHelpers.php';
 
@@ -77,6 +78,42 @@ test('with a certificate the document gets a CMS with the CAdES attribute that O
 
     unlink($signed);
     unlink($content);
+});
+
+test('a stored fingerprint verifies until the XML of the document changes', function (): void {
+    $signature = $this->postJson('/api/v1/document-trust/signatures', $this->reference)->assertCreated()->json('data');
+
+    $ok = $this->postJson("/api/v1/document-trust/signatures/{$signature['id']}/verify")->assertOk()->json('data');
+    expect($ok)->toMatchArray(['valid' => true, 'reason' => null, 'content_changed' => false, 'trust_chain_validated' => false, 'driver' => 'local']);
+
+    InvoiceSdiMetadata::where('invoice_id', $this->invoice->id)->update(['xml_content' => '<xml>fattura alterata</xml>']);
+
+    expect($this->postJson("/api/v1/document-trust/signatures/{$signature['id']}/verify")->json('data'))->toMatchArray(['valid' => false, 'reason' => 'content_changed', 'content_changed' => true]);
+});
+
+test('a CAdES signature verifies, and fails once the file is changed or the signature is altered', function (): void {
+    $this->putJson('/api/v1/document-trust/settings', ['driver' => 'cades', ...selfSignedPair()])->assertOk();
+    $signature = $this->postJson('/api/v1/document-trust/signatures', $this->reference)->assertCreated()->json('data');
+    $url = "/api/v1/document-trust/signatures/{$signature['id']}/verify";
+
+    expect($this->postJson($url)->json('data'))->toMatchArray(['valid' => true, 'format' => 'cades-bes-p7m', 'trust_chain_validated' => false]);
+
+    DB::table('document_signatures')->where('id', $signature['id'])->update(['signature' => base64_encode(str_repeat("\x01", 64))]);
+    expect($this->postJson($url)->json('data'))->toMatchArray(['valid' => false, 'reason' => 'signature_invalid']);
+
+    InvoiceSdiMetadata::where('invoice_id', $this->invoice->id)->update(['xml_content' => '<xml>altro</xml>']);
+    expect($this->postJson($url)->json('data.content_changed'))->toBeTrue();
+});
+
+test('verification of a signature of another tenant is a 404 and the route is closed to read-only roles', function (): void {
+    $signature = $this->postJson('/api/v1/document-trust/signatures', $this->reference)->assertCreated()->json('data');
+
+    actingAsMember(complianceTenant('Beta'));
+    $this->postJson("/api/v1/document-trust/signatures/{$signature['id']}/verify")->assertNotFound();
+    $this->postJson('/api/v1/document-trust/signatures/'.Str::uuid().'/verify')->assertNotFound();
+
+    actingAsMember($this->tenant, 'accountant_readonly');
+    $this->postJson("/api/v1/document-trust/signatures/{$signature['id']}/verify")->assertForbidden();
 });
 
 test('keys are encrypted, hidden, and must match a valid certificate', function (): void {

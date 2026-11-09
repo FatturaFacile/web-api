@@ -44,15 +44,15 @@ final class ProcessServiceContractRenewalsJob implements ShouldQueue
                 null,
                 [
                     'end_date' => $contract->end_date,
-                    'contract_value' => $contract->contract_value,
+                    'contract_value' => (string) $contract->annual_value,
                 ],
                 'MODULE_17_ESM'
             );
 
             $dispatcher->dispatch(new ServiceRevenueForecastEvent(
                 forecastPeriod: now()->format('Y-m'),
-                projectedServiceRevenue: (float) $contract->contract_value,
-                contractedMrr: (float) ($contract->contract_value / 12.0),
+                projectedServiceRevenue: (float) $contract->annual_value,
+                contractedMrr: (float) bcdiv((string) $contract->annual_value, '12', 2),
                 tenantId: $contract->tenant_id,
                 companyId: $contract->company_id ?? $contract->tenant_id
             ));

@@ -60,6 +60,30 @@ final class DocumentTrustController extends Controller
         return $this->successResponse(DocumentSignature::where('document_id', $validated['document_id'])->latest()->get(), 'Signatures retrieved');
     }
 
+    #[OA\Post(path: '/api/v1/document-trust/signatures/{id}/verify', operationId: 'verifyDocumentSignature', description: 'Checks a stored signature against the XML the document has now: a changed file, an altered signature or a missing document make it invalid. Only the binding between signature and content is checked; the certificate chain is NOT validated against a trust list (`trust_chain_validated` is always false), so a valid answer proves the document was not altered, not who signed it.', summary: 'Verify a signature', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
+        new OA\Response(response: 200, description: 'The verification result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', type: 'object', properties: [
+            new OA\Property(property: 'signature_id', type: 'string', format: 'uuid'),
+            new OA\Property(property: 'document_type', type: 'string', enum: ['invoice', 'passive_invoice']),
+            new OA\Property(property: 'document_id', type: 'string', format: 'uuid'),
+            new OA\Property(property: 'driver', type: 'string', example: 'cades'),
+            new OA\Property(property: 'format', type: 'string', example: 'cades-bes-p7m'),
+            new OA\Property(property: 'valid', type: 'boolean'),
+            new OA\Property(property: 'reason', type: 'string', nullable: true, enum: ['content_changed', 'signature_invalid', 'signature_unreadable', 'document_missing']),
+            new OA\Property(property: 'content_changed', type: 'boolean'),
+            new OA\Property(property: 'trust_chain_validated', type: 'boolean', example: false),
+        ])])),
+        new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        new OA\Response(response: 404, description: 'Signature not found in the active tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+    ])]
+    /**
+     * Verify a stored signature against the current XML of its document.
+     */
+    public function verify(string $id): JsonResponse
+    {
+        return $this->successResponse($this->trust->verify($id), 'Signature verified');
+    }
+
     #[OA\Post(path: '/api/v1/document-trust/preservation', operationId: 'preserveDocument', description: 'Hands a document to the preservation driver. The local driver records `fingerprint_only`, which is not legal preservation. The `accredited` driver refuses until a provider is contracted.', summary: 'Preserve a document', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['document_type', 'document_id'], properties: [new OA\Property(property: 'document_type', type: 'string', enum: ['invoice', 'passive_invoice']), new OA\Property(property: 'document_id', type: 'string', format: 'uuid')])), tags: ['Document Trust'], responses: [
         new OA\Response(response: 201, description: 'Record stored', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
         new OA\Response(response: 404, description: 'Document not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),

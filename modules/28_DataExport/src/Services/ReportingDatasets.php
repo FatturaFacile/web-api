@@ -7,10 +7,11 @@ namespace Modules\DataExport\Services;
 use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\PassiveInvoice;
+use App\Models\Payment;
 use Illuminate\Database\Eloquent\Builder;
 
 /**
- * The read-only datasets of the reporting feed and of the CSV exports: only these columns ever leave the application.
+ * The read-only datasets (invoices, purchases, collections received, contacts) of the reporting feed and of the CSV exports: only these columns ever leave the application.
  */
 final class ReportingDatasets
 {
@@ -22,6 +23,7 @@ final class ReportingDatasets
         return match ($dataset) {
             'invoices' => ['id', 'invoice_number', 'invoice_type', 'date', 'due_date', 'contact_id', 'currency', 'total_net', 'total_tax', 'total_gross', 'total_paid', 'payment_status'],
             'purchases' => ['id', 'invoice_number', 'document_type', 'date', 'due_date', 'supplier_id', 'currency', 'total_net', 'total_tax', 'total_amount', 'total_paid', 'payment_status'],
+            'payments' => ['id', 'invoice_id', 'amount', 'paid_at', 'payment_method', 'reference'],
             'contacts' => ['id', 'type', 'company_name', 'first_name', 'last_name', 'email', 'phone', 'vat_number', 'fiscal_code', 'country'],
         };
     }
@@ -34,12 +36,13 @@ final class ReportingDatasets
         $query = match ($dataset) {
             'invoices' => Invoice::query(),
             'purchases' => PassiveInvoice::query(),
+            'payments' => Payment::query(),
             'contacts' => Contact::query(),
         };
 
         return $query
-            ->when($dataset !== 'contacts' && ($period['from'] ?? null), static fn (Builder $builder) => $builder->whereDate('date', '>=', $period['from']))
-            ->when($dataset !== 'contacts' && ($period['to'] ?? null), static fn (Builder $builder) => $builder->whereDate('date', '<=', $period['to']))
+            ->when($dataset !== 'contacts' && ($period['from'] ?? null), static fn (Builder $builder) => $builder->whereDate($dataset === 'payments' ? 'paid_at' : 'date', '>=', $period['from']))
+            ->when($dataset !== 'contacts' && ($period['to'] ?? null), static fn (Builder $builder) => $builder->whereDate($dataset === 'payments' ? 'paid_at' : 'date', '<=', $period['to']))
             ->orderBy('id')
             ->select($this->columns($dataset));
     }

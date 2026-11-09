@@ -156,6 +156,8 @@ Route::prefix('api/v1/esm')
         Route::post('/work-orders/{workOrder}/schedule', [WorkOrderController::class, 'schedule'])->name('api.v1.esm.work-orders.schedule');
         Route::post('/work-orders/{workOrder}/record-visit', [WorkOrderController::class, 'recordVisit'])->name('api.v1.esm.work-orders.record-visit');
         Route::post('/work-orders/{workOrder}/complete', [WorkOrderController::class, 'complete'])->name('api.v1.esm.work-orders.complete');
+        Route::post('/work-orders/{workOrder}/parts', [WorkOrderController::class, 'consumePart'])->name('api.v1.esm.work-orders.parts');
+        Route::post('/work-orders/{workOrder}/invoice', [WorkOrderController::class, 'invoice'])->name('api.v1.esm.work-orders.invoice');
 
         // Service Contracts & CSAT
         Route::get('/service-contracts', [ServiceContractController::class, 'index'])->name('api.v1.esm.service-contracts.index');

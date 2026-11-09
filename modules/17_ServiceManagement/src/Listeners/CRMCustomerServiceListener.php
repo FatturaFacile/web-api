@@ -11,6 +11,7 @@ use Illuminate\Support\Str;
 use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\ServiceManagement\Models\ServiceContract;
+use Modules\ServiceManagement\Services\ServiceAmounts;
 
 final readonly class CRMCustomerServiceListener
 {
@@ -59,8 +60,14 @@ final readonly class CRMCustomerServiceListener
         $contractNumber = 'SC-'.date('Ymd').'-'.strtoupper(Str::random(6));
 
         $quoteNumber = $event->quoteNumber ?? $event->quoteId;
-        $customerId = $event->customerId ?? (string) Str::uuid7();
-        $totalAmount = (float) ($event->totalAmount ?? 0.0);
+        $customerId = $event->customerId;
+
+        if ($customerId === null || $customerId === '') {
+            // A contract needs a real customer: an accepted quote without one is left for a person to handle.
+            return;
+        }
+
+        $totalAmount = ServiceAmounts::money($event->totalAmount ?? '0');
         $quoteId = $event->salesQuoteId ?? $event->quoteId;
 
         $contract = ServiceContract::create([

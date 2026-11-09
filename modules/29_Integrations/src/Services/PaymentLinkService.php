@@ -44,6 +44,10 @@ final readonly class PaymentLinkService
             throw ValidationException::withMessages(['invoice_id' => __('sales.payment_link_not_payable')]);
         }
 
+        if (PaymentLink::where('invoice_id', $invoice->id)->where('status', 'open')->exists()) {
+            throw ValidationException::withMessages(['invoice_id' => __('sales.payment_link_already_open')]);
+        }
+
         $settings = $this->settings();
 
         try {
@@ -79,6 +83,27 @@ final readonly class PaymentLinkService
     }
 
     /**
+     * Withdraws an open link so that a new one can be created. The page stays alive at the provider until it expires:
+     * a payment that still arrives is not booked, it is kept in `review`.
+     *
+     * @throws ValidationException when the link is not open
+     */
+    public function cancel(PaymentLink $link): PaymentLink
+    {
+        return DB::transaction(function () use ($link): PaymentLink {
+            $locked = PaymentLink::whereKey($link->id)->lockForUpdate()->firstOrFail();
+
+            if ($locked->status !== 'open') {
+                throw ValidationException::withMessages(['status' => __('sales.payment_link_not_open')]);
+            }
+
+            $locked->update(['status' => 'cancelled']);
+
+            return $locked;
+        });
+    }
+
+    /**
      * @throws PaymentGatewayException when the call is not authentic
      */
     public function handleWebhook(Request $request): void
@@ -108,6 +133,13 @@ final readonly class PaymentLinkService
         $link = PaymentLink::where('provider', $provider)->where('provider_reference', $event->reference)->lockForUpdate()->first();
 
         if ($link === null || $link->status === 'paid') {
+            return;
+        }
+
+        if ($link->status === 'cancelled') {
+            // The customer paid a page that was cancelled here: the money arrived, a person decides what it is for.
+            $link->update(['status' => 'review', 'review_reason' => "Paid {$event->amount} {$event->currency} after the link was cancelled."]);
+
             return;
         }
 
