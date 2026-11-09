@@ -21,7 +21,7 @@ final class ServiceContractResource extends JsonResource
             'status' => $this->status,
             'start_date' => $this->start_date?->format('Y-m-d'),
             'end_date' => $this->end_date?->format('Y-m-d'),
-            'contract_value' => (string) $this->annual_value,
+            'contract_value' => (string) $this->resource->getAttribute('annual_value'),
             'currency' => $this->currency,
             'is_locked' => (bool) $this->is_locked,
             'created_at' => $this->created_at?->toIso8601String(),

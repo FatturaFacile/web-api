@@ -351,10 +351,10 @@ final class WorkOrderController extends Controller
         $this->workOrderService->consumePart(
             workOrderId: $workOrder->id,
             itemNumber: $validated['item_number'],
-            description: $validated['description'] ?? (string) ($product?->name ?? $validated['item_number']),
+            description: $validated['description'] ?? ($product === null ? $validated['item_number'] : (string) $product->name),
             quantity: $validated['quantity'],
-            unitCost: $validated['unit_cost'] ?? (string) ($product?->cost_price ?? '0'),
-            unitPrice: $validated['unit_price'] ?? (string) ($product?->sale_price ?? '0'),
+            unitCost: $validated['unit_cost'] ?? ($product === null ? '0' : (string) $product->cost_price),
+            unitPrice: $validated['unit_price'] ?? ($product === null ? '0' : (string) $product->sale_price),
             warehouseId: $validated['warehouse_id'] ?? null,
             actorUserId: $request->user()?->id
         );

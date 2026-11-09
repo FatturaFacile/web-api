@@ -12,6 +12,11 @@ use Illuminate\Support\Str;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
+/**
+ * A service contract of a customer. The annual value is a decimal string, never a float.
+ *
+ * @property string $annual_value
+ */
 final class ServiceContract extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
     protected $table = 'esm_service_contracts';

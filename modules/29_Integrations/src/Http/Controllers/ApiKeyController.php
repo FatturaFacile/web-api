@@ -86,7 +86,7 @@ final class ApiKeyController extends Controller
             throw ValidationException::withMessages(['id' => __('sales.api_key_not_rotatable')]);
         }
 
-        foreach ($old->scopes ?? [] as $scope) {
+        foreach ($old->getAttribute('scopes') ?? [] as $scope) {
             [$module, $access] = array_pad(explode('.', (string) $scope, 2), 2, '');
 
             if (! in_array($access, ['read', 'write'], true) || config("permissions.modules.{$module}") === null || ! $moduleAccess->allows($request->user(), $tenantContext->getTenantId(), $module, $access)) {

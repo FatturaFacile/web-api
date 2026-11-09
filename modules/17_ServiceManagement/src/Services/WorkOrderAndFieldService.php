@@ -10,6 +10,7 @@ use App\Services\Inventory\StockService;
 use App\Services\Tenancy\TenantClock;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -265,7 +266,7 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
                 'company_id' => $workOrder->company_id,
                 'work_order_id' => $workOrder->id,
                 'product_id' => $product->id,
-                'warehouse_id' => $movement?->warehouse_id ?? $warehouse?->id,
+                'warehouse_id' => $movement !== null ? $movement->warehouse_id : $warehouse?->id,
                 'lot_number' => $itemNumber,
                 'quantity' => $quantity,
                 'unit_cost' => $unitCost,
@@ -409,7 +410,7 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
                 throw ValidationException::withMessages(['work_order' => __('work_orders.billing_already_invoiced')]);
             }
 
-            if ($workOrder->customer_id === null) {
+            if (blank($workOrder->customer_id)) {
                 throw ValidationException::withMessages(['customer_id' => __('work_orders.internal_not_invoiceable')]);
             }
 
@@ -420,11 +421,11 @@ final readonly class WorkOrderAndFieldService implements WorkOrderAndFieldServic
             }
 
             foreach (PartsConsumption::where('work_order_id', $workOrder->id)->orderBy('created_at')->get() as $part) {
-                $meta = (array) ($part->metadata ?? []);
+                $meta = (array) $part->getAttribute('metadata');
                 $lines[] = [
-                    'description' => (string) ($meta['description'] ?? $part->lot_number),
+                    'description' => (string) (Arr::get($meta, 'description') ?? $part->lot_number),
                     'quantity' => (string) $part->quantity,
-                    'unit_price' => ServiceAmounts::money($meta['unit_price'] ?? '0'),
+                    'unit_price' => ServiceAmounts::money(Arr::get($meta, 'unit_price', '0')),
                     'product_id' => $part->product_id,
                 ];
             }
