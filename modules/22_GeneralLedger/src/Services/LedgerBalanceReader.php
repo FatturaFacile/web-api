@@ -12,7 +12,8 @@ use Illuminate\Support\Facades\DB;
 /**
  * Reads account balances of the statutory ledger as decimal strings. A reversed entry stays in the sums together with
  * its reversal, so the two cancel out. Opening entries repeat balances that are already in the ledger, so cumulative
- * reads leave them out.
+ * reads leave them out. Every amount is in the accounting (functional) currency of the tenant (FunctionalAmount), so
+ * the closings, budgets and KPIs that read here never add a foreign transaction amount to an accounting one.
  */
 final class LedgerBalanceReader
 {
@@ -92,7 +93,7 @@ final class LedgerBalanceReader
             ->whereNotIn('journal_entries.journal_type', ['opening', 'closing'])
             ->join('fiscal_periods', 'fiscal_periods.id', '=', 'journal_entries.fiscal_period_id')
             ->groupBy('chart_of_accounts.id', 'journal_lines.cost_center_id', 'fiscal_periods.period_number', 'chart_of_accounts.normal_balance')
-            ->selectRaw('chart_of_accounts.id as account_id, journal_lines.cost_center_id, fiscal_periods.period_number, chart_of_accounts.normal_balance, SUM(journal_lines.debit_amount) as debit, SUM(journal_lines.credit_amount) as credit')
+            ->selectRaw('chart_of_accounts.id as account_id, journal_lines.cost_center_id, fiscal_periods.period_number, chart_of_accounts.normal_balance, SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit, SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit')
             ->get();
     }
 
@@ -125,7 +126,7 @@ final class LedgerBalanceReader
         return $query
             ->groupBy('chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', 'chart_of_accounts.normal_balance', 'chart_of_accounts.reporting_class', 'chart_of_accounts.reconciliation_type')
             ->orderBy('chart_of_accounts.account_code')
-            ->selectRaw('chart_of_accounts.id as account_id, chart_of_accounts.account_code, chart_of_accounts.name as account_name, chart_of_accounts.account_type, chart_of_accounts.normal_balance, chart_of_accounts.reporting_class, chart_of_accounts.reconciliation_type, SUM(journal_lines.debit_amount) as debit, SUM(journal_lines.credit_amount) as credit')
+            ->selectRaw('chart_of_accounts.id as account_id, chart_of_accounts.account_code, chart_of_accounts.name as account_name, chart_of_accounts.account_type, chart_of_accounts.normal_balance, chart_of_accounts.reporting_class, chart_of_accounts.reconciliation_type, SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit, SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit')
             ->get()
             ->keyBy('account_id');
     }

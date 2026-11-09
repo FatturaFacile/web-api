@@ -136,7 +136,7 @@ final readonly class ManualJournalService
     public function postDraft(string $journalEntryId, string $actorId): JournalEntry
     {
         $entry = JournalEntry::findOrFail($journalEntryId);
-        $total = (string) $entry->lines()->sum('debit_amount');
+        $total = (string) $entry->lines()->sum(DB::raw(FunctionalAmount::debit()));
 
         if ($entry->status === 'pending_approval' || ($entry->status === 'draft' && $this->settings->approvalRequiredFor((string) $entry->tenant_id, $total))) {
             throw new LedgerConflictException('This journal needs the approval of a second person: submit it and have it approved.');

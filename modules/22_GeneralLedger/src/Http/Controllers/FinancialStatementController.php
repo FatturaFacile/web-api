@@ -24,7 +24,7 @@ final class FinancialStatementController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/financial-statements/trial-balance',
         operationId: 'getTrialBalanceGeneralLedgerFinancialStatement',
-        description: 'Debit and credit per account of the posted entries of the fiscal period (reversed entries and their reversals both count, so they cancel out). Amounts are decimal strings since April 2027. For a date range, opening balances, comparison and dimension filters use GET /api/v1/general-ledger/reports/trial-balance.',
+        description: 'Debit and credit per account of the posted entries of the fiscal period (reversed entries and their reversals both count, so they cancel out). Amounts are decimal strings since April 2027. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`. For a date range, opening balances, comparison and dimension filters use GET /api/v1/general-ledger/reports/trial-balance.',
         summary: 'Get trial balance',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Financial Statements'],
@@ -58,7 +58,7 @@ final class FinancialStatementController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/financial-statements/balance-sheet',
         operationId: 'getBalanceSheetGeneralLedgerFinancialStatement',
-        description: 'Balance sheet at the end of the fiscal period from every posted entry up to that day, classified by account type only (no account-code guessing); the result not yet closed into equity is added to equity. Amounts are decimal strings since April 2027. With comparison dates use GET /api/v1/general-ledger/reports/balance-sheet.',
+        description: 'Balance sheet at the end of the fiscal period from every posted entry up to that day, classified by account type only (no account-code guessing); the result not yet closed into equity is added to equity. Amounts are decimal strings since April 2027. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`. With comparison dates use GET /api/v1/general-ledger/reports/balance-sheet.',
         summary: 'Get balance sheet',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Financial Statements'],
@@ -92,7 +92,7 @@ final class FinancialStatementController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/financial-statements/income-statement',
         operationId: 'getIncomeStatementGeneralLedgerFinancialStatement',
-        description: 'Income statement of the fiscal period from posted entries, classified by account type only (revenue, cogs, expense), without the year-end closing entry. Amounts are decimal strings since April 2027. With comparison ranges use GET /api/v1/general-ledger/reports/income-statement.',
+        description: 'Income statement of the fiscal period from posted entries, classified by account type only (revenue, cogs, expense), without the year-end closing entry. Amounts are decimal strings since April 2027. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`. With comparison ranges use GET /api/v1/general-ledger/reports/income-statement.',
         summary: 'Get income statement',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Financial Statements'],

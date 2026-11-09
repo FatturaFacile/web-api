@@ -40,7 +40,7 @@ final class LedgerReportController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/reports/trial-balance',
         operationId: 'getGeneralLedgerTrialBalanceReport',
-        description: 'Trial balance (bilancio di verifica) of a range of posting dates from posted entries only: per account the balance before the range, debit and credit of the range and the closing balance (debit minus credit), with an optional comparison range and optional cost centre, profit centre or project filter. Reversed entries and their reversals both count, so they cancel out; carried-forward opening entries are left out because they repeat balances already in the ledger. Each row carries the drill-down query of its account ledger. Amounts are decimal strings.',
+        description: 'Trial balance (bilancio di verifica) of a range of posting dates from posted entries only: per account the balance before the range, debit and credit of the range and the closing balance (debit minus credit), with an optional comparison range and optional cost centre, profit centre or project filter. Reversed entries and their reversals both count, so they cancel out; carried-forward opening entries are left out because they repeat balances already in the ledger. Each row carries the drill-down query of its account ledger. Amounts are decimal strings. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.',
         summary: 'Trial balance report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
@@ -73,7 +73,7 @@ final class LedgerReportController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/reports/account-ledger',
         operationId: 'getGeneralLedgerAccountLedgerReport',
-        description: 'Account ledger (mastrino) of one account for a range of posting dates: the balance before the range, the posted lines oldest first with their journal entry (for drill-down to GET /journals/{id}), source document, partner and dimensions, the running balance after each line (it includes every earlier line of the range, whatever the page) and the closing balance. 404 when the account is not in the active tenant.',
+        description: 'Account ledger (mastrino) of one account for a range of posting dates: the balance before the range, the posted lines oldest first with their journal entry (for drill-down to GET /journals/{id}), source document, partner and dimensions, the running balance after each line (it includes every earlier line of the range, whatever the page) and the closing balance. Balances and the debit/credit of each line are in the accounting currency (`currency`); each line also gives `transaction_currency`, `transaction_debit`, `transaction_credit` and `exchange_rate` as booked. 404 when the account is not in the active tenant.',
         summary: 'Account ledger report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
@@ -116,7 +116,7 @@ final class LedgerReportController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/reports/balance-sheet',
         operationId: 'getGeneralLedgerBalanceSheetReport',
-        description: 'Balance sheet (stato patrimoniale) at `as_of` from posted entries, by account type (asset and wip, liability, equity), amounts in the natural sign of each section; the result not yet closed into equity is reported on its own and added to equity, so `is_balanced` checks assets = liabilities + equity. With `compare_as_of` every account carries its comparison amount and the variance. For a statutory layout (art. 2424 c.c., Swiss OR) use a reclassification scheme (GET /financial-statements/reclassified).',
+        description: 'Balance sheet (stato patrimoniale) at `as_of` from posted entries, by account type (asset and wip, liability, equity), amounts in the natural sign of each section; the result not yet closed into equity is reported on its own and added to equity, so `is_balanced` checks assets = liabilities + equity. With `compare_as_of` every account carries its comparison amount and the variance. For a statutory layout (art. 2424 c.c., Swiss OR) use a reclassification scheme (GET /financial-statements/reclassified). Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.',
         summary: 'Balance sheet report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
@@ -148,7 +148,7 @@ final class LedgerReportController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/reports/income-statement',
         operationId: 'getGeneralLedgerIncomeStatementReport',
-        description: 'Income statement (conto economico) of a range of posting dates from posted entries, by account type (revenue, cogs, expense) in the natural sign, without the year-end closing entries; gross profit and net income. With a comparison range every account carries its comparison amount and the variance; each account carries the drill-down query of its account ledger. Optional cost centre, profit centre or project filter.',
+        description: 'Income statement (conto economico) of a range of posting dates from posted entries, by account type (revenue, cogs, expense) in the natural sign, without the year-end closing entries; gross profit and net income. With a comparison range every account carries its comparison amount and the variance; each account carries the drill-down query of its account ledger. Optional cost centre, profit centre or project filter. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.',
         summary: 'Income statement report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
@@ -181,7 +181,7 @@ final class LedgerReportController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/reports/dimensions',
         operationId: 'getGeneralLedgerDimensionReport',
-        description: 'Income statement accounts of a range grouped by cost centre, profit centre or project, from posted entries: per group the accounts with debit, credit and natural amount, and the result of the group (revenue minus costs). Lines without the dimension form a group with a null id, so the sum of the groups equals the net income of the range.',
+        description: 'Income statement accounts of a range grouped by cost centre, profit centre or project, from posted entries: per group the accounts with debit, credit and natural amount, and the result of the group (revenue minus costs). Lines without the dimension form a group with a null id, so the sum of the groups equals the net income of the range. Every amount is in the accounting (functional) currency of the tenant, stated in `currency`: a line booked in a foreign currency counts at its converted value.',
         summary: 'Dimension analysis report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],
@@ -213,7 +213,7 @@ final class LedgerReportController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/audit-trail/export',
         operationId: 'exportGeneralLedgerAuditTrail',
-        description: 'Audit trail of the ledger for auditors: every journal entry with a posting date in the range, whatever its status (draft, pending_approval, posted, rejected, reversed), with who created, submitted, approved, rejected, posted and reversed it and when, the source document, the reversal link, the automatic reversal date and the debit/credit totals of its lines. CSV (semicolon separated, UTF-8 with BOM, default) or JSON.',
+        description: 'Audit trail of the ledger for auditors: every journal entry with a posting date in the range, whatever its status (draft, pending_approval, posted, rejected, reversed), with who created, submitted, approved, rejected, posted and reversed it and when, the source document, the reversal link, the automatic reversal date and the debit/credit totals of its lines in the accounting currency. CSV (semicolon separated, UTF-8 with BOM, default) or JSON.',
         summary: 'Export ledger audit trail',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Reports'],

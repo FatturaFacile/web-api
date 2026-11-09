@@ -9,6 +9,7 @@ use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
 /**
  * Reports read from the posted entries of the statutory ledger only: trial balance, account ledger (mastrino) with
@@ -19,6 +20,10 @@ use Modules\GeneralLedger\Models\ChartOfAccount;
  * ledger and are left out; closing entries of the year-end are left out of the income statement and of the movements,
  * and kept in the cumulative balances, where they move past results into equity. Amounts are bcmath strings at 4
  * decimals; a balance is debit minus credit unless stated as natural (positive on the normal side of the account).
+ *
+ * Every amount is in the accounting (functional) currency of the tenant (FunctionalAmount): a line in a foreign
+ * currency counts at its converted value, never at its transaction amount. Each report states that `currency`; the
+ * account ledger also gives each line its transaction currency and amounts.
  */
 final class LedgerReportService
 {
@@ -74,6 +79,7 @@ final class LedgerReportService
         }
 
         return [
+            'currency' => TenantAccountingCurrency::of($tenantId),
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'compare_from' => $compareFrom?->toDateString(),
@@ -101,17 +107,18 @@ final class LedgerReportService
             ->where('journal_lines.account_id', $account->id)
             ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()]);
 
-        $totals = $inRange()->selectRaw('COUNT(*) as line_count, COALESCE(SUM(journal_lines.debit_amount), 0) as debit, COALESCE(SUM(journal_lines.credit_amount), 0) as credit')->first();
+        $totals = $inRange()->selectRaw('COUNT(*) as line_count, COALESCE(SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)), 0) as debit, COALESCE(SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)), 0) as credit, COALESCE(SUM(journal_lines.debit_amount), 0) as transaction_debit, COALESCE(SUM(journal_lines.credit_amount), 0) as transaction_credit, COUNT(DISTINCT journal_lines.currency) as currency_count, MIN(journal_lines.currency) as single_currency')->first();
         $total = (int) ($totals->line_count ?? 0);
         $order = 'journal_entries.posting_date, journal_entries.journal_number, journal_entries.created_at, journal_lines.line_number, journal_lines.id';
 
         $rows = $inRange()
-            ->selectRaw("journal_lines.id as line_id, journal_entries.id as journal_entry_id, journal_entries.entry_number, journal_entries.journal_number, journal_entries.posting_date, journal_entries.journal_type, journal_entries.status, journal_entries.source_document_type, journal_entries.source_document_id, journal_lines.description, journal_lines.partner_type, journal_lines.partner_id, journal_lines.cost_center_id, journal_lines.profit_center_id, journal_lines.project_id, journal_lines.currency, journal_lines.debit_amount, journal_lines.credit_amount, SUM(journal_lines.debit_amount - journal_lines.credit_amount) OVER (ORDER BY {$order} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cumulative")
+            ->selectRaw("journal_lines.id as line_id, journal_entries.id as journal_entry_id, journal_entries.entry_number, journal_entries.journal_number, journal_entries.posting_date, journal_entries.journal_type, journal_entries.status, journal_entries.source_document_type, journal_entries.source_document_id, journal_lines.description, journal_lines.partner_type, journal_lines.partner_id, journal_lines.cost_center_id, journal_lines.profit_center_id, journal_lines.project_id, journal_lines.currency, journal_lines.exchange_rate, journal_lines.debit_amount, journal_lines.credit_amount, COALESCE(journal_lines.functional_debit, journal_lines.debit_amount) as functional_debit, COALESCE(journal_lines.functional_credit, journal_lines.credit_amount) as functional_credit, SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount) - COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) OVER (ORDER BY {$order} ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) as cumulative")
             ->orderByRaw($order)
             ->offset(($page - 1) * $perPage)
             ->limit($perPage)
             ->get();
 
+        $currency = TenantAccountingCurrency::of($tenantId);
         $lines = $rows->map(fn (object $row): array => [
             'line_id' => (string) $row->line_id,
             'journal_entry_id' => (string) $row->journal_entry_id,
@@ -128,9 +135,13 @@ final class LedgerReportService
             'cost_center_id' => $row->cost_center_id,
             'profit_center_id' => $row->profit_center_id,
             'project_id' => $row->project_id,
-            'currency' => $row->currency,
-            'debit' => $this->scaled((string) $row->debit_amount),
-            'credit' => $this->scaled((string) $row->credit_amount),
+            'currency' => $currency,
+            'debit' => $this->scaled((string) $row->functional_debit),
+            'credit' => $this->scaled((string) $row->functional_credit),
+            'transaction_currency' => $row->currency,
+            'transaction_debit' => $this->scaled((string) $row->debit_amount),
+            'transaction_credit' => $this->scaled((string) $row->credit_amount),
+            'exchange_rate' => bcadd((string) $row->exchange_rate, '0', 6),
             'running_balance' => bcadd($opening, (string) $row->cumulative, self::Scale),
         ])->values()->all();
 
@@ -139,12 +150,14 @@ final class LedgerReportService
 
         return [
             'account' => ['id' => (string) $account->id, 'account_code' => $account->account_code, 'name' => $account->name, 'account_type' => $account->account_type, 'normal_balance' => $account->normal_balance],
+            'currency' => $currency,
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'opening_balance' => $opening,
             'closing_balance' => bcadd($opening, bcsub($debit, $credit, self::Scale), self::Scale),
             'total_debit' => $this->scaled($debit),
             'total_credit' => $this->scaled($credit),
+            'transaction_totals' => (int) ($totals->currency_count ?? 0) === 1 ? ['currency' => (string) $totals->single_currency, 'debit' => $this->scaled((string) $totals->transaction_debit), 'credit' => $this->scaled((string) $totals->transaction_credit)] : null,
             'lines' => $lines,
             'meta' => ['current_page' => $page, 'last_page' => max(1, (int) ceil($total / $perPage)), 'per_page' => $perPage, 'total' => $total],
         ];
@@ -162,6 +175,7 @@ final class LedgerReportService
         $comparison = $compareAsOf !== null ? $this->balanceSheetAt($tenantId, $compareAsOf) : null;
 
         return [
+            'currency' => TenantAccountingCurrency::of($tenantId),
             'as_of' => $asOf->toDateString(),
             'compare_as_of' => $compareAsOf?->toDateString(),
             'sections' => $this->mergeSections($current['sections'], $comparison['sections'] ?? null),
@@ -184,6 +198,7 @@ final class LedgerReportService
         $comparison = $compareFrom !== null && $compareTo !== null ? $this->incomeStatementOf($tenantId, $compareFrom, $compareTo, $dimensions) : null;
 
         return [
+            'currency' => TenantAccountingCurrency::of($tenantId),
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'compare_from' => $compareFrom?->toDateString(),
@@ -215,7 +230,7 @@ final class LedgerReportService
             ->whereIn('chart_of_accounts.account_type', LedgerBalanceReader::IncomeTypes)
             ->groupBy("journal_lines.{$column}", 'chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', 'chart_of_accounts.normal_balance')
             ->orderBy('chart_of_accounts.account_code')
-            ->selectRaw("journal_lines.{$column} as dimension_id, chart_of_accounts.id as account_id, chart_of_accounts.account_code, chart_of_accounts.name as account_name, chart_of_accounts.account_type, chart_of_accounts.normal_balance, SUM(journal_lines.debit_amount) as debit, SUM(journal_lines.credit_amount) as credit")
+            ->selectRaw("journal_lines.{$column} as dimension_id, chart_of_accounts.id as account_id, chart_of_accounts.account_code, chart_of_accounts.name as account_name, chart_of_accounts.account_type, chart_of_accounts.normal_balance, SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit, SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit")
             ->get();
 
         $names = $this->dimensionNames($tenantId, $dimension, $rows->pluck('dimension_id')->filter()->unique()->values()->all());
@@ -251,7 +266,7 @@ final class LedgerReportService
             ];
         }
 
-        return ['dimension' => $dimension, 'from' => $from->toDateString(), 'to' => $to->toDateString(), 'groups' => $groups, 'total' => $total];
+        return ['currency' => TenantAccountingCurrency::of($tenantId), 'dimension' => $dimension, 'from' => $from->toDateString(), 'to' => $to->toDateString(), 'groups' => $groups, 'total' => $total];
     }
 
     /**
@@ -435,7 +450,7 @@ final class LedgerReportService
     {
         return $query
             ->groupBy('journal_lines.account_id')
-            ->selectRaw('journal_lines.account_id, SUM(journal_lines.debit_amount) as debit, SUM(journal_lines.credit_amount) as credit')
+            ->selectRaw('journal_lines.account_id, SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit, SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit')
             ->get()
             ->keyBy(static fn (object $row): string => (string) $row->account_id);
     }

@@ -125,11 +125,13 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'partner_type'),
         new OA\Property(property: 'partner_id', type: 'string'),
         new OA\Property(property: 'description', type: 'string'),
-        new OA\Property(property: 'debit_amount', type: 'number'),
-        new OA\Property(property: 'credit_amount', type: 'number'),
-        new OA\Property(property: 'currency', type: 'string'),
-        new OA\Property(property: 'exchange_rate', type: 'number'),
-        new OA\Property(property: 'amount_in_functional_currency', type: 'number'),
+        new OA\Property(property: 'debit_amount', description: 'Debit in the transaction currency of the line (`currency`)', type: 'number'),
+        new OA\Property(property: 'credit_amount', description: 'Credit in the transaction currency of the line (`currency`)', type: 'number'),
+        new OA\Property(property: 'currency', description: 'Transaction currency of the line (ISO 4217)', type: 'string', example: 'USD'),
+        new OA\Property(property: 'exchange_rate', description: 'Accounting-currency units per unit of the transaction currency; 1 for a line in the accounting currency', type: 'number', example: 0.92),
+        new OA\Property(property: 'amount_in_functional_currency', description: 'Unsigned amount of the line in the accounting currency (legacy; prefer functional_debit / functional_credit)', type: 'number'),
+        new OA\Property(property: 'functional_debit', description: 'Debit in the accounting currency of the tenant, the amount every balance and report sums. Null only for a historical foreign-currency line posted without a usable rate (see general-ledger:functional-currency-audit)', type: 'number', nullable: true, example: 920.0),
+        new OA\Property(property: 'functional_credit', description: 'Credit in the accounting currency of the tenant. Null only for a historical foreign-currency line posted without a usable rate', type: 'number', nullable: true, example: 0),
     ]
 )]
 #[OA\Schema(

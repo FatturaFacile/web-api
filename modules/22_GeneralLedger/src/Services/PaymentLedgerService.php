@@ -13,9 +13,14 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Exceptions\FiscalPeriodException;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\LedgerAmount;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Treasury\Models\BankAccount;
 
@@ -25,6 +30,10 @@ use Modules\Treasury\Models\BankAccount;
  *   collection    Dr bank / Cr receivables      payment       Dr payables / Cr bank
  *   withheld fee  Dr bank charges / Cr receivables   fee      Dr bank charges / Cr bank
  *   adjustment    Dr rounding / Cr receivables  adjustment    Dr payables / Cr rounding
+ *
+ * A payment of a document in a foreign currency books the money side at the rate of the payment day (exchange-rate
+ * service) and the receivable or payable at the frozen rate of the document, so the open item is closed at the value it
+ * was opened with; the difference in the accounting currency is the realised exchange gain or loss, on its own line.
  *
  * A document that has not reached the ledger yet (for example an invoice older than this flow) has no item to settle:
  * its payments wait, and they are posted right after the document itself.
@@ -43,6 +52,8 @@ final class PaymentLedgerService
         private readonly FiscalPeriodResolver $periods,
         private readonly LedgerAccountResolver $accounts,
         private readonly CustomerLedgerServiceInterface $customerLedger,
+        private readonly PostingAccountResolver $postingAccounts = new PostingAccountResolver,
+        private readonly AccountingExchangeRate $exchangeRates = new AccountingExchangeRate,
     ) {}
 
     /**
@@ -76,14 +87,18 @@ final class PaymentLedgerService
                 : $this->accounts->bank($tenantId, $currency, $options['iban'] ?? null),
         };
 
-        $entry = $this->post($tenantId, self::SOURCE_CUSTOMER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Collection', [
-            $this->line($debitAccount, $amount, '0', $currency, $invoice->exchange_rate, "Collection: Invoice {$invoice->invoice_number}"),
-            $this->line($this->accounts->receivables($tenantId), '0', $amount, $currency, $invoice->exchange_rate, "AR Settlement: Invoice {$invoice->invoice_number}") + [
+        $documentRate = LedgerAmount::rate($invoice->exchange_rate);
+        $paymentRate = $this->paymentRate($tenantId, $currency, $payment->paid_at, $documentRate);
+        $lines = [
+            $this->line($debitAccount, $amount, '0', $currency, $paymentRate, "Collection: Invoice {$invoice->invoice_number}"),
+            $this->line($this->accounts->receivables($tenantId), '0', $amount, $currency, $documentRate, "AR Settlement: Invoice {$invoice->invoice_number}") + [
                 'partner_type' => 'customer',
                 'partner_id' => (string) $invoice->contact_id,
                 'settles_entry_id' => (string) $invoice->gl_journal_entry_id,
             ],
-        ], $options);
+        ];
+
+        $entry = $this->post($tenantId, self::SOURCE_CUSTOMER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Collection', $this->withExchangeDifference($tenantId, $lines, "Exchange difference: Invoice {$invoice->invoice_number}"), $options);
 
         $this->customerLedger->recordPaymentEntry(
             customerId: (string) $invoice->contact_id,
@@ -118,7 +133,8 @@ final class PaymentLedgerService
 
         $amount = (string) $payment->amount;
         $currency = (string) $invoice->currency;
-        $rate = $invoice->exchange_rate ?? 1;
+        $rate = LedgerAmount::rate($invoice->exchange_rate);
+        $paymentRate = $this->paymentRate($tenantId, $currency, $payment->paid_at, $rate);
         $description = "Supplier Payment: Invoice {$invoice->invoice_number}";
         $bank = $this->accounts->bank($tenantId, $currency, $options['iban'] ?? null);
         $settlement = [
@@ -130,14 +146,14 @@ final class PaymentLedgerService
 
         $lines = match ($payment->type) {
             'bank_fee' => [
-                $this->line($this->accounts->bankCharges($tenantId), $amount, '0', $currency, $rate, "Bank charges: Invoice {$invoice->invoice_number}"),
-                $this->line($bank, '0', $amount, $currency, $rate, $description),
+                $this->line($this->accounts->bankCharges($tenantId), $amount, '0', $currency, $paymentRate, "Bank charges: Invoice {$invoice->invoice_number}"),
+                $this->line($bank, '0', $amount, $currency, $paymentRate, $description),
             ],
-            'adjustment' => [$payables, $this->line($this->accounts->rounding($tenantId), '0', $amount, $currency, $rate, $description)],
-            default => [$payables, $this->line($bank, '0', $amount, $currency, $rate, $description)],
+            'adjustment' => [$payables, $this->line($this->accounts->rounding($tenantId), '0', $amount, $currency, $paymentRate, $description)],
+            default => [$payables, $this->line($bank, '0', $amount, $currency, $paymentRate, $description)],
         };
 
-        return $this->post($tenantId, self::SOURCE_SUPPLIER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Supplier payment', $lines, $options);
+        return $this->post($tenantId, self::SOURCE_SUPPLIER, (string) $payment->id, $payment->paid_at, (string) $invoice->invoice_number, 'Supplier payment', $this->withExchangeDifference($tenantId, $lines, "Exchange difference: Invoice {$invoice->invoice_number}"), $options);
     }
 
     /**
@@ -197,8 +213,8 @@ final class PaymentLedgerService
         $bank = $this->accounts->bank($tenantId, $currency, $options['iban'] ?? null);
 
         return $this->post($tenantId, $sourceType, $sourceId, $date, $documentNumber, 'Bank charge', [
-            $this->line($expenseAccount, $amount, '0', $currency, 1, "Bank charge: {$documentNumber}"),
-            $this->line($bank, '0', $amount, $currency, 1, "Bank charge: {$documentNumber}"),
+            $this->line($expenseAccount, $amount, '0', $currency, null, "Bank charge: {$documentNumber}"),
+            $this->line($bank, '0', $amount, $currency, null, "Bank charge: {$documentNumber}"),
         ], $options);
     }
 
@@ -233,18 +249,73 @@ final class PaymentLedgerService
     }
 
     /**
+     * A line of a money movement. A null rate leaves the conversion to the posting service (accounting currency, or the
+     * rate of the exchange-rate service on the posting date).
+     *
      * @return array<string, mixed>
      */
-    private function line(ChartOfAccount $account, string $debit, string $credit, string $currency, mixed $exchangeRate, string $description): array
+    private function line(ChartOfAccount $account, string $debit, string $credit, string $currency, ?string $exchangeRate, string $description): array
     {
         return [
             'account_id' => $account->id,
             'debit_amount' => $debit,
             'credit_amount' => $credit,
             'currency' => $currency,
-            'exchange_rate' => (float) ($exchangeRate ?: 1),
+            'exchange_rate' => $exchangeRate,
             'description' => $description,
         ];
+    }
+
+    /**
+     * The rate of the money side of a payment: accounting-currency units per document-currency unit on the day it was
+     * paid, from the exchange-rate service. The document keeps its frozen rate, so the two sides differ by the realised
+     * exchange difference. A document in the accounting currency, or a day without a published rate, uses the rate of
+     * the document: the payment then carries no exchange difference.
+     */
+    private function paymentRate(string $tenantId, string $currency, mixed $paidAt, string $documentRate): string
+    {
+        if (strtoupper($currency) === TenantAccountingCurrency::of($tenantId)) {
+            return $documentRate;
+        }
+
+        return $this->exchangeRates->rateOn($tenantId, $currency, CarbonImmutable::parse($paidAt)) ?? $documentRate;
+    }
+
+    /**
+     * Adds the realised exchange difference of a payment: the lines are converted as the posting converts them (amount
+     * × rate at 4 decimals) and what keeps them from balancing in the accounting currency goes, in the accounting
+     * currency, to the realised exchange gain or loss account (the unrealised one when the tenant has not set a
+     * realised one). A payment without a difference gets no line.
+     *
+     * @param  list<array<string, mixed>>  $lines
+     * @return list<array<string, mixed>>
+     *
+     * @throws LedgerPostingException when there is a difference and no exchange gain/loss account is set
+     */
+    private function withExchangeDifference(string $tenantId, array $lines, string $description): array
+    {
+        $accounting = TenantAccountingCurrency::of($tenantId);
+        $difference = '0';
+
+        foreach ($lines as $line) {
+            $rate = strtoupper((string) $line['currency']) === $accounting ? '1' : (string) ($line['exchange_rate'] ?? '1');
+            $difference = Decimal::add($difference, LedgerAmount::of(Decimal::mul((string) $line['debit_amount'], $rate)));
+            $difference = Decimal::sub($difference, LedgerAmount::of(Decimal::mul((string) $line['credit_amount'], $rate)));
+        }
+
+        if (Decimal::isZero($difference)) {
+            return $lines;
+        }
+
+        $isGain = Decimal::isPositive($difference);
+        $account = $isGain
+            ? ($this->postingAccounts->account($tenantId, PostingAccountRole::FxRealisedGain) ?? $this->postingAccounts->require($tenantId, PostingAccountRole::FxUnrealisedGain))
+            : ($this->postingAccounts->account($tenantId, PostingAccountRole::FxRealisedLoss) ?? $this->postingAccounts->require($tenantId, PostingAccountRole::FxUnrealisedLoss));
+        $amount = LedgerAmount::of(Decimal::abs($difference));
+
+        $lines[] = $this->line($account, $isGain ? '0' : $amount, $isGain ? $amount : '0', $accounting, '1.000000', $description);
+
+        return $lines;
     }
 
     /**

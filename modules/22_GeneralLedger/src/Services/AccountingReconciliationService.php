@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Services;
 
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\AccountingReconciliationServiceInterface;
@@ -15,7 +16,12 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\ReconciliationItem;
 use Modules\GeneralLedger\Models\ReconciliationRun;
 use Modules\GeneralLedger\Models\SupplierLedger;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
+/**
+ * Compares control accounts with what should explain them, in the accounting currency of the tenant: the ledger side at
+ * the functional amounts of its lines, the open items at the historical rate of the line that opened them.
+ */
 final class AccountingReconciliationService implements AccountingReconciliationServiceInterface
 {
     public function __construct(
@@ -31,35 +37,27 @@ final class AccountingReconciliationService implements AccountingReconciliationS
                 ->where('reconciliation_type', 'customer')
                 ->first() ?? ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', '1100')->firstOrFail();
 
-            // GL balance: net debits
-            $glBalance = (float) DB::table('journal_lines')
-                ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
-                ->where('journal_entries.tenant_id', $tenantId)
-                ->where('journal_entries.status', 'posted')
-                ->where('journal_lines.account_id', $account->id)
-                ->sum(DB::raw('journal_lines.debit_amount - journal_lines.credit_amount'));
+            // GL balance in the accounting currency, without the exchange revaluations (they have no open item)
+            $glBalance = (float) $this->controlAccountLines($tenantId, (string) $account->id)
+                ->sum(DB::raw(FunctionalAmount::balance()));
 
-            // Subledger balance: sum of open customer ledger items
+            // Subledger balance: open customer items at the rate that opened them, in the accounting currency
             $subledgerBalance = (float) CustomerLedger::where('tenant_id', $tenantId)
                 ->whereIn('status', ['open', 'partially_paid'])
-                ->sum('open_amount');
+                ->sum(DB::raw(FunctionalAmount::openItem('customer_ledger', 'customer_id', TenantAccountingCurrency::of($tenantId))));
         } elseif ($reconciliationType === 'subledger_ap') {
             $account = ChartOfAccount::where('tenant_id', $tenantId)
                 ->where('reconciliation_type', 'supplier')
                 ->first() ?? ChartOfAccount::where('tenant_id', $tenantId)->where('account_code', '2000')->firstOrFail();
 
-            // GL balance: net credits
-            $glBalance = (float) DB::table('journal_lines')
-                ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
-                ->where('journal_entries.tenant_id', $tenantId)
-                ->where('journal_entries.status', 'posted')
-                ->where('journal_lines.account_id', $account->id)
-                ->sum(DB::raw('journal_lines.credit_amount - journal_lines.debit_amount'));
+            // GL balance (net credits) in the accounting currency, without the exchange revaluations
+            $glBalance = (float) $this->controlAccountLines($tenantId, (string) $account->id)
+                ->sum(DB::raw('-'.FunctionalAmount::balance()));
 
-            // Subledger balance: sum of open supplier ledger items
+            // Subledger balance: open supplier items at the rate that opened them, in the accounting currency
             $subledgerBalance = (float) SupplierLedger::where('tenant_id', $tenantId)
                 ->whereIn('status', ['open', 'partially_paid'])
-                ->sum('open_amount');
+                ->sum(DB::raw(FunctionalAmount::openItem('supplier_ledger', 'supplier_id', TenantAccountingCurrency::of($tenantId))));
         } else {
             // General / Inventory / Project
             $account = ChartOfAccount::where('tenant_id', $tenantId)
@@ -71,7 +69,7 @@ final class AccountingReconciliationService implements AccountingReconciliationS
                 ->where('journal_entries.tenant_id', $tenantId)
                 ->where('journal_entries.status', 'posted')
                 ->where('journal_lines.account_id', $account->id)
-                ->sum(DB::raw('journal_lines.debit_amount - journal_lines.credit_amount'));
+                ->sum(DB::raw(FunctionalAmount::balance()));
 
             $subledgerBalance = $glBalance; // balanced
         }
@@ -154,14 +152,14 @@ final class AccountingReconciliationService implements AccountingReconciliationS
             ->where('journal_entries.tenant_id', $tenantId)
             ->where('journal_entries.status', 'posted')
             ->where('journal_lines.account_id', $account->id)
-            ->sum('journal_lines.debit_amount');
+            ->sum(DB::raw(FunctionalAmount::debit()));
 
         $cr = (float) DB::table('journal_lines')
             ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
             ->where('journal_entries.tenant_id', $tenantId)
             ->where('journal_entries.status', 'posted')
             ->where('journal_lines.account_id', $account->id)
-            ->sum('journal_lines.credit_amount');
+            ->sum(DB::raw(FunctionalAmount::credit()));
 
         $netClearing = round($cr - $dr, 4);
         $status = abs($netClearing) < 0.0001 ? 'balanced' : 'discrepancy';
@@ -206,5 +204,19 @@ final class AccountingReconciliationService implements AccountingReconciliationS
         event($event);
 
         return $run->load('items');
+    }
+
+    /**
+     * Posted lines of a control account, without the period-end exchange revaluations of the open items: those adjust
+     * the account without opening an item, so they would never match the subledger.
+     */
+    private function controlAccountLines(string $tenantId, string $accountId): Builder
+    {
+        return DB::table('journal_lines')
+            ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
+            ->where('journal_entries.tenant_id', $tenantId)
+            ->where('journal_entries.status', 'posted')
+            ->where('journal_lines.account_id', $accountId)
+            ->where(fn ($query) => $query->whereNull('journal_entries.source_document_type')->orWhere('journal_entries.source_document_type', '!=', 'gl_fx_revaluation'));
     }
 }

@@ -12,6 +12,8 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Models\PeriodCloseTask;
 use Modules\GeneralLedger\Models\RecurringJournal;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 
 /**
  * The close checklist of a fiscal period: automatic checks read from the ledger, plus the tasks the users add (bank
@@ -141,7 +143,7 @@ final class PeriodCloseChecklistService
             ->whereNull('journal_entries.deleted_at')
             ->whereNull('journal_lines.deleted_at')
             ->groupBy('journal_entries.id')
-            ->havingRaw('SUM(journal_lines.debit_amount) <> SUM(journal_lines.credit_amount)')
+            ->havingRaw('SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) <> SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount))')
             ->select('journal_entries.id'), 'unbalanced_entries')
             ->count();
 
@@ -158,14 +160,17 @@ final class PeriodCloseChecklistService
     }
 
     /**
-     * How many of the customer and supplier control sides differ from the sum of their open items at the date, read in
-     * the accounting currency of the lines (informative: open items in a foreign currency are kept in that currency).
+     * How many of the customer and supplier control sides differ from the sum of their open items at the date, both in
+     * the accounting currency: the control account at its functional amounts, without the period-end exchange
+     * revaluations (they have no open item), and each open item at the historical rate of the line that opened it.
+     * Compared to the cent, since each side is converted line by line.
      */
     private function subledgerDifference(string $tenantId, string $end): int
     {
         $differences = 0;
+        $accounting = TenantAccountingCurrency::of($tenantId);
 
-        foreach (['customer' => ['customer_ledger', '1'], 'supplier' => ['supplier_ledger', '-1']] as $type => [$table, $sign]) {
+        foreach (['customer' => ['customer_ledger', '1', 'customer_id'], 'supplier' => ['supplier_ledger', '-1', 'supplier_id']] as $type => [$table, $sign, $partnerColumn]) {
             $ledger = (string) (DB::table('journal_lines')
                 ->join('journal_entries', 'journal_lines.journal_entry_id', '=', 'journal_entries.id')
                 ->join('chart_of_accounts', 'journal_lines.account_id', '=', 'chart_of_accounts.id')
@@ -176,17 +181,18 @@ final class PeriodCloseChecklistService
                 ->whereNull('journal_lines.deleted_at')
                 ->where('journal_entries.posting_date', '<=', $end)
                 ->where('chart_of_accounts.reconciliation_type', $type)
-                ->selectRaw('COALESCE(SUM(journal_lines.debit_amount - journal_lines.credit_amount), 0) as balance')
+                ->where(fn ($query) => $query->whereNull('journal_entries.source_document_type')->orWhere('journal_entries.source_document_type', '!=', 'gl_fx_revaluation'))
+                ->selectRaw('COALESCE(SUM('.FunctionalAmount::balance().'), 0) as balance')
                 ->value('balance') ?? '0');
 
             $open = (string) (DB::table($table)
                 ->where('tenant_id', $tenantId)
                 ->whereNull('deleted_at')
                 ->where('posting_date', '<=', $end)
-                ->selectRaw('COALESCE(SUM(open_amount), 0) as open_total')
+                ->selectRaw('COALESCE(SUM('.FunctionalAmount::openItem($table, $partnerColumn, $accounting).'), 0) as open_total')
                 ->value('open_total') ?? '0');
 
-            if (bccomp(bcmul($ledger, $sign, 4), $open, 4) !== 0) {
+            if (bccomp(Decimal::round2(bcmul($ledger, $sign, 4)), Decimal::round2($open), 2) !== 0) {
                 $differences++;
             }
         }

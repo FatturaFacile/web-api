@@ -92,7 +92,7 @@ final class VatLedgerReader
             ->orderBy('je.entry_number')
             ->orderBy('jl.line_number')
             ->get([
-                'jl.journal_entry_id', 'jl.account_id', 'jl.partner_type', 'jl.partner_id', 'jl.debit_amount', 'jl.credit_amount',
+                'jl.journal_entry_id', 'jl.account_id', 'jl.partner_type', 'jl.partner_id', 'jl.debit_amount', 'jl.credit_amount', 'jl.functional_debit', 'jl.functional_credit',
                 'jl.exchange_rate', 'jl.vat_base_amount', 'jl.vat_tax_amount', 'jl.vat_rate_percent', 'jl.vat_treatment',
                 'je.entry_number', 'je.posting_date', 'je.document_date', 'je.document_number', 'je.source_document_type',
                 'coa.account_type', 'coa.account_class', 'coa.type as account_legacy_type',
@@ -285,10 +285,15 @@ final class VatLedgerReader
     }
 
     /**
-     * The amount of the line in the accounting currency, positive on the credit side.
+     * The amount of the line in the accounting currency, positive on the credit side: the functional amounts the
+     * posting stored, or for a historical line without them its amounts at its rate.
      */
     private function creditMinusDebit(object $line): string
     {
+        if ($line->functional_debit !== null || $line->functional_credit !== null) {
+            return Decimal::sub((string) ($line->functional_credit ?? '0'), (string) ($line->functional_debit ?? '0'));
+        }
+
         return Decimal::mul(Decimal::sub((string) $line->credit_amount, (string) $line->debit_amount), (string) $line->exchange_rate);
     }
 

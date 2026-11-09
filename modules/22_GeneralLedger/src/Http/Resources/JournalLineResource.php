@@ -6,7 +6,13 @@ namespace Modules\GeneralLedger\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\GeneralLedger\Models\JournalLine;
 
+/**
+ * A journal line with its transaction-currency and accounting-currency amounts.
+ *
+ * @mixin JournalLine
+ */
 final class JournalLineResource extends JsonResource
 {
     /**
@@ -29,6 +35,8 @@ final class JournalLineResource extends JsonResource
             'currency' => $this->currency,
             'exchange_rate' => (float) $this->exchange_rate,
             'amount_in_functional_currency' => (float) $this->amount_in_functional_currency,
+            'functional_debit' => $this->functional_debit !== null ? (float) $this->functional_debit : null,
+            'functional_credit' => $this->functional_credit !== null ? (float) $this->functional_credit : null,
         ];
     }
 }

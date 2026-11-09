@@ -10,6 +10,7 @@ use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Events\BankPostingReadyEvent;
 use Modules\GeneralLedger\Events\JournalPostedEvent;
 use Modules\GeneralLedger\Events\JournalReversedEvent;
@@ -29,13 +30,42 @@ use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use RoundingMode;
 
+/**
+ * The one way into the journal. Every line keeps its amounts in the transaction currency (`debit_amount`,
+ * `credit_amount`, `currency`, `exchange_rate`) and gets its debit and credit in the accounting (functional) currency
+ * of the tenant (`functional_debit`, `functional_credit`), which is what every balance and report sums:
+ *
+ * - a line in the accounting currency (or without a currency) has rate 1 and the same amounts;
+ * - a line in another currency is converted at the rate the caller states (accounting units per foreign unit, as the
+ *   documents freeze it) or, when it states none, at the rate of the exchange-rate service on the posting date; without
+ *   either the posting is refused: no rate is assumed;
+ * - each functional amount is rounded to the 4 decimals of the ledger.
+ *
+ * An entry must balance in the accounting currency. Lines all in one currency must also balance exactly in that
+ * currency, as before. When the per-line conversion leaves a residual of at most 0.01 the entry gets a rounding line in
+ * the accounting currency on the rounding account of the default posting accounts (PostingAccountResolver); a bigger
+ * residual, or a residual without a rounding account, refuses the posting.
+ */
 final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterface
 {
+    /** The widest conversion residual of one entry that a rounding line may absorb. */
+    public const string MAX_CONVERSION_ROUNDING = '0.01';
+
+    private const string UNBALANCED = 'Journal entry lines must balance with positive debit/credit values.';
+
     public function __construct(
         private readonly EventDispatcher $dispatcher,
-        private readonly AuditLedgerInterface $auditLedger
+        private readonly AuditLedgerInterface $auditLedger,
+        private readonly PostingAccountResolver $postingAccounts = new PostingAccountResolver,
+        private readonly AccountingExchangeRate $exchangeRates = new AccountingExchangeRate,
     ) {}
 
+    /**
+     * Whether the lines can make an entry: no negative amount, something to post, and balanced. Lines all in one
+     * currency (or without currency) must balance exactly in it; lines in several currencies must balance once
+     * converted at their stated rates, up to the rounding the posting absorbs. The posting itself checks again with the
+     * accounting currency of the tenant and the rates of the exchange-rate service.
+     */
     public function validateBalance(array $lines): bool
     {
         if (empty($lines)) {
@@ -44,6 +74,9 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
 
         $totalDebit = '0';
         $totalCredit = '0';
+        $functionalDebit = '0';
+        $functionalCredit = '0';
+        $currencies = [];
 
         foreach ($lines as $line) {
             $debit = $this->ledgerAmount($line['debit_amount'] ?? 0);
@@ -53,11 +86,20 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 return false;
             }
 
+            $rate = $this->exchangeRate($line['exchange_rate'] ?? null) ?? '1.000000';
+            $currencies[strtoupper((string) ($line['currency'] ?? ''))] = true;
             $totalDebit = Decimal::add($totalDebit, $debit);
             $totalCredit = Decimal::add($totalCredit, $credit);
+            $functionalDebit = Decimal::add($functionalDebit, $this->ledgerAmount(Decimal::mul($debit, $rate)));
+            $functionalCredit = Decimal::add($functionalCredit, $this->ledgerAmount(Decimal::mul($credit, $rate)));
         }
 
-        return Decimal::compare($totalDebit, $totalCredit) === 0 && Decimal::isPositive($totalDebit);
+        if (count($currencies) <= 1) {
+            return Decimal::compare($totalDebit, $totalCredit) === 0 && Decimal::isPositive($totalDebit);
+        }
+
+        return Decimal::compare(Decimal::abs(Decimal::sub($functionalDebit, $functionalCredit)), self::MAX_CONVERSION_ROUNDING) <= 0
+            && Decimal::isPositive($functionalDebit);
     }
 
     public function createAndPost(array $data, ?string $actorUserId = null): JournalEntry
@@ -85,8 +127,8 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
         return DB::transaction(function () use ($data, $actorUuid, $isYearEndClosing) {
             $lines = $data['lines'] ?? [];
 
-            if (! $this->validateBalance($lines)) {
-                throw new LedgerPostingException('Journal entry lines must balance with positive debit/credit values.');
+            if (! is_array($lines) || $lines === []) {
+                throw new LedgerPostingException(self::UNBALANCED);
             }
 
             $fiscalPeriod = $this->sharedLockedPeriod((string) $data['fiscal_period_id']);
@@ -104,9 +146,11 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 throw new LedgerPostingException("Fiscal period [{$fiscalPeriod->period_name}] is locked for General Ledger postings.");
             }
 
+            $lines = $this->inAccountingCurrency((string) $data['tenant_id'], $lines, $postingDate);
+
             $totalAmount = '0';
             foreach ($lines as $line) {
-                $totalAmount = Decimal::add($totalAmount, $this->ledgerAmount($line['debit_amount'] ?? 0));
+                $totalAmount = Decimal::add($totalAmount, $line['functional_debit']);
             }
 
             $entry = JournalEntry::create([
@@ -134,15 +178,14 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                 'posted_by' => ($data['status'] ?? 'posted') === 'posted' ? $actorUuid : null,
             ]);
 
-            $tenantCurrency = TenantAccountingCurrency::of((string) $entry->tenant_id);
             $lineNumber = 1;
             foreach ($lines as $line) {
                 $account = $this->tenantAccount((string) $entry->tenant_id, (string) $line['account_id']);
-                $debit = $this->ledgerAmount($line['debit_amount'] ?? 0);
-                $credit = $this->ledgerAmount($line['credit_amount'] ?? 0);
-                $currency = $line['currency'] ?? $tenantCurrency;
-                $rate = $this->exchangeRate($line['exchange_rate'] ?? null);
-                $functionalAmt = $this->ledgerAmount(Decimal::mul(Decimal::isPositive($debit) ? $debit : $credit, $rate));
+                $debit = $line['debit_amount'];
+                $credit = $line['credit_amount'];
+                $currency = $line['currency'];
+                $rate = $line['exchange_rate'];
+                $functionalAmt = Decimal::isPositive($debit) ? $line['functional_debit'] : $line['functional_credit'];
 
                 $journalLine = JournalLine::create([
                     'id' => (string) Str::uuid7(),
@@ -162,6 +205,8 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                     'currency' => $currency,
                     'exchange_rate' => $rate,
                     'amount_in_functional_currency' => $functionalAmt,
+                    'functional_debit' => $line['functional_debit'],
+                    'functional_credit' => $line['functional_credit'],
                     'vat_code_id' => $line['vat_code_id'] ?? null,
                     'vat_base_amount' => $this->ledgerAmount($line['vat_base_amount'] ?? 0),
                     'vat_tax_amount' => $this->ledgerAmount($line['vat_tax_amount'] ?? 0),
@@ -351,6 +396,8 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
                     'currency' => $line->currency,
                     'exchange_rate' => $line->exchange_rate,
                     'amount_in_functional_currency' => $line->amount_in_functional_currency,
+                    'functional_debit' => $line->functional_credit,
+                    'functional_credit' => $line->functional_debit,
                     'vat_code_id' => $line->vat_code_id,
                     'vat_base_amount' => $line->vat_base_amount,
                     'vat_tax_amount' => $line->vat_tax_amount,
@@ -433,18 +480,105 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
     }
 
     /**
-     * Exchange rate of a line at the scale of the column (6 decimals): accounting-currency units per unit of the line
-     * currency. A missing rate means the line is in the accounting currency.
+     * Exchange rate stated on a line at the scale of the column (6 decimals): accounting-currency units per unit of the
+     * line currency. Null when the line states none, or a rate that is not positive.
      */
-    private function exchangeRate(mixed $value): string
+    private function exchangeRate(mixed $value): ?string
     {
         if ($value === null || $value === '') {
-            return '1.000000';
+            return null;
         }
 
         $text = is_float($value) ? number_format($value, 6, '.', '') : (string) $value;
+        $rate = bcround(Decimal::normalize($text), 6, RoundingMode::HalfAwayFromZero);
 
-        return bcround(Decimal::normalize($text), 6, RoundingMode::HalfAwayFromZero);
+        return Decimal::isPositive($rate) ? $rate : null;
+    }
+
+    /**
+     * The lines of an entry with their currency, rate and functional debit and credit resolved, plus the rounding line
+     * the conversion needs, if any (see the class description).
+     *
+     * @param  array<int, array<string, mixed>>  $lines
+     * @return list<array<string, mixed>>
+     *
+     * @throws LedgerPostingException when a foreign line has no rate, the lines do not balance, or the conversion
+     *                                residual is too wide or has no rounding account to go to
+     */
+    private function inAccountingCurrency(string $tenantId, array $lines, string $postingDate): array
+    {
+        $accounting = TenantAccountingCurrency::of($tenantId);
+        $resolved = [];
+        $currencies = [];
+        $totals = ['debit' => '0', 'credit' => '0', 'functional_debit' => '0', 'functional_credit' => '0'];
+
+        foreach ($lines as $line) {
+            $debit = $this->ledgerAmount($line['debit_amount'] ?? 0);
+            $credit = $this->ledgerAmount($line['credit_amount'] ?? 0);
+
+            if (Decimal::isNegative($debit) || Decimal::isNegative($credit)) {
+                throw new LedgerPostingException(self::UNBALANCED);
+            }
+
+            $currency = strtoupper(trim((string) ($line['currency'] ?? '')));
+            $currency = $currency !== '' ? $currency : $accounting;
+
+            if ($currency === $accounting) {
+                $rate = '1.000000';
+                $functionalDebit = $debit;
+                $functionalCredit = $credit;
+            } else {
+                $rate = $this->exchangeRate($line['exchange_rate'] ?? null)
+                    ?? $this->exchangeRates->rateOn($tenantId, $currency, $postingDate)
+                    ?? throw new LedgerPostingException("No exchange rate to convert {$currency} into the accounting currency {$accounting} on {$postingDate}: state the rate of the line or synchronise the exchange rates.");
+                $functionalDebit = $this->ledgerAmount(Decimal::mul($debit, $rate));
+                $functionalCredit = $this->ledgerAmount(Decimal::mul($credit, $rate));
+            }
+
+            $currencies[$currency] = true;
+            $totals['debit'] = Decimal::add($totals['debit'], $debit);
+            $totals['credit'] = Decimal::add($totals['credit'], $credit);
+            $totals['functional_debit'] = Decimal::add($totals['functional_debit'], $functionalDebit);
+            $totals['functional_credit'] = Decimal::add($totals['functional_credit'], $functionalCredit);
+
+            $resolved[] = array_merge($line, [
+                'debit_amount' => $debit,
+                'credit_amount' => $credit,
+                'currency' => $currency,
+                'exchange_rate' => $rate,
+                'functional_debit' => $functionalDebit,
+                'functional_credit' => $functionalCredit,
+            ]);
+        }
+
+        if (! Decimal::isPositive($totals['functional_debit']) || (count($currencies) === 1 && Decimal::compare($totals['debit'], $totals['credit']) !== 0)) {
+            throw new LedgerPostingException(self::UNBALANCED);
+        }
+
+        $residual = Decimal::sub($totals['functional_debit'], $totals['functional_credit']);
+
+        if (Decimal::isZero($residual)) {
+            return $resolved;
+        }
+
+        if (Decimal::compare(Decimal::abs($residual), self::MAX_CONVERSION_ROUNDING) > 0) {
+            throw new LedgerPostingException('Journal entry lines must balance in the accounting currency '.$accounting.': they differ by '.bcadd($residual, '0', 4).'.');
+        }
+
+        $amount = $this->ledgerAmount(Decimal::abs($residual));
+        $debitSide = Decimal::isNegative($residual);
+        $resolved[] = [
+            'account_id' => (string) $this->postingAccounts->require($tenantId, PostingAccountRole::Rounding)->id,
+            'debit_amount' => $debitSide ? $amount : '0.0000',
+            'credit_amount' => $debitSide ? '0.0000' : $amount,
+            'currency' => $accounting,
+            'exchange_rate' => '1.000000',
+            'functional_debit' => $debitSide ? $amount : '0.0000',
+            'functional_credit' => $debitSide ? '0.0000' : $amount,
+            'description' => 'Rounding of the conversion into the accounting currency',
+        ];
+
+        return $resolved;
     }
 
     /**

@@ -21,7 +21,7 @@ use OpenApi\Attributes as OA;
     schema: 'GeneralLedgerSettingsResource',
     type: 'object',
     properties: [
-        new OA\Property(property: 'posting_accounts', description: 'One entry per role: sales_revenue, purchase_expense, output_vat, input_vat, receivables, payables, retained_earnings, fx_unrealised_gain, fx_unrealised_loss, rounding', type: 'object', additionalProperties: new OA\AdditionalProperties(properties: [
+        new OA\Property(property: 'posting_accounts', description: 'One entry per role: sales_revenue, purchase_expense, output_vat, input_vat, receivables, payables, retained_earnings, fx_unrealised_gain, fx_unrealised_loss, fx_realised_gain, fx_realised_loss, rounding. The realised roles take the exchange differences of payments of foreign-currency documents (collection rate against document rate); when they are not set the unrealised accounts are used. The rounding account also takes the residual of the conversion of an entry into the accounting currency (at most 0.01 per entry)', type: 'object', additionalProperties: new OA\AdditionalProperties(properties: [
             new OA\Property(property: 'account_id', type: 'string', format: 'uuid', nullable: true),
             new OA\Property(property: 'account_code', type: 'string', nullable: true),
             new OA\Property(property: 'account_name', type: 'string', nullable: true),
@@ -213,6 +213,7 @@ use OpenApi\Attributes as OA;
     schema: 'GeneralLedgerTrialBalanceReport',
     type: 'object',
     properties: [
+        new OA\Property(property: 'currency', description: 'Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value', type: 'string', example: 'EUR'),
         new OA\Property(property: 'from', type: 'string', format: 'date'),
         new OA\Property(property: 'to', type: 'string', format: 'date'),
         new OA\Property(property: 'compare_from', type: 'string', format: 'date', nullable: true),
@@ -242,15 +243,22 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'GeneralLedgerAccountLedgerReport',
+    description: 'Balances, totals and the debit/credit of each line are in the accounting currency of the tenant (currency); each line also carries its transaction currency and amounts as booked.',
     type: 'object',
     properties: [
         new OA\Property(property: 'account', type: 'object'),
+        new OA\Property(property: 'currency', description: 'Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value', type: 'string', example: 'EUR'),
         new OA\Property(property: 'from', type: 'string', format: 'date'),
         new OA\Property(property: 'to', type: 'string', format: 'date'),
         new OA\Property(property: 'opening_balance', type: 'string'),
         new OA\Property(property: 'closing_balance', type: 'string'),
         new OA\Property(property: 'total_debit', type: 'string'),
         new OA\Property(property: 'total_credit', type: 'string'),
+        new OA\Property(property: 'transaction_totals', description: 'Debit and credit of the range in the transaction currency, only when every line of the range is in the same currency (null otherwise: amounts of different currencies are not added)', type: 'object', nullable: true, properties: [
+            new OA\Property(property: 'currency', type: 'string', example: 'USD'),
+            new OA\Property(property: 'debit', type: 'string', example: '1000.0000'),
+            new OA\Property(property: 'credit', type: 'string', example: '0.0000'),
+        ]),
         new OA\Property(property: 'lines', type: 'array', items: new OA\Items(properties: [
             new OA\Property(property: 'line_id', type: 'string', format: 'uuid'),
             new OA\Property(property: 'journal_entry_id', type: 'string', format: 'uuid'),
@@ -267,10 +275,14 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'cost_center_id', type: 'string', nullable: true),
             new OA\Property(property: 'profit_center_id', type: 'string', nullable: true),
             new OA\Property(property: 'project_id', type: 'string', nullable: true),
-            new OA\Property(property: 'currency', type: 'string'),
-            new OA\Property(property: 'debit', type: 'string'),
-            new OA\Property(property: 'credit', type: 'string'),
-            new OA\Property(property: 'running_balance', type: 'string'),
+            new OA\Property(property: 'currency', description: 'Accounting currency of the tenant, the currency of debit, credit and running_balance (until this version it was the transaction currency: now in transaction_currency)', type: 'string', example: 'EUR'),
+            new OA\Property(property: 'debit', description: 'Debit in the accounting currency', type: 'string', example: '920.0000'),
+            new OA\Property(property: 'credit', description: 'Credit in the accounting currency', type: 'string', example: '0.0000'),
+            new OA\Property(property: 'transaction_currency', description: 'Currency the line was booked in', type: 'string', example: 'USD'),
+            new OA\Property(property: 'transaction_debit', description: 'Debit in the transaction currency', type: 'string', example: '1000.0000'),
+            new OA\Property(property: 'transaction_credit', description: 'Credit in the transaction currency', type: 'string', example: '0.0000'),
+            new OA\Property(property: 'exchange_rate', description: 'Accounting-currency units per transaction-currency unit used for the line', type: 'string', example: '0.920000'),
+            new OA\Property(property: 'running_balance', description: 'Balance after the line, in the accounting currency', type: 'string'),
         ], type: 'object')),
         new OA\Property(property: 'meta', properties: [
             new OA\Property(property: 'current_page', type: 'integer'),
@@ -285,6 +297,7 @@ use OpenApi\Attributes as OA;
     description: 'Balance sheet (sections asset, liability, equity; as_of/compare_as_of) or income statement (sections revenue, cogs, expense; from/to/compare_from/compare_to). With a comparison, every account carries comparison_amount and variance, every section comparison_total and variance.',
     type: 'object',
     properties: [
+        new OA\Property(property: 'currency', description: 'Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value', type: 'string', example: 'EUR'),
         new OA\Property(property: 'as_of', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'compare_as_of', type: 'string', format: 'date', nullable: true),
         new OA\Property(property: 'from', type: 'string', format: 'date', nullable: true),
@@ -312,6 +325,7 @@ use OpenApi\Attributes as OA;
     schema: 'GeneralLedgerDimensionReport',
     type: 'object',
     properties: [
+        new OA\Property(property: 'currency', description: 'Accounting (functional) currency of the tenant: every amount of the report is in it, foreign-currency lines counted at their converted value', type: 'string', example: 'EUR'),
         new OA\Property(property: 'dimension', type: 'string', enum: ['cost_center', 'profit_center', 'project']),
         new OA\Property(property: 'from', type: 'string', format: 'date'),
         new OA\Property(property: 'to', type: 'string', format: 'date'),
@@ -337,8 +351,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'status', type: 'string'),
         new OA\Property(property: 'source_document_type', type: 'string', nullable: true),
         new OA\Property(property: 'source_document_id', type: 'string', nullable: true),
-        new OA\Property(property: 'total_debit', type: 'string'),
-        new OA\Property(property: 'total_credit', type: 'string'),
+        new OA\Property(property: 'total_debit', description: 'Debit total of the lines in the accounting currency of the tenant', type: 'string'),
+        new OA\Property(property: 'total_credit', description: 'Credit total of the lines in the accounting currency of the tenant', type: 'string'),
         new OA\Property(property: 'created_by', type: 'string', nullable: true),
         new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'submitted_by', type: 'string', nullable: true),
