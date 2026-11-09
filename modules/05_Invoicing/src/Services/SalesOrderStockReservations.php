@@ -172,17 +172,70 @@ final readonly class SalesOrderStockReservations
         });
     }
 
+    /**
+     * Whether any line of the order holds an active reservation in the inventory module, whoever made it: this sales
+     * flow (mirrored in `quantity_reserved`) or the warehouse flow of the inventory module (which does not mirror it).
+     */
+    public function hasActiveReservations(SalesOrder $order): bool
+    {
+        return $this->reservations->activeFor(self::ReservedForType, $this->lineIds($order))->isNotEmpty();
+    }
+
+    /**
+     * Brings `quantity_reserved` of every stock-relevant line back in line with the reservations the inventory module
+     * still holds for it (after some lapsed at their expiry), and returns the inventory status of the order computed
+     * as `reserve()` does: `reserved`, `partially_reserved`, `not_reserved` or `not_required`.
+     */
+    public function refreshFromInventory(SalesOrder $order): string
+    {
+        return DB::transaction(function () use ($order): string {
+            $tracked = $this->trackedProducts($order->items);
+            $active = $this->reservations->activeFor(self::ReservedForType, $this->lineIds($order))->groupBy('reserved_for_id');
+            $relevantLines = 0;
+            $fullyReserved = 0;
+            $anyReserved = false;
+
+            foreach ($order->items as $item) {
+                if ($item->product_id === null || ! isset($tracked[(string) $item->product_id])) {
+                    continue;
+                }
+
+                $relevantLines++;
+                $reserved = array_reduce(
+                    ($active->get((string) $item->id) ?? collect())->all(),
+                    static fn (string $sum, StockReservation $reservation): string => Decimal::add($sum, (string) $reservation->quantity_reserved),
+                    '0'
+                );
+                $item->update(['quantity_reserved' => bcadd($reserved, '0', 4)]);
+                $anyReserved = $anyReserved || Decimal::isPositive($reserved);
+
+                if (Decimal::compare($reserved, $this->openQuantity($item)) >= 0) {
+                    $fullyReserved++;
+                }
+            }
+
+            return match (true) {
+                $relevantLines === 0 => 'not_required',
+                $fullyReserved === $relevantLines => 'reserved',
+                $anyReserved => 'partially_reserved',
+                default => 'not_reserved',
+            };
+        });
+    }
+
     private function releaseLine(SalesOrderItem $item): void
     {
-        $active = StockReservation::query()
-            ->where('reserved_for_type', self::ReservedForType)
-            ->where('reserved_for_id', (string) $item->id)
-            ->where('status', 'active')
-            ->get();
-
-        foreach ($active as $reservation) {
+        foreach ($this->reservations->activeFor(self::ReservedForType, [(string) $item->id]) as $reservation) {
             $this->reservations->release($reservation);
         }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function lineIds(SalesOrder $order): array
+    {
+        return $order->items->map(static fn (SalesOrderItem $item): string => (string) $item->id)->values()->all();
     }
 
     /**

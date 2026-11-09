@@ -30,7 +30,7 @@ final class JournalEntryResource extends JsonResource
             'source_document_type' => $this->source_document_type,
             'source_document_id' => $this->source_document_id ? (string) $this->source_document_id : null,
             'status' => $this->status,
-            'total_amount' => (float) $this->total_amount,
+            'total_amount' => (string) ($this->total_amount ?? '0.0000'),
             'posted_at' => $this->posted_at?->toIso8601String(),
             'reversed_at' => $this->reversed_at?->toIso8601String(),
             'reversal_journal_entry_id' => $this->reversal_journal_entry_id ? (string) $this->reversal_journal_entry_id : null,

@@ -94,7 +94,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'source_document_type'),
         new OA\Property(property: 'source_document_id', type: 'string'),
         new OA\Property(property: 'status', type: 'string', enum: ['draft', 'pending_approval', 'posted', 'rejected', 'reversed']),
-        new OA\Property(property: 'total_amount', type: 'number'),
+        new OA\Property(property: 'total_amount', description: 'Sum of the debit side of the entry, as a decimal string (4 decimals) so no precision is lost', type: 'string', example: '15420.5000'),
         new OA\Property(property: 'posted_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'reversed_at', type: 'string', format: 'date-time'),
         new OA\Property(property: 'reversal_journal_entry_id', type: 'string'),

@@ -7,6 +7,7 @@ namespace Modules\Invoicing\Providers;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Inventory\Events\StockReservationExpiredEvent;
 use Modules\Invoicing\Contracts\CustomerCreditServiceInterface;
 use Modules\Invoicing\Contracts\CustomerLedgerServiceInterface;
 use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
@@ -33,6 +34,7 @@ use Modules\Invoicing\Events\SalesQuoteCreatedEvent;
 use Modules\Invoicing\Events\SalesQuoteSubmittedEvent;
 use Modules\Invoicing\Listeners\DispatchOutboxOnInvoicingEventListener;
 use Modules\Invoicing\Listeners\ProjectsBillingEventListener;
+use Modules\Invoicing\Listeners\RefreshOrderReservationOnExpiryListener;
 use Modules\Invoicing\Listeners\TreasuryCollectionEventListener;
 use Modules\Invoicing\Listeners\TriggerWorkflowOnQuoteSubmissionListener;
 use Modules\Invoicing\Listeners\WorkflowApprovalInvoicingListener;
@@ -102,6 +104,9 @@ final class InvoicingServiceProvider extends ServiceProvider
 
         // 3. Module 24 Treasury -> Collections Clearing
         Event::listen(CollectionReceivedEvent::class, [TreasuryCollectionEventListener::class, 'handle']);
+
+        // Module 14 Inventory -> a lapsed reservation of an order line updates the order
+        Event::listen(StockReservationExpiredEvent::class, [RefreshOrderReservationOnExpiryListener::class, 'handle']);
 
         // 4. Invoicing Domain Events -> Transactional Outbox
         Event::listen(SalesQuoteCreatedEvent::class, DispatchOutboxOnInvoicingEventListener::class);

@@ -13,6 +13,7 @@ use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\LedgerAmount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 use Modules\Procurement\Events\PurchaseLiabilityReadyEvent;
@@ -55,14 +56,14 @@ final class ProcurementAccountingListener
             'lines' => [
                 [
                     'account_id' => $encumbranceExpAcc->id,
-                    'debit_amount' => $event->committedAmount,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->committedAmount, 4),
+                    'credit_amount' => '0',
                     'description' => 'PO Encumbrance',
                 ],
                 [
                     'account_id' => $encumbranceResAcc->id,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => $event->committedAmount,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->committedAmount, 4),
                     'description' => 'PO Encumbrance Reserve',
                 ],
             ],
@@ -79,8 +80,8 @@ final class ProcurementAccountingListener
 
         $reason = $event->reason ?? ($event->cancellationReason ?? 'Cancelled');
 
-        $amount = (float) ($event->cancelledAmount ?? 0.0);
-        if ($amount <= 0.0) {
+        $amount = LedgerAmount::of($event->cancelledAmount ?? '0', 4);
+        if (! Decimal::isPositive($amount)) {
             $encEntry = DB::table('journal_entries')
                 ->join('journal_lines', 'journal_entries.id', '=', 'journal_lines.journal_entry_id')
                 ->where('journal_entries.tenant_id', $event->tenantId)
@@ -88,10 +89,10 @@ final class ProcurementAccountingListener
                 ->where('journal_entries.entry_number', 'LIKE', 'ENC-%')
                 ->where('journal_lines.debit_amount', '>', 0)
                 ->first();
-            $amount = (float) ($encEntry->debit_amount ?? 0.0);
+            $amount = LedgerAmount::of($encEntry->debit_amount ?? '0', 4);
         }
 
-        if ($amount <= 0.0) {
+        if (! Decimal::isPositive($amount)) {
             return;
         }
 
@@ -111,12 +112,12 @@ final class ProcurementAccountingListener
                 [
                     'account_id' => $encumbranceResAcc->id,
                     'debit_amount' => $amount,
-                    'credit_amount' => 0.0,
+                    'credit_amount' => '0',
                     'description' => 'Reverse Encumbrance Reserve',
                 ],
                 [
                     'account_id' => $encumbranceExpAcc->id,
-                    'debit_amount' => 0.0,
+                    'debit_amount' => '0',
                     'credit_amount' => $amount,
                     'description' => 'Reverse Encumbrance Expense',
                 ],
@@ -149,12 +150,12 @@ final class ProcurementAccountingListener
                 [
                     'account_id' => $invAcc->id,
                     'debit_amount' => $receiptValue,
-                    'credit_amount' => 0.0,
+                    'credit_amount' => '0',
                     'description' => "Inventory Receipt: {$event->supplierDeliveryNoteRef}",
                 ],
                 [
                     'account_id' => $grIrAcc->id,
-                    'debit_amount' => 0.0,
+                    'debit_amount' => '0',
                     'credit_amount' => $receiptValue,
                     'description' => 'GR/IR Clearing Liability',
                 ],
@@ -181,47 +182,51 @@ final class ProcurementAccountingListener
 
         // Without a purchase order there is no goods receipt to clear: the supply is a cost.
         $grIrAcc = $event->purchaseOrderId === ''
-            ? $this->resolveAccount($event->tenantId, '6000', 'Purchases and services (Acquisti e servizi)', 'expense', 'debit')
+            ? $this->accounts->purchaseExpense($event->tenantId)
             : $this->resolveAccount($event->tenantId, '2010', 'GR/IR Clearing Account', 'liability', 'credit');
-        $vatAcc = $this->resolveAccount($event->tenantId, '1400', 'IVA c/Acquisti (Purchase VAT)', 'asset', 'debit');
-        $apAcc = $this->resolveAccount($event->tenantId, '2000', 'Accounts Payable (Debiti v/Fornitori)', 'liability', 'credit');
-        $apAcc->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'supplier']);
+        $vatAcc = $this->accounts->inputVat($event->tenantId);
+        $apAcc = $this->accounts->payables($event->tenantId);
 
         $currency = ! empty($event->currency) ? $event->currency : TenantAccountingCurrency::of($event->tenantId);
+        $exchangeRate = LedgerAmount::of($event->exchangeRate, 6);
+        $taxAmount = LedgerAmount::of($event->taxAmount, 2);
+        $stampDuty = LedgerAmount::of($event->stampDutyAmount, 2);
+        $withholding = LedgerAmount::of($event->withholdingTaxAmount, 2);
+        $contribution = LedgerAmount::of($event->contributionAmount, 2);
 
-        $lines = $this->costLines($event, (string) $grIrAcc->id, $currency);
+        $lines = $this->costLines($event, (string) $grIrAcc->id, $currency, $exchangeRate);
 
-        if ((float) $event->taxAmount > 0) {
+        if (Decimal::isPositive($taxAmount)) {
             $lines[] = [
                 'account_id' => $vatAcc->id,
-                'debit_amount' => (float) $event->taxAmount,
-                'credit_amount' => 0.0,
+                'debit_amount' => $taxAmount,
+                'credit_amount' => '0',
                 'currency' => $currency,
-                'exchange_rate' => $event->exchangeRate,
-                'vat_base_amount' => (float) $event->netAmount,
-                'vat_tax_amount' => (float) $event->taxAmount,
+                'exchange_rate' => $exchangeRate,
+                'vat_base_amount' => LedgerAmount::of($event->netAmount, 2),
+                'vat_tax_amount' => $taxAmount,
                 'vat_rate_percent' => $this->effectiveVatRate($event),
                 'description' => "Input VAT for Invoice {$event->vendorInvoiceNumber}",
             ];
         }
 
-        if ($event->stampDutyAmount > 0) {
+        if (Decimal::isPositive($stampDuty)) {
             $lines[] = [
                 'account_id' => $this->accounts->stampDutyExpense($event->tenantId)->id,
-                'debit_amount' => $event->stampDutyAmount,
-                'credit_amount' => 0.0,
+                'debit_amount' => $stampDuty,
+                'credit_amount' => '0',
                 'currency' => $currency,
-                'exchange_rate' => $event->exchangeRate,
+                'exchange_rate' => $exchangeRate,
                 'description' => "Stamp duty charged on Invoice {$event->vendorInvoiceNumber}",
             ];
         }
 
         $lines[] = [
             'account_id' => $apAcc->id,
-            'debit_amount' => 0.0,
-            'credit_amount' => round((float) $event->grossAmount - $event->withholdingTaxAmount - $event->contributionAmount, 2),
+            'debit_amount' => '0',
+            'credit_amount' => Decimal::round2(Decimal::sub(Decimal::sub(LedgerAmount::of($event->grossAmount, 2), $withholding), $contribution)),
             'currency' => $currency,
-            'exchange_rate' => $event->exchangeRate,
+            'exchange_rate' => $exchangeRate,
             'partner_type' => 'supplier',
             'partner_id' => $event->supplierId,
             'due_date' => $event->dueDate,
@@ -229,18 +234,18 @@ final class ProcurementAccountingListener
         ];
 
         $withheld = [
-            [$event->withholdingTaxAmount, $this->accounts->withholdingPayable(...)],
-            [$event->contributionAmount, $this->accounts->contributionsPayable(...)],
+            [$withholding, $this->accounts->withholdingPayable(...)],
+            [$contribution, $this->accounts->contributionsPayable(...)],
         ];
 
         foreach ($withheld as [$amount, $account]) {
-            if ($amount > 0) {
+            if (Decimal::isPositive($amount)) {
                 $lines[] = [
                     'account_id' => $account($event->tenantId)->id,
-                    'debit_amount' => 0.0,
+                    'debit_amount' => '0',
                     'credit_amount' => $amount,
                     'currency' => $currency,
-                    'exchange_rate' => $event->exchangeRate,
+                    'exchange_rate' => $exchangeRate,
                     'description' => "Withheld on Invoice {$event->vendorInvoiceNumber}",
                 ];
             }
@@ -276,24 +281,24 @@ final class ProcurementAccountingListener
      *
      * @return list<array<string, mixed>>
      */
-    private function costLines(PurchaseLiabilityReadyEvent $event, string $defaultAccountId, string $currency): array
+    private function costLines(PurchaseLiabilityReadyEvent $event, string $defaultAccountId, string $currency, string $exchangeRate): array
     {
-        $line = fn (string $accountId, float $amount): array => [
+        $line = fn (string $accountId, string $amount): array => [
             'account_id' => $accountId,
             'debit_amount' => $amount,
-            'credit_amount' => 0.0,
+            'credit_amount' => '0',
             'currency' => $currency,
-            'exchange_rate' => $event->exchangeRate,
+            'exchange_rate' => $exchangeRate,
             'description' => "Clear GR/IR: Invoice {$event->vendorInvoiceNumber}",
         ];
 
         $allocations = $event->purchaseOrderId === '' ? $event->costAllocations : [];
-        $lines = array_map(static fn (array $allocation): array => $line($allocation['account_id'], $allocation['amount']), $allocations);
-        $allocated = array_reduce($allocations, static fn (string $sum, array $allocation): string => bcadd($sum, number_format($allocation['amount'], 2, '.', ''), 2), '0.00');
-        $remaining = bcsub(number_format($event->netAmount, 2, '.', ''), $allocated, 2);
+        $lines = array_map(static fn (array $allocation): array => $line($allocation['account_id'], LedgerAmount::of($allocation['amount'], 2)), $allocations);
+        $allocated = array_reduce($allocations, static fn (string $sum, array $allocation): string => bcadd($sum, LedgerAmount::of($allocation['amount'], 2), 2), '0.00');
+        $remaining = bcsub(LedgerAmount::of($event->netAmount, 2), $allocated, 2);
 
         if (bccomp($remaining, '0', 2) !== 0 || $lines === []) {
-            $lines[] = $line($defaultAccountId, (float) $remaining);
+            $lines[] = $line($defaultAccountId, $remaining);
         }
 
         return $lines;
@@ -312,8 +317,8 @@ final class ProcurementAccountingListener
                 throw new LedgerPostingException("Goods receipt {$event->receiptNumber}: a line has no unit cost.");
             }
 
-            $quantity = number_format((float) ($line['quantity_accepted'] ?? $line['quantity_received'] ?? 0.0), 4, '.', '');
-            $total = Decimal::add($total, Decimal::mul($quantity, number_format((float) $line['unit_cost'], 4, '.', '')));
+            $quantity = LedgerAmount::of($line['quantity_accepted'] ?? $line['quantity_received'] ?? '0', 4);
+            $total = Decimal::add($total, Decimal::mul($quantity, LedgerAmount::of($line['unit_cost'], 4)));
         }
 
         if (! Decimal::isPositive($total)) {

@@ -14,4 +14,10 @@ interface InventoryReplenishmentServiceInterface
     public function computeAbcClassification(string $tenantId): array;
 
     public function calculateSafetyStock(StockItem $item, int $leadTimeDays, float $serviceLevelFactor = 1.65): float;
+
+    /**
+     * Available quantity of the item in the warehouse as a decimal string: on hand minus reserved, outside quarantine
+     * and transit zones and quarantined lots. The one availability rule other modules (Procurement) must read.
+     */
+    public function availableInWarehouse(StockItem $item, string $warehouseId): string;
 }

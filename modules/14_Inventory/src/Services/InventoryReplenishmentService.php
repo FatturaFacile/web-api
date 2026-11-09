@@ -71,9 +71,7 @@ final class InventoryReplenishmentService implements InventoryReplenishmentServi
             return null;
         }
 
-        $available = Quantity::of((string) $item->quants()
-            ->whereHas('bin.rack.aisle.zone', static fn ($zone) => $zone->where('warehouse_id', $rule->warehouse_id)->whereNotIn('zone_type', StockAllocationPlanner::BLOCKED_ZONE_TYPES))
-            ->sum(DB::raw('quantity_on_hand - quantity_reserved')));
+        $available = $this->availableInWarehouse($item, (string) $rule->warehouse_id);
 
         $needs = Quantity::compare($available, (string) $rule->reorder_point) <= 0;
         $quantity = $needs ? Quantity::max((string) $rule->economic_order_quantity, Quantity::sub((string) $rule->max_stock_level, $available)) : Quantity::of(0);
@@ -93,6 +91,20 @@ final class InventoryReplenishmentService implements InventoryReplenishmentServi
             'preferred_supplier_id' => $rule->preferred_supplier_id !== null ? (string) $rule->preferred_supplier_id : null,
             'lead_time_days' => (int) $rule->lead_time_days,
         ];
+    }
+
+    /**
+     * What the warehouse can still give of the item for replenishment purposes: on hand minus reserved, leaving out the
+     * bins of quarantine and transit zones and the quants of quarantined lots (the same stock the allocation planner
+     * never hands to an order). Procurement reads it through the interface, so a purchase suggestion and the Inventory
+     * replenishment report always agree on the position of a rule.
+     */
+    public function availableInWarehouse(StockItem $item, string $warehouseId): string
+    {
+        return Quantity::of((string) $item->quants()
+            ->whereHas('bin.rack.aisle.zone', static fn ($zone) => $zone->where('warehouse_id', $warehouseId)->whereNotIn('zone_type', StockAllocationPlanner::BLOCKED_ZONE_TYPES))
+            ->where(static fn ($quant) => $quant->whereNull('lot_id')->orWhereHas('lot', static fn ($lot) => $lot->where('is_quarantined', false)))
+            ->sum(DB::raw('quantity_on_hand - quantity_reserved')));
     }
 
     /**

@@ -7,24 +7,55 @@ namespace Modules\GeneralLedger\Services;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantPreferences;
 use Illuminate\Support\Str;
+use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Treasury\Models\BankAccount;
 
 /**
- * The accounts of the postings between documents and cash. They use the codes the posting listeners already write to,
- * created on first use. A bank account of Treasury linked to a ledger account takes precedence over the default.
+ * The accounts of the postings between documents and cash. A role the tenant configured in the General Ledger settings
+ * (PostingAccountResolver: `gl_default_posting_accounts`, then the accounting preferences) wins; otherwise the codes the
+ * posting listeners always wrote to are used, created on first use, so a tenant that configured nothing keeps posting
+ * exactly as before. A bank account of Treasury linked to a ledger account takes precedence over the default.
  */
 final class LedgerAccountResolver
 {
+    public function __construct(private readonly PostingAccountResolver $postingAccounts = new PostingAccountResolver) {}
+
+    /**
+     * The customer control account: the configured receivables account, else 1100.
+     */
     public function receivables(string $tenantId): ChartOfAccount
     {
-        return $this->controlAccount($tenantId, '1100', 'Accounts Receivable (Crediti v/Clienti)', 'asset', 'debit', 'customer');
+        return $this->configuredControlAccount($tenantId, PostingAccountRole::Receivables, 'customer')
+            ?? $this->controlAccount($tenantId, '1100', 'Accounts Receivable (Crediti v/Clienti)', 'asset', 'debit', 'customer');
     }
 
+    /**
+     * The supplier control account: the configured payables account, else 2000.
+     */
     public function payables(string $tenantId): ChartOfAccount
     {
-        return $this->controlAccount($tenantId, '2000', 'Accounts Payable (Debiti v/Fornitori)', 'liability', 'credit', 'supplier');
+        return $this->configuredControlAccount($tenantId, PostingAccountRole::Payables, 'supplier')
+            ?? $this->controlAccount($tenantId, '2000', 'Accounts Payable (Debiti v/Fornitori)', 'liability', 'credit', 'supplier');
+    }
+
+    /**
+     * The revenue of a sales line that names no account of its own: the configured sales revenue account, else 4000.
+     */
+    public function salesRevenue(string $tenantId): ChartOfAccount
+    {
+        return $this->postingAccounts->account($tenantId, PostingAccountRole::SalesRevenue)
+            ?? $this->account($tenantId, '4000', 'Sales Revenue (Ricavi delle Vendite)', 'revenue', 'credit');
+    }
+
+    /**
+     * The cost of a supplier invoice not matched to a goods receipt: the configured purchase expense account, else 6000.
+     */
+    public function purchaseExpense(string $tenantId): ChartOfAccount
+    {
+        return $this->postingAccounts->account($tenantId, PostingAccountRole::PurchaseExpense)
+            ?? $this->account($tenantId, '6000', 'Purchases and services (Acquisti e servizi)', 'expense', 'debit');
     }
 
     public function bankCharges(string $tenantId): ChartOfAccount
@@ -32,9 +63,13 @@ final class LedgerAccountResolver
         return $this->account($tenantId, '6800', 'Bank charges (Spese bancarie)', 'expense', 'debit');
     }
 
+    /**
+     * Cash rounding and small payment differences: the configured rounding account, else 6960.
+     */
     public function rounding(string $tenantId): ChartOfAccount
     {
-        return $this->account($tenantId, '6960', 'Rounding differences (Arrotondamenti)', 'expense', 'debit');
+        return $this->postingAccounts->account($tenantId, PostingAccountRole::Rounding)
+            ?? $this->account($tenantId, '6960', 'Rounding differences (Arrotondamenti)', 'expense', 'debit');
     }
 
     /**
@@ -108,14 +143,22 @@ final class LedgerAccountResolver
         return $this->account($tenantId, '6975', 'IVA su autofatture (VAT on self-invoices)', 'expense', 'debit');
     }
 
+    /**
+     * Output VAT of sales documents: the configured output VAT account, else 2200.
+     */
     public function outputVat(string $tenantId): ChartOfAccount
     {
-        return $this->account($tenantId, '2200', 'IVA c/Vendite (Sales Output VAT)', 'liability', 'credit');
+        return $this->postingAccounts->account($tenantId, PostingAccountRole::OutputVat)
+            ?? $this->account($tenantId, '2200', 'IVA c/Vendite (Sales Output VAT)', 'liability', 'credit');
     }
 
+    /**
+     * Input VAT of purchase documents: the configured input VAT account, else 1400.
+     */
     public function inputVat(string $tenantId): ChartOfAccount
     {
-        return $this->account($tenantId, '1400', 'IVA c/Acquisti (Purchase VAT)', 'asset', 'debit');
+        return $this->postingAccounts->account($tenantId, PostingAccountRole::InputVat)
+            ?? $this->account($tenantId, '1400', 'IVA c/Acquisti (Purchase VAT)', 'asset', 'debit');
     }
 
     public function cash(string $tenantId): ChartOfAccount
@@ -165,6 +208,21 @@ final class LedgerAccountResolver
         }
 
         return $this->controlAccount($tenantId, '1020', 'Bank (Banca c/c)', 'asset', 'debit', 'bank');
+    }
+
+    /**
+     * The configured account of a control role, flagged as a reconciliation account of the partner type as the default
+     * control accounts are, so open items and partner balances work on it the same way.
+     */
+    private function configuredControlAccount(string $tenantId, PostingAccountRole $role, string $reconciliationType): ?ChartOfAccount
+    {
+        $account = $this->postingAccounts->account($tenantId, $role);
+
+        if ($account !== null && ($account->reconciliation_type !== $reconciliationType || ! $account->is_reconciliation_account)) {
+            $account->update(['is_reconciliation_account' => true, 'reconciliation_type' => $reconciliationType]);
+        }
+
+        return $account;
     }
 
     private function controlAccount(string $tenantId, string $code, string $name, string $type, string $normalBalance, string $reconciliationType): ChartOfAccount

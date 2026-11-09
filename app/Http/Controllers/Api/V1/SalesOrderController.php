@@ -277,7 +277,7 @@ class SalesOrderController extends Controller
     )]
     public function createDepositInvoice(DepositInvoiceRequest $request, string $id): JsonResponse
     {
-        $invoice = $this->toInvoice->depositFromOrder(SalesOrder::with('items')->findOrFail($id), (float) $request->validated('percentage'));
+        $invoice = $this->toInvoice->depositFromOrder(SalesOrder::with('items')->findOrFail($id), DocumentTotalsCalculator::decimal($request->validated('percentage')));
 
         return $this->successResponse(new InvoiceResource($invoice), __('sales.messages.deposit_invoiced'), Response::HTTP_CREATED);
     }

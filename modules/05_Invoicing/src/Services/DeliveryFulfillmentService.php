@@ -294,7 +294,12 @@ final class DeliveryFulfillmentService implements DeliveryFulfillmentServiceInte
             $tenantId = (string) $locked->tenant_id;
             $order = $locked->sales_order_id !== null ? SalesOrder::query()->with('items')->whereKey($locked->sales_order_id)->lockForUpdate()->first() : null;
             $reservations = $this->reservations ?? app(SalesOrderStockReservations::class);
-            $hadReservations = $order !== null && $order->items->contains(static fn (SalesOrderItem $item): bool => Decimal::isPositive(DocumentTotalsCalculator::decimal($item->quantity_reserved)));
+            // Reservations of the order made here (mirrored on the lines) or by the warehouse flow of the inventory
+            // module (not mirrored) are given back before the issue, so the stock leaves from free quantities.
+            $hadReservations = $order !== null && (
+                $order->items->contains(static fn (SalesOrderItem $item): bool => Decimal::isPositive(DocumentTotalsCalculator::decimal($item->quantity_reserved)))
+                || $reservations->hasActiveReservations($order)
+            );
 
             if ($hadReservations) {
                 $reservations->release($order);

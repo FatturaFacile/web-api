@@ -7,8 +7,12 @@ namespace Modules\Procurement\Services;
 use App\Enums\PurchaseOrderStatus;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\Inventory\Contracts\InventoryReplenishmentServiceInterface;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockReorderRule;
+use Modules\Inventory\Services\ProductStockItemResolver;
+use Modules\Invoicing\Models\SalesOrder;
+use Modules\Invoicing\Models\SalesOrderItem;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
 use Modules\Procurement\Exceptions\ProcurementRuleViolation;
 use Modules\Procurement\Models\PurchaseOrder;
@@ -16,16 +20,23 @@ use Modules\Procurement\Models\PurchaseSuggestion;
 use Modules\Procurement\Support\Decimal;
 
 /**
- * Purchase suggestions from inventory reorder rules (available plus on-order stock at or below the reorder point:
+ * Purchase suggestions from inventory reorder rules (available stock, as the inventory module defines it through
+ * InventoryReplenishmentServiceInterface::availableInWarehouse so quarantine and transit zones and quarantined lots never
+ * count, plus on-order stock at or below the reorder point:
  * order the economic quantity, or up to the maximum level when more is missing) and from MRP planned purchase orders.
  * Each suggestion gets the cheapest valid supplier offer for the item (the preferred supplier of the rule when it has
  * one), and open suggestions are converted into one draft purchase order per supplier.
  */
 final readonly class PurchaseSuggestionService
 {
+    /** Source of the suggestions made for a sales order line (buy to order, drop-ship). */
+    public const string SalesOrderLineSource = 'sales_order_line';
+
     public function __construct(
         private SupplierPriceService $prices,
         private ProcurementService $procurement,
+        private InventoryReplenishmentServiceInterface $inventory,
+        private ProductStockItemResolver $stockItems,
     ) {}
 
     /**
@@ -46,7 +57,7 @@ final readonly class PurchaseSuggestionService
                     continue;
                 }
 
-                $position = Decimal::add($this->availableIn($item, (string) $rule->warehouse_id), $this->onOrder($tenantId, $item), 4);
+                $position = Decimal::add($this->inventory->availableInWarehouse($item, (string) $rule->warehouse_id), $this->onOrder($tenantId, $item), 4);
 
                 if (Decimal::cmp($position, (string) $rule->reorder_point, 4) > 0) {
                     continue;
@@ -130,6 +141,57 @@ final readonly class PurchaseSuggestionService
     }
 
     /**
+     * A purchase suggestion for the open quantity (ordered less delivered) of a sales order line, for the lines a
+     * company buys to order or has the supplier ship to the customer (drop-ship). The line must belong to an order of
+     * the tenant and sell a product with a stock item; the suggestion gets the cheapest valid supplier offer for its SKU
+     * and the order's due date as required-by date. Asking twice returns the open suggestion of the line instead of a
+     * second one (source `sales_order_line`).
+     *
+     * @throws ProcurementRuleViolation when the line is not an open line of an order of the tenant, or its product has
+     *                                  no stock item
+     */
+    public function suggestForSalesOrderLine(string $tenantId, string $salesOrderItemId): PurchaseSuggestion
+    {
+        return DB::transaction(function () use ($tenantId, $salesOrderItemId): PurchaseSuggestion {
+            $line = SalesOrderItem::withoutGlobalScopes()->whereKey($salesOrderItemId)->first();
+            $order = $line !== null
+                ? SalesOrder::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereKey($line->sales_order_id)->whereNull('deleted_at')->first()
+                : null;
+
+            if ($line === null || $order === null) {
+                throw new ProcurementRuleViolation('The sales order line does not exist in the active company.', 'sales_order_item_id');
+            }
+
+            $existing = PurchaseSuggestion::query()
+                ->where('tenant_id', $tenantId)
+                ->where('source', self::SalesOrderLineSource)
+                ->where('source_id', (string) $line->id)
+                ->where('status', 'open')
+                ->first();
+
+            if ($existing !== null) {
+                return $existing;
+            }
+
+            $item = $line->product_id !== null ? $this->stockItems->find((string) $line->product_id, $tenantId) : null;
+
+            if ($item === null) {
+                throw new ProcurementRuleViolation('The product of the sales order line has no stock item to buy.', 'sales_order_item_id');
+            }
+
+            $open = Decimal::sub(Decimal::of((string) $line->quantity, 4), Decimal::of((string) ($line->quantity_delivered ?? '0'), 4), 4);
+
+            if (! Decimal::isPositive($open)) {
+                throw new ProcurementRuleViolation('The sales order line has no open quantity left to buy.', 'sales_order_item_id');
+            }
+
+            $dueDate = $order->getRawOriginal('due_date');
+
+            return $this->suggest($tenantId, self::SalesOrderLineSource, (string) $line->id, $item, null, $open, $dueDate !== null ? substr((string) $dueDate, 0, 10) : null, null, now()->toDateString());
+        });
+    }
+
+    /**
      * Dismisses an open suggestion.
      */
     public function dismiss(PurchaseSuggestion $suggestion): PurchaseSuggestion
@@ -168,25 +230,6 @@ final readonly class PurchaseSuggestionService
     private function hasOpen(string $tenantId, string $source, string $sourceId): bool
     {
         return PurchaseSuggestion::query()->where('tenant_id', $tenantId)->where('source', $source)->where('source_id', $sourceId)->where('status', 'open')->exists();
-    }
-
-    /**
-     * Available stock (on hand less reserved) of the item in the bins of the warehouse.
-     */
-    private function availableIn(StockItem $item, string $warehouseId): string
-    {
-        $available = DB::table('stock_quants as q')
-            ->join('warehouse_bins as b', 'b.id', '=', 'q.warehouse_bin_id')
-            ->join('warehouse_racks as r', 'r.id', '=', 'b.warehouse_rack_id')
-            ->join('warehouse_aisles as a', 'a.id', '=', 'r.warehouse_aisle_id')
-            ->join('warehouse_zones as z', 'z.id', '=', 'a.warehouse_zone_id')
-            ->where('q.stock_item_id', $item->id)
-            ->where('z.warehouse_id', $warehouseId)
-            ->whereNull('q.deleted_at')
-            ->selectRaw('COALESCE(SUM(q.quantity_on_hand - q.quantity_reserved), 0) as available')
-            ->value('available');
-
-        return Decimal::of((string) $available, 4);
     }
 
     /**

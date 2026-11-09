@@ -16,6 +16,7 @@ use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\LedgerAmount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use Modules\Invoicing\Events\CreditNoteIssuedEvent;
@@ -61,22 +62,8 @@ final class CreditNoteAccountingListener
             normalBalance: 'debit'
         );
 
-        $vatReversalAcc = $this->resolveAccount(
-            tenantId: $event->tenantId,
-            code: '2200',
-            name: 'IVA c/Vendite (Sales Output VAT)',
-            type: 'liability',
-            normalBalance: 'credit'
-        );
-
-        $arAccount = $this->resolveAccount(
-            tenantId: $event->tenantId,
-            code: '1100',
-            name: 'Accounts Receivable (Crediti v/Clienti)',
-            type: 'asset',
-            normalBalance: 'debit'
-        );
-        $arAccount->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'customer']);
+        $vatReversalAcc = $this->accounts->outputVat($event->tenantId);
+        $arAccount = $this->accounts->receivables($event->tenantId);
 
         // A split-payment invoice left only the net on the receivable: its credit note takes back the same amount.
         $isSplitPayment = (bool) $creditNote?->split_payment;
@@ -92,7 +79,7 @@ final class CreditNoteAccountingListener
         }
 
         $currency = ! empty($creditNote?->currency) ? (string) $creditNote->currency : TenantAccountingCurrency::of($event->tenantId);
-        $exchangeRate = (float) ($creditNote?->exchange_rate ?: 1.0);
+        $exchangeRate = LedgerAmount::of($creditNote?->exchange_rate ?: '1', 6);
         $creditedGross = number_format($event->creditedAmount, 2, '.', '');
 
         // 4. Split the credited amount by the real rate of its lines, once the pension fund share and its VAT are set apart
@@ -107,9 +94,8 @@ final class CreditNoteAccountingListener
             $vatCredited = Decimal::add($vatCredited, $group['tax']);
         }
 
-        $netCredited = (float) Decimal::round2($netCredited);
-        $vatCredited = (float) Decimal::round2($vatCredited);
-        $creditedGross = (float) $creditedGross;
+        $netCredited = Decimal::round2($netCredited);
+        $vatCredited = Decimal::round2($vatCredited);
 
         // 5. Construct Balanced Reversal Journal Lines
         // Line 1: Debit Revenue Reversal
@@ -117,7 +103,7 @@ final class CreditNoteAccountingListener
             [
                 'account_id' => $revenueReversalAcc->id,
                 'debit_amount' => $netCredited,
-                'credit_amount' => 0.0,
+                'credit_amount' => '0',
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'cost_center_id' => $this->commonCostCentre($creditNote),
@@ -133,12 +119,12 @@ final class CreditNoteAccountingListener
 
             $lines[] = [
                 'account_id' => $vatReversalAcc->id,
-                'debit_amount' => (float) $group['tax'],
-                'credit_amount' => 0.0,
+                'debit_amount' => $group['tax'],
+                'credit_amount' => '0',
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
-                'vat_tax_amount' => (float) $group['tax'],
-                'vat_base_amount' => (float) $group['net'],
+                'vat_tax_amount' => $group['tax'],
+                'vat_base_amount' => $group['net'],
                 'vat_rate_percent' => $group['rate'],
                 'vat_treatment' => $isSplitPayment ? VatLedgerReader::TREATMENT_SPLIT_PAYMENT : null,
                 'description' => "VAT Reversal: Credit Note {$event->creditNoteNumber}",
@@ -149,8 +135,8 @@ final class CreditNoteAccountingListener
         if (Decimal::isPositive($fund['amount'])) {
             $lines[] = [
                 'account_id' => $fund['account_id'],
-                'debit_amount' => (float) $fund['amount'],
-                'credit_amount' => 0.0,
+                'debit_amount' => $fund['amount'],
+                'credit_amount' => '0',
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'description' => "Pension fund contribution reversed: Credit Note {$event->creditNoteNumber}",
@@ -160,12 +146,12 @@ final class CreditNoteAccountingListener
         if (Decimal::isPositive($fund['vat'])) {
             $lines[] = [
                 'account_id' => $vatReversalAcc->id,
-                'debit_amount' => (float) $fund['vat'],
-                'credit_amount' => 0.0,
+                'debit_amount' => $fund['vat'],
+                'credit_amount' => '0',
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
-                'vat_tax_amount' => (float) $fund['vat'],
-                'vat_base_amount' => (float) $fund['amount'],
+                'vat_tax_amount' => $fund['vat'],
+                'vat_base_amount' => $fund['amount'],
                 'vat_rate_percent' => $fund['rate'],
                 'vat_treatment' => $isSplitPayment ? VatLedgerReader::TREATMENT_SPLIT_PAYMENT : null,
                 'description' => "Pension fund VAT reversal: Credit Note {$event->creditNoteNumber}",
@@ -174,10 +160,10 @@ final class CreditNoteAccountingListener
 
         // Line 3: Credit Accounts Receivable, net of the withholding and the Enasarco the customer never paid
         $withheld = $this->withheldShare($creditNote);
-        $receivableCredit = (float) Decimal::round2(Decimal::sub($isSplitPayment ? Decimal::sub((string) $creditedGross, (string) $vatCredited) : (string) $creditedGross, Decimal::add($withheld['withholding'], $withheld['enasarco'])));
+        $receivableCredit = Decimal::round2(Decimal::sub($isSplitPayment ? Decimal::sub($creditedGross, $vatCredited) : $creditedGross, Decimal::add($withheld['withholding'], $withheld['enasarco'])));
         $lines[] = [
             'account_id' => $arAccount->id,
-            'debit_amount' => 0.0,
+            'debit_amount' => '0',
             'credit_amount' => $receivableCredit,
             'currency' => $currency,
             'exchange_rate' => $exchangeRate,
@@ -186,10 +172,10 @@ final class CreditNoteAccountingListener
             'description' => "AR Credit Offset: Credit Note {$event->creditNoteNumber}",
         ];
 
-        if ($isSplitPayment && $vatCredited > 0) {
+        if ($isSplitPayment && Decimal::isPositive($vatCredited)) {
             $lines[] = [
                 'account_id' => $vatReversalAcc->id,
-                'debit_amount' => 0.0,
+                'debit_amount' => '0',
                 'credit_amount' => $vatCredited,
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
@@ -200,8 +186,8 @@ final class CreditNoteAccountingListener
         if (Decimal::isPositive($withheld['withholding'])) {
             $lines[] = [
                 'account_id' => $this->accounts->withholdingReceivable($event->tenantId)->id,
-                'debit_amount' => 0.0,
-                'credit_amount' => (float) $withheld['withholding'],
+                'debit_amount' => '0',
+                'credit_amount' => $withheld['withholding'],
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'description' => "Withholding reversed: Credit Note {$event->creditNoteNumber}",
@@ -211,8 +197,8 @@ final class CreditNoteAccountingListener
         if (Decimal::isPositive($withheld['enasarco'])) {
             $lines[] = [
                 'account_id' => $this->accounts->enasarcoExpense($event->tenantId)->id,
-                'debit_amount' => 0.0,
-                'credit_amount' => (float) $withheld['enasarco'],
+                'debit_amount' => '0',
+                'credit_amount' => $withheld['enasarco'],
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'description' => "Enasarco reversed: Credit Note {$event->creditNoteNumber}",
@@ -309,10 +295,10 @@ final class CreditNoteAccountingListener
                 return [];
             }
 
-            $rate = Decimal::round2(number_format((float) $line['tax_rate'], 2, '.', ''));
-            $quantity = number_format((float) ($line['quantity'] ?? 1.0), 4, '.', '');
-            $unitPrice = number_format((float) ($line['unit_price'] ?? 0.0), 4, '.', '');
-            $discount = number_format((float) ($line['discount_percentage'] ?? 0.0), 2, '.', '');
+            $rate = Decimal::round2(LedgerAmount::of($line['tax_rate'], 2));
+            $quantity = LedgerAmount::of($line['quantity'] ?? '1', 4);
+            $unitPrice = LedgerAmount::of($line['unit_price'] ?? '0', 4);
+            $discount = LedgerAmount::of($line['discount_percentage'] ?? '0', 2);
             $net = Decimal::round2(Decimal::div(Decimal::mul(Decimal::mul($quantity, $unitPrice), Decimal::sub('100', $discount)), '100'));
             $current = $byRate[$rate] ?? ['rate' => $rate, 'net' => '0', 'tax' => '0'];
 

@@ -116,7 +116,7 @@ use OpenApi\Attributes as OA;
     schema: 'ProcurementSuggestionResource',
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'source', type: 'string', enum: ['reorder_rule', 'mrp']),
+        new OA\Property(property: 'source', description: 'reorder_rule (inventory reorder rule), mrp (planned purchase order of MRP) or sales_order_line (bought for a sales order line)', type: 'string', enum: ['reorder_rule', 'mrp', 'sales_order_line']),
         new OA\Property(property: 'stock_item_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'supplier_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'supplier_catalog_id', type: 'string', format: 'uuid', nullable: true),

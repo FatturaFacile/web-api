@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use Modules\SubscriptionBilling\Models\Subscription as EngineSubscription;
+use Modules\SubscriptionBilling\Models\SubscriptionPlan;
 
 uses(RefreshDatabase::class);
 
@@ -89,6 +91,19 @@ test('statistics summarise invoiced, paid, outstanding, overdue and payment beha
         ->and($stats['yearly_sales'])->toEqual(['2026' => 325.0, '2025' => 50.0])
         ->and($stats['documents']['quotes'])->toBe(1)
         ->and($stats['purchases'])->toEqual(['document_count' => 2, 'total' => 80.0]);
+});
+
+test('statistics count the active contracts of the subscription engine', function (): void {
+    $plan = SubscriptionPlan::factory()->create(['tenant_id' => $this->tenant->id]);
+    $contract = static fn (string $status, string $customerId) => EngineSubscription::factory()->create(['tenant_id' => test()->tenant->id, 'plan_id' => $plan->id, 'customer_id' => $customerId, 'status' => $status]);
+    $contract('active', (string) $this->contact->id);
+    $contract('active', (string) $this->contact->id);
+    $contract('cancelled', (string) $this->contact->id);
+    $contract('active', (string) Contact::create(['tenant_id' => $this->tenant->id, 'company_name' => 'Other Customer', 'country' => 'IT'])->id);
+
+    $stats = insightsApi()->getJson("/api/v1/crm/contacts/{$this->contact->id}/statistics")->assertOk()->json('data');
+
+    expect($stats['documents']['active_subscriptions'])->toBe(2);
 });
 
 test('statistics of a contact without activity are empty but well formed', function (): void {
