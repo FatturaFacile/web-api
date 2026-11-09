@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "3f6053a6-15ee-4251-91ac-62b03a6a008d",
+        "_postman_id": "d2f5b37c-5755-4ae3-b951-96b656539f86",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -10354,7 +10354,32 @@
                                 "assistant",
                                 "logs"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "outcome",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "user_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "from",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "to",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "List asked questions"
@@ -23623,7 +23648,7 @@
                     }
                 },
                 {
-                    "name": "Return the groups of the kindergarten",
+                    "name": "Return the groups of the kindergarten with the active children they hold and the places left",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -23650,7 +23675,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Return the groups of the kindergarten"
+                        "description": "Return the groups of the kindergarten with the active children they hold and the places left"
                     }
                 },
                 {
@@ -23820,6 +23845,76 @@
                             ]
                         },
                         "description": "Change the data of a child"
+                    }
+                },
+                {
+                    "name": "Return the children waiting for a place, in the order of their applications",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/childcare/waiting-list",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "childcare",
+                                "waiting-list"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return the children waiting for a place, in the order of their applications"
+                    }
+                },
+                {
+                    "name": "Admit a waiting child into a group with a free place",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/childcare/children/:id/admit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "childcare",
+                                "children",
+                                ":id",
+                                "admit"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Admit a waiting child into a group with a free place"
                     }
                 },
                 {
@@ -26684,6 +26779,564 @@
                                 }
                             ]
                         }
+                    }
+                },
+                {
+                    "name": "Return the diary of a site, latest day first",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/diary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "diary"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return the diary of a site, latest day first"
+                    }
+                },
+                {
+                    "name": "Write the diary of a day: weather, workers present, work performed and incidents",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/diary",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "diary"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Write the diary of a day: weather, workers present, work performed and incidents"
+                    }
+                },
+                {
+                    "name": "Correct a diary entry; the day itself does not change",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/diary/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "diary",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Correct a diary entry; the day itself does not change"
+                    }
+                },
+                {
+                    "name": "Return the safety and compliance documents of a site, with those of its subcontractors",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "documents"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return the safety and compliance documents of a site, with those of its subcontractors"
+                    }
+                },
+                {
+                    "name": "Record a safety or compliance document of the site or of a subcontractor, with its expiry date",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "documents"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Record a safety or compliance document of the site or of a subcontractor, with its expiry date"
+                    }
+                },
+                {
+                    "name": "Return the documents that are expired or expire within the given days, across every site",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/site-documents/expiring",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "site-documents",
+                                "expiring"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return the documents that are expired or expire within the given days, across every site"
+                    }
+                },
+                {
+                    "name": "Remove a document record (the file stays in the Documents module)",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/site-documents/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "site-documents",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Remove a document record (the file stays in the Documents module)"
+                    }
+                },
+                {
+                    "name": "Return the subcontractors of the company",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/subcontractors",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "subcontractors"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return the subcontractors of the company"
+                    }
+                },
+                {
+                    "name": "Register a subcontractor",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/subcontractors",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "subcontractors"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Register a subcontractor"
+                    }
+                },
+                {
+                    "name": "Change a subcontractor, or suspend it so that it takes no new subcontract",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/subcontractors/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "subcontractors",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Change a subcontractor, or suspend it so that it takes no new subcontract"
+                    }
+                },
+                {
+                    "name": "Return the subcontracts of a construction site",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/subcontracts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "subcontracts"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return the subcontracts of a construction site"
+                    }
+                },
+                {
+                    "name": "Entrust work on a site to a subcontractor for an agreed amount",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/sites/:id/subcontracts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "sites",
+                                ":id",
+                                "subcontracts"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Entrust work on a site to a subcontractor for an agreed amount"
+                    }
+                },
+                {
+                    "name": "Return a subcontract with its certifications and the amounts certified and left",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/subcontracts/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "subcontracts",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return a subcontract with its certifications and the amounts certified and left"
+                    }
+                },
+                {
+                    "name": "Certify work of the subcontractor",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/subcontracts/:id/certifications",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "subcontracts",
+                                ":id",
+                                "certifications"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Certify work of the subcontractor"
+                    }
+                },
+                {
+                    "name": "Complete or cancel an active subcontract",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/construction-trades/subcontracts/:id/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "construction-trades",
+                                "subcontracts",
+                                ":id",
+                                "status"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Complete or cancel an active subcontract"
                     }
                 },
                 {
@@ -35803,6 +36456,45 @@
                     }
                 },
                 {
+                    "name": "Verify a stored signature against the current XML of its document",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/signatures/:id/verify",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "signatures",
+                                ":id",
+                                "verify"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Verify a stored signature against the current XML of its document"
+                    }
+                },
+                {
                     "name": "List the preservation records of a document",
                     "request": {
                         "method": "GET",
@@ -38975,10 +39667,73 @@
                                 "edocument-networks",
                                 "transmissions"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "network",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "document_reference",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "List transmissions"
+                    }
+                },
+                {
+                    "name": "Show one transmission",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/edocument-networks/transmissions/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "edocument-networks",
+                                "transmissions",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show one transmission"
                     }
                 },
                 {
@@ -42726,7 +43481,7 @@
                         "description": "Creates a new work order in the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"work_type\": \"corrective\",\n    \"priority\": \"low\",\n    \"service_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"service_contract_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"asset_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ticket_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"project_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"service_team_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lead_technician_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"scheduled_start\": \"2026-01-31T12:00:00+00:00\",\n    \"scheduled_end\": \"2026-01-31T12:00:00+00:00\",\n    \"location_address\": \"string\",\n    \"billing_type\": \"contract_included\",\n    \"items\": \"string\"\n}",
+                            "raw": "{\n    \"title\": \"string\",\n    \"description\": \"string\",\n    \"work_type\": \"corrective\",\n    \"priority\": \"low\",\n    \"service_category_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"customer_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"service_contract_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"asset_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ticket_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"project_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"service_team_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"lead_technician_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"scheduled_start\": \"2026-01-31T12:00:00+00:00\",\n    \"scheduled_end\": \"2026-01-31T12:00:00+00:00\",\n    \"location_address\": \"string\",\n    \"items\": [\n        {\n            \"item_type\": \"labor\",\n            \"description\": \"string\",\n            \"quantity\": 1.5,\n            \"unit_cost\": 1.5,\n            \"unit_price\": 1.5,\n            \"is_billable\": false\n        }\n    ],\n    \"billing_type\": \"contract_included\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -42816,7 +43571,7 @@
                         "description": "Dispatches a work order to a technician",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"technician_id\": \"string\"\n}",
+                            "raw": "{\n    \"technician_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -42972,7 +43727,111 @@
                         "description": "Completes a work order with the completion notes and the customer signature",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"completion_notes\": \"string\",\n    \"resolution_summary\": \"string\",\n    \"customer_signature_url\": \"string\",\n    \"signed_by_customer_name\": \"string\",\n    \"signed_at\": \"string\"\n}",
+                            "raw": "{\n    \"completion_notes\": \"string\",\n    \"resolution_summary\": \"string\",\n    \"customer_signature_url\": \"string\",\n    \"signed_by_customer_name\": \"string\",\n    \"signed_at\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Issues a stocked part to a work order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/work-orders/:workOrder/parts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "work-orders",
+                                ":workOrder",
+                                "parts"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "workOrder",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Issues a stocked part to a work order",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"item_number\": \"string\",\n    \"quantity\": 1.5,\n    \"unit_cost\": 1.5,\n    \"unit_price\": 1.5,\n    \"description\": \"string\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Drafts the sales invoice of a completed work order",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/esm/work-orders/:workOrder/invoice",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "esm",
+                                "work-orders",
+                                ":workOrder",
+                                "invoice"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "workOrder",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Drafts the sales invoice of a completed work order",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"tax_rate\": 1.5,\n    \"due_date\": \"2026-01-31\",\n    \"revenue_account_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -44073,6 +44932,12 @@
                                     "description": ""
                                 },
                                 {
+                                    "key": "gateway_status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
                                     "key": "from",
                                     "value": "",
                                     "disabled": true,
@@ -44165,6 +45030,45 @@
                                 "fiscal-retail",
                                 "commercial-documents",
                                 ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/fiscal-retail/commercial-documents/:id/retransmit",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/fiscal-retail/commercial-documents/:id/retransmit",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "fiscal-retail",
+                                "commercial-documents",
+                                ":id",
+                                "retransmit"
                             ],
                             "query": [],
                             "variable": [
@@ -49458,6 +50362,254 @@
                             ]
                         },
                         "description": "Mark a kitchen ticket ready or served; its items follow"
+                    }
+                },
+                {
+                    "name": "Return the reservations of one calendar day of the venue (its own wall clock), in time order",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return the reservations of one calendar day of the venue (its own wall clock), in time order"
+                    }
+                },
+                {
+                    "name": "Book a table for a party. The table may be left out and assigned later; when given it must seat the party and be\nfree for the interval",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Book a table for a party. The table may be left out and assigned later; when given it must seat the party and be\nfree for the interval"
+                    }
+                },
+                {
+                    "name": "Return the active tables that seat the party and are free for the whole interval",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations/availability",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations",
+                                "availability"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return the active tables that seat the party and are free for the whole interval"
+                    }
+                },
+                {
+                    "name": "Return a reservation",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return a reservation"
+                    }
+                },
+                {
+                    "name": "Move a booked reservation: time, duration, party, table or guest details, with the same checks as a booking",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Move a booked reservation: time, duration, party, table or guest details, with the same checks as a booking"
+                    }
+                },
+                {
+                    "name": "Seat the guests of a booked reservation: opens the order of the table with the party size as covers",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations/:id/seat",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations",
+                                ":id",
+                                "seat"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Seat the guests of a booked reservation: opens the order of the table with the party size as covers"
+                    }
+                },
+                {
+                    "name": "Cancel, mark no-show or complete a reservation",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hospitality/reservations/:id/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hospitality",
+                                "reservations",
+                                ":id",
+                                "status"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Cancel, mark no-show or complete a reservation"
                     }
                 }
             ]
@@ -55124,6 +56276,45 @@
                     }
                 },
                 {
+                    "name": "POST /v1/integrations/api-keys/:id/rotate",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/integrations/api-keys/:id/rotate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "integrations",
+                                "api-keys",
+                                ":id",
+                                "rotate"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
                     "name": "DELETE /v1/integrations/api-keys/:id",
                     "request": {
                         "method": "DELETE",
@@ -59326,7 +60517,7 @@
                     }
                 },
                 {
-                    "name": "Manual signed stock correction (inventory count result)",
+                    "name": "Manual signed stock correction (inventory count result). Deprecated: it moves the stock at once, with no approval\nthreshold and no ledger entry. It keeps working unchanged for existing clients and flags every response with\n`X-Deprecated: true` and a `Link` header to the successor, POST /api/v1/inventory/adjustments (approval above the\ntenant threshold, valuation posted to the General Ledger)",
                     "request": {
                         "method": "POST",
                         "header": [
@@ -59357,7 +60548,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Manual signed stock correction (inventory count result)",
+                        "description": "Manual signed stock correction (inventory count result). Deprecated: it moves the stock at once, with no approval\nthreshold and no ledger entry. It keeps working unchanged for existing clients and flags every response with\n`X-Deprecated: true` and a `Link` header to the successor, POST /api/v1/inventory/adjustments (approval above the\ntenant threshold, valuation posted to the General Ledger)",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"product_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"warehouse_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"quantity\": 1.5,\n    \"notes\": \"string\"\n}",
@@ -66059,6 +67250,81 @@
                             }
                         }
                     }
+                },
+                {
+                    "name": "GET /v1/payment-links/:id",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payment-links/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payment-links",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/payment-links/:id/cancel",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payment-links/:id/cancel",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payment-links",
+                                ":id",
+                                "cancel"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
                 }
             ]
         },
@@ -71809,6 +73075,217 @@
                             ]
                         },
                         "description": "Reopen a closed period. Owners and administrators only"
+                    }
+                },
+                {
+                    "name": "Return the retainers, optionally of one client or one status",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/practice/retainers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "practice",
+                                "retainers"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return the retainers, optionally of one client or one status"
+                    }
+                },
+                {
+                    "name": "Register a retainer received from a client",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/practice/retainers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "practice",
+                                "retainers"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Register a retainer received from a client"
+                    }
+                },
+                {
+                    "name": "Return, per client, the retainers received, applied and still available",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/practice/retainers/balances",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "practice",
+                                "retainers",
+                                "balances"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Return, per client, the retainers received, applied and still available"
+                    }
+                },
+                {
+                    "name": "Apply part of a retainer to a fee note of the same client",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/practice/retainers/:id/apply",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "practice",
+                                "retainers",
+                                ":id",
+                                "apply"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Apply part of a retainer to a fee note of the same client"
+                    }
+                },
+                {
+                    "name": "Void a retainer entered by mistake, while nothing of it has been applied",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/practice/retainers/:id/void",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "practice",
+                                "retainers",
+                                ":id",
+                                "void"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Void a retainer entered by mistake, while nothing of it has been applied"
+                    }
+                },
+                {
+                    "name": "Return what a fee note still asks after the retainers applied to it",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/practice/fee-notes/:id/retainers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "practice",
+                                "fee-notes",
+                                ":id",
+                                "retainers"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return what a fee note still asks after the retainers applied to it"
                     }
                 }
             ]
@@ -82639,6 +84116,44 @@
                     }
                 },
                 {
+                    "name": "Show one flagged expense",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/tessera-sanitaria/expenses/:id",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tessera-sanitaria",
+                                "expenses",
+                                ":id"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Show one flagged expense"
+                    }
+                },
+                {
                     "name": "Remove the flag from a document",
                     "request": {
                         "method": "DELETE",
@@ -82674,6 +84189,44 @@
                             ]
                         },
                         "description": "Remove the flag from a document"
+                    }
+                },
+                {
+                    "name": "Totals of a payment year by expense type",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/tessera-sanitaria/summary?year=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "tessera-sanitaria",
+                                "summary"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Totals of a payment year by expense type"
                     }
                 },
                 {
@@ -89412,6 +90965,242 @@
                     }
                 },
                 {
+                    "name": "Return the time entries of a folder with the minutes and hours per technician",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workshop/folders/:id/time-entries",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workshop",
+                                "folders",
+                                ":id",
+                                "time-entries"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return the time entries of a folder with the minutes and hours per technician"
+                    }
+                },
+                {
+                    "name": "Enter time worked on a folder without clocking",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workshop/folders/:id/time-entries",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workshop",
+                                "folders",
+                                ":id",
+                                "time-entries"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Enter time worked on a folder without clocking"
+                    }
+                },
+                {
+                    "name": "Clock a technician on a folder in progress",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workshop/folders/:id/time-entries/start",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workshop",
+                                "folders",
+                                ":id",
+                                "time-entries",
+                                "start"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Clock a technician on a folder in progress"
+                    }
+                },
+                {
+                    "name": "Bill the unbilled time of a folder as labour lines, one per technician",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workshop/folders/:id/time-entries/bill",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workshop",
+                                "folders",
+                                ":id",
+                                "time-entries",
+                                "bill"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Bill the unbilled time of a folder as labour lines, one per technician"
+                    }
+                },
+                {
+                    "name": "Clock the technician off",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workshop/time-entries/:id/stop",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workshop",
+                                "time-entries",
+                                ":id",
+                                "stop"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Clock the technician off"
+                    }
+                },
+                {
+                    "name": "Return the service history of a vehicle: its folders with mileage and net total",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/workshop/vehicles/:id/history",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "workshop",
+                                "vehicles",
+                                ":id",
+                                "history"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Return the service history of a vehicle: its folders with mileage and net total"
+                    }
+                },
+                {
                     "name": "Return the recurring services with their subscription",
                     "request": {
                         "method": "GET",
@@ -90000,6 +91789,18 @@
                             "query": [
                                 {
                                     "key": "kind",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "contact_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "per_page",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""

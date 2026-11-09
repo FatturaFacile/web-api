@@ -22858,8 +22858,8 @@
                     "Inventory",
                     "Stock"
                 ],
-                "summary": "Record stock adjustment",
-                "description": "Record manual signed inventory quantity adjustment and valuation write-off/in.",
+                "summary": "Record stock adjustment (deprecated)",
+                "description": "DEPRECATED, use POST /api/v1/inventory/adjustments. Records a manual signed quantity correction of a product at once: no approval threshold applies and no General Ledger entry is posted for the valuation difference. Kept unchanged for existing clients; every response carries X-Deprecated: true and Link: </api/v1/inventory/adjustments>; rel=\"successor-version\". The successor creates an inventory adjustment per stock item and bin with a reason, goes through approval above the tenant threshold and posts the variance to the ledger.",
                 "operationId": "recordStockAdjustment",
                 "parameters": [
                     {
@@ -22935,7 +22935,24 @@
                         }
                     },
                     "403": {
-                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                        "description": "The role has no write access to the inventory module. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Product or warehouse not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "description": "Validation error",
@@ -22948,6 +22965,7 @@
                         }
                     }
                 },
+                "deprecated": true,
                 "security": [
                     {
                         "bearerAuth": [],
@@ -76594,6 +76612,301 @@
                 ]
             }
         },
+        "/api/v1/esm/work-orders/{workOrder}/parts": {
+            "post": {
+                "tags": [
+                    "ESM Work Orders"
+                ],
+                "summary": "Consume a part on a work order",
+                "description": "Issues a part of the company stock to a scheduled, dispatched or in-progress work order. The product is found by its SKU (`item_number`); when it tracks inventory the quantity leaves the warehouse through the inventory service. Cost and price default to the cost and sale price of the product. The work order cost and billable totals grow by the line, in exact decimal arithmetic.",
+                "operationId": "consumePartEsmWorkOrder",
+                "parameters": [
+                    {
+                        "name": "workOrder",
+                        "in": "path",
+                        "description": "Identifier of the work order",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "item_number",
+                                    "quantity"
+                                ],
+                                "properties": {
+                                    "item_number": {
+                                        "description": "SKU of a product of the company",
+                                        "type": "string",
+                                        "example": "BRUSH-ALT-88"
+                                    },
+                                    "quantity": {
+                                        "type": "string",
+                                        "example": "2"
+                                    },
+                                    "unit_cost": {
+                                        "description": "Defaults to the product cost price",
+                                        "type": "string",
+                                        "example": "15.00",
+                                        "nullable": true
+                                    },
+                                    "unit_price": {
+                                        "description": "Defaults to the product sale price",
+                                        "type": "string",
+                                        "example": "35.00",
+                                        "nullable": true
+                                    },
+                                    "description": {
+                                        "type": "string",
+                                        "nullable": true
+                                    },
+                                    "warehouse_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Part consumed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/ServiceManagementWorkOrderResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden: read-only role. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Work order not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Unknown item number, work order not open, or invalid quantity",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/esm/work-orders/{workOrder}/invoice": {
+            "post": {
+                "tags": [
+                    "ESM Work Orders"
+                ],
+                "summary": "Invoice a work order",
+                "description": "Drafts the sales invoice of a completed, billable work order through the invoicing service: one line per billable item and per consumed part, at the recorded prices, with the VAT rate stated in the request. The draft then follows the normal invoice flow (approval, posting, e-invoicing). The work order keeps `invoice_id`, is marked invoiced and refuses a second invoice.",
+                "operationId": "invoiceEsmWorkOrder",
+                "parameters": [
+                    {
+                        "name": "workOrder",
+                        "in": "path",
+                        "description": "Identifier of the work order",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "tax_rate"
+                                ],
+                                "properties": {
+                                    "tax_rate": {
+                                        "description": "VAT rate in percent applied to every line",
+                                        "type": "string",
+                                        "example": "22"
+                                    },
+                                    "due_date": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "revenue_account_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Invoice drafted",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "invoice_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                },
+                                                "invoice_number": {
+                                                    "type": "string"
+                                                },
+                                                "total_gross": {
+                                                    "type": "string",
+                                                    "example": "183.00"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden: read-only role. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Work order not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Not completed, not billable, internal, already invoiced or nothing to invoice",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/hr/employees": {
             "get": {
                 "tags": [
@@ -118742,7 +119055,7 @@
                     "Fiscal Retail"
                 ],
                 "summary": "List commercial documents",
-                "description": "Commercial documents of the active tenant, newest first. Filter with `document_type`, `from` and `to`.",
+                "description": "Commercial documents of the active tenant, newest first. Filter with `document_type`, `gateway_status` (`failed` lists the documents still to be transmitted), `from` and `to`.",
                 "operationId": "listCommercialDocuments",
                 "parameters": [
                     {
@@ -118756,6 +119069,15 @@
                                 "void",
                                 "return"
                             ]
+                        }
+                    },
+                    {
+                        "name": "gateway_status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "example": "failed"
                         }
                     },
                     {
@@ -119050,6 +119372,100 @@
                     },
                     "422": {
                         "description": "Already corrected, or not a sale",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/fiscal-retail/commercial-documents/{id}/retransmit": {
+            "post": {
+                "tags": [
+                    "Fiscal Retail"
+                ],
+                "summary": "Retransmit a failed commercial document",
+                "description": "Sends again, now, a document whose transmission failed (`gateway_status` = `failed`), with the same idempotency key as the first attempt. The scheduled retry does the same; this is for the operator who does not want to wait. The document is never changed, only its transmission outcome.",
+                "operationId": "retransmitCommercialDocument",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The document with the outcome of the new attempt",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The transmission did not fail: nothing to send again",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -119536,7 +119952,7 @@
                     "Assistant"
                 ],
                 "summary": "List asked questions",
-                "description": "Questions asked in this tenant. Owners and administrators only.",
+                "description": "Questions asked in this tenant, latest first. Owners and administrators only. Filter by `outcome` (`unmatched` shows what people asked that the catalogue cannot answer yet, `forbidden` what their role does not allow), by `user_id` and by period.",
                 "operationId": "getAssistantLogs",
                 "parameters": [
                     {
@@ -119548,6 +119964,47 @@
                         }
                     },
                     {
+                        "name": "outcome",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "answered",
+                                "unmatched",
+                                "forbidden",
+                                "failed"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "from",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
+                        "name": "to",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "date"
+                        }
+                    },
+                    {
                         "$ref": "#/components/parameters/XTenantId"
                     },
                     {
@@ -119555,9 +120012,6 @@
                     },
                     {
                         "$ref": "#/components/parameters/TenantIdQuery"
-                    },
-                    {
-                        "$ref": "#/components/parameters/UserIdQuery"
                     }
                 ],
                 "responses": {
@@ -119588,6 +120042,16 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filter",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
                                 }
                             }
                         }
@@ -119933,6 +120397,16 @@
                             }
                         }
                     },
+                    "409": {
+                        "description": "The document is already flagged: one document is one expense",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiProblemDetailsResponse"
+                                }
+                            }
+                        }
+                    },
                     "422": {
                         "description": "Flow disabled or invalid data",
                         "content": {
@@ -119953,6 +120427,88 @@
             }
         },
         "/api/v1/tessera-sanitaria/expenses/{id}": {
+            "get": {
+                "tags": [
+                    "Tessera Sanitaria"
+                ],
+                "summary": "Get a health expense",
+                "description": "One flagged health expense of the active tenant. The fiscal code of the patient is never returned.",
+                "operationId": "getHealthExpense",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The expense",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
             "delete": {
                 "tags": [
                     "Tessera Sanitaria"
@@ -120006,6 +120562,90 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/tessera-sanitaria/summary": {
+            "get": {
+                "tags": [
+                    "Tessera Sanitaria"
+                ],
+                "summary": "Summarize health expenses of a year",
+                "description": "Count and total of the health expenses paid in a year, by expense type, with the number of expenses whose patient opposed the transmission. Amounts are decimal strings. A check before the export, not a legal return.",
+                "operationId": "summarizeHealthExpenses",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 2027
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The totals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid year",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
                                 }
                             }
                         }
@@ -120200,6 +120840,7 @@
                             "enum": [
                                 "invoices",
                                 "purchases",
+                                "payments",
                                 "contacts"
                             ]
                         }
@@ -120283,7 +120924,7 @@
                     "Data Export"
                 ],
                 "summary": "Export dataset to CSV",
-                "description": "Excel-compatible CSV (semicolons, UTF-8 BOM) of invoices, purchases or contacts, optionally for a period.",
+                "description": "Excel-compatible CSV (semicolons, UTF-8 BOM) of invoices, purchases, payments (collections received on invoices, by payment date) or contacts, optionally for a period.",
                 "operationId": "exportDatasetCsv",
                 "parameters": [
                     {
@@ -120295,6 +120936,7 @@
                             "enum": [
                                 "invoices",
                                 "purchases",
+                                "payments",
                                 "contacts"
                             ]
                         }
@@ -120433,9 +121075,48 @@
                     "Document Networks"
                 ],
                 "summary": "List transmissions",
-                "description": "Documents handed to a driver.",
+                "description": "Documents handed to a driver, latest first, paginated. Filter by `network`, `status` or `document_reference`.",
                 "operationId": "listEDocumentTransmissions",
                 "parameters": [
+                    {
+                        "name": "network",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "ebill",
+                                "peppol",
+                                "nso"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "document_reference",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 100,
+                            "maximum": 100
+                        }
+                    },
                     {
                         "$ref": "#/components/parameters/XTenantId"
                     },
@@ -120473,6 +121154,95 @@
                     },
                     "403": {
                         "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/edocument-networks/transmissions/{id}": {
+            "get": {
+                "tags": [
+                    "Document Networks"
+                ],
+                "summary": "Get a transmission",
+                "description": "One transmission of the active tenant: the document reference, the recipient, the SHA-256 of the payload handed over, the driver that took it and the identifier it returned.",
+                "operationId": "getEDocumentTransmission",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The transmission",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/EDocumentTransmissionResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -120560,6 +121330,16 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The same payload was already handed to this network for this document reference",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiProblemDetailsResponse"
                                 }
                             }
                         }
@@ -120721,6 +121501,100 @@
                     },
                     "422": {
                         "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/integrations/api-keys/{id}/rotate": {
+            "post": {
+                "tags": [
+                    "Integrations"
+                ],
+                "summary": "Rotate API key",
+                "description": "Replaces a key without changing its name, scopes or expiry: the old key is revoked at once and a new one is created. The new token is returned only by this call. A key can never do more than the person who rotates it, so a user who has since lost access to a scope cannot carry it over (422).",
+                "operationId": "rotateApiKey",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "New key created, old key revoked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Key not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The key is revoked or expired, or the user no longer holds one of its scopes",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -120929,7 +121803,185 @@
                         }
                     },
                     "422": {
-                        "description": "Nothing to collect, or refused by the provider",
+                        "description": "Nothing to collect, a link is already open for the invoice, or refused by the provider",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payment-links/{id}": {
+            "get": {
+                "tags": [
+                    "Payment Links"
+                ],
+                "summary": "Get payment link",
+                "description": "One payment link of the active tenant, with its status (`open`, `paid`, `review` when the payment needs a person, `cancelled`, `failed`).",
+                "operationId": "getPaymentLink",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The link",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payment-links/{id}/cancel": {
+            "post": {
+                "tags": [
+                    "Payment Links"
+                ],
+                "summary": "Cancel payment link",
+                "description": "Withdraws an open link so that a new one can be created for the invoice (only one link per invoice can be open). The page stays alive at the provider until it expires: a payment that still arrives is not booked, the link goes to `review`.",
+                "operationId": "cancelPaymentLink",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Link cancelled",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The link is not open",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -121528,6 +122580,26 @@
                         }
                     },
                     {
+                        "name": "contact_id",
+                        "in": "query",
+                        "description": "Only the items exchanged with this CRM contact: the counterpart address contains the email of the contact. A contact of another tenant, or without an email, is refused.",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 200,
+                            "maximum": 200
+                        }
+                    },
+                    {
                         "$ref": "#/components/parameters/XTenantId"
                     },
                     {
@@ -121573,7 +122645,24 @@
                         }
                     },
                     "403": {
-                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Invalid filter, or unknown contact",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -150128,6 +151217,146 @@
                 ]
             }
         },
+        "/api/v1/document-trust/signatures/{id}/verify": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Verify a signature",
+                "description": "Checks a stored signature against the XML the document has now: a changed file, an altered signature or a missing document make it invalid. Only the binding between signature and content is checked; the certificate chain is NOT validated against a trust list (`trust_chain_validated` is always false), so a valid answer proves the document was not altered, not who signed it.",
+                "operationId": "verifyDocumentSignature",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The verification result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "signature_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                },
+                                                "document_type": {
+                                                    "type": "string",
+                                                    "enum": [
+                                                        "invoice",
+                                                        "passive_invoice"
+                                                    ]
+                                                },
+                                                "document_id": {
+                                                    "type": "string",
+                                                    "format": "uuid"
+                                                },
+                                                "driver": {
+                                                    "type": "string",
+                                                    "example": "cades"
+                                                },
+                                                "format": {
+                                                    "type": "string",
+                                                    "example": "cades-bes-p7m"
+                                                },
+                                                "valid": {
+                                                    "type": "boolean"
+                                                },
+                                                "reason": {
+                                                    "type": "string",
+                                                    "nullable": true,
+                                                    "enum": [
+                                                        "content_changed",
+                                                        "signature_invalid",
+                                                        "signature_unreadable",
+                                                        "document_missing"
+                                                    ]
+                                                },
+                                                "content_changed": {
+                                                    "type": "boolean"
+                                                },
+                                                "trust_chain_validated": {
+                                                    "type": "boolean",
+                                                    "example": false
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Signature not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/document-trust/preservation": {
             "get": {
                 "tags": [
@@ -151298,6 +152527,388 @@
                     },
                     "422": {
                         "$ref": "#/components/responses/WorkshopUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workshop/folders/{id}/time-entries": {
+            "get": {
+                "tags": [
+                    "Workshop"
+                ],
+                "summary": "List labour time",
+                "description": "Return the labour time entries of a folder, with the minutes and hours per technician and how much is not billed yet.",
+                "operationId": "listWorkshopTimeEntries",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/WorkshopId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Entries and totals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkshopTimeSummaryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/WorkshopUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/WorkshopForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/WorkshopNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Workshop"
+                ],
+                "summary": "Enter labour time",
+                "description": "Enter time worked on a folder that is not invoiced or cancelled, for work that was not clocked on the job.",
+                "operationId": "storeWorkshopTimeEntry",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/WorkshopId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkshopTimeEntryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Time entered",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkshopRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/WorkshopUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/WorkshopForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/WorkshopNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/WorkshopUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workshop/folders/{id}/time-entries/start": {
+            "post": {
+                "tags": [
+                    "Workshop"
+                ],
+                "summary": "Start labour time",
+                "description": "Clock a technician (the caller when not named) on a folder in progress. A technician works on one folder at a time: stop the running entry first.",
+                "operationId": "startWorkshopTimeEntry",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/WorkshopId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkshopTimeStartRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Time started",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkshopRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/WorkshopUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/WorkshopForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/WorkshopNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/WorkshopUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workshop/time-entries/{id}/stop": {
+            "post": {
+                "tags": [
+                    "Workshop"
+                ],
+                "summary": "Stop labour time",
+                "description": "Clock the technician off: the entry keeps the whole minutes elapsed, rounded down.",
+                "operationId": "stopWorkshopTimeEntry",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/WorkshopId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Time stopped",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkshopRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/WorkshopUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/WorkshopForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/WorkshopNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/WorkshopUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workshop/folders/{id}/time-entries/bill": {
+            "post": {
+                "tags": [
+                    "Workshop"
+                ],
+                "summary": "Bill labour time",
+                "description": "Turn the unbilled time of a folder into labour lines, one per technician, at the hourly rate and tax rate given in the request. Running entries must be stopped first; billed time is never billed twice. The lines then follow the quote, delivery note and invoice of the folder.",
+                "operationId": "billWorkshopTimeEntries",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/WorkshopId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/WorkshopTimeBillRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Labour lines created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkshopRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/WorkshopUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/WorkshopForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/WorkshopNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/WorkshopUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/workshop/vehicles/{id}/history": {
+            "get": {
+                "tags": [
+                    "Workshop"
+                ],
+                "summary": "Vehicle service history",
+                "description": "Return the service history of a customer vehicle: its folders, newest first, with status, mileage in and out, complaint and the net total of the lines.",
+                "operationId": "workshopVehicleHistory",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/WorkshopId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "History",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/WorkshopVehicleHistoryResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/WorkshopUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/WorkshopForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/WorkshopNotFound"
                     }
                 },
                 "security": [
@@ -153445,6 +155056,944 @@
                 ]
             }
         },
+        "/api/v1/construction-trades/sites/{id}/diary": {
+            "get": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "List site diary",
+                "description": "Return the diary of a construction site, latest day first.",
+                "operationId": "listTradesSiteDiary",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Diary entries",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Write diary entry",
+                "description": "Write the diary of a day of the site: weather, workers present, work performed and incidents. One entry per site and day.",
+                "operationId": "storeTradesSiteDiary",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesDiaryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Entry written",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/diary/{id}": {
+            "put": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Change diary entry",
+                "description": "Correct a diary entry: weather, workers present, work performed or incidents. The day does not change.",
+                "operationId": "updateTradesSiteDiary",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesDiaryRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Entry changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/sites/{id}/documents": {
+            "get": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "List site documents",
+                "description": "Return the safety and compliance documents of a site, including those of its subcontractors, soonest expiry first.",
+                "operationId": "listTradesSiteDocuments",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Documents",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Add site document",
+                "description": "Record a safety or compliance document of the site or of one of its subcontractors, with its expiry date. The file is uploaded in the Documents module and referenced by dms_document_id.",
+                "operationId": "storeTradesSiteDocument",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesSiteDocumentRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Document recorded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/site-documents/{id}": {
+            "delete": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Remove site document",
+                "description": "Remove a site document record. The file, if any, stays in the Documents module.",
+                "operationId": "destroyTradesSiteDocument",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Document removed"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/site-documents/expiring": {
+            "get": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Expiring site documents",
+                "description": "Return the safety and compliance documents that are expired or expire within the given number of days, across every site, soonest first. days_left is negative for an expired document.",
+                "operationId": "expiringTradesSiteDocuments",
+                "parameters": [
+                    {
+                        "name": "within_days",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 30
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Expiring documents",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesExpiringDocumentsResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/subcontractors": {
+            "get": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "List subcontractors",
+                "description": "Return the subcontractors of the company, by name.",
+                "operationId": "listTradesSubcontractors",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subcontractors",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Create subcontractor",
+                "description": "Register a subcontractor: a firm or craftsman that works on the sites of the company, optionally linked to a contact.",
+                "operationId": "storeTradesSubcontractor",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesSubcontractorRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Subcontractor created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/subcontractors/{id}": {
+            "put": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Change subcontractor",
+                "description": "Change a subcontractor, or suspend it (status suspended) so that it takes no new subcontract; existing ones continue.",
+                "operationId": "updateTradesSubcontractor",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesSubcontractorRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Subcontractor changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/sites/{id}/subcontracts": {
+            "get": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "List site subcontracts",
+                "description": "Return the subcontracts of a construction site with their subcontractor.",
+                "operationId": "listTradesSiteSubcontracts",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subcontracts",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Create subcontract",
+                "description": "Entrust work on a site to an active subcontractor for an agreed amount. With a bid the certified work flows into that bid's site costs; the bid must belong to the same site.",
+                "operationId": "storeTradesSubcontract",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesSubcontractRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Subcontract created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/subcontracts/{id}": {
+            "get": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Show subcontract",
+                "description": "Return a subcontract with its certifications and the contract, certified and remaining amounts.",
+                "operationId": "showTradesSubcontract",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Subcontract",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/subcontracts/{id}/certifications": {
+            "post": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Certify subcontractor work",
+                "description": "Certify work of the subcontractor on an active subcontract, never beyond the contract amount. When the subcontract belongs to a bid the amount is booked as a site cost of the bid.",
+                "operationId": "storeTradesSubcontractCertification",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesCertificationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Work certified",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/construction-trades/subcontracts/{id}/status": {
+            "post": {
+                "tags": [
+                    "Construction Trades"
+                ],
+                "summary": "Close subcontract",
+                "description": "Complete or cancel an active subcontract. Certified work stays as recorded.",
+                "operationId": "statusTradesSubcontract",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/TradesId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/TradesSubcontractStatusRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Subcontract closed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/TradesRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/TradesUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/TradesForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/TradesNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/TradesUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/construction-trades/work-cycles": {
             "get": {
                 "tags": [
@@ -154843,7 +157392,8 @@
                             "type": "string",
                             "enum": [
                                 "active",
-                                "left"
+                                "left",
+                                "waiting"
                             ]
                         }
                     },
@@ -155044,6 +157594,127 @@
                 "responses": {
                     "200": {
                         "description": "Child changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChildcareRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/ChildcareUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ChildcareForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ChildcareNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ChildcareUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/childcare/waiting-list": {
+            "get": {
+                "tags": [
+                    "Childcare"
+                ],
+                "summary": "Waiting list",
+                "description": "Return the children waiting for a place, in the order of their applications (enrolled_on is the application date), each with its position.",
+                "operationId": "childcareWaitingList",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Waiting children",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChildcareRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/ChildcareUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ChildcareForbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/childcare/children/{id}/admit": {
+            "post": {
+                "tags": [
+                    "Childcare"
+                ],
+                "summary": "Admit from waiting list",
+                "description": "Admit a child from the waiting list into a group (its own or the one given). The group must have a free place; the child becomes active on the date given, today by default.",
+                "operationId": "admitChildcareChild",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/ChildcareId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChildcareAdmitRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Child admitted",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -157060,6 +159731,382 @@
                 ]
             }
         },
+        "/api/v1/practice/retainers": {
+            "get": {
+                "tags": [
+                    "Practice Management"
+                ],
+                "summary": "List retainers",
+                "description": "Return the retainers received from clients, latest first, optionally of one client or one status (open, exhausted, void).",
+                "operationId": "listPracticeRetainers",
+                "parameters": [
+                    {
+                        "name": "client_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "open",
+                                "exhausted",
+                                "void"
+                            ]
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retainers",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PracticeDataResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PracticeUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PracticeForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PracticeUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Practice Management"
+                ],
+                "summary": "Record retainer",
+                "description": "Register a retainer (advance on account of fees) received from a client, for the whole client or one of its cases. The amount is a decimal string; the bank receipt itself is booked in Treasury.",
+                "operationId": "storePracticeRetainer",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PracticeRetainerRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Retainer recorded",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PracticeRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PracticeUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PracticeForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PracticeUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/practice/retainers/balances": {
+            "get": {
+                "tags": [
+                    "Practice Management"
+                ],
+                "summary": "Retainer balances",
+                "description": "Return, per client, the retainers received, applied to fee notes and still available. Void retainers are excluded.",
+                "operationId": "practiceRetainerBalances",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Balances per client",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PracticeDataResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PracticeUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PracticeForbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/practice/retainers/{id}/apply": {
+            "post": {
+                "tags": [
+                    "Practice Management"
+                ],
+                "summary": "Apply retainer to fee note",
+                "description": "Apply part of an open retainer to an unpaid fee note of the same client, never beyond what is left of the retainer or what the fee note still asks. The retainer becomes exhausted when fully applied.",
+                "operationId": "applyPracticeRetainer",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PracticeId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PracticeRetainerApplyRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Retainer applied",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PracticeRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PracticeUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PracticeForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/PracticeNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PracticeUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/practice/retainers/{id}/void": {
+            "post": {
+                "tags": [
+                    "Practice Management"
+                ],
+                "summary": "Void retainer",
+                "description": "Void a retainer entered by mistake. Refused once any part of it has been applied to a fee note.",
+                "operationId": "voidPracticeRetainer",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PracticeId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Retainer voided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PracticeRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PracticeUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PracticeForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/PracticeNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PracticeUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/practice/fee-notes/{id}/retainers": {
+            "get": {
+                "tags": [
+                    "Practice Management"
+                ],
+                "summary": "Retainers of a fee note",
+                "description": "Return the retainers applied to a fee note and what the fee note still asks after them.",
+                "operationId": "practiceFeeNoteRetainers",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PracticeId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Fee note retainers",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PracticeDataResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PracticeUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PracticeForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/PracticeNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/hospitality/rooms": {
             "get": {
                 "tags": [
@@ -158085,6 +161132,503 @@
                 "responses": {
                     "200": {
                         "description": "Ticket advanced",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/HospitalityNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/HospitalityUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/hospitality/reservations": {
+            "get": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Reservation calendar",
+                "description": "Return the reservations of one calendar day of the venue (its own wall clock), in time order, optionally of one room or one status.",
+                "operationId": "listHospitalityReservations",
+                "parameters": [
+                    {
+                        "name": "date",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date",
+                            "example": "2026-11-20"
+                        }
+                    },
+                    {
+                        "name": "room_id",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "booked",
+                                "seated",
+                                "completed",
+                                "cancelled",
+                                "no_show"
+                            ]
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reservations of the day",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/HospitalityUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Book table",
+                "description": "Book a table for a party. The table may be left out and assigned later; when given it must seat the party and be free for the interval. The instant carries its offset and is stored in UTC.",
+                "operationId": "storeHospitalityReservation",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HospitalityReservationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Reservation booked",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/HospitalityUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/hospitality/reservations/availability": {
+            "get": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Table availability",
+                "description": "Return the active tables that seat the party and are free for the whole interval: no overlapping booking and, when the interval includes now, no open order.",
+                "operationId": "hospitalityReservationAvailability",
+                "parameters": [
+                    {
+                        "name": "starts_at",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "date-time",
+                            "example": "2026-11-20T19:30:00+01:00"
+                        }
+                    },
+                    {
+                        "name": "duration_minutes",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 90
+                        }
+                    },
+                    {
+                        "name": "party_size",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "integer",
+                            "example": 4
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Free tables, smallest first",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordCollection"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/HospitalityUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/hospitality/reservations/{id}": {
+            "get": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Show reservation",
+                "description": "Return a reservation with its table.",
+                "operationId": "showHospitalityReservation",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/HospitalityId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reservation",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/HospitalityNotFound"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Reschedule reservation",
+                "description": "Move a booked reservation: time, duration, party, table or guest details, with the same checks as a booking. Only a booked reservation changes.",
+                "operationId": "updateHospitalityReservation",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/HospitalityId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HospitalityReservationRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Reservation changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/HospitalityNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/HospitalityUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/hospitality/reservations/{id}/seat": {
+            "post": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Seat guests",
+                "description": "Seat the guests of a booked reservation: opens the order of the table with the party size as covers. A table can be named now when the booking had none.",
+                "operationId": "seatHospitalityReservation",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/HospitalityId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HospitalityReservationSeatRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Guests seated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HospitalityRecordResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/HospitalityUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/HospitalityForbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/HospitalityNotFound"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/HospitalityUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/hospitality/reservations/{id}/status": {
+            "post": {
+                "tags": [
+                    "Hospitality"
+                ],
+                "summary": "Close reservation",
+                "description": "Cancel a booked reservation, mark it no-show, or complete a seated one. Cancelling and no-show need a reason.",
+                "operationId": "statusHospitalityReservation",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/HospitalityId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/HospitalityReservationStatusRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Status changed",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -167496,10 +171040,12 @@
                         "format": "uuid"
                     },
                     "source": {
+                        "description": "reorder_rule (inventory reorder rule), mrp (planned purchase order of MRP) or sales_order_line (bought for a sales order line)",
                         "type": "string",
                         "enum": [
                             "reorder_rule",
-                            "mrp"
+                            "mrp",
+                            "sales_order_line"
                         ]
                     },
                     "stock_item_id": {
@@ -178981,9 +182527,9 @@
                         ]
                     },
                     "total_cost": {
-                        "type": "number",
-                        "format": "double",
-                        "example": 1250
+                        "description": "Decimal string, never a float",
+                        "type": "string",
+                        "example": "1250.00"
                     }
                 },
                 "type": "object"
@@ -179851,13 +183397,42 @@
                     "location_address": {},
                     "billing_type": {},
                     "total_labor_hours": {
-                        "type": "number"
+                        "description": "Hours as a decimal string",
+                        "type": "string",
+                        "example": "3.00"
+                    },
+                    "labor_cost": {
+                        "description": "Decimal string, never a float",
+                        "type": "string",
+                        "example": "120.00"
+                    },
+                    "material_cost": {
+                        "description": "Decimal string, never a float",
+                        "type": "string",
+                        "example": "60.00"
                     },
                     "total_cost": {
-                        "type": "number"
+                        "description": "Decimal string, never a float",
+                        "type": "string",
+                        "example": "180.00"
                     },
                     "total_billed_amount": {
-                        "type": "number"
+                        "description": "Billable amount as a decimal string, never a float",
+                        "type": "string",
+                        "example": "345.00"
+                    },
+                    "currency": {
+                        "type": "string",
+                        "example": "EUR"
+                    },
+                    "is_invoiced": {
+                        "type": "boolean"
+                    },
+                    "invoice_id": {
+                        "description": "Draft invoice created by POST /esm/work-orders/{workOrder}/invoice",
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
                     },
                     "is_invoice_ready": {
                         "type": "boolean"
@@ -179974,7 +183549,9 @@
                         "type": "string"
                     },
                     "contract_value": {
-                        "type": "number"
+                        "description": "Annual value as a decimal string, never a float",
+                        "type": "string",
+                        "example": "12000.00"
                     },
                     "currency": {
                         "type": "string"
@@ -187666,9 +191243,9 @@
                         ]
                     },
                     "total_amount": {
-                        "type": "number",
-                        "format": "float",
-                        "example": 15420.5
+                        "description": "Sum of the debit side of the entry, as a decimal string (4 decimals)",
+                        "type": "string",
+                        "example": "15420.5000"
                     },
                     "description": {
                         "type": "string",
@@ -188325,7 +191902,9 @@
                         ]
                     },
                     "total_amount": {
-                        "type": "number"
+                        "description": "Sum of the debit side of the entry, as a decimal string (4 decimals) so no precision is lost",
+                        "type": "string",
+                        "example": "15420.5000"
                     },
                     "posted_at": {
                         "type": "string",
@@ -200275,6 +203854,157 @@
                 },
                 "type": "object"
             },
+            "WorkshopTimeStartRequest": {
+                "properties": {
+                    "technician_user_id": {
+                        "description": "Defaults to the caller",
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "WorkshopTimeEntryRequest": {
+                "required": [
+                    "technician_user_id",
+                    "started_at",
+                    "minutes"
+                ],
+                "properties": {
+                    "technician_user_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "started_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-11-09T08:00:00+01:00"
+                    },
+                    "minutes": {
+                        "type": "integer",
+                        "example": 90
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "WorkshopTimeBillRequest": {
+                "required": [
+                    "hourly_rate",
+                    "tax_rate"
+                ],
+                "properties": {
+                    "hourly_rate": {
+                        "description": "Labour rate per hour, chosen by the user",
+                        "type": "string",
+                        "example": "120.00"
+                    },
+                    "tax_rate": {
+                        "description": "Chosen by the user",
+                        "type": "string",
+                        "example": "8.10"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Mano d'opera officina",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "WorkshopTimeSummaryResponse": {
+                "properties": {
+                    "data": {
+                        "properties": {
+                            "entries": {
+                                "type": "array",
+                                "items": {
+                                    "type": "object"
+                                }
+                            },
+                            "technicians": {
+                                "type": "array",
+                                "items": {
+                                    "properties": {
+                                        "technician_user_id": {
+                                            "type": "string",
+                                            "format": "uuid"
+                                        },
+                                        "minutes": {
+                                            "type": "integer"
+                                        },
+                                        "hours": {
+                                            "type": "string"
+                                        },
+                                        "unbilled_minutes": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "type": "object"
+                    }
+                },
+                "type": "object"
+            },
+            "WorkshopVehicleHistoryResponse": {
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "folder_number": {
+                                    "type": "string"
+                                },
+                                "kind": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string"
+                                },
+                                "received_at": {
+                                    "type": "string",
+                                    "format": "date-time",
+                                    "nullable": true
+                                },
+                                "mileage_in": {
+                                    "type": "integer",
+                                    "nullable": true
+                                },
+                                "mileage_out": {
+                                    "type": "integer",
+                                    "nullable": true
+                                },
+                                "complaint": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "currency": {
+                                    "type": "string"
+                                },
+                                "net_total": {
+                                    "type": "string"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "WorkshopFolderRequest": {
                 "required": [
                     "vehicle_id",
@@ -201144,6 +204874,245 @@
                 },
                 "type": "object"
             },
+            "TradesSubcontractorRequest": {
+                "description": "A subcontractor. On PUT every field is optional.",
+                "required": [
+                    "name"
+                ],
+                "properties": {
+                    "name": {
+                        "type": "string",
+                        "example": "Elettro Ticino SA"
+                    },
+                    "contact_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "tax_id": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "trade": {
+                        "type": "string",
+                        "example": "Impianti elettrici",
+                        "nullable": true
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended"
+                        ]
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TradesSubcontractRequest": {
+                "required": [
+                    "subcontractor_id",
+                    "description",
+                    "contract_amount"
+                ],
+                "properties": {
+                    "subcontractor_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "bid_id": {
+                        "description": "Bid whose site costs receive the certified work",
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "Impianto elettrico, piani 1-3"
+                    },
+                    "contract_amount": {
+                        "type": "string",
+                        "example": "18500.00"
+                    },
+                    "starts_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "ends_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TradesCertificationRequest": {
+                "required": [
+                    "certified_on",
+                    "amount",
+                    "description"
+                ],
+                "properties": {
+                    "certified_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "amount": {
+                        "description": "Up to the contract amount still to certify",
+                        "type": "string",
+                        "example": "6000.00"
+                    },
+                    "description": {
+                        "type": "string",
+                        "example": "SAL 1 subappaltatore"
+                    }
+                },
+                "type": "object"
+            },
+            "TradesSubcontractStatusRequest": {
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "completed",
+                            "cancelled"
+                        ]
+                    }
+                },
+                "type": "object"
+            },
+            "TradesDiaryRequest": {
+                "description": "A day of the site diary. entry_date is required on creation and cannot be changed.",
+                "required": [
+                    "entry_date",
+                    "workers_present",
+                    "work_performed"
+                ],
+                "properties": {
+                    "entry_date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "weather": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "workers_present": {
+                        "type": "integer",
+                        "example": 6
+                    },
+                    "work_performed": {
+                        "type": "string"
+                    },
+                    "incidents": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TradesSiteDocumentRequest": {
+                "required": [
+                    "kind",
+                    "title"
+                ],
+                "properties": {
+                    "kind": {
+                        "type": "string",
+                        "enum": [
+                            "safety_plan",
+                            "risk_assessment",
+                            "insurance",
+                            "compliance_certificate",
+                            "training_certificate",
+                            "permit",
+                            "other"
+                        ]
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "subcontractor_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "dms_document_id": {
+                        "description": "File uploaded in the Documents module",
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "issued_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "expires_on": {
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "TradesExpiringDocumentsResponse": {
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "properties": {
+                                "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "construction_site_id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                },
+                                "subcontractor_id": {
+                                    "type": "string",
+                                    "format": "uuid",
+                                    "nullable": true
+                                },
+                                "subcontractor_name": {
+                                    "type": "string",
+                                    "nullable": true
+                                },
+                                "kind": {
+                                    "type": "string"
+                                },
+                                "title": {
+                                    "type": "string"
+                                },
+                                "expires_on": {
+                                    "type": "string",
+                                    "format": "date"
+                                },
+                                "expired": {
+                                    "type": "boolean"
+                                },
+                                "days_left": {
+                                    "type": "integer"
+                                }
+                            },
+                            "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
             "ConstructionSiteRequest": {
                 "description": "A construction site. On PUT and PATCH every field is optional.",
                 "required": [
@@ -201380,6 +205349,23 @@
                             "active",
                             "left"
                         ]
+                    }
+                },
+                "type": "object"
+            },
+            "ChildcareAdmitRequest": {
+                "properties": {
+                    "group_id": {
+                        "description": "Group to admit into; defaults to the group of the child",
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "enrolled_on": {
+                        "description": "Defaults to today of the company",
+                        "type": "string",
+                        "format": "date",
+                        "nullable": true
                     }
                 },
                 "type": "object"
@@ -202046,6 +206032,59 @@
                 },
                 "type": "object"
             },
+            "PracticeRetainerRequest": {
+                "required": [
+                    "client_id",
+                    "received_on",
+                    "amount"
+                ],
+                "properties": {
+                    "client_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "legal_case_id": {
+                        "description": "Restrict the retainer to one case of the client",
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "received_on": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "2000.00"
+                    },
+                    "reference": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PracticeRetainerApplyRequest": {
+                "required": [
+                    "fee_note_id",
+                    "amount"
+                ],
+                "properties": {
+                    "fee_note_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "amount": {
+                        "type": "string",
+                        "example": "500.00"
+                    }
+                },
+                "type": "object"
+            },
             "PracticeChecklistRequest": {
                 "required": [
                     "items"
@@ -202127,6 +206166,89 @@
                     },
                     "height": {
                         "type": "integer"
+                    }
+                },
+                "type": "object"
+            },
+            "HospitalityReservationRequest": {
+                "description": "A table reservation. On PUT every field is optional.",
+                "required": [
+                    "guest_name",
+                    "party_size",
+                    "starts_at",
+                    "duration_minutes"
+                ],
+                "properties": {
+                    "table_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "contact_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "nullable": true
+                    },
+                    "guest_name": {
+                        "type": "string",
+                        "example": "Famiglia Bianchi"
+                    },
+                    "guest_phone": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "guest_email": {
+                        "type": "string",
+                        "format": "email",
+                        "nullable": true
+                    },
+                    "party_size": {
+                        "type": "integer",
+                        "example": 4
+                    },
+                    "starts_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "example": "2026-11-20T19:30:00+01:00"
+                    },
+                    "duration_minutes": {
+                        "type": "integer",
+                        "example": 90
+                    },
+                    "notes": {
+                        "type": "string",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "HospitalityReservationSeatRequest": {
+                "properties": {
+                    "table_id": {
+                        "description": "Table to seat at, when the booking has none or the guests move",
+                        "type": "string",
+                        "format": "uuid"
+                    }
+                },
+                "type": "object"
+            },
+            "HospitalityReservationStatusRequest": {
+                "required": [
+                    "status"
+                ],
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "cancelled",
+                            "no_show",
+                            "completed"
+                        ]
+                    },
+                    "reason": {
+                        "description": "Required for cancelled and no_show",
+                        "type": "string",
+                        "nullable": true
                     }
                 },
                 "type": "object"

@@ -2227,6 +2227,101 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  '/v1/integrations/api-keys/{id}/rotate':
+    post:
+      operationId: integrations.api-keys.rotate
+      tags:
+        - ApiKey
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'API key rotated'
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                      tenant_id:
+                        type: string
+                      name:
+                        type: string
+                      prefix:
+                        type: string
+                      scopes:
+                        type: array
+                        items: {}
+                      expires_at:
+                        type:
+                          - string
+                          - 'null'
+                        format: date-time
+                      last_used_at:
+                        type:
+                          - string
+                          - 'null'
+                        format: date-time
+                      revoked_at:
+                        type:
+                          - string
+                          - 'null'
+                        format: date-time
+                      created_by:
+                        type:
+                          - string
+                          - 'null'
+                      created_at:
+                        type:
+                          - string
+                          - 'null'
+                        format: date-time
+                      updated_at:
+                        type:
+                          - string
+                          - 'null'
+                        format: date-time
+                      token:
+                        type: string
+                      replaces:
+                        type: string
+                    required:
+                      - id
+                      - tenant_id
+                      - name
+                      - prefix
+                      - scopes
+                      - expires_at
+                      - last_used_at
+                      - revoked_at
+                      - created_by
+                      - created_at
+                      - updated_at
+                      - token
+                      - replaces
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   '/v1/integrations/api-keys/{id}':
     delete:
       operationId: integrations.api-keys.revoke
@@ -4526,6 +4621,40 @@ paths:
       summary: 'List asked questions'
       tags:
         - Assistant
+      parameters:
+        -
+          name: outcome
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/AnswerOutcome'
+              -
+                type: 'null'
+        -
+          name: user_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: from
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
+        -
+          name: to
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: date
       responses:
         '200':
           description: ''
@@ -4576,6 +4705,8 @@ paths:
                     description: 'Error overview.'
                 required:
                   - message
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/attachments:
@@ -10722,7 +10853,7 @@ paths:
   /v1/childcare/groups:
     get:
       operationId: v1.childcare.groups.index
-      summary: 'Return the groups of the kindergarten'
+      summary: 'Return the groups of the kindergarten with the active children they hold and the places left'
       tags:
         - Child
       responses:
@@ -10847,6 +10978,63 @@ paths:
     put:
       operationId: v1.childcare.children.update
       summary: 'Change the data of a child'
+      tags:
+        - Child
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`ChildcareResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ChildcareResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/childcare/waiting-list:
+    get:
+      operationId: v1.childcare.waiting-list
+      summary: 'Return the children waiting for a place, in the order of their applications'
+      tags:
+        - Child
+      responses:
+        '200':
+          description: 'Array of `ChildcareResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ChildcareResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/childcare/children/{id}/admit':
+    post:
+      operationId: v1.childcare.children.admit
+      summary: 'Admit a waiting child into a group with a free place'
       tags:
         - Child
       parameters:
@@ -12121,6 +12309,14 @@ paths:
               - return
               - null
         -
+          name: gateway_status
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 30
+        -
           name: from
           in: query
           schema:
@@ -12255,6 +12451,42 @@ paths:
                   - meta
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/fiscal-retail/commercial-documents/{id}/retransmit':
+    post:
+      operationId: fiscal-retail.documents.retransmit
+      tags:
+        - CommercialDocument
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Commercial document retransmitted'
+                  data:
+                    $ref: '#/components/schemas/CommercialDocument'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
   '/v1/fiscal-retail/commercial-documents/{id}/void':
@@ -13657,6 +13889,7 @@ paths:
                             minimum: 0
                           active_subscriptions:
                             type: integer
+                            description: 'Contracts of the subscription engine (/sub/contracts), where the legacy subscriptions were migrated'
                             minimum: 0
                         required:
                           - quotes
@@ -23492,6 +23725,108 @@ paths:
           $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  '/v1/document-trust/signatures/{id}/verify':
+    post:
+      operationId: document-trust.verify
+      summary: 'Verify a stored signature against the current XML of its document'
+      tags:
+        - DocumentTrust
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Signature verified'
+                  data:
+                    anyOf:
+                      -
+                        type: object
+                        properties:
+                          signature_id:
+                            type: string
+                          document_type:
+                            type: string
+                          document_id:
+                            type: string
+                          driver:
+                            type: string
+                          format:
+                            type: string
+                          valid:
+                            type: boolean
+                          reason:
+                            type:
+                              - string
+                              - 'null'
+                          content_changed:
+                            type: boolean
+                          trust_chain_validated:
+                            type: boolean
+                        required:
+                          - signature_id
+                          - document_type
+                          - document_id
+                          - driver
+                          - format
+                          - valid
+                          - reason
+                          - content_changed
+                          - trust_chain_validated
+                      -
+                        type: object
+                        properties:
+                          signature_id:
+                            type: string
+                          document_type:
+                            type: string
+                          document_id:
+                            type: string
+                          driver:
+                            type: string
+                          format:
+                            type: string
+                          valid:
+                            type: boolean
+                          reason:
+                            type: string
+                            const: document_missing
+                          content_changed:
+                            type: boolean
+                          trust_chain_validated:
+                            type: boolean
+                        required:
+                          - signature_id
+                          - document_type
+                          - document_id
+                          - driver
+                          - format
+                          - valid
+                          - reason
+                          - content_changed
+                          - trust_chain_validated
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/document-trust/preservation:
     post:
       operationId: document-trust.preserve
@@ -24840,6 +25175,41 @@ paths:
       summary: 'List transmissions'
       tags:
         - EDocumentNetwork
+      parameters:
+        -
+          name: network
+          in: query
+          schema:
+            anyOf:
+              -
+                $ref: '#/components/schemas/Network'
+              -
+                type: 'null'
+        -
+          name: status
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 40
+        -
+          name: document_reference
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            maxLength: 190
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 100
       responses:
         '200':
           description: ''
@@ -24852,11 +25222,64 @@ paths:
                     type: boolean
                   message:
                     type: string
-                    const: 'Operation successful'
+                    const: 'Transmissions retrieved'
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/TransmissionResource'
+                  meta:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                    required:
+                      - total
+                      - current_page
+                      - last_page
+                      - per_page
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/edocument-networks/transmissions/{id}':
+    get:
+      operationId: edocument-networks.transmissions.show
+      summary: 'Show one transmission'
+      tags:
+        - EDocumentNetwork
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Transmission retrieved'
+                  data:
+                    $ref: '#/components/schemas/TransmissionResource'
                   meta:
                     type: string
                 required:
@@ -24924,6 +25347,35 @@ paths:
                     const: 503
                   detail:
                     type: string
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
+        '409':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Already transmitted'
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type: string
+                    const: 'This exact document was already handed to this network: it is not sent twice.'
                   instance:
                     type: 'null'
                   invalid_params:
@@ -34098,11 +34550,76 @@ paths:
                   - message
                   - data
                   - meta
+        '409':
+          description: ''
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                properties:
+                  type:
+                    type: 'null'
+                  title:
+                    type: string
+                    const: 'Document already flagged'
+                  status:
+                    type: integer
+                    const: 409
+                  detail:
+                    type: string
+                    const: 'This document is already flagged as a health expense.'
+                  instance:
+                    type: 'null'
+                  invalid_params:
+                    type: string
+                required:
+                  - type
+                  - title
+                  - status
+                  - detail
+                  - instance
+                  - invalid_params
         '401':
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
   '/v1/tessera-sanitaria/expenses/{id}':
+    get:
+      operationId: tessera-sanitaria.expenses.show
+      summary: 'Show one flagged expense'
+      tags:
+        - HealthExpense
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Health expense retrieved'
+                  data:
+                    $ref: '#/components/schemas/HealthExpense'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
     delete:
       operationId: tessera-sanitaria.expenses.destroy
       summary: 'Remove the flag from a document'
@@ -34137,6 +34654,67 @@ paths:
                   - message
                   - data
                   - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/tessera-sanitaria/summary:
+    get:
+      operationId: tessera-sanitaria.summary
+      summary: 'Totals of a payment year by expense type'
+      tags:
+        - HealthExpense
+      parameters:
+        -
+          name: year
+          in: query
+          required: true
+          schema:
+            type: integer
+            minimum: 2014
+            maximum: 2100
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Health expense summary retrieved'
+                  data:
+                    type: object
+                    properties:
+                      year:
+                        type: integer
+                      count:
+                        type: integer
+                        minimum: 0
+                      total_amount:
+                        type: string
+                      opposed_count:
+                        type: integer
+                        minimum: 0
+                      by_expense_type:
+                        type: array
+                        items: {}
+                    required:
+                      - year
+                      - count
+                      - total_amount
+                      - opposed_count
+                      - by_expense_type
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/tessera-sanitaria/export:
@@ -39385,6 +39963,235 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  '/v1/workshop/folders/{id}/time-entries':
+    get:
+      operationId: v1.workshop.folders.time.index
+      summary: 'Return the time entries of a folder with the minutes and hours per technician'
+      tags:
+        - LabourTime
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      entries:
+                        type: array
+                        items: {}
+                      technicians:
+                        type: string
+                    required:
+                      - entries
+                      - technicians
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.workshop.folders.time.store
+      summary: 'Enter time worked on a folder without clocking'
+      tags:
+        - LabourTime
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`WorkshopResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkshopResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/workshop/folders/{id}/time-entries/start':
+    post:
+      operationId: v1.workshop.folders.time.start
+      summary: 'Clock a technician on a folder in progress'
+      tags:
+        - LabourTime
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`WorkshopResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkshopResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/workshop/folders/{id}/time-entries/bill':
+    post:
+      operationId: v1.workshop.folders.time.bill
+      summary: 'Bill the unbilled time of a folder as labour lines, one per technician'
+      tags:
+        - LabourTime
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: 'Array of `WorkshopResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkshopResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/workshop/time-entries/{id}/stop':
+    post:
+      operationId: v1.workshop.time.stop
+      summary: 'Clock the technician off'
+      tags:
+        - LabourTime
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`WorkshopResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/WorkshopResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/workshop/vehicles/{id}/history':
+    get:
+      operationId: v1.workshop.vehicles.history
+      summary: 'Return the service history of a vehicle: its folders with mileage and net total'
+      tags:
+        - LabourTime
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        folder_number:
+                          type: string
+                        kind:
+                          type: string
+                        status:
+                          type: string
+                        received_at:
+                          type:
+                            - string
+                            - 'null'
+                          format: date-time
+                        mileage_in:
+                          type:
+                            - integer
+                            - 'null'
+                        mileage_out:
+                          type:
+                            - integer
+                            - 'null'
+                        complaint:
+                          type:
+                            - string
+                            - 'null'
+                        currency:
+                          type: string
+                        net_total:
+                          type: string
+                      required:
+                        - id
+                        - folder_number
+                        - kind
+                        - status
+                        - received_at
+                        - mileage_in
+                        - mileage_out
+                        - complaint
+                        - currency
+                        - net_total
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/procurement/landed-costs:
     get:
       operationId: procurement.landed-costs.index
@@ -51161,6 +51968,80 @@ paths:
                   message:
                     type: string
                     const: 'Payment link created'
+                  data:
+                    $ref: '#/components/schemas/PaymentLink'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payment-links/{id}':
+    get:
+      operationId: payment-links.show
+      tags:
+        - PaymentLink
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Payment link retrieved'
+                  data:
+                    $ref: '#/components/schemas/PaymentLink'
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/payment-links/{id}/cancel':
+    post:
+      operationId: payment-links.cancel
+      tags:
+        - PaymentLink
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Payment link cancelled'
                   data:
                     $ref: '#/components/schemas/PaymentLink'
                   meta:
@@ -71001,6 +71882,397 @@ paths:
                   - '@odata.count'
                   - value
                   - '@odata.nextLink'
+  /v1/hospitality/reservations:
+    get:
+      operationId: v1.hospitality.reservations.index
+      summary: 'Return the reservations of one calendar day of the venue (its own wall clock), in time order'
+      tags:
+        - Reservation
+      responses:
+        '200':
+          description: 'Array of `HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: v1.hospitality.reservations.store
+      summary: |-
+        Book a table for a party. The table may be left out and assigned later; when given it must seat the party and be
+        free for the interval
+      tags:
+        - Reservation
+      responses:
+        '201':
+          description: '`HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/hospitality/reservations/availability:
+    get:
+      operationId: v1.hospitality.reservations.availability
+      summary: 'Return the active tables that seat the party and are free for the whole interval'
+      tags:
+        - Reservation
+      responses:
+        '200':
+          description: 'Array of `HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hospitality/reservations/{id}':
+    get:
+      operationId: v1.hospitality.reservations.show
+      summary: 'Return a reservation'
+      tags:
+        - Reservation
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    put:
+      operationId: v1.hospitality.reservations.update
+      summary: 'Move a booked reservation: time, duration, party, table or guest details, with the same checks as a booking'
+      tags:
+        - Reservation
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hospitality/reservations/{id}/seat':
+    post:
+      operationId: v1.hospitality.reservations.seat
+      summary: 'Seat the guests of a booked reservation: opens the order of the table with the party size as covers'
+      tags:
+        - Reservation
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/hospitality/reservations/{id}/status':
+    post:
+      operationId: v1.hospitality.reservations.status
+      summary: 'Cancel, mark no-show or complete a reservation'
+      tags:
+        - Reservation
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`HospitalityResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/HospitalityResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/practice/retainers:
+    get:
+      operationId: v1.practice.retainers.index
+      summary: 'Return the retainers, optionally of one client or one status'
+      tags:
+        - Retainer
+      responses:
+        '200':
+          description: 'Array of `PracticeResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PracticeResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+    post:
+      operationId: v1.practice.retainers.store
+      summary: 'Register a retainer received from a client'
+      tags:
+        - Retainer
+      responses:
+        '201':
+          description: '`PracticeResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PracticeResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/practice/retainers/balances:
+    get:
+      operationId: v1.practice.retainers.balances
+      summary: 'Return, per client, the retainers received, applied and still available'
+      tags:
+        - Retainer
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        client_id:
+                          type: string
+                        received:
+                          type: string
+                        applied:
+                          type: string
+                        available:
+                          type: string
+                      required:
+                        - client_id
+                        - received
+                        - applied
+                        - available
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/practice/retainers/{id}/apply':
+    post:
+      operationId: v1.practice.retainers.apply
+      summary: 'Apply part of a retainer to a fee note of the same client'
+      tags:
+        - Retainer
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`PracticeResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PracticeResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/practice/retainers/{id}/void':
+    post:
+      operationId: v1.practice.retainers.void
+      summary: 'Void a retainer entered by mistake, while nothing of it has been applied'
+      tags:
+        - Retainer
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`PracticeResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/PracticeResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/practice/fee-notes/{id}/retainers':
+    get:
+      operationId: v1.practice.fee-notes.retainers
+      summary: 'Return what a fee note still asks after the retainers applied to it'
+      tags:
+        - Retainer
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      net_payable:
+                        type: string
+                      retainers_applied:
+                        type: string
+                      outstanding:
+                        type: string
+                      applications:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            retainer_id:
+                              type: string
+                            amount:
+                              type: string
+                            applied_on:
+                              type: string
+                          required:
+                            - retainer_id
+                            - amount
+                            - applied_on
+                    required:
+                      - net_payable
+                      - retainers_applied
+                      - outstanding
+                      - applications
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/dms/retention-policies:
     get:
       operationId: dms.retention.index
@@ -74196,7 +75468,7 @@ paths:
                     type: boolean
                   message:
                     type: string
-                    const: sales.messages.order_lines_list
+                    const: 'Order lines retrieved successfully'
                   data:
                     type: array
                     items:
@@ -80200,6 +81472,236 @@ paths:
           $ref: '#/components/responses/AuthenticationException'
         '422':
           $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/sites/{id}/diary':
+    get:
+      operationId: v1.construction-trades.sites.diary.index
+      summary: 'Return the diary of a site, latest day first'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Array of `TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.construction-trades.sites.diary.store
+      summary: 'Write the diary of a day: weather, workers present, work performed and incidents'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/diary/{id}':
+    put:
+      operationId: v1.construction-trades.diary.update
+      summary: 'Correct a diary entry; the day itself does not change'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/sites/{id}/documents':
+    get:
+      operationId: v1.construction-trades.sites.documents.index
+      summary: 'Return the safety and compliance documents of a site, with those of its subcontractors'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Array of `TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.construction-trades.sites.documents.store
+      summary: 'Record a safety or compliance document of the site or of a subcontractor, with its expiry date'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  /v1/construction-trades/site-documents/expiring:
+    get:
+      operationId: v1.construction-trades.site-documents.expiring
+      summary: 'Return the documents that are expired or expire within the given days, across every site'
+      tags:
+        - SiteLog
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        construction_site_id:
+                          type: string
+                        subcontractor_id:
+                          type:
+                            - string
+                            - 'null'
+                        kind:
+                          type: string
+                        title:
+                          type: string
+                        subcontractor_name:
+                          type:
+                            - string
+                            - 'null'
+                        expires_on:
+                          type:
+                            - string
+                            - 'null'
+                        expired:
+                          type: boolean
+                        days_left:
+                          type: integer
+                      required:
+                        - id
+                        - construction_site_id
+                        - subcontractor_id
+                        - kind
+                        - title
+                        - subcontractor_name
+                        - expires_on
+                        - expired
+                        - days_left
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/site-documents/{id}':
+    delete:
+      operationId: v1.construction-trades.site-documents.destroy
+      summary: 'Remove a document record (the file stays in the Documents module)'
+      tags:
+        - SiteLog
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'No content'
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
   /v1/associations/sport/compensations:
     get:
       operationId: v1.associations.sport.compensations.index
@@ -82690,7 +84192,11 @@ paths:
   /v1/inventory/stock-adjustments:
     post:
       operationId: inventory.stock-adjustments.store
-      summary: 'Manual signed stock correction (inventory count result)'
+      summary: |-
+        Manual signed stock correction (inventory count result). Deprecated: it moves the stock at once, with no approval
+        threshold and no ledger entry. It keeps working unchanged for existing clients and flags every response with
+        `X-Deprecated: true` and a `Link` header to the successor, POST /api/v1/inventory/adjustments (approval above the
+        tenant threshold, valuation posted to the General Ledger)
       tags:
         - Stock
       requestBody:
@@ -84972,6 +86478,245 @@ paths:
                   - data
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/construction-trades/subcontractors:
+    get:
+      operationId: v1.construction-trades.subcontractors.index
+      summary: 'Return the subcontractors of the company'
+      tags:
+        - Subcontract
+      responses:
+        '200':
+          description: 'Array of `TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.construction-trades.subcontractors.store
+      summary: 'Register a subcontractor'
+      tags:
+        - Subcontract
+      responses:
+        '201':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/subcontractors/{id}':
+    put:
+      operationId: v1.construction-trades.subcontractors.update
+      summary: 'Change a subcontractor, or suspend it so that it takes no new subcontract'
+      tags:
+        - Subcontract
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/sites/{id}/subcontracts':
+    get:
+      operationId: v1.construction-trades.sites.subcontracts.index
+      summary: 'Return the subcontracts of a construction site'
+      tags:
+        - Subcontract
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: 'Array of `TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: v1.construction-trades.sites.subcontracts.store
+      summary: 'Entrust work on a site to a subcontractor for an agreed amount'
+      tags:
+        - Subcontract
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/subcontracts/{id}':
+    get:
+      operationId: v1.construction-trades.subcontracts.show
+      summary: 'Return a subcontract with its certifications and the amounts certified and left'
+      tags:
+        - Subcontract
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      totals:
+                        type: object
+                        properties:
+                          contract_amount:
+                            type: string
+                          certified_amount:
+                            type: string
+                          remaining_amount:
+                            type: string
+                        required:
+                          - contract_amount
+                          - certified_amount
+                          - remaining_amount
+                    required:
+                      - totals
+                    additionalProperties: {}
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/construction-trades/subcontracts/{id}/certifications':
+    post:
+      operationId: v1.construction-trades.subcontracts.certifications.store
+      summary: 'Certify work of the subcontractor'
+      tags:
+        - Subcontract
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '201':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/construction-trades/subcontracts/{id}/status':
+    post:
+      operationId: v1.construction-trades.subcontracts.status
+      summary: 'Complete or cancel an active subcontract'
+      tags:
+        - Subcontract
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: '`TradesResource`'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/TradesResource'
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/general-ledger/subledgers/customers:
     get:
       operationId: subledger.customerLedger
@@ -99470,17 +101215,11 @@ paths:
       tags:
         - WorkOrder
       requestBody:
+        required: true
         content:
           application/json:
             schema:
-              allOf:
-                -
-                  $ref: '#/components/schemas/Modules.ServiceManagement.Http.Requests.StoreWorkOrderRequest'
-                -
-                  type: object
-                  properties:
-                    items:
-                      type: string
+              $ref: '#/components/schemas/Modules.ServiceManagement.Http.Requests.StoreWorkOrderRequest'
       responses:
         '201':
           description: ''
@@ -99549,10 +101288,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                technician_id:
-                  type: string
+              $ref: '#/components/schemas/DispatchWorkOrderRequest'
       responses:
         '200':
           description: ''
@@ -99573,6 +101309,8 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/esm/work-orders/{workOrder}/schedule':
     post:
       operationId: v1.esm.work-orders.schedule
@@ -99674,18 +101412,7 @@ paths:
         content:
           application/json:
             schema:
-              type: object
-              properties:
-                completion_notes:
-                  type: string
-                resolution_summary:
-                  type: string
-                customer_signature_url:
-                  type: string
-                signed_by_customer_name:
-                  type: string
-                signed_at:
-                  type: string
+              $ref: '#/components/schemas/CompleteWorkOrderRequest'
       responses:
         '200':
           description: ''
@@ -99706,6 +101433,103 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/esm/work-orders/{workOrder}/parts':
+    post:
+      operationId: v1.esm.work-orders.parts
+      summary: 'Issues a stocked part to a work order'
+      tags:
+        - WorkOrder
+      parameters:
+        -
+          name: workOrder
+          in: path
+          required: true
+          description: 'The work order ID'
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ConsumeWorkOrderPartRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Part consumed successfully'
+                  data:
+                    $ref: '#/components/schemas/Modules.ServiceManagement.Http.Resources.WorkOrderResource'
+                required:
+                  - message
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+  '/v1/esm/work-orders/{workOrder}/invoice':
+    post:
+      operationId: v1.esm.work-orders.invoice
+      summary: 'Drafts the sales invoice of a completed work order'
+      tags:
+        - WorkOrder
+      parameters:
+        -
+          name: workOrder
+          in: path
+          required: true
+          description: 'The work order ID'
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvoiceWorkOrderRequest'
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Invoice drafted from work order'
+                  data:
+                    type: object
+                    properties:
+                      invoice_id:
+                        type: string
+                      invoice_number:
+                        type: string
+                      total_gross:
+                        type: string
+                    required:
+                      - invoice_id
+                      - invoice_number
+                      - total_gross
+                required:
+                  - message
+                  - data
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/workflows/my-pending:
     get:
       operationId: workflows.decisions.my-pending
@@ -101750,7 +103574,30 @@ paths:
           name: kind
           in: query
           schema:
-            type: string
+            type:
+              - string
+              - 'null'
+            enum:
+              - calendar_event
+              - email
+              - null
+        -
+          name: contact_id
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            format: uuid
+        -
+          name: per_page
+          in: query
+          schema:
+            type:
+              - integer
+              - 'null'
+            minimum: 1
+            maximum: 200
       responses:
         '200':
           description: ''
@@ -101763,18 +103610,34 @@ paths:
                     type: boolean
                   message:
                     type: string
-                    const: 'Operation successful'
+                    const: 'Items retrieved'
                   data:
                     type: array
                     items:
                       $ref: '#/components/schemas/WorkspaceItemResource'
                   meta:
-                    type: string
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      current_page:
+                        type: integer
+                      last_page:
+                        type: integer
+                      per_page:
+                        type: integer
+                    required:
+                      - total
+                      - current_page
+                      - last_page
+                      - per_page
                 required:
                   - success
                   - message
                   - data
                   - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
 components:
@@ -102308,6 +104171,16 @@ components:
       required:
         - score
       title: AnswerCsatSurveyRequest
+    AnswerOutcome:
+      type: string
+      description: |
+        Allowed values of answer outcome in the Assistant module.
+      enum:
+        - answered
+        - unmatched
+        - forbidden
+        - failed
+      title: AnswerOutcome
     ApiKey:
       type: object
       properties:
@@ -106346,6 +108219,36 @@ components:
                 minimum: 0
           maxItems: 200
       title: CompleteMaintenanceWorkOrderRequest
+    CompleteWorkOrderRequest:
+      type: object
+      description: 'Validates the completion of a work order with its notes and the customer sign-off.'
+      properties:
+        completion_notes:
+          type:
+            - string
+            - 'null'
+          maxLength: 5000
+        resolution_summary:
+          type:
+            - string
+            - 'null'
+          maxLength: 5000
+        customer_signature_url:
+          type:
+            - string
+            - 'null'
+          maxLength: 1000000
+        signed_by_customer_name:
+          type:
+            - string
+            - 'null'
+          maxLength: 150
+        signed_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+      title: CompleteWorkOrderRequest
     ConfirmExtractionRequest:
       type: object
       description: 'Validates the input of the confirm extraction operation (authorization is decided by module.access).'
@@ -106641,6 +108544,42 @@ components:
         - token
         - action
       title: ConsumeRemoteTokenRequest
+    ConsumeWorkOrderPartRequest:
+      type: object
+      description: 'Validates the issue of a stocked part to a work order. The item number is the SKU of a product of the company.'
+      properties:
+        item_number:
+          type: string
+          maxLength: 100
+        quantity:
+          type: number
+          maximum: 99999999
+        unit_cost:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 9999999999
+        unit_price:
+          type:
+            - number
+            - 'null'
+          minimum: 0
+          maximum: 9999999999
+        description:
+          type:
+            - string
+            - 'null'
+          maxLength: 255
+        warehouse_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - item_number
+        - quantity
+      title: ConsumeWorkOrderPartRequest
     Contact:
       type: object
       properties:
@@ -110867,6 +112806,16 @@ components:
         - auto_apply
         - contact_id
       title: DiscountPolicyResource
+    DispatchWorkOrderRequest:
+      type: object
+      description: 'Validates the technician a work order is dispatched to: it must belong to the active tenant.'
+      properties:
+        technician_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      title: DispatchWorkOrderRequest
     DisposeAssetRequest:
       type: object
       description: 'Validation of a total or partial disposal (sale, scrapping, retirement, donation, loss).'
@@ -114972,6 +116921,27 @@ components:
         - created_at
         - updated_at
       title: InvoiceResource
+    InvoiceWorkOrderRequest:
+      type: object
+      description: 'Validates the invoicing of a completed work order. The VAT rate is stated by the caller: a work order carries none.'
+      properties:
+        tax_rate:
+          type: number
+          minimum: 0
+          maximum: 100
+        due_date:
+          type:
+            - string
+            - 'null'
+          format: date
+        revenue_account_id:
+          type:
+            - string
+            - 'null'
+          format: uuid
+      required:
+        - tax_rate
+      title: InvoiceWorkOrderRequest
     IssueCreditNoteRequest:
       type: object
       description: 'A credit note on an issued invoice of the active company: every line states its VAT rate.'
@@ -115266,7 +117236,7 @@ components:
         status:
           type: string
         total_amount:
-          type: number
+          type: string
         posted_at:
           type:
             - string
@@ -118814,6 +120784,49 @@ components:
             - string
             - 'null'
           maxLength: 255
+        items:
+          type:
+            - array
+            - 'null'
+          items:
+            type: object
+            properties:
+              item_type:
+                type:
+                  - string
+                  - 'null'
+                enum:
+                  - labor
+                  - part
+                  - expense
+                  - null
+              description:
+                type:
+                  - string
+                  - 'null'
+                maxLength: 255
+              quantity:
+                type:
+                  - number
+                  - 'null'
+                maximum: 99999999
+              unit_cost:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 9999999999
+              unit_price:
+                type:
+                  - number
+                  - 'null'
+                minimum: 0
+                maximum: 9999999999
+              is_billable:
+                type:
+                  - boolean
+                  - 'null'
+          maxItems: 200
         billing_type:
           type:
             - string
@@ -118896,11 +120909,19 @@ components:
         billing_type:
           type: string
         total_labor_hours:
-          type: number
+          type: string
+        labor_cost:
+          type: string
+        material_cost:
+          type: string
         total_cost:
-          type: number
+          type: string
         total_billed_amount:
-          type: number
+          type: string
+        currency: {}
+        is_invoiced:
+          type: boolean
+        invoice_id: {}
         is_invoice_ready:
           type: boolean
         is_locked:
@@ -118936,8 +120957,13 @@ components:
         - location_address
         - billing_type
         - total_labor_hours
+        - labor_cost
+        - material_cost
         - total_cost
         - total_billed_amount
+        - currency
+        - is_invoiced
+        - invoice_id
         - is_invoice_ready
         - is_locked
         - created_at
@@ -118963,6 +120989,15 @@ components:
       required:
         - pipeline_stage_id
       title: MoveApplicationRequest
+    Network:
+      type: string
+      description: |
+        Allowed values of network in the EDocumentNetworks module.
+      enum:
+        - ebill
+        - peppol
+        - nso
+      title: Network
     OpenPayslipLinkRequest:
       type: object
       properties:
@@ -132096,7 +134131,7 @@ components:
             - string
             - 'null'
         contract_value:
-          type: number
+          type: string
         currency:
           type: string
         is_locked:
@@ -149874,6 +151909,9 @@ tags:
     name: Kpi
     description: 'Operations of the Kpi module.'
   -
+    name: LabourTime
+    description: 'Operations of the LabourTime module.'
+  -
     name: LandedCost
     description: 'Operations of the LandedCost module.'
   -
@@ -150228,6 +152266,12 @@ tags:
     name: ReportingExport
     description: 'Operations of the ReportingExport module.'
   -
+    name: Reservation
+    description: 'Operations of the Reservation module.'
+  -
+    name: Retainer
+    description: 'Operations of the Retainer module.'
+  -
     name: RetentionPolicy
     description: 'Operations of the RetentionPolicy module.'
   -
@@ -150320,6 +152364,9 @@ tags:
   -
     name: ShortTime
     description: 'Operations of the ShortTime module.'
+  -
+    name: SiteLog
+    description: 'Operations of the SiteLog module.'
   -
     name: SportWork
     description: 'Operations of the SportWork module.'
