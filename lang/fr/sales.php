@@ -94,6 +94,7 @@ return [
     'corrispettivi_day_empty' => 'Cette journée n\'a aucun document à clôturer.',
     'corrispettivi_future_day' => 'Une journée future ne peut pas être clôturée.',
     'tessera_sanitaria_disabled' => 'Le flux Sistema Tessera Sanitaria n\'est pas activé pour cette entreprise.',
+    'tessera_sanitaria_already_flagged' => 'Ce document est déjà indiqué comme dépense de santé.',
     'tessera_sanitaria_payment_before_issue' => 'Le paiement précède le document : indiquez-le comme paiement anticipé.',
     'delivery_channel_disabled' => 'Ce canal est désactivé.',
     'delivery_no_recipient' => 'Indiquez un destinataire : le contact n\'en a pas pour ce canal.',

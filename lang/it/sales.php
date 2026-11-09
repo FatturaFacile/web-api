@@ -94,6 +94,7 @@ return [
     'corrispettivi_day_empty' => 'Questa giornata non ha documenti da chiudere.',
     'corrispettivi_future_day' => 'Non si può chiudere una giornata futura.',
     'tessera_sanitaria_disabled' => 'Il flusso Sistema Tessera Sanitaria non è attivo per questa azienda.',
+    'tessera_sanitaria_already_flagged' => 'Questo documento è già indicato come spesa sanitaria.',
     'tessera_sanitaria_payment_before_issue' => 'Il pagamento precede il documento: indicalo come pagamento anticipato.',
     'delivery_channel_disabled' => 'Questo canale è disattivato.',
     'delivery_no_recipient' => 'Indica un destinatario: il contatto non ne ha uno per questo canale.',

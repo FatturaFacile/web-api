@@ -112,6 +112,7 @@ return [
     'corrispettivi_day_empty' => 'This day has no documents to close.',
     'corrispettivi_future_day' => 'A future day cannot be closed.',
     'tessera_sanitaria_disabled' => 'The Sistema Tessera Sanitaria flow is not enabled for this company.',
+    'tessera_sanitaria_already_flagged' => 'This document is already flagged as a health expense.',
     'tessera_sanitaria_payment_before_issue' => 'The payment comes before the document: flag it as an advance payment.',
     'delivery_channel_disabled' => 'This channel is disabled.',
     'delivery_no_recipient' => 'State a recipient: the contact has none for this channel.',

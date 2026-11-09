@@ -94,6 +94,7 @@ return [
     'corrispettivi_day_empty' => 'Dieser Tag hat keine Dokumente zum Abschließen.',
     'corrispettivi_future_day' => 'Ein zukünftiger Tag kann nicht abgeschlossen werden.',
     'tessera_sanitaria_disabled' => 'Der Sistema-Tessera-Sanitaria-Ablauf ist für dieses Unternehmen nicht aktiviert.',
+    'tessera_sanitaria_already_flagged' => 'Dieses Dokument ist bereits als Gesundheitsausgabe gekennzeichnet.',
     'tessera_sanitaria_payment_before_issue' => 'Die Zahlung liegt vor dem Dokument: Kennzeichnen Sie sie als Vorauszahlung.',
     'delivery_channel_disabled' => 'Dieser Kanal ist deaktiviert.',
     'delivery_no_recipient' => 'Geben Sie einen Empfänger an: Der Kontakt hat keinen für diesen Kanal.',

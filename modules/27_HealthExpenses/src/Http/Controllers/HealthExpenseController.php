@@ -141,6 +141,7 @@ final class HealthExpenseController extends Controller
         responses: [
             new OA\Response(response: 201, description: 'Expense flagged', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 404, description: 'Document not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'The document is already flagged: one document is one expense', content: new OA\JsonContent(ref: '#/components/schemas/ApiProblemDetailsResponse')),
             new OA\Response(response: 422, description: 'Flow disabled or invalid data', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
@@ -156,6 +157,10 @@ final class HealthExpenseController extends Controller
         $data = $request->validated();
         $isInvoice = $data['document_type'] === 'invoice';
         $document = $isInvoice ? Invoice::findOrFail($data['document_id']) : CommercialDocument::findOrFail($data['document_id']);
+
+        if (HealthExpense::query()->where('document_type', $data['document_type'])->where('document_id', $data['document_id'])->exists()) {
+            return $this->problemDetailsResponse('Document already flagged', __('sales.tessera_sanitaria_already_flagged'), Response::HTTP_CONFLICT);
+        }
         $issueDate = $isInvoice ? $document->date : $document->issue_date;
         $opposition = (bool) ($data['patient_opposition'] ?? false);
 
@@ -174,6 +179,54 @@ final class HealthExpenseController extends Controller
         ]);
 
         return $this->successResponse($expense, 'Health expense flagged', Response::HTTP_CREATED);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/tessera-sanitaria/expenses/{id}',
+        operationId: 'getHealthExpense',
+        description: 'One flagged health expense of the active tenant. The fiscal code of the patient is never returned.',
+        summary: 'Get a health expense',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Tessera Sanitaria'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'The expense', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Not found in the active tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    /**
+     * Show one flagged expense.
+     */
+    public function show(string $id): JsonResponse
+    {
+        return $this->successResponse(HealthExpense::findOrFail($id), 'Health expense retrieved');
+    }
+
+    #[OA\Get(
+        path: '/api/v1/tessera-sanitaria/summary',
+        operationId: 'summarizeHealthExpenses',
+        description: 'Count and total of the health expenses paid in a year, by expense type, with the number of expenses whose patient opposed the transmission. Amounts are decimal strings. A check before the export, not a legal return.',
+        summary: 'Summarize health expenses of a year',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Tessera Sanitaria'],
+        parameters: [new OA\Parameter(name: 'year', in: 'query', required: true, schema: new OA\Schema(type: 'integer', example: 2027))],
+        responses: [
+            new OA\Response(response: 200, description: 'The totals', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Invalid year', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    /**
+     * Totals of a payment year by expense type.
+     */
+    public function summary(Request $request, HealthExpenseExporter $exporter): JsonResponse
+    {
+        $validated = $request->validate(['year' => ['required', 'integer', 'min:2014', 'max:2100']]);
+
+        return $this->successResponse($exporter->summary((int) $validated['year']), 'Health expense summary retrieved');
     }
 
     #[OA\Delete(
