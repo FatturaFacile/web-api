@@ -85,6 +85,7 @@ return [
     'document_quota_exceeded' => 'Das jährliche Dokumentenlimit ist erreicht: :used von :limit Punkten verwendet.',
     'corrispettivi_ade_unavailable' => 'Die Übermittlung an die Agenzia delle Entrate ist nicht verfügbar: Es besteht keine Vereinbarung.',
     'commercial_document_already_corrected' => 'Dieses Dokument wurde bereits berichtigt.',
+    'commercial_document_not_failed' => 'Nur ein Dokument, dessen Übermittlung fehlgeschlagen ist, kann erneut gesendet werden.',
     'commercial_document_not_a_sale' => 'Nur ein Verkaufsdokument kann berichtigt werden.',
     'commercial_document_return_exceeds' => 'Die Menge übersteigt die noch offene Menge der Position.',
     'commercial_document_return_empty' => 'Auf diesen Positionen gibt es nichts zurückzugeben.',

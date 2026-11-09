@@ -85,6 +85,7 @@ return [
     'document_quota_exceeded' => 'La limite annuelle de documents est atteinte : :used points utilisés sur :limit.',
     'corrispettivi_ade_unavailable' => 'La transmission à l\'Agenzia delle Entrate n\'est pas disponible : aucun accord n\'est en place.',
     'commercial_document_already_corrected' => 'Ce document a déjà été rectifié.',
+    'commercial_document_not_failed' => 'Seul un document dont la transmission a échoué peut être renvoyé.',
     'commercial_document_not_a_sale' => 'Seul un document de vente peut être rectifié.',
     'commercial_document_return_exceeds' => 'La quantité dépasse celle encore ouverte sur la ligne.',
     'commercial_document_return_empty' => 'Il n\'y a rien à retourner sur ces lignes.',

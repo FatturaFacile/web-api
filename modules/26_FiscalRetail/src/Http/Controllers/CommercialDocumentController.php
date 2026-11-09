@@ -9,9 +9,11 @@ use App\Http\Responses\ApiResponse;
 use App\Models\PosSale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Modules\FiscalRetail\Actions\IssueCommercialDocument;
 use Modules\FiscalRetail\Http\Requests\StoreCommercialDocumentRequest;
 use Modules\FiscalRetail\Models\CommercialDocument;
+use Modules\FiscalRetail\Services\CorrispettiviTransmitter;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -22,12 +24,13 @@ final class CommercialDocumentController extends Controller
     #[OA\Get(
         path: '/api/v1/fiscal-retail/commercial-documents',
         operationId: 'listCommercialDocuments',
-        description: 'Commercial documents of the active tenant, newest first. Filter with `document_type`, `from` and `to`.',
+        description: 'Commercial documents of the active tenant, newest first. Filter with `document_type`, `gateway_status` (`failed` lists the documents still to be transmitted), `from` and `to`.',
         summary: 'List commercial documents',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Fiscal Retail'],
         parameters: [
             new OA\Parameter(name: 'document_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['sale', 'void', 'return'])),
+            new OA\Parameter(name: 'gateway_status', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'failed')),
             new OA\Parameter(name: 'from', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
             new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
         ],
@@ -40,6 +43,7 @@ final class CommercialDocumentController extends Controller
     {
         $validated = $request->validate([
             'document_type' => ['nullable', 'in:sale,void,return'],
+            'gateway_status' => ['nullable', 'string', 'max:30'],
             'from' => ['nullable', 'date'],
             'to' => ['nullable', 'date'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
@@ -47,6 +51,7 @@ final class CommercialDocumentController extends Controller
 
         $documents = CommercialDocument::query()
             ->when($validated['document_type'] ?? null, static fn ($query, string $type) => $query->where('document_type', $type))
+            ->when($validated['gateway_status'] ?? null, static fn ($query, string $status) => $query->where('gateway_status', $status))
             ->when($validated['from'] ?? null, static fn ($query, string $from) => $query->whereDate('issue_date', '>=', $from))
             ->when($validated['to'] ?? null, static fn ($query, string $to) => $query->whereDate('issue_date', '<=', $to))
             ->orderByDesc('fiscal_year')
@@ -127,6 +132,35 @@ final class CommercialDocumentController extends Controller
     public function void(string $id, IssueCommercialDocument $issue): JsonResponse
     {
         return $this->successResponse($issue->void(CommercialDocument::findOrFail($id)), 'Void document issued', Response::HTTP_CREATED);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/fiscal-retail/commercial-documents/{id}/retransmit',
+        operationId: 'retransmitCommercialDocument',
+        description: 'Sends again, now, a document whose transmission failed (`gateway_status` = `failed`), with the same idempotency key as the first attempt. The scheduled retry does the same; this is for the operator who does not want to wait. The document is never changed, only its transmission outcome.',
+        summary: 'Retransmit a failed commercial document',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Fiscal Retail'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'The document with the outcome of the new attempt', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Not found in the active tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'The transmission did not fail: nothing to send again', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+        ]
+    )]
+    public function retransmit(string $id, CorrispettiviTransmitter $transmitter): JsonResponse
+    {
+        $document = CommercialDocument::findOrFail($id);
+
+        if ($document->gateway_status !== CorrispettiviTransmitter::StatusFailed) {
+            throw ValidationException::withMessages(['document' => __('sales.commercial_document_not_failed')]);
+        }
+
+        $transmitter->transmitDocument($document);
+
+        return $this->successResponse($document->refresh(), 'Commercial document retransmitted');
     }
 
     #[OA\Post(
