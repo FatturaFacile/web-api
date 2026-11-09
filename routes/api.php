@@ -347,7 +347,8 @@ Route::prefix('v1')->group(function (): void {
             Route::put('/products/{id}', [InventoryController::class, 'updateProduct'])->name('products.update');
             Route::get('/delivery-notes', [InventoryController::class, 'deliveryNotes'])->name('delivery-notes');
             Route::get('/stock-levels', [StockController::class, 'levels'])->name('stock-levels');
-            Route::post('/stock-adjustments', [StockController::class, 'adjust'])->name('stock-adjustments.store');
+            // Deprecated: no approval and no ledger entry; the successor is the Inventory adjustment flow
+            Route::post('/stock-adjustments', [StockController::class, 'adjust'])->middleware('deprecated:/api/v1/inventory/adjustments')->name('stock-adjustments.store');
             Route::get('/products/variants/{variantId}', [ProductVariantController::class, 'show'])->name('products.variants.show');
             Route::put('/products/variants/{variantId}', [ProductVariantController::class, 'update'])->name('products.variants.update');
             Route::delete('/products/variants/{variantId}', [ProductVariantController::class, 'destroy'])->name('products.variants.destroy');

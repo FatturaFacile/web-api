@@ -232,7 +232,10 @@ test('delivery notes unload tracked stock automatically, services excluded', fun
 });
 
 test('manual stock adjustments are signed, limited to tracked products and filterable by warehouse', function (): void {
-    posApi()->postJson('/api/v1/inventory/stock-adjustments', ['product_id' => $this->product->id, 'quantity' => -4])->assertCreated();
+    // Deprecated for the approval and ledger flow of /inventory/adjustments, but unchanged for existing clients
+    posApi()->postJson('/api/v1/inventory/stock-adjustments', ['product_id' => $this->product->id, 'quantity' => -4])->assertCreated()
+        ->assertHeader('X-Deprecated', 'true')
+        ->assertHeader('Link', '</api/v1/inventory/adjustments>; rel="successor-version"');
     expect(stockOf($this->product->id))->toEqual(6.0);
 
     posApi()->postJson('/api/v1/inventory/stock-adjustments', ['product_id' => $this->service->id, 'quantity' => 1])->assertUnprocessable();

@@ -12,12 +12,12 @@ use App\Models\Invoice;
 use App\Models\Quote;
 use App\Models\TireHotelRecord;
 use App\Models\Vehicle;
-use App\Services\Inventory\StockService;
 use App\Services\Invoicing\InvoiceService;
 use App\Services\Sales\DocumentNumberingService;
 use App\Services\Tenancy\TenantClock;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\Invoicing\Contracts\DeliveryFulfillmentServiceInterface;
 use Modules\SubscriptionBilling\Contracts\SubscriptionLifecycleServiceInterface;
 use Modules\SubscriptionBilling\DTOs\CancelSubscriptionDTO;
 use Modules\SubscriptionBilling\Models\Subscription as EngineSubscription;
@@ -38,7 +38,7 @@ final class WorkshopService
         private readonly SaveSalesDocument $salesDocuments,
         private readonly SaveSubscription $subscriptions,
         private readonly InvoiceService $invoices,
-        private readonly StockService $stock,
+        private readonly DeliveryFulfillmentServiceInterface $fulfillment,
         private readonly SubscriptionLifecycleServiceInterface $subscriptionLifecycle,
     ) {}
 
@@ -170,7 +170,8 @@ final class WorkshopService
     }
 
     /**
-     * The delivery note handed over with the vehicle. Tracked parts leave the stock here, as in the sales flow.
+     * The delivery note handed over with the vehicle, written by the sales delivery note writer
+     * (DeliveryFulfillmentService): gapless DDT number, issued at once, tracked parts leave the stock with it.
      */
     public function deliveryNote(WorkshopFolder $folder): DeliveryNote
     {
@@ -186,28 +187,25 @@ final class WorkshopService
                 throw new BusinessRuleException('Only a completed folder gets a delivery note.');
             }
 
-            $note = DeliveryNote::create([
-                'contact_id' => $locked->contact_id,
-                'ddt_number' => $this->numbering->next('delivery_note')['number'],
-                'date' => now()->toDateString(),
-                'status' => 'issued',
-                'notes' => $this->reference($locked),
-            ]);
-
-            foreach ($this->documentItems($locked) as $item) {
-                $note->items()->create([
+            // The one delivery note writer of the sales flow numbers the DDT in the gapless series, issues it and moves
+            // the stock of the tracked parts, exactly as a delivery note shipped from a quote.
+            $userId = auth()->id();
+            $draft = $this->fulfillment->createStandaloneDeliveryNote(
+                (string) $locked->tenant_id,
+                (string) $locked->contact_id,
+                ['notes' => $this->reference($locked), 'created_by' => $userId !== null ? (string) $userId : null],
+                array_map(static fn (array $item): array => [
                     'product_id' => $item['product_id'],
-                    'description' => $item['description'],
+                    'description' => (string) $item['description'],
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'tax_rate' => $item['tax_rate'],
-                ]);
-            }
+                ], $this->documentItems($locked))
+            );
+            $this->fulfillment->dispatchDelivery($draft, $userId !== null ? (string) $userId : 'system');
+            $locked->update(['delivery_note_id' => $draft->id]);
 
-            $this->stock->recordForLines('out', $note, $note->items()->get());
-            $locked->update(['delivery_note_id' => $note->id]);
-
-            return $note->load('items');
+            return DeliveryNote::query()->with('items')->findOrFail($draft->id);
         });
     }
 

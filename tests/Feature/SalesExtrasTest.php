@@ -116,6 +116,31 @@ test('deposit invoices are split per tax rate, capped, and deducted from the fin
     salesExtrasApi()->postJson("/api/v1/sales/orders/{$orderId}/deposit-invoice", ['percentage' => 5])->assertUnprocessable();
 });
 
+test('a decimal deposit percentage is applied exactly to each tax rate', function (): void {
+    $orderId = salesExtrasApi()->postJson('/api/v1/sales/orders', array_merge($this->payload, ['status' => 'confirmed']))->json('data.id');
+
+    $deposit = salesExtrasApi()->postJson("/api/v1/sales/orders/{$orderId}/deposit-invoice", ['percentage' => '12.5'])->assertCreated();
+
+    // 12.5% of 100 at 22% and of 200 at 10%
+    expect((float) $deposit->json('data.total_net'))->toEqual(37.5)
+        ->and((float) $deposit->json('data.total_tax'))->toEqual(5.25)
+        ->and((float) $deposit->json('data.total_gross'))->toEqual(42.75);
+});
+
+test('the order lines and the other sales messages are translated in every language', function (string $locale, string $message): void {
+    salesExtrasApi()->postJson('/api/v1/sales/orders', array_merge($this->payload, ['status' => 'confirmed']))->assertCreated();
+
+    salesExtrasApi()->withHeader('X-Language-Code', $locale)->getJson('/api/v1/sales/order-lines')->assertOk()->assertJsonPath('message', $message);
+    salesExtrasApi()->withHeader('X-Language-Code', $locale)->getJson('/api/v1/sales/orders')->assertOk()->assertJsonPath('message', __('sales.messages.orders_list', [], $locale));
+
+    expect(__('sales.messages.orders_list', [], $locale))->not->toBe('sales.messages.orders_list');
+})->with([
+    'english' => ['en', 'Order lines retrieved successfully'],
+    'italian' => ['it', 'Righe dell\'ordine recuperate con successo'],
+    'german' => ['de', 'Auftragspositionen erfolgreich abgerufen'],
+    'french' => ['fr', 'Lignes de commande récupérées avec succès'],
+]);
+
 test('the order lines page lists lines across orders and filters the open ones', function (): void {
     $order = salesExtrasApi()->postJson('/api/v1/sales/orders', array_merge($this->payload, ['status' => 'confirmed']))->assertCreated();
     $first = $order->json('data.items.0.id');

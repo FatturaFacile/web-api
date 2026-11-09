@@ -11,11 +11,11 @@ use App\Models\PassiveInvoice;
 use App\Models\Payment;
 use App\Models\Quote;
 use App\Models\SalesOrder;
-use App\Models\Subscription;
 use App\Models\WorkOrder;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Collection;
+use Modules\SubscriptionBilling\Models\Subscription;
 
 /**
  * Read-only analytics on a contact: sales statistics, payment behaviour and the open-items account statement.
@@ -53,7 +53,8 @@ class ContactInsights
                 'sales_orders' => SalesOrder::where('contact_id', $contact->id)->count(),
                 'delivery_notes' => DeliveryNote::where('contact_id', $contact->id)->count(),
                 'work_orders' => WorkOrder::where('client_id', $contact->id)->count(),
-                'active_subscriptions' => Subscription::where('contact_id', $contact->id)->where('status', 'active')->count(),
+                // Contracts of the subscription engine (/sub/contracts), where the legacy subscriptions were migrated
+                'active_subscriptions' => Subscription::query()->where('customer_id', $contact->id)->where('status', 'active')->count(),
             ],
             'purchases' => $this->purchases($contact),
         ];

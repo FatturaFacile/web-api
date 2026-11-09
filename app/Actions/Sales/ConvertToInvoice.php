@@ -61,7 +61,7 @@ class ConvertToInvoice
      * Issues a down-payment invoice for a percentage of the order net total, split per VAT rate. The down payments of an
      * order can never exceed its net total.
      */
-    public function depositFromOrder(SalesOrder $order, float|string $percentage): Invoice
+    public function depositFromOrder(SalesOrder $order, string $percentage): Invoice
     {
         return DB::transaction(function () use ($order, $percentage): Invoice {
             $issued = $this->orderBilling->issueDownPayment(ModuleSalesOrder::query()->findOrFail($order->id), DocumentTotalsCalculator::decimal($percentage), null, [], $this->actor());

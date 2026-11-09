@@ -16,6 +16,7 @@ use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\LedgerAccountResolver;
 use Modules\GeneralLedger\Services\PaymentLedgerService;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\LedgerAmount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\GeneralLedger\Services\Tax\VatLedgerReader;
 use Modules\Invoicing\Events\InvoicePostedEvent;
@@ -64,31 +65,10 @@ final class InvoiceAccountingListener
             return;
         }
 
-        // 3. Resolve Master General Ledger Accounts
-        $arAccount = $this->resolveAccount(
-            tenantId: $event->tenantId,
-            code: '1100',
-            name: 'Accounts Receivable (Crediti v/Clienti)',
-            type: 'asset',
-            normalBalance: 'debit'
-        );
-        $arAccount->update(['is_reconciliation_account' => true, 'reconciliation_type' => 'customer']);
-
-        $defaultRevenueAccount = $this->resolveAccount(
-            tenantId: $event->tenantId,
-            code: '4000',
-            name: 'Sales Revenue (Ricavi delle Vendite)',
-            type: 'revenue',
-            normalBalance: 'credit'
-        );
-
-        $defaultVatAccount = $this->resolveAccount(
-            tenantId: $event->tenantId,
-            code: '2200',
-            name: 'IVA c/Vendite (Sales Output VAT)',
-            type: 'liability',
-            normalBalance: 'credit'
-        );
+        // 3. Resolve the posting accounts: the tenant's configured defaults, else the historical codes
+        $arAccount = $this->accounts->receivables($event->tenantId);
+        $defaultRevenueAccount = $this->accounts->salesRevenue($event->tenantId);
+        $defaultVatAccount = $this->accounts->outputVat($event->tenantId);
 
         $vatTreatment = $this->vatTreatmentOf($event);
 
@@ -105,23 +85,23 @@ final class InvoiceAccountingListener
         $revenueByLine = [];
         foreach ($event->revenueLines as $revenueLine) {
             if (! empty($revenueLine['line_id'])) {
-                $revenueByLine[(string) $revenueLine['line_id']] = (float) $revenueLine['amount'];
+                $revenueByLine[(string) $revenueLine['line_id']] = LedgerAmount::of($revenueLine['amount']);
             }
         }
 
         $currency = ! empty($event->currency) ? $event->currency : TenantAccountingCurrency::of($event->tenantId);
-        $exchangeRate = (float) ($event->exchangeRate > 0 ? $event->exchangeRate : 1.0);
-        $totalGross = (float) $event->totalGross;
-        $totalTax = (float) $event->totalTax;
-        $totalNet = (float) $event->totalNet;
+        $exchangeRate = LedgerAmount::rate($event->exchangeRate);
+        $totalGross = LedgerAmount::of($event->totalGross);
+        $totalTax = LedgerAmount::of($event->totalTax);
+        $totalNet = LedgerAmount::of($event->totalNet);
 
         // 4. Construct Balanced Journal Lines
         // Line 1: Debit Accounts Receivable: what the customer pays, not what it is billed
         $lines = [
             [
                 'account_id' => $arAccount->id,
-                'debit_amount' => $invoice !== null ? (float) $invoice->amountDue() : $totalGross,
-                'credit_amount' => 0.0,
+                'debit_amount' => $invoice !== null ? LedgerAmount::of($invoice->amountDue()) : $totalGross,
+                'credit_amount' => '0',
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
                 'partner_type' => 'customer',
@@ -135,16 +115,16 @@ final class InvoiceAccountingListener
         if (! empty($event->revenueLines)) {
             foreach ($event->revenueLines as $revLine) {
                 $revAccountId = ! empty($revLine['account_id']) ? $revLine['account_id'] : $defaultRevenueAccount->id;
-                $amount = (float) $revLine['amount'];
+                $amount = LedgerAmount::of($revLine['amount']);
 
-                if ($amount === 0.0) {
+                if (Decimal::isZero($amount)) {
                     continue;
                 }
 
                 $lines[] = [
                     'account_id' => $revAccountId,
-                    'debit_amount' => $amount < 0 ? abs($amount) : 0.0,
-                    'credit_amount' => $amount > 0 ? $amount : 0.0,
+                    'debit_amount' => Decimal::isNegative($amount) ? Decimal::abs($amount) : '0',
+                    'credit_amount' => Decimal::isPositive($amount) ? $amount : '0',
                     'currency' => $currency,
                     'exchange_rate' => $exchangeRate,
                     'cost_center_id' => ! empty($revLine['cost_center_id']) ? (string) $revLine['cost_center_id'] : null,
@@ -155,7 +135,7 @@ final class InvoiceAccountingListener
         } else {
             $lines[] = [
                 'account_id' => $defaultRevenueAccount->id,
-                'debit_amount' => 0.0,
+                'debit_amount' => '0',
                 'credit_amount' => $totalNet,
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
@@ -169,29 +149,29 @@ final class InvoiceAccountingListener
                 $vatAccountId = ! empty($taxLine['account_id']) && $vatTreatment !== VatLedgerReader::TREATMENT_SPLIT_PAYMENT
                     ? $taxLine['account_id']
                     : $defaultVatAccount->id;
-                $amount = (float) $taxLine['amount'];
+                $amount = LedgerAmount::of($taxLine['amount']);
 
-                if ($amount === 0.0) {
+                if (Decimal::isZero($amount)) {
                     continue;
                 }
 
                 $lines[] = [
                     'account_id' => $vatAccountId,
-                    'debit_amount' => $amount < 0 ? abs($amount) : 0.0,
-                    'credit_amount' => $amount > 0 ? $amount : 0.0,
+                    'debit_amount' => Decimal::isNegative($amount) ? Decimal::abs($amount) : '0',
+                    'credit_amount' => Decimal::isPositive($amount) ? $amount : '0',
                     'currency' => $currency,
                     'exchange_rate' => $exchangeRate,
-                    'vat_tax_amount' => (float) $taxLine['amount'],
-                    'vat_base_amount' => $taxLine['base_amount'] ?? $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? 0.0,
-                    'vat_rate_percent' => $taxLine['tax_rate'] ?? null,
+                    'vat_tax_amount' => $amount,
+                    'vat_base_amount' => isset($taxLine['base_amount']) ? LedgerAmount::of($taxLine['base_amount']) : ($revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? '0'),
+                    'vat_rate_percent' => isset($taxLine['tax_rate']) ? LedgerAmount::of($taxLine['tax_rate']) : null,
                     'vat_treatment' => $vatTreatment,
                     'description' => "Output VAT: Invoice {$event->invoiceNumber}",
                 ];
             }
-        } elseif ($totalTax > 0) {
+        } elseif (Decimal::isPositive($totalTax)) {
             $lines[] = [
                 'account_id' => $defaultVatAccount->id,
-                'debit_amount' => 0.0,
+                'debit_amount' => '0',
                 'credit_amount' => $totalTax,
                 'currency' => $currency,
                 'exchange_rate' => $exchangeRate,
@@ -261,7 +241,7 @@ final class InvoiceAccountingListener
      *
      * @return list<array<string, mixed>>
      */
-    private function fiscalLines(InvoicePostedEvent $event, SalesInvoice $invoice, string $vatAccountId, string $currency, float $exchangeRate): array
+    private function fiscalLines(InvoicePostedEvent $event, SalesInvoice $invoice, string $vatAccountId, string $currency, string $exchangeRate): array
     {
         $tenantId = $event->tenantId;
         $number = $event->invoiceNumber;
@@ -323,22 +303,23 @@ final class InvoiceAccountingListener
         $lines = [];
 
         foreach ($event->taxLines as $taxLine) {
-            $amount = (float) $taxLine['amount'];
+            $amount = LedgerAmount::of($taxLine['amount']);
 
-            if ($amount === 0.0) {
+            if (Decimal::isZero($amount)) {
                 continue;
             }
 
+            $baseAmount = $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? null;
             $vat = [
                 'currency' => $event->currency,
-                'exchange_rate' => $event->exchangeRate > 0 ? $event->exchangeRate : 1.0,
+                'exchange_rate' => LedgerAmount::rate($event->exchangeRate),
                 'vat_tax_amount' => $amount,
-                'vat_base_amount' => $revenueByLine[(string) ($taxLine['line_id'] ?? '')] ?? 0.0,
-                'vat_rate_percent' => $taxLine['tax_rate'] ?? null,
+                'vat_base_amount' => $baseAmount !== null ? LedgerAmount::of($baseAmount) : '0',
+                'vat_rate_percent' => isset($taxLine['tax_rate']) ? LedgerAmount::of($taxLine['tax_rate']) : null,
             ];
 
-            $lines[] = $vat + ['account_id' => $debitAccount->id, 'debit_amount' => $amount, 'credit_amount' => 0.0, 'description' => "VAT of self-invoice {$event->invoiceNumber}"];
-            $lines[] = $vat + ['account_id' => $creditAccount->id, 'debit_amount' => 0.0, 'credit_amount' => $amount, 'description' => "VAT of self-invoice {$event->invoiceNumber}"];
+            $lines[] = $vat + ['account_id' => $debitAccount->id, 'debit_amount' => $amount, 'credit_amount' => '0', 'description' => "VAT of self-invoice {$event->invoiceNumber}"];
+            $lines[] = $vat + ['account_id' => $creditAccount->id, 'debit_amount' => '0', 'credit_amount' => $amount, 'description' => "VAT of self-invoice {$event->invoiceNumber}"];
         }
 
         if ($lines === []) {
@@ -394,26 +375,26 @@ final class InvoiceAccountingListener
      * @param  array<int, array<string, mixed>>  $lines
      * @return array<string, mixed>|null
      */
-    private function roundingLine(InvoicePostedEvent $event, array $lines, string $currency, float $exchangeRate): ?array
+    private function roundingLine(InvoicePostedEvent $event, array $lines, string $currency, string $exchangeRate): ?array
     {
         $difference = '0';
 
         foreach ($lines as $line) {
-            $difference = Decimal::add($difference, number_format((float) $line['debit_amount'], 4, '.', ''));
-            $difference = Decimal::sub($difference, number_format((float) $line['credit_amount'], 4, '.', ''));
+            $difference = Decimal::add($difference, LedgerAmount::of($line['debit_amount']));
+            $difference = Decimal::sub($difference, LedgerAmount::of($line['credit_amount']));
         }
 
         if (Decimal::isZero($difference) || Decimal::compare(Decimal::abs($difference), self::MAX_ROUNDING) > 0) {
             return null;
         }
 
-        $account = $this->resolveAccount($event->tenantId, '6960', 'Rounding differences (Arrotondamenti)', 'expense', 'debit');
+        $account = $this->accounts->rounding($event->tenantId);
         $isGain = Decimal::isPositive($difference);
 
         return [
             'account_id' => $account->id,
-            'debit_amount' => $isGain ? 0.0 : (float) Decimal::abs($difference),
-            'credit_amount' => $isGain ? (float) $difference : 0.0,
+            'debit_amount' => $isGain ? '0' : LedgerAmount::of(Decimal::abs($difference)),
+            'credit_amount' => $isGain ? LedgerAmount::of($difference) : '0',
             'currency' => $currency,
             'exchange_rate' => $exchangeRate,
             'description' => "Rounding: Invoice {$event->invoiceNumber}",

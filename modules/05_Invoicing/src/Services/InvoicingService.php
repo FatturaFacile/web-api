@@ -604,7 +604,7 @@ final class InvoicingService implements InvoicingServiceInterface
             $revenueLine = [
                 'line_id' => (string) $item->id,
                 'account_id' => $item->revenue_account_id,
-                'amount' => (float) $item->line_total,
+                'amount' => (string) $item->line_total,
                 'description' => $item->description,
             ];
 
@@ -619,8 +619,8 @@ final class InvoicingService implements InvoicingServiceInterface
             $taxLines[] = [
                 'line_id' => (string) $item->id,
                 'account_id' => $item->tax_account_id,
-                'tax_rate' => (float) $item->tax_rate,
-                'amount' => (float) $lineTaxes[(string) $item->id],
+                'tax_rate' => (string) $item->tax_rate,
+                'amount' => (string) $lineTaxes[(string) $item->id],
             ];
         }
 
@@ -628,9 +628,9 @@ final class InvoicingService implements InvoicingServiceInterface
             $taxLines[] = [
                 'line_id' => null,
                 'account_id' => null,
-                'tax_rate' => (float) $invoice->fund_vat_rate,
-                'amount' => (float) ($lineTaxes[self::FUND_VAT_ENTRY] ?? $invoice->fund_vat_amount),
-                'base_amount' => (float) $invoice->fund_amount,
+                'tax_rate' => (string) $invoice->fund_vat_rate,
+                'amount' => (string) ($lineTaxes[self::FUND_VAT_ENTRY] ?? $invoice->fund_vat_amount),
+                'base_amount' => (string) $invoice->fund_amount,
             ];
         }
 

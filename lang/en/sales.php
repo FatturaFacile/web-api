@@ -75,6 +75,7 @@ return [
         'quote_signed' => 'Quote signed successfully',
         'deposit_invoiced' => 'Deposit invoice created',
         'order_lines' => 'Order lines retrieved successfully',
+        'order_lines_list' => 'Order lines retrieved successfully',
         'quote_revised' => 'Quote revision created',
         'quotes_expired' => 'Quotes past their validity date expired',
         'kpis' => 'Sales indicators computed',

@@ -10,7 +10,9 @@ use App\Models\TireHotelRecord;
 use App\Models\Vehicle;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
+use Enterprise\EventBus\Models\TransactionalOutbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
 use Modules\Workshop\Models\VehicleStockUnit;
 use Modules\Workshop\Models\WorkshopFolder;
@@ -203,4 +205,26 @@ test('a member of another company cannot read or change a vehicle', function ():
     $this->getJson("/api/v1/automotive/vehicles/{$this->vehicle->id}")->assertNotFound();
     $this->putJson("/api/v1/automotive/vehicles/{$this->vehicle->id}", ['mileage_km' => 1])->assertNotFound();
     $this->deleteJson("/api/v1/automotive/vehicles/{$this->vehicle->id}")->assertNotFound();
+});
+
+test('the delivery note of a folder is written by the sales delivery note writer: gapless number, issued and announced', function (): void {
+    $notes = [];
+
+    foreach ([1, 2] as $ignored) {
+        $id = ($this->openFolder)();
+        $this->postJson("/api/v1/workshop/folders/{$id}/status", ['status' => 'in_progress'])->assertOk();
+        $this->postJson("/api/v1/workshop/folders/{$id}/status", ['status' => 'completed', 'mileage_out' => 1000005])->assertOk();
+        $notes[] = SalesDeliveryNote::query()->findOrFail($this->postJson("/api/v1/workshop/folders/{$id}/delivery-note")->assertCreated()->json('data.document_id'));
+    }
+
+    [$first, $second] = $notes;
+    $sequence = static fn (SalesDeliveryNote $note): int => (int) preg_replace('/\D+/', '', (string) str((string) $note->ddt_number)->afterLast('-'));
+
+    expect((string) $first->tenant_id)->toBe((string) $this->tenant->id)
+        ->and($first->status)->toBe('issued')
+        ->and($first->shipping_status)->toBe('dispatched')
+        ->and($first->items()->count())->toBe(2)
+        ->and($sequence($second))->toBe($sequence($first) + 1)
+        ->and(TransactionalOutbox::query()->where('event_type', 'sales.delivery_note.issued')->where('aggregate_id', $first->id)->exists())->toBeTrue()
+        ->and(TransactionalOutbox::query()->where('event_type', 'sales.goods.dispatched')->where('aggregate_id', $second->id)->exists())->toBeTrue();
 });

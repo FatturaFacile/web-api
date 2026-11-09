@@ -10,6 +10,7 @@ use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\LedgerAmount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Projects\Events\ProjectAccrualReadyEvent;
 use Modules\Projects\Events\ProjectClosureReadyEvent;
@@ -106,15 +107,15 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $arAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->recognizedAmount,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->recognizedAmount),
+                    'credit_amount' => '0',
                     'description' => 'Accounts Receivable for Project Revenue',
                 ],
                 [
                     'account_id' => $revAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->recognizedAmount,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->recognizedAmount),
                     'description' => 'Project Contract Revenue',
                 ],
             ],
@@ -144,15 +145,15 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $wipAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->wipBalance,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->wipBalance),
+                    'credit_amount' => '0',
                     'description' => 'WIP Asset Capitalization',
                 ],
                 [
                     'account_id' => $capAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->wipBalance,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->wipBalance),
                     'description' => 'WIP Offset Allocation',
                 ],
             ],
@@ -182,15 +183,15 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $expAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->accrualAmount,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->accrualAmount),
+                    'credit_amount' => '0',
                     'description' => 'Accrued Project Expense',
                 ],
                 [
                     'account_id' => $liabAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->accrualAmount,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->accrualAmount),
                     'description' => 'Accrued Liability',
                 ],
             ],
@@ -395,15 +396,15 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $wipAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->totalCost,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->totalCost),
+                    'credit_amount' => '0',
                     'description' => "WIP Direct Labor ({$event->hoursWorked} hrs)",
                 ],
                 [
                     'account_id' => $payrollAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalCost,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->totalCost),
                     'description' => 'Labor Payroll Absorption Clearing',
                 ],
             ],
@@ -433,15 +434,15 @@ final class ProjectsAccountingListener
                 [
                     'account_id' => $wipAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => (float) $event->totalCost,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->totalCost),
+                    'credit_amount' => '0',
                     'description' => "WIP Direct Material ({$event->quantity} units)",
                 ],
                 [
                     'account_id' => $invAcc->id,
                     'project_id' => $event->projectId,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalCost,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->totalCost),
                     'description' => 'Inventory Asset Relief for Project',
                 ],
             ],

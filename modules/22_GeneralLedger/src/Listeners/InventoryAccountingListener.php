@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 use Modules\GeneralLedger\Contracts\DoubleEntryPostingServiceInterface;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Services\FiscalPeriodResolver;
+use Modules\GeneralLedger\Services\Tax\Decimal;
+use Modules\GeneralLedger\Services\Tax\LedgerAmount;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 use Modules\Inventory\Events\InventoryAdjustmentPostedEvent;
 use Modules\Inventory\Events\InventoryCostingReadyEvent;
@@ -45,14 +47,14 @@ final class InventoryAccountingListener
             'lines' => [
                 [
                     'account_id' => $invAcc->id,
-                    'debit_amount' => (float) $event->totalValuationAmount,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->totalValuationAmount),
+                    'credit_amount' => '0',
                     'description' => 'Periodic Inventory Asset Balance',
                 ],
                 [
                     'account_id' => $cogsAcc->id,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalValuationAmount,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->totalValuationAmount),
                     'description' => 'Inventory Balancing Adjustment',
                 ],
             ],
@@ -81,14 +83,14 @@ final class InventoryAccountingListener
             'lines' => [
                 [
                     'account_id' => $cogsAcc->id,
-                    'debit_amount' => (float) $event->totalCost,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->totalCost),
+                    'credit_amount' => '0',
                     'description' => 'COGS Cost Posting',
                 ],
                 [
                     'account_id' => $invAcc->id,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalCost,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->totalCost),
                     'description' => 'Inventory Asset Relief',
                 ],
             ],
@@ -104,12 +106,13 @@ final class InventoryAccountingListener
         $varAcc = $this->resolveAccount($event->tenantId, '5100', 'Inventory Variance & Shrinkage', 'expense', 'debit');
 
         // Nothing to post for an adjustment without cost impact: no amount is made up.
-        $cost = round(abs((float) $event->totalCostImpact), 2);
-        if ($cost <= 0.0) {
+        $impact = LedgerAmount::of($event->totalCostImpact, 2);
+        $cost = Decimal::abs($impact);
+        if (! Decimal::isPositive($cost)) {
             return;
         }
 
-        $isPositive = (float) $event->totalCostImpact >= 0;
+        $isPositive = ! Decimal::isNegative($impact);
 
         $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
@@ -126,12 +129,12 @@ final class InventoryAccountingListener
                 [
                     'account_id' => $isPositive ? $invAcc->id : $varAcc->id,
                     'debit_amount' => $cost,
-                    'credit_amount' => 0.0,
+                    'credit_amount' => '0',
                     'description' => 'Inventory Adjustment Debit',
                 ],
                 [
                     'account_id' => $isPositive ? $varAcc->id : $invAcc->id,
-                    'debit_amount' => 0.0,
+                    'debit_amount' => '0',
                     'credit_amount' => $cost,
                     'description' => 'Inventory Adjustment Credit',
                 ],
@@ -161,14 +164,14 @@ final class InventoryAccountingListener
             'lines' => [
                 [
                     'account_id' => $scrapAcc->id,
-                    'debit_amount' => (float) $event->totalWriteOffAmount,
-                    'credit_amount' => 0.0,
+                    'debit_amount' => LedgerAmount::of($event->totalWriteOffAmount),
+                    'credit_amount' => '0',
                     'description' => "Loss on inventory scrap: {$event->reason}",
                 ],
                 [
                     'account_id' => $invAcc->id,
-                    'debit_amount' => 0.0,
-                    'credit_amount' => (float) $event->totalWriteOffAmount,
+                    'debit_amount' => '0',
+                    'credit_amount' => LedgerAmount::of($event->totalWriteOffAmount),
                     'description' => 'Inventory Asset De-recognition',
                 ],
             ],
@@ -183,14 +186,14 @@ final class InventoryAccountingListener
         $invAcc = $this->resolveAccount($event->tenantId, '1200', 'Merchandise Inventory Asset', 'asset', 'debit');
         $reserveAcc = $this->resolveAccount($event->tenantId, '3100', 'Inventory Revaluation Reserve', 'equity', 'credit');
 
-        $diff = (float) $event->deltaAmount;
-        $absDiff = abs($diff);
+        $diff = LedgerAmount::of($event->deltaAmount);
+        $absDiff = Decimal::abs($diff);
 
-        if ($absDiff <= 0) {
+        if (! Decimal::isPositive($absDiff)) {
             return;
         }
 
-        $isGain = $diff > 0;
+        $isGain = Decimal::isPositive($diff);
 
         $this->postingService->createAndPost([
             'tenant_id' => $event->tenantId,
@@ -207,12 +210,12 @@ final class InventoryAccountingListener
                 [
                     'account_id' => $isGain ? $invAcc->id : $reserveAcc->id,
                     'debit_amount' => $absDiff,
-                    'credit_amount' => 0.0,
+                    'credit_amount' => '0',
                     'description' => $isGain ? 'Inventory Asset Appreciation' : 'Revaluation Deficit',
                 ],
                 [
                     'account_id' => $isGain ? $reserveAcc->id : $invAcc->id,
-                    'debit_amount' => 0.0,
+                    'debit_amount' => '0',
                     'credit_amount' => $absDiff,
                     'description' => $isGain ? 'Revaluation Surplus' : 'Inventory Asset Reduction',
                 ],

@@ -96,8 +96,8 @@ test('procurement accounting listener uses dynamic commitment amount instead of 
 
     expect($capturedPayload)->not->toBeNull()
         ->and($capturedPayload['journal_type'])->toBe('reversing')
-        ->and($capturedPayload['lines'][0]['debit_amount'])->toBe(4850.75)
-        ->and($capturedPayload['lines'][1]['credit_amount'])->toBe(4850.75);
+        ->and($capturedPayload['lines'][0]['debit_amount'])->toBe('4850.7500')
+        ->and($capturedPayload['lines'][1]['credit_amount'])->toBe('4850.7500');
 });
 
 test('european central bank provider returns valid currency pairs', function (): void {

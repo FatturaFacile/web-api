@@ -5,11 +5,13 @@ declare(strict_types=1);
 namespace Modules\Inventory\Services;
 
 use Enterprise\EventBus\Services\EventDispatcher;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Contracts\StockReservationServiceInterface;
 use Modules\Inventory\DTOs\StockReservationDTO;
 use Modules\Inventory\Events\StockReleasedEvent;
+use Modules\Inventory\Events\StockReservationExpiredEvent;
 use Modules\Inventory\Events\StockReservedEvent;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockQuant;
@@ -155,11 +157,43 @@ final class StockReservationService implements StockReservationServiceInterface
 
         $count = 0;
         foreach ($staleReservations as $res) {
-            $this->release($res);
-            $res->update(['status' => 'cancelled']);
+            DB::transaction(function () use ($res): void {
+                $this->release($res);
+                $res->update(['status' => 'cancelled']);
+
+                $this->dispatcher->publishAndDispatch(new StockReservationExpiredEvent(
+                    reservationId: (string) $res->id,
+                    stockItemId: (string) $res->stock_item_id,
+                    warehouseId: (string) $res->warehouse_id,
+                    reservedForType: (string) $res->reserved_for_type,
+                    reservedForId: (string) $res->reserved_for_id,
+                    quantity: bcadd((string) $res->quantity_reserved, '0', 4),
+                    tenantId: (string) $res->tenant_id,
+                    companyId: (string) ($res->company_id ?? '')
+                ));
+            });
             $count++;
         }
 
         return $count;
+    }
+
+    /**
+     * @param  list<string>  $reservedForIds
+     * @return Collection<int, StockReservation>
+     */
+    public function activeFor(string $reservedForType, array $reservedForIds): Collection
+    {
+        if ($reservedForIds === []) {
+            return new Collection;
+        }
+
+        return StockReservation::query()
+            ->where('reserved_for_type', $reservedForType)
+            ->whereIn('reserved_for_id', $reservedForIds)
+            ->where('status', 'active')
+            ->orderBy('created_at')
+            ->orderBy('id')
+            ->get();
     }
 }

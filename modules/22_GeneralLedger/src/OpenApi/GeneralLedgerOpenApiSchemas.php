@@ -38,8 +38,8 @@ class GeneralLedgerOpenApiSchemas
     #[OA\Property(example: 'posted', enum: ['draft', 'pending_approval', 'posted', 'reversed'])]
     public string $status;
 
-    #[OA\Property(example: 15420.50)]
-    public float $total_amount;
+    #[OA\Property(description: 'Sum of the debit side of the entry, as a decimal string (4 decimals)', type: 'string', example: '15420.5000')]
+    public string $total_amount;
 
     #[OA\Property(example: 'Vendor Invoice & Input VAT Posting')]
     public string $description;

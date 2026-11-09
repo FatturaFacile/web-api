@@ -52,13 +52,17 @@ class StockController extends Controller
     }
 
     /**
-     * Manual signed stock correction (inventory count result).
+     * Manual signed stock correction (inventory count result). Deprecated: it moves the stock at once, with no approval
+     * threshold and no ledger entry. It keeps working unchanged for existing clients and flags every response with
+     * `X-Deprecated: true` and a `Link` header to the successor, POST /api/v1/inventory/adjustments (approval above the
+     * tenant threshold, valuation posted to the General Ledger).
      */
     #[OA\Post(
         path: '/api/v1/inventory/stock-adjustments',
         operationId: 'recordStockAdjustment',
-        description: 'Record manual signed inventory quantity adjustment and valuation write-off/in.',
-        summary: 'Record stock adjustment',
+        description: 'DEPRECATED, use POST /api/v1/inventory/adjustments. Records a manual signed quantity correction of a product at once: no approval threshold applies and no General Ledger entry is posted for the valuation difference. Kept unchanged for existing clients; every response carries X-Deprecated: true and Link: </api/v1/inventory/adjustments>; rel="successor-version". The successor creates an inventory adjustment per stock item and bin with a reason, goes through approval above the tenant threshold and posts the variance to the ledger.',
+        summary: 'Record stock adjustment (deprecated)',
+        deprecated: true,
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Inventory', 'Stock'],
         requestBody: new OA\RequestBody(
@@ -76,6 +80,8 @@ class StockController extends Controller
         responses: [
             new OA\Response(response: 201, description: 'Stock adjusted successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 403, description: 'The role has no write access to the inventory module', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Product or warehouse not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
