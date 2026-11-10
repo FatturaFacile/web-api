@@ -22,7 +22,8 @@ final class SwissPayrollRules
     private const array AnnualModelCantons = ['FR', 'GE', 'TI', 'VD', 'VS'];
 
     /**
-     * The family allowance a child gives in a month, if any: education from 15 to 24 while in education, child under 16.
+     * The family allowance a child gives in a month, if any: education from 15 to 25 (inclusive of the month of the
+     * 25th birthday) while in education, child until the end of the month of the 16th birthday (Art. 3 al. 1 LAFam).
      */
     public static function familyAllowanceKind(ChildData $child, DateTimeImmutable $periodStart, DateTimeImmutable $periodEnd): ?string
     {
@@ -30,12 +31,14 @@ final class SwissPayrollRules
             return null;
         }
 
-        $age = PayrollDates::ageAt($child->dateOfBirth, $periodStart);
+        $ageAtEnd = PayrollDates::ageAt($child->dateOfBirth, $periodEnd);
+        $sixteenthBirthday = PayrollDates::addYears($child->dateOfBirth, 16);
+        $twentyFifthBirthday = PayrollDates::addYears($child->dateOfBirth, 25);
         $inEducation = $child->inEducation && ($child->educationEndDate === null || $child->educationEndDate >= $periodStart);
 
         return match (true) {
-            $inEducation && $age >= 15 && $age < 25 => self::EducationAllowanceKind,
-            $age < 16 => self::ChildAllowanceKind,
+            $inEducation && $ageAtEnd >= 15 && $twentyFifthBirthday >= $periodStart => self::EducationAllowanceKind,
+            $sixteenthBirthday >= $periodStart => self::ChildAllowanceKind,
             default => null,
         };
     }

@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
+use App\Http\Middleware\LogSensitiveDataReadAccess;
 use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
 use App\Http\Middleware\SecurityHeaders;
@@ -27,7 +28,11 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        $rawTrustedProxies = trim((string) env('TRUSTED_PROXIES', '127.0.0.1,::1,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16'));
+        $trustedProxies = ($rawTrustedProxies === '*' && in_array(env('APP_ENV'), ['local', 'testing'], true))
+            ? '*'
+            : array_values(array_filter(array_map('trim', explode(',', $rawTrustedProxies)), fn (string $ip): bool => $ip !== '' && $ip !== '*'));
+        $middleware->trustProxies(at: $trustedProxies);
 
         $middleware->prepend(NormalizeTenantInput::class);
 
@@ -49,6 +54,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'locale' => SetLocale::class,
             'deprecated' => MarkDeprecated::class,
             'normalize.tenant' => NormalizeTenantInput::class,
+            'privacy.sensitive.log' => LogSensitiveDataReadAccess::class,
         ]);
 
         $middleware->priority([

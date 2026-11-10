@@ -86094,6 +86094,189 @@
                 ]
             }
         },
+        "/api/v1/payroll/compliance/permit-alerts": {
+            "get": {
+                "tags": [
+                    "Payroll"
+                ],
+                "summary": "Swiss work permit compliance alerts",
+                "description": "Audit Swiss work permits (B, C, G, L, Ci, F, N, S, CH, Meldeverfahren) for expiration and withholding tax consistency.",
+                "operationId": "listPayrollPermitAlerts",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Permit compliance overview",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PayrollUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PayrollForbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payroll/compliance/salary-declaration/xml": {
+            "get": {
+                "tags": [
+                    "Payroll"
+                ],
+                "summary": "Export Swissdec ELM XML",
+                "description": "Generate the complete 10-domain Swissdec ELM 5.0 / 6.0 salary declaration XML from the closed runs of the year.",
+                "operationId": "exportSwissdecSalaryDeclarationXml",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/PayrollYearRequired"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Swissdec ELM XML file",
+                        "content": {
+                            "application/xml": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PayrollUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PayrollForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PayrollUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/payroll/compliance/salary-declaration/validate": {
+            "post": {
+                "tags": [
+                    "Payroll"
+                ],
+                "summary": "Validate Swissdec ELM XML",
+                "description": "Validate the generated or supplied Swissdec ELM XML declaration against the bundled XSD schema and 10-domain arithmetic consistency checks.",
+                "operationId": "validateSwissdecSalaryDeclaration",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "year": {
+                                        "type": "integer"
+                                    },
+                                    "xml": {
+                                        "type": "string"
+                                    },
+                                    "version": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Validation result",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PayrollUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PayrollForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PayrollUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/payroll/exports/salary-declaration": {
             "get": {
                 "tags": [
@@ -98916,6 +99099,15 @@
                         }
                     },
                     {
+                        "name": "presentation_currency",
+                        "in": "query",
+                        "description": "Optional presentation currency (e.g. CHF per CO Art. 958d para. 3)",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
                         "$ref": "#/components/parameters/XTenantId"
                     },
                     {
@@ -99034,6 +99226,168 @@
                     }
                 },
                 "deprecated": true,
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-ledger/financial-statements/swiss-anhang/{fiscalYearId}": {
+            "get": {
+                "tags": [
+                    "General Ledger Financial Statements"
+                ],
+                "summary": "Get Swiss statutory notes (Anhang)",
+                "description": "Returns the Swiss statutory notes to the financial statements (Anhang, CO Art. 959c) for the given fiscal year, including auto-derived BVG/pension liabilities and general ledger figures.",
+                "operationId": "getSwissAnhangGeneralLedgerFinancialStatement",
+                "parameters": [
+                    {
+                        "name": "fiscalYearId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Swiss Anhang disclosures and ledger figures",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Fiscal year not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "put": {
+                "tags": [
+                    "General Ledger Financial Statements"
+                ],
+                "summary": "Update Swiss statutory notes (Anhang)",
+                "description": "Creates or updates the Swiss statutory notes to the financial statements (Anhang, CO Art. 959c) for the given fiscal year.",
+                "operationId": "updateSwissAnhangGeneralLedgerFinancialStatement",
+                "parameters": [
+                    {
+                        "name": "fiscalYearId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated Swiss Anhang disclosures and ledger figures",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "bearerAuth": [],
@@ -99758,6 +100112,213 @@
                     },
                     "404": {
                         "description": "Resource not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-ledger/fiscal-years/{id}/reopen": {
+            "post": {
+                "tags": [
+                    "General Ledger Fiscal Years"
+                ],
+                "summary": "Reopen fiscal year",
+                "description": "Reopens a closed fiscal year prior to AGM approval and reverses the closing journal entries.",
+                "operationId": "reopenYearGeneralLedgerFiscalYear",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the fiscal year",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "reason": {
+                                        "type": "string",
+                                        "maxLength": 500
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Fiscal year reopened successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/GeneralLedgerFiscalYearResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Cannot reopen fiscal year",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-ledger/fiscal-years/{id}/approve-agm": {
+            "post": {
+                "tags": [
+                    "General Ledger Fiscal Years"
+                ],
+                "summary": "Approve fiscal year at AGM",
+                "description": "Records the Annual General Meeting (AGM) resolution approving the closed financial statements, permanently locking the fiscal year against reopening.",
+                "operationId": "approveAgmGeneralLedgerFiscalYear",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the fiscal year",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "resolution_reference": {
+                                        "type": "string",
+                                        "maxLength": 190
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "AGM approval recorded successfully",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "message": {
+                                            "type": "string"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/GeneralLedgerFiscalYearResource"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Fiscal year must be closed before AGM approval",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -105509,6 +106070,147 @@
                                 }
                             }
                         }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-ledger/tax-settlements/{id}/swiss-xml": {
+            "get": {
+                "tags": [
+                    "General Ledger Tax Settlements"
+                ],
+                "summary": "Export Swiss eCH-0217 VAT XML",
+                "description": "Downloads the official Swiss eCH-0217 v2.0 XML VAT declaration for ESTV ePortal upload.",
+                "operationId": "exportGeneralLedgerTaxSettlementSwissXml",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "description": "Identifier of the tax settlement",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "eCH-0217 XML file",
+                        "content": {
+                            "application/xml": {}
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "422": {
+                        "description": "Not a Swiss settlement",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-ledger/vat-annual-reconciliation": {
+            "get": {
+                "tags": [
+                    "General Ledger Tax Settlements"
+                ],
+                "summary": "Get Swiss VAT annual reconciliation",
+                "description": "Computes the Swiss VAT annual reconciliation (Umsatzabstimmung & Vorsteuerabstimmung under Art. 72 LIVA) comparing declared periodic VAT returns against the statutory General Ledger.",
+                "operationId": "getGeneralLedgerVatAnnualReconciliation",
+                "parameters": [
+                    {
+                        "name": "year",
+                        "in": "query",
+                        "description": "Calendar year",
+                        "required": false,
+                        "schema": {
+                            "type": "integer"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Annual VAT reconciliation report",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "description": "Unauthenticated",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
                     }
                 },
                 "security": [

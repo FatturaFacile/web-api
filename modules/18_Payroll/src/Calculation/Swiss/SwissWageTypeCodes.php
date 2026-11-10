@@ -33,6 +33,8 @@ final class SwissWageTypeCodes
 
     public const string Bvg = '9040';
 
+    public const string BvgBuyIn = 'BVG_BUYIN';
+
     public const string WithholdingTax = '9050';
 
     public const string AhvEmployer = '9500';

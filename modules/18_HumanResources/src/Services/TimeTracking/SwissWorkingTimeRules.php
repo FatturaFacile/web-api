@@ -45,6 +45,35 @@ final class SwissWorkingTimeRules
     /** End of night work. */
     public const NIGHT_END_HOUR = 6;
 
+    /** OLL 1 Art. 31 / ArG Art. 17b: threshold of night shifts per calendar year for regular night work (10% time compensation). */
+    public const int REGULAR_NIGHT_SHIFTS_THRESHOLD = 25;
+
+    /** ArG Art. 17b al. 2: mandatory 10% compensatory rest time credit for regular night work (>= 25 shifts/year). */
+    public const int NIGHT_TIME_COMPENSATION_PERCENT = 10;
+
+    /** ArG Art. 17b al. 1: 25% cash wage supplement for temporary/occasional night work (< 25 shifts/year). */
+    public const int NIGHT_CASH_SUPPLEMENT_PERCENT = 25;
+
+    /**
+     * Swiss CO Art. 329a: minimum statutory vacation weeks per year.
+     * Employees up to age 20 (under 20 years of age in the calendar year) and apprentices are entitled to at least 5 weeks (25 days on a 5-day week);
+     * all other employees are entitled to at least 4 weeks (20 days).
+     */
+    public static function minimumSwissVacationWeeks(DateTimeInterface $birthDate, int $year, bool $isApprentice = false): int
+    {
+        $age = $year - (int) $birthDate->format('Y');
+
+        return ($isApprentice || $age < 20) ? 5 : 4;
+    }
+
+    /**
+     * Swiss CO Art. 329a: minimum statutory vacation days per year for a given work week.
+     */
+    public static function minimumSwissVacationDays(DateTimeInterface $birthDate, int $year, bool $isApprentice = false, int $workDaysPerWeek = 5): int
+    {
+        return self::minimumSwissVacationWeeks($birthDate, $year, $isApprentice) * max(1, $workDaysPerWeek);
+    }
+
     /**
      * The minimum break for a daily working time (art. 15 LL: 15 minutes above 5.5 hours, 30 above 7, 60 above 9).
      */

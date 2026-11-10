@@ -12,5 +12,8 @@ final readonly class VatPurchaseDocument
     public function __construct(
         public string $deductibleVat,
         public string $totalNet = '0',
+        public bool $reverseCharge = false,
+        public ?string $estvBox = null,
+        public string $acquisitionTaxAmount = '0',
     ) {}
 }

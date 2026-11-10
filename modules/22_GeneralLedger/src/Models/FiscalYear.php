@@ -18,6 +18,8 @@ final class FiscalYear extends BaseEnterpriseModel
             'end_date' => 'date',
             'is_locked' => 'boolean',
             'closed_at' => 'datetime',
+            'reopened_at' => 'datetime',
+            'agm_approved_at' => 'datetime',
         ];
     }
 

@@ -16,6 +16,7 @@ final class VatCode extends BaseEnterpriseModel
     {
         return [
             'tax_rate_percent' => 'decimal:2',
+            'sss_rate_percent' => 'decimal:2',
             'is_reverse_charge' => 'boolean',
             'is_split_payment' => 'boolean',
             'is_non_deductible' => 'boolean',

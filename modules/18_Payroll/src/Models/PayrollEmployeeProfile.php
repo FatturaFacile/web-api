@@ -43,6 +43,14 @@ final class PayrollEmployeeProfile extends PayrollRecord
             'pension_fund_employee_rate_percent' => 'decimal:4',
             'regional_surcharge_rate_percent' => 'decimal:4',
             'municipal_surcharge_rate_percent' => 'decimal:4',
+            'waive_retiree_allowance' => 'boolean',
+            'extrapolate_qst_to_full_time' => 'boolean',
+            'other_employment_fte_percent' => 'decimal:2',
+            'qst_rate_determining_percent' => 'decimal:2',
+            'frontier_apply_80_percent_basis' => 'boolean',
+            'swiss_permit_number' => 'encrypted',
+            'swiss_permit_valid_until' => 'date:Y-m-d',
+            'single_parent_concubinage' => 'boolean',
         ];
     }
 

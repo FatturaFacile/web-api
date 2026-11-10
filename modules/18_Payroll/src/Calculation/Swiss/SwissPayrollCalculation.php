@@ -176,6 +176,18 @@ final class SwissPayrollCalculation
             return;
         }
 
+        $ahvRaw = $this->sumSubject(static fn (WageTypeData $type): bool => $type->subjectToAhv);
+        $extrapolatedAhvMonthly = Dec::isPositive($this->paidDays)
+            ? Dec::div(Dec::mul($ahvRaw, self::DaysPerMonth), $this->paidDays)
+            : $ahvRaw;
+        $minLafam = $this->context->parameters->lafamMinimumMonthlyIncome;
+
+        if (Dec::isPositive($minLafam) && Dec::cmp($extrapolatedAhvMonthly, $minLafam) < 0) {
+            $this->warnings[] = "Assegni familiari non corrisposti: salario soggetto ad AVS inferiore al minimo LAFam di CHF {$minLafam}/mese (art. 13 cpv. 3 LAFam).";
+
+            return;
+        }
+
         if ($rate === null) {
             $this->warnings[] = "Importi degli assegni familiari mancanti per il cantone {$canton}.";
 
@@ -199,7 +211,7 @@ final class SwissPayrollCalculation
 
         $this->ahvBasis = $contributionAge ? $ahvRaw : '0';
 
-        if ($pensioner) {
+        if ($pensioner && ! $this->employee->waiveRetireeAllowance) {
             $allowance = Dec::div(Dec::mul($this->settings->pensionerAllowanceMonthly, $this->paidDays), self::DaysPerMonth);
             $this->ahvBasis = Dec::max('0', Dec::sub($this->ahvBasis, $allowance));
         }
@@ -227,8 +239,7 @@ final class SwissPayrollCalculation
         $buRate = self::rate($this->employee->occupationalAccidentRatePercent, $this->settings->buEmployerRatePercent);
         $ktgRate = self::rate($this->employee->dailySicknessRatePercent, $this->settings->ktgEmployeeRatePercent);
         $fakRate = self::rate($this->employee->familyAllowanceFundRatePercent, $this->settings->fakEmployerRatePercent);
-        $nbuDue = ! $this->isHourly()
-            || Dec::isZero($this->employee->weeklyHours)
+        $nbuDue = Dec::isZero($this->employee->weeklyHours)
             || Dec::cmp($this->employee->weeklyHours, $this->context->parameters->nbuMinimumWeeklyHours) >= 0;
 
         $this->addContribution(SwissWageTypeCodes::Ahv, $this->ahvBasis, $this->settings->ahvEmployeeRatePercent, false);
@@ -259,6 +270,10 @@ final class SwissPayrollCalculation
 
         $tariff = $this->findTariff($this->withholdingTaxRateIncome());
         $manualRate = $this->employee->withholdingTaxRatePercent;
+
+        if (strcasecmp((string) $this->employee->frontierRegime, 'new') === 0 && $this->employee->frontierApply80PercentBasis) {
+            $this->qstBasis = Dec::round(Dec::mul($this->qstBasis, '0.80'));
+        }
 
         if ($tariff !== null) {
             $this->qstRate = $tariff->ratePercent;
@@ -382,25 +397,80 @@ final class SwissPayrollCalculation
 
     private function withholdingTaxRateIncome(): string
     {
+        $regular = '0';
+        $irregular = '0';
+
+        foreach ($this->lines as $line) {
+            $type = $this->context->wageTypes[$line->wageTypeCode] ?? null;
+
+            if ($type === null || ! WageTypeKind::isGross($type->kind) || ! $type->subjectToWithholdingTax) {
+                continue;
+            }
+
+            if ($type->isIrregular || $line->wageTypeCode === SwissWageTypeCodes::ThirteenthSalary) {
+                $irregular = Dec::add($irregular, $line->amount);
+            } else {
+                $regular = Dec::add($regular, $line->amount);
+            }
+        }
+
+        // Convert incomplete-month periodic income to a full 30-day month (FTA Circular No. 45 § 6.3).
+        $regularFullMonth = Dec::isPositive($this->paidDays)
+            ? Dec::div(Dec::mul($regular, self::DaysPerMonth), $this->paidDays)
+            : $regular;
+
+        // Extrapolate periodic income for part-time / multiple employment when applicable (Circular No. 45 § 6.4).
+        $regularExtrapolated = $this->extrapolateRegularQstIncomeByWorkload($regularFullMonth);
+
         if (SwissPayrollRules::usesAnnualWithholdingTaxModel($this->qstCanton)) {
-            // Annual model: the rate is determined on the regular monthly income including the pro-rata share of the 13th salary.
-            $regular = '0';
+            $installments = max($this->employee->salaryInstallmentsPerYear, 12);
+            $annualModelRegular = Dec::div(Dec::mul($regularExtrapolated, (string) $installments), '12');
+            $irregularWithout13th = '0';
 
             foreach ($this->lines as $line) {
                 $type = $this->context->wageTypes[$line->wageTypeCode] ?? null;
 
-                if ($type !== null && $type->subjectToWithholdingTax && ! $type->isIrregular && $line->wageTypeCode !== SwissWageTypeCodes::ThirteenthSalary) {
-                    $regular = Dec::add($regular, $line->amount);
+                if ($type !== null && WageTypeKind::isGross($type->kind) && $type->subjectToWithholdingTax && $type->isIrregular && $line->wageTypeCode !== SwissWageTypeCodes::ThirteenthSalary) {
+                    $irregularWithout13th = Dec::add($irregularWithout13th, $line->amount);
                 }
             }
 
-            $installments = max($this->employee->salaryInstallmentsPerYear, 12);
-
-            return Dec::div(Dec::mul(Dec::div(Dec::mul($regular, (string) $installments), '12'), self::DaysPerMonth), $this->paidDays);
+            return Dec::add($annualModelRegular, Dec::div($irregularWithout13th, '12'));
         }
 
-        // Monthly model: the income of an incomplete month is converted to a full month to determine the rate.
-        return Dec::div(Dec::mul($this->qstBasis, self::DaysPerMonth), $this->paidDays);
+        // Monthly model: periodic income is extrapolated to 30 days & workload, while irregular/aperiodic benefits are added un-extrapolated.
+        return Dec::add($regularExtrapolated, $irregular);
+    }
+
+    private function extrapolateRegularQstIncomeByWorkload(string $regularMonthly): string
+    {
+        if (! Dec::isPositive($regularMonthly)) {
+            return $regularMonthly;
+        }
+
+        $ftePercent = Dec::isPositive($this->employee->fteRatio)
+            ? Dec::mul($this->employee->fteRatio, '100')
+            : '100';
+
+        if (! Dec::isPositive($ftePercent) || Dec::cmp($ftePercent, '100') >= 0) {
+            return $regularMonthly;
+        }
+
+        $targetPercent = null;
+
+        if ($this->employee->qstRateDeterminingPercent !== null && Dec::isPositive($this->employee->qstRateDeterminingPercent)) {
+            $targetPercent = Dec::min('100', $this->employee->qstRateDeterminingPercent);
+        } elseif ($this->employee->extrapolateQstToFullTime) {
+            $targetPercent = '100';
+        } elseif (Dec::isPositive($this->employee->otherEmploymentFtePercent)) {
+            $targetPercent = Dec::min('100', Dec::add($ftePercent, $this->employee->otherEmploymentFtePercent));
+        }
+
+        if ($targetPercent === null || Dec::cmp($targetPercent, $ftePercent) <= 0) {
+            return $regularMonthly;
+        }
+
+        return Dec::div(Dec::mul($regularMonthly, $targetPercent), $ftePercent);
     }
 
     private function findTariff(string $rateIncome): ?WithholdingTaxTariffData

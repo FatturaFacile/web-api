@@ -13,6 +13,7 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\ItalianVatPeriod;
 use Modules\GeneralLedger\Services\Tax\LipeData;
 use Modules\GeneralLedger\Services\Tax\LipeXmlBuilder;
+use Modules\GeneralLedger\Services\Tax\SwissEstvXmlBuilder;
 use Modules\GeneralLedger\Services\Tax\VatAccountResolver;
 
 /**
@@ -191,6 +192,20 @@ final class VatFilingExportService
                 'periodFrom' => CarbonImmutable::parse($settlement->period_from)->format('d.m.Y'),
                 'periodTo' => CarbonImmutable::parse($settlement->period_to)->format('d.m.Y'),
             ]),
+        ];
+    }
+
+    /**
+     * @return array{file_name: string, content: string}
+     */
+    public function swissEstvXml(VatSettlement $settlement): array
+    {
+        $this->assertCountry($settlement, 'CH', 'The eCH-0217 XML export concerns Swiss VAT settlements only.');
+        $tenant = Tenant::query()->findOrFail($settlement->tenant_id);
+
+        return [
+            'file_name' => SwissEstvXmlBuilder::fileName($settlement),
+            'content' => SwissEstvXmlBuilder::build($settlement, $tenant),
         ];
     }
 

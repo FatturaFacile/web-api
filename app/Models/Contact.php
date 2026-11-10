@@ -40,7 +40,17 @@ class Contact extends Model
         'price_list_id',
         'payment_term_id',
         'document_language',
+        'processing_restricted_at',
+        'anonymized_at',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'processing_restricted_at' => 'datetime',
+            'anonymized_at' => 'datetime',
+        ];
+    }
 
     /**
      * @return Attribute<string, string>

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Services;
 
+use App\Models\Tenant;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -24,11 +25,12 @@ final readonly class LedgerSettingsService
     /**
      * The settings as the API shows them.
      *
-     * @return array{posting_accounts: array<string, array{account_id: ?string, account_code: ?string, account_name: ?string, source: ?string}>, manual_journal_approval_required: bool, manual_journal_approval_threshold: ?string}
+     * @return array{posting_accounts: array<string, array{account_id: ?string, account_code: ?string, account_name: ?string, source: ?string}>, manual_journal_approval_required: bool, manual_journal_approval_threshold: ?string, fx_unrealised_gain_provision_account_id: ?string, enforce_swiss_imparity_principle: bool, unrealised_gain_treatment: string}
      */
     public function show(string $tenantId): array
     {
         $setting = $this->setting($tenantId);
+        $country = strtoupper((string) (Tenant::find($tenantId)?->getAttribute('country') ?? 'IT'));
         $accounts = [];
 
         foreach ($this->resolver->all($tenantId) as $role => $resolved) {
@@ -40,17 +42,30 @@ final readonly class LedgerSettingsService
             ];
         }
 
+        $enforceImparity = $setting !== null
+            ? (bool) $setting->enforce_swiss_imparity_principle
+            : ($country === 'CH');
+        $defaultTreatment = $country === 'CH' && $enforceImparity ? 'provision' : 'recognise';
+        $treatment = $setting?->unrealised_gain_treatment !== null && $setting->unrealised_gain_treatment !== ''
+            ? (string) $setting->unrealised_gain_treatment
+            : $defaultTreatment;
+
         return [
             'posting_accounts' => $accounts,
             'manual_journal_approval_required' => $setting !== null && $setting->manual_journal_approval_required,
             'manual_journal_approval_threshold' => $setting?->manual_journal_approval_threshold !== null ? (string) $setting->manual_journal_approval_threshold : null,
+            'fx_unrealised_gain_provision_account_id' => $setting?->fx_unrealised_gain_provision_account_id !== null
+                ? (string) $setting->fx_unrealised_gain_provision_account_id
+                : $accounts[PostingAccountRole::FxUnrealisedGainProvision->value]['account_id'],
+            'enforce_swiss_imparity_principle' => $enforceImparity,
+            'unrealised_gain_treatment' => $treatment,
         ];
     }
 
     /**
      * Changes the settings given; a role set to null goes back to the preference code, if any.
      *
-     * @param  array{posting_accounts?: array<string, ?string>, manual_journal_approval_required?: bool, manual_journal_approval_threshold?: string|int|float|null}  $data
+     * @param  array{posting_accounts?: array<string, ?string>, manual_journal_approval_required?: bool, manual_journal_approval_threshold?: string|int|float|null, fx_unrealised_gain_provision_account_id?: ?string, enforce_swiss_imparity_principle?: bool, unrealised_gain_treatment?: ?string}  $data
      * @return array<string, mixed>
      *
      * @throws ValidationException when an account does not fit its role
@@ -81,7 +96,23 @@ final readonly class LedgerSettingsService
                 }
             }
 
-            if (array_key_exists('manual_journal_approval_required', $data) || array_key_exists('manual_journal_approval_threshold', $data)) {
+            $settingKeys = [
+                'manual_journal_approval_required',
+                'manual_journal_approval_threshold',
+                'fx_unrealised_gain_provision_account_id',
+                'enforce_swiss_imparity_principle',
+                'unrealised_gain_treatment',
+            ];
+
+            $hasSettingChange = false;
+            foreach ($settingKeys as $settingKey) {
+                if (array_key_exists($settingKey, $data)) {
+                    $hasSettingChange = true;
+                    break;
+                }
+            }
+
+            if ($hasSettingChange) {
                 $setting = LedgerSetting::withoutGlobalScopes()->where('tenant_id', $tenantId)->lockForUpdate()->first()
                     ?? new LedgerSetting(['id' => (string) Str::uuid7(), 'tenant_id' => $tenantId]);
 
@@ -92,6 +123,26 @@ final readonly class LedgerSettingsService
                 if (array_key_exists('manual_journal_approval_threshold', $data)) {
                     $threshold = $data['manual_journal_approval_threshold'];
                     $setting->setAttribute('manual_journal_approval_threshold', $threshold === null ? null : Decimal::normalize((string) $threshold));
+                }
+
+                if (array_key_exists('fx_unrealised_gain_provision_account_id', $data)) {
+                    $provisionId = $data['fx_unrealised_gain_provision_account_id'];
+                    if ($provisionId !== null) {
+                        $provisionAccount = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereKey($provisionId)->first();
+                        $allowed = PostingAccountRole::FxUnrealisedGainProvision->allowedAccountTypes();
+                        if ($provisionAccount === null || ! in_array($provisionAccount->account_type, $allowed, true)) {
+                            throw ValidationException::withMessages(['fx_unrealised_gain_provision_account_id' => ['The FX unrealised gain provision account must be of type '.implode(' or ', $allowed).' of this tenant.']]);
+                        }
+                    }
+                    $setting->setAttribute('fx_unrealised_gain_provision_account_id', $provisionId);
+                }
+
+                if (array_key_exists('enforce_swiss_imparity_principle', $data)) {
+                    $setting->enforce_swiss_imparity_principle = (bool) $data['enforce_swiss_imparity_principle'];
+                }
+
+                if (array_key_exists('unrealised_gain_treatment', $data)) {
+                    $setting->setAttribute('unrealised_gain_treatment', $data['unrealised_gain_treatment']);
                 }
 
                 $setting->save();

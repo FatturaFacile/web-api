@@ -24,6 +24,7 @@ final class BalanceSheetReportRequest extends FormRequest
         return [
             'as_of' => ['required', 'date'],
             'compare_as_of' => ['nullable', 'date'],
+            'presentation_currency' => ['nullable', 'string', 'size:3'],
         ];
     }
 }

@@ -23,6 +23,12 @@ final class FiscalYearResource extends JsonResource
             'status' => $this->status,
             'is_locked' => (bool) $this->is_locked,
             'closed_at' => $this->closed_at?->toIso8601String(),
+            'reopened_at' => $this->reopened_at?->toIso8601String(),
+            'reopened_by' => $this->reopened_by,
+            'reopen_reason' => $this->reopen_reason,
+            'agm_approved_at' => $this->agm_approved_at?->toIso8601String(),
+            'agm_approved_by' => $this->agm_approved_by,
+            'agm_resolution_reference' => $this->agm_resolution_reference,
             'periods' => FiscalPeriodResource::collection($this->whenLoaded('periods')),
         ];
     }

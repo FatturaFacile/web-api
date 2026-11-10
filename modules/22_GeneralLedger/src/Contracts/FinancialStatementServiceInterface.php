@@ -14,12 +14,12 @@ interface FinancialStatementServiceInterface
     /**
      * @return array<string, mixed>
      */
-    public function generateBalanceSheet(string $tenantId, string $fiscalPeriodId): array;
+    public function generateBalanceSheet(string $tenantId, string $fiscalPeriodId, ?string $presentationCurrency = null): array;
 
     /**
      * @return array<string, mixed>
      */
-    public function generateIncomeStatement(string $tenantId, string $fiscalPeriodId): array;
+    public function generateIncomeStatement(string $tenantId, string $fiscalPeriodId, ?string $presentationCurrency = null): array;
 
     /**
      * @return array<string, mixed>

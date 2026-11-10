@@ -38,6 +38,8 @@ Route::prefix('api/v1/general-ledger')
         // Fiscal Calendar
         Route::apiResource('fiscal-years', FiscalYearController::class)->except(['update', 'destroy']);
         Route::post('fiscal-years/{id}/close', [FiscalYearController::class, 'closeYear']);
+        Route::post('fiscal-years/{id}/reopen', [FiscalYearController::class, 'reopenYear'])->whereUuid('id');
+        Route::post('fiscal-years/{id}/approve-agm', [FiscalYearController::class, 'approveAgm'])->whereUuid('id');
         Route::post('fiscal-years/{id}/carry-forward', [FinancialAnalysisController::class, 'carryForward'])->whereUuid('id');
 
         Route::apiResource('fiscal-periods', FiscalPeriodController::class)->except(['update', 'destroy']);
@@ -99,6 +101,8 @@ Route::prefix('api/v1/general-ledger')
         Route::get('financial-statements/reclassified', [FinancialAnalysisController::class, 'reclassified']);
         Route::get('financial-statements/cash-flow-statement', [FinancialAnalysisController::class, 'cashFlow']);
         Route::get('financial-statements/ratios', [FinancialAnalysisController::class, 'ratios']);
+        Route::get('financial-statements/swiss-anhang/{fiscalYearId}', [FinancialStatementController::class, 'swissAnhang'])->whereUuid('fiscalYearId');
+        Route::put('financial-statements/swiss-anhang/{fiscalYearId}', [FinancialStatementController::class, 'updateSwissAnhang'])->whereUuid('fiscalYearId');
         Route::get('statement-schemes', [StatementSchemeController::class, 'index']);
         Route::post('statement-schemes', [StatementSchemeController::class, 'store']);
         Route::delete('statement-schemes/{id}', [StatementSchemeController::class, 'destroy'])->whereUuid('id');
@@ -127,6 +131,8 @@ Route::prefix('api/v1/general-ledger')
         Route::get('tax-settlements/{id}/lipe', [TaxSettlementController::class, 'lipe'])->whereUuid('id');
         Route::get('tax-settlements/{id}/f24', [TaxSettlementController::class, 'f24'])->whereUuid('id');
         Route::get('tax-settlements/{id}/statement', [TaxSettlementController::class, 'statement'])->whereUuid('id');
+        Route::get('tax-settlements/{id}/swiss-xml', [TaxSettlementController::class, 'swissXml'])->whereUuid('id');
+        Route::get('vat-annual-reconciliation', [TaxSettlementController::class, 'annualReconciliation']);
 
         // Withholding Settlements (Liquidazione ritenute)
         Route::get('withholding-settlements', [WithholdingSettlementController::class, 'index']);

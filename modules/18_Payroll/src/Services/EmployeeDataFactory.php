@@ -44,6 +44,12 @@ final class EmployeeDataFactory
             pensionFundEmployeeRatePercent: $profile?->pension_fund_employee_rate_percent,
             regionalSurchargeRatePercent: (string) ($profile->regional_surcharge_rate_percent ?? '0'),
             municipalSurchargeRatePercent: (string) ($profile->municipal_surcharge_rate_percent ?? '0'),
+            waiveRetireeAllowance: (bool) ($profile->waive_retiree_allowance ?? false),
+            extrapolateQstToFullTime: (bool) ($profile->extrapolate_qst_to_full_time ?? false),
+            otherEmploymentFtePercent: (string) ($profile->other_employment_fte_percent ?? '0'),
+            qstRateDeterminingPercent: $profile?->qst_rate_determining_percent === null ? null : (string) $profile->qst_rate_determining_percent,
+            frontierRegime: $profile?->frontier_regime,
+            frontierApply80PercentBasis: (bool) ($profile->frontier_apply_80_percent_basis ?? false),
         );
     }
 
