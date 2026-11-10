@@ -15,6 +15,15 @@ class Translation extends Model
     /** @use HasFactory<TranslationFactory> */
     use HasFactory;
 
+    /**
+     * Languages the platform ships translations for; also the only values allowed in public cache keys.
+     *
+     * @var array<int, string>
+     */
+    public const SUPPORTED_LOCALES = ['it', 'de', 'fr', 'en'];
+
+    public const DEFAULT_LOCALE = 'it';
+
     protected $fillable = [
         'tenant_id',
         'locale',
@@ -22,6 +31,17 @@ class Translation extends Model
         'key',
         'value',
     ];
+
+    /**
+     * Restrict a client-supplied locale to the supported languages, falling back to the default.
+     * Public endpoints build permanent cache keys from the locale, so arbitrary strings must never reach them.
+     */
+    public static function normalizeLocale(?string $locale): string
+    {
+        $normalized = strtolower(trim((string) $locale));
+
+        return in_array($normalized, self::SUPPORTED_LOCALES, true) ? $normalized : self::DEFAULT_LOCALE;
+    }
 
     /**
      * Scope query to a specific tenant ID with fallback to global (null) translations.
