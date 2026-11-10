@@ -91,12 +91,12 @@ final class StockValuationController extends Controller
         description: 'The stock as it stood at the end of the given day (company time zone), per item and warehouse, valued with the method of the item category: moving_average = perpetual ledger average up to that moment (value in minus value out over net quantity), fifo = latest receipts up to that moment, standard_cost = current standard cost (no history is kept). cost_source says where each unit cost comes from. valuation_method forces one method for every item.',
         tags: ['Inventory Valuation'],
         parameters: [
-            new OA\Parameter(name: 'date', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'date', example: '2026-12-31')),
+            new OA\Parameter(name: 'date', in: 'query', required: true, description: 'Y-m-d, today or in the past (a future date is a 422)', schema: new OA\Schema(type: 'string', format: 'date', example: '2026-12-31')),
             new OA\Parameter(ref: '#/components/parameters/WmsWarehouseFilter'),
-            new OA\Parameter(name: 'valuation_method', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['fifo', 'moving_average', 'standard_cost'])),
+            new OA\Parameter(name: 'valuation_method', in: 'query', required: false, description: 'Lowercase; forces one method for every item. When omitted each item is valued with the method of its category', schema: new OA\Schema(type: 'string', enum: ['fifo', 'moving_average', 'standard_cost'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Valuation at the date', content: new OA\JsonContent(ref: '#/components/schemas/WmsValuationReport')),
+            new OA\Response(response: 200, description: 'Valuation at the date: the report object itself, NOT wrapped in data (no success/message envelope)', content: new OA\JsonContent(ref: '#/components/schemas/WmsValuationReport')),
             new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/WmsUnprocessable', response: 422),
         ]

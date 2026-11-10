@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Invoicing\Http\Requests\InvoiceBillingPlanItemRequest;
 use Modules\Invoicing\Http\Requests\RunBillingPlansRequest;
 use Modules\Invoicing\Http\Requests\StoreBillingPlanRequest;
@@ -29,11 +31,13 @@ final class BillingPlanController extends Controller
 
     /**
      * Lists the billing plans of the active company, optionally of one order or in one status.
+     *
+     * @response AnonymousResourceCollection<LengthAwarePaginator<BillingPlanResource>>
      */
     #[OA\Get(
         path: '/api/v1/invoicing/billing-plans',
         operationId: 'listInvoicingBillingPlans',
-        description: 'Lists the billing plans of the active company with their items, newest first, optionally of one sales order or in one status.',
+        description: 'Lists the billing plans of the active company with their items, newest first, optionally of one sales order or in one status. The list is paginated (per_page up to 100, default 25): the body is the Laravel paginator document with data, links and meta.',
         summary: 'List billing plans',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Invoicing Billing'],
@@ -43,7 +47,11 @@ final class BillingPlanController extends Controller
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, maximum: 100, minimum: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Billing plans', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/InvoicingBillingPlanResource'))], type: 'object')),
+            new OA\Response(response: 200, description: 'Billing plans', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/InvoicingBillingPlanResource')),
+                new OA\Property(property: 'links', ref: '#/components/schemas/InvoicingPaginatorLinks'),
+                new OA\Property(property: 'meta', ref: '#/components/schemas/InvoicingPaginatorMeta'),
+            ], type: 'object')),
             new OA\Response(response: 401, ref: '#/components/responses/InvoicingBillingUnauthenticated'),
         ]
     )]

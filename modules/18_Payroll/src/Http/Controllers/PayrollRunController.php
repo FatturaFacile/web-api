@@ -11,12 +11,12 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response as HttpResponse;
 use Modules\Payroll\Calculation\PayrollPreview;
-use Modules\Payroll\Calculation\PayrollResult;
 use Modules\Payroll\Http\Requests\CalculatePayrollRunRequest;
 use Modules\Payroll\Http\Requests\PreviewPayrollRequest;
 use Modules\Payroll\Http\Requests\ReopenPayrollRunRequest;
 use Modules\Payroll\Http\Requests\SimulatePayrollRequest;
-use Modules\Payroll\Http\Resources\PayrollRecordResource;
+use Modules\Payroll\Http\Resources\PayrollRunResource;
+use Modules\Payroll\Http\Resources\PayrollSimulatedPayslipResource;
 use Modules\Payroll\Models\PayrollRun;
 use Modules\Payroll\Services\PayrollCalculator;
 use Modules\Payroll\Services\PayrollDocumentService;
@@ -49,7 +49,7 @@ final class PayrollRunController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollYearFilter')],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll runs', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll runs', content: new OA\JsonContent(ref: '#/components/schemas/PayrollRunPage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
         ]
@@ -64,7 +64,7 @@ final class PayrollRunController extends PayrollController
             ->orderByDesc('month')
             ->paginate($this->perPage($request, 24));
 
-        return PayrollRecordResource::collection($runs);
+        return PayrollRunResource::collection($runs);
     }
 
     /**
@@ -79,18 +79,18 @@ final class PayrollRunController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll run', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll run', content: new OA\JsonContent(ref: '#/components/schemas/PayrollRunEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
         ]
     )]
-    public function show(string $id): PayrollRecordResource
+    public function show(string $id): PayrollRunResource
     {
         $run = PayrollRun::query()->findOrFail($id);
         $this->authorize('view', $run);
 
-        return new PayrollRecordResource($run->load('payslips', 'events'));
+        return new PayrollRunResource($run->load('payslips', 'events'));
     }
 
     /**
@@ -105,7 +105,7 @@ final class PayrollRunController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollCalculateRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Run calculated', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Run calculated', content: new OA\JsonContent(ref: '#/components/schemas/PayrollRunEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollConflict', response: 409),
@@ -124,7 +124,7 @@ final class PayrollRunController extends PayrollController
             $request->validated('payment_date'),
         );
 
-        return (new PayrollRecordResource($run))->response()->setStatusCode(201);
+        return (new PayrollRunResource($run->refresh()))->response()->setStatusCode(201);
     }
 
     /**
@@ -139,7 +139,7 @@ final class PayrollRunController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollSimulateRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 200, description: 'Simulated payslips', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Simulated payslips', content: new OA\JsonContent(ref: '#/components/schemas/PayrollSimulationResponse')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -158,7 +158,7 @@ final class PayrollRunController extends PayrollController
 
         $results = $this->calculator->calculate($this->tenant(), (int) $request->validated('year'), (int) $request->validated('month'), $employeeId);
 
-        return response()->json(['data' => array_map(self::presentResult(...), array_values($results))]);
+        return PayrollSimulatedPayslipResource::collection(array_values($results))->response();
     }
 
     /**
@@ -173,7 +173,7 @@ final class PayrollRunController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollPreviewRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll preview', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll preview', content: new OA\JsonContent(ref: '#/components/schemas/PayrollPreviewResponse')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -202,7 +202,7 @@ final class PayrollRunController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Run approved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Run approved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollRunEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -210,12 +210,12 @@ final class PayrollRunController extends PayrollController
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function approve(Request $request, string $id): PayrollRecordResource
+    public function approve(Request $request, string $id): PayrollRunResource
     {
         $run = PayrollRun::query()->findOrFail($id);
         $this->authorize('approve', $run);
 
-        return new PayrollRecordResource($this->runs->approve($run, $this->actor($request)));
+        return new PayrollRunResource($this->runs->approve($run, $this->actor($request)));
     }
 
     /**
@@ -230,7 +230,7 @@ final class PayrollRunController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Run closed', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Run closed', content: new OA\JsonContent(ref: '#/components/schemas/PayrollRunEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -238,12 +238,12 @@ final class PayrollRunController extends PayrollController
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function finalize(Request $request, string $id): PayrollRecordResource
+    public function finalize(Request $request, string $id): PayrollRunResource
     {
         $run = PayrollRun::query()->findOrFail($id);
         $this->authorize('finalize', $run);
 
-        return new PayrollRecordResource($this->runs->finalize($run, $this->actor($request)));
+        return new PayrollRunResource($this->runs->finalize($run, $this->actor($request)));
     }
 
     /**
@@ -259,19 +259,19 @@ final class PayrollRunController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Run reopened', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Run reopened', content: new OA\JsonContent(ref: '#/components/schemas/PayrollRunEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function reopen(ReopenPayrollRunRequest $request, string $id): PayrollRecordResource
+    public function reopen(ReopenPayrollRunRequest $request, string $id): PayrollRunResource
     {
         $run = PayrollRun::query()->findOrFail($id);
         $this->authorize('reopen', $run);
 
-        return new PayrollRecordResource($this->runs->reopen($run, $this->actor($request), (string) $request->validated('reason')));
+        return new PayrollRunResource($this->runs->reopen($run, $this->actor($request), (string) $request->validated('reason')));
     }
 
     /**
@@ -300,43 +300,6 @@ final class PayrollRunController extends PayrollController
         $this->requireCountry('IT', 'Il Libro Unico del Lavoro è disponibile per le aziende italiane.');
 
         return $this->pdfResponse($this->documents->labourBook($run, $this->tenant()), sprintf('LUL_%d-%02d.pdf', $run->year, $run->month));
-    }
-
-    /**
-     * @return array<string, mixed>
-     */
-    private static function presentResult(PayrollResult $result): array
-    {
-        return [
-            'employee_id' => $result->payslip->employeeId,
-            'employee_name' => $result->payslip->employeeName,
-            'year' => $result->payslip->year,
-            'month' => $result->payslip->month,
-            'paid_days' => $result->payslip->paidDays,
-            'gross_salary' => $result->payslip->grossSalary,
-            'ahv_basis' => $result->payslip->ahvBasis,
-            'alv_basis' => $result->payslip->alvBasis,
-            'uvg_basis' => $result->payslip->uvgBasis,
-            'ktg_basis' => $result->payslip->ktgBasis,
-            'bvg_insured_salary' => $result->payslip->bvgInsuredSalary,
-            'withholding_tax_basis' => $result->payslip->withholdingTaxBasis,
-            'withholding_tax_rate_percent' => $result->payslip->withholdingTaxRatePercent,
-            'withholding_tax_code' => $result->payslip->withholdingTaxCode,
-            'withholding_tax_canton' => $result->payslip->withholdingTaxCanton,
-            'employee_deductions' => $result->payslip->employeeDeductions,
-            'net_salary' => $result->payslip->netSalary,
-            'payout_amount' => $result->payslip->payoutAmount,
-            'employer_contributions' => $result->payslip->employerContributions,
-            'warnings' => $result->payslip->warnings,
-            'lines' => array_map(static fn ($line): array => [
-                'wage_type_code' => $line->wageTypeCode,
-                'description' => $line->description,
-                'kind' => $line->kind,
-                'quantity' => $line->quantity,
-                'rate' => $line->rate,
-                'amount' => $line->amount,
-            ], $result->lines),
-        ];
     }
 
     /**

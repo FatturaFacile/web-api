@@ -35,7 +35,7 @@ final class StockItemController extends Controller
             new OA\Parameter(name: 'tracking_type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['none', 'lot', 'serial'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated stock items'),
+            new OA\Response(response: 200, description: 'Paginated stock items', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockItemList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -93,7 +93,7 @@ final class StockItemController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Stock item created'),
+            new OA\Response(response: 201, description: 'Stock item created', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockItem')),
             new OA\Response(response: 422, description: 'Validation failed'),
         ]
     )]
@@ -132,7 +132,7 @@ final class StockItemController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Stock item details'),
+            new OA\Response(response: 200, description: 'Stock item details', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockItem')),
             new OA\Response(response: 404, description: 'Stock item not found'),
         ]
     )]
@@ -154,7 +154,7 @@ final class StockItemController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Stock item updated'),
+            new OA\Response(response: 200, description: 'Stock item updated', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockItem')),
             new OA\Response(response: 404, description: 'Stock item not found'),
             new OA\Response(response: 422, description: 'Validation failed'),
         ]

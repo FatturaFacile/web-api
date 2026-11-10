@@ -41,7 +41,7 @@ final class FxRiskController extends Controller
             new OA\Parameter(name: 'company_id', in: 'query', required: false, description: 'Filter by company', schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 200, description: 'Exposure by foreign currency (bare object, no envelope)', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryFxExposure')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

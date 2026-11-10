@@ -33,7 +33,7 @@ final class StockQuantController extends Controller
             new OA\Parameter(name: 'available_only', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated list of stock quants'),
+            new OA\Response(response: 200, description: 'Paginated list of stock quants', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockQuantList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -105,7 +105,7 @@ final class StockQuantController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Stock quant details'),
+            new OA\Response(response: 200, description: 'Stock quant details', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockQuant')),
             new OA\Response(response: 404, description: 'Stock quant not found'),
         ]
     )]

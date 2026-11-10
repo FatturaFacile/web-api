@@ -37,6 +37,8 @@ class TimeAttendanceController extends Controller
 
     /**
      * List paginated time entries for the authenticated user or tenant.
+     *
+     * @deprecated Use GET /api/v1/hr/time/events.
      */
     #[OA\Get(
         path: '/api/v1/time-attendance/entries',
@@ -93,6 +95,8 @@ class TimeAttendanceController extends Controller
 
     /**
      * Clock in: register a new work shift start with optional GPS geofencing coords.
+     *
+     * @deprecated Use POST /api/v1/hr/time/events.
      */
     #[OA\Post(
         path: '/api/v1/time-attendance/clock-in',
@@ -158,6 +162,8 @@ class TimeAttendanceController extends Controller
 
     /**
      * Clock out: close the currently active shift and log breaks.
+     *
+     * @deprecated Use POST /api/v1/hr/time/events.
      */
     #[OA\Post(
         path: '/api/v1/time-attendance/clock-out',
@@ -230,6 +236,8 @@ class TimeAttendanceController extends Controller
 
     /**
      * Monthly Report: returns summarized hours, breaks, and compliance audit for a user.
+     *
+     * @deprecated Use the HR time reports under /api/v1/hr/time.
      */
     #[OA\Get(
         path: '/api/v1/time-attendance/monthly-report',
@@ -321,6 +329,8 @@ class TimeAttendanceController extends Controller
 
     /**
      * On-demand labour compliance audit check.
+     *
+     * @deprecated Use the HR time compliance endpoints under /api/v1/hr/time.
      */
     #[OA\Get(
         path: '/api/v1/time-attendance/compliance-check',

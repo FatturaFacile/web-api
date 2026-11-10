@@ -41,7 +41,7 @@ final class BankReconciliationController extends Controller
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of reconciliations', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryBankReconciliationResource')), new OA\Property(property: 'links', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 200, description: 'List of reconciliations', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryBankReconciliationResource')), new OA\Property(property: 'links', ref: '#/components/schemas/TreasuryPaginatorLinks'), new OA\Property(property: 'meta', ref: '#/components/schemas/TreasuryPaginatorMeta')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

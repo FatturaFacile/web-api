@@ -51,7 +51,7 @@ class QuoteController extends Controller
             new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Quotes list retrieved'),
+            new OA\Response(response: 200, description: 'Quotes list retrieved (with contact summary, no lines)', content: new OA\JsonContent(ref: '#/components/schemas/SalesQuoteListResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Forbidden'),
         ]
@@ -85,16 +85,11 @@ class QuoteController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['contact_id', 'date'],
-                properties: [
-                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
-                ]
+                ref: '#/components/schemas/SalesQuoteWriteRequest',
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Quote created successfully'),
+            new OA\Response(response: 201, description: 'Quote created successfully (columns written by the request, lines included; read the quote for the full document)', content: new OA\JsonContent(ref: '#/components/schemas/SalesQuoteResponse')),
             new OA\Response(response: 422, description: 'Validation error'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Forbidden'),
@@ -119,7 +114,7 @@ class QuoteController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Quote details retrieved'),
+            new OA\Response(response: 200, description: 'Quote details retrieved (with lines)', content: new OA\JsonContent(ref: '#/components/schemas/SalesQuoteResponse')),
             new OA\Response(response: 404, description: 'Quote not found'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Forbidden'),
@@ -145,15 +140,11 @@ class QuoteController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
-                ]
+                ref: '#/components/schemas/SalesQuoteWriteRequest',
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Quote updated successfully'),
+            new OA\Response(response: 200, description: 'Quote updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/SalesQuoteResponse')),
             new OA\Response(response: 404, description: 'Quote not found'),
             new OA\Response(response: 422, description: 'Validation error'),
             new OA\Response(response: 401, description: 'Unauthenticated'),

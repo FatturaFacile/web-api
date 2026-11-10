@@ -23,6 +23,7 @@ Route::prefix('api/v1/hr/me')
     ->whereUuid('id')
     ->group(function (): void {
         Route::get('/', [EmployeeSelfServiceController::class, 'profile'])->name('profile');
+        Route::get('/leave-types', [EmployeeSelfServiceController::class, 'leaveTypes'])->name('leave-types');
         Route::get('/leave-balances', [EmployeeSelfServiceController::class, 'leaveBalances'])->name('leave-balances');
         Route::get('/leave-requests', [EmployeeSelfServiceController::class, 'leaveRequests'])->name('leave-requests.index');
         Route::post('/leave-requests', [EmployeeSelfServiceController::class, 'submitLeave'])->name('leave-requests.store');

@@ -42,10 +42,34 @@ final class StockItemResource extends JsonResource
             'quants' => StockQuantResource::collection($this->whenLoaded('quants')),
             'lots' => $this->whenLoaded('lots'),
             'reorder_rules' => $this->whenLoaded('reorderRules'),
-            'total_on_hand' => (float) ($this->quants_sum_quantity ?? 0.0),
-            'total_available' => (float) ($this->quants_sum_available_quantity ?? 0.0),
+            'total_on_hand' => $this->totalOnHand(),
+            'total_available' => $this->totalOnHand() - $this->totalReserved(),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * On-hand quantity over every bin: the aggregate of the list query or, on a single item, the loaded quants.
+     */
+    private function totalOnHand(): float
+    {
+        if ($this->resource->getAttribute('quants_sum_quantity_on_hand') !== null) {
+            return (float) $this->resource->getAttribute('quants_sum_quantity_on_hand');
+        }
+
+        return $this->resource->relationLoaded('quants') ? (float) $this->resource->quants->sum('quantity_on_hand') : 0.0;
+    }
+
+    /**
+     * Reserved quantity over every bin, from the same source as the on-hand quantity.
+     */
+    private function totalReserved(): float
+    {
+        if ($this->resource->getAttribute('quants_sum_quantity_reserved') !== null) {
+            return (float) $this->resource->getAttribute('quants_sum_quantity_reserved');
+        }
+
+        return $this->resource->relationLoaded('quants') ? (float) $this->resource->quants->sum('quantity_reserved') : 0.0;
     }
 }

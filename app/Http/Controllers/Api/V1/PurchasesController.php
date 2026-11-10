@@ -42,7 +42,7 @@ class PurchasesController extends Controller
             new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Purchase requests retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Purchase requests retrieved successfully (the paginator is inside data: rows in data.data)', content: new OA\JsonContent(ref: '#/components/schemas/PurchasesRequestsListResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
@@ -64,7 +64,7 @@ class PurchasesController extends Controller
             new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Purchase orders retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Purchase orders retrieved successfully (the paginator is inside data: rows in data.data)', content: new OA\JsonContent(ref: '#/components/schemas/PurchasesOrdersListResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

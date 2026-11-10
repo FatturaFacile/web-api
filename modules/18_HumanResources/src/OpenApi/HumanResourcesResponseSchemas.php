@@ -93,10 +93,16 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'HumanResourcesLeaveTypeModel',
-    description: 'Attributes of the Leave Type record, as serialized by the API',
+    description: 'Attributes of the Leave Type record, as serialized by the API (the whole model: GET /hr/leave-types needs HR access; employees use GET /hr/me/leave-types)',
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'company_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'code', type: 'string', example: 'VAC'),
+        new OA\Property(property: 'name', type: 'string', example: 'Vacation'),
+        new OA\Property(property: 'category', type: 'string'),
+        new OA\Property(property: 'accrual_frequency', type: 'string'),
         new OA\Property(property: 'is_paid', type: 'boolean', nullable: true),
         new OA\Property(property: 'requires_approval', type: 'boolean', nullable: true),
         new OA\Property(property: 'requires_attachment', type: 'boolean', nullable: true),
@@ -110,7 +116,7 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'HumanResourcesLeaveBalanceResource',
-    description: 'JSON representation produced by LeaveBalanceResource',
+    description: 'Leave balance of an employee, leave type and fiscal year. The *_hours fields are JSON numbers (the resource casts them to float), not decimal strings.',
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
@@ -131,17 +137,17 @@ use OpenApi\Attributes as OA;
     type: 'object',
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
-        new OA\Property(property: 'request_number'),
-        new OA\Property(property: 'employee_id', type: 'string'),
-        new OA\Property(property: 'leave_type_id', type: 'string'),
-        new OA\Property(property: 'start_date', type: 'string'),
-        new OA\Property(property: 'end_date', type: 'string'),
-        new OA\Property(property: 'total_hours', type: 'number'),
-        new OA\Property(property: 'total_days', type: 'number'),
-        new OA\Property(property: 'status'),
+        new OA\Property(property: 'request_number', type: 'string', example: 'LR-202606-0001'),
+        new OA\Property(property: 'employee_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'leave_type_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'start_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'end_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'total_hours', type: 'number', description: 'JSON number (float), not a decimal string'),
+        new OA\Property(property: 'total_days', type: 'number', description: 'JSON number (float), not a decimal string'),
+        new OA\Property(property: 'status', type: 'string', enum: ['draft', 'pending_approval', 'approved', 'rejected', 'cancelled']),
         new OA\Property(property: 'is_locked', type: 'boolean'),
-        new OA\Property(property: 'reason'),
-        new OA\Property(property: 'approved_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'reason', type: 'string', nullable: true),
+        new OA\Property(property: 'approved_at', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
 #[OA\Schema(

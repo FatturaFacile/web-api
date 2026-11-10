@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Procurement\Actions\ProcessGoodsReceiptAction;
 use Modules\Procurement\DTOs\ProcessGoodsReceiptDTO;
 use Modules\Procurement\Http\Requests\ProcessGoodsReceiptRequest;
@@ -19,6 +21,11 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Procurement Goods Receipts', description: 'Warehouse receipt notes, QA inspections, and receiving dock operations')]
 final class PurchaseReceiptController extends Controller
 {
+    /**
+     * Paginated goods receipts, latest received first.
+     *
+     * @response AnonymousResourceCollection<LengthAwarePaginator<PurchaseReceiptResource>>
+     */
     #[OA\Get(
         path: '/api/v1/procurement/goods-receipts',
         summary: 'List goods receipts',
@@ -30,12 +37,7 @@ final class PurchaseReceiptController extends Controller
             new OA\Parameter(name: 'purchase_order_id', in: 'query', description: 'Filter by PO UUID', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated goods receipts', content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProcurementGoodsReceipt')),
-                    new OA\Property(property: 'meta', ref: '#/components/schemas/ProcurementApiPaginationMeta'),
-                ]
-            )),
+            new OA\Response(response: 200, description: 'Paginated goods receipts', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementGoodsReceiptPage')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]

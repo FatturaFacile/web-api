@@ -66,6 +66,20 @@ abstract class PayrollController extends Controller
         return new PayrollRecordResource($record);
     }
 
+    /**
+     * A record that was just created, re-read: the columns the database defaults (flags, counters, nullable audit
+     * columns) are in the 201 answer like in every later read of the record.
+     *
+     * @template TRecord of PayrollRecord
+     *
+     * @param  TRecord  $record
+     * @return TRecord
+     */
+    protected function refreshed(PayrollRecord $record): PayrollRecord
+    {
+        return $record->refresh();
+    }
+
     protected function pdfResponse(string $content, string $fileName): Response
     {
         return response($content, 200, [

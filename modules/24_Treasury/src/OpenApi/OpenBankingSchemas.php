@@ -63,8 +63,18 @@ use OpenApi\Attributes as OA;
     schema: 'TreasuryOpenBankingAccountInformation',
     type: 'object',
     properties: [
-        new OA\Property(property: 'balance', type: 'object'),
-        new OA\Property(property: 'transactions', type: 'array', items: new OA\Items(type: 'object')),
+        new OA\Property(property: 'balance', type: 'object', properties: [
+            new OA\Property(property: 'iban', type: 'string'),
+            new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+            new OA\Property(property: 'balance', type: 'string', example: '0.00'),
+        ]),
+        new OA\Property(property: 'transactions', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'external_id', type: 'string'),
+            new OA\Property(property: 'booked_at', type: 'string'),
+            new OA\Property(property: 'amount', type: 'string', example: '120.50'),
+            new OA\Property(property: 'currency', type: 'string'),
+            new OA\Property(property: 'description', type: 'string'),
+        ])),
     ]
 )]
 final class OpenBankingSchemas {}

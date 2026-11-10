@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Procurement\Http\Requests\StoreSupplierContractRequest;
 use Modules\Procurement\Http\Requests\UpdateSupplierContractRequest;
 use Modules\Procurement\Http\Resources\SupplierContractResource;
@@ -17,6 +19,11 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Procurement Contracts', description: 'Supplier framework agreements, commitments, and master terms')]
 final class SupplierContractController extends Controller
 {
+    /**
+     * Paginated supplier contracts by end date.
+     *
+     * @response AnonymousResourceCollection<LengthAwarePaginator<SupplierContractResource>>
+     */
     #[OA\Get(
         path: '/api/v1/procurement/contracts',
         summary: 'List supplier framework agreements and master contracts',
@@ -29,7 +36,7 @@ final class SupplierContractController extends Controller
             new OA\Parameter(name: 'status', in: 'query', description: 'Filter by status (draft, active, expired)', required: false, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated contracts list'),
+            new OA\Response(response: 200, description: 'Paginated contracts list', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementSupplierContractPage')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]

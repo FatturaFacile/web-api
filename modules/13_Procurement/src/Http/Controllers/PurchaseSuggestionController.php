@@ -10,7 +10,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\Procurement\Exceptions\ProcurementRuleViolation;
 use Modules\Procurement\Http\Controllers\Concerns\ProcurementControllerHelpers;
-use Modules\Procurement\Http\Requests\ProcurementDecisionRequest;
+use Modules\Procurement\Http\Requests\ConvertPurchaseSuggestionsRequest;
 use Modules\Procurement\Http\Resources\PurchaseOrderResource;
 use Modules\Procurement\Http\Resources\PurchaseSuggestionResource;
 use Modules\Procurement\Models\PurchaseOrder;
@@ -78,6 +78,10 @@ final class PurchaseSuggestionController extends Controller
 
     /**
      * Converts suggestions into purchase orders.
+     *
+     * @status 201
+     *
+     * @response array{data: list<PurchaseOrderResource>}
      */
     #[OA\Post(
         path: '/api/v1/procurement/purchase-suggestions/convert',
@@ -85,7 +89,7 @@ final class PurchaseSuggestionController extends Controller
         description: 'Creates one draft purchase order per supplier from open suggestions with a supplier offer.',
         summary: 'Convert purchase suggestions',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['suggestion_ids'], properties: [new OA\Property(property: 'suggestion_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid'))])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['suggestion_ids'], properties: [new OA\Property(property: 'suggestion_ids', type: 'array', minItems: 1, description: 'Open purchase suggestions to order; each needs a supplier offer', items: new OA\Items(type: 'string', format: 'uuid'))])),
         tags: ['Procurement Suggestions'],
         responses: [
             new OA\Response(response: 201, description: 'Purchase orders', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProcurementPurchaseOrder'))])),
@@ -94,7 +98,7 @@ final class PurchaseSuggestionController extends Controller
             new OA\Response(ref: '#/components/responses/ProcUnprocessable', response: 422),
         ]
     )]
-    public function convert(ProcurementDecisionRequest $request): JsonResponse
+    public function convert(ConvertPurchaseSuggestionsRequest $request): JsonResponse
     {
         /** @var list<string> $ids */
         $ids = $request->validated('suggestion_ids') ?? [];

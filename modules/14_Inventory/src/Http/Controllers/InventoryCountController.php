@@ -34,7 +34,7 @@ final class InventoryCountController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'in_progress', 'completed', 'cancelled'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated count sessions'),
+            new OA\Response(response: 200, description: 'Paginated count sessions', content: new OA\JsonContent(ref: '#/components/schemas/InventoryCountSessionList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -117,7 +117,7 @@ final class InventoryCountController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Session details'),
+            new OA\Response(response: 200, description: 'Session details', content: new OA\JsonContent(ref: '#/components/schemas/WmsCountSession')),
             new OA\Response(response: 404, description: 'Session not found'),
         ]
     )]
@@ -149,7 +149,7 @@ final class InventoryCountController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Count recorded'),
+            new OA\Response(response: 200, description: 'Count recorded', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Count recorded successfully')])),
             new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
@@ -230,7 +230,7 @@ final class InventoryCountController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Adjustment generated (approved and posted, or pending approval)'),
+            new OA\Response(response: 200, description: 'Adjustment generated (approved and posted, or pending approval)', content: new OA\JsonContent(ref: '#/components/schemas/InventoryAdjustment')),
             new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/WmsForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),

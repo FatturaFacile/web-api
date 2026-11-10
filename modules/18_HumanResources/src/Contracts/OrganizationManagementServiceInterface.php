@@ -16,7 +16,7 @@ interface OrganizationManagementServiceInterface
     public function assignSuccessor(Position $position, string $successorEmployeeId, string $readinessLevel = 'ready_1_2_years', ?string $actorUserId = null): Position;
 
     /**
-     * @return array<string, mixed>
+     * @return array{period_code: string, active_headcount: int, estimated_payroll_outflow: float, accrual_amount: float}
      */
     public function generatePeriodCostAndPayrollForecast(string $tenantId, string $periodCode): array;
 }

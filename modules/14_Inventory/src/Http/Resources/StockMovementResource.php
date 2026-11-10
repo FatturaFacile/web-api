@@ -14,15 +14,20 @@ final class StockMovementResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $source = $this->source_location_id;
+        $destination = $this->destination_location_id;
+        $quantity = (float) $this->quantity;
+
         return [
             'id' => $this->id,
             'movement_number' => $this->movement_number,
             'warehouse_id' => $this->warehouse_id,
             'stock_item_id' => $this->stock_item_id,
-            'source_bin_id' => $this->source_location_id,
-            'destination_bin_id' => $this->destination_location_id,
+            'source_bin_id' => $source,
+            'destination_bin_id' => $destination,
             'movement_type' => $this->movement_type,
-            'quantity' => (float) $this->quantity,
+            'quantity' => $quantity,
+            'signed_quantity' => $source !== null && $destination === null ? -abs($quantity) : abs($quantity),
             'unit_cost' => (float) $this->unit_cost,
             'total_valuation' => (float) $this->total_valuation,
             'stock_lot_id' => $this->lot_id,

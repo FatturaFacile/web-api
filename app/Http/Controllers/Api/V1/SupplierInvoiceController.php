@@ -33,6 +33,8 @@ class SupplierInvoiceController extends Controller
 
     /**
      * List received supplier documents. Filters: `supplier_id`, `document_type`, `payment_status`.
+     *
+     * @response array{success: bool, message: string, data: list<array{id: string, tenant_id: string|null, supplier_id: string, invoice_number: string, date: string, due_date: string|null, total_amount: string, currency: string, sdi_lot_id: string|null, is_reconciled: bool, qr_raw_payload: string|null, created_at: string|null, updated_at: string|null, document_type: string, total_net: string, total_tax: string, payment_status: string, document_hash: string|null, sdi_file_name: string|null, total_paid: string, gl_journal_entry_id: string|null, exchange_rate: string|null, withholding_tax_amount: string, withholdings: array<int, array<string, mixed>>|null, declaration_of_intent_id: string|null, cost_account_id: string|null, cost_account_source: string|null, approval_status: string, cost_center_id: string|null, approval_workflow_instance_id: string|null, approval_submitted_by: string|null, approval_decided_at: string|null, stamp_duty_amount: string, purchase_order_id: string|null, match_status: string|null, approval_status_before_block: string|null}>, meta: array{current_page: int, last_page: int, per_page: int, total: int}}
      */
     #[OA\Get(
         path: '/api/v1/purchases/supplier-invoices',
@@ -48,8 +50,8 @@ class SupplierInvoiceController extends Controller
             new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Supplier invoices retrieved successfully'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Supplier invoices retrieved successfully: every stored column of the document (decimals as strings, dates as ISO 8601 date-times, the raw XML hidden), newest document date first', content: new OA\JsonContent(ref: '#/components/schemas/PurchasesSupplierInvoiceListResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function index(Request $request): JsonResponse

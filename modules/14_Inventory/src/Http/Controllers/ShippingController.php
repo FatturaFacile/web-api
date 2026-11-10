@@ -137,7 +137,7 @@ final class ShippingController extends Controller
         tags: ['Inventory Shipping'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'The label in the format of the carrier: HTML for `local`, PDF for `dpd_ch`', content: new OA\MediaType(mediaType: 'text/html', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 200, description: 'The label in the format of the carrier: HTML for `local`, PDF for `dpd_ch`', content: [new OA\MediaType(mediaType: 'text/html', schema: new OA\Schema(type: 'string', description: 'HTML page of the label (carrier driver local)')), new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary', description: 'PDF of the label (carrier driver dpd_ch)'))]),
             new OA\Response(response: 404, description: 'Shipment not found'),
         ]
     )]

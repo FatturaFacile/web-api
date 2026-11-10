@@ -37,7 +37,7 @@ final class CashForecastController extends Controller
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of cash forecasts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryCashForecastResource')), new OA\Property(property: 'links', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 200, description: 'List of cash forecasts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryCashForecastResource')), new OA\Property(property: 'links', ref: '#/components/schemas/TreasuryPaginatorLinks'), new OA\Property(property: 'meta', ref: '#/components/schemas/TreasuryPaginatorMeta')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
@@ -120,7 +120,7 @@ final class CashForecastController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the cash forecast', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 200, description: 'Deficit evaluation (bare object, no envelope)', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryCashForecastDeficitEvaluation')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]

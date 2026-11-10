@@ -238,7 +238,7 @@ final class OrganizationController extends Controller
         parameters: [
             new OA\Parameter(name: 'positionId', in: 'path', required: true, description: 'Identifier of the position', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'successor_employee_id', type: 'string'), new OA\Property(property: 'readiness_level', type: 'string', default: 'ready_1_2_years')])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HrAssignSuccessorRequest')),
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesPositionResource')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -271,9 +271,9 @@ final class OrganizationController extends Controller
         summary: 'Generate payroll forecast',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Payroll Forecast'],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'period_code', type: 'string')])),
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/HrPayrollForecastRequest')),
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object')])),
+            new OA\Response(response: 200, description: 'The forecast of the period', content: new OA\JsonContent(ref: '#/components/schemas/HrPayrollForecastResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

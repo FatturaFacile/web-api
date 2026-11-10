@@ -18,11 +18,13 @@ use Modules\HumanResources\Http\Requests\SubmitOwnLeaveRequest;
 use Modules\HumanResources\Http\Resources\EmployeeDocumentResource;
 use Modules\HumanResources\Http\Resources\LeaveBalanceResource;
 use Modules\HumanResources\Http\Resources\LeaveRequestResource;
+use Modules\HumanResources\Http\Resources\LeaveTypeSelfServiceResource;
 use Modules\HumanResources\Models\Certification;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\EmployeeDocument;
 use Modules\HumanResources\Models\LeaveBalance;
 use Modules\HumanResources\Models\LeaveRequest;
+use Modules\HumanResources\Models\LeaveType;
 use Modules\HumanResources\Models\TrainingRecord;
 use Modules\HumanResources\Services\EmployeeDocumentService;
 use OpenApi\Attributes as OA;
@@ -51,7 +53,7 @@ final class EmployeeSelfServiceController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Self-Service'],
         responses: [
-            new OA\Response(response: 200, description: 'Employee record', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Employee record', content: new OA\JsonContent(ref: '#/components/schemas/HrSelfServiceProfileResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
@@ -76,6 +78,29 @@ final class EmployeeSelfServiceController extends Controller
     }
 
     /**
+     * The absence types, for labelling the own balances and requests.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/me/leave-types',
+        operationId: 'hrSelfServiceLeaveTypes',
+        description: 'Absence types of the active company (labels and flags, inactive ones included because old balances and requests can still reference them), for the employee self-service screens. Needs no HR module access, only an employee record linked to the user: 403 without one. The entitlement rules stay with GET /hr/leave-types, which needs HR access.',
+        summary: 'Leave types for my screens',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Self-Service'],
+        responses: [
+            new OA\Response(response: 200, description: 'Leave types ordered by code', content: new OA\JsonContent(ref: '#/components/schemas/HrSelfServiceLeaveTypeListResponse')),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+        ]
+    )]
+    public function leaveTypes(Request $request): JsonResponse
+    {
+        $this->ownEmployee($request);
+
+        return response()->json(['data' => LeaveTypeSelfServiceResource::collection(LeaveType::query()->orderBy('code')->get())]);
+    }
+
+    /**
      * The own leave balances.
      */
     #[OA\Get(
@@ -87,7 +112,7 @@ final class EmployeeSelfServiceController extends Controller
         tags: ['HR Self-Service'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/HrYearFilter')],
         responses: [
-            new OA\Response(response: 200, description: 'Balances', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Balances; hours are JSON numbers (floats)', content: new OA\JsonContent(ref: '#/components/schemas/HrLeaveBalanceListResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
@@ -114,7 +139,7 @@ final class EmployeeSelfServiceController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Self-Service'],
         responses: [
-            new OA\Response(response: 200, description: 'Requests', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Requests; hours and days are JSON numbers (floats)', content: new OA\JsonContent(ref: '#/components/schemas/HrLeaveRequestListResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
@@ -138,7 +163,7 @@ final class EmployeeSelfServiceController extends Controller
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HrOwnLeaveRequest')),
         tags: ['HR Self-Service'],
         responses: [
-            new OA\Response(response: 201, description: 'Request submitted', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Request submitted', content: new OA\JsonContent(ref: '#/components/schemas/HrLeaveRequestResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/HrUnprocessable', response: 422),
@@ -179,7 +204,7 @@ final class EmployeeSelfServiceController extends Controller
         tags: ['HR Self-Service'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/HrRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Request cancelled', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Request cancelled', content: new OA\JsonContent(ref: '#/components/schemas/HrLeaveRequestResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
@@ -206,7 +231,7 @@ final class EmployeeSelfServiceController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Self-Service'],
         responses: [
-            new OA\Response(response: 200, description: 'Training and certifications', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Training and certifications', content: new OA\JsonContent(ref: '#/components/schemas/HrSelfServiceTrainingResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
@@ -250,7 +275,7 @@ final class EmployeeSelfServiceController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Self-Service'],
         responses: [
-            new OA\Response(response: 200, description: 'Documents', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Documents', content: new OA\JsonContent(ref: '#/components/schemas/HrEmployeeDocumentListResponse')),
             new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]

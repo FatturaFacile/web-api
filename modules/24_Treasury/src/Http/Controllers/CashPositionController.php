@@ -32,7 +32,7 @@ final class CashPositionController extends Controller
             new OA\Parameter(name: 'currency', in: 'query', required: false, description: 'Filter by currency', schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 200, description: 'Intraday position (bare object, no envelope)', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryIntradayPosition')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

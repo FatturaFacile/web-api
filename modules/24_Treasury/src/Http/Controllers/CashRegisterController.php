@@ -160,7 +160,7 @@ final class CashRegisterController extends Controller
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryCashMovementResource'),
             ])),
-            new OA\Response(response: 200, description: 'Movement already recorded with this idempotency key', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Movement already recorded with this idempotency key (same body as the 201)', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryCashMovementEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryNotFound', response: 404),

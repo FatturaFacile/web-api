@@ -36,7 +36,7 @@ final class ReceivableCollectionController extends Controller
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'List of collections', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryReceivableCollectionResource')), new OA\Property(property: 'links', type: 'object'), new OA\Property(property: 'meta', type: 'object')])),
+            new OA\Response(response: 200, description: 'List of collections', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryReceivableCollectionResource')), new OA\Property(property: 'links', ref: '#/components/schemas/TreasuryPaginatorLinks'), new OA\Property(property: 'meta', ref: '#/components/schemas/TreasuryPaginatorMeta')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
@@ -71,7 +71,7 @@ final class ReceivableCollectionController extends Controller
             new OA\Parameter(name: 'company_id', in: 'query', required: false, description: 'Filter by company', schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 200, description: 'Aging buckets (bare object, no envelope)', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryCollectionsAging')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
