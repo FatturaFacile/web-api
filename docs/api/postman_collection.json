@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "3602920d-039c-4d8f-821f-1ac940eceb32",
+        "_postman_id": "0e03f6cb-5542-465e-90fb-c319d40416b4",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl variable, then run Auth > login: it stores authToken and tenantId for all other requests.",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -8023,7 +8023,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Use GET /api/v1/general-ledger/accounts."
                     }
                 },
                 {
@@ -8054,7 +8054,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Legacy listing of the ledger. It reads the journal entries of the General Ledger module (the one ledger of the\napplication), so it shows the same entries and figures as `/api/v1/general-ledger/journals`, in the legacy row\nshape plus the journal fields (`journal_number`, `fiscal_period_id`, `status`, `total_amount`)"
+                        "description": "Use GET /api/v1/general-ledger/journals."
                     }
                 },
                 {
@@ -8129,7 +8129,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Use GET /api/v1/general-ledger/tax-settlements."
                     }
                 },
                 {
@@ -31643,7 +31643,7 @@
                         "description": "Creates a segment",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"entity\": \"contacts\",\n    \"filters\": [\n        [\n            \"string\"\n        ]\n    ],\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"entity\": \"contacts\",\n    \"filters\": [\n        {\n            \"field\": \"string\",\n            \"operator\": \"string\",\n            \"value\": \"string\",\n            \"channel\": \"string\",\n            \"purpose\": \"string\"\n        }\n    ],\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -31732,7 +31732,7 @@
                         "description": "Updates a segment",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"entity\": \"contacts\",\n    \"filters\": [\n        [\n            \"string\"\n        ]\n    ],\n    \"is_active\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"entity\": \"contacts\",\n    \"filters\": [\n        {\n            \"field\": \"string\",\n            \"operator\": \"string\",\n            \"value\": \"string\",\n            \"channel\": \"string\",\n            \"purpose\": \"string\"\n        }\n    ],\n    \"is_active\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -46425,7 +46425,14 @@
                                 "financial-statements",
                                 "balance-sheet"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "presentation_currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "Generates the balance sheet of the fiscal period"
@@ -46457,7 +46464,14 @@
                                 "financial-statements",
                                 "income-statement"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "presentation_currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "Generates the income statement of the fiscal period"
@@ -46493,6 +46507,97 @@
                             "variable": []
                         },
                         "description": "Generates the data used to prepare the cash flow statement of the fiscal period"
+                    }
+                },
+                {
+                    "name": "Retrieves the Swiss statutory notes (Anhang, CO Art. 959c) for a fiscal year",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/financial-statements/swiss-anhang/:fiscalYearId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "financial-statements",
+                                "swiss-anhang",
+                                ":fiscalYearId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "fiscalYearId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Retrieves the Swiss statutory notes (Anhang, CO Art. 959c) for a fiscal year"
+                    }
+                },
+                {
+                    "name": "Updates the Swiss statutory notes (Anhang, CO Art. 959c) for a fiscal year",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/financial-statements/swiss-anhang/:fiscalYearId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "financial-statements",
+                                "swiss-anhang",
+                                ":fiscalYearId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "fiscalYearId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Updates the Swiss statutory notes (Anhang, CO Art. 959c) for a fiscal year",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fte_band\": \"up_to_10\",\n    \"valuation_principles\": \"string\",\n    \"pledged_assets_amount\": 1.5,\n    \"pledged_assets_details\": \"string\",\n    \"leasing_commitments_amount\": 1.5,\n    \"leasing_commitments_details\": \"string\",\n    \"pension_fund_liabilities_amount\": 1.5,\n    \"pension_fund_liabilities_details\": \"string\",\n    \"fire_insurance_values\": [\n        \"string\"\n    ],\n    \"subsequent_events\": \"string\",\n    \"auditor_fees_audit\": 1.5,\n    \"auditor_fees_other\": 1.5,\n    \"extra_disclosures\": [\n        \"string\"\n    ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -46843,6 +46948,110 @@
                             ]
                         },
                         "description": "Runs the closing of the fiscal year and returns the closing run"
+                    }
+                },
+                {
+                    "name": "Reopens a closed fiscal year prior to AGM approval (CO Art. 958 / 698)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fiscal-years/:id/reopen",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fiscal-years",
+                                ":id",
+                                "reopen"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Reopens a closed fiscal year prior to AGM approval (CO Art. 958 / 698)",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Locks the fiscal year upon Annual General Meeting (AGM) approval (CO Art. 698 / 958)",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/fiscal-years/:id/approve-agm",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "fiscal-years",
+                                ":id",
+                                "approve-agm"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Locks the fiscal year upon Annual General Meeting (AGM) approval (CO Art. 698 / 958)",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"resolution_reference\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -47691,6 +47900,12 @@
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
+                                },
+                                {
+                                    "key": "presentation_currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -47817,6 +48032,12 @@
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
+                                },
+                                {
+                                    "key": "presentation_currency",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -47889,6 +48110,12 @@
                                 },
                                 {
                                     "key": "project_id",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "presentation_currency",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
@@ -48067,7 +48294,7 @@
                         "description": "Changes the settings sent",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"posting_accounts\": {\n        \"sales_revenue\": \"00000000-0000-0000-0000-000000000000\",\n        \"purchase_expense\": \"00000000-0000-0000-0000-000000000000\",\n        \"output_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"input_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"receivables\": \"00000000-0000-0000-0000-000000000000\",\n        \"payables\": \"00000000-0000-0000-0000-000000000000\",\n        \"retained_earnings\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_realised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_realised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"rounding\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    \"manual_journal_approval_required\": false,\n    \"manual_journal_approval_threshold\": 1.5\n}",
+                            "raw": "{\n    \"posting_accounts\": {\n        \"sales_revenue\": \"00000000-0000-0000-0000-000000000000\",\n        \"purchase_expense\": \"00000000-0000-0000-0000-000000000000\",\n        \"output_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"input_vat\": \"00000000-0000-0000-0000-000000000000\",\n        \"receivables\": \"00000000-0000-0000-0000-000000000000\",\n        \"payables\": \"00000000-0000-0000-0000-000000000000\",\n        \"retained_earnings\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_gain_provision\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_unrealised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_realised_gain\": \"00000000-0000-0000-0000-000000000000\",\n        \"fx_realised_loss\": \"00000000-0000-0000-0000-000000000000\",\n        \"rounding\": \"00000000-0000-0000-0000-000000000000\"\n    },\n    \"manual_journal_approval_required\": false,\n    \"manual_journal_approval_threshold\": 1.5,\n    \"fx_unrealised_gain_provision_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"enforce_swiss_imparity_principle\": false,\n    \"unrealised_gain_treatment\": \"provision\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -49381,6 +49608,76 @@
                     }
                 },
                 {
+                    "name": "Downloads the Swiss eCH-0217 XML declaration of a VAT settlement",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/tax-settlements/:id/swiss-xml",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "tax-settlements",
+                                ":id",
+                                "swiss-xml"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Downloads the Swiss eCH-0217 XML declaration of a VAT settlement"
+                    }
+                },
+                {
+                    "name": "Returns the Swiss VAT Annual Reconciliation (Umsatzabstimmung & Vorsteuerabstimmung, Art. 72 LIVA)",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/vat-annual-reconciliation",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "vat-annual-reconciliation"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Returns the Swiss VAT Annual Reconciliation (Umsatzabstimmung & Vorsteuerabstimmung, Art. 72 LIVA)"
+                    }
+                },
+                {
                     "name": "Returns the sales or purchases VAT register of a date range",
                     "request": {
                         "method": "GET",
@@ -49503,7 +49800,7 @@
                         "description": "Updates the VAT settings of the active tenant",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"periodicity\": \"monthly\",\n    \"output_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"input_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"settlement_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"interest_expense_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"declarant_tax_code\": \"string\",\n    \"declarant_role_code\": \"string\"\n}",
+                            "raw": "{\n    \"periodicity\": \"monthly\",\n    \"regime\": \"effective\",\n    \"sss_rate_1\": 1.5,\n    \"sss_rate_2\": 1.5,\n    \"flat_tax_rates\": [\n        1.5\n    ],\n    \"flat_rate_adjustment_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"acquisition_tax_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"output_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"input_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"settlement_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"interest_expense_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"declarant_tax_code\": \"string\",\n    \"declarant_role_code\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -51320,6 +51617,38 @@
                             "variable": []
                         },
                         "description": "The own employee record"
+                    }
+                },
+                {
+                    "name": "The absence types, for labelling the own balances and requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/me/leave-types",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "me",
+                                "leave-types"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "The absence types, for labelling the own balances and requests"
                     }
                 },
                 {
@@ -56134,7 +56463,7 @@
                         "description": "Close a month",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"year\": 1,\n    \"month\": 1\n}",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"transfer_to_payroll\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -56193,6 +56522,83 @@
                                 }
                             }
                         }
+                    }
+                },
+                {
+                    "name": "Transfer a closed (or approved) attendance period to payroll variable inputs",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/time-closings/:year/:month/transfer-to-payroll",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "time-closings",
+                                ":year",
+                                ":month",
+                                "transfer-to-payroll"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Transfer a closed (or approved) attendance period to payroll variable inputs"
+                    }
+                },
+                {
+                    "name": "List or evaluate ArG Art. 17b night work compensation balances for a calendar year",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/hr/time/night-work-balances",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "hr",
+                                "time",
+                                "night-work-balances"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List or evaluate ArG Art. 17b night work compensation balances for a calendar year"
                     }
                 }
             ]
@@ -67824,7 +68230,7 @@
                         "description": "Create or change the payroll profile of an employee",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"social_security_number\": \"string\",\n    \"iban\": \"string\",\n    \"street\": \"string\",\n    \"house_number\": \"string\",\n    \"postal_code\": \"string\",\n    \"city\": \"string\",\n    \"gender\": \"M\",\n    \"residence_permit\": \"CH\",\n    \"residence_country\": \"string\",\n    \"residence_canton\": \"AG\",\n    \"work_canton\": \"AG\",\n    \"civil_status\": \"string\",\n    \"church_tax\": false,\n    \"pay_type\": \"monthly\",\n    \"salary_installments_per_year\": 1,\n    \"hourly_wage\": 1.5,\n    \"weekly_hours\": 1.5,\n    \"holiday_weeks\": 1,\n    \"is_fixed_term_contract\": false,\n    \"is_withholding_tax_subject\": false,\n    \"withholding_tax_code\": \"string\",\n    \"withholding_tax_rate_percent\": 1.5,\n    \"birth_place\": \"string\",\n    \"italian_tax_code\": \"string\",\n    \"frontier_regime\": \"old\",\n    \"frontier_status_valid_from\": \"2026-01-31\",\n    \"frontier_commune_in_zone\": false,\n    \"frontier_returns_daily\": false,\n    \"ccl_zone\": \"string\",\n    \"non_occupational_accident_rate_percent\": 1.5,\n    \"occupational_accident_rate_percent\": 1.5,\n    \"daily_sickness_rate_percent\": 1.5,\n    \"family_allowance_fund_rate_percent\": 1.5,\n    \"pension_fund_employee_rate_percent\": 1.5,\n    \"regional_surcharge_rate_percent\": 1.5,\n    \"municipal_surcharge_rate_percent\": 1.5,\n    \"collective_agreement_code\": \"string\",\n    \"contract_level\": \"string\",\n    \"inps_qualification\": \"string\",\n    \"region_code\": \"string\",\n    \"municipality_code\": \"string\"\n}",
+                            "raw": "{\n    \"social_security_number\": \"string\",\n    \"iban\": \"string\",\n    \"street\": \"string\",\n    \"house_number\": \"string\",\n    \"postal_code\": \"string\",\n    \"city\": \"string\",\n    \"gender\": \"M\",\n    \"residence_permit\": \"CH\",\n    \"residence_country\": \"string\",\n    \"residence_canton\": \"AG\",\n    \"work_canton\": \"AG\",\n    \"civil_status\": \"string\",\n    \"church_tax\": false,\n    \"pay_type\": \"monthly\",\n    \"salary_installments_per_year\": 1,\n    \"hourly_wage\": 1.5,\n    \"weekly_hours\": 1.5,\n    \"holiday_weeks\": 1,\n    \"is_fixed_term_contract\": false,\n    \"is_withholding_tax_subject\": false,\n    \"withholding_tax_code\": \"string\",\n    \"withholding_tax_rate_percent\": 1.5,\n    \"birth_place\": \"string\",\n    \"italian_tax_code\": \"string\",\n    \"frontier_regime\": \"old\",\n    \"frontier_status_valid_from\": \"2026-01-31\",\n    \"frontier_commune_in_zone\": false,\n    \"frontier_returns_daily\": false,\n    \"frontier_apply_80_percent_basis\": false,\n    \"waive_retiree_allowance\": false,\n    \"extrapolate_qst_to_full_time\": false,\n    \"other_employment_fte_percent\": 1.5,\n    \"qst_rate_determining_percent\": 1.5,\n    \"swiss_permit_type\": \"CH\",\n    \"swiss_permit_number\": \"string\",\n    \"swiss_permit_valid_until\": \"2026-01-31\",\n    \"spouse_work_status\": \"string\",\n    \"religion_code\": \"string\",\n    \"single_parent_concubinage\": false,\n    \"ccl_zone\": \"string\",\n    \"non_occupational_accident_rate_percent\": 1.5,\n    \"occupational_accident_rate_percent\": 1.5,\n    \"daily_sickness_rate_percent\": 1.5,\n    \"family_allowance_fund_rate_percent\": 1.5,\n    \"pension_fund_employee_rate_percent\": 1.5,\n    \"regional_surcharge_rate_percent\": 1.5,\n    \"municipal_surcharge_rate_percent\": 1.5,\n    \"collective_agreement_code\": \"string\",\n    \"contract_level\": \"string\",\n    \"inps_qualification\": \"string\",\n    \"region_code\": \"string\",\n    \"municipality_code\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -68676,6 +69082,12 @@
                                     "value": "",
                                     "disabled": false,
                                     "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -68767,11 +69179,148 @@
                                     "value": "",
                                     "disabled": false,
                                     "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
                         },
                         "description": "Data of the exchange of information"
+                    }
+                },
+                {
+                    "name": "Audit Swiss work permits for expiry and withholding tax consistency",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/compliance/permit-alerts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "compliance",
+                                "permit-alerts"
+                            ],
+                            "query": [
+                                {
+                                    "key": "warning_days",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Audit Swiss work permits for expiry and withholding tax consistency"
+                    }
+                },
+                {
+                    "name": "Export the Swissdec ELM 5.0 / 6.0 salary declaration as XML",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/compliance/salary-declaration/xml?year=",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "compliance",
+                                "salary-declaration",
+                                "xml"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "",
+                                    "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "Export the Swissdec ELM 5.0 / 6.0 salary declaration as XML"
+                    }
+                },
+                {
+                    "name": "Validate a Swissdec ELM 5.0 / 6.0 salary declaration against the bundled XSD schema and domain rules",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/payroll/compliance/salary-declaration/validate",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "payroll",
+                                "compliance",
+                                "salary-declaration",
+                                "validate"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Validate a Swissdec ELM 5.0 / 6.0 salary declaration against the bundled XSD schema and domain rules",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"xml\": \"string\",\n    \"version\": \"5.0\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
                     }
                 },
                 {
@@ -68805,6 +69354,12 @@
                                     "key": "year",
                                     "value": "",
                                     "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
                                     "description": ""
                                 }
                             ],
@@ -68935,6 +69490,12 @@
                                     "value": "",
                                     "disabled": false,
                                     "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -69006,6 +69567,12 @@
                                     "value": "",
                                     "disabled": false,
                                     "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -69044,6 +69611,12 @@
                                     "key": "year",
                                     "value": "",
                                     "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
                                     "description": ""
                                 }
                             ],
@@ -69088,7 +69661,7 @@
                         "description": "Send a declaration: not available",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"year\": 1\n}",
+                            "raw": "{\n    \"year\": 1,\n    \"version\": \"5.0\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -69734,6 +70307,12 @@
                                     "key": "year",
                                     "value": "",
                                     "disabled": false,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "version",
+                                    "value": "",
+                                    "disabled": true,
                                     "description": ""
                                 }
                             ],
@@ -74238,7 +74817,7 @@
                         "description": "Approves the variance of a failed three-way match",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"reason\": \"string\",\n    \"suggestion_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"credit_note_reference\": \"string\",\n    \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -74248,7 +74827,7 @@
                     }
                 },
                 {
-                    "name": "GET /v1/procurement/purchase-orders",
+                    "name": "Paginated purchase orders, newest first",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -74294,7 +74873,7 @@
                             ],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Paginated purchase orders, newest first"
                     }
                 },
                 {
@@ -74773,7 +75352,7 @@
                     }
                 },
                 {
-                    "name": "GET /v1/procurement/goods-receipts",
+                    "name": "Paginated goods receipts, latest received first",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -74807,7 +75386,7 @@
                             ],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Paginated goods receipts, latest received first"
                     }
                 },
                 {
@@ -74901,7 +75480,7 @@
                     }
                 },
                 {
-                    "name": "GET /v1/procurement/requisitions",
+                    "name": "Paginated purchase requisitions",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -74947,7 +75526,7 @@
                             ],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Paginated purchase requisitions"
                     }
                 },
                 {
@@ -75523,7 +76102,7 @@
                         "description": "Converts suggestions into purchase orders",
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"reason\": \"string\",\n    \"suggestion_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"passive_invoice_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"credit_note_reference\": \"string\",\n    \"cost_center_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "raw": "{\n    \"suggestion_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -76433,7 +77012,7 @@
                     }
                 },
                 {
-                    "name": "GET /v1/procurement/contracts",
+                    "name": "Paginated supplier contracts by end date",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -76473,7 +77052,7 @@
                             ],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Paginated supplier contracts by end date"
                     }
                 },
                 {
@@ -77146,7 +77725,7 @@
                     }
                 },
                 {
-                    "name": "GET /v1/procurement/three-way-match",
+                    "name": "Paginated three-way matching logs, latest evaluation first",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -77180,7 +77759,7 @@
                             ],
                             "variable": []
                         },
-                        "description": ""
+                        "description": "Paginated three-way matching logs, latest evaluation first"
                     }
                 },
                 {
@@ -81556,6 +82135,431 @@
                     }
                 },
                 {
+                    "name": "GET /v1/settings/privacy/processing-activities",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/processing-activities",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "processing-activities"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/privacy/processing-activities",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/processing-activities",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "processing-activities"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"string\",\n    \"purpose\": \"string\",\n    \"legal_basis\": \"string\",\n    \"data_categories\": [\n        \"string\"\n    ],\n    \"subject_categories\": [\n        \"string\"\n    ],\n    \"recipients\": [\n        \"string\"\n    ],\n    \"cross_border_countries\": [\n        \"string\"\n    ],\n    \"transfer_safeguards\": \"string\",\n    \"retention_period\": \"string\",\n    \"security_measures\": \"string\",\n    \"status\": \"active\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/privacy/subprocessors",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/subprocessors",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "subprocessors"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/privacy/subprocessors",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/subprocessors",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "subprocessors"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"name\": \"string\",\n    \"service_type\": \"string\",\n    \"country_code\": \"string\",\n    \"safeguard_mechanism\": \"string\",\n    \"dpa_signed_at\": \"2026-01-31T12:00:00+00:00\",\n    \"is_active\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/privacy/data-subject-requests",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/data-subject-requests",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "data-subject-requests"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/privacy/data-subject-requests",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/data-subject-requests",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "data-subject-requests"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"request_type\": \"access\",\n    \"regulation\": \"nLPD\",\n    \"subject_type\": \"contact\",\n    \"subject_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"notes\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/privacy/data-subject-requests/:id/execute-erasure",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/data-subject-requests/:id/execute-erasure",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "data-subject-requests",
+                                ":id",
+                                "execute-erasure"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/privacy/portability/:subjectType/:subjectId",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/portability/:subjectType/:subjectId",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "portability",
+                                ":subjectType",
+                                ":subjectId"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "subjectType",
+                                    "value": "",
+                                    "description": ""
+                                },
+                                {
+                                    "key": "subjectId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/privacy/breaches",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/breaches",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "breaches"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/privacy/breaches",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/breaches",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "breaches"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"title\": \"string\",\n    \"severity\": \"low\",\n    \"discovered_at\": \"2026-01-31T12:00:00+00:00\",\n    \"affected_records_count\": 1,\n    \"data_categories\": [\n        \"string\"\n    ],\n    \"likely_consequences\": \"string\",\n    \"mitigation_measures\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/settings/privacy/sensitive-access-logs",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/sensitive-access-logs",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "sensitive-access-logs"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": ""
+                    }
+                },
+                {
                     "name": "Show the SDI channel of the active tenant, without its secrets",
                     "request": {
                         "method": "GET",
@@ -84319,7 +85323,7 @@
                             ],
                             "variable": []
                         },
-                        "description": "List paginated time entries for the authenticated user or tenant"
+                        "description": "Use GET /api/v1/hr/time/events."
                     }
                 },
                 {
@@ -84354,7 +85358,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Clock in: register a new work shift start with optional GPS geofencing coords",
+                        "description": "Use POST /api/v1/hr/time/events.",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"clock_in\": \"2026-01-31T12:00:00+00:00\",\n    \"latitude\": 1.5,\n    \"longitude\": 1.5,\n    \"is_simplified_record\": false,\n    \"notes\": \"string\"\n}",
@@ -84398,7 +85402,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Clock out: close the currently active shift and log breaks",
+                        "description": "Use POST /api/v1/hr/time/events.",
                         "body": {
                             "mode": "raw",
                             "raw": "{\n    \"clock_out\": \"2026-01-31T12:00:00+00:00\",\n    \"break_minutes\": 1,\n    \"notes\": \"string\"\n}",
@@ -84451,7 +85455,7 @@
                             ],
                             "variable": []
                         },
-                        "description": "On-demand labour compliance audit check"
+                        "description": "Use the HR time compliance endpoints under /api/v1/hr/time."
                     }
                 },
                 {
@@ -84507,7 +85511,7 @@
                             ],
                             "variable": []
                         },
-                        "description": "Monthly Report: returns summarized hours, breaks, and compliance audit for a user"
+                        "description": "Use the HR time reports under /api/v1/hr/time."
                     }
                 }
             ]
