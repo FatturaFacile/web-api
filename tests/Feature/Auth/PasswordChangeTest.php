@@ -24,9 +24,8 @@ beforeEach(function (): void {
     Mail::fake();
     config(['session.driver' => 'database']);
 
-    // Generated at runtime: both satisfy the password policy.
-    $this->password = 'Bb2!'.Str::random(16);
-    $this->newPassword = 'Cc3?'.Str::random(16);
+    $this->password = passwordChangeRandomPassword();
+    $this->newPassword = passwordChangeRandomPassword();
     $this->tenant = Tenant::create([
         'name' => 'Studio Rossi',
         'legal_name' => 'Studio Rossi SRL',
@@ -45,6 +44,14 @@ beforeEach(function (): void {
     ]);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
 });
+
+/**
+ * Generated at runtime, so no password is written in the test: symbols, digits and both cases satisfy the policy.
+ */
+function passwordChangeRandomPassword(): string
+{
+    return Str::password(16).chr(random_int(65, 90)).chr(random_int(97, 122)).random_int(0, 9);
+}
 
 function passwordChangeLogin(string $password, string $userAgent = 'FatturaFacile Mobile/1.0'): string
 {
@@ -127,7 +134,7 @@ test('a wrong current password is rejected on its field and counted', function (
 test('the new password follows the policy and matches its confirmation', function (string $case): void {
     $token = passwordChangeLogin($this->password);
     $override = match ($case) {
-        'too weak' => ['password' => 'short', 'password_confirmation' => 'short'],
+        'too weak' => ['password' => $weak = Str::lower(Str::random(5)), 'password_confirmation' => $weak],
         'confirmation differs' => ['password_confirmation' => $this->newPassword.'x'],
     };
 
