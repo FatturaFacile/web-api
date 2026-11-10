@@ -265,6 +265,13 @@ Sign in as that user, list the requests with `GET /api/v1/admin/tenant-access-re
 address. The link opens `/reset-password` on the frontend and lasts `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`. Completing the
 reset revokes the user's access tokens and deletes their rows in `sessions`, which requires `SESSION_DRIVER=database`.
 
+#### Changing the password
+
+`PUT /api/v1/auth/password` asks the current password, and a code of the authenticator app or a recovery code when the
+user has two factors. A wrong answer counts as a failure for the user: after `AUTH_PASSWORD_CHANGE_MAX_FAILED_ATTEMPTS`
+the change is locked for `AUTH_PASSWORD_CHANGE_LOCKOUT_MINUTES`. A change revokes every token and session of the user,
+the current one included, so the client signs in again; an email reports the change.
+
 ### The Platform Bootstrap Command
 
 The `php artisan erp:bootstrap` command fills a migrated database with reference data, users and demo records. It does

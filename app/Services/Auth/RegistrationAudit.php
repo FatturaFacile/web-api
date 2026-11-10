@@ -8,7 +8,7 @@ use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 
 /**
- * Registration and password recovery events on the audit ledger. They identify users by id only: the ledger is immutable, so it must not
+ * Registration, password and second factor events on the audit ledger. They identify users by id only: the ledger is immutable, so it must not
  * accumulate email addresses, and tokens never reach it. Events without a tenant go on the ledger's system chain.
  */
 final class RegistrationAudit
@@ -50,6 +50,12 @@ final class RegistrationAudit
     public const PASSWORD_RESET_SESSIONS_REVOKED = 'PASSWORD_RESET_SESSIONS_REVOKED';
 
     public const PASSWORD_CHANGE_NOTIFIED = 'PASSWORD_CHANGE_NOTIFIED';
+
+    public const PASSWORD_CHANGED = 'PASSWORD_CHANGED';
+
+    public const PASSWORD_CHANGE_FAILED = 'PASSWORD_CHANGE_FAILED';
+
+    public const PASSWORD_CHANGE_ATTEMPTS_EXCEEDED = 'PASSWORD_CHANGE_ATTEMPTS_EXCEEDED';
 
     public const TWO_FACTOR_SETUP_STARTED = 'TWO_FACTOR_SETUP_STARTED';
 

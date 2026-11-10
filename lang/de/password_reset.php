@@ -32,6 +32,7 @@ return [
             'device' => 'Browser und Gerät: :device',
             'unknown' => 'nicht verfügbar',
             'security' => 'Falls Sie das nicht waren, kontaktieren Sie sofort den Support: Jemand könnte Zugriff auf Ihr Postfach gehabt haben.',
+            'security_profile' => 'Falls Sie das nicht waren, kennt jemand Ihr Passwort: Setzen Sie es sofort über „Passwort vergessen“ zurück und kontaktieren Sie den Support.',
         ],
         'alert' => [
             'subject' => 'Viele Anfragen zur Passwort-Wiederherstellung - :app',

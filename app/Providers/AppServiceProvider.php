@@ -147,6 +147,7 @@ class AppServiceProvider extends ServiceProvider
 
         RateLimiter::for('password-reset-request', fn (Request $request): Limit => Limit::perMinute((int) config('auth.password_reset.rate_limits.request_per_minute'))->by($request->ip()));
         RateLimiter::for('password-reset-attempt', fn (Request $request): Limit => Limit::perMinute((int) config('auth.password_reset.rate_limits.attempts_per_minute'))->by($request->ip()));
+        RateLimiter::for('password-change', fn (Request $request): Limit => Limit::perMinute((int) config('auth.password_change.rate_limits.attempts_per_minute'))->by('user:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
         RateLimiter::for('two-factor-challenge', fn (Request $request): array => [
             Limit::perMinute((int) config('auth.two_factor.rate_limits.challenge_per_minute'))->by('challenge:'.hash('sha256', (string) $request->input('challenge_token'))),
             Limit::perMinute((int) config('auth.two_factor.rate_limits.challenge_per_minute') * 3)->by('ip:'.$request->ip()),

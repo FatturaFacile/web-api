@@ -32,6 +32,7 @@ return [
             'device' => 'Navigateur et appareil : :device',
             'unknown' => 'non disponible',
             'security' => 'Si ce n\'était pas vous, contactez immédiatement le support : quelqu\'un a peut-être eu accès à votre boîte mail.',
+            'security_profile' => 'Si ce n\'était pas vous, quelqu\'un connaît votre mot de passe : réinitialisez-le immédiatement avec « Mot de passe oublié » et contactez le support.',
         ],
         'alert' => [
             'subject' => 'Nombreuses demandes de récupération du mot de passe - :app',

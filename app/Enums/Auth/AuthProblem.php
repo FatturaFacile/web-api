@@ -17,6 +17,7 @@ enum AuthProblem: string
     case PasswordResetTokenInvalid = 'urn:fatturafacile:problem:password-reset-token-invalid';
     case PasswordResetTokenExpired = 'urn:fatturafacile:problem:password-reset-token-expired';
     case PasswordResetLocked = 'urn:fatturafacile:problem:password-reset-locked';
+    case PasswordChangeLocked = 'urn:fatturafacile:problem:password-change-locked';
     case TwoFactorChallengeInvalid = 'urn:fatturafacile:problem:two-factor-challenge-invalid';
     case TwoFactorCodeInvalid = 'urn:fatturafacile:problem:two-factor-code-invalid';
     case TwoFactorSetupRequired = 'urn:fatturafacile:problem:two-factor-setup-required';

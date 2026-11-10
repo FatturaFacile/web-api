@@ -32,6 +32,7 @@ return [
             'device' => 'Browser e dispositivo: :device',
             'unknown' => 'non disponibile',
             'security' => 'Se non sei stato tu, contatta subito il supporto: qualcuno potrebbe aver avuto accesso alla tua casella di posta.',
+            'security_profile' => 'Se non sei stato tu, qualcuno conosce la tua password: reimpostala subito con «Password dimenticata» e contatta il supporto.',
         ],
         'alert' => [
             'subject' => 'Molte richieste di recupero password - :app',
