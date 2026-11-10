@@ -29,7 +29,7 @@ final class WarehouseController extends Controller
             new OA\Parameter(name: 'is_active', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated list of warehouses'),
+            new OA\Response(response: 200, description: 'Paginated list of warehouses', content: new OA\JsonContent(ref: '#/components/schemas/InventoryWarehouseList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -78,7 +78,7 @@ final class WarehouseController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Warehouse created'),
+            new OA\Response(response: 201, description: 'Warehouse created', content: new OA\JsonContent(ref: '#/components/schemas/InventoryWarehouse')),
             new OA\Response(response: 422, description: 'Validation error'),
         ]
     )]
@@ -101,7 +101,7 @@ final class WarehouseController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Warehouse details'),
+            new OA\Response(response: 200, description: 'Warehouse details', content: new OA\JsonContent(ref: '#/components/schemas/InventoryWarehouse')),
             new OA\Response(response: 404, description: 'Warehouse not found'),
         ]
     )]
@@ -134,7 +134,7 @@ final class WarehouseController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Warehouse updated'),
+            new OA\Response(response: 200, description: 'Warehouse updated', content: new OA\JsonContent(ref: '#/components/schemas/InventoryWarehouse')),
             new OA\Response(response: 404, description: 'Warehouse not found'),
             new OA\Response(response: 422, description: 'Validation error'),
         ]

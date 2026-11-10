@@ -41,7 +41,7 @@ class SalesOrderController extends Controller
     #[OA\Get(
         path: '/api/v1/sales/orders',
         summary: 'List sales orders',
-        description: 'Get paginated list of sales orders with optional status filter',
+        description: 'Get paginated list of sales orders with optional status filter. An order with status on_hold carries the id of its active credit hold in credit_hold_id (and the holds list): pass it to POST /api/v1/invoicing/customer-credit/holds/{holdId}/release, allowed to the credit managers only.',
         tags: ['Sales Orders'],
         security: [['sanctum' => []]],
         parameters: [
@@ -50,13 +50,13 @@ class SalesOrderController extends Controller
             new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Sales orders list retrieved'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Sales orders list retrieved: every order with its contact summary, credit_hold_id and active holds (no lines)', content: new OA\JsonContent(ref: '#/components/schemas/SalesOrderListResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function index(Request $request): JsonResponse
     {
-        $query = SalesOrder::with('contact')->latest('date');
+        $query = SalesOrder::with(['contact', 'holds' => static fn ($holds) => $holds->where('status', 'active')])->latest('date');
 
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
@@ -81,18 +81,13 @@ class SalesOrderController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['contact_id', 'date'],
-                properties: [
-                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
-                ]
+                ref: '#/components/schemas/SalesOrderWriteRequest',
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Sales order created successfully'),
-            new OA\Response(response: 422, description: 'Validation error'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 201, description: 'Sales order created successfully (with lines)', content: new OA\JsonContent(ref: '#/components/schemas/SalesOrderResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function store(StoreSalesOrderRequest $request): JsonResponse
@@ -112,14 +107,14 @@ class SalesOrderController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Sales order retrieved successfully'),
-            new OA\Response(response: 404, description: 'Sales order not found'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Sales order with contact summary, lines, credit_hold_id and active holds', content: new OA\JsonContent(ref: '#/components/schemas/SalesOrderResponse')),
+            new OA\Response(response: 404, description: 'Sales order not found (or of another company)', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function show(string $id): JsonResponse
     {
-        $order = SalesOrder::with(['contact', 'items'])->findOrFail($id);
+        $order = SalesOrder::with(['contact', 'items', 'holds' => static fn ($holds) => $holds->where('status', 'active')])->findOrFail($id);
 
         return $this->successResponse(new SalesOrderResource($order), __('sales.messages.order_retrieved'));
     }
@@ -136,18 +131,14 @@ class SalesOrderController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'date', type: 'string', format: 'date'),
-                    new OA\Property(property: 'items', type: 'array', items: new OA\Items(type: 'object')),
-                ]
+                ref: '#/components/schemas/SalesOrderWriteRequest',
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Sales order updated successfully'),
-            new OA\Response(response: 404, description: 'Sales order not found'),
-            new OA\Response(response: 422, description: 'Validation error'),
-            new OA\Response(response: 401, description: 'Unauthenticated'),
+            new OA\Response(response: 200, description: 'Sales order updated successfully', content: new OA\JsonContent(ref: '#/components/schemas/SalesOrderResponse')),
+            new OA\Response(response: 404, description: 'Sales order not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function update(StoreSalesOrderRequest $request, string $id): JsonResponse
@@ -167,8 +158,8 @@ class SalesOrderController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Sales order deleted successfully'),
-            new OA\Response(response: 404, description: 'Sales order not found'),
+            new OA\Response(response: 200, description: 'Sales order deleted successfully', content: new OA\JsonContent(ref: '#/components/schemas/SalesOrderDeleteResponse')),
+            new OA\Response(response: 404, description: 'Sales order not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'The order has delivered or invoiced quantities', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]

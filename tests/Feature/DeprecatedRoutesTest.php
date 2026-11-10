@@ -36,6 +36,9 @@ test('legacy endpoints answer with the X-Deprecated header and a link to their s
         'camt import' => ['POST', '/api/v1/treasury/import-camt', '/api/v1/sales/payment-imports'],
         'generate qr bill' => ['POST', "/api/v1/sales/invoices/{$id}/generate-qr-bill", '/api/v1/sales/invoices/{id}/qr-bill'],
         'download qr bill' => ['GET', "/api/v1/sales/invoices/{$id}/download-qr-bill", '/api/v1/sales/invoices/{id}/qr-bill'],
+        'legacy chart of accounts' => ['GET', '/api/v1/accounting/chart-of-accounts', '/api/v1/general-ledger/accounts'],
+        'legacy ledger entries' => ['GET', '/api/v1/accounting/ledger-entries', '/api/v1/general-ledger/journals'],
+        'legacy vat settlements' => ['GET', '/api/v1/accounting/vat-settlements', '/api/v1/general-ledger/tax-settlements'],
         'stock adjustment' => ['POST', '/api/v1/inventory/stock-adjustments', '/api/v1/inventory/adjustments'],
     ];
 });

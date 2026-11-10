@@ -29,6 +29,9 @@ use OpenApi\Attributes as OA;
         ], type: 'object')),
         new OA\Property(property: 'manual_journal_approval_required', type: 'boolean'),
         new OA\Property(property: 'manual_journal_approval_threshold', type: 'string', nullable: true, example: '10000.0000'),
+        new OA\Property(property: 'fx_unrealised_gain_provision_account_id', description: 'Account that holds provisioned unrealised FX gains (Swiss imparity principle); falls back to the fx_unrealised_gain_provision posting role', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'enforce_swiss_imparity_principle', description: 'Defaults to true for Swiss tenants and false otherwise', type: 'boolean'),
+        new OA\Property(property: 'unrealised_gain_treatment', type: 'string', enum: ['provision', 'suppress', 'recognise'], example: 'provision'),
     ]
 )]
 #[OA\Schema(
@@ -38,6 +41,9 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'posting_accounts', description: 'Role => account id of the tenant (null goes back to the preference code)', type: 'object', example: ['retained_earnings' => '01960000-0000-7000-8000-000000000001', 'fx_unrealised_gain' => null], additionalProperties: new OA\AdditionalProperties(type: 'string', format: 'uuid', nullable: true)),
         new OA\Property(property: 'manual_journal_approval_required', type: 'boolean', example: true),
         new OA\Property(property: 'manual_journal_approval_threshold', description: 'Total from which approval is needed; null = every manual journal', type: 'number', minimum: 0, nullable: true, example: 5000),
+        new OA\Property(property: 'fx_unrealised_gain_provision_account_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'enforce_swiss_imparity_principle', type: 'boolean'),
+        new OA\Property(property: 'unrealised_gain_treatment', type: 'string', enum: ['provision', 'suppress', 'recognise'], nullable: true),
     ]
 )]
 #[OA\Schema(

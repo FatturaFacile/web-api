@@ -38,7 +38,7 @@ final class StockLotController extends Controller
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated lots', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/InventoryLot'))])),
+            new OA\Response(response: 200, description: 'Paginated lots', content: new OA\JsonContent(ref: '#/components/schemas/InventoryLotList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]

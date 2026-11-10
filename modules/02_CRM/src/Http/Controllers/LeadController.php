@@ -50,7 +50,7 @@ final class LeadController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $query = Lead::where('tenant_id', $tenant->id);
+        $query = Lead::where('tenant_id', $tenant->id)->with('leadSource');
 
         if ($request->has('status')) {
             $query->where('status', $request->query('status'));

@@ -38,7 +38,7 @@ final class OpenBankingController extends Controller
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TreasuryCheckIbanRequest')),
         tags: ['Treasury Open Banking'],
         responses: [
-            new OA\Response(response: 200, description: 'Result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryIbanCheck')])),
+            new OA\Response(response: 200, description: 'Result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryIbanCheck')])),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
@@ -56,7 +56,7 @@ final class OpenBankingController extends Controller
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TreasuryStoreOpenBankingConsentRequest')),
         tags: ['Treasury Open Banking'],
         responses: [
-            new OA\Response(response: 201, description: 'Consent', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingConsent')])),
+            new OA\Response(response: 201, description: 'Consent', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingConsent')])),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 503, description: 'No provider', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
@@ -83,7 +83,7 @@ final class OpenBankingController extends Controller
             new OA\Parameter(name: 'to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Account information', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingAccountInformation')])),
+            new OA\Response(response: 200, description: 'Account information', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingAccountInformation')])),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 409, description: 'Consent no longer active', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 503, description: 'No provider', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -107,7 +107,7 @@ final class OpenBankingController extends Controller
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TreasuryInitiateOpenBankingPaymentRequest')),
         tags: ['Treasury Open Banking'],
         responses: [
-            new OA\Response(response: 201, description: 'Payment', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingPayment')])),
+            new OA\Response(response: 201, description: 'Payment', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingPayment')])),
             new OA\Response(response: 409, description: 'Consent no longer active', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
             new OA\Response(response: 503, description: 'No provider', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -133,7 +133,7 @@ final class OpenBankingController extends Controller
         tags: ['Treasury Open Banking'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'Payment', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingPayment')])),
+            new OA\Response(response: 200, description: 'Payment', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/TreasuryOpenBankingPayment')])),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 503, description: 'No provider', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]

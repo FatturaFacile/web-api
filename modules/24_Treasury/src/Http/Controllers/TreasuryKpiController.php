@@ -38,7 +38,7 @@ final class TreasuryKpiController extends Controller
             new OA\Parameter(name: 'currency', in: 'query', required: false, schema: new OA\Schema(type: 'string', maxLength: 3, minLength: 3)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'KPIs', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'KPIs', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryKpisEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryValidationError', response: 422),

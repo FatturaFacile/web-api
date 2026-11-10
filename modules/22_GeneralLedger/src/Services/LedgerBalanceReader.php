@@ -42,6 +42,9 @@ final class LedgerBalanceReader
             $this->postedLines($tenantId)
                 ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()])
                 ->whereNotIn('journal_entries.journal_type', ['opening', 'closing'])
+                ->where(static fn (Builder $query): Builder => $query
+                    ->whereNull('journal_entries.source_document_type')
+                    ->orWhereNotIn('journal_entries.source_document_type', ['opening_balance', 'year_end_closing']))
         );
     }
 
@@ -59,7 +62,14 @@ final class LedgerBalanceReader
                 ->where('journal_entries.posting_date', '<=', $to->toDateString())
                 ->where('journal_entries.journal_type', '!=', 'opening')
                 ->where(static fn (Builder $query): Builder => $query
-                    ->where('journal_entries.journal_type', '!=', 'closing')
+                    ->whereNull('journal_entries.source_document_type')
+                    ->orWhere('journal_entries.source_document_type', '!=', 'opening_balance'))
+                ->where(static fn (Builder $query): Builder => $query
+                    ->where(static fn (Builder $inner): Builder => $inner
+                        ->where('journal_entries.journal_type', '!=', 'closing')
+                        ->where(static fn (Builder $src): Builder => $src
+                            ->whereNull('journal_entries.source_document_type')
+                            ->orWhere('journal_entries.source_document_type', '!=', 'year_end_closing')))
                     ->orWhere('journal_entries.posting_date', '<', $yearStart->toDateString()))
                 ->whereIn('chart_of_accounts.account_type', self::BalanceSheetTypes)
         );
@@ -76,6 +86,9 @@ final class LedgerBalanceReader
             $this->postedLines($tenantId)
                 ->where('journal_entries.posting_date', '<=', $to->toDateString())
                 ->where('journal_entries.journal_type', '!=', 'opening')
+                ->where(static fn (Builder $query): Builder => $query
+                    ->whereNull('journal_entries.source_document_type')
+                    ->orWhere('journal_entries.source_document_type', '!=', 'opening_balance'))
                 ->whereIn('chart_of_accounts.account_type', self::BalanceSheetTypes)
         );
     }
@@ -91,6 +104,9 @@ final class LedgerBalanceReader
         return $this->postedLines($tenantId)
             ->whereIn('journal_entries.fiscal_period_id', $periodIds)
             ->whereNotIn('journal_entries.journal_type', ['opening', 'closing'])
+            ->where(static fn (Builder $query): Builder => $query
+                ->whereNull('journal_entries.source_document_type')
+                ->orWhereNotIn('journal_entries.source_document_type', ['opening_balance', 'year_end_closing']))
             ->join('fiscal_periods', 'fiscal_periods.id', '=', 'journal_entries.fiscal_period_id')
             ->groupBy('chart_of_accounts.id', 'journal_lines.cost_center_id', 'fiscal_periods.period_number', 'chart_of_accounts.normal_balance')
             ->selectRaw('chart_of_accounts.id as account_id, journal_lines.cost_center_id, fiscal_periods.period_number, chart_of_accounts.normal_balance, SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) as debit, SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)) as credit')

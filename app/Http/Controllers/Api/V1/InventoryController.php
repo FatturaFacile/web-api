@@ -126,7 +126,7 @@ class InventoryController extends Controller
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Inventory'],
         responses: [
-            new OA\Response(response: 200, description: 'Delivery notes retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Delivery notes retrieved (the paginator is inside data: rows in data.data)', content: new OA\JsonContent(ref: '#/components/schemas/PurchasesDeliveryNotesListResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

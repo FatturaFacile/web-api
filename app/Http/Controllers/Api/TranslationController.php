@@ -48,6 +48,7 @@ class TranslationController extends Controller
     )]
     public function index(Request $request, PublicTenantResolver $tenantResolver, string $locale): JsonResponse
     {
+        $locale = Translation::normalizeLocale($locale);
         $tenantId = $tenantResolver->resolve($request);
 
         $cacheKey = $tenantId ? "translations_{$tenantId}_{$locale}" : "translations_global_{$locale}";

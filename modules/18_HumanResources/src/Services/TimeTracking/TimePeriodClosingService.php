@@ -57,9 +57,9 @@ final class TimePeriodClosingService
     /**
      * Close a month: the totals of the records at closing time are kept with the closing.
      */
-    public function close(User $actor, int $year, int $month): TimePeriodClosing
+    public function close(User $actor, int $year, int $month, bool $transferToPayroll = false): TimePeriodClosing
     {
-        return DB::transaction(function () use ($actor, $year, $month): TimePeriodClosing {
+        return DB::transaction(function () use ($actor, $year, $month, $transferToPayroll): TimePeriodClosing {
             $closing = TimePeriodClosing::query()->where('year', $year)->where('month', $month)->lockForUpdate()->first();
 
             if ($closing?->isClosed()) {
@@ -73,6 +73,10 @@ final class TimePeriodClosingService
                 'daily_records' => TimeDailyRecord::query()->whereBetween('work_date', [$from, $to])->count(),
                 'employees' => TimeClockEvent::query()->betweenLocalDays($from, $to)->distinct()->count('user_id'),
             ];
+
+            if ($transferToPayroll) {
+                $summary['payroll_transfer'] = app(TimeToPayrollTransferService::class)->transfer($year, $month, $actor);
+            }
 
             $closing ??= new TimePeriodClosing(['year' => $year, 'month' => $month]);
             $closing->fill(['status' => TimePeriodClosing::StatusClosed, 'closed_at' => now(), 'closed_by' => $actor->id, 'summary' => $summary])->save();

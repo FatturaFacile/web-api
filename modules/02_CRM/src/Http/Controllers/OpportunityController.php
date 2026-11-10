@@ -47,7 +47,7 @@ final class OpportunityController extends Controller
     public function index(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $query = Opportunity::where('tenant_id', $tenant->id);
+        $query = Opportunity::where('tenant_id', $tenant->id)->with(['account', 'stage']);
 
         if ($request->has('status')) {
             $query->where('status', $request->query('status'));

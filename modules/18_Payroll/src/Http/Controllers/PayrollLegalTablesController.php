@@ -14,6 +14,7 @@ use Modules\Payroll\Exceptions\PayrollException;
 use Modules\Payroll\Http\Requests\ImportWithholdingTaxTariffsRequest;
 use Modules\Payroll\Http\Requests\SaveAnnualParametersRequest;
 use Modules\Payroll\Http\Requests\SaveFamilyAllowanceRateRequest;
+use Modules\Payroll\Http\Resources\PayrollFamilyAllowanceRateResource;
 use Modules\Payroll\Http\Resources\PayrollRecordResource;
 use Modules\Payroll\Models\PayrollAnnualParameter;
 use Modules\Payroll\Models\PayrollFamilyAllowanceRate;
@@ -160,7 +161,7 @@ final class PayrollLegalTablesController extends PayrollController
         security: [['bearerAuth' => []]],
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 200, description: 'Family allowance rates', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Family allowance rates', content: new OA\JsonContent(ref: '#/components/schemas/PayrollFamilyAllowanceRatePage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
         ]
@@ -169,7 +170,7 @@ final class PayrollLegalTablesController extends PayrollController
     {
         $this->authorize('viewAny', PayrollFamilyAllowanceRate::class);
 
-        return PayrollRecordResource::collection(PayrollFamilyAllowanceRate::query()->orderBy('canton')->orderByDesc('valid_from')->paginate($this->perPage($request, 100, 200)));
+        return PayrollFamilyAllowanceRateResource::collection(PayrollFamilyAllowanceRate::query()->orderBy('canton')->orderByDesc('valid_from')->paginate($this->perPage($request, 100, 200)));
     }
 
     /**
@@ -184,7 +185,7 @@ final class PayrollLegalTablesController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollFamilyAllowanceRateRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Rate created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Rate created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollFamilyAllowanceRateEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -194,7 +195,7 @@ final class PayrollLegalTablesController extends PayrollController
     {
         $this->authorize('create', PayrollFamilyAllowanceRate::class);
 
-        return (new PayrollRecordResource(PayrollFamilyAllowanceRate::query()->create($request->validated())))->response()->setStatusCode(201);
+        return (new PayrollFamilyAllowanceRateResource($this->refreshed(PayrollFamilyAllowanceRate::query()->create($request->validated()))))->response()->setStatusCode(201);
     }
 
     /**
@@ -210,20 +211,20 @@ final class PayrollLegalTablesController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Rate saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Rate saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollFamilyAllowanceRateEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function updateFamilyAllowanceRate(SaveFamilyAllowanceRateRequest $request, string $id): PayrollRecordResource
+    public function updateFamilyAllowanceRate(SaveFamilyAllowanceRateRequest $request, string $id): PayrollFamilyAllowanceRateResource
     {
         $rate = PayrollFamilyAllowanceRate::query()->findOrFail($id);
         $this->authorize('update', $rate);
         $rate->update($request->validated());
 
-        return new PayrollRecordResource($rate->refresh());
+        return new PayrollFamilyAllowanceRateResource($rate->refresh());
     }
 
     /**

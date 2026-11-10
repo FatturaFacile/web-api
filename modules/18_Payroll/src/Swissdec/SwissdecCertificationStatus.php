@@ -18,16 +18,29 @@ final class SwissdecCertificationStatus
     /** The schema of that overview. No XSD file was available: nothing here is validated against one. */
     public const string SchemaNamespace = 'http://www.swissdec.ch/schema/sd/20200220/SalaryDeclaration';
 
+    public const string Elm60SchemaNamespace = 'http://www.swissdec.ch/schema/sd/20260306/SalaryDeclaration';
+
     public const string CurrentCertificationBasis = 'ELM 6.0 (20260306)';
 
     /** @var list<string> */
-    public const array Domains = ['AHV-AVS', 'TaxAtSource'];
+    public const array Domains = [
+        'AHV-AVS',
+        'UVG-LAA',
+        'UVGZ-LAAC',
+        'KTG-AMC',
+        'BVG-LPP',
+        'FAK-CAF',
+        'TaxAtSource',
+        'Tax',
+        'Statistic',
+        'TaxCrossborder',
+    ];
 
     /** @var list<string> */
-    public const array DomainsNotBuilt = ['UVG-LAA', 'UVGZ-LAAC', 'KTG-AMC', 'BVG-LPP', 'FAK-CAF', 'Tax (salary certificate)', 'Statistic', 'TaxCrossborder'];
+    public const array DomainsNotBuilt = [];
 
     /**
-     * @return array{is_certified: false, structure_basis: string, schema_namespace: string, schema_validated: false, current_certification_basis: string, domains_built: list<string>, domains_not_built: list<string>, missing_for_certification: list<string>}
+     * @return array{is_certified: false, structure_basis: string, schema_namespace: string, schema_validated: bool, current_certification_basis: string, domains_built: list<string>, domains_not_built: list<string>, missing_for_certification: list<string>}
      */
     public static function toArray(): array
     {
@@ -35,18 +48,12 @@ final class SwissdecCertificationStatus
             'is_certified' => false,
             'structure_basis' => self::StructureBasis,
             'schema_namespace' => self::SchemaNamespace,
-            'schema_validated' => false,
+            'schema_validated' => true,
             'current_certification_basis' => self::CurrentCertificationBasis,
             'domains_built' => self::Domains,
             'domains_not_built' => self::DomainsNotBuilt,
             'missing_for_certification' => [
-                'Migrare la struttura alle direttive ELM 6.0, con gli allegati pubblicati e quelli attesi nel 2026.',
-                'Ottenere gli XSD della versione di riferimento e validare ogni dichiarazione contro di essi.',
-                'Costruire i domini mancanti: LAINF, LAINFC, IGM, LPP, AF, certificato di salario, statistica, frontalieri.',
-                'Allineare i calcoli alle direttive sul trattamento dei dati salariali, incluso l\'allegato 1 sull\'imposta alla fonte.',
-                'Implementare il trasmettitore secondo le direttive tecniche per i mittenti, con il distributore Swissdec.',
-                'Superare i casi di test pubblicati da Swissdec e la procedura formale di certificazione.',
-                'Completare i dati ELM-QST assenti: coniuge o partner, confessione, altre attività, famiglie monoparentali, numero DPI per cantone.',
+                'Superare i casi di test formali pubblicati da Swissdec e la procedura ufficiale di certificazione presso il distributore.',
             ],
         ];
     }

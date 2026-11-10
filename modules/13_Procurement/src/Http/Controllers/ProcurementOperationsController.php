@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Modules\Procurement\Exceptions\ProcurementRuleViolation;
 use Modules\Procurement\Http\Controllers\Concerns\ProcurementControllerHelpers;
+use Modules\Procurement\Http\Requests\ApproveThreeWayMatchVarianceRequest;
 use Modules\Procurement\Http\Requests\InspectGoodsReceiptRequest;
 use Modules\Procurement\Http\Requests\ProcurementDecisionRequest;
 use Modules\Procurement\Http\Resources\PurchaseOrderResource;
@@ -133,7 +134,7 @@ final class ProcurementOperationsController extends Controller
         description: 'Approves the variance of a match beyond tolerance with a reason: the supplier invoice is released for payment.',
         summary: 'Approve three-way match variance',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
-        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string')])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string', maxLength: 2000, example: 'Price increase agreed with the supplier by phone', description: 'Why the variance beyond tolerance is accepted')])),
         tags: ['Procurement Operations'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/ProcRecordId')],
         responses: [
@@ -144,7 +145,7 @@ final class ProcurementOperationsController extends Controller
             new OA\Response(ref: '#/components/responses/ProcUnprocessable', response: 422),
         ]
     )]
-    public function approveVariance(ProcurementDecisionRequest $request, string $id, ThreeWayMatchingService $matching): JsonResponse
+    public function approveVariance(ApproveThreeWayMatchVarianceRequest $request, string $id, ThreeWayMatchingService $matching): JsonResponse
     {
         $reason = (string) ($request->validated('reason') ?? '');
 

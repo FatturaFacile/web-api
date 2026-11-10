@@ -110,6 +110,8 @@ final class OpenItemFxRevaluationController extends Controller
             'open_items' => $row->open_items,
             'journal_entry_id' => $row->journal_entry_id,
             'reversal_date' => LedgerDateFormat::day($row->reversal_date),
+            'imparity_deferred' => (bool) $row->imparity_deferred,
+            'treatment_applied' => $row->treatment_applied,
         ];
     }
 }

@@ -29,7 +29,7 @@ final class SwissPayrollPreview
 
         $ahvBase = $belowContributionAge ? '0' : $monthlyGross;
 
-        if ($retired) {
+        if ($retired && ! $employee->waiveRetireeAllowance) {
             $ahvBase = Dec::max('0', Dec::sub($monthlyGross, $parameters->ahvRetireeMonthlyAllowance));
         }
 
@@ -39,7 +39,9 @@ final class SwissPayrollPreview
         $alv = Dec::round(Dec::mul($alvBase, $parameters->alvEmployeeRate));
         $bvg = self::bvgEmployee($employee, $annualGross, $age, $notes, $parameters);
         $uvgBase = $cappedMonthly;
-        $nbu = Dec::round(Dec::div(Dec::mul($uvgBase, $employee->nonOccupationalAccidentRatePercent), '100'));
+        $nbuDue = Dec::isZero($employee->weeklyHours)
+            || Dec::cmp($employee->weeklyHours, $parameters->nbuMinimumWeeklyHours) >= 0;
+        $nbu = $nbuDue ? Dec::round(Dec::div(Dec::mul($uvgBase, $employee->nonOccupationalAccidentRatePercent), '100')) : '0';
         $ktg = Dec::round(Dec::div(Dec::mul($monthlyGross, $employee->dailySicknessRatePercent), '100'));
         $qst = '0';
 

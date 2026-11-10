@@ -9,6 +9,8 @@ use App\Models\User;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Procurement\Actions\CreatePurchaseRequisitionAction;
 use Modules\Procurement\Actions\SubmitRequisitionForApprovalAction;
 use Modules\Procurement\DTOs\CreatePurchaseRequisitionDTO;
@@ -24,6 +26,11 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Procurement Requisitions', description: 'Internal procurement requisitions and authorization workflows')]
 final class PurchaseRequisitionController extends Controller
 {
+    /**
+     * Paginated purchase requisitions.
+     *
+     * @response AnonymousResourceCollection<LengthAwarePaginator<PurchaseRequisitionResource>>
+     */
     #[OA\Get(
         path: '/api/v1/procurement/requisitions',
         summary: 'List purchase requisitions',
@@ -38,12 +45,7 @@ final class PurchaseRequisitionController extends Controller
             new OA\Parameter(name: 'sort', in: 'query', description: 'Sort field (-created_at, requisition_number)', required: false, schema: new OA\Schema(type: 'string', default: '-created_at')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated requisitions list', content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProcurementPurchaseRequisition')),
-                    new OA\Property(property: 'meta', ref: '#/components/schemas/ProcurementApiPaginationMeta'),
-                ]
-            )),
+            new OA\Response(response: 200, description: 'Paginated requisitions list', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementPurchaseRequisitionPage')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementApiErrorResponse')),
         ]
     )]

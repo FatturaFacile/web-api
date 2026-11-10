@@ -14,5 +14,7 @@ final readonly class VatSaleItem
         public string $lineTotal,
         public string $taxRate,
         public ?string $tax = null,
+        public ?string $sssRatePercent = null,
+        public ?string $estvBox = null,
     ) {}
 }

@@ -23,6 +23,7 @@ Route::prefix('api/v1/hr/me')
     ->whereUuid('id')
     ->group(function (): void {
         Route::get('/', [EmployeeSelfServiceController::class, 'profile'])->name('profile');
+        Route::get('/leave-types', [EmployeeSelfServiceController::class, 'leaveTypes'])->name('leave-types');
         Route::get('/leave-balances', [EmployeeSelfServiceController::class, 'leaveBalances'])->name('leave-balances');
         Route::get('/leave-requests', [EmployeeSelfServiceController::class, 'leaveRequests'])->name('leave-requests.index');
         Route::post('/leave-requests', [EmployeeSelfServiceController::class, 'submitLeave'])->name('leave-requests.store');
@@ -36,16 +37,18 @@ Route::prefix('api/v1/hr')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:hr'])
     ->group(function (): void {
         // Employee Lifecycle Routes
-        Route::get('/employees', [EmployeeController::class, 'index'])->name('api.v1.hr.employees.index');
-        Route::post('/employees', [EmployeeController::class, 'store'])->name('api.v1.hr.employees.store');
-        Route::get('/employees/{id}', [EmployeeController::class, 'show'])->name('api.v1.hr.employees.show');
-        Route::put('/employees/{id}', [EmployeeController::class, 'update'])->name('api.v1.hr.employees.update');
-        Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('api.v1.hr.employees.destroy');
-        Route::post('/employees/{id}/complete-probation', [EmployeeController::class, 'completeProbation'])->name('api.v1.hr.employees.complete-probation');
-        Route::post('/employees/{id}/promote', [EmployeeController::class, 'promote'])->name('api.v1.hr.employees.promote');
-        Route::post('/employees/{id}/transfer', [EmployeeController::class, 'transfer'])->name('api.v1.hr.employees.transfer');
-        Route::post('/employees/{id}/terminate', [EmployeeController::class, 'terminate'])->name('api.v1.hr.employees.terminate');
-        Route::post('/employees/{id}/rehire', [EmployeeController::class, 'rehire'])->name('api.v1.hr.employees.rehire');
+        Route::middleware('privacy.sensitive.log:hr_employee_records')->group(function (): void {
+            Route::get('/employees', [EmployeeController::class, 'index'])->name('api.v1.hr.employees.index');
+            Route::post('/employees', [EmployeeController::class, 'store'])->name('api.v1.hr.employees.store');
+            Route::get('/employees/{id}', [EmployeeController::class, 'show'])->name('api.v1.hr.employees.show');
+            Route::put('/employees/{id}', [EmployeeController::class, 'update'])->name('api.v1.hr.employees.update');
+            Route::delete('/employees/{id}', [EmployeeController::class, 'destroy'])->name('api.v1.hr.employees.destroy');
+            Route::post('/employees/{id}/complete-probation', [EmployeeController::class, 'completeProbation'])->name('api.v1.hr.employees.complete-probation');
+            Route::post('/employees/{id}/promote', [EmployeeController::class, 'promote'])->name('api.v1.hr.employees.promote');
+            Route::post('/employees/{id}/transfer', [EmployeeController::class, 'transfer'])->name('api.v1.hr.employees.transfer');
+            Route::post('/employees/{id}/terminate', [EmployeeController::class, 'terminate'])->name('api.v1.hr.employees.terminate');
+            Route::post('/employees/{id}/rehire', [EmployeeController::class, 'rehire'])->name('api.v1.hr.employees.rehire');
+        });
 
         // Organizational Management Routes
         Route::get('/departments', [OrganizationController::class, 'departments'])->name('api.v1.hr.departments.index');
@@ -120,6 +123,8 @@ Route::prefix('api/v1/hr')
             Route::get('/time-closings', [WorkingTimeRulesController::class, 'closings'])->name('api.v1.hr.time-closings.index');
             Route::post('/time-closings', [WorkingTimeRulesController::class, 'close'])->name('api.v1.hr.time-closings.store');
             Route::post('/time-closings/{id}/reopen', [WorkingTimeRulesController::class, 'reopen'])->name('api.v1.hr.time-closings.reopen');
+            Route::post('/time-closings/{year}/{month}/transfer-to-payroll', [WorkingTimeRulesController::class, 'transferToPayroll'])->whereNumber(['year', 'month'])->name('api.v1.hr.time-closings.transfer-to-payroll');
+            Route::get('/time/night-work-balances', [WorkingTimeRulesController::class, 'nightWorkBalances'])->name('api.v1.hr.time.night-work-balances');
         });
 
         // Talent, Performance & Training Routes

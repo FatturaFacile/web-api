@@ -91,8 +91,15 @@ final class VatSettlementService implements VatSettlementServiceInterface
                 'period_to' => $result->periodTo,
                 'country' => $result->country,
                 'currency' => TenantAccountingCurrency::of($tenantId),
+                'regime' => $result->regime,
                 'turnover' => $result->turnover,
                 'taxable_turnover' => $result->taxableTurnover,
+                'gross_turnover' => $result->grossTurnover,
+                'exempt_turnover' => $result->exemptTurnover,
+                'acquisition_tax_base' => $result->acquisitionTaxBase,
+                'acquisition_tax_amount' => $result->acquisitionTaxAmount,
+                'gross_input_vat_forfeited' => $result->grossInputVatForfeited,
+                'flat_rate_adjustment_amount' => $result->flatRateAdjustmentAmount,
                 'passive_operations' => $snapshot->passiveOperations(),
                 'output_vat_amount' => $result->outputVat,
                 'input_vat_amount' => $result->inputVat,
@@ -110,6 +117,7 @@ final class VatSettlementService implements VatSettlementServiceInterface
                     static fn (VatRateTotal $rate): array => ['rate' => $rate->rate, 'taxable' => $rate->taxable, 'tax' => $rate->tax],
                     $result->rates
                 ),
+                'estv_boxes' => $result->estvBoxes,
                 'warnings' => $snapshot->warnings,
                 'details' => $result->details,
                 'status' => VatSettlement::STATUS_CALCULATED,
@@ -212,8 +220,23 @@ final class VatSettlementService implements VatSettlementServiceInterface
         $previousCredit = Decimal::isNegative($previousPayable) ? Decimal::neg($previousPayable) : '0';
         $previousDebit = $previous?->below_minimum_payment ? $previousPayable : '0';
 
+        $settings = $this->accountResolver->settingsOf($tenantId);
+        $regime = $country === 'CH' ? (string) ($settings->regime ?? 'effective') : 'effective';
+
         return [
-            'result' => VatReturnCalculator::compute($country, $period->from, $period->to, $snapshot->sales, $snapshot->purchases, $previousCredit, $previousDebit),
+            'result' => VatReturnCalculator::compute(
+                $country,
+                $period->from,
+                $period->to,
+                $snapshot->sales,
+                $snapshot->purchases,
+                $previousCredit,
+                $previousDebit,
+                $regime,
+                $settings->sss_rate_1 !== null ? (string) $settings->sss_rate_1 : null,
+                $settings->sss_rate_2 !== null ? (string) $settings->sss_rate_2 : null,
+                is_array($settings->flat_tax_rates) ? $settings->flat_tax_rates : [],
+            ),
             'snapshot' => $snapshot,
             'previous' => $previous,
         ];
@@ -244,6 +267,7 @@ final class VatSettlementService implements VatSettlementServiceInterface
         $tenantId = (string) $settlement->tenant_id;
         $currency = TenantAccountingCurrency::of($tenantId);
         $lines = [];
+        $isFlatRateSwiss = $result->country === 'CH' && in_array($result->regime, ['net_tax_rate', 'flat_tax_rate'], true);
 
         foreach ($snapshot->outputByAccount as $accountId => $amount) {
             $lines[] = $this->clearingLine($accountId, Decimal::neg($amount), $currency, 'Clear sales VAT for settlement');
@@ -251,6 +275,35 @@ final class VatSettlementService implements VatSettlementServiceInterface
 
         foreach ($snapshot->inputByAccount as $accountId => $amount) {
             $lines[] = $this->clearingLine($accountId, $amount, $currency, 'Clear purchase VAT for settlement');
+        }
+
+        if ($isFlatRateSwiss) {
+            if (! Decimal::isZero($result->flatRateAdjustmentAmount)) {
+                $lines[] = $this->clearingLine(
+                    $this->accountResolver->flatRateAdjustmentAccountId($tenantId),
+                    $result->flatRateAdjustmentAmount,
+                    $currency,
+                    'SSS/PST flat-rate VAT revenue adjustment'
+                );
+            }
+
+            if (Decimal::isPositive($result->grossInputVatForfeited)) {
+                $lines[] = $this->clearingLine(
+                    $this->accountResolver->forfeitedInputVatAccountId($tenantId),
+                    Decimal::neg($result->grossInputVatForfeited),
+                    $currency,
+                    'Non-deductible input VAT under SSS/PST'
+                );
+            }
+        }
+
+        if (Decimal::isPositive($result->acquisitionTaxAmount)) {
+            $lines[] = $this->clearingLine(
+                $this->accountResolver->forfeitedInputVatAccountId($tenantId),
+                Decimal::neg($result->acquisitionTaxAmount),
+                $currency,
+                'Bezugsteuer / Acquisition Tax'
+            );
         }
 
         if (Decimal::isPositive($result->interest)) {

@@ -96,7 +96,7 @@ final class VatLedgerReader
                 'jl.exchange_rate', 'jl.vat_base_amount', 'jl.vat_tax_amount', 'jl.vat_rate_percent', 'jl.vat_treatment',
                 'je.entry_number', 'je.posting_date', 'je.document_date', 'je.document_number', 'je.source_document_type',
                 'coa.account_type', 'coa.account_class', 'coa.type as account_legacy_type',
-                'vc.tax_rate_percent as vat_code_rate', 'vc.is_split_payment', 'vc.is_reverse_charge',
+                'vc.tax_rate_percent as vat_code_rate', 'vc.sss_rate_percent', 'vc.estv_box', 'vc.is_split_payment', 'vc.is_reverse_charge',
             ]);
     }
 
@@ -161,9 +161,16 @@ final class VatLedgerReader
                 continue;
             }
 
-            $key = Decimal::formatRate((string) $rate).'|'.($treatment ?? '');
+            $key = Decimal::formatRate((string) $rate).'|'.($treatment ?? '').'|'.($line->sss_rate_percent ?? '').'|'.($line->estv_box ?? '');
             $base = $this->signedBase($line, $tax);
-            $current = $groups[$key] ?? ['rate' => Decimal::formatRate((string) $rate), 'treatment' => $treatment, 'base' => '0', 'tax' => '0'];
+            $current = $groups[$key] ?? [
+                'rate' => Decimal::formatRate((string) $rate),
+                'treatment' => $treatment,
+                'base' => '0',
+                'tax' => '0',
+                'sss_rate' => $line->sss_rate_percent !== null ? Decimal::formatRate((string) $line->sss_rate_percent) : null,
+                'estv_box' => $line->estv_box !== null ? (string) $line->estv_box : null,
+            ];
             $groups[$key] = [...$current, 'base' => Decimal::add($current['base'], $base), 'tax' => Decimal::add($current['tax'], $tax)];
         }
 
@@ -175,7 +182,15 @@ final class VatLedgerReader
         }
 
         if ($groups === []) {
-            $groups[] = ['rate' => '0', 'treatment' => null, 'base' => $revenue, 'tax' => '0'];
+            $firstLineWithBox = $lines->first(fn (object $l): bool => ! empty($l->estv_box) || ! empty($l->sss_rate_percent));
+            $groups[] = [
+                'rate' => '0',
+                'treatment' => null,
+                'base' => $revenue,
+                'tax' => '0',
+                'sss_rate' => $firstLineWithBox?->sss_rate_percent !== null ? Decimal::formatRate((string) $firstLineWithBox->sss_rate_percent) : null,
+                'estv_box' => $firstLineWithBox?->estv_box !== null ? (string) $firstLineWithBox->estv_box : null,
+            ];
         }
 
         $isFirst = true;
@@ -183,7 +198,13 @@ final class VatLedgerReader
         foreach ($groups as $group) {
             $sales[] = new VatSaleDocument(
                 totalNet: $isFirst ? $revenue : '0',
-                items: [new VatSaleItem(Decimal::round2($group['base']), $group['rate'], Decimal::round2($group['tax']))],
+                items: [new VatSaleItem(
+                    Decimal::round2($group['base']),
+                    $group['rate'],
+                    Decimal::round2($group['tax']),
+                    $group['sss_rate'] ?? null,
+                    $group['estv_box'] ?? null,
+                )],
                 splitPayment: $group['treatment'] === self::TREATMENT_SPLIT_PAYMENT,
                 reverseCharge: $group['treatment'] === self::TREATMENT_REVERSE_CHARGE,
             );
@@ -205,10 +226,28 @@ final class VatLedgerReader
         $deductible = '0';
         $supplierGross = '0';
         $groups = [];
+        $reverseCharge = false;
+        $estvBox = null;
+        $acquisitionTaxAmount = '0';
 
         foreach ($lines as $line) {
             if ($line->partner_type === 'supplier') {
                 $supplierGross = Decimal::add($supplierGross, $this->creditMinusDebit($line));
+            }
+
+            if ($this->treatmentOf($line) === self::TREATMENT_REVERSE_CHARGE || $line->estv_box === '383') {
+                $reverseCharge = true;
+            }
+
+            if ($line->estv_box !== null && $estvBox === null) {
+                $estvBox = (string) $line->estv_box;
+            }
+
+            if (in_array((string) $line->account_id, $accounts->outputAccountIds, true) && ($reverseCharge || $this->treatmentOf($line) === self::TREATMENT_REVERSE_CHARGE)) {
+                $acqTax = Decimal::round2($this->creditMinusDebit($line));
+                $acquisitionTaxAmount = Decimal::add($acquisitionTaxAmount, $acqTax);
+                $accountId = (string) $line->account_id;
+                $outputByAccountPlaceholder = null;
             }
 
             if (! in_array((string) $line->account_id, $accounts->inputAccountIds, true)) {
@@ -240,10 +279,20 @@ final class VatLedgerReader
             $groups[array_key_first($groups)]['base'] = $net;
         }
 
-        $purchases[] = new VatPurchaseDocument(Decimal::round2($deductible), Decimal::round2($net));
+        if ($reverseCharge && Decimal::isZero($acquisitionTaxAmount) && Decimal::isPositive($deductible)) {
+            $acquisitionTaxAmount = $deductible;
+        }
+
+        $purchases[] = new VatPurchaseDocument(
+            Decimal::round2($deductible),
+            Decimal::round2($net),
+            $reverseCharge,
+            $estvBox,
+            Decimal::round2($acquisitionTaxAmount),
+        );
 
         foreach ($groups as $group) {
-            $registerLines[] = $this->registerLine($lines, $group['base'], $group['rate'], $group['tax'], null);
+            $registerLines[] = $this->registerLine($lines, $group['base'], $group['rate'], $group['tax'], $reverseCharge ? self::TREATMENT_REVERSE_CHARGE : null);
         }
     }
 

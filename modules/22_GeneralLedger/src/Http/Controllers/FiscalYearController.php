@@ -158,4 +158,107 @@ final class FiscalYearController extends Controller
             'data' => $run,
         ]);
     }
+
+    /**
+     * Reopens a closed fiscal year prior to AGM approval (CO Art. 958 / 698).
+     */
+    #[OA\Post(
+        path: '/api/v1/general-ledger/fiscal-years/{id}/reopen',
+        operationId: 'reopenYearGeneralLedgerFiscalYear',
+        description: 'Reopens a closed fiscal year prior to AGM approval and reverses the closing journal entries.',
+        summary: 'Reopen fiscal year',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Fiscal Years'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the fiscal year', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: true,
+            content: new OA\JsonContent(
+                required: ['reason'],
+                properties: [
+                    new OA\Property(property: 'reason', type: 'string', maxLength: 500),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'Fiscal year reopened successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerFiscalYearResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Cannot reopen fiscal year', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function reopenYear(Request $request, string $id): JsonResponse
+    {
+        $year = FiscalYear::findOrFail($id);
+        $this->authorize('update', $year);
+
+        $validated = $request->validate([
+            'reason' => ['required', 'string', 'min:3', 'max:500'],
+        ]);
+
+        $user = $request->user();
+        if ($user === null) {
+            abort(401, 'Unauthenticated');
+        }
+        $actorId = (string) $user->id;
+        $reopened = $this->closingService->reopenFiscalYear($id, $actorId, (string) $validated['reason']);
+
+        return response()->json([
+            'message' => 'Fiscal Year reopened successfully',
+            'data' => new FiscalYearResource($reopened),
+        ]);
+    }
+
+    /**
+     * Locks the fiscal year upon Annual General Meeting (AGM) approval (CO Art. 698 / 958).
+     */
+    #[OA\Post(
+        path: '/api/v1/general-ledger/fiscal-years/{id}/approve-agm',
+        operationId: 'approveAgmGeneralLedgerFiscalYear',
+        description: 'Records the Annual General Meeting (AGM) resolution approving the closed financial statements, permanently locking the fiscal year against reopening.',
+        summary: 'Approve fiscal year at AGM',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Fiscal Years'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the fiscal year', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        requestBody: new OA\RequestBody(
+            required: false,
+            content: new OA\JsonContent(
+                properties: [
+                    new OA\Property(property: 'resolution_reference', type: 'string', maxLength: 190),
+                ]
+            )
+        ),
+        responses: [
+            new OA\Response(response: 200, description: 'AGM approval recorded successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerFiscalYearResource')])),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Fiscal year must be closed before AGM approval', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function approveAgm(Request $request, string $id): JsonResponse
+    {
+        $year = FiscalYear::findOrFail($id);
+        $this->authorize('update', $year);
+
+        $validated = $request->validate([
+            'resolution_reference' => ['nullable', 'string', 'max:190'],
+        ]);
+
+        $user = $request->user();
+        if ($user === null) {
+            abort(401, 'Unauthenticated');
+        }
+        $actorId = (string) $user->id;
+        $approved = $this->closingService->approveFiscalYearAtAgm(
+            $id,
+            $actorId,
+            isset($validated['resolution_reference']) ? (string) $validated['resolution_reference'] : null
+        );
+
+        return response()->json([
+            'message' => 'Fiscal Year approved at AGM and permanently locked',
+            'data' => new FiscalYearResource($approved),
+        ]);
+    }
 }

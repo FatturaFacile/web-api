@@ -136,7 +136,8 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'incurred_date', type: 'string', format: 'date'),
     new OA\Property(property: 'approval_status', type: 'string', enum: ['pending', 'approved', 'rejected']),
     new OA\Property(property: 'rejection_reason', type: 'string', nullable: true),
-    new OA\Property(property: 'allocations', type: 'array', items: new OA\Items(type: 'object'), nullable: true),
+    new OA\Property(property: 'allocations', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsCostAllocation'), nullable: true, description: 'Present when the allocations are loaded'),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
 ])]
 #[OA\Schema(schema: 'ProjectsTimesheet', type: 'object', properties: [
     new OA\Property(property: 'id', type: 'string', format: 'uuid'),
@@ -173,7 +174,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'status', type: 'string', enum: ['submitted', 'pending_approval', 'customer_approved', 'rejected']),
     new OA\Property(property: 'approved_at', type: 'string', format: 'date-time', nullable: true),
     new OA\Property(property: 'rejection_reason', type: 'string', nullable: true),
-    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(type: 'object'), nullable: true),
+    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsChangeOrderLine'), nullable: true, description: 'Present when the lines are loaded (list, create, approve; not on reject)'),
 ])]
 #[OA\Schema(schema: 'ProjectsRevenueRecognition', type: 'object', properties: [
     new OA\Property(property: 'id', type: 'string', format: 'uuid'),
@@ -358,5 +359,28 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'remaining_budget', ref: '#/components/schemas/ProjectsBudgetCategoryReport'),
     new OA\Property(property: 'inflows', type: 'object'),
     new OA\Property(property: 'outflows', type: 'object'),
+])]
+#[OA\Schema(schema: 'ProjectsChangeOrderLine', type: 'object', description: 'Line of a change order as stored: the deltas applied to the project budget and contract.', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'project_change_order_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'cost_category', type: 'string'),
+    new OA\Property(property: 'description', type: 'string'),
+    new OA\Property(property: 'quantity_delta', type: 'string', example: '1.0000'),
+    new OA\Property(property: 'unit_cost_delta', type: 'string', example: '100.0000'),
+    new OA\Property(property: 'total_cost_delta', type: 'string', example: '100.00'),
+    new OA\Property(property: 'revenue_delta', type: 'string', example: '0.00'),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
+])]
+#[OA\Schema(schema: 'ProjectsCostAllocation', type: 'object', description: 'Share of a cost entry charged to a task, as stored.', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'project_cost_entry_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'project_task_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'allocation_percentage', type: 'string', example: '100.00'),
+    new OA\Property(property: 'allocated_amount', type: 'string', example: '250.00'),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
 ])]
 final class ProjectsOpenApiSchemas {}

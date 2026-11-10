@@ -43,6 +43,9 @@ use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Connection;
+use Illuminate\Database\PostgresConnection;
+use Illuminate\Database\Schema\PostgresBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -60,6 +63,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
+        if ($this->app->runningInConsole()) {
+            @ini_set('memory_limit', '1G');
+        }
+
         $this->app->singleton(TenantContext::class, fn () => new TenantContext);
         $this->app->bind(ExchangeRateProviderInterface::class, EuropeanCentralBankProvider::class);
         $this->app->bind(SdiProvider::class, TenantSdiProvider::class);
@@ -73,6 +80,42 @@ class AppServiceProvider extends ServiceProvider
             $app->environment('local') ? (array) config('security.outbound.allowed_hosts', []) : [],
         ));
         $this->app->singleton(WidgetRegistry::class);
+
+        Connection::resolverFor('pgsql', static function ($connection, $database, $prefix, $config): PostgresConnection {
+            return new class($connection, $database, $prefix, $config) extends PostgresConnection
+            {
+                public function getSchemaBuilder(): PostgresBuilder
+                {
+                    if (is_null($this->schemaGrammar)) {
+                        $this->useDefaultSchemaGrammar();
+                    }
+
+                    return new class($this) extends PostgresBuilder
+                    {
+                        public function dropAllTables(): void
+                        {
+                            $tables = [];
+                            $excludedTables = $this->connection->getConfig('dont_drop') ?? ['spatial_ref_sys'];
+
+                            foreach ($this->getTables($this->getCurrentSchemaListing()) as $table) {
+                                if (empty(array_intersect([$table['name'], $table['schema_qualified_name']], $excludedTables))) {
+                                    $tables[] = $table['schema_qualified_name'];
+                                }
+                            }
+
+                            if (empty($tables)) {
+                                return;
+                            }
+
+                            foreach (array_chunk($tables, 20) as $chunk) {
+                                $wrapped = array_map(static fn (string $table): string => '"'.str_replace(['"', '.'], ['""', '"."'], $table).'"', $chunk);
+                                $this->connection->statement('drop table if exists '.implode(',', $wrapped).' cascade');
+                            }
+                        }
+                    };
+                }
+            };
+        });
     }
 
     /**
@@ -135,6 +178,11 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('ip:'.$request->ip()),
         ]);
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(300)->by($request->user()?->getKey() ?: $request->ip()));
+        // Routes of the stateful `web` group (Sanctum csrf-cookie, docs, root, health) open a session row per request:
+        // csrf-cookie is the one a SPA hits once per login, so 60/min per address is generous; the rest gets 240/min.
+        RateLimiter::for('web-public', fn (Request $request): Limit => $request->routeIs('sanctum.csrf-cookie')
+            ? Limit::perMinute(60)->by('csrf-cookie|'.$request->ip())
+            : Limit::perMinute(240)->by('web|'.$request->ip()));
         RateLimiter::for('registration', fn (Request $request): array => [
             Limit::perMinute((int) config('auth.registration.rate_limits.register_per_minute'))->by('ip:'.$request->ip()),
             Limit::perHour((int) config('auth.registration.rate_limits.register_per_email_per_hour'))->by($emailKey($request)),

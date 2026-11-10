@@ -37,6 +37,7 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
             'work_days_per_week' => 'integer',
             'hire_date' => 'date',
             'termination_date' => 'date',
+            'is_regular_night_worker' => 'boolean',
         ];
     }
 

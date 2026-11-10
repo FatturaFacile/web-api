@@ -8,6 +8,10 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\GeneralLedger\Exceptions\VatSettlementException;
 
+/**
+ * @property array<string, mixed>|null $estv_boxes
+ * @property array<int, array<string, mixed>>|null $rate_breakdown
+ */
 final class VatSettlement extends BaseEnterpriseModel
 {
     public const string STATUS_CALCULATED = 'calculated';
@@ -58,6 +62,12 @@ final class VatSettlement extends BaseEnterpriseModel
             'net_vat_credit' => 'decimal:4',
             'turnover' => 'decimal:2',
             'taxable_turnover' => 'decimal:2',
+            'gross_turnover' => 'decimal:2',
+            'exempt_turnover' => 'decimal:2',
+            'acquisition_tax_base' => 'decimal:2',
+            'acquisition_tax_amount' => 'decimal:4',
+            'gross_input_vat_forfeited' => 'decimal:4',
+            'flat_rate_adjustment_amount' => 'decimal:4',
             'passive_operations' => 'decimal:2',
             'previous_debit' => 'decimal:2',
             'interest_amount' => 'decimal:2',
@@ -68,6 +78,7 @@ final class VatSettlement extends BaseEnterpriseModel
             'is_paid' => 'boolean',
             'payment_date' => 'immutable_date',
             'rate_breakdown' => 'array',
+            'estv_boxes' => 'array',
             'warnings' => 'array',
             'posted_at' => 'immutable_datetime',
             'paid_at' => 'immutable_datetime',

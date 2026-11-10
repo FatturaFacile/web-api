@@ -34,8 +34,8 @@ final class BankAccountController extends Controller
         responses: [
             new OA\Response(response: 200, description: 'Bank accounts', content: new OA\JsonContent(properties: [
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryBankAccountResource')),
-                new OA\Property(property: 'meta', type: 'object'),
-                new OA\Property(property: 'links', type: 'object'),
+                new OA\Property(property: 'meta', ref: '#/components/schemas/TreasuryPaginatorMeta'),
+                new OA\Property(property: 'links', ref: '#/components/schemas/TreasuryPaginatorLinks'),
             ])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]

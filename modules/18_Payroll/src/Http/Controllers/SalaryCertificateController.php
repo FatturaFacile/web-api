@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response as HttpResponse;
 use Modules\Payroll\Http\Requests\GenerateSalaryCertificatesRequest;
 use Modules\Payroll\Http\Requests\ListEmployeeDocumentsRequest;
-use Modules\Payroll\Http\Resources\PayrollRecordResource;
+use Modules\Payroll\Http\Resources\PayrollSalaryCertificateResource;
 use Modules\Payroll\Models\SalaryCertificate;
 use Modules\Payroll\Policies\EmployeeDocumentPolicy;
 use Modules\Payroll\Services\PayrollDocumentService;
@@ -46,7 +46,7 @@ final class SalaryCertificateController extends PayrollController
             new OA\Parameter(ref: '#/components/parameters/PayrollYearFilter'),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Salary certificates', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Salary certificates', content: new OA\JsonContent(ref: '#/components/schemas/PayrollSalaryCertificatePage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -70,7 +70,7 @@ final class SalaryCertificateController extends PayrollController
             ->orderByDesc('year')
             ->paginate((int) $request->validated('per_page', 50));
 
-        return PayrollRecordResource::collection($certificates);
+        return PayrollSalaryCertificateResource::collection($certificates);
     }
 
     /**
@@ -85,7 +85,7 @@ final class SalaryCertificateController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['year'], properties: [new OA\Property(property: 'year', type: 'integer', example: 2026)])),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 200, description: 'Number of certificates generated', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Number of certificates generated', content: new OA\JsonContent(ref: '#/components/schemas/PayrollGeneratedCertificates')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -111,18 +111,18 @@ final class SalaryCertificateController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Salary certificate', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Salary certificate', content: new OA\JsonContent(ref: '#/components/schemas/PayrollSalaryCertificateEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
         ]
     )]
-    public function show(string $id): PayrollRecordResource
+    public function show(string $id): PayrollSalaryCertificateResource
     {
         $certificate = SalaryCertificate::query()->findOrFail($id);
         $this->authorize('view', $certificate);
 
-        return new PayrollRecordResource($certificate);
+        return new PayrollSalaryCertificateResource($certificate);
     }
 
     /**

@@ -8,9 +8,11 @@ use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
 use App\Models\Tenant;
+use App\Models\Translation;
 use App\Models\User;
 use Database\Seeders\ErpLookupsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -59,6 +61,32 @@ class LookupTest extends TestCase
         $responseFr->assertOk();
         $nrFr = collect($responseFr->json())->firstWhere('code', 'NR');
         $this->assertSame('Numéro', $nrFr['label']);
+    }
+
+    public function test_it_falls_back_to_the_default_locale_and_never_caches_arbitrary_locale_keys(): void
+    {
+        Cache::flush();
+
+        $response = $this->getJson('/api/v1/lookups/unit_of_measure?locale=zz-attacker-chosen');
+
+        $response->assertOk();
+        $nr = collect($response->json())->firstWhere('code', 'NR');
+        $this->assertSame('Numero', $nr['label']);
+        $this->assertFalse(Cache::has('lookups_unit_of_measure_global_zz-attacker-chosen'));
+        $this->assertTrue(Cache::has('lookups_unit_of_measure_global_it'));
+    }
+
+    public function test_translations_endpoint_falls_back_to_the_default_locale_for_unsupported_values(): void
+    {
+        Cache::flush();
+        Translation::create(['tenant_id' => null, 'locale' => 'it', 'group' => 'ui', 'key' => 'greeting', 'value' => 'Ciao']);
+
+        $response = $this->getJson('/api/v1/translations/not-a-locale');
+
+        $response->assertOk()->assertJsonPath('locale', 'it')->assertJsonPath('translations.greeting', 'Ciao');
+        $scope = $response->json('tenant_id') ?? 'global';
+        $this->assertFalse(Cache::has("translations_{$scope}_not-a-locale"));
+        $this->assertTrue(Cache::has("translations_{$scope}_it"));
     }
 
     public function test_it_returns_404_for_unknown_category(): void

@@ -13,7 +13,7 @@ final class PayrollRules
     public const array Cantons = ['AG', 'AI', 'AR', 'BE', 'BL', 'BS', 'FR', 'GE', 'GL', 'GR', 'JU', 'LU', 'NE', 'NW', 'OW', 'SG', 'SH', 'SO', 'SZ', 'TG', 'TI', 'UR', 'VD', 'VS', 'ZG', 'ZH'];
 
     /** @var list<string> */
-    public const array Permits = ['CH', 'C', 'B', 'L', 'G', 'F', 'N', 'S', 'CI'];
+    public const array Permits = ['CH', 'C', 'B', 'L', 'G', 'F', 'N', 'S', 'CI', 'Ci', 'Meldeverfahren'];
 
     /**
      * @return array<string, list<string>>

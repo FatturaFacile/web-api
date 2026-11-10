@@ -25,6 +25,10 @@ final class VatAccountResolver
 
     private const string DEFAULT_INTEREST_CODE = '7500';
 
+    private const string DEFAULT_FLAT_RATE_ADJUSTMENT_CODE = '3805';
+
+    private const string DEFAULT_FORFEITED_INPUT_EXPENSE_CODE = '6575';
+
     public function accountsFor(string $tenantId, string $country): VatAccountSet
     {
         $settings = $this->settingsOf($tenantId);
@@ -69,6 +73,23 @@ final class VatAccountResolver
     {
         return $this->settingsOf($tenantId)->interest_expense_account_id
             ?? $this->findOrCreate($tenantId, self::DEFAULT_INTEREST_CODE, 'Interessi su IVA trimestrale (Quarterly VAT Interest)', 'expense', 'debit');
+    }
+
+    /**
+     * The revenue adjustment account for Swiss Saldosteuersatz / Pauschalsteuersatz differences.
+     */
+    public function flatRateAdjustmentAccountId(string $tenantId): string
+    {
+        return $this->settingsOf($tenantId)->flat_rate_adjustment_account_id
+            ?? $this->findOrCreate($tenantId, self::DEFAULT_FLAT_RATE_ADJUSTMENT_CODE, 'Rettifica ricavi SSS/PST (Flat-Rate VAT Adjustment)', 'revenue', 'credit');
+    }
+
+    /**
+     * The expense account absorbing non-deductible input VAT under Saldosteuersatz / Pauschalsteuersatz.
+     */
+    public function forfeitedInputVatAccountId(string $tenantId): string
+    {
+        return $this->findOrCreate($tenantId, self::DEFAULT_FORFEITED_INPUT_EXPENSE_CODE, 'Imposta precedente non deducibile SSS/PST', 'expense', 'debit');
     }
 
     public function settingsOf(string $tenantId): VatTaxSetting

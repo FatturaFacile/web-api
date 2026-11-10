@@ -10,6 +10,7 @@ use Illuminate\Console\Scheduling\CallbackEvent;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Support\Facades\Schema;
 use Modules\AssetManagement\Jobs\NotifyExpiringAssetCoverageJob;
 use Modules\Associations\Jobs\ExpireMembershipsJob;
 use Modules\Associations\Jobs\SendCertificateAlertsJob;
@@ -66,8 +67,12 @@ Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverla
 Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
 
-// Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore
-Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverlapping()->onOneServer();
+// Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore. Telescope e' una dipendenza di sviluppo
+// spenta in produzione (TELESCOPE_ENABLED=false) e le sue tabelle non sono migrate: il prune gira solo se e' attivo
+// e la tabella esiste, altrimenti fallirebbe ogni notte.
+Schedule::command('telescope:prune --hours=24')->dailyAt('03:00')->withoutOverlapping()->onOneServer()
+    ->when(static fn (): bool => (bool) config('telescope.enabled')
+        && Schema::connection(config('telescope.storage.database.connection'))->hasTable('telescope_entries'));
 
 // Demo pubblica: database ricostruito da zero e storage svuotato ogni 30 minuti (solo con DEMO_RESET_ENABLED=true)
 Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->onOneServer()->when(fn (): bool => (bool) config('app.demo_reset'));

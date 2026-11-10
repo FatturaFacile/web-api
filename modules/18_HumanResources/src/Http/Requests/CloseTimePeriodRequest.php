@@ -27,6 +27,7 @@ final class CloseTimePeriodRequest extends FormRequest
         return [
             'year' => ['required', 'integer', 'between:2000,2100'],
             'month' => ['required', 'integer', 'between:1,12'],
+            'transfer_to_payroll' => ['sometimes', 'boolean'],
         ];
     }
 }

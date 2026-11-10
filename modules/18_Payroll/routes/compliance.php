@@ -37,6 +37,13 @@ Route::prefix('api/v1/payroll')
         Route::put('/frontier-workers/{employeeId}/nights', [PayrollComplianceController::class, 'saveFrontierNights'])->name('frontier-workers.nights');
         Route::get('/exports/frontier-exchange', [PayrollComplianceController::class, 'exportFrontierExchange'])->name('exports.frontier-exchange');
 
+        // Swiss work permit compliance & Swissdec ELM 5.0 / 6.0 XML export and XSD validation
+        Route::middleware('privacy.sensitive.log:swissdec_exports')->group(function (): void {
+            Route::get('/compliance/permit-alerts', [PayrollComplianceController::class, 'permitAlerts'])->name('compliance.permit-alerts');
+            Route::get('/compliance/salary-declaration/xml', [PayrollComplianceController::class, 'salaryDeclarationXml'])->name('compliance.salary-declaration.xml');
+            Route::post('/compliance/salary-declaration/validate', [PayrollComplianceController::class, 'validateSalaryDeclaration'])->name('compliance.salary-declaration.validate');
+        });
+
         // Short-time work and bad weather
         Route::get('/short-time/cases', [ShortTimeController::class, 'cases'])->name('short-time.cases.index');
         Route::post('/short-time/cases', [ShortTimeController::class, 'storeCase'])->name('short-time.cases.store');
@@ -55,10 +62,12 @@ Route::prefix('api/v1/payroll')
         Route::get('/exports/joint-commission-report', [ShortTimeController::class, 'exportJointCommissionReport'])->name('exports.joint-commission-report');
 
         // Salary declaration in ELM structure. Not certified: the transmission is a stub that sends nothing.
-        Route::get('/swissdec/status', [PayrollExtrasController::class, 'swissdecStatus'])->name('swissdec.status');
-        Route::get('/swissdec/declaration', [PayrollExtrasController::class, 'swissdecDeclaration'])->name('swissdec.declaration');
-        Route::get('/swissdec/readiness', [PayrollExtrasController::class, 'swissdecReadiness'])->name('swissdec.readiness');
-        Route::post('/swissdec/transmissions', [PayrollExtrasController::class, 'swissdecTransmit'])->name('swissdec.transmissions.store');
+        Route::middleware('privacy.sensitive.log:swissdec_exports')->group(function (): void {
+            Route::get('/swissdec/status', [PayrollExtrasController::class, 'swissdecStatus'])->name('swissdec.status');
+            Route::get('/swissdec/declaration', [PayrollExtrasController::class, 'swissdecDeclaration'])->name('swissdec.declaration');
+            Route::get('/swissdec/readiness', [PayrollExtrasController::class, 'swissdecReadiness'])->name('swissdec.readiness');
+            Route::post('/swissdec/transmissions', [PayrollExtrasController::class, 'swissdecTransmit'])->name('swissdec.transmissions.store');
+        });
 
         // Payslip delivery, payment files, reports
         Route::post('/runs/{id}/deliver-payslips', [PayrollExtrasController::class, 'deliverPayslips'])->name('runs.deliver-payslips');

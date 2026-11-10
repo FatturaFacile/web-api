@@ -108,13 +108,17 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'engagement_score', type: 'number'),
         new OA\Property(property: 'revenue_score', type: 'number'),
         new OA\Property(property: 'risk_score', type: 'number'),
-        new OA\Property(property: 'churn_risk_indicator'),
+        new OA\Property(property: 'churn_risk_indicator', type: 'string', enum: ['low', 'medium', 'high', 'critical'], description: 'Derived from the health index and the risk score'),
         new OA\Property(property: 'health_index', type: 'number'),
-        new OA\Property(property: 'last_interaction_at', type: 'string', format: 'date-time'),
-        new OA\Property(property: 'open_receivable_amount', type: 'number'),
+        new OA\Property(property: 'last_interaction_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'open_receivable_amount', type: 'number', description: 'JSON number (this resource does not use decimal strings)'),
         new OA\Property(property: 'overdue_receivable_amount', type: 'number'),
-        new OA\Property(property: 'evaluation_metrics'),
-        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+        new OA\Property(property: 'evaluation_metrics', type: 'object', nullable: true, properties: [
+            new OA\Property(property: 'evaluated_at', type: 'string', format: 'date-time'),
+            new OA\Property(property: 'completed_activities', type: 'integer'),
+            new OA\Property(property: 'days_since_interaction', type: 'integer', nullable: true),
+        ]),
+        new OA\Property(property: 'updated_at', type: 'string', format: 'date-time', nullable: true),
     ]
 )]
 #[OA\Schema(

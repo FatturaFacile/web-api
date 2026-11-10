@@ -50,6 +50,7 @@ use App\Http\Controllers\Api\V1\PosSaleController;
 use App\Http\Controllers\Api\V1\PosSessionController;
 use App\Http\Controllers\Api\V1\PosTerminalController;
 use App\Http\Controllers\Api\V1\PriceListController;
+use App\Http\Controllers\Api\V1\PrivacyComplianceController;
 use App\Http\Controllers\Api\V1\ProductBrandController;
 use App\Http\Controllers\Api\V1\ProductCategoryController;
 use App\Http\Controllers\Api\V1\ProfessionalsController;
@@ -480,10 +481,10 @@ Route::prefix('v1')->group(function (): void {
 
         // 17. Fiscal & Statutory Accounting
         Route::prefix('accounting')->name('accounting.')->middleware('module.access:ledger')->group(function (): void {
-            Route::get('/chart-of-accounts', [AccountingController::class, 'chartOfAccounts'])->name('chart-of-accounts');
-            Route::get('/ledger-entries', [AccountingController::class, 'ledgerEntries'])->name('ledger-entries');
+            Route::get('/chart-of-accounts', [AccountingController::class, 'chartOfAccounts'])->middleware('deprecated:/api/v1/general-ledger/accounts')->name('chart-of-accounts');
+            Route::get('/ledger-entries', [AccountingController::class, 'ledgerEntries'])->middleware('deprecated:/api/v1/general-ledger/journals')->name('ledger-entries');
             Route::post('/ledger-entries', [AccountingController::class, 'storeLedgerEntry'])->middleware('deprecated:/api/v1/general-ledger/journals')->name('ledger-entries.store');
-            Route::get('/vat-settlements', [AccountingController::class, 'vatSettlements'])->name('vat-settlements');
+            Route::get('/vat-settlements', [AccountingController::class, 'vatSettlements'])->middleware('deprecated:/api/v1/general-ledger/tax-settlements')->name('vat-settlements');
             Route::get('/vendor-aging', VendorAgingController::class)->name('vendor-aging');
             Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger');
             Route::get('/general-ledger/export', [GeneralLedgerController::class, 'export'])->name('general-ledger.export');
@@ -533,6 +534,27 @@ Route::prefix('v1')->group(function (): void {
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');
                 Route::put('/security/two-factor', [TwoFactorController::class, 'updatePolicy'])->name('security.two-factor.update');
                 Route::post('/users/{userId}/two-factor/reset', [TwoFactorController::class, 'resetMember'])->whereUuid('userId')->name('users.two-factor.reset');
+
+                // GDPR (EU 2016/679) & Swiss nLPD (RS 235.1) Compliance
+                Route::prefix('privacy')->name('privacy.')->group(function (): void {
+                    Route::get('/processing-activities', [PrivacyComplianceController::class, 'processingActivities'])->name('processing-activities.index');
+                    Route::post('/processing-activities', [PrivacyComplianceController::class, 'storeProcessingActivity'])->name('processing-activities.store');
+                    Route::get('/subprocessors', [PrivacyComplianceController::class, 'subprocessors'])->name('subprocessors.index');
+                    Route::post('/subprocessors', [PrivacyComplianceController::class, 'storeSubprocessor'])->name('subprocessors.store');
+                    Route::get('/data-subject-requests', [PrivacyComplianceController::class, 'dataSubjectRequests'])->name('dsr.index');
+                    Route::post('/data-subject-requests', [PrivacyComplianceController::class, 'storeDataSubjectRequest'])->name('dsr.store');
+                    Route::post('/data-subject-requests/{id}/execute-erasure', [PrivacyComplianceController::class, 'executeErasure'])
+                        ->middleware('privacy.sensitive.log:gdpr_exports')
+                        ->whereUuid('id')
+                        ->name('dsr.execute-erasure');
+                    Route::get('/portability/{subjectType}/{subjectId}', [PrivacyComplianceController::class, 'exportSubjectDossier'])
+                        ->middleware('privacy.sensitive.log:gdpr_exports')
+                        ->whereUuid('subjectId')
+                        ->name('portability.export');
+                    Route::get('/breaches', [PrivacyComplianceController::class, 'breaches'])->name('breaches.index');
+                    Route::post('/breaches', [PrivacyComplianceController::class, 'storeBreach'])->name('breaches.store');
+                    Route::get('/sensitive-access-logs', [PrivacyComplianceController::class, 'sensitiveAccessLogs'])->name('sensitive-access-logs.index');
+                });
             });
 
             Route::middleware('module.access:integrations')->group(function (): void {

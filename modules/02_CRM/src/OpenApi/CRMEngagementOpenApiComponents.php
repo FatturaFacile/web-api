@@ -219,11 +219,13 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'CRMSegmentFilter',
+    description: 'One condition of a segment. A filter is an OBJECT with named keys (field, operator, value): positional triples such as [field, operator, value] are refused with 422 on `filters`. All the conditions of a segment are ANDed. Filterable fields per entity: contacts = type, country, company_name, first_name, last_name, email, phone, vat_number, fiscal_code, document_language, created_at; leads = status, rating, score, country, company_name, title, email, phone, estimated_budget, campaign_id, assigned_user_id, created_at. The special field "consent" keeps only the subjects with a current opt-in for `channel` (default email) and `purpose` (default marketing) and takes no operator or value. Operators: eq, neq (also matches null), contains and starts_with (case-insensitive), in (list, or a comma separated string), gte, lte, is_null and not_null (no value).',
     type: 'object',
+    required: ['field'],
     properties: [
-        new OA\Property(property: 'field', type: 'string', description: 'A whitelisted column, or "consent"'),
-        new OA\Property(property: 'operator', type: 'string', enum: ['eq', 'neq', 'contains', 'starts_with', 'in', 'gte', 'lte', 'is_null', 'not_null']),
-        new OA\Property(property: 'value', description: 'Compared value (string, number or list for "in")'),
+        new OA\Property(property: 'field', type: 'string', example: 'country', description: 'A whitelisted column of the entity, or "consent"'),
+        new OA\Property(property: 'operator', type: 'string', example: 'eq', enum: ['eq', 'neq', 'contains', 'starts_with', 'in', 'gte', 'lte', 'is_null', 'not_null'], description: 'Required unless field is "consent"'),
+        new OA\Property(property: 'value', example: 'IT', description: 'Compared value (string, number or list for "in"); not used by is_null and not_null', oneOf: [new OA\Schema(type: 'string'), new OA\Schema(type: 'number'), new OA\Schema(type: 'array', items: new OA\Items(type: 'string'))]),
         new OA\Property(property: 'channel', type: 'string', description: 'Consent filter only', enum: ['email', 'sms', 'phone', 'post']),
         new OA\Property(property: 'purpose', type: 'string', description: 'Consent filter only', enum: ['marketing', 'newsletter', 'profiling']),
     ]
@@ -394,7 +396,12 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'qualification_rate', type: 'number'),
             new OA\Property(property: 'conversion_rate', type: 'number'),
             new OA\Property(property: 'average_days_to_convert', type: 'number', nullable: true),
-            new OA\Property(property: 'by_source', type: 'array', items: new OA\Items(type: 'object')),
+            new OA\Property(property: 'by_source', type: 'array', items: new OA\Items(type: 'object', properties: [
+                new OA\Property(property: 'lead_source', type: 'string', nullable: true, description: 'Name of the lead source, null for leads without one'),
+                new OA\Property(property: 'leads', type: 'integer'),
+                new OA\Property(property: 'converted', type: 'integer'),
+                new OA\Property(property: 'conversion_rate', type: 'number', description: 'Percentage, two decimals'),
+            ])),
         ]),
         new OA\Property(property: 'opportunities', type: 'object', properties: [
             new OA\Property(property: 'won', type: 'integer'),
@@ -414,8 +421,20 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'overdue', type: 'integer'),
         new OA\Property(property: 'completion_rate', type: 'number'),
         new OA\Property(property: 'by_status', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'integer')),
-        new OA\Property(property: 'by_type', type: 'array', items: new OA\Items(type: 'object')),
-        new OA\Property(property: 'by_assignee', type: 'array', items: new OA\Items(type: 'object')),
+        new OA\Property(property: 'by_type', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'type', type: 'string', example: 'call'),
+            new OA\Property(property: 'total', type: 'integer'),
+            new OA\Property(property: 'completed', type: 'integer'),
+            new OA\Property(property: 'overdue', type: 'integer', description: 'Pending or in progress with a due date in the past'),
+            new OA\Property(property: 'completion_rate', type: 'number', description: 'Percentage, two decimals'),
+        ])),
+        new OA\Property(property: 'by_assignee', type: 'array', items: new OA\Items(type: 'object', properties: [
+            new OA\Property(property: 'assigned_user_id', type: 'string', format: 'uuid', nullable: true, description: 'Null for unassigned activities'),
+            new OA\Property(property: 'total', type: 'integer'),
+            new OA\Property(property: 'completed', type: 'integer'),
+            new OA\Property(property: 'overdue', type: 'integer'),
+            new OA\Property(property: 'completion_rate', type: 'number', description: 'Percentage, two decimals'),
+        ])),
     ]
 )]
 final class CRMEngagementOpenApiComponents {}

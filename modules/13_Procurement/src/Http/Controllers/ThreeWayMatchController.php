@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Procurement\Actions\ExecuteThreeWayMatchAction;
 use Modules\Procurement\DTOs\ExecuteThreeWayMatchDTO;
 use Modules\Procurement\Http\Requests\ExecuteThreeWayMatchRequest;
@@ -18,6 +20,11 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Procurement Three-Way Matching', description: 'Reconciliation of Purchase Orders, Goods Receipts, and Vendor Invoices')]
 final class ThreeWayMatchController extends Controller
 {
+    /**
+     * Paginated three-way matching logs, latest evaluation first.
+     *
+     * @response AnonymousResourceCollection<LengthAwarePaginator<ThreeWayMatchLogResource>>
+     */
     #[OA\Get(
         path: '/api/v1/procurement/three-way-match',
         summary: 'List three-way matching audit logs and variance reports',
@@ -26,15 +33,10 @@ final class ThreeWayMatchController extends Controller
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', description: 'Page number', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
             new OA\Parameter(name: 'per_page', in: 'query', description: 'Items per page', required: false, schema: new OA\Schema(type: 'integer', default: 25)),
-            new OA\Parameter(name: 'match_status', in: 'query', description: 'Filter by matching result', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'match_status', in: 'query', description: 'Filter by matching result', required: false, schema: new OA\Schema(type: 'string', enum: ['matched', 'price_variance', 'quantity_variance', 'escalated_to_workflow', 'override_approved'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated matching logs', content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProcurementThreeWayMatchLog')),
-                    new OA\Property(property: 'meta', ref: '#/components/schemas/ProcurementApiPaginationMeta'),
-                ]
-            )),
+            new OA\Response(response: 200, description: 'Paginated matching logs', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementThreeWayMatchLogPage')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]

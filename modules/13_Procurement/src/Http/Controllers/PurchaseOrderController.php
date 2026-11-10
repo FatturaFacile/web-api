@@ -9,6 +9,8 @@ use App\Models\User;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Procurement\Actions\CreatePurchaseOrderAction;
 use Modules\Procurement\Actions\SubmitPurchaseOrderForApprovalAction;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
@@ -29,6 +31,11 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Procurement Purchase Orders', description: 'Purchase orders lifecycle, approvals, receiving, and commitments')]
 final class PurchaseOrderController extends Controller
 {
+    /**
+     * Paginated purchase orders, newest first.
+     *
+     * @response AnonymousResourceCollection<LengthAwarePaginator<PurchaseOrderResource>>
+     */
     #[OA\Get(
         path: '/api/v1/procurement/purchase-orders',
         summary: 'List purchase orders',
@@ -43,12 +50,7 @@ final class PurchaseOrderController extends Controller
             new OA\Parameter(name: 'sort', in: 'query', description: 'Sort field (-created_at, po_number)', required: false, schema: new OA\Schema(type: 'string', default: '-created_at')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated purchase orders', content: new OA\JsonContent(
-                properties: [
-                    new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProcurementPurchaseOrder')),
-                    new OA\Property(property: 'meta', ref: '#/components/schemas/ProcurementApiPaginationMeta'),
-                ]
-            )),
+            new OA\Response(response: 200, description: 'Paginated purchase orders', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementPurchaseOrderPage')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ProcurementApiErrorResponse')),
         ]
     )]

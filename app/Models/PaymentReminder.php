@@ -21,6 +21,12 @@ class PaymentReminder extends Model
         'channel',
         'recipient',
         'amount_due',
+        'dunning_fee',
+        'interest_rate_percent',
+        'interest_amount',
+        'total_claimed_amount',
+        'qr_bill_attached',
+        'qr_reference',
         'status',
         'error',
         'sent_at',
@@ -30,6 +36,11 @@ class PaymentReminder extends Model
     {
         return [
             'amount_due' => 'decimal:2',
+            'dunning_fee' => 'decimal:2',
+            'interest_rate_percent' => 'decimal:2',
+            'interest_amount' => 'decimal:2',
+            'total_claimed_amount' => 'decimal:2',
+            'qr_bill_attached' => 'boolean',
             'level' => 'integer',
             'sent_at' => 'datetime',
         ];

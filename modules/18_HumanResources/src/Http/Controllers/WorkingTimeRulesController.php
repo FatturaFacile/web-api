@@ -16,9 +16,12 @@ use Modules\HumanResources\Http\Requests\ReasonRequest;
 use Modules\HumanResources\Http\Requests\SaveOvertimeRuleRequest;
 use Modules\HumanResources\Models\OvertimeRule;
 use Modules\HumanResources\Models\TimeClockEvent;
+use Modules\HumanResources\Models\TimeNightCompensationBalance;
 use Modules\HumanResources\Models\TimePeriodClosing;
+use Modules\HumanResources\Services\TimeTracking\NightWorkCompensationService;
 use Modules\HumanResources\Services\TimeTracking\OvertimeCalculator;
 use Modules\HumanResources\Services\TimeTracking\TimePeriodClosingService;
+use Modules\HumanResources\Services\TimeTracking\TimeToPayrollTransferService;
 use OpenApi\Attributes as OA;
 
 /**
@@ -30,6 +33,8 @@ final class WorkingTimeRulesController extends Controller
         private readonly OvertimeCalculator $overtime,
         private readonly TimePeriodClosingService $closings,
         private readonly TenantContext $tenantContext,
+        private readonly TimeToPayrollTransferService $payrollTransfer,
+        private readonly NightWorkCompensationService $nightCompensation,
     ) {}
 
     /**
@@ -213,7 +218,85 @@ final class WorkingTimeRulesController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
-        return response()->json(['data' => $this->closings->close($actor, (int) $request->validated('year'), (int) $request->validated('month'))], 201);
+        return response()->json([
+            'data' => $this->closings->close(
+                $actor,
+                (int) $request->validated('year'),
+                (int) $request->validated('month'),
+                (bool) $request->validated('transfer_to_payroll', false),
+            ),
+        ], 201);
+    }
+
+    /**
+     * Transfer a closed (or approved) attendance period to payroll variable inputs.
+     */
+    #[OA\Post(
+        path: '/api/v1/hr/time-closings/{year}/{month}/transfer-to-payroll',
+        operationId: 'transferHrTimeToPayroll',
+        description: 'Evaluates the working time of every employee linked to a user for the month and creates or updates the payroll variable inputs: hourly hours for hourly-paid employees (1001), overtime at 125% (1010), the 25% night supplement for occasional night workers (1020) and the 50% Sunday and public holiday supplement (1030). Regular night workers (25 or more night shifts in the year, ArG Art. 17b) get 10% compensatory rest time credited to the night work balance instead of the cash supplement. Runs in one transaction and is idempotent: running it again overwrites the inputs of the same employee, month and wage type. The month does not have to be closed first. Responds 200 (not 201) because inputs are upserted.',
+        summary: 'Transfer working time to payroll inputs',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time & Attendance'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/HrPayrollTransferYear'),
+            new OA\Parameter(ref: '#/components/parameters/HrPayrollTransferMonth'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Transfer result', content: new OA\JsonContent(ref: '#/components/schemas/HrTimeToPayrollResponse')),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+        ]
+    )]
+    public function transferToPayroll(Request $request, int $year, int $month): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return response()->json([
+            'data' => $this->payrollTransfer->transfer($year, $month, $actor),
+        ]);
+    }
+
+    /**
+     * List or evaluate ArG Art. 17b night work compensation balances for a calendar year.
+     */
+    #[OA\Get(
+        path: '/api/v1/hr/time/night-work-balances',
+        operationId: 'listHrNightWorkBalances',
+        description: 'Night work compensation banks of the company for a calendar year (ArG Art. 17b): night shifts so far, whether the employee is a regular night worker (25 or more shifts, entitled to 10% compensatory rest time) and the rest time accrued, taken and remaining. With user_id the balance of that employee is first re-evaluated from the recorded working time, so the call writes the balance row; without it the stored balances are listed as they are.',
+        summary: 'Night work compensation balances',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time & Attendance'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/HrNightWorkYear'),
+            new OA\Parameter(ref: '#/components/parameters/HrNightWorkUserFilter'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Balances', content: new OA\JsonContent(ref: '#/components/schemas/HrNightWorkBalanceListResponse')),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+        ]
+    )]
+    public function nightWorkBalances(Request $request): JsonResponse
+    {
+        $year = $request->integer('year') ?: (int) now()->year;
+        $userId = $request->string('user_id')->toString();
+
+        if ($userId !== '') {
+            $user = User::query()->find($userId);
+            abort_unless($user !== null && $user->belongsToTenant((string) $this->tenantContext->getTenantId()), 404);
+            $this->nightCompensation->evaluateYearToDate($user, $year);
+        }
+
+        return response()->json([
+            'data' => TimeNightCompensationBalance::query()
+                ->where('year', $year)
+                ->when($userId !== '', static fn ($q) => $q->where('user_id', $userId))
+                ->orderByDesc('ytd_night_shifts')
+                ->get(),
+        ]);
     }
 
     /**

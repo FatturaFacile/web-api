@@ -32,7 +32,7 @@ final class StockPickListController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated pick lists'),
+            new OA\Response(response: 200, description: 'Paginated pick lists', content: new OA\JsonContent(ref: '#/components/schemas/InventoryPickListPage')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]

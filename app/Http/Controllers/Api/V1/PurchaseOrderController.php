@@ -175,7 +175,7 @@ class PurchaseOrderController extends Controller
             new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Goods receipts retrieved successfully'),
+            new OA\Response(response: 200, description: 'Goods receipts retrieved successfully', content: new OA\JsonContent(ref: '#/components/schemas/PurchasesGoodsReceiptsListResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]

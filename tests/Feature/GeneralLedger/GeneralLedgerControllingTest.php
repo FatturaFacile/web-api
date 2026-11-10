@@ -143,6 +143,19 @@ test('ledger settings resolve configured accounts, fall back to preference codes
     $this->tenant->update(['settings' => ['preferences' => ['accounting' => ['accounts' => ['revenue_account_code' => '4000']]]]]);
     glcActAs($this->accountant, $this->tenant);
 
+    // OpenAPI: posting_accounts is an object per role, each {account_id, account_code, account_name, source}.
+    $settings = $this->getJson('/api/v1/general-ledger/settings')->assertOk()->json('data');
+    expect(array_keys($settings))->toBe([
+        'posting_accounts',
+        'manual_journal_approval_required',
+        'manual_journal_approval_threshold',
+        'fx_unrealised_gain_provision_account_id',
+        'enforce_swiss_imparity_principle',
+        'unrealised_gain_treatment',
+    ])
+        ->and(array_keys($settings['posting_accounts']))->toBe(PostingAccountRole::values())
+        ->and(array_keys($settings['posting_accounts']['sales_revenue']))->toBe(['account_id', 'account_code', 'account_name', 'source']);
+
     $this->getJson('/api/v1/general-ledger/settings')->assertOk()
         ->assertJsonPath('data.posting_accounts.retained_earnings.account_id', null)
         ->assertJsonPath('data.posting_accounts.sales_revenue.account_id', (string) $this->sales->id)
@@ -315,6 +328,9 @@ test('the close checklist blocks the closing until drafts, due reversals and blo
 
     $checklist = $this->getJson("/api/v1/general-ledger/fiscal-periods/{$period->id}/close-checklist")->assertOk()->json('data');
     $checks = collect($checklist['checks'])->keyBy('code');
+    expect(array_keys($checklist))->toBe(['fiscal_period_id', 'period_name', 'status', 'can_close', 'checks', 'tasks'])
+        ->and(array_keys($checklist['checks'][0]))->toBe(['code', 'label', 'blocking', 'passed', 'count'])
+        ->and(array_keys($checklist['tasks'][0]))->toBe(['id', 'fiscal_period_id', 'title', 'description', 'is_blocking', 'status', 'created_by', 'completed_by', 'completed_at', 'completion_note']);
     expect($checklist['can_close'])->toBeFalse()
         ->and($checks['no_drafts']['passed'])->toBeFalse()
         ->and($checks['automatic_reversals_posted']['count'])->toBe(1);
@@ -479,8 +495,25 @@ test('the chart of accounts protects accounts with postings and keeps codes uniq
     $centreId = $this->postJson('/api/v1/general-ledger/cost-centers', ['code' => 'SALES', 'name' => 'Sales'])->assertCreated()->json('data.id');
     $this->putJson("/api/v1/general-ledger/cost-centers/{$centreId}", ['is_active' => false])->assertOk()->assertJsonPath('data.is_active', false);
     $this->postJson('/api/v1/general-ledger/profit-centers', ['code' => 'PC1', 'name' => 'Retail'])->assertCreated();
+    // OpenAPI: data is a list of {id, code, name, is_active}.
+    expect(array_keys($this->getJson('/api/v1/general-ledger/cost-centers')->assertOk()->json('data.0')))->toBe(['id', 'code', 'name', 'is_active'])
+        ->and(array_keys($this->getJson('/api/v1/general-ledger/profit-centers')->assertOk()->json('data.0')))->toBe(['id', 'code', 'name', 'is_active']);
     $this->getJson('/api/v1/general-ledger/cost-centers?active=true')->assertOk()->assertJsonCount(1, 'data');
 
     glcActAs($this->reader, $this->tenant);
     $this->postJson('/api/v1/general-ledger/cost-centers', ['code' => 'X', 'name' => 'X'])->assertForbidden();
+});
+
+test('a manual journal without fiscal_period_id lands in the open period of its posting date', function (): void {
+    glcActAs($this->accountant, $this->tenant);
+    $lines = [['account_id' => $this->rent->id, 'debit_amount' => '50'], ['account_id' => $this->bank->id, 'credit_amount' => '50']];
+    $payload = glcJournal($this->tenant, '2026-02-10', $lines);
+    $expected = $payload['fiscal_period_id'];
+    unset($payload['fiscal_period_id']);
+
+    $created = $this->postJson('/api/v1/general-ledger/journals', $payload)->assertCreated();
+    expect($created->json('data.fiscal_period_id'))->toBe($expected);
+
+    $payload['posting_date'] = '2099-01-10';
+    $this->postJson('/api/v1/general-ledger/journals', $payload)->assertUnprocessable();
 });

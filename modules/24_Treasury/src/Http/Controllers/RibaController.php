@@ -46,7 +46,7 @@ final class RibaController extends Controller
         ])),
         tags: ['Treasury Ri.Ba.'],
         responses: [
-            new OA\Response(response: 201, description: 'Batch created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Batch created: the Ri.Ba. presentation with its receipts; payment_batch_id is the payment batch to submit and approve', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaPresentationEnvelope')),
             new OA\Response(response: 422, description: 'Invalid data, or a receipt cannot be collected', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
@@ -79,7 +79,7 @@ final class RibaController extends Controller
         tags: ['Treasury Ri.Ba.'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the payment batch', schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'The batch', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'The presentation with its receipts and the payment batch', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaPresentationEnvelope')),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
@@ -97,7 +97,7 @@ final class RibaController extends Controller
         tags: ['Treasury Ri.Ba.'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the payment batch', schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'File written', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'File written: the presentation with its receipts, now presented', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaPresentationEnvelope')),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'The batch is not approved', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
@@ -143,7 +143,7 @@ final class RibaController extends Controller
         tags: ['Treasury Ri.Ba.'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'Receipt paid', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Receipt paid', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaReceiptEnvelope')),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'The receipt is not presented', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
@@ -169,7 +169,7 @@ final class RibaController extends Controller
         tags: ['Treasury Ri.Ba.'],
         parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'Receipt unpaid', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Receipt unpaid', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaReceiptEnvelope')),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'The receipt cannot become unpaid, the configured fee account does not exist or the period is closed', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
