@@ -40,7 +40,7 @@ final class TreasuryBalanceController extends Controller
         tags: ['Treasury Bank Accounts'],
         parameters: [new OA\Parameter(name: 'date', description: 'Default: today', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date'))],
         responses: [
-            new OA\Response(response: 200, description: 'Balances', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Balances', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryBankBalancesEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryValidationError', response: 422),
@@ -70,7 +70,7 @@ final class TreasuryBalanceController extends Controller
             new OA\Parameter(ref: '#/components/parameters/TreasuryToDate'),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Balance history', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Balance history', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryBankBalanceHistoryEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryNotFound', response: 404),
@@ -114,7 +114,7 @@ final class TreasuryBalanceController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Positions'],
         responses: [
-            new OA\Response(response: 200, description: 'Cash position', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Cash position', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryCashPositionEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
         ]

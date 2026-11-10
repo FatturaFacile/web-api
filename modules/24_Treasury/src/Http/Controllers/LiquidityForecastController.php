@@ -47,7 +47,7 @@ final class LiquidityForecastController extends Controller
             new OA\Parameter(name: 'minimum_balance', in: 'query', required: false, schema: new OA\Schema(type: 'number')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Forecast', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Forecast', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryLiquidityForecastEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryValidationError', response: 422),

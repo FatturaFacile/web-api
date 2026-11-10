@@ -103,6 +103,11 @@ test('the relocation endpoint only moves stock between two bins of one warehouse
         ->assertCreated()
         ->assertJsonPath('total_valuation', 4);
 
+    $ledger = collect($this->getJson('/api/v1/inventory/movements?stock_item_id='.$item->id)->assertOk()->json('data'));
+    expect($ledger->every(fn (array $row): bool => array_key_exists('signed_quantity', $row)))->toBeTrue()
+        ->and($ledger->firstWhere('movement_type', 'transfer') ?? $ledger->first())->toHaveKey('signed_quantity');
+    expect($ledger->where('source_bin_id', null)->every(fn (array $row): bool => $row['signed_quantity'] > 0))->toBeTrue();
+
     $this->postJson('/api/v1/inventory/movements/transfer', ['stock_item_id' => $item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 1, 'source_bin_id' => $this->bin->id])
         ->assertStatus(422)->assertJsonValidationErrors('destination_bin_id');
     $this->postJson('/api/v1/inventory/movements/transfer', ['stock_item_id' => $item->id, 'warehouse_id' => $this->warehouse->id, 'quantity' => 1, 'movement_type' => 'PURCHASE_RECEIPT', 'source_bin_id' => $this->bin->id, 'destination_bin_id' => $to->id])

@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Inventory\Actions\ExecuteDoubleEntryMovementAction;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Exceptions\StockRuleViolation;
@@ -20,6 +22,9 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Inventory Stock Movements', description: 'Double-entry stock movements, internal transfers, and bin-to-bin relocation')]
 final class StockMovementController extends Controller
 {
+    /**
+     * @response AnonymousResourceCollection<LengthAwarePaginator<StockMovementResource>>
+     */
     #[OA\Get(
         path: '/api/v1/inventory/movements',
         summary: 'List stock movements',
@@ -33,7 +38,7 @@ final class StockMovementController extends Controller
             new OA\Parameter(name: 'movement_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated stock movements'),
+            new OA\Response(response: 200, description: 'Paginated stock movements', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockMovementList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -42,7 +47,7 @@ final class StockMovementController extends Controller
     {
         $this->authorize('viewAny', StockMovement::class);
 
-        $query = StockMovement::with(['item', 'warehouse', 'sourceBin', 'destinationBin'])
+        $query = StockMovement::with(['item', 'sourceBin', 'destinationBin'])
             ->orderBy('created_at', 'desc');
 
         if ($request->filled('stock_item_id')) {
@@ -86,7 +91,7 @@ final class StockMovementController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Stock relocated'),
+            new OA\Response(response: 201, description: 'Stock relocated', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockMovement')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 403, description: 'Read-only role', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation failed, bins not in the warehouse, bin frozen or insufficient stock', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),

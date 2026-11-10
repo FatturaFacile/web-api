@@ -9,7 +9,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response as HttpResponse;
 use Modules\Payroll\Http\Requests\ListEmployeeDocumentsRequest;
-use Modules\Payroll\Http\Resources\PayrollRecordResource;
+use Modules\Payroll\Http\Resources\PayrollPayslipResource;
 use Modules\Payroll\Models\Payslip;
 use Modules\Payroll\Policies\EmployeeDocumentPolicy;
 use Modules\Payroll\Services\PayrollDocumentService;
@@ -44,7 +44,7 @@ final class PayslipController extends PayrollController
             new OA\Parameter(ref: '#/components/parameters/PayrollMonthFilter'),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Payslips', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payslips', content: new OA\JsonContent(ref: '#/components/schemas/PayslipPage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -71,7 +71,7 @@ final class PayslipController extends PayrollController
             ->orderBy('employee_name')
             ->paginate((int) $request->validated('per_page', 50));
 
-        return PayrollRecordResource::collection($payslips);
+        return PayrollPayslipResource::collection($payslips);
     }
 
     /**
@@ -86,18 +86,18 @@ final class PayslipController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Payslip', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payslip', content: new OA\JsonContent(ref: '#/components/schemas/PayslipEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
         ]
     )]
-    public function show(Request $request, string $id): PayrollRecordResource
+    public function show(Request $request, string $id): PayrollPayslipResource
     {
         $payslip = Payslip::query()->findOrFail($id);
         $this->authorize('view', $payslip);
 
-        return new PayrollRecordResource($payslip->load('lines'));
+        return new PayrollPayslipResource($payslip->load('lines'));
     }
 
     /**

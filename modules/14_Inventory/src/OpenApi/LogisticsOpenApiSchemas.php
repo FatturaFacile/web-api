@@ -124,13 +124,22 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'pick_list_number', type: 'string'),
     new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'assigned_picker_user_id', type: 'string', format: 'uuid', nullable: true),
     new OA\Property(property: 'status', type: 'string', enum: ['draft', 'assigned', 'picking', 'completed', 'cancelled']),
+    new OA\Property(property: 'origin_document_type', type: 'string', nullable: true),
+    new OA\Property(property: 'origin_document_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'warehouse', ref: '#/components/schemas/InventoryWarehouse', description: 'Only when loaded (show)'),
+    new OA\Property(property: 'completed_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'pick_wave_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'delivery_note_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'shipped_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time', nullable: true),
     new OA\Property(property: 'shortages', type: 'array', nullable: true, items: new OA\Items(properties: [
         new OA\Property(property: 'stock_item_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'requested', type: 'string'),
         new OA\Property(property: 'short', type: 'string'),
     ])),
-    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(ref: '#/components/schemas/InventoryPickLine')),
+    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(ref: '#/components/schemas/InventoryPickLine'), description: 'Only when loaded (create, show; not in the list)'),
 ])]
 #[OA\Schema(schema: 'InventoryPickStop', properties: [
     new OA\Property(property: 'remaining_stops', type: 'integer'),

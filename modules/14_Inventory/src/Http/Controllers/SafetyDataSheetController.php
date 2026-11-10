@@ -134,7 +134,7 @@ final class SafetyDataSheetController extends Controller
         tags: ['Inventory Safety Data Sheets'],
         parameters: [new OA\Parameter(name: 'versionId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
-            new OA\Response(response: 200, description: 'The PDF', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
+            new OA\Response(response: 200, description: 'The PDF file of the revision, sent as an attachment named after the uploaded file', content: new OA\MediaType(mediaType: 'application/pdf', schema: new OA\Schema(type: 'string', format: 'binary'))),
             new OA\Response(response: 404, description: 'Revision not found'),
         ]
     )]

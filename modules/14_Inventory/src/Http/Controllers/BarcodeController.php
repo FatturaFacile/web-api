@@ -34,7 +34,11 @@ final class BarcodeController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 200, description: 'Barcode resolved and parsed'),
+            new OA\Response(response: 200, description: 'Barcode resolved and parsed', content: new OA\JsonContent(properties: [
+                new OA\Property(property: 'type', type: 'string', description: 'Kind of record the code resolved to: bin, serial_number, lot, item, gs1_composite or unknown (nothing matched)'),
+                new OA\Property(property: 'entity', type: 'object', description: 'The matched record as stored (bin, serial number, lot or stock item)'),
+                new OA\Property(property: 'data', type: 'object', description: 'Key fields of the record: ids, code, stock item, status or expiry depending on type'),
+            ])),
             new OA\Response(response: 422, description: 'Unrecognized barcode'),
         ]
     )]

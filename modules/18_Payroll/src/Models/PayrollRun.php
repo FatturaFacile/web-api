@@ -6,10 +6,14 @@ namespace Modules\Payroll\Models;
 
 use Enterprise\Foundation\Concerns\Auditable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 use Modules\Payroll\Exceptions\PayrollRunClosedException;
 
 /**
  * The elaboration of a month. Closed runs are immutable; the only way back is markReopened().
+ *
+ * @property Carbon|null $approved_at
+ * @property string|null $approved_by
  */
 final class PayrollRun extends PayrollRecord
 {
@@ -92,6 +96,7 @@ final class PayrollRun extends PayrollRecord
             'month' => 'integer',
             'payment_date' => 'date:Y-m-d',
             'calculated_at' => 'datetime',
+            'approved_at' => 'datetime',
             'finalized_at' => 'datetime',
             'reopened_at' => 'datetime',
             'reopen_count' => 'integer',

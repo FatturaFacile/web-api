@@ -30,7 +30,7 @@ final class StoreJournalEntryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'fiscal_period_id' => ['required', 'uuid', $this->tenantExists('fiscal_periods')],
+            'fiscal_period_id' => ['nullable', 'uuid', $this->tenantExists('fiscal_periods')],
             'batch_id' => ['nullable', 'uuid', $this->tenantExists('journal_batches')],
             'posting_date' => ['required', 'date'],
             'document_date' => ['nullable', 'date'],

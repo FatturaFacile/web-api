@@ -12,7 +12,10 @@ use Modules\Payroll\Http\Requests\SaveAbsenceRequest;
 use Modules\Payroll\Http\Requests\SaveEmployeeChildRequest;
 use Modules\Payroll\Http\Requests\SaveEmployeeProfileRequest;
 use Modules\Payroll\Http\Requests\SavePayrollInputRequest;
-use Modules\Payroll\Http\Resources\PayrollRecordResource;
+use Modules\Payroll\Http\Resources\PayrollAbsenceResource;
+use Modules\Payroll\Http\Resources\PayrollEmployeeChildResource;
+use Modules\Payroll\Http\Resources\PayrollEmployeeProfileResource;
+use Modules\Payroll\Http\Resources\PayrollInputResource;
 use Modules\Payroll\Models\PayrollAbsence;
 use Modules\Payroll\Models\PayrollEmployeeChild;
 use Modules\Payroll\Models\PayrollEmployeeProfile;
@@ -36,7 +39,7 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollEmployeeFilter')],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll profiles', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll profiles', content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeProfilePage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
         ]
@@ -45,7 +48,7 @@ final class EmployeePayrollDataController extends PayrollController
     {
         $this->authorize('viewAny', PayrollEmployeeProfile::class);
 
-        return PayrollRecordResource::collection(PayrollEmployeeProfile::query()
+        return PayrollEmployeeProfileResource::collection(PayrollEmployeeProfile::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
             ->paginate((int) $request->validated('per_page', 50)));
     }
@@ -62,7 +65,7 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollEmployeeId')],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll profile', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll profile', content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeProfileNullableEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -74,7 +77,7 @@ final class EmployeePayrollDataController extends PayrollController
         $employee = $this->employee($employeeId);
         $profile = PayrollEmployeeProfile::query()->where('employee_id', $employee->id)->first();
 
-        return response()->json(['data' => $profile === null ? null : new PayrollRecordResource($profile)]);
+        return response()->json(['data' => $profile === null ? null : new PayrollEmployeeProfileResource($profile)]);
     }
 
     /**
@@ -90,14 +93,14 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollEmployeeId')],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll profile saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll profile saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeProfileEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function saveProfile(SaveEmployeeProfileRequest $request, string $employeeId): PayrollRecordResource
+    public function saveProfile(SaveEmployeeProfileRequest $request, string $employeeId): PayrollEmployeeProfileResource
     {
         $this->authorize('create', PayrollEmployeeProfile::class);
         $employee = $this->employee($employeeId);
@@ -105,7 +108,9 @@ final class EmployeePayrollDataController extends PayrollController
         $profile = PayrollEmployeeProfile::query()->firstOrNew(['employee_id' => $employee->id]);
         $profile->fill($request->validated())->save();
 
-        return $this->savedRecord($profile);
+        $profile->refresh()->wasRecentlyCreated = false;
+
+        return new PayrollEmployeeProfileResource($profile);
     }
 
     /**
@@ -124,7 +129,7 @@ final class EmployeePayrollDataController extends PayrollController
             new OA\Parameter(ref: '#/components/parameters/PayrollMonthFilter'),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Payroll inputs', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Payroll inputs', content: new OA\JsonContent(ref: '#/components/schemas/PayrollInputPage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -134,7 +139,7 @@ final class EmployeePayrollDataController extends PayrollController
     {
         $this->authorize('viewAny', PayrollInput::class);
 
-        return PayrollRecordResource::collection(PayrollInput::query()
+        return PayrollInputResource::collection(PayrollInput::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
             ->when($request->validated('year') !== null, static fn ($query) => $query->where('year', (int) $request->validated('year')))
             ->when($request->validated('month') !== null, static fn ($query) => $query->where('month', (int) $request->validated('month')))
@@ -155,7 +160,7 @@ final class EmployeePayrollDataController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollInputRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Input created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Input created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollInputEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -168,7 +173,7 @@ final class EmployeePayrollDataController extends PayrollController
         $this->authorize('create', PayrollInput::class);
         $this->employee((string) $request->validated('employee_id'));
 
-        return (new PayrollRecordResource(PayrollInput::query()->create($request->validated())))->response()->setStatusCode(201);
+        return (new PayrollInputResource($this->refreshed(PayrollInput::query()->create($request->validated()))))->response()->setStatusCode(201);
     }
 
     /**
@@ -184,7 +189,7 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Input saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Input saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollInputEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -192,14 +197,14 @@ final class EmployeePayrollDataController extends PayrollController
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function updateInput(SavePayrollInputRequest $request, string $id): PayrollRecordResource
+    public function updateInput(SavePayrollInputRequest $request, string $id): PayrollInputResource
     {
         $input = PayrollInput::query()->findOrFail($id);
         $this->authorize('update', $input);
         $this->employee((string) $request->validated('employee_id'));
         $input->update($request->validated());
 
-        return new PayrollRecordResource($input->refresh());
+        return new PayrollInputResource($input->refresh());
     }
 
     /**
@@ -242,7 +247,7 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollEmployeeFilter')],
         responses: [
-            new OA\Response(response: 200, description: 'Absences', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Absences', content: new OA\JsonContent(ref: '#/components/schemas/PayrollAbsencePage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -252,7 +257,7 @@ final class EmployeePayrollDataController extends PayrollController
     {
         $this->authorize('viewAny', PayrollAbsence::class);
 
-        return PayrollRecordResource::collection(PayrollAbsence::query()
+        return PayrollAbsenceResource::collection(PayrollAbsence::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
             ->orderByDesc('start_date')
             ->paginate((int) $request->validated('per_page', 50)));
@@ -270,7 +275,7 @@ final class EmployeePayrollDataController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollAbsenceRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Absence created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Absence created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollAbsenceEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -282,7 +287,7 @@ final class EmployeePayrollDataController extends PayrollController
         $this->authorize('create', PayrollAbsence::class);
         $this->employee((string) $request->validated('employee_id'));
 
-        return (new PayrollRecordResource(PayrollAbsence::query()->create($request->validated())))->response()->setStatusCode(201);
+        return (new PayrollAbsenceResource($this->refreshed(PayrollAbsence::query()->create($request->validated()))))->response()->setStatusCode(201);
     }
 
     /**
@@ -298,21 +303,21 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Absence saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Absence saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollAbsenceEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function updateAbsence(SaveAbsenceRequest $request, string $id): PayrollRecordResource
+    public function updateAbsence(SaveAbsenceRequest $request, string $id): PayrollAbsenceResource
     {
         $absence = PayrollAbsence::query()->findOrFail($id);
         $this->authorize('update', $absence);
         $this->employee((string) $request->validated('employee_id'));
         $absence->update($request->validated());
 
-        return new PayrollRecordResource($absence->refresh());
+        return new PayrollAbsenceResource($absence->refresh());
     }
 
     /**
@@ -354,7 +359,7 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollEmployeeFilter')],
         responses: [
-            new OA\Response(response: 200, description: 'Children', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Children', content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeChildPage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -364,7 +369,7 @@ final class EmployeePayrollDataController extends PayrollController
     {
         $this->authorize('viewAny', PayrollEmployeeChild::class);
 
-        return PayrollRecordResource::collection(PayrollEmployeeChild::query()
+        return PayrollEmployeeChildResource::collection(PayrollEmployeeChild::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
             ->orderBy('date_of_birth')
             ->paginate((int) $request->validated('per_page', 50)));
@@ -382,7 +387,7 @@ final class EmployeePayrollDataController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeChildRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Child created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Child created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeChildEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -394,7 +399,7 @@ final class EmployeePayrollDataController extends PayrollController
         $this->authorize('create', PayrollEmployeeChild::class);
         $this->employee((string) $request->validated('employee_id'));
 
-        return (new PayrollRecordResource(PayrollEmployeeChild::query()->create($request->validated())))->response()->setStatusCode(201);
+        return (new PayrollEmployeeChildResource($this->refreshed(PayrollEmployeeChild::query()->create($request->validated()))))->response()->setStatusCode(201);
     }
 
     /**
@@ -410,21 +415,21 @@ final class EmployeePayrollDataController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Child saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Child saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollEmployeeChildEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function updateChild(SaveEmployeeChildRequest $request, string $id): PayrollRecordResource
+    public function updateChild(SaveEmployeeChildRequest $request, string $id): PayrollEmployeeChildResource
     {
         $child = PayrollEmployeeChild::query()->findOrFail($id);
         $this->authorize('update', $child);
         $this->employee((string) $request->validated('employee_id'));
         $child->update($request->validated());
 
-        return new PayrollRecordResource($child->refresh());
+        return new PayrollEmployeeChildResource($child->refresh());
     }
 
     /**

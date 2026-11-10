@@ -10,7 +10,7 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response as HttpResponse;
 use Modules\Payroll\Exceptions\PayrollException;
 use Modules\Payroll\Http\Requests\SaveWageTypeRequest;
-use Modules\Payroll\Http\Resources\PayrollRecordResource;
+use Modules\Payroll\Http\Resources\PayrollWageTypeResource;
 use Modules\Payroll\Models\PayrollWageType;
 use OpenApi\Attributes as OA;
 
@@ -30,7 +30,7 @@ final class WageTypeController extends PayrollController
         security: [['bearerAuth' => []]],
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 200, description: 'Wage types', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Wage types', content: new OA\JsonContent(ref: '#/components/schemas/PayrollWageTypePage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
         ]
@@ -39,7 +39,7 @@ final class WageTypeController extends PayrollController
     {
         $this->authorize('viewAny', PayrollWageType::class);
 
-        return PayrollRecordResource::collection(PayrollWageType::query()->orderBy('sort_order')->orderBy('code')->paginate($this->perPage($request, 100, 200)));
+        return PayrollWageTypeResource::collection(PayrollWageType::query()->orderBy('sort_order')->orderBy('code')->paginate($this->perPage($request, 100, 200)));
     }
 
     /**
@@ -54,7 +54,7 @@ final class WageTypeController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollWageTypeRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Wage type created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Wage type created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollWageTypeEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -64,7 +64,7 @@ final class WageTypeController extends PayrollController
     {
         $this->authorize('create', PayrollWageType::class);
 
-        return (new PayrollRecordResource(PayrollWageType::query()->create($request->validated())))->response()->setStatusCode(201);
+        return (new PayrollWageTypeResource($this->refreshed(PayrollWageType::query()->create($request->validated()))))->response()->setStatusCode(201);
     }
 
     /**
@@ -80,14 +80,14 @@ final class WageTypeController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Wage type saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Wage type saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollWageTypeEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function update(SaveWageTypeRequest $request, string $id): PayrollRecordResource
+    public function update(SaveWageTypeRequest $request, string $id): PayrollWageTypeResource
     {
         $wageType = PayrollWageType::query()->findOrFail($id);
         $this->authorize('update', $wageType);
@@ -98,7 +98,7 @@ final class WageTypeController extends PayrollController
 
         $wageType->update($request->validated());
 
-        return new PayrollRecordResource($wageType->refresh());
+        return new PayrollWageTypeResource($wageType->refresh());
     }
 
     /**

@@ -14,6 +14,7 @@ use Modules\GeneralLedger\Http\Requests\ReverseJournalEntryRequest;
 use Modules\GeneralLedger\Http\Requests\StoreJournalEntryRequest;
 use Modules\GeneralLedger\Http\Resources\JournalEntryResource;
 use Modules\GeneralLedger\Models\JournalEntry;
+use Modules\GeneralLedger\Services\FiscalPeriodResolver;
 use Modules\GeneralLedger\Services\ManualJournalService;
 use OpenApi\Attributes as OA;
 
@@ -23,6 +24,7 @@ final class JournalEntryController extends Controller
         private readonly DoubleEntryPostingServiceInterface $postingService,
         private readonly TenantContext $tenantContext,
         private readonly ManualJournalService $manualJournals,
+        private readonly FiscalPeriodResolver $periods,
     ) {}
 
     /**
@@ -107,6 +109,11 @@ final class JournalEntryController extends Controller
         $payload = array_merge($request->validated(), [
             'tenant_id' => $tenantId,
         ]);
+
+        // Without an explicit period the open period containing the posting date is used (422 when none is open).
+        if (empty($payload['fiscal_period_id'])) {
+            $payload['fiscal_period_id'] = (string) $this->periods->forDate((string) $tenantId, (string) $payload['posting_date'])->id;
+        }
 
         $entry = $this->manualJournals->create($payload, $actorId);
 

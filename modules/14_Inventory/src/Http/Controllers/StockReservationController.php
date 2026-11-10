@@ -32,7 +32,7 @@ final class StockReservationController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['active', 'released', 'consumed', 'expired'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated reservations'),
+            new OA\Response(response: 200, description: 'Paginated reservations', content: new OA\JsonContent(ref: '#/components/schemas/InventoryStockReservationList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -118,7 +118,7 @@ final class StockReservationController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Reservation released'),
+            new OA\Response(response: 200, description: 'Reservation released', content: new OA\JsonContent(properties: [new OA\Property(property: 'message', type: 'string', example: 'Reservation released successfully')])),
             new OA\Response(response: 404, description: 'Reservation not found'),
             new OA\Response(response: 422, description: 'Reservation cannot be released'),
         ]

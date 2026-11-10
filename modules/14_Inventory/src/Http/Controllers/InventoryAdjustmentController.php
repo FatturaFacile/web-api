@@ -8,6 +8,8 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\Inventory\Actions\CreateInventoryAdjustmentAction;
 use Modules\Inventory\Actions\PostInventoryAdjustmentAction;
 use Modules\Inventory\Actions\RejectInventoryAdjustmentAction;
@@ -21,6 +23,9 @@ use OpenApi\Attributes as OA;
 #[OA\Tag(name: 'Inventory Adjustments', description: 'Stock write-offs, discrepancies, damages, and approvals')]
 final class InventoryAdjustmentController extends Controller
 {
+    /**
+     * @response AnonymousResourceCollection<LengthAwarePaginator<InventoryAdjustmentResource>>
+     */
     #[OA\Get(
         path: '/api/v1/inventory/adjustments',
         summary: 'List adjustments',
@@ -33,7 +38,7 @@ final class InventoryAdjustmentController extends Controller
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'pending_approval', 'approved', 'rejected'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Paginated adjustments'),
+            new OA\Response(response: 200, description: 'Paginated adjustments', content: new OA\JsonContent(ref: '#/components/schemas/InventoryAdjustmentList')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
         ]
     )]
@@ -82,7 +87,7 @@ final class InventoryAdjustmentController extends Controller
             )
         ),
         responses: [
-            new OA\Response(response: 201, description: 'Adjustment created'),
+            new OA\Response(response: 201, description: 'Adjustment created', content: new OA\JsonContent(ref: '#/components/schemas/InventoryAdjustment')),
             new OA\Response(response: 422, description: 'Validation failed'),
         ]
     )]
@@ -113,7 +118,7 @@ final class InventoryAdjustmentController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Adjustment details'),
+            new OA\Response(response: 200, description: 'Adjustment details', content: new OA\JsonContent(ref: '#/components/schemas/InventoryAdjustment')),
             new OA\Response(response: 404, description: 'Adjustment not found'),
         ]
     )]
@@ -135,7 +140,7 @@ final class InventoryAdjustmentController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Adjustment approved and posted'),
+            new OA\Response(response: 200, description: 'Adjustment approved and posted', content: new OA\JsonContent(ref: '#/components/schemas/InventoryAdjustment')),
             new OA\Response(response: 401, description: 'Unauthenticated'),
             new OA\Response(response: 403, description: 'Not a manager, read-only role, or segregation of duties violation'),
             new OA\Response(response: 404, description: 'Adjustment not found'),
@@ -162,7 +167,7 @@ final class InventoryAdjustmentController extends Controller
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Adjustment rejected'),
+            new OA\Response(response: 200, description: 'Adjustment rejected', content: new OA\JsonContent(ref: '#/components/schemas/InventoryAdjustment')),
             new OA\Response(response: 404, description: 'Adjustment not found'),
         ]
     )]

@@ -37,7 +37,7 @@ final class RibaPortfolioController extends Controller
             new OA\Parameter(name: 'bank_account_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Batches', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Batches', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaBatchListEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryValidationError', response: 422),
@@ -84,7 +84,7 @@ final class RibaPortfolioController extends Controller
             new OA\Parameter(name: 'due_to', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Portfolio', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Portfolio', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaPortfolioEnvelope')),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/TreasuryValidationError', response: 422),

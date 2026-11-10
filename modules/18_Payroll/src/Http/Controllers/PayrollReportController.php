@@ -35,7 +35,7 @@ final class PayrollReportController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Allocation', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Allocation', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCostAllocationResponse')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -64,7 +64,10 @@ final class PayrollReportController extends PayrollController
             new OA\Parameter(name: 'format', description: 'json (default) or csv', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['json', 'csv'])),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Summary', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Summary: JSON (format=json, default) or a semicolon separated CSV file (format=csv)', content: [
+                new OA\JsonContent(ref: '#/components/schemas/PayrollYearEndResponse'),
+                new OA\MediaType(mediaType: 'text/csv', schema: new OA\Schema(type: 'string', description: 'Header: year;employee_id;employee_name;wage_type_code;amount;gross_salary;employee_deductions;net_salary;payout_amount;employer_contributions;months. One TOTAL row per employee, then one row per wage type code.')),
+            ]),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),

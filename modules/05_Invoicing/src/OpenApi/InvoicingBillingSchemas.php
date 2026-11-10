@@ -131,4 +131,35 @@ use OpenApi\Attributes as OA;
     ],
     type: 'object'
 )]
+#[OA\Schema(
+    schema: 'InvoicingPaginatorLinks',
+    description: 'Links of the Laravel paginator; null at the first and last page',
+    properties: [
+        new OA\Property(property: 'first', type: 'string', nullable: true),
+        new OA\Property(property: 'last', type: 'string', nullable: true),
+        new OA\Property(property: 'prev', type: 'string', nullable: true),
+        new OA\Property(property: 'next', type: 'string', nullable: true),
+    ],
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'InvoicingPaginatorMeta',
+    description: 'Meta block of the Laravel paginator',
+    properties: [
+        new OA\Property(property: 'current_page', type: 'integer', example: 1),
+        new OA\Property(property: 'from', type: 'integer', nullable: true, example: 1),
+        new OA\Property(property: 'last_page', type: 'integer', example: 3),
+        new OA\Property(property: 'links', type: 'array', items: new OA\Items(properties: [
+            new OA\Property(property: 'url', type: 'string', nullable: true),
+            new OA\Property(property: 'label', type: 'string'),
+            new OA\Property(property: 'page', type: 'integer', nullable: true),
+            new OA\Property(property: 'active', type: 'boolean'),
+        ], type: 'object')),
+        new OA\Property(property: 'path', type: 'string'),
+        new OA\Property(property: 'per_page', type: 'integer', example: 25),
+        new OA\Property(property: 'to', type: 'integer', nullable: true, example: 25),
+        new OA\Property(property: 'total', type: 'integer', example: 60),
+    ],
+    type: 'object'
+)]
 final class InvoicingBillingSchemas {}

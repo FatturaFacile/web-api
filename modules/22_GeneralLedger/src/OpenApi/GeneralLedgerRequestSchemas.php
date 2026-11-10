@@ -102,10 +102,10 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(
     schema: 'GeneralLedgerStoreJournalEntryRequest',
     description: 'Request payload validated by StoreJournalEntryRequest',
-    required: ['fiscal_period_id', 'posting_date', 'description', 'lines'],
+    required: ['posting_date', 'description', 'lines'],
     type: 'object',
     properties: [
-        new OA\Property(property: 'fiscal_period_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'fiscal_period_id', type: 'string', format: 'uuid', nullable: true, description: 'Optional: when omitted the open fiscal period that contains posting_date is used (422 when no period contains the date or it is closed/locked)'),
         new OA\Property(property: 'batch_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'entry_number', description: 'Ignored since April 2027: the entry number and the libro giornale number are assigned by the system.', type: 'string', maxLength: 50, nullable: true, deprecated: true),
         new OA\Property(property: 'posting_date', type: 'string', format: 'date', example: '2027-03-31'),

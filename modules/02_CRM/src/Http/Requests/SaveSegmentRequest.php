@@ -35,6 +35,11 @@ final class SaveSegmentRequest extends FormRequest
             'entity' => [$this->isMethod('post') ? 'required' : 'prohibited', Rule::in(Segment::Entities)],
             'filters' => [$required, 'array'],
             'filters.*' => ['array'],
+            'filters.*.field' => ['sometimes', 'string'],
+            'filters.*.operator' => ['sometimes', 'string'],
+            'filters.*.value' => ['sometimes', 'nullable'],
+            'filters.*.channel' => ['sometimes', 'string'],
+            'filters.*.purpose' => ['sometimes', 'string'],
             'is_active' => ['nullable', 'boolean'],
         ];
     }

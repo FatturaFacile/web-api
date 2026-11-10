@@ -162,7 +162,7 @@ final class TalentAndTrainingController extends Controller
         summary: 'Create training course',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Training Courses'],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'course_code', type: 'string'), new OA\Property(property: 'title', type: 'string'), new OA\Property(property: 'category', type: 'string', default: 'safety'), new OA\Property(property: 'provider', type: 'string', default: 'Enterprise Academy'), new OA\Property(property: 'duration_hours', type: 'number', default: 8), new OA\Property(property: 'cost_per_participant', type: 'number', default: 0), new OA\Property(property: 'validity_months', type: 'integer', default: 24), new OA\Property(property: 'is_mandatory_compliance', type: 'boolean', default: false)])),
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HrTrainingCourseRequest')),
         responses: [
             new OA\Response(response: 201, description: 'Training course created', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesTrainingCourseModel')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -259,7 +259,7 @@ final class TalentAndTrainingController extends Controller
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the training record', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'score', type: 'number', default: 100)])),
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/HrCompleteTrainingRequest')),
         responses: [
             new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/HumanResourcesTrainingRecordResource')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -315,9 +315,9 @@ final class TalentAndTrainingController extends Controller
         summary: 'Scan expiring certifications',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['HR Certifications'],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'within_days', type: 'integer', default: 30)])),
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/HrScanExpiringCertificationsRequest')),
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [new OA\Property(property: 'expiring_certifications_alerted', type: 'integer')])])),
+            new OA\Response(response: 200, description: 'Number of certifications alerted', content: new OA\JsonContent(ref: '#/components/schemas/HrScanExpiringCertificationsResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]

@@ -31,7 +31,7 @@ final class WarehouseStructureController extends Controller
         tags: ['Inventory Warehouses'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/WmsRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Zones of the warehouse', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsZone'))])),
+            new OA\Response(response: 200, description: 'Every zone of the warehouse ordered by code (not paginated: no meta, no page or per_page)', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsZone'))])),
             new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
         ]
@@ -88,7 +88,7 @@ final class WarehouseStructureController extends Controller
             new OA\Parameter(name: 'bin_type', description: 'Only bins of this type', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: WarehouseBin::BIN_TYPES)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Bins of the warehouse', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsBin'))])),
+            new OA\Response(response: 200, description: 'Every bin of the warehouse matching the filters, ordered by code (not paginated: no meta, no page or per_page)', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WmsBin'))])),
             new OA\Response(ref: '#/components/responses/WmsUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/WmsNotFound', response: 404),
         ]

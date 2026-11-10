@@ -10,7 +10,8 @@ use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response as HttpResponse;
 use Modules\Payroll\Http\Requests\SaveAgreementLevelRequest;
 use Modules\Payroll\Http\Requests\SaveCollectiveAgreementRequest;
-use Modules\Payroll\Http\Resources\PayrollRecordResource;
+use Modules\Payroll\Http\Resources\PayrollCollectiveAgreementLevelResource;
+use Modules\Payroll\Http\Resources\PayrollCollectiveAgreementResource;
 use Modules\Payroll\Models\CollectiveAgreement;
 use Modules\Payroll\Models\CollectiveAgreementLevel;
 use OpenApi\Attributes as OA;
@@ -31,7 +32,7 @@ final class CollectiveAgreementController extends PayrollController
         security: [['bearerAuth' => []]],
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 200, description: 'Collective agreements', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Collective agreements', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementPage')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
         ]
@@ -40,7 +41,7 @@ final class CollectiveAgreementController extends PayrollController
     {
         $this->authorize('viewAny', CollectiveAgreement::class);
 
-        return PayrollRecordResource::collection(CollectiveAgreement::query()->with('levels')->orderBy('code')->paginate($this->perPage($request, 50)));
+        return PayrollCollectiveAgreementResource::collection(CollectiveAgreement::query()->with('levels')->orderBy('code')->paginate($this->perPage($request, 50)));
     }
 
     /**
@@ -55,7 +56,7 @@ final class CollectiveAgreementController extends PayrollController
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementRequest')),
         tags: ['Payroll'],
         responses: [
-            new OA\Response(response: 201, description: 'Collective agreement created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Collective agreement created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
@@ -65,7 +66,7 @@ final class CollectiveAgreementController extends PayrollController
     {
         $this->authorize('create', CollectiveAgreement::class);
 
-        return (new PayrollRecordResource(CollectiveAgreement::query()->create($request->validated())))->response()->setStatusCode(201);
+        return (new PayrollCollectiveAgreementResource($this->refreshed(CollectiveAgreement::query()->create($request->validated()))))->response()->setStatusCode(201);
     }
 
     /**
@@ -80,18 +81,18 @@ final class CollectiveAgreementController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Collective agreement', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Collective agreement', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
         ]
     )]
-    public function show(string $id): PayrollRecordResource
+    public function show(string $id): PayrollCollectiveAgreementResource
     {
         $agreement = CollectiveAgreement::query()->findOrFail($id);
         $this->authorize('view', $agreement);
 
-        return new PayrollRecordResource($agreement->load('levels'));
+        return new PayrollCollectiveAgreementResource($agreement->load('levels'));
     }
 
     /**
@@ -107,20 +108,20 @@ final class CollectiveAgreementController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 200, description: 'Collective agreement saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Collective agreement saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function update(SaveCollectiveAgreementRequest $request, string $id): PayrollRecordResource
+    public function update(SaveCollectiveAgreementRequest $request, string $id): PayrollCollectiveAgreementResource
     {
         $agreement = CollectiveAgreement::query()->findOrFail($id);
         $this->authorize('update', $agreement);
         $agreement->update($request->validated());
 
-        return new PayrollRecordResource($agreement->refresh());
+        return new PayrollCollectiveAgreementResource($agreement->refresh());
     }
 
     /**
@@ -163,7 +164,7 @@ final class CollectiveAgreementController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId')],
         responses: [
-            new OA\Response(response: 201, description: 'Level created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 201, description: 'Level created', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementLevelEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
@@ -176,7 +177,7 @@ final class CollectiveAgreementController extends PayrollController
         $this->authorize('update', $agreement);
         $level = CollectiveAgreementLevel::query()->create([...$request->validated(), 'agreement_id' => $agreement->id]);
 
-        return (new PayrollRecordResource($level))->response()->setStatusCode(201);
+        return (new PayrollCollectiveAgreementLevelResource($level->refresh()))->response()->setStatusCode(201);
     }
 
     /**
@@ -192,20 +193,20 @@ final class CollectiveAgreementController extends PayrollController
         tags: ['Payroll'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/PayrollRecordId'), new OA\Parameter(ref: '#/components/parameters/PayrollLevelId')],
         responses: [
-            new OA\Response(response: 200, description: 'Level saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 200, description: 'Level saved', content: new OA\JsonContent(ref: '#/components/schemas/PayrollCollectiveAgreementLevelEnvelope')),
             new OA\Response(ref: '#/components/responses/PayrollUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/PayrollForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/PayrollNotFound', response: 404),
             new OA\Response(ref: '#/components/responses/PayrollUnprocessable', response: 422),
         ]
     )]
-    public function updateLevel(SaveAgreementLevelRequest $request, string $id, string $levelId): PayrollRecordResource
+    public function updateLevel(SaveAgreementLevelRequest $request, string $id, string $levelId): PayrollCollectiveAgreementLevelResource
     {
         $level = CollectiveAgreementLevel::query()->where('agreement_id', $id)->findOrFail($levelId);
         $this->authorize('update', $level);
         $level->update($request->validated());
 
-        return new PayrollRecordResource($level->refresh());
+        return new PayrollCollectiveAgreementLevelResource($level->refresh());
     }
 
     /**

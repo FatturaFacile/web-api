@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Invoicing\Models\SalesOrderHold;
 
 class SalesOrder extends Model
 {
@@ -63,6 +64,17 @@ class SalesOrder extends Model
     public function items(): HasMany
     {
         return $this->hasMany(SalesOrderItem::class)->orderBy('id');
+    }
+
+    /**
+     * Credit holds (and other order holds) placed on the order, active or released; released through
+     * `POST /invoicing/customer-credit/holds/{holdId}/release`.
+     *
+     * @return HasMany<SalesOrderHold, $this>
+     */
+    public function holds(): HasMany
+    {
+        return $this->hasMany(SalesOrderHold::class, 'sales_order_id');
     }
 
     /**

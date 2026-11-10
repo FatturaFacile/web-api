@@ -99,12 +99,13 @@ final class CustomerCreditController extends Controller
         parameters: [
             new OA\Parameter(name: 'holdId', in: 'path', required: true, description: 'Identifier of the hold', schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
-        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'notes')])),
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true, example: 'Approved by the CFO')])),
         responses: [
-            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'hold_id', type: 'string', format: 'uuid'), new OA\Property(property: 'status')])),
+            new OA\Response(response: 200, description: 'Request completed successfully', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'hold_id', type: 'string', format: 'uuid'), new OA\Property(property: 'status', type: 'string', example: 'released')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 403, description: 'Only the credit managers of the company (owner, admin, accountant, sales manager) manage credit', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'The hold is not active any more, or the notes are not a string', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
     public function releaseHold(string $holdId, ReleaseSalesOrderHoldAction $action, Request $request): JsonResponse
@@ -112,7 +113,7 @@ final class CustomerCreditController extends Controller
         $hold = SalesOrderHold::findOrFail($holdId);
         $this->authorize('manageCredit', CustomerCreditProfile::class);
         $userId = (string) ($request->user()?->id ?? 'system');
-        $notes = $request->input('notes');
+        $notes = $request->validate(['notes' => ['nullable', 'string', 'max:2000']])['notes'] ?? null;
 
         $released = $action->execute($hold, $userId, $notes);
 

@@ -26,10 +26,14 @@ class AccountingController extends Controller
 {
     use ApiResponse, TenantScopedRules;
 
+    /**
+     * @deprecated Use GET /api/v1/general-ledger/accounts.
+     */
     #[OA\Get(
         path: '/api/v1/accounting/chart-of-accounts',
         operationId: 'getChartOfAccounts',
-        description: 'Get chart of accounts ordered by account code.',
+        deprecated: true,
+        description: 'Deprecated: use GET /api/v1/general-ledger/accounts (responses carry X-Deprecated and a Link successor-version header). Get chart of accounts ordered by account code.',
         summary: 'Get chart of accounts',
         security: [['bearerAuth' => []]],
         tags: ['Accounting'],
@@ -49,11 +53,14 @@ class AccountingController extends Controller
      * Legacy listing of the ledger. It reads the journal entries of the General Ledger module (the one ledger of the
      * application), so it shows the same entries and figures as `/api/v1/general-ledger/journals`, in the legacy row
      * shape plus the journal fields (`journal_number`, `fiscal_period_id`, `status`, `total_amount`).
+     *
+     * @deprecated Use GET /api/v1/general-ledger/journals.
      */
     #[OA\Get(
         path: '/api/v1/accounting/ledger-entries',
         operationId: 'getLedgerEntries',
-        description: 'Get paginated general ledger entries. Reads the journal entries of the General Ledger module (posted and reversed; drafts are excluded) in the legacy row shape, with `journal_entry_id`, `journal_number`, `fiscal_period_id`, `status` and `total_amount` added. Prefer GET /api/v1/general-ledger/journals.',
+        deprecated: true,
+        description: 'Get paginated general ledger entries. Reads the journal entries of the General Ledger module (posted and reversed; drafts are excluded) in the legacy row shape, with `journal_entry_id`, `journal_number`, `fiscal_period_id`, `status` and `total_amount` added. Deprecated: use GET /api/v1/general-ledger/journals (responses carry X-Deprecated and a Link successor-version header).',
         summary: 'List ledger entries',
         security: [['bearerAuth' => []]],
         tags: ['Accounting'],
@@ -182,10 +189,14 @@ class AccountingController extends Controller
         return (string) $tenantId;
     }
 
+    /**
+     * @deprecated Use GET /api/v1/general-ledger/tax-settlements.
+     */
     #[OA\Get(
         path: '/api/v1/accounting/vat-settlements',
         operationId: 'getVatSettlements',
-        description: 'Get VAT settlements and periodic liquidations.',
+        deprecated: true,
+        description: 'Deprecated: use GET /api/v1/general-ledger/tax-settlements (responses carry X-Deprecated and a Link successor-version header). Get VAT settlements and periodic liquidations.',
         summary: 'Get VAT settlements',
         security: [['bearerAuth' => []]],
         tags: ['Accounting'],
