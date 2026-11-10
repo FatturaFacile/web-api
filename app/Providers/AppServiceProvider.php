@@ -41,11 +41,11 @@ use App\Services\Security\DnsHostResolver;
 use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Database\SafeDropPostgresConnection;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Connection;
 use Illuminate\Database\PostgresConnection;
-use Illuminate\Database\Schema\PostgresBuilder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
@@ -81,41 +81,7 @@ class AppServiceProvider extends ServiceProvider
         ));
         $this->app->singleton(WidgetRegistry::class);
 
-        Connection::resolverFor('pgsql', static function ($connection, $database, $prefix, $config): PostgresConnection {
-            return new class($connection, $database, $prefix, $config) extends PostgresConnection
-            {
-                public function getSchemaBuilder(): PostgresBuilder
-                {
-                    if (is_null($this->schemaGrammar)) {
-                        $this->useDefaultSchemaGrammar();
-                    }
-
-                    return new class($this) extends PostgresBuilder
-                    {
-                        public function dropAllTables(): void
-                        {
-                            $tables = [];
-                            $excludedTables = $this->connection->getConfig('dont_drop') ?? ['spatial_ref_sys'];
-
-                            foreach ($this->getTables($this->getCurrentSchemaListing()) as $table) {
-                                if (empty(array_intersect([$table['name'], $table['schema_qualified_name']], $excludedTables))) {
-                                    $tables[] = $table['schema_qualified_name'];
-                                }
-                            }
-
-                            if (empty($tables)) {
-                                return;
-                            }
-
-                            foreach (array_chunk($tables, 20) as $chunk) {
-                                $wrapped = array_map(static fn (string $table): string => '"'.str_replace(['"', '.'], ['""', '"."'], $table).'"', $chunk);
-                                $this->connection->statement('drop table if exists '.implode(',', $wrapped).' cascade');
-                            }
-                        }
-                    };
-                }
-            };
-        });
+        Connection::resolverFor('pgsql', static fn ($connection, $database, $prefix, $config): PostgresConnection => new SafeDropPostgresConnection($connection, $database, $prefix, $config));
     }
 
     /**
