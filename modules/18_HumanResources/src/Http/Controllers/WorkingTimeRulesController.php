@@ -231,6 +231,23 @@ final class WorkingTimeRulesController extends Controller
     /**
      * Transfer a closed (or approved) attendance period to payroll variable inputs.
      */
+    #[OA\Post(
+        path: '/api/v1/hr/time-closings/{year}/{month}/transfer-to-payroll',
+        operationId: 'transferHrTimeToPayroll',
+        description: 'Evaluates the working time of every employee linked to a user for the month and creates or updates the payroll variable inputs: hourly hours for hourly-paid employees (1001), overtime at 125% (1010), the 25% night supplement for occasional night workers (1020) and the 50% Sunday and public holiday supplement (1030). Regular night workers (25 or more night shifts in the year, ArG Art. 17b) get 10% compensatory rest time credited to the night work balance instead of the cash supplement. Runs in one transaction and is idempotent: running it again overwrites the inputs of the same employee, month and wage type. The month does not have to be closed first. Responds 200 (not 201) because inputs are upserted.',
+        summary: 'Transfer working time to payroll inputs',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time & Attendance'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/HrPayrollTransferYear'),
+            new OA\Parameter(ref: '#/components/parameters/HrPayrollTransferMonth'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Transfer result', content: new OA\JsonContent(ref: '#/components/schemas/HrTimeToPayrollResponse')),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+        ]
+    )]
     public function transferToPayroll(Request $request, int $year, int $month): JsonResponse
     {
         /** @var User $actor */
@@ -244,6 +261,24 @@ final class WorkingTimeRulesController extends Controller
     /**
      * List or evaluate ArG Art. 17b night work compensation balances for a calendar year.
      */
+    #[OA\Get(
+        path: '/api/v1/hr/time/night-work-balances',
+        operationId: 'listHrNightWorkBalances',
+        description: 'Night work compensation banks of the company for a calendar year (ArG Art. 17b): night shifts so far, whether the employee is a regular night worker (25 or more shifts, entitled to 10% compensatory rest time) and the rest time accrued, taken and remaining. With user_id the balance of that employee is first re-evaluated from the recorded working time, so the call writes the balance row; without it the stored balances are listed as they are.',
+        summary: 'Night work compensation balances',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['HR Time & Attendance'],
+        parameters: [
+            new OA\Parameter(ref: '#/components/parameters/HrNightWorkYear'),
+            new OA\Parameter(ref: '#/components/parameters/HrNightWorkUserFilter'),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Balances', content: new OA\JsonContent(ref: '#/components/schemas/HrNightWorkBalanceListResponse')),
+            new OA\Response(ref: '#/components/responses/HrUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
+            new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
+        ]
+    )]
     public function nightWorkBalances(Request $request): JsonResponse
     {
         $year = $request->integer('year') ?: (int) now()->year;

@@ -14,6 +14,7 @@ use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use OpenApi\Attributes as OA;
 
 /**
  * Tenant-wide GDPR (EU 2016/679) and Swiss nLPD (RS 235.1) Compliance Controller.
@@ -25,6 +26,19 @@ final class PrivacyComplianceController extends Controller
         private readonly TenantContext $tenantContext,
     ) {}
 
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/processing-activities',
+        operationId: 'listPrivacyProcessingActivities',
+        description: 'Record of processing activities (RoPA, Art. 30 GDPR / Art. 12 nLPD) of the active company: what personal data is processed, why, on which legal basis, who receives it, cross-border transfers and retention.',
+        summary: 'List processing activities',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 200, description: 'Processing activities ordered by title', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyProcessingActivityListResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function processingActivities(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -34,6 +48,21 @@ final class PrivacyComplianceController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/settings/privacy/processing-activities',
+        operationId: 'storePrivacyProcessingActivity',
+        description: 'Adds an entry to the record of processing activities of the company. The entry is created as version 1 with status active unless archived is requested.',
+        summary: 'Register a processing activity',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PrivacyProcessingActivityRequest')),
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 201, description: 'Processing activity registered', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyProcessingActivityResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnprocessable', response: 422),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function storeProcessingActivity(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -61,6 +90,19 @@ final class PrivacyComplianceController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/subprocessors',
+        operationId: 'listPrivacySubprocessors',
+        description: 'Third parties that process personal data on behalf of the company, with the outcome of the Swiss nLPD adequacy check of their country and the safeguard in place.',
+        summary: 'List subprocessors',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 200, description: 'Subprocessors ordered by name', content: new OA\JsonContent(ref: '#/components/schemas/PrivacySubprocessorListResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function subprocessors(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -70,6 +112,21 @@ final class PrivacyComplianceController extends Controller
         ]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/settings/privacy/subprocessors',
+        operationId: 'storePrivacySubprocessor',
+        description: 'Registers a subprocessor. The country is checked against the countries recognised as adequate by the Swiss Federal Council (Annex 1 DPOOP, Art. 16 nLPD); without an explicit safeguard, adequacy_decision is recorded for adequate countries and scc_fdpic (standard contractual clauses recognised by the FDPIC) for the others.',
+        summary: 'Register a subprocessor',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PrivacySubprocessorRequest')),
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 201, description: 'Subprocessor registered', content: new OA\JsonContent(ref: '#/components/schemas/PrivacySubprocessorResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnprocessable', response: 422),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function storeSubprocessor(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -90,6 +147,19 @@ final class PrivacyComplianceController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/data-subject-requests',
+        operationId: 'listPrivacyDataSubjectRequests',
+        description: 'Requests of data subjects (access, portability, erasure, restriction, rectification) of the active company, newest first, with their statutory deadline.',
+        summary: 'List data subject requests',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 200, description: 'Data subject requests', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataSubjectRequestListResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function dataSubjectRequests(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -101,6 +171,21 @@ final class PrivacyComplianceController extends Controller
         return response()->json(['data' => $requests]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/settings/privacy/data-subject-requests',
+        operationId: 'storePrivacyDataSubjectRequest',
+        description: 'Registers the request of a data subject. The request starts as received, handled by the current user, with a deadline of 30 days from now. Registering does not execute anything: use the portability export and execute-erasure endpoints.',
+        summary: 'Register a data subject request',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataSubjectRequestRequest')),
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 201, description: 'Request registered', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataSubjectRequestResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnprocessable', response: 422),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function storeDataSubjectRequest(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -124,6 +209,22 @@ final class PrivacyComplianceController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/portability/{subjectType}/{subjectId}',
+        operationId: 'exportPrivacySubjectDossier',
+        description: 'Portable machine-readable dossier with all personal data of a contact or employee (GDPR Art. 15 and 20, nLPD Art. 25 and 28). The response contains personal data: the export is written to the sensitive access log with the user and IP address.',
+        summary: 'Export a data subject dossier',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PrivacySubjectType'), new OA\Parameter(ref: '#/components/parameters/PrivacySubjectId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Dossier', content: new OA\JsonContent(ref: '#/components/schemas/PrivacySubjectDossierResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/PrivacyUnprocessable', response: 422),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function exportSubjectDossier(Request $request, string $subjectType, string $subjectId): JsonResponse
     {
         if (! in_array($subjectType, ['contact', 'employee'], true)) {
@@ -142,6 +243,21 @@ final class PrivacyComplianceController extends Controller
         return response()->json(['data' => $dossier]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/settings/privacy/data-subject-requests/{id}/execute-erasure',
+        operationId: 'executePrivacyErasure',
+        description: 'Executes the erasure or restriction of processing for the subject of the request (GDPR Art. 17/18, nLPD Art. 32) in one transaction. Contact and employee contact details are wiped and processing is restricted. Names are anonymised only when no statutory retention applies (CO Art. 958f 10 years for accounting and payroll vouchers, ArG Art. 46 5 years for working time records); otherwise the request ends as partially_completed_legal_hold and the legal holds are listed. The call is logged in the sensitive access log. It is irreversible and has no request body.',
+        summary: 'Execute erasure or restriction',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/PrivacyDataSubjectRequestId')],
+        responses: [
+            new OA\Response(response: 200, description: 'Erasure executed; data holds status, legal_holds and erasure_summary', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataSubjectRequestResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyNotFound', response: 404),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function executeErasure(Request $request, string $id): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -162,6 +278,19 @@ final class PrivacyComplianceController extends Controller
         ]);
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/breaches',
+        operationId: 'listPrivacyBreaches',
+        description: 'Register of personal data breaches of the active company, most recently discovered first, with the 72-hour notification deadline and the notification status.',
+        summary: 'List personal data breaches',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 200, description: 'Data breaches', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataBreachListResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function breaches(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -173,6 +302,21 @@ final class PrivacyComplianceController extends Controller
         return response()->json(['data' => $breaches]);
     }
 
+    #[OA\Post(
+        path: '/api/v1/settings/privacy/breaches',
+        operationId: 'storePrivacyBreach',
+        description: 'Logs a personal data breach with a notification deadline of 72 hours from discovery (GDPR Art. 33, nLPD Art. 24). Severity medium, high or critical flags the authority notification as required; high and critical also the notification of the data subjects. Status starts as investigating.',
+        summary: 'Report a personal data breach',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataBreachRequest')),
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 201, description: 'Breach logged', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataBreachResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnprocessable', response: 422),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function storeBreach(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
@@ -195,6 +339,19 @@ final class PrivacyComplianceController extends Controller
         ], 201);
     }
 
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/sensitive-access-logs',
+        operationId: 'listPrivacySensitiveAccessLogs',
+        description: 'Audit trail of reads and exports of sensitive personal data (Swiss DPOOP Art. 4): who accessed which subject, which data category, action and IP address. Returns only the latest 200 entries, newest first; there is no pagination or filter.',
+        summary: 'List sensitive data access logs',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 200, description: 'Latest 200 access log lines', content: new OA\JsonContent(ref: '#/components/schemas/PrivacySensitiveAccessLogListResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
     public function sensitiveAccessLogs(Request $request): JsonResponse
     {
         $tenantId = $this->tenantId($request);
