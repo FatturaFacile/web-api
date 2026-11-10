@@ -145,7 +145,14 @@ test('ledger settings resolve configured accounts, fall back to preference codes
 
     // OpenAPI: posting_accounts is an object per role, each {account_id, account_code, account_name, source}.
     $settings = $this->getJson('/api/v1/general-ledger/settings')->assertOk()->json('data');
-    expect(array_keys($settings))->toBe(['posting_accounts', 'manual_journal_approval_required', 'manual_journal_approval_threshold'])
+    expect(array_keys($settings))->toBe([
+        'posting_accounts',
+        'manual_journal_approval_required',
+        'manual_journal_approval_threshold',
+        'fx_unrealised_gain_provision_account_id',
+        'enforce_swiss_imparity_principle',
+        'unrealised_gain_treatment',
+    ])
         ->and(array_keys($settings['posting_accounts']))->toBe(PostingAccountRole::values())
         ->and(array_keys($settings['posting_accounts']['sales_revenue']))->toBe(['account_id', 'account_code', 'account_name', 'source']);
 
