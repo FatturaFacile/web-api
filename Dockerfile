@@ -28,6 +28,16 @@ RUN apk add --no-cache --virtual .phpredis-build $PHPIZE_DEPS \
 # 128M default is not enough. Applies to both the CLI and php-fpm.
 RUN echo "memory_limit = 2048M" > /usr/local/etc/php/conf.d/zz-memory-limit.ini
 
+# Upload limits (PHP defaults are 2M/8M). The largest file the API validates is the withholding-tax tariff import
+# (max:102400 KB = 100M); documents, attachments and the backup restore are capped at 25600 KB. post_max_size sits above
+# upload_max_filesize to leave room for the multipart envelope and the other form fields. The reverse proxy must allow
+# the same size (client_max_body_size).
+RUN printf 'upload_max_filesize = 100M\npost_max_size = 110M\n' > /usr/local/etc/php/conf.d/zz-uploads.ini
+
+# OPcache sized for ~15000 classes (modules and vendor) plus the cached routes/config. The image is rebuilt on every
+# deploy, but validate_timestamps stays at its default on purpose: it is not switched off here.
+RUN printf 'opcache.memory_consumption = 256\nopcache.interned_strings_buffer = 16\nopcache.max_accelerated_files = 32531\n' > /usr/local/etc/php/conf.d/zz-opcache.ini
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
