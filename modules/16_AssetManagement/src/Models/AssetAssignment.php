@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\AssetManagement\Models;
 
 use Database\Factories\AssetAssignmentFactory;
+use Enterprise\MultiTenant\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -42,7 +43,7 @@ use Illuminate\Support\Str;
 final class AssetAssignment extends Model
 {
     /** @use HasFactory<AssetAssignmentFactory> */
-    use HasFactory, SoftDeletes;
+    use BelongsToTenant, HasFactory, SoftDeletes;
 
     protected $table = 'eam_asset_assignments';
 
