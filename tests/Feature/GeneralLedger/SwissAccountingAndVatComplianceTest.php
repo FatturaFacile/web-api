@@ -16,7 +16,7 @@ use Modules\GeneralLedger\Contracts\PeriodClosingServiceInterface;
 use Modules\GeneralLedger\Contracts\VatSettlementServiceInterface;
 use Modules\GeneralLedger\Exceptions\LedgerConflictException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
-use Modules\GeneralLedger\Models\CustomerLedger;
+use Modules\GeneralLedger\Models\DefaultPostingAccount;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
 use Modules\GeneralLedger\Models\LedgerSetting;
@@ -122,7 +122,7 @@ test('Phase A.1: Swiss CO Art. 960a Imparity Principle defers unrealised FX gain
     $periodJan = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 1)->firstOrFail();
 
     // Invoice of 1000 EUR booked at historical rate 0.92 CHF/EUR -> book value 920.00 CHF
-    $entry = app(DoubleEntryPostingServiceInterface::class)->createAndPost([
+    app(DoubleEntryPostingServiceInterface::class)->createAndPost([
         'tenant_id' => (string) $tenant->id,
         'fiscal_period_id' => $periodJan->id,
         'posting_date' => '2026-01-10',
@@ -147,21 +147,6 @@ test('Phase A.1: Swiss CO Art. 960a Imparity Principle defers unrealised FX gain
         ],
     ], (string) $user->id);
 
-    CustomerLedger::create([
-        'id' => (string) Str::uuid7(),
-        'tenant_id' => (string) $tenant->id,
-        'customer_id' => $customer->id,
-        'journal_entry_id' => $entry->id,
-        'document_type' => 'invoice',
-        'document_number' => 'INV-EUR-1',
-        'posting_date' => '2026-01-10',
-        'due_date' => '2026-02-10',
-        'currency' => 'EUR',
-        'original_amount' => '1000.00',
-        'open_amount' => '1000.00',
-        'status' => 'open',
-    ]);
-
     // Closing rate on 2026-01-31: 1 CHF = 1.00 EUR -> revalued value = 1000.00 CHF -> unrealised GAIN of +80.00 CHF
     ExchangeRate::create([
         'source' => 'CHF',
@@ -178,7 +163,7 @@ test('Phase A.1: Swiss CO Art. 960a Imparity Principle defers unrealised FX gain
     );
 
     expect($revaluations)->toHaveCount(1)
-        ->and((string) $revaluations[0]->difference)->toBe('80.00')
+        ->and((string) $revaluations[0]->difference)->toBe('80.0000')
         ->and($revaluations[0]->imparity_deferred)->toBeTrue()
         ->and($revaluations[0]->treatment_applied)->toBe('provision');
 
@@ -205,6 +190,13 @@ test('Phase A.2, A.3 & A.4: Swiss Anhang (CO Art. 959c), CHF Presentation Curren
         'id' => (string) Str::uuid7(),
         'tenant_id' => (string) $tenant->id,
         'retained_earnings_account_id' => $retained->id,
+    ]);
+
+    DefaultPostingAccount::create([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => (string) $tenant->id,
+        'role' => 'retained_earnings',
+        'account_id' => $retained->id,
     ]);
 
     $periodDec = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 12)->firstOrFail();
@@ -343,6 +335,10 @@ test('Phase B: Swiss VAT Saldosteuersatzmethode (SSS), Bezugsteuer (Box 383), al
     ]);
 
     $periodJan = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 1)->firstOrFail();
+    $periodFeb = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 2)->firstOrFail();
+    $periodMar = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 3)->firstOrFail();
+    $periodApr = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 4)->firstOrFail();
+    $periodMay = FiscalPeriod::where('tenant_id', $tenant->id)->where('period_number', 5)->firstOrFail();
     $posting = app(DoubleEntryPostingServiceInterface::class);
 
     // 1. Primary SSS sale: net 10,000 + 8.1% VAT (810) = gross 10,810 -> SSS 6.2% on 10,810 = 670.22 CHF
@@ -362,7 +358,7 @@ test('Phase B: Swiss VAT Saldosteuersatzmethode (SSS), Bezugsteuer (Box 383), al
     // 2. Secondary SSS sale: net 1,000 + 8.1% VAT (81) = gross 1,081 -> SSS 2.1% on 1,081 = 22.70 CHF
     $posting->createAndPost([
         'tenant_id' => (string) $tenant->id,
-        'fiscal_period_id' => $periodJan->id,
+        'fiscal_period_id' => $periodFeb->id,
         'source_document_type' => 'sales_invoice',
         'posting_date' => '2026-02-10',
         'document_date' => '2026-02-10',
@@ -376,7 +372,7 @@ test('Phase B: Swiss VAT Saldosteuersatzmethode (SSS), Bezugsteuer (Box 383), al
     // 3. Export sale (0% VAT, Box 220): 2,000 CHF
     $posting->createAndPost([
         'tenant_id' => (string) $tenant->id,
-        'fiscal_period_id' => $periodJan->id,
+        'fiscal_period_id' => $periodMar->id,
         'source_document_type' => 'sales_invoice',
         'posting_date' => '2026-03-05',
         'document_date' => '2026-03-05',
@@ -390,7 +386,7 @@ test('Phase B: Swiss VAT Saldosteuersatzmethode (SSS), Bezugsteuer (Box 383), al
     $supplier = Contact::create(['tenant_id' => (string) $tenant->id, 'company_name' => 'Lieferant AG', 'type' => 'supplier', 'country' => 'CH']);
     $posting->createAndPost([
         'tenant_id' => (string) $tenant->id,
-        'fiscal_period_id' => $periodJan->id,
+        'fiscal_period_id' => $periodApr->id,
         'source_document_type' => 'vendor_invoice',
         'posting_date' => '2026-04-10',
         'document_date' => '2026-04-10',
@@ -403,7 +399,7 @@ test('Phase B: Swiss VAT Saldosteuersatzmethode (SSS), Bezugsteuer (Box 383), al
 
     $posting->createAndPost([
         'tenant_id' => (string) $tenant->id,
-        'fiscal_period_id' => $periodJan->id,
+        'fiscal_period_id' => $periodMay->id,
         'source_document_type' => 'vendor_invoice',
         'posting_date' => '2026-05-12',
         'document_date' => '2026-05-12',

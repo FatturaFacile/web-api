@@ -147,7 +147,7 @@ final class SalaryCertificateBoxes
             $parts[] = "Grado di occupazione: {$percent}%";
         }
 
-        $permit = $profile?->swiss_permit_type ?? $profile?->residence_permit;
+        $permit = $profile !== null ? ($profile->swiss_permit_type ?? $profile->residence_permit) : null;
 
         if ($permit !== null && $permit !== '') {
             $parts[] = "Permesso: {$permit}";

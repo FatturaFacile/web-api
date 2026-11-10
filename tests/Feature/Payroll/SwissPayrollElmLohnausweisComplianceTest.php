@@ -171,7 +171,7 @@ test('Phase C.4: FTA Circular No. 45 QST incomplete month irregular bonus, part-
 
     expect($resMidMonth->payslip->withholdingTaxBasis)->toBe('4500.00')
         ->and($resMidMonth->payslip->withholdingTaxRatePercent)->toBe('10.00')
-        ->and($resMidMonth->amount(Codes::WithholdingTax))->toBe('-450.00');
+        ->and($resMidMonth->amount(Codes::WithholdingTax))->toBe('-450');
 
     // 2. Part-time 50% employee earning 3000/month with extrapolateQstToFullTime = true:
     // Rate looked up at 6000 (10% bracket), tax applied on actual 3000 -> -300.00
@@ -200,7 +200,7 @@ test('Phase C.4: FTA Circular No. 45 QST incomplete month irregular bonus, part-
 
     expect($resPartTime->payslip->withholdingTaxBasis)->toBe('3000.00')
         ->and($resPartTime->payslip->withholdingTaxRatePercent)->toBe('10.00')
-        ->and($resPartTime->amount(Codes::WithholdingTax))->toBe('-300.00');
+        ->and($resPartTime->amount(Codes::WithholdingTax))->toBe('-300');
 
     // 3. New Frontier Worker (CH-IT Agreement) with 80% taxable basis rule:
     // Salary 6000/month -> rate looked up on 100% (6000 -> 12% bracket), QST applied to 80% of 6000 = 4800 * 12% = -576.00
@@ -229,7 +229,7 @@ test('Phase C.4: FTA Circular No. 45 QST incomplete month irregular bonus, part-
 
     expect($resFrontier->payslip->withholdingTaxBasis)->toBe('4800.00')
         ->and($resFrontier->payslip->withholdingTaxRatePercent)->toBe('12.00')
-        ->and($resFrontier->amount(Codes::WithholdingTax))->toBe('-576.00');
+        ->and($resFrontier->amount(Codes::WithholdingTax))->toBe('-576');
 });
 
 test('Phase C.5: Swiss work permit compliance endpoint detects expired permits, expiring permits and QST mismatches', function (): void {

@@ -41,7 +41,8 @@ final class SwissEstvXmlBuilder
         self::appendElement($doc, $header, 'currency', (string) ($settlement->currency ?: 'CHF'));
         $root->appendChild($header);
 
-        $boxes = is_array($settlement->estv_boxes) ? $settlement->estv_boxes : [];
+        $rawBoxes = $settlement->getAttribute('estv_boxes');
+        $boxes = is_array($rawBoxes) ? $rawBoxes : [];
         $turnoverSection = $doc->createElementNS(self::NAMESPACE_URI, 'eCH-0217:turnoverSection');
         foreach (['200', '220', '221', '225', '230', '235', '289', '299'] as $boxCode) {
             $val = isset($boxes[$boxCode]) && ! is_array($boxes[$boxCode]) ? (string) $boxes[$boxCode] : '0.00';
@@ -51,7 +52,7 @@ final class SwissEstvXmlBuilder
 
         $taxCalculation = $doc->createElementNS(self::NAMESPACE_URI, 'eCH-0217:taxCalculationSection');
         foreach (['303', '313', '343', '383'] as $rateBoxCode) {
-            $boxData = $boxes[$rateBoxCode] ?? ['base' => '0.00', 'rate' => '0.0', 'tax' => '0.00'];
+            $boxData = isset($boxes[$rateBoxCode]) && is_array($boxes[$rateBoxCode]) ? $boxes[$rateBoxCode] : [];
             $el = $doc->createElementNS(self::NAMESPACE_URI, 'eCH-0217:rateBox');
             $el->setAttribute('code', $rateBoxCode);
             $el->setAttribute('taxableBase', Decimal::round2((string) ($boxData['base'] ?? '0.00')));
@@ -59,7 +60,7 @@ final class SwissEstvXmlBuilder
             $el->setAttribute('taxAmount', Decimal::round2((string) ($boxData['tax'] ?? '0.00')));
             $taxCalculation->appendChild($el);
         }
-        self::appendBoxElement($doc, $taxCalculation, '399', Decimal::round2((string) ($boxes['399'] ?? $settlement->output_vat_amount ?? '0.00')));
+        self::appendBoxElement($doc, $taxCalculation, '399', Decimal::round2((string) ($boxes['399'] ?? $settlement->output_vat_amount ?: '0.00')));
         $root->appendChild($taxCalculation);
 
         $inputTaxSection = $doc->createElementNS(self::NAMESPACE_URI, 'eCH-0217:inputTaxSection');
@@ -70,8 +71,8 @@ final class SwissEstvXmlBuilder
         $root->appendChild($inputTaxSection);
 
         $settlementSection = $doc->createElementNS(self::NAMESPACE_URI, 'eCH-0217:settlementSection');
-        self::appendBoxElement($doc, $settlementSection, '500', Decimal::round2((string) ($boxes['500'] ?? $settlement->net_vat_payable ?? '0.00')));
-        self::appendBoxElement($doc, $settlementSection, '510', Decimal::round2((string) ($boxes['510'] ?? $settlement->net_vat_credit ?? '0.00')));
+        self::appendBoxElement($doc, $settlementSection, '500', Decimal::round2((string) ($boxes['500'] ?? $settlement->net_vat_payable ?: '0.00')));
+        self::appendBoxElement($doc, $settlementSection, '510', Decimal::round2((string) ($boxes['510'] ?? $settlement->net_vat_credit ?: '0.00')));
         $root->appendChild($settlementSection);
 
         return (string) $doc->saveXML();

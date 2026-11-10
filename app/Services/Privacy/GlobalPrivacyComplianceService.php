@@ -140,8 +140,8 @@ final class GlobalPrivacyComplianceService
             $invoices = Invoice::withoutGlobalScope('tenant')
                 ->where('tenant_id', $tenantId)
                 ->where('contact_id', $contact->id)
-                ->orderByDesc('issue_date')
-                ->get(['id', 'invoice_number', 'issue_date', 'due_date', 'total', 'currency', 'status']);
+                ->orderByDesc('date')
+                ->get(['id', 'invoice_number', 'date', 'due_date', 'total_net', 'total_tax', 'total_gross', 'currency', 'payment_status']);
 
             return [
                 'schema' => 'urn:fatturafacile:privacy:portability:1.0',
@@ -182,12 +182,12 @@ final class GlobalPrivacyComplianceService
             $payslips = Payslip::withoutGlobalScope(TenantScope::class)
                 ->where('tenant_id', $tenantId)
                 ->where('employee_id', $employee->id)
-                ->get(['id', 'gross_amount', 'net_amount', 'currency', 'created_at']);
+                ->get(['id', 'year', 'month', 'gross_salary', 'employee_deductions', 'net_salary', 'payout_amount', 'created_at']);
 
             $certificates = SalaryCertificate::withoutGlobalScope(TenantScope::class)
                 ->where('tenant_id', $tenantId)
                 ->where('employee_id', $employee->id)
-                ->get(['id', 'year', 'gross_salary_total', 'net_salary', 'issued_at']);
+                ->get(['id', 'year', 'period_from', 'period_to', 'box8_gross', 'box11_net', 'box12_withholding_tax', 'generated_at']);
 
             return [
                 'schema' => 'urn:fatturafacile:privacy:portability:1.0',
@@ -196,7 +196,7 @@ final class GlobalPrivacyComplianceService
                 'subject_type' => 'employee',
                 'subject_id' => (string) $employee->id,
                 'personal_data' => [
-                    'employee_code' => $employee->employee_code,
+                    'employee_number' => $employee->employee_number,
                     'first_name' => $employee->first_name,
                     'last_name' => $employee->last_name,
                     'personal_email' => $employee->personal_email,
@@ -209,10 +209,11 @@ final class GlobalPrivacyComplianceService
                     'tax_code' => $employee->tax_code,
                 ],
                 'payroll_profile' => $payrollProfile ? [
-                    'tax_canton' => $payrollProfile->tax_canton,
+                    'work_canton' => $payrollProfile->work_canton,
+                    'residence_canton' => $payrollProfile->residence_canton,
                     'swiss_permit_type' => $payrollProfile->swiss_permit_type,
-                    'swiss_permit_Expires_on' => $payrollProfile->swiss_permit_expires_on?->toDateString(),
-                    'withholding_tax_tariff' => $payrollProfile->withholding_tax_tariff,
+                    'swiss_permit_valid_until' => $payrollProfile->swiss_permit_valid_until?->toDateString(),
+                    'withholding_tax_code' => $payrollProfile->withholding_tax_code,
                 ] : null,
                 'employment_contracts' => $employee->contracts->toArray(),
                 'payslips' => $payslips->toArray(),
@@ -246,7 +247,7 @@ final class GlobalPrivacyComplianceService
                 $recentInvoices = Invoice::withoutGlobalScope('tenant')
                     ->where('tenant_id', $tenantId)
                     ->where('contact_id', $contact->id)
-                    ->whereDate('issue_date', '>=', $tenYearsAgo->toDateString())
+                    ->whereDate('date', '>=', $tenYearsAgo->toDateString())
                     ->count();
 
                 if ($recentInvoices > 0) {

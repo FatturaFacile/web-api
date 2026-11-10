@@ -44,7 +44,47 @@ return new class extends Migration
 
     public function down(): void
     {
-        // Additive enterprise migration policy.
+        if (Schema::hasTable('payroll_salary_certificates')) {
+            Schema::table('payroll_salary_certificates', function (Blueprint $table): void {
+                foreach ([
+                    'checkbox_f_transport',
+                    'checkbox_g_canteen',
+                    'box10_1_ordinary_pension',
+                    'box10_2_pension_buyin',
+                    'box13_1_effective_expenses',
+                    'box13_2_lump_sum_expenses',
+                    'box15_remarks',
+                    'barcode_payload',
+                    'barcode_svg',
+                ] as $column) {
+                    if (Schema::hasColumn('payroll_salary_certificates', $column)) {
+                        $table->dropColumn($column);
+                    }
+                }
+            });
+        }
+
+        if (Schema::hasTable('payroll_employee_profiles')) {
+            Schema::table('payroll_employee_profiles', function (Blueprint $table): void {
+                foreach ([
+                    'waive_retiree_allowance',
+                    'extrapolate_qst_to_full_time',
+                    'other_employment_fte_percent',
+                    'qst_rate_determining_percent',
+                    'frontier_apply_80_percent_basis',
+                    'swiss_permit_type',
+                    'swiss_permit_number',
+                    'swiss_permit_valid_until',
+                    'spouse_work_status',
+                    'religion_code',
+                    'single_parent_concubinage',
+                ] as $column) {
+                    if (Schema::hasColumn('payroll_employee_profiles', $column)) {
+                        $table->dropColumn($column);
+                    }
+                }
+            });
+        }
     }
 
     private function addColumn(Blueprint $table, string $tableName, string $column, Closure $definition): void

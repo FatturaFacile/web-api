@@ -541,8 +541,14 @@ Route::prefix('v1')->group(function (): void {
                     Route::post('/subprocessors', [PrivacyComplianceController::class, 'storeSubprocessor'])->name('subprocessors.store');
                     Route::get('/data-subject-requests', [PrivacyComplianceController::class, 'dataSubjectRequests'])->name('dsr.index');
                     Route::post('/data-subject-requests', [PrivacyComplianceController::class, 'storeDataSubjectRequest'])->name('dsr.store');
-                    Route::post('/data-subject-requests/{id}/execute-erasure', [PrivacyComplianceController::class, 'executeErasure'])->whereUuid('id')->name('dsr.execute-erasure');
-                    Route::get('/portability/{subjectType}/{subjectId}', [PrivacyComplianceController::class, 'exportSubjectDossier'])->whereUuid('subjectId')->name('portability.export');
+                    Route::post('/data-subject-requests/{id}/execute-erasure', [PrivacyComplianceController::class, 'executeErasure'])
+                        ->middleware('privacy.sensitive.log:gdpr_exports')
+                        ->whereUuid('id')
+                        ->name('dsr.execute-erasure');
+                    Route::get('/portability/{subjectType}/{subjectId}', [PrivacyComplianceController::class, 'exportSubjectDossier'])
+                        ->middleware('privacy.sensitive.log:gdpr_exports')
+                        ->whereUuid('subjectId')
+                        ->name('portability.export');
                     Route::get('/breaches', [PrivacyComplianceController::class, 'breaches'])->name('breaches.index');
                     Route::post('/breaches', [PrivacyComplianceController::class, 'storeBreach'])->name('breaches.store');
                     Route::get('/sensitive-access-logs', [PrivacyComplianceController::class, 'sensitiveAccessLogs'])->name('sensitive-access-logs.index');

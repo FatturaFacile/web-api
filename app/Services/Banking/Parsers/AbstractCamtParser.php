@@ -8,7 +8,9 @@ use App\Contracts\Banking\BankStatementParserInterface;
 use App\DTOs\Banking\ParsedStatement;
 use App\DTOs\Banking\ParsedStatementLine;
 use App\Exceptions\BankStatementException;
+use App\Support\Security\SafeXmlLoader;
 use Carbon\CarbonImmutable;
+use InvalidArgumentException;
 use SimpleXMLElement;
 use XMLReader;
 
@@ -167,13 +169,11 @@ abstract class AbstractCamtParser implements BankStatementParserInterface
         $xml = (string) $reader->readOuterXml();
         $xml = (string) preg_replace(['/\sxmlns(:\w+)?="[^"]*"/', '/\s\w+:\w+="[^"]*"/', '/<(\/?)\w+:/'], ['', '', '<$1'], $xml);
 
-        $node = simplexml_load_string($xml, SimpleXMLElement::class, LIBXML_NONET);
-
-        if ($node === false) {
+        try {
+            return SafeXmlLoader::loadSimpleXml($xml);
+        } catch (InvalidArgumentException) {
             throw BankStatementException::because(BankStatementException::INVALID_XML);
         }
-
-        return $node;
     }
 
     private function accountIban(SimpleXMLElement $account): ?string

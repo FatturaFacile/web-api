@@ -195,5 +195,48 @@ return new class extends Migration
         Schema::dropIfExists('privacy_subprocessors');
         Schema::dropIfExists('privacy_processing_activities');
         Schema::dropIfExists('time_night_compensation_balances');
+
+        if (Schema::hasTable('hr_employees')) {
+            Schema::table('hr_employees', function (Blueprint $table): void {
+                foreach (['processing_restricted_at', 'anonymized_at'] as $column) {
+                    if (Schema::hasColumn('hr_employees', $column)) {
+                        $table->dropColumn($column);
+                    }
+                }
+            });
+        }
+
+        if (Schema::hasTable('contacts')) {
+            Schema::table('contacts', function (Blueprint $table): void {
+                foreach (['processing_restricted_at', 'anonymized_at'] as $column) {
+                    if (Schema::hasColumn('contacts', $column)) {
+                        $table->dropColumn($column);
+                    }
+                }
+            });
+        }
+
+        if (Schema::hasTable('payment_reminders')) {
+            Schema::table('payment_reminders', function (Blueprint $table): void {
+                foreach ([
+                    'dunning_fee',
+                    'interest_rate_percent',
+                    'interest_amount',
+                    'total_claimed_amount',
+                    'qr_bill_attached',
+                    'qr_reference',
+                ] as $column) {
+                    if (Schema::hasColumn('payment_reminders', $column)) {
+                        $table->dropColumn($column);
+                    }
+                }
+            });
+        }
+
+        if (Schema::hasTable('time_recording_profiles') && Schema::hasColumn('time_recording_profiles', 'is_regular_night_worker')) {
+            Schema::table('time_recording_profiles', function (Blueprint $table): void {
+                $table->dropColumn('is_regular_night_worker');
+            });
+        }
     }
 };

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Security\KeyDerivation;
 use App\Support\Security\SafeXmlLoader;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
@@ -25,6 +26,7 @@ uses(RefreshDatabase::class);
 test('Phase F: ArG Art. 17b Night Work Compensation Bank (<25 shifts 25% cash vs >=25 shifts 10% mandatory rest time) and automatic Time-to-Payroll transfer', function (): void {
     $tenant = Tenant::create([
         'name' => 'Swiss Time Tenant '.Str::random(4),
+        'legal_name' => 'Swiss Time SA',
         'country' => 'CH',
         'default_currency' => 'CHF',
     ]);
@@ -51,13 +53,14 @@ test('Phase F: ArG Art. 17b Night Work Compensation Bank (<25 shifts 25% cash vs
         'id' => (string) Str::uuid7(),
         'tenant_id' => (string) $tenant->id,
         'user_id' => $workerUser->id,
-        'employee_code' => 'EMP-NIGHT-1',
+        'employee_number' => 'EMP-NIGHT-1',
         'first_name' => 'Luca',
         'last_name' => 'Notturno',
         'full_name' => 'Luca Notturno',
+        'work_email' => 'luca.notturno@worker.ch',
         'hire_date' => '2025-01-01',
         'employment_type' => 'hourly',
-        'status' => 'active',
+        'employment_status' => 'active',
     ]);
 
     PayrollEmployeeProfile::create([
@@ -74,28 +77,32 @@ test('Phase F: ArG Art. 17b Night Work Compensation Bank (<25 shifts 25% cash vs
         'id' => (string) Str::uuid7(),
         'tenant_id' => (string) $tenant->id,
         'user_id' => $workerUser->id,
-        'recording_mode' => 'full',
+        'mode' => 'Simplified',
+        'agreement_date' => '2026-01-01',
+        'agreement_valid_from' => '2026-01-01',
         'canton' => 'TI',
-        'weekly_max_hours' => 45,
-        'daily_target_minutes' => 504,
+        'legal_max_weekly_hours' => 45,
+        'weekly_hours' => '42.00',
+        'work_days_per_week' => 5,
         'is_regular_night_worker' => false,
     ]);
 
     // Case 1: Occasional night work in January 2026 (2 night shifts < 25 threshold) -> generates NIGHT_125 (1020) 25% cash supplement
     foreach (['2026-01-12', '2026-01-13'] as $day) {
+        $nextDay = CarbonImmutable::parse($day)->addDay()->toDateString();
         TimeDailyRecord::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => (string) $tenant->id,
             'user_id' => $workerUser->id,
             'work_date' => $day,
             'worked_minutes' => 480,
-            'break_minutes' => 30,
-            'night_minutes' => 180, // 3h night work per shift
+            'start_time' => "{$day}T18:00:00+01:00",
+            'end_time' => "{$nextDay}T02:00:00+01:00", // 23:00-02:00 = 180 min (3h) night work per shift
         ]);
     }
 
     Sanctum::actingAs($manager);
-    $headers = ['X-Tenant-Id' => (string) $tenant->id];
+    $headers = ['X-Tenant-Id' => (string) $tenant->id, 'X-User-Id' => (string) $manager->id];
 
     $janTransfer = $this->withHeaders($headers)
         ->postJson('/api/v1/hr/time-closings/2026/1/transfer-to-payroll')
@@ -164,15 +171,14 @@ test('Phase G: Swiss Dunning Levels 1, 2, 3 with configurable fees, CO Art. 104 
         'tenant_id' => (string) $tenant->id,
         'contact_id' => $contact->id,
         'invoice_number' => 'INV-CH-2026-001',
-        'invoice_type' => 'invoice',
+        'invoice_type' => 'standard',
         'jurisdiction' => 'CH',
-        'issue_date' => '2026-07-30',
+        'date' => '2026-07-30',
         'due_date' => '2026-08-29',
         'currency' => 'CHF',
-        'subtotal' => '1000.00',
-        'tax' => '0.00',
-        'total' => '1000.00',
-        'status' => 'issued',
+        'total_net' => '1000.00',
+        'total_tax' => '0.00',
+        'total_gross' => '1000.00',
         'payment_status' => 'unpaid',
     ]);
 
@@ -225,6 +231,7 @@ XML;
 test('Phase I: Global GDPR & Swiss nLPD Compliance Module (Art. 30/12 RoPA, Art. 16 Cross-Border Subprocessors, Portability Export, Erasure with CO Art. 958f 10-year Legal Hold, Breach 72h Deadline)', function (): void {
     $tenant = Tenant::create([
         'name' => 'Swiss Privacy AG',
+        'legal_name' => 'Swiss Privacy AG',
         'country' => 'CH',
         'default_currency' => 'CHF',
     ]);
@@ -284,14 +291,13 @@ test('Phase I: Global GDPR & Swiss nLPD Compliance Module (Art. 30/12 RoPA, Art.
         'tenant_id' => (string) $tenant->id,
         'contact_id' => $contact->id,
         'invoice_number' => 'INV-2026-999',
-        'invoice_type' => 'invoice',
-        'issue_date' => '2026-05-01',
+        'invoice_type' => 'standard',
+        'date' => '2026-05-01',
         'due_date' => '2026-05-31',
         'currency' => 'CHF',
-        'subtotal' => '500.00',
-        'tax' => '0.00',
-        'total' => '500.00',
-        'status' => 'issued',
+        'total_net' => '500.00',
+        'total_tax' => '0.00',
+        'total_gross' => '500.00',
         'payment_status' => 'paid',
     ]);
 

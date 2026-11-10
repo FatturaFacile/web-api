@@ -80,7 +80,7 @@ final readonly class SwissAnhangService
 
             if (array_key_exists('fte_band', $data) && $data['fte_band'] !== null) {
                 $note->fte_band = (string) $data['fte_band'];
-            } elseif (! $note->exists && $note->fte_band === null) {
+            } elseif (! $note->exists && empty($note->fte_band)) {
                 $note->fte_band = 'up_to_10';
             }
 
@@ -123,7 +123,7 @@ final readonly class SwissAnhangService
             }
 
             if (array_key_exists('fire_insurance_values', $data)) {
-                $note->fire_insurance_values = is_array($data['fire_insurance_values']) ? $data['fire_insurance_values'] : null;
+                $note->setAttribute('fire_insurance_values', is_array($data['fire_insurance_values']) ? $data['fire_insurance_values'] : null);
             }
 
             if (array_key_exists('subsequent_events', $data)) {
@@ -145,7 +145,7 @@ final readonly class SwissAnhangService
             }
 
             if (array_key_exists('extra_disclosures', $data)) {
-                $note->extra_disclosures = is_array($data['extra_disclosures']) ? $data['extra_disclosures'] : null;
+                $note->setAttribute('extra_disclosures', is_array($data['extra_disclosures']) ? $data['extra_disclosures'] : null);
             }
 
             if ($actorId !== null) {
@@ -174,7 +174,7 @@ final readonly class SwissAnhangService
 
         $liabilityAccounts = $balanceSheet['sections']['liability']['accounts'] ?? [];
         $derivedPensionLiability = $this->derivePensionFundLiability($liabilityAccounts);
-        $effectivePensionLiability = $note?->pension_fund_liabilities_amount !== null
+        $effectivePensionLiability = $note !== null && $note->pension_fund_liabilities_amount !== null
             ? Decimal::normalize((string) $note->pension_fund_liabilities_amount)
             : $derivedPensionLiability;
 
@@ -184,27 +184,27 @@ final readonly class SwissAnhangService
 
         return [
             'fiscal_year_id' => (string) $fiscalYear->id,
-            'fiscal_year_code' => (string) ($fiscalYear->year_code ?? ''),
-            'fiscal_year_name' => (string) ($fiscalYear->getAttribute('name') ?? $fiscalYear->year_code ?? ''),
+            'fiscal_year_code' => (string) ($fiscalYear->year_code ?: ''),
+            'fiscal_year_name' => (string) ($fiscalYear->getAttribute('name') ?? $fiscalYear->year_code ?: ''),
             'start_date' => $startDate->toDateString(),
             'end_date' => $endDate->toDateString(),
             'legal_reference' => 'CO Art. 959c',
             'accounting_currency' => $accountingCurrency,
-            'fte_band' => $note?->fte_band ?? 'up_to_10',
-            'valuation_principles' => $note?->valuation_principles ?? 'Historical cost and prudence / imparity principle pursuant to Swiss Code of Obligations (CO Art. 960 / 960a).',
-            'pledged_assets_amount' => Decimal::normalize((string) ($note?->pledged_assets_amount ?? '0')),
+            'fte_band' => $note !== null && $note->fte_band !== '' ? $note->fte_band : 'up_to_10',
+            'valuation_principles' => $note !== null && $note->valuation_principles !== null ? $note->valuation_principles : 'Historical cost and prudence / imparity principle pursuant to Swiss Code of Obligations (CO Art. 960 / 960a).',
+            'pledged_assets_amount' => Decimal::normalize((string) ($note !== null && $note->pledged_assets_amount !== null ? $note->pledged_assets_amount : '0')),
             'pledged_assets_details' => $note?->pledged_assets_details,
-            'leasing_commitments_amount' => Decimal::normalize((string) ($note?->leasing_commitments_amount ?? '0')),
+            'leasing_commitments_amount' => Decimal::normalize((string) ($note !== null && $note->leasing_commitments_amount !== null ? $note->leasing_commitments_amount : '0')),
             'leasing_commitments_details' => $note?->leasing_commitments_details,
             'pension_fund_liabilities_amount' => $effectivePensionLiability,
             'derived_pension_fund_liabilities_amount' => $derivedPensionLiability,
-            'pension_fund_liabilities_overridden' => $note?->pension_fund_liabilities_amount !== null,
+            'pension_fund_liabilities_overridden' => $note !== null && $note->pension_fund_liabilities_amount !== null,
             'pension_fund_liabilities_details' => $note?->pension_fund_liabilities_details,
-            'fire_insurance_values' => $note?->fire_insurance_values ?? [],
+            'fire_insurance_values' => $note !== null && is_array($note->fire_insurance_values) ? $note->fire_insurance_values : [],
             'subsequent_events' => $note?->subsequent_events,
-            'auditor_fees_audit' => Decimal::normalize((string) ($note?->auditor_fees_audit ?? '0')),
-            'auditor_fees_other' => Decimal::normalize((string) ($note?->auditor_fees_other ?? '0')),
-            'extra_disclosures' => $note?->extra_disclosures ?? [],
+            'auditor_fees_audit' => Decimal::normalize((string) ($note !== null && $note->auditor_fees_audit !== null ? $note->auditor_fees_audit : '0')),
+            'auditor_fees_other' => Decimal::normalize((string) ($note !== null && $note->auditor_fees_other !== null ? $note->auditor_fees_other : '0')),
+            'extra_disclosures' => $note !== null && is_array($note->extra_disclosures) ? $note->extra_disclosures : [],
             'ledger_figures' => [
                 'total_assets' => (string) $bsTotals['total_assets'],
                 'total_liabilities' => (string) $bsTotals['total_liabilities'],

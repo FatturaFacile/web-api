@@ -66,8 +66,8 @@ final class SwissPermitComplianceService
             }
 
             $employeeId = (string) $profile->employee_id;
-            $employeeName = (string) ($employee?->full_name ?? $employeeId);
-            $permitCode = $permit?->value ?? (string) $rawPermit;
+            $employeeName = (string) ($employee !== null ? ($employee->full_name ?? $employeeId) : $employeeId);
+            $permitCode = $permit !== null ? $permit->value : (string) $rawPermit;
             $validUntil = $profile->swiss_permit_valid_until !== null
                 ? CarbonImmutable::parse($profile->swiss_permit_valid_until)->startOfDay()
                 : null;

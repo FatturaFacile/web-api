@@ -6,7 +6,11 @@ namespace Modules\GeneralLedger\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\GeneralLedger\Models\VatTaxSetting;
 
+/**
+ * @mixin VatTaxSetting
+ */
 final class VatTaxSettingResource extends JsonResource
 {
     /**

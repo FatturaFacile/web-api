@@ -118,15 +118,15 @@ final class SalaryDeclarationBuilder
                     'Person' => $persons,
                     'Institutions' => [
                         'AHV-AVS' => ['AK-CC-CustomerNumber' => $settings?->ahv_member_number],
-                        'UVG-LAA' => ['InsurerName' => $settings?->uvg_insurer ?? 'SUVA'],
-                        'UVGZ-LAAC' => ['InsurerName' => $settings?->uvg_insurer ?? 'SUVA'],
+                        'UVG-LAA' => ['InsurerName' => ($settings !== null ? $settings->uvg_insurer : null) ?? 'SUVA'],
+                        'UVGZ-LAAC' => ['InsurerName' => ($settings !== null ? $settings->uvg_insurer : null) ?? 'SUVA'],
                         'KTG-AMC' => ['InsurerName' => 'KTG-Collective'],
-                        'BVG-LPP' => ['InsurerName' => $settings?->bvg_insurer ?? 'LPP-Foundation'],
+                        'BVG-LPP' => ['InsurerName' => ($settings !== null ? $settings->bvg_insurer : null) ?? 'LPP-Foundation'],
                         'FAK-CAF' => ['AK-CC-CustomerNumber' => $settings?->ahv_member_number],
-                        'TaxAtSource' => ['Canton' => $settings?->default_work_canton ?? 'TI'],
-                        'Tax' => ['Canton' => $settings?->default_work_canton ?? 'TI'],
+                        'TaxAtSource' => ['Canton' => ($settings !== null ? $settings->default_work_canton : null) ?? 'TI'],
+                        'Tax' => ['Canton' => ($settings !== null ? $settings->default_work_canton : null) ?? 'TI'],
                         'Statistic' => ['BFS-WorkplaceID' => '1'],
-                        'TaxCrossborder' => ['Canton' => $settings?->default_work_canton ?? 'TI'],
+                        'TaxCrossborder' => ['Canton' => ($settings !== null ? $settings->default_work_canton : null) ?? 'TI'],
                     ],
                     'SalaryTotals' => [
                         'AHV-AVS-Totals' => [
@@ -281,9 +281,9 @@ final class SalaryDeclarationBuilder
 
         $boxes = SalaryCertificateBoxes::fill($lineDatas, $employee, $profile);
 
-        $weeklyHours = (string) ($profile?->weekly_hours ?? '42.00');
+        $weeklyHours = (string) ($profile !== null && $profile->weekly_hours > 0 ? $profile->weekly_hours : '42.00');
         $nbuDue = Dec::isZero($weeklyHours) || Dec::cmp($weeklyHours, '8') >= 0;
-        $workCanton = strtoupper((string) ($profile?->work_canton ?? $settings?->default_work_canton ?? 'TI'));
+        $workCanton = strtoupper((string) ($profile !== null && $profile->work_canton !== '' ? $profile->work_canton : ($settings !== null && $settings->default_work_canton !== '' ? $settings->default_work_canton : 'TI')));
         $activityRate = $employee === null ? '100.00' : Dec::round(Dec::mul((string) $employee->fte_ratio, '100'));
 
         $bvgAnnualBasis = $slips->isEmpty()
@@ -304,13 +304,13 @@ final class SalaryDeclarationBuilder
                 'Sex' => $profile?->gender ?? $employee?->gender,
                 'DateOfBirth' => $employee?->birth_date?->format('Y-m-d'),
                 'Nationality' => $employee?->nationality,
-                'ResidenceCategory' => $profile?->swiss_permit_type ?? $profile?->residence_permit,
+                'ResidenceCategory' => $profile !== null ? ($profile->swiss_permit_type ?? $profile->residence_permit) : null,
                 'CivilStatus' => ['Status' => $profile?->civil_status],
                 'Address' => [
                     'Street' => trim("{$profile?->street} {$profile?->house_number}"),
                     'ZIP-Code' => $profile?->postal_code,
                     'City' => $profile?->city,
-                    'Country' => $profile?->residence_country ?? 'CH',
+                    'Country' => $profile !== null && $profile->residence_country !== '' ? $profile->residence_country : 'CH',
                 ],
             ],
             'Work' => [
@@ -411,8 +411,8 @@ final class SalaryDeclarationBuilder
         $person['StatisticSalaries'] = [
             'StatisticSalary' => [
                 'Month' => (int) $slips->max('month'),
-                'Contract' => ($profile?->is_fixed_term_contract ?? false) ? 'fixedTerm' : 'indefinite',
-                'PayType' => $profile?->pay_type ?? 'monthly',
+                'Contract' => ($profile !== null && (bool) $profile->is_fixed_term_contract) ? 'fixedTerm' : 'indefinite',
+                'PayType' => $profile !== null && $profile->pay_type !== '' ? $profile->pay_type : 'monthly',
                 'WeeklyHours' => $weeklyHours,
                 'ActivityRate' => $activityRate,
                 'GrossWage' => $amounts['gross'],
@@ -424,8 +424,8 @@ final class SalaryDeclarationBuilder
             ],
         ];
 
-        $residenceCountry = strtoupper((string) ($profile?->residence_country ?? 'CH'));
-        $permit = strtoupper((string) ($profile?->swiss_permit_type ?? $profile?->residence_permit ?? ''));
+        $residenceCountry = strtoupper((string) ($profile !== null && $profile->residence_country !== '' ? $profile->residence_country : 'CH'));
+        $permit = strtoupper((string) ($profile !== null ? ($profile->swiss_permit_type ?? $profile->residence_permit ?? '') : ''));
 
         if ($residenceCountry !== 'CH' || $permit === 'G') {
             $person['TaxCrossborderSalaries'] = [
@@ -435,7 +435,7 @@ final class SalaryDeclarationBuilder
                     'WorkplaceCanton' => $workCanton,
                     'TaxID' => $profile?->italian_tax_code,
                     'BirthPlace' => $profile?->birth_place,
-                    'FrontierRegime' => $profile?->frontier_regime ?? 'new',
+                    'FrontierRegime' => $profile !== null && $profile->frontier_regime !== null ? $profile->frontier_regime : 'new',
                     'TaxableEarning' => $amounts['basis'],
                     'TaxAtSource' => $amounts['tax'],
                     'SocialContributions' => $amounts['social_contributions'],

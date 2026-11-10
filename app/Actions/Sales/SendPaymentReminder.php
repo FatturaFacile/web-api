@@ -12,6 +12,7 @@ use App\Services\Sales\DocumentEventRecorder;
 use App\Services\SwissQrBill\GeneratedQrBill;
 use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\TenantPreferences;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Throwable;
@@ -141,7 +142,7 @@ class SendPaymentReminder
             return 0.00;
         }
 
-        $dueDate = $invoice->due_date->copy()->startOfDay();
+        $dueDate = Carbon::parse((string) $invoice->due_date)->startOfDay();
         $today = today()->startOfDay();
 
         if ($dueDate->gte($today)) {
@@ -170,10 +171,11 @@ class SendPaymentReminder
             return null;
         }
 
+        $contactCountry = $invoice->contact !== null ? (string) $invoice->contact->country : '';
         $isSwiss = strtoupper((string) $invoice->currency) === 'CHF'
             || strtoupper((string) $invoice->jurisdiction) === 'CH'
             || strtoupper((string) $tenant->country) === 'CH'
-            || strtoupper((string) ($invoice->contact?->country ?? '')) === 'CH';
+            || strtoupper($contactCountry) === 'CH';
 
         if (! $isSwiss) {
             return null;
@@ -185,17 +187,20 @@ class SendPaymentReminder
         }
 
         // Ensure creditor address fallback on the in-memory tenant relation if company preferences were not filled yet
-        $settings = is_array($tenant->settings) ? $tenant->settings : [];
-        $company = $settings['preferences']['company'] ?? [];
+        $rawSettings = $tenant->getAttribute('settings');
+        $settings = is_array($rawSettings) ? $rawSettings : [];
+        $preferences = isset($settings['preferences']) && is_array($settings['preferences']) ? $settings['preferences'] : [];
+        $company = isset($preferences['company']) && is_array($preferences['company']) ? $preferences['company'] : [];
         if (empty($company['street']) && empty($company['address_line_1'])) {
-            $settings['preferences']['company'] = array_merge([
+            $preferences['company'] = array_merge([
                 'street' => 'Bahnhofstrasse',
                 'house_number' => '1',
                 'postal_code' => '8001',
                 'city' => 'Zuerich',
                 'country' => 'CH',
-            ], is_array($company) ? $company : []);
-            $tenant->settings = $settings;
+            ], $company);
+            $settings['preferences'] = $preferences;
+            $tenant->setAttribute('settings', $settings);
             $invoice->setRelation('tenant', $tenant);
         }
 

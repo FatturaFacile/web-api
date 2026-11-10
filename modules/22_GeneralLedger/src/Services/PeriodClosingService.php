@@ -33,6 +33,8 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
 {
     public const string OpeningBalanceSource = 'opening_balance';
 
+    public const string ClosingBalanceSource = 'year_end_closing';
+
     public function __construct(
         private readonly EventDispatcher $dispatcher,
         private readonly AuditLedgerInterface $auditLedger,
@@ -213,6 +215,8 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                     'posting_date' => $fy->end_date,
                     'document_date' => $fy->end_date,
                     'description' => "Year-end financial closing for {$fy->year_code}",
+                    'source_document_type' => self::ClosingBalanceSource,
+                    'source_document_id' => $fy->id,
                     'lines' => $closingLines,
                 ], $closedByUuid);
             }

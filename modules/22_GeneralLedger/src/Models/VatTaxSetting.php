@@ -8,6 +8,20 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 
 /**
  * VAT configuration of a tenant: ledger accounts of the settlement, filing period and LIPE declarant.
+ *
+ * @property string|null $periodicity
+ * @property string|null $regime
+ * @property string|null $sss_rate_1
+ * @property string|null $sss_rate_2
+ * @property array<int|string, mixed>|null $flat_tax_rates
+ * @property string|null $flat_rate_adjustment_account_id
+ * @property string|null $acquisition_tax_account_id
+ * @property array<int, string>|null $output_vat_account_ids
+ * @property array<int, string>|null $input_vat_account_ids
+ * @property string|null $settlement_account_id
+ * @property string|null $interest_expense_account_id
+ * @property string|null $declarant_tax_code
+ * @property string|null $declarant_role_code
  */
 final class VatTaxSetting extends BaseEnterpriseModel
 {

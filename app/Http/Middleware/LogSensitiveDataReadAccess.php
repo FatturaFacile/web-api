@@ -27,8 +27,13 @@ final class LogSensitiveDataReadAccess
         if ($response->isSuccessful() && in_array($request->method(), ['GET', 'POST'], true)) {
             $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
             if ($tenantId) {
-                $subjectId = (string) ($request->route('id') ?? $request->route('employee') ?? $request->route('subjectId') ?? 'collection');
-                $subjectType = str_contains($request->path(), 'payroll') || str_contains($request->path(), 'hr') ? 'employee' : 'subject';
+                $subjectId = (string) ($request->route('id') ?? $request->route('employeeId') ?? $request->route('employee') ?? $request->route('subjectId') ?? 'collection');
+                $subjectType = (string) ($request->route('subjectType')
+                    ?? (str_contains($request->path(), 'payroll') || str_contains($request->path(), 'hr') ? 'employee' : 'subject'));
+                $path = $request->path();
+                $action = str_contains($path, 'portability')
+                    ? 'portability_export'
+                    : ($request->isMethod('GET') && ! str_contains($path, 'export') && ! str_contains($path, 'xml') && ! str_contains($path, 'pdf') ? 'read' : 'export');
 
                 $this->privacyService->logSensitiveAccess(
                     tenantId: (string) $tenantId,
@@ -36,7 +41,7 @@ final class LogSensitiveDataReadAccess
                     subjectType: $subjectType,
                     subjectId: $subjectId,
                     dataCategory: $dataCategory,
-                    action: $request->isMethod('GET') ? 'read' : 'export',
+                    action: $action,
                     ipAddress: $request->ip(),
                 );
             }

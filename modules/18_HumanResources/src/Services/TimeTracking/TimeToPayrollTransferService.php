@@ -263,11 +263,13 @@ final class TimeToPayrollTransferService
             return true;
         }
 
-        if (strtolower((string) $employee->employment_type) === 'hourly' || strtolower((string) $employee->contract_type) === 'hourly') {
+        $contract = $employee->activeContract;
+        $contractType = strtolower((string) ($contract !== null ? $contract->contract_type : ''));
+        if (strtolower((string) $employee->employment_type) === 'hourly' || $contractType === 'hourly') {
             return true;
         }
 
-        $contractHourly = (float) ($employee->activeContract?->hourly_rate ?? 0);
+        $contractHourly = (float) ($contract !== null ? $contract->hourly_rate : 0);
         $baseAnnual = (float) ($employee->base_annual_salary ?? 0);
 
         return $contractHourly > 0 && $baseAnnual <= 0;
@@ -279,16 +281,17 @@ final class TimeToPayrollTransferService
             return round((float) $payrollProfile->hourly_wage, 4);
         }
 
-        if ($employee->activeContract !== null && (float) $employee->activeContract->hourly_rate > 0) {
-            return round((float) $employee->activeContract->hourly_rate, 4);
+        $contract = $employee->activeContract;
+        if ($contract !== null && (float) $contract->hourly_rate > 0) {
+            return round((float) $contract->hourly_rate, 4);
         }
 
         if ((float) $employee->hourly_cost_rate > 0) {
             return round((float) $employee->hourly_cost_rate, 4);
         }
 
-        $baseAnnual = (float) ($employee->base_annual_salary ?? $employee->activeContract?->base_annual_salary ?? 0);
-        $weeklyHours = (float) ($payrollProfile?->weekly_hours ?? $employee->activeContract?->weekly_hours ?? 42.0);
+        $baseAnnual = (float) ($employee->base_annual_salary ?? ($contract !== null ? ($contract->base_annual_salary ?? 0) : 0));
+        $weeklyHours = (float) ($payrollProfile !== null && $payrollProfile->weekly_hours > 0 ? $payrollProfile->weekly_hours : ($contract !== null && $contract->weekly_hours > 0 ? $contract->weekly_hours : 42.0));
 
         if ($baseAnnual > 0 && $weeklyHours > 0) {
             return round($baseAnnual / ($weeklyHours * 52), 4);

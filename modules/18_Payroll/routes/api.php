@@ -21,12 +21,16 @@ Route::prefix('api/v1/payroll')
     ->group(function (): void {
         // Employee self-service: every employee reads their own payslips and certificates; EmployeeDocumentPolicy limits
         // the answer to the own records of a user without payroll access.
-        Route::get('/payslips', [PayslipController::class, 'index'])->name('payslips.index');
-        Route::get('/payslips/{id}', [PayslipController::class, 'show'])->name('payslips.show');
-        Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf'])->name('payslips.pdf');
-        Route::get('/salary-certificates', [SalaryCertificateController::class, 'index'])->name('salary-certificates.index');
-        Route::get('/salary-certificates/{id}', [SalaryCertificateController::class, 'show'])->name('salary-certificates.show');
-        Route::get('/salary-certificates/{id}/pdf', [SalaryCertificateController::class, 'pdf'])->name('salary-certificates.pdf');
+        Route::middleware('privacy.sensitive.log:payroll_payslips')->group(function (): void {
+            Route::get('/payslips', [PayslipController::class, 'index'])->name('payslips.index');
+            Route::get('/payslips/{id}', [PayslipController::class, 'show'])->name('payslips.show');
+            Route::get('/payslips/{id}/pdf', [PayslipController::class, 'pdf'])->name('payslips.pdf');
+        });
+        Route::middleware('privacy.sensitive.log:salary_certificates')->group(function (): void {
+            Route::get('/salary-certificates', [SalaryCertificateController::class, 'index'])->name('salary-certificates.index');
+            Route::get('/salary-certificates/{id}', [SalaryCertificateController::class, 'show'])->name('salary-certificates.show');
+            Route::get('/salary-certificates/{id}/pdf', [SalaryCertificateController::class, 'pdf'])->name('salary-certificates.pdf');
+        });
 
         // Simulations save nothing: payroll read access is enough.
         Route::middleware('module.access:payroll,read')->group(function (): void {
@@ -52,13 +56,17 @@ Route::prefix('api/v1/payroll')
         Route::get('/reports/year-end', [PayrollReportController::class, 'yearEnd'])->name('reports.year-end');
 
         // Salary certificates of the whole company
-        Route::post('/salary-certificates/generate', [SalaryCertificateController::class, 'generate'])->name('salary-certificates.generate');
+        Route::post('/salary-certificates/generate', [SalaryCertificateController::class, 'generate'])
+            ->middleware('privacy.sensitive.log:salary_certificates')
+            ->name('salary-certificates.generate');
 
         // Filing exports
-        Route::get('/exports/salary-declaration', [PayrollExportController::class, 'salaryDeclaration'])->name('exports.salary-declaration');
-        Route::get('/exports/f24', [PayrollExportController::class, 'f24'])->name('exports.f24');
-        Route::get('/exports/uniemens', [PayrollExportController::class, 'uniEmens'])->name('exports.uniemens');
-        Route::get('/exports/cu', [PayrollExportController::class, 'certificazioneUnica'])->name('exports.cu');
+        Route::middleware('privacy.sensitive.log:swissdec_exports')->group(function (): void {
+            Route::get('/exports/salary-declaration', [PayrollExportController::class, 'salaryDeclaration'])->name('exports.salary-declaration');
+            Route::get('/exports/f24', [PayrollExportController::class, 'f24'])->name('exports.f24');
+            Route::get('/exports/uniemens', [PayrollExportController::class, 'uniEmens'])->name('exports.uniemens');
+            Route::get('/exports/cu', [PayrollExportController::class, 'certificazioneUnica'])->name('exports.cu');
+        });
 
         // Settings and setup
         Route::post('/setup', [PayrollSettingsController::class, 'setup'])->name('setup');
@@ -84,9 +92,11 @@ Route::prefix('api/v1/payroll')
         Route::delete('/wage-types/{id}', [WageTypeController::class, 'destroy'])->name('wage-types.destroy');
 
         // Employee data of the payroll
-        Route::get('/employee-profiles', [EmployeePayrollDataController::class, 'profiles'])->name('employee-profiles.index');
-        Route::get('/employee-profiles/{employeeId}', [EmployeePayrollDataController::class, 'showProfile'])->name('employee-profiles.show');
-        Route::put('/employee-profiles/{employeeId}', [EmployeePayrollDataController::class, 'saveProfile'])->name('employee-profiles.save');
+        Route::middleware('privacy.sensitive.log:payroll_employee_profiles')->group(function (): void {
+            Route::get('/employee-profiles', [EmployeePayrollDataController::class, 'profiles'])->name('employee-profiles.index');
+            Route::get('/employee-profiles/{employeeId}', [EmployeePayrollDataController::class, 'showProfile'])->name('employee-profiles.show');
+            Route::put('/employee-profiles/{employeeId}', [EmployeePayrollDataController::class, 'saveProfile'])->name('employee-profiles.save');
+        });
         Route::get('/inputs', [EmployeePayrollDataController::class, 'inputs'])->name('inputs.index');
         Route::post('/inputs', [EmployeePayrollDataController::class, 'storeInput'])->name('inputs.store');
         Route::put('/inputs/{id}', [EmployeePayrollDataController::class, 'updateInput'])->name('inputs.update');

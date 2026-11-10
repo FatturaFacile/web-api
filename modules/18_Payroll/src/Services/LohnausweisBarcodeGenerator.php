@@ -33,8 +33,11 @@ final class LohnausweisBarcodeGenerator
         ?PayrollEmployeeProfile $profile = null,
         ?Tenant $tenant = null,
     ): string {
-        $ssn = preg_replace('/\D/', '', (string) ($profile?->social_security_number ?? $employee?->social_security_number ?? '')) ?? '';
-        $uid = (string) ($tenant?->vat_number ?? '');
+        $rawSsn = ($profile !== null ? $profile->social_security_number : null)
+            ?? ($employee !== null ? $employee->social_security_number : null)
+            ?? '';
+        $ssn = preg_replace('/\D/', '', (string) $rawSsn) ?? '';
+        $uid = (string) ($tenant !== null ? ($tenant->vat_number ?? '') : '');
 
         $fields = [
             'STD=eCH-0019:2.0',
@@ -43,7 +46,7 @@ final class LohnausweisBarcodeGenerator
             'FROM='.$periodFrom,
             'TO='.$periodTo,
             'UID='.$uid,
-            'EMP_NAME='.self::sanitize((string) ($employee?->full_name ?? '')),
+            'EMP_NAME='.self::sanitize((string) ($employee !== null ? ($employee->full_name ?? '') : '')),
             'AHV='.$ssn,
             'F='.(! empty($boxes['checkbox_f_transport']) ? '1' : '0'),
             'G='.(! empty($boxes['checkbox_g_canteen']) ? '1' : '0'),

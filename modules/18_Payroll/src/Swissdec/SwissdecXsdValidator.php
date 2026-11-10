@@ -162,9 +162,9 @@ final class SwissdecXsdValidator
      */
     private function collectLibXmlErrors(): array
     {
-        return array_values(array_map(
+        return array_map(
             static fn (LibXMLError $error): string => sprintf('Riga %d: %s', $error->line, trim($error->message)),
             libxml_get_errors(),
-        ));
+        );
     }
 }

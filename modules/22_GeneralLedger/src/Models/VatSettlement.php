@@ -8,6 +8,10 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Modules\GeneralLedger\Exceptions\VatSettlementException;
 
+/**
+ * @property array<string, mixed>|null $estv_boxes
+ * @property array<int, array<string, mixed>>|null $rate_breakdown
+ */
 final class VatSettlement extends BaseEnterpriseModel
 {
     public const string STATUS_CALCULATED = 'calculated';

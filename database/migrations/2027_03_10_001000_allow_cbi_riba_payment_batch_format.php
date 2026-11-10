@@ -12,12 +12,20 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE payment_batches DROP CONSTRAINT IF EXISTS payment_batches_format_check');
         DB::statement("ALTER TABLE payment_batches ADD CONSTRAINT payment_batches_format_check CHECK (format IN ('sepa_pain_001_it', 'iso_pain_001_ch', 'cbi_riba'))");
     }
 
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE payment_batches DROP CONSTRAINT IF EXISTS payment_batches_format_check');
         DB::statement("ALTER TABLE payment_batches ADD CONSTRAINT payment_batches_format_check CHECK (format IN ('sepa_pain_001_it', 'iso_pain_001_ch')) NOT VALID");
     }

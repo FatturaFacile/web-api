@@ -196,7 +196,11 @@ final class FiscalYearController extends Controller
             'reason' => ['required', 'string', 'min:3', 'max:500'],
         ]);
 
-        $actorId = (string) ($request->user()?->id ?? abort(401, 'Unauthenticated'));
+        $user = $request->user();
+        if ($user === null) {
+            abort(401, 'Unauthenticated');
+        }
+        $actorId = (string) $user->id;
         $reopened = $this->closingService->reopenFiscalYear($id, $actorId, (string) $validated['reason']);
 
         return response()->json([
@@ -241,7 +245,11 @@ final class FiscalYearController extends Controller
             'resolution_reference' => ['nullable', 'string', 'max:190'],
         ]);
 
-        $actorId = (string) ($request->user()?->id ?? abort(401, 'Unauthenticated'));
+        $user = $request->user();
+        if ($user === null) {
+            abort(401, 'Unauthenticated');
+        }
+        $actorId = (string) $user->id;
         $approved = $this->closingService->approveFiscalYearAtAgm(
             $id,
             $actorId,

@@ -239,9 +239,9 @@ final class VatReturnCalculator
     /**
      * Builds the complete 20-box ESTV Form 050/051 structure.
      *
-     * @param  array<string, string>  $deductionBoxes
+     * @param  array<int|string, string>  $deductionBoxes
      * @param  list<VatRateTotal>  $rates
-     * @return array<string, mixed>
+     * @return array<int|string, mixed>
      */
     private static function buildSwissEstvBoxes(
         string $regime,
@@ -307,11 +307,11 @@ final class VatReturnCalculator
 
         return [
             '200' => Decimal::round2($turnover),
-            '220' => Decimal::round2($deductionBoxes['220'] ?? '0'),
-            '221' => Decimal::round2($deductionBoxes['221'] ?? '0'),
-            '225' => Decimal::round2($deductionBoxes['225'] ?? '0'),
-            '230' => Decimal::round2($deductionBoxes['230'] ?? '0'),
-            '235' => Decimal::round2($deductionBoxes['235'] ?? '0'),
+            '220' => Decimal::round2(array_key_exists(220, $deductionBoxes) ? $deductionBoxes[220] : '0'),
+            '221' => Decimal::round2(array_key_exists(221, $deductionBoxes) ? $deductionBoxes[221] : '0'),
+            '225' => Decimal::round2(array_key_exists(225, $deductionBoxes) ? $deductionBoxes[225] : '0'),
+            '230' => Decimal::round2(array_key_exists(230, $deductionBoxes) ? $deductionBoxes[230] : '0'),
+            '235' => Decimal::round2(array_key_exists(235, $deductionBoxes) ? $deductionBoxes[235] : '0'),
             '289' => $box289,
             '299' => Decimal::round2($taxableTurnover),
             '303' => $box303,

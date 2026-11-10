@@ -59,7 +59,7 @@ final class NightWorkCompensationService
 
         $isRegular = $forceRegularNightWorker
             || $profileFlag
-            || (bool) ($existing?->is_regular_night_worker ?? false)
+            || (bool) ($existing !== null ? $existing->is_regular_night_worker : false)
             || $ytdNightShifts >= SwissWorkingTimeRules::REGULAR_NIGHT_SHIFTS_THRESHOLD;
 
         $accruedRestMinutes = $isRegular
@@ -70,7 +70,7 @@ final class NightWorkCompensationService
             ? 0
             : SwissWorkingTimeRules::roundedDivision($totalNightMinutes * SwissWorkingTimeRules::NIGHT_CASH_SUPPLEMENT_PERCENT, 100);
 
-        $takenRestMinutes = (int) ($existing?->taken_rest_minutes ?? 0);
+        $takenRestMinutes = (int) ($existing !== null ? $existing->taken_rest_minutes : 0);
         $remainingRestMinutes = $accruedRestMinutes - $takenRestMinutes;
         $mode = $isRegular
             ? TimeNightCompensationBalance::ModeTime10Percent

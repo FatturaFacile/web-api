@@ -77,17 +77,20 @@ class SendPaymentReminderEmail implements ShouldQueue
             $tenant = $invoice->tenant ?? ($invoice->tenant_id ? Tenant::find($invoice->tenant_id) : null);
 
             if ($tenant !== null) {
-                $settings = is_array($tenant->settings) ? $tenant->settings : [];
-                $company = $settings['preferences']['company'] ?? [];
+                $rawSettings = $tenant->getAttribute('settings');
+                $settings = is_array($rawSettings) ? $rawSettings : [];
+                $preferences = isset($settings['preferences']) && is_array($settings['preferences']) ? $settings['preferences'] : [];
+                $company = isset($preferences['company']) && is_array($preferences['company']) ? $preferences['company'] : [];
                 if (empty($company['street']) && empty($company['address_line_1'])) {
-                    $settings['preferences']['company'] = array_merge([
+                    $preferences['company'] = array_merge([
                         'street' => 'Bahnhofstrasse',
                         'house_number' => '1',
                         'postal_code' => '8001',
                         'city' => 'Zuerich',
                         'country' => 'CH',
-                    ], is_array($company) ? $company : []);
-                    $tenant->settings = $settings;
+                    ], $company);
+                    $settings['preferences'] = $preferences;
+                    $tenant->setAttribute('settings', $settings);
                     $invoice->setRelation('tenant', $tenant);
                 }
             }

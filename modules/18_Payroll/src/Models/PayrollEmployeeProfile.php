@@ -5,10 +5,20 @@ declare(strict_types=1);
 namespace Modules\Payroll\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Carbon;
 use Modules\HumanResources\Models\Employee;
 
 /**
  * The payroll data of an employee that hr_employees does not hold.
+ *
+ * @property string|null $swiss_permit_type
+ * @property Carbon|null $swiss_permit_valid_until
+ * @property string|null $swiss_permit_number
+ * @property string|null $qst_rate_determining_percent
+ * @property string|null $other_employment_fte_percent
+ * @property bool|null $extrapolate_qst_to_full_time
+ * @property bool|null $frontier_apply_80_percent_basis
+ * @property bool|null $single_parent_concubinage
  */
 final class PayrollEmployeeProfile extends PayrollRecord
 {
