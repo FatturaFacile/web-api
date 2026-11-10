@@ -178,6 +178,11 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(20)->by('ip:'.$request->ip()),
         ]);
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(300)->by($request->user()?->getKey() ?: $request->ip()));
+        // Routes of the stateful `web` group (Sanctum csrf-cookie, docs, root, health) open a session row per request:
+        // csrf-cookie is the one a SPA hits once per login, so 60/min per address is generous; the rest gets 240/min.
+        RateLimiter::for('web-public', fn (Request $request): Limit => $request->routeIs('sanctum.csrf-cookie')
+            ? Limit::perMinute(60)->by('csrf-cookie|'.$request->ip())
+            : Limit::perMinute(240)->by('web|'.$request->ip()));
         RateLimiter::for('registration', fn (Request $request): array => [
             Limit::perMinute((int) config('auth.registration.rate_limits.register_per_minute'))->by('ip:'.$request->ip()),
             Limit::perHour((int) config('auth.registration.rate_limits.register_per_email_per_hour'))->by($emailKey($request)),
