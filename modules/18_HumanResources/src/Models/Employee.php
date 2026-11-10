@@ -37,6 +37,8 @@ final class Employee extends BaseEnterpriseModel implements LockableByWorkflowIn
             'confirmation_date' => 'date',
             'termination_date' => 'date',
             'rehire_date' => 'date',
+            'processing_restricted_at' => 'datetime',
+            'anonymized_at' => 'datetime',
             'base_annual_salary' => 'decimal:2',
             'hourly_cost_rate' => 'decimal:2',
             'fte_ratio' => 'decimal:2',

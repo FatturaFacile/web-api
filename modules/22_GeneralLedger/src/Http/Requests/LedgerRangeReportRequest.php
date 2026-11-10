@@ -32,6 +32,7 @@ final class LedgerRangeReportRequest extends FormRequest
             'cost_center_id' => ['nullable', 'uuid', $this->tenantOwns('cost_centers')],
             'profit_center_id' => ['nullable', 'uuid', $this->tenantOwns('profit_centers')],
             'project_id' => ['nullable', 'uuid', $this->tenantOwns('projects')],
+            'presentation_currency' => ['nullable', 'string', 'size:3'],
         ];
     }
 

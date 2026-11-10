@@ -196,6 +196,12 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 ->where('period_number', 13)
                 ->first() ?? FiscalPeriod::where('fiscal_year_id', $fy->id)->where('period_number', 12)->firstOrFail();
 
+            $priorCloses = FinancialClosingRun::where('tenant_id', $fy->tenant_id)
+                ->where('fiscal_period_id', $closingPeriod->id)
+                ->where('closing_type', 'year_end')
+                ->count();
+            $entrySuffix = $priorCloses > 0 ? '-R'.$priorCloses : '';
+
             [$closingLines, $netIncome] = $this->resultClosingLines($fy);
             $closingJournal = null;
             if (! empty($closingLines)) {
@@ -203,7 +209,7 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                     'tenant_id' => $fy->tenant_id,
                     'company_id' => $fy->company_id,
                     'fiscal_period_id' => $closingPeriod->id,
-                    'entry_number' => 'YE-CLOSE-'.$fy->year_code,
+                    'entry_number' => 'YE-CLOSE-'.$fy->year_code.$entrySuffix,
                     'posting_date' => $fy->end_date,
                     'document_date' => $fy->end_date,
                     'description' => "Year-end financial closing for {$fy->year_code}",
@@ -258,6 +264,143 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
     }
 
     /**
+     * Reopens a closed fiscal year prior to General Assembly (AGM) approval (CO Art. 958c / 698).
+     * Reverses the year-end P&L closing entry and any carry-forward opening balance entry in the next year,
+     * and unlocks the final adjustment/December period for pre-AGM audit adjustments.
+     */
+    public function reopenFiscalYear(string $fiscalYearId, string $actorId, string $reason): FiscalYear
+    {
+        $actorUuid = Str::isUuid($actorId) ? $actorId : (string) Str::uuid7();
+
+        return DB::transaction(function () use ($fiscalYearId, $actorUuid, $reason): FiscalYear {
+            /** @var FiscalYear $fy */
+            $fy = FiscalYear::where('id', $fiscalYearId)->lockForUpdate()->firstOrFail();
+
+            if ($fy->agm_approved_at !== null) {
+                throw new LedgerConflictException("Cannot reopen fiscal year [{$fy->year_code}]: financial statements have already been approved by the General Assembly (CO Art. 958c / 698).");
+            }
+
+            if ($fy->status !== 'closed') {
+                throw new LedgerConflictException("Fiscal year [{$fy->year_code}] is not closed.");
+            }
+
+            $before = $fy->toArray();
+
+            // Unlock the last period (period 13 if present, otherwise period 12) so reversal & audit adjustments can post
+            $closingPeriods = FiscalPeriod::where('fiscal_year_id', $fy->id)
+                ->whereIn('period_number', [12, 13])
+                ->get();
+
+            foreach ($closingPeriods as $cp) {
+                $cp->update(['status' => 'open']);
+                PeriodLock::where('fiscal_period_id', $cp->id)->update(['is_locked' => false]);
+            }
+
+            // Reverse the latest completed year-end closing journal entry if posted
+            $closingRun = FinancialClosingRun::where('tenant_id', $fy->tenant_id)
+                ->whereIn('fiscal_period_id', $closingPeriods->pluck('id'))
+                ->where('closing_type', 'year_end')
+                ->where('status', 'completed')
+                ->latest('executed_at')
+                ->first();
+
+            if ($closingRun !== null) {
+                if ($closingRun->closing_journal_id !== null) {
+                    $closingJournal = JournalEntry::find($closingRun->closing_journal_id);
+                    if ($closingJournal !== null && $closingJournal->status === 'posted') {
+                        $this->postingService->reverseJournal(
+                            (string) $closingJournal->id,
+                            CarbonImmutable::parse($fy->end_date)->toDateString(),
+                            "Fiscal year {$fy->year_code} reopened: {$reason}",
+                            $actorUuid,
+                            true
+                        );
+                    }
+                }
+                $closingRun->update(['status' => 'reversed']);
+            }
+
+            // Reverse the carry-forward opening balance entry in the next year if posted
+            $openingEntries = JournalEntry::where('tenant_id', $fy->tenant_id)
+                ->where('source_document_type', self::OpeningBalanceSource)
+                ->where('source_document_id', $fy->id)
+                ->where('status', 'posted')
+                ->where('journal_type', '!=', 'reversing')
+                ->get();
+
+            foreach ($openingEntries as $openingEntry) {
+                PeriodLock::where('fiscal_period_id', $openingEntry->fiscal_period_id)->update(['is_locked' => false]);
+                $this->postingService->reverseJournal(
+                    (string) $openingEntry->id,
+                    CarbonImmutable::parse($openingEntry->posting_date)->toDateString(),
+                    "Prior fiscal year {$fy->year_code} reopened: {$reason}",
+                    $actorUuid,
+                    true
+                );
+            }
+
+            $fy->update([
+                'status' => 'open',
+                'is_locked' => false,
+                'reopened_at' => now(),
+                'reopened_by' => $actorUuid,
+                'reopen_reason' => $reason,
+            ]);
+
+            $this->auditLedger->record(
+                action: 'year_reopened',
+                model: $fy,
+                payloadBefore: $before,
+                payloadAfter: $fy->fresh()?->toArray() ?? $fy->toArray(),
+                moduleCode: 'MODULE_22_GENERAL_LEDGER'
+            );
+
+            return $fy->fresh(['periods']) ?? $fy;
+        });
+    }
+
+    /**
+     * Records General Assembly (AGM) approval of the annual financial statements (CO Art. 958c / 698),
+     * permanently locking the fiscal year against reopening.
+     */
+    public function approveFiscalYearAtAgm(string $fiscalYearId, string $actorId, ?string $resolutionReference = null): FiscalYear
+    {
+        $actorUuid = Str::isUuid($actorId) ? $actorId : (string) Str::uuid7();
+
+        return DB::transaction(function () use ($fiscalYearId, $actorUuid, $resolutionReference): FiscalYear {
+            /** @var FiscalYear $fy */
+            $fy = FiscalYear::where('id', $fiscalYearId)->lockForUpdate()->firstOrFail();
+
+            if ($fy->status !== 'closed') {
+                throw new LedgerConflictException("Fiscal year [{$fy->year_code}] must be closed before General Assembly (AGM) approval.");
+            }
+
+            if ($fy->agm_approved_at !== null) {
+                return $fy;
+            }
+
+            $before = $fy->toArray();
+
+            $fy->update([
+                'is_locked' => true,
+                'agm_approved_at' => now(),
+                'agm_approved_by' => $actorUuid,
+                'agm_resolution_reference' => $resolutionReference,
+            ]);
+
+            $this->auditLedger->record(
+                action: 'year_agm_approved',
+                model: $fy,
+                payloadBefore: $before,
+                payloadAfter: $fy->fresh()?->toArray() ?? $fy->toArray(),
+                moduleCode: 'MODULE_22_GENERAL_LEDGER'
+            );
+
+            return $fy->fresh(['periods']) ?? $fy;
+        });
+    }
+
+    /**
      * The next year is the one starting the day after. A calendar year opens it if needed; any other year must have it
      * in place first, and then null comes back. Lines carry no partner, so no open item is created twice, and the bank
      * balance stays as it is because the money did not move.
@@ -277,6 +420,8 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
             $existing = JournalEntry::where('tenant_id', $fy->tenant_id)
                 ->where('source_document_type', self::OpeningBalanceSource)
                 ->where('source_document_id', $fy->id)
+                ->where('status', 'posted')
+                ->where('journal_type', '!=', 'reversing')
                 ->first();
 
             if ($existing !== null) {
@@ -295,13 +440,19 @@ final class PeriodClosingService implements PeriodClosingServiceInterface
                 return null;
             }
 
+            $priorOpenings = JournalEntry::where('tenant_id', $fy->tenant_id)
+                ->where('source_document_type', self::OpeningBalanceSource)
+                ->where('source_document_id', $fy->id)
+                ->count();
+            $entrySuffix = $priorOpenings > 0 ? '-R'.$priorOpenings : '';
+
             $firstPeriod = FiscalPeriod::where('fiscal_year_id', $nextYear->id)->orderBy('start_date')->orderBy('period_number')->firstOrFail();
 
             return $this->postingService->createAndPost([
                 'tenant_id' => $fy->tenant_id,
                 'company_id' => $fy->company_id,
                 'fiscal_period_id' => $firstPeriod->id,
-                'entry_number' => 'OPEN-'.$nextYear->year_code,
+                'entry_number' => 'OPEN-'.$nextYear->year_code.$entrySuffix,
                 'journal_type' => 'opening',
                 'posting_date' => CarbonImmutable::parse($nextYear->start_date)->toDateString(),
                 'document_date' => CarbonImmutable::parse($nextYear->start_date)->toDateString(),

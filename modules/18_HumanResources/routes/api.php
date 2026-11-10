@@ -121,6 +121,8 @@ Route::prefix('api/v1/hr')
             Route::get('/time-closings', [WorkingTimeRulesController::class, 'closings'])->name('api.v1.hr.time-closings.index');
             Route::post('/time-closings', [WorkingTimeRulesController::class, 'close'])->name('api.v1.hr.time-closings.store');
             Route::post('/time-closings/{id}/reopen', [WorkingTimeRulesController::class, 'reopen'])->name('api.v1.hr.time-closings.reopen');
+            Route::post('/time-closings/{year}/{month}/transfer-to-payroll', [WorkingTimeRulesController::class, 'transferToPayroll'])->whereNumber(['year', 'month'])->name('api.v1.hr.time-closings.transfer-to-payroll');
+            Route::get('/time/night-work-balances', [WorkingTimeRulesController::class, 'nightWorkBalances'])->name('api.v1.hr.time.night-work-balances');
         });
 
         // Talent, Performance & Training Routes

@@ -17,6 +17,7 @@ use Modules\GeneralLedger\Http\Resources\VatSettlementResource;
 use Modules\GeneralLedger\Models\VatSettlement;
 use Modules\GeneralLedger\Services\Tax\VatAccountResolver;
 use Modules\GeneralLedger\Services\Tax\VatPeriod;
+use Modules\GeneralLedger\Services\VatAnnualReconciliationService;
 use Modules\GeneralLedger\Services\VatFilingExportService;
 use OpenApi\Attributes as OA;
 
@@ -25,6 +26,7 @@ final class TaxSettlementController extends Controller
     public function __construct(
         private readonly VatSettlementServiceInterface $settlementService,
         private readonly VatFilingExportService $exportService,
+        private readonly VatAnnualReconciliationService $annualReconciliationService,
         private readonly VatAccountResolver $accountResolver,
         private readonly TenantContext $tenantContext
     ) {}
@@ -313,6 +315,64 @@ final class TaxSettlementController extends Controller
         $file = $this->exportService->swissStatementCsv($settlement);
 
         return $this->download($file['content'], $file['file_name'], 'text/csv; charset=UTF-8');
+    }
+
+    /**
+     * Downloads the Swiss eCH-0217 XML declaration of a VAT settlement.
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/tax-settlements/{id}/swiss-xml',
+        operationId: 'exportGeneralLedgerTaxSettlementSwissXml',
+        description: 'Downloads the official Swiss eCH-0217 v2.0 XML VAT declaration for ESTV ePortal upload.',
+        summary: 'Export Swiss eCH-0217 VAT XML',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Tax Settlements'],
+        parameters: [
+            new OA\Parameter(name: 'id', in: 'path', required: true, description: 'Identifier of the tax settlement', schema: new OA\Schema(type: 'string', format: 'uuid')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'eCH-0217 XML file', content: new OA\MediaType(mediaType: 'application/xml')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Not a Swiss settlement', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function swissXml(Request $request, string $id): Response
+    {
+        $settlement = $this->settlementOf($request, $id);
+        $this->authorize('export', $settlement);
+
+        $file = $this->exportService->swissEstvXml($settlement);
+
+        return $this->download($file['content'], $file['file_name'], 'application/xml');
+    }
+
+    /**
+     * Returns the Swiss VAT Annual Reconciliation (Umsatzabstimmung & Vorsteuerabstimmung, Art. 72 LIVA).
+     */
+    #[OA\Get(
+        path: '/api/v1/general-ledger/vat-annual-reconciliation',
+        operationId: 'getGeneralLedgerVatAnnualReconciliation',
+        description: 'Computes the Swiss VAT annual reconciliation (Umsatzabstimmung & Vorsteuerabstimmung under Art. 72 LIVA) comparing declared periodic VAT returns against the statutory General Ledger.',
+        summary: 'Get Swiss VAT annual reconciliation',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Tax Settlements'],
+        parameters: [
+            new OA\Parameter(name: 'year', in: 'query', required: false, description: 'Calendar year', schema: new OA\Schema(type: 'integer')),
+        ],
+        responses: [
+            new OA\Response(response: 200, description: 'Annual VAT reconciliation report', content: new OA\JsonContent(type: 'object')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function annualReconciliation(Request $request): JsonResponse
+    {
+        $this->authorize('viewAny', VatSettlement::class);
+
+        $year = (int) ($request->query('year') ?: now()->year);
+
+        return response()->json([
+            'data' => $this->annualReconciliationService->reconcileYear($this->tenantId($request), $year),
+        ]);
     }
 
     private function requestedPeriod(CalculateTaxSettlementRequest $request, string $tenantId): VatPeriod

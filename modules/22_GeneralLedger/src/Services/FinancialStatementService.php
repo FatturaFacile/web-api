@@ -114,17 +114,28 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
      *
      * @return array<string, mixed>
      */
-    public function generateBalanceSheet(string $tenantId, string $fiscalPeriodId): array
+    public function generateBalanceSheet(string $tenantId, string $fiscalPeriodId, ?string $presentationCurrency = null): array
     {
         $period = FiscalPeriod::findOrFail($fiscalPeriodId);
-        $sheet = $this->reports->balanceSheet($tenantId, CarbonImmutable::parse($period->end_date));
+        $sheet = $this->reports->balanceSheet(
+            $tenantId,
+            CarbonImmutable::parse($period->end_date),
+            null,
+            $presentationCurrency,
+            CarbonImmutable::parse($period->start_date)
+        );
         $rows = static fn (string $section): array => array_map(static fn (array $row): array => [
             'account_id' => $row['account_id'],
             'account_code' => $row['account_code'],
             'account_name' => $row['account_name'],
             'net_balance' => $row['amount'],
+            'functional_net_balance' => $row['functional_amount'] ?? $row['amount'],
+            'presentation_net_balance' => $row['presentation_amount'] ?? $row['amount'],
+            'exchange_rate' => $row['exchange_rate'] ?? '1.000000',
         ], $sheet['sections'][$section]['accounts']);
         $totals = $sheet['totals'];
+        $functionalTotals = $sheet['functional_totals'] ?? $totals;
+        $presentationTotals = $sheet['presentation_totals'] ?? $totals;
 
         $this->dispatcher->publishAndDispatch(new FinancialStatementGeneratedEvent(
             statementType: 'balance_sheet',
@@ -138,16 +149,36 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
             'period_id' => (string) $period->id,
             'period_name' => (string) $period->period_name,
             'currency' => $sheet['currency'],
+            'functional_currency' => $sheet['functional_currency'] ?? $sheet['currency'],
+            'presentation_currency' => $sheet['presentation_currency'] ?? $sheet['currency'],
+            'closing_exchange_rate' => $sheet['closing_exchange_rate'] ?? '1.000000',
+            'average_exchange_rate' => $sheet['average_exchange_rate'] ?? '1.000000',
+            'historical_exchange_rate' => $sheet['historical_exchange_rate'] ?? '1.000000',
+            'currency_translation_adjustment' => $sheet['currency_translation_adjustment'] ?? '0.0000',
             'as_of' => $sheet['as_of'],
             'assets' => $rows('asset'),
             'total_assets' => $totals['total_assets'],
+            'functional_total_assets' => $functionalTotals['total_assets'],
+            'presentation_total_assets' => $presentationTotals['total_assets'],
             'liabilities' => $rows('liability'),
             'total_liabilities' => $totals['total_liabilities'],
+            'functional_total_liabilities' => $functionalTotals['total_liabilities'],
+            'presentation_total_liabilities' => $presentationTotals['total_liabilities'],
             'equity' => $rows('equity'),
             'total_equity_base' => $totals['total_equity'],
+            'functional_total_equity_base' => $functionalTotals['total_equity'],
+            'presentation_total_equity_base' => $presentationTotals['total_equity'],
             'current_period_net_income' => $totals['result_not_yet_closed'],
+            'functional_current_period_net_income' => $functionalTotals['result_not_yet_closed'],
+            'presentation_current_period_net_income' => $presentationTotals['result_not_yet_closed'],
             'total_equity' => $totals['total_equity_with_result'],
+            'functional_total_equity' => $functionalTotals['total_equity_with_result'],
+            'presentation_total_equity' => $presentationTotals['total_equity_with_result'],
             'total_liabilities_and_equity' => $totals['total_liabilities_and_equity'],
+            'functional_total_liabilities_and_equity' => $functionalTotals['total_liabilities_and_equity'],
+            'presentation_total_liabilities_and_equity' => $presentationTotals['total_liabilities_and_equity'],
+            'functional_totals' => $functionalTotals,
+            'presentation_totals' => $presentationTotals,
             'is_balanced' => $sheet['is_balanced'],
         ];
     }
@@ -158,17 +189,30 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
      *
      * @return array<string, mixed>
      */
-    public function generateIncomeStatement(string $tenantId, string $fiscalPeriodId): array
+    public function generateIncomeStatement(string $tenantId, string $fiscalPeriodId, ?string $presentationCurrency = null): array
     {
         $period = FiscalPeriod::findOrFail($fiscalPeriodId);
-        $statement = $this->reports->incomeStatement($tenantId, CarbonImmutable::parse($period->start_date), CarbonImmutable::parse($period->end_date));
+        $statement = $this->reports->incomeStatement(
+            $tenantId,
+            CarbonImmutable::parse($period->start_date),
+            CarbonImmutable::parse($period->end_date),
+            null,
+            null,
+            [],
+            $presentationCurrency
+        );
         $rows = static fn (string $section): array => array_map(static fn (array $row): array => [
             'account_id' => $row['account_id'],
             'account_code' => $row['account_code'],
             'account_name' => $row['account_name'],
             'net_balance' => $row['amount'],
+            'functional_net_balance' => $row['functional_amount'] ?? $row['amount'],
+            'presentation_net_balance' => $row['presentation_amount'] ?? $row['amount'],
+            'exchange_rate' => $row['exchange_rate'] ?? '1.000000',
         ], $statement['sections'][$section]['accounts']);
         $totals = $statement['totals'];
+        $functionalTotals = $statement['functional_totals'] ?? $totals;
+        $presentationTotals = $statement['presentation_totals'] ?? $totals;
 
         $this->dispatcher->publishAndDispatch(new FinancialStatementGeneratedEvent(
             statementType: 'income_statement',
@@ -182,14 +226,31 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
             'period_id' => (string) $period->id,
             'period_name' => (string) $period->period_name,
             'currency' => $statement['currency'],
+            'functional_currency' => $statement['functional_currency'] ?? $statement['currency'],
+            'presentation_currency' => $statement['presentation_currency'] ?? $statement['currency'],
+            'closing_exchange_rate' => $statement['closing_exchange_rate'] ?? '1.000000',
+            'average_exchange_rate' => $statement['average_exchange_rate'] ?? '1.000000',
+            'currency_translation_adjustment' => $statement['currency_translation_adjustment'] ?? '0.0000',
             'revenues' => $rows('revenue'),
             'total_revenue' => $totals['total_revenue'],
+            'functional_total_revenue' => $functionalTotals['total_revenue'],
+            'presentation_total_revenue' => $presentationTotals['total_revenue'],
             'cogs' => $rows('cogs'),
             'total_cogs' => $totals['total_cogs'],
+            'functional_total_cogs' => $functionalTotals['total_cogs'],
+            'presentation_total_cogs' => $presentationTotals['total_cogs'],
             'gross_profit' => $totals['gross_profit'],
+            'functional_gross_profit' => $functionalTotals['gross_profit'],
+            'presentation_gross_profit' => $presentationTotals['gross_profit'],
             'operating_expenses' => $rows('expense'),
             'total_operating_expenses' => $totals['total_expenses'],
+            'functional_total_operating_expenses' => $functionalTotals['total_expenses'],
+            'presentation_total_operating_expenses' => $presentationTotals['total_expenses'],
             'net_income' => $totals['net_income'],
+            'functional_net_income' => $functionalTotals['net_income'],
+            'presentation_net_income' => $presentationTotals['net_income'],
+            'functional_totals' => $functionalTotals,
+            'presentation_totals' => $presentationTotals,
         ];
     }
 

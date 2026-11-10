@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\ItalianSdi;
 
+use App\Support\Security\SafeXmlLoader;
 use InvalidArgumentException;
 use SimpleXMLElement;
 
@@ -112,21 +113,20 @@ class FatturaPaParser
 
     private function load(string $xml): SimpleXMLElement
     {
+        SafeXmlLoader::assertSafeXml($xml);
+
         // Namespaces, element prefixes and prefixed attributes are stripped so plain XPath works for every provider flavour.
         $clean = (string) preg_replace('/\sxmlns(:\w+)?="[^"]*"/', '', $xml);
         $clean = (string) preg_replace('/(<\/?)\w+:/', '$1', $clean);
         $clean = (string) preg_replace('/\s\w+:\w+="[^"]*"/', '', $clean);
 
-        $previous = libxml_use_internal_errors(true);
-
         try {
-            $document = simplexml_load_string($clean);
-        } finally {
-            libxml_clear_errors();
-            libxml_use_internal_errors($previous);
+            $document = SafeXmlLoader::loadSimpleXml($clean);
+        } catch (InvalidArgumentException) {
+            throw new InvalidArgumentException(__('purchases.invalid_fatturapa'));
         }
 
-        if ($document === false || $document->getName() !== 'FatturaElettronica') {
+        if ($document->getName() !== 'FatturaElettronica') {
             throw new InvalidArgumentException(__('purchases.invalid_fatturapa'));
         }
 

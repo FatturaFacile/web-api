@@ -24,6 +24,13 @@ final class UpdateVatTaxSettingRequest extends FormRequest
     {
         return [
             'periodicity' => ['nullable', Rule::in([VatPeriod::MONTHLY, VatPeriod::QUARTERLY, VatPeriod::SEMIANNUAL])],
+            'regime' => ['nullable', Rule::in(['effective', 'net_tax_rate', 'flat_tax_rate'])],
+            'sss_rate_1' => ['nullable', 'numeric', 'min:0', 'max:20'],
+            'sss_rate_2' => ['nullable', 'numeric', 'min:0', 'max:20'],
+            'flat_tax_rates' => ['nullable', 'array'],
+            'flat_tax_rates.*' => ['numeric', 'min:0', 'max:20'],
+            'flat_rate_adjustment_account_id' => ['nullable', 'uuid', $this->tenantAccount()],
+            'acquisition_tax_account_id' => ['nullable', 'uuid', $this->tenantAccount()],
             'output_vat_account_ids' => ['nullable', 'array'],
             'output_vat_account_ids.*' => ['uuid', $this->tenantAccount()],
             'input_vat_account_ids' => ['nullable', 'array'],

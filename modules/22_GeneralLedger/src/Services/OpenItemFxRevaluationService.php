@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Services;
 
 use App\Models\ExchangeRate;
+use App\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,6 +15,7 @@ use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\CustomerLedger;
 use Modules\GeneralLedger\Models\FxRevaluation;
 use Modules\GeneralLedger\Models\JournalLine;
+use Modules\GeneralLedger\Models\LedgerSetting;
 use Modules\GeneralLedger\Models\SupplierLedger;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
@@ -137,7 +139,31 @@ final readonly class OpenItemFxRevaluationService
 
         $increasesBalance = bccomp($difference, '0', 2) === 1;
         $isGain = $group['side'] === 'receivable' ? $increasesBalance : ! $increasesBalance;
-        $counter = $this->postingAccounts->require($tenantId, $isGain ? PostingAccountRole::FxUnrealisedGain : PostingAccountRole::FxUnrealisedLoss);
+        $treatment = $isGain ? $this->resolveUnrealisedGainTreatment($tenantId) : 'recognise';
+
+        if ($isGain && $treatment !== 'recognise') {
+            $provisionAccount = $treatment === 'provision'
+                ? $this->postingAccounts->account($tenantId, PostingAccountRole::FxUnrealisedGainProvision)
+                : null;
+
+            if ($provisionAccount === null) {
+                $revaluation->update([
+                    'imparity_deferred' => true,
+                    'treatment_applied' => 'suppress',
+                ]);
+
+                return $revaluation->refresh();
+            }
+
+            $counter = $provisionAccount;
+            $imparityDeferred = true;
+            $treatmentApplied = 'provision';
+        } else {
+            $counter = $this->postingAccounts->require($tenantId, $isGain ? PostingAccountRole::FxUnrealisedGain : PostingAccountRole::FxUnrealisedLoss);
+            $imparityDeferred = false;
+            $treatmentApplied = 'recognise';
+        }
+
         $amount = ltrim($difference, '-');
         $label = "FX revaluation of open {$group['side']}s in {$group['currency']} at {$date->toDateString()} (rate {$rate})";
         $controlIsDebit = $group['side'] === 'receivable' ? $increasesBalance : ! $increasesBalance;
@@ -160,9 +186,37 @@ final readonly class OpenItemFxRevaluationService
                 : [$other + ['debit_amount' => $amount, 'credit_amount' => '0'], $control + ['debit_amount' => '0', 'credit_amount' => $amount]],
         ], $actorId);
 
-        $revaluation->update(['journal_entry_id' => $entry->id, 'reversal_date' => $date->addDay()->toDateString()]);
+        $revaluation->update([
+            'journal_entry_id' => $entry->id,
+            'reversal_date' => $date->addDay()->toDateString(),
+            'imparity_deferred' => $imparityDeferred,
+            'treatment_applied' => $treatmentApplied,
+        ]);
 
         return $revaluation->refresh();
+    }
+
+    /**
+     * Resolves CO Art. 960a imparity treatment for unrealised FX gains ('provision', 'suppress', or 'recognise').
+     */
+    private function resolveUnrealisedGainTreatment(string $tenantId): string
+    {
+        $setting = LedgerSetting::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereNull('deleted_at')
+            ->first();
+
+        if ($setting !== null && $setting->enforce_swiss_imparity_principle === false) {
+            return 'recognise';
+        }
+
+        if ($setting !== null && in_array($setting->unrealised_gain_treatment, ['provision', 'suppress', 'recognise'], true)) {
+            return (string) $setting->unrealised_gain_treatment;
+        }
+
+        $country = strtoupper((string) (Tenant::find($tenantId)?->getAttribute('country') ?? 'IT'));
+
+        return $country === 'CH' ? 'provision' : 'recognise';
     }
 
     /**

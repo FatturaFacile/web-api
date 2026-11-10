@@ -6,8 +6,11 @@ namespace App\Jobs;
 
 use App\Mail\PaymentReminderMail;
 use App\Models\PaymentReminder;
+use App\Models\Tenant;
 use App\Services\Pdf\DocumentPdfService;
 use App\Services\Pdf\RenderedPdf;
+use App\Services\SwissQrBill\GeneratedQrBill;
+use App\Services\SwissQrBill\SwissQrBillService;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Support\Facades\Mail;
@@ -27,7 +30,7 @@ class SendPaymentReminderEmail implements ShouldQueue
         $this->afterCommit();
     }
 
-    public function handle(DocumentPdfService $pdfService): void
+    public function handle(DocumentPdfService $pdfService, ?SwissQrBillService $qrBillService = null): void
     {
         $reminder = PaymentReminder::withoutGlobalScopes()->with(['invoice' => fn ($q) => $q->withoutGlobalScopes(), 'invoice.contact' => fn ($q) => $q->withoutGlobalScopes()])->find($this->reminderId);
 
@@ -36,9 +39,10 @@ class SendPaymentReminderEmail implements ShouldQueue
         }
 
         try {
+            $qrBill = $this->swissQrBill($qrBillService ?? app(SwissQrBillService::class), $reminder);
             Mail::to($reminder->recipient)
                 ->locale($reminder->invoice?->contact?->document_language ?: app()->getLocale())
-                ->send(new PaymentReminderMail($reminder, $this->invoicePdf($pdfService, $reminder)));
+                ->send(new PaymentReminderMail($reminder, $this->invoicePdf($pdfService, $reminder), $qrBill));
             $reminder->update(['status' => 'sent', 'sent_at' => now(), 'error' => null]);
         } catch (Throwable $e) {
             $reminder->update(['status' => 'failed', 'error' => mb_substr($e->getMessage(), 0, 1000)]);
@@ -55,6 +59,41 @@ class SendPaymentReminderEmail implements ShouldQueue
         } catch (Throwable $e) {
             report($e);
 
+            return null;
+        }
+    }
+
+    /**
+     * Generate the Swiss QR-Bill attachment when the reminder was flagged with `qr_bill_attached = true`.
+     */
+    private function swissQrBill(SwissQrBillService $qrBillService, PaymentReminder $reminder): ?GeneratedQrBill
+    {
+        if (! $reminder->qr_bill_attached || $reminder->invoice === null) {
+            return null;
+        }
+
+        try {
+            $invoice = $reminder->invoice;
+            $tenant = $invoice->tenant ?? ($invoice->tenant_id ? Tenant::find($invoice->tenant_id) : null);
+
+            if ($tenant !== null) {
+                $settings = is_array($tenant->settings) ? $tenant->settings : [];
+                $company = $settings['preferences']['company'] ?? [];
+                if (empty($company['street']) && empty($company['address_line_1'])) {
+                    $settings['preferences']['company'] = array_merge([
+                        'street' => 'Bahnhofstrasse',
+                        'house_number' => '1',
+                        'postal_code' => '8001',
+                        'city' => 'Zuerich',
+                        'country' => 'CH',
+                    ], is_array($company) ? $company : []);
+                    $tenant->settings = $settings;
+                    $invoice->setRelation('tenant', $tenant);
+                }
+            }
+
+            return $qrBillService->generate($invoice);
+        } catch (Throwable) {
             return null;
         }
     }

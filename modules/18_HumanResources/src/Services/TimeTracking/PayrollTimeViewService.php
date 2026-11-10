@@ -26,10 +26,17 @@ use Modules\Payroll\Calculation\Dec;
  */
 final class PayrollTimeViewService
 {
-    public function __construct(private readonly WorkingTimeCalculator $calculator) {}
+    private readonly NightWorkCompensationService $nightCompensation;
+
+    public function __construct(
+        private readonly WorkingTimeCalculator $calculator,
+        ?NightWorkCompensationService $nightCompensation = null,
+    ) {
+        $this->nightCompensation = $nightCompensation ?? new NightWorkCompensationService($this->calculator);
+    }
 
     /**
-     * @return array{employee_id: string, from: string, to: string, days: list<array<string, mixed>>, totals: array<string, mixed>}
+     * @return array{employee_id: string, from: string, to: string, days: list<array<string, mixed>>, totals: array<string, mixed>, night_work_compensation: array<string, mixed>}
      */
     public function view(User $employee, string $from, string $to): array
     {
@@ -46,6 +53,9 @@ final class PayrollTimeViewService
             $days[] = $this->day($day, $rule, $today, $shifts->get($date), isset($holidays[$date]));
         }
 
+        $periodNightMinutes = (int) array_sum(array_column($days, 'night_minutes'));
+        $nightComp = $this->nightCompensation->evaluatePeriodForPayroll($employee, $from, $to, $periodNightMinutes);
+
         return [
             'employee_id' => (string) $employee->id,
             'from' => $from,
@@ -54,11 +64,18 @@ final class PayrollTimeViewService
             'totals' => [
                 'recorded_minutes' => array_sum(array_column($days, 'recorded_minutes')),
                 'payroll_minutes' => array_sum(array_column($days, 'payroll_minutes')),
+                'night_minutes' => $periodNightMinutes,
                 'night_allowance_minutes' => array_sum(array_column($days, 'night_allowance_minutes')),
                 'sunday_allowance_minutes' => array_sum(array_column($days, 'sunday_allowance_minutes')),
                 'holiday_allowance_minutes' => array_sum(array_column($days, 'holiday_allowance_minutes')),
                 'daily_allowance_amount' => Dec::round(Dec::sum(array_column($days, 'daily_allowance_amount'))),
+                'ytd_night_shifts' => $nightComp['ytd_night_shifts'],
+                'is_regular_night_worker' => $nightComp['is_regular_night_worker'],
+                'night_compensation_mode' => $nightComp['compensation_mode'],
+                'night_time_compensation_minutes' => $nightComp['time_compensation_minutes'],
+                'night_cash_supplement_minutes' => $nightComp['cash_supplement_minutes'],
             ],
+            'night_work_compensation' => $nightComp,
         ];
     }
 

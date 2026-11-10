@@ -18,6 +18,9 @@ final class PayrollYearExportRequest extends FormRequest
      */
     public function rules(): array
     {
-        return ['year' => PayrollRules::period()['year']];
+        return [
+            'year' => PayrollRules::period()['year'],
+            'version' => ['sometimes', 'string', 'in:5.0,6.0'],
+        ];
     }
 }

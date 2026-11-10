@@ -39,5 +39,11 @@ final readonly class EmployeeData
         public ?string $pensionFundEmployeeRatePercent = null,
         public string $regionalSurchargeRatePercent = '0',
         public string $municipalSurchargeRatePercent = '0',
+        public bool $waiveRetireeAllowance = false,
+        public bool $extrapolateQstToFullTime = false,
+        public string $otherEmploymentFtePercent = '0',
+        public ?string $qstRateDeterminingPercent = null,
+        public ?string $frontierRegime = null,
+        public bool $frontierApply80PercentBasis = false,
     ) {}
 }

@@ -23,6 +23,7 @@ final readonly class SwissPayrollParameters
         public string $alvMaxAnnualSalary = '148200',
         public string $ahvRetireeMonthlyAllowance = '1400',
         public int $referenceAge = 65,
+        public string $lafamMinimumMonthlyIncome = '630',
     ) {}
 
     /**
@@ -44,6 +45,7 @@ final readonly class SwissPayrollParameters
             alvMaxAnnualSalary: (string) ($values['alv_max_annual_salary'] ?? $defaults->alvMaxAnnualSalary),
             ahvRetireeMonthlyAllowance: (string) ($values['ahv_retiree_monthly_allowance'] ?? $defaults->ahvRetireeMonthlyAllowance),
             referenceAge: (int) ($values['reference_age'] ?? $defaults->referenceAge),
+            lafamMinimumMonthlyIncome: (string) ($values['lafam_minimum_monthly_income'] ?? $defaults->lafamMinimumMonthlyIncome),
         );
     }
 
@@ -65,6 +67,7 @@ final readonly class SwissPayrollParameters
             'alv_max_annual_salary' => $this->alvMaxAnnualSalary,
             'ahv_retiree_monthly_allowance' => $this->ahvRetireeMonthlyAllowance,
             'reference_age' => $this->referenceAge,
+            'lafam_minimum_monthly_income' => $this->lafamMinimumMonthlyIncome,
         ];
     }
 }

@@ -37,6 +37,11 @@ Route::prefix('api/v1/payroll')
         Route::put('/frontier-workers/{employeeId}/nights', [PayrollComplianceController::class, 'saveFrontierNights'])->name('frontier-workers.nights');
         Route::get('/exports/frontier-exchange', [PayrollComplianceController::class, 'exportFrontierExchange'])->name('exports.frontier-exchange');
 
+        // Swiss work permit compliance & Swissdec ELM 5.0 / 6.0 XML export and XSD validation
+        Route::get('/compliance/permit-alerts', [PayrollComplianceController::class, 'permitAlerts'])->name('compliance.permit-alerts');
+        Route::get('/compliance/salary-declaration/xml', [PayrollComplianceController::class, 'salaryDeclarationXml'])->name('compliance.salary-declaration.xml');
+        Route::post('/compliance/salary-declaration/validate', [PayrollComplianceController::class, 'validateSalaryDeclaration'])->name('compliance.salary-declaration.validate');
+
         // Short-time work and bad weather
         Route::get('/short-time/cases', [ShortTimeController::class, 'cases'])->name('short-time.cases.index');
         Route::post('/short-time/cases', [ShortTimeController::class, 'storeCase'])->name('short-time.cases.store');

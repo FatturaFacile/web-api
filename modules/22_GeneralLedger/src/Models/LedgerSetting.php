@@ -18,6 +18,7 @@ final class LedgerSetting extends BaseEnterpriseModel
         return [
             'manual_journal_approval_required' => 'boolean',
             'manual_journal_approval_threshold' => 'decimal:4',
+            'enforce_swiss_imparity_principle' => 'boolean',
         ];
     }
 }

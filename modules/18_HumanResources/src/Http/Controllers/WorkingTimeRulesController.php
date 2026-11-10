@@ -16,9 +16,12 @@ use Modules\HumanResources\Http\Requests\ReasonRequest;
 use Modules\HumanResources\Http\Requests\SaveOvertimeRuleRequest;
 use Modules\HumanResources\Models\OvertimeRule;
 use Modules\HumanResources\Models\TimeClockEvent;
+use Modules\HumanResources\Models\TimeNightCompensationBalance;
 use Modules\HumanResources\Models\TimePeriodClosing;
+use Modules\HumanResources\Services\TimeTracking\NightWorkCompensationService;
 use Modules\HumanResources\Services\TimeTracking\OvertimeCalculator;
 use Modules\HumanResources\Services\TimeTracking\TimePeriodClosingService;
+use Modules\HumanResources\Services\TimeTracking\TimeToPayrollTransferService;
 use OpenApi\Attributes as OA;
 
 /**
@@ -30,6 +33,8 @@ final class WorkingTimeRulesController extends Controller
         private readonly OvertimeCalculator $overtime,
         private readonly TimePeriodClosingService $closings,
         private readonly TenantContext $tenantContext,
+        private readonly TimeToPayrollTransferService $payrollTransfer,
+        private readonly NightWorkCompensationService $nightCompensation,
     ) {}
 
     /**
@@ -213,7 +218,50 @@ final class WorkingTimeRulesController extends Controller
         /** @var User $actor */
         $actor = $request->user();
 
-        return response()->json(['data' => $this->closings->close($actor, (int) $request->validated('year'), (int) $request->validated('month'))], 201);
+        return response()->json([
+            'data' => $this->closings->close(
+                $actor,
+                (int) $request->validated('year'),
+                (int) $request->validated('month'),
+                (bool) $request->validated('transfer_to_payroll', false),
+            ),
+        ], 201);
+    }
+
+    /**
+     * Transfer a closed (or approved) attendance period to payroll variable inputs.
+     */
+    public function transferToPayroll(Request $request, int $year, int $month): JsonResponse
+    {
+        /** @var User $actor */
+        $actor = $request->user();
+
+        return response()->json([
+            'data' => $this->payrollTransfer->transfer($year, $month, $actor),
+        ]);
+    }
+
+    /**
+     * List or evaluate ArG Art. 17b night work compensation balances for a calendar year.
+     */
+    public function nightWorkBalances(Request $request): JsonResponse
+    {
+        $year = $request->integer('year') ?: (int) now()->year;
+        $userId = $request->string('user_id')->toString();
+
+        if ($userId !== '') {
+            $user = User::query()->find($userId);
+            abort_unless($user !== null && $user->belongsToTenant((string) $this->tenantContext->getTenantId()), 404);
+            $this->nightCompensation->evaluateYearToDate($user, $year);
+        }
+
+        return response()->json([
+            'data' => TimeNightCompensationBalance::query()
+                ->where('year', $year)
+                ->when($userId !== '', static fn ($q) => $q->where('user_id', $userId))
+                ->orderByDesc('ytd_night_shifts')
+                ->get(),
+        ]);
     }
 
     /**

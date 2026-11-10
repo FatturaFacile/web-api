@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Services;
 
+use App\Models\ExchangeRate;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\FiscalYear;
+use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
+use RoundingMode;
 
 /**
  * Reports read from the posted entries of the statutory ledger only: trial balance, account ledger (mastrino) with
@@ -169,17 +174,37 @@ final class LedgerReportService
      *
      * @return array<string, mixed>
      */
-    public function balanceSheet(string $tenantId, CarbonImmutable $asOf, ?CarbonImmutable $compareAsOf = null): array
-    {
-        $current = $this->balanceSheetAt($tenantId, $asOf);
-        $comparison = $compareAsOf !== null ? $this->balanceSheetAt($tenantId, $compareAsOf) : null;
+    public function balanceSheet(
+        string $tenantId,
+        CarbonImmutable $asOf,
+        ?CarbonImmutable $compareAsOf = null,
+        ?string $presentationCurrency = null,
+        ?CarbonImmutable $periodStart = null,
+    ): array {
+        $functionalCurrency = TenantAccountingCurrency::of($tenantId);
+        $targetCurrency = $presentationCurrency !== null && trim($presentationCurrency) !== ''
+            ? strtoupper(trim($presentationCurrency))
+            : $functionalCurrency;
+
+        $current = $this->balanceSheetAt($tenantId, $asOf, $functionalCurrency, $targetCurrency, $periodStart);
+        $comparison = $compareAsOf !== null
+            ? $this->balanceSheetAt($tenantId, $compareAsOf, $functionalCurrency, $targetCurrency, null)
+            : null;
 
         return [
-            'currency' => TenantAccountingCurrency::of($tenantId),
+            'currency' => $targetCurrency,
+            'functional_currency' => $functionalCurrency,
+            'presentation_currency' => $targetCurrency,
+            'closing_exchange_rate' => $current['closing_exchange_rate'],
+            'average_exchange_rate' => $current['average_exchange_rate'],
+            'historical_exchange_rate' => $current['historical_exchange_rate'],
+            'currency_translation_adjustment' => $current['currency_translation_adjustment'],
             'as_of' => $asOf->toDateString(),
             'compare_as_of' => $compareAsOf?->toDateString(),
             'sections' => $this->mergeSections($current['sections'], $comparison['sections'] ?? null),
             'totals' => $current['totals'],
+            'functional_totals' => $current['functional_totals'],
+            'presentation_totals' => $current['presentation_totals'],
             'comparison_totals' => $comparison['totals'] ?? null,
             'is_balanced' => $current['is_balanced'],
         ];
@@ -192,19 +217,40 @@ final class LedgerReportService
      * @param  array{cost_center_id?: ?string, profit_center_id?: ?string, project_id?: ?string}  $dimensions
      * @return array<string, mixed>
      */
-    public function incomeStatement(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, ?CarbonImmutable $compareFrom = null, ?CarbonImmutable $compareTo = null, array $dimensions = []): array
-    {
-        $current = $this->incomeStatementOf($tenantId, $from, $to, $dimensions);
-        $comparison = $compareFrom !== null && $compareTo !== null ? $this->incomeStatementOf($tenantId, $compareFrom, $compareTo, $dimensions) : null;
+    public function incomeStatement(
+        string $tenantId,
+        CarbonImmutable $from,
+        CarbonImmutable $to,
+        ?CarbonImmutable $compareFrom = null,
+        ?CarbonImmutable $compareTo = null,
+        array $dimensions = [],
+        ?string $presentationCurrency = null,
+    ): array {
+        $functionalCurrency = TenantAccountingCurrency::of($tenantId);
+        $targetCurrency = $presentationCurrency !== null && trim($presentationCurrency) !== ''
+            ? strtoupper(trim($presentationCurrency))
+            : $functionalCurrency;
+
+        $current = $this->incomeStatementOf($tenantId, $from, $to, $dimensions, $functionalCurrency, $targetCurrency);
+        $comparison = $compareFrom !== null && $compareTo !== null
+            ? $this->incomeStatementOf($tenantId, $compareFrom, $compareTo, $dimensions, $functionalCurrency, $targetCurrency)
+            : null;
 
         return [
-            'currency' => TenantAccountingCurrency::of($tenantId),
+            'currency' => $targetCurrency,
+            'functional_currency' => $functionalCurrency,
+            'presentation_currency' => $targetCurrency,
+            'closing_exchange_rate' => $current['closing_exchange_rate'],
+            'average_exchange_rate' => $current['average_exchange_rate'],
+            'currency_translation_adjustment' => $current['currency_translation_adjustment'],
             'from' => $from->toDateString(),
             'to' => $to->toDateString(),
             'compare_from' => $compareFrom?->toDateString(),
             'compare_to' => $compareTo?->toDateString(),
             'sections' => $this->mergeSections($current['sections'], $comparison['sections'] ?? null),
             'totals' => $current['totals'],
+            'functional_totals' => $current['functional_totals'],
+            'presentation_totals' => $current['presentation_totals'],
             'comparison_totals' => $comparison['totals'] ?? null,
         ];
     }
@@ -270,22 +316,35 @@ final class LedgerReportService
     }
 
     /**
-     * @return array{sections: array<string, array{accounts: list<array<string, mixed>>, total: string}>, totals: array<string, string>, is_balanced: bool}
+     * @return array<string, mixed>
      */
-    private function balanceSheetAt(string $tenantId, CarbonImmutable $asOf): array
-    {
+    private function balanceSheetAt(
+        string $tenantId,
+        CarbonImmutable $asOf,
+        string $functionalCurrency,
+        string $targetCurrency,
+        ?CarbonImmutable $periodStart = null,
+    ): array {
         $sums = $this->sums($this->lines($tenantId)->where('journal_entries.posting_date', '<=', $asOf->toDateString()));
         $accounts = $this->accounts($tenantId, $sums->keys()->all());
+
+        $translate = $targetCurrency !== $functionalCurrency;
+        $rangeStart = $periodStart ?? $this->resolveYearStart($tenantId, $asOf);
+        $closingRate = $translate ? $this->closingTranslationRate($functionalCurrency, $targetCurrency, $asOf) : '1.000000';
+        $historicalRate = $translate ? $this->historicalTranslationRate($functionalCurrency, $targetCurrency, $rangeStart, $closingRate) : '1.000000';
+        $averageRate = $translate ? $this->averageTranslationRate($functionalCurrency, $targetCurrency, $rangeStart, $asOf, $closingRate) : '1.000000';
+
         $sections = ['asset' => [], 'liability' => [], 'equity' => []];
-        $totals = ['asset' => '0', 'liability' => '0', 'equity' => '0'];
-        $unclosedResult = '0';
+        $funcTotals = ['asset' => '0.0000', 'liability' => '0.0000', 'equity' => '0.0000'];
+        $presTotals = ['asset' => '0.0000', 'liability' => '0.0000', 'equity' => '0.0000'];
+        $unclosedResultFunc = '0.0000';
 
         foreach ($accounts as $account) {
             $sum = $sums->get((string) $account->id);
             $creditMinusDebit = bcsub((string) $sum->credit, (string) $sum->debit, self::Scale);
 
             if (in_array($account->account_type, LedgerBalanceReader::IncomeTypes, true)) {
-                $unclosedResult = bcadd($unclosedResult, $creditMinusDebit, self::Scale);
+                $unclosedResultFunc = bcadd($unclosedResultFunc, $creditMinusDebit, self::Scale);
 
                 continue;
             }
@@ -301,81 +360,277 @@ final class LedgerReportService
                 continue;
             }
 
-            $amount = $section === 'asset' ? bcmul($creditMinusDebit, '-1', self::Scale) : $creditMinusDebit;
-            $totals[$section] = bcadd($totals[$section], $amount, self::Scale);
+            $funcAmount = $section === 'asset' ? bcmul($creditMinusDebit, '-1', self::Scale) : $creditMinusDebit;
+            $rateForAccount = $section === 'equity' ? $historicalRate : $closingRate;
+            $presAmount = $translate ? $this->translateAmount($funcAmount, $rateForAccount) : $funcAmount;
+
+            $funcTotals[$section] = bcadd($funcTotals[$section], $funcAmount, self::Scale);
+            $presTotals[$section] = bcadd($presTotals[$section], $presAmount, self::Scale);
             $sections[$section][] = [
                 'account_id' => (string) $account->id,
                 'account_code' => $account->account_code,
                 'account_name' => $account->name,
-                'amount' => $amount,
+                'amount' => $presAmount,
+                'functional_amount' => $funcAmount,
+                'presentation_amount' => $presAmount,
+                'exchange_rate' => $rateForAccount,
             ];
         }
 
-        $equityWithResult = bcadd($totals['equity'], $unclosedResult, self::Scale);
-        $liabilitiesAndEquity = bcadd($totals['liability'], $equityWithResult, self::Scale);
+        $funcEquityWithResult = bcadd($funcTotals['equity'], $unclosedResultFunc, self::Scale);
+        $funcLiabilitiesAndEquity = bcadd($funcTotals['liability'], $funcEquityWithResult, self::Scale);
+
+        $unclosedResultPres = $translate ? $this->translateAmount($unclosedResultFunc, $averageRate) : $unclosedResultFunc;
+        $cta = '0.0000';
+
+        if ($translate) {
+            // CO Art. 958d para. 3: CTA bridges closing-rate net assets and historical/average-rate equity components.
+            $netAssetsPres = bcsub($presTotals['asset'], $presTotals['liability'], self::Scale);
+            $equityBeforeCta = bcadd($presTotals['equity'], $unclosedResultPres, self::Scale);
+            $cta = bcsub($netAssetsPres, $equityBeforeCta, self::Scale);
+        }
+
+        $presEquityWithResult = bcadd(bcadd($presTotals['equity'], $unclosedResultPres, self::Scale), $cta, self::Scale);
+        $presLiabilitiesAndEquity = bcadd($presTotals['liability'], $presEquityWithResult, self::Scale);
+
+        $functionalTotalsMap = [
+            'total_assets' => $funcTotals['asset'],
+            'total_liabilities' => $funcTotals['liability'],
+            'total_equity' => $funcTotals['equity'],
+            'result_not_yet_closed' => $unclosedResultFunc,
+            'currency_translation_adjustment' => '0.0000',
+            'total_equity_with_result' => $funcEquityWithResult,
+            'total_liabilities_and_equity' => $funcLiabilitiesAndEquity,
+        ];
+
+        $presentationTotalsMap = [
+            'total_assets' => $presTotals['asset'],
+            'total_liabilities' => $presTotals['liability'],
+            'total_equity' => $presTotals['equity'],
+            'result_not_yet_closed' => $unclosedResultPres,
+            'currency_translation_adjustment' => $cta,
+            'total_equity_with_result' => $presEquityWithResult,
+            'total_liabilities_and_equity' => $presLiabilitiesAndEquity,
+        ];
 
         return [
+            'closing_exchange_rate' => $closingRate,
+            'average_exchange_rate' => $averageRate,
+            'historical_exchange_rate' => $historicalRate,
+            'currency_translation_adjustment' => $cta,
             'sections' => [
-                'asset' => ['accounts' => $sections['asset'], 'total' => $totals['asset']],
-                'liability' => ['accounts' => $sections['liability'], 'total' => $totals['liability']],
-                'equity' => ['accounts' => $sections['equity'], 'total' => $totals['equity']],
+                'asset' => ['accounts' => $sections['asset'], 'total' => $presTotals['asset'], 'functional_total' => $funcTotals['asset']],
+                'liability' => ['accounts' => $sections['liability'], 'total' => $presTotals['liability'], 'functional_total' => $funcTotals['liability']],
+                'equity' => ['accounts' => $sections['equity'], 'total' => $presTotals['equity'], 'functional_total' => $funcTotals['equity']],
             ],
-            'totals' => [
-                'total_assets' => $totals['asset'],
-                'total_liabilities' => $totals['liability'],
-                'total_equity' => $totals['equity'],
-                'result_not_yet_closed' => $unclosedResult,
-                'total_equity_with_result' => $equityWithResult,
-                'total_liabilities_and_equity' => $liabilitiesAndEquity,
-            ],
-            'is_balanced' => bccomp($totals['asset'], $liabilitiesAndEquity, self::Scale) === 0,
+            'totals' => $presentationTotalsMap,
+            'functional_totals' => $functionalTotalsMap,
+            'presentation_totals' => $presentationTotalsMap,
+            'is_balanced' => bccomp($presTotals['asset'], $presLiabilitiesAndEquity, self::Scale) === 0,
         ];
     }
 
     /**
      * @param  array{cost_center_id?: ?string, profit_center_id?: ?string, project_id?: ?string}  $dimensions
-     * @return array{sections: array<string, array{accounts: list<array<string, mixed>>, total: string}>, totals: array<string, string>}
+     * @return array<string, mixed>
      */
-    private function incomeStatementOf(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, array $dimensions): array
-    {
+    private function incomeStatementOf(
+        string $tenantId,
+        CarbonImmutable $from,
+        CarbonImmutable $to,
+        array $dimensions,
+        string $functionalCurrency,
+        string $targetCurrency,
+    ): array {
         $sums = $this->sums($this->lines($tenantId, $dimensions)
             ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()])
             ->where('journal_entries.journal_type', '!=', 'closing')
             ->whereIn('chart_of_accounts.account_type', LedgerBalanceReader::IncomeTypes));
+
+        $translate = $targetCurrency !== $functionalCurrency;
+        $closingRate = $translate ? $this->closingTranslationRate($functionalCurrency, $targetCurrency, $to) : '1.000000';
+        $averageRate = $translate ? $this->averageTranslationRate($functionalCurrency, $targetCurrency, $from, $to, $closingRate) : '1.000000';
+
         $sections = ['revenue' => [], 'cogs' => [], 'expense' => []];
-        $totals = ['revenue' => '0', 'cogs' => '0', 'expense' => '0'];
+        $funcTotals = ['revenue' => '0.0000', 'cogs' => '0.0000', 'expense' => '0.0000'];
+        $presTotals = ['revenue' => '0.0000', 'cogs' => '0.0000', 'expense' => '0.0000'];
 
         foreach ($this->accounts($tenantId, $sums->keys()->all()) as $account) {
             $sum = $sums->get((string) $account->id);
-            $amount = $account->account_type === 'revenue'
+            $funcAmount = $account->account_type === 'revenue'
                 ? bcsub((string) $sum->credit, (string) $sum->debit, self::Scale)
                 : bcsub((string) $sum->debit, (string) $sum->credit, self::Scale);
-            $totals[$account->account_type] = bcadd($totals[$account->account_type], $amount, self::Scale);
+            $presAmount = $translate ? $this->translateAmount($funcAmount, $averageRate) : $funcAmount;
+
+            $funcTotals[$account->account_type] = bcadd($funcTotals[$account->account_type], $funcAmount, self::Scale);
+            $presTotals[$account->account_type] = bcadd($presTotals[$account->account_type], $presAmount, self::Scale);
             $sections[$account->account_type][] = [
                 'account_id' => (string) $account->id,
                 'account_code' => $account->account_code,
                 'account_name' => $account->name,
-                'amount' => $amount,
+                'amount' => $presAmount,
+                'functional_amount' => $funcAmount,
+                'presentation_amount' => $presAmount,
+                'exchange_rate' => $averageRate,
                 'drill_down' => $this->drillDown((string) $account->id, $from, $to),
             ];
         }
 
-        $grossProfit = bcsub($totals['revenue'], $totals['cogs'], self::Scale);
+        $funcGrossProfit = bcsub($funcTotals['revenue'], $funcTotals['cogs'], self::Scale);
+        $funcNetIncome = bcsub($funcGrossProfit, $funcTotals['expense'], self::Scale);
+
+        $presGrossProfit = bcsub($presTotals['revenue'], $presTotals['cogs'], self::Scale);
+        $presNetIncome = bcsub($presGrossProfit, $presTotals['expense'], self::Scale);
+
+        $netIncomeAtClosing = $translate ? $this->translateAmount($funcNetIncome, $closingRate) : $funcNetIncome;
+        $cta = $translate ? bcsub($netIncomeAtClosing, $presNetIncome, self::Scale) : '0.0000';
+
+        $functionalTotalsMap = [
+            'total_revenue' => $funcTotals['revenue'],
+            'total_cogs' => $funcTotals['cogs'],
+            'gross_profit' => $funcGrossProfit,
+            'total_expenses' => $funcTotals['expense'],
+            'net_income' => $funcNetIncome,
+        ];
+
+        $presentationTotalsMap = [
+            'total_revenue' => $presTotals['revenue'],
+            'total_cogs' => $presTotals['cogs'],
+            'gross_profit' => $presGrossProfit,
+            'total_expenses' => $presTotals['expense'],
+            'net_income' => $presNetIncome,
+        ];
 
         return [
+            'closing_exchange_rate' => $closingRate,
+            'average_exchange_rate' => $averageRate,
+            'currency_translation_adjustment' => $cta,
             'sections' => [
-                'revenue' => ['accounts' => $sections['revenue'], 'total' => $totals['revenue']],
-                'cogs' => ['accounts' => $sections['cogs'], 'total' => $totals['cogs']],
-                'expense' => ['accounts' => $sections['expense'], 'total' => $totals['expense']],
+                'revenue' => ['accounts' => $sections['revenue'], 'total' => $presTotals['revenue'], 'functional_total' => $funcTotals['revenue']],
+                'cogs' => ['accounts' => $sections['cogs'], 'total' => $presTotals['cogs'], 'functional_total' => $funcTotals['cogs']],
+                'expense' => ['accounts' => $sections['expense'], 'total' => $presTotals['expense'], 'functional_total' => $funcTotals['expense']],
             ],
-            'totals' => [
-                'total_revenue' => $totals['revenue'],
-                'total_cogs' => $totals['cogs'],
-                'gross_profit' => $grossProfit,
-                'total_expenses' => $totals['expense'],
-                'net_income' => bcsub($grossProfit, $totals['expense'], self::Scale),
-            ],
+            'totals' => $presentationTotalsMap,
+            'functional_totals' => $functionalTotalsMap,
+            'presentation_totals' => $presentationTotalsMap,
         ];
+    }
+
+    private function resolveYearStart(string $tenantId, CarbonImmutable $asOf): CarbonImmutable
+    {
+        $year = FiscalYear::withoutGlobalScopes()
+            ->where('tenant_id', $tenantId)
+            ->whereDate('start_date', '<=', $asOf->toDateString())
+            ->whereDate('end_date', '>=', $asOf->toDateString())
+            ->first();
+
+        return $year !== null ? CarbonImmutable::parse((string) $year->start_date) : $asOf->startOfYear();
+    }
+
+    /**
+     * Resolves presentation currency units per 1 functional currency unit at a given date (closing rate).
+     */
+    private function closingTranslationRate(string $functionalCurrency, string $presentationCurrency, CarbonImmutable $asOf): string
+    {
+        $direct = ExchangeRate::query()
+            ->where('source', $functionalCurrency)
+            ->where('target', $presentationCurrency)
+            ->whereDate('effective_date', '<=', $asOf->toDateString())
+            ->orderByDesc('effective_date')
+            ->value('rate');
+
+        if ($direct !== null && Decimal::isPositive((string) $direct)) {
+            return bcadd((string) $direct, '0', 6);
+        }
+
+        $inverse = ExchangeRate::query()
+            ->where('source', $presentationCurrency)
+            ->where('target', $functionalCurrency)
+            ->whereDate('effective_date', '<=', $asOf->toDateString())
+            ->orderByDesc('effective_date')
+            ->value('rate');
+
+        if ($inverse !== null && Decimal::isPositive((string) $inverse)) {
+            return bcadd(bcround(Decimal::div('1', (string) $inverse), 6, RoundingMode::HalfAwayFromZero), '0', 6);
+        }
+
+        throw new LedgerPostingException("No {$functionalCurrency}/{$presentationCurrency} exchange rate available on or before {$asOf->toDateString()}.");
+    }
+
+    private function historicalTranslationRate(string $functionalCurrency, string $presentationCurrency, CarbonImmutable $startDate, string $fallbackRate): string
+    {
+        $direct = ExchangeRate::query()
+            ->where('source', $functionalCurrency)
+            ->where('target', $presentationCurrency)
+            ->whereDate('effective_date', '<=', $startDate->toDateString())
+            ->orderByDesc('effective_date')
+            ->value('rate');
+
+        if ($direct !== null && Decimal::isPositive((string) $direct)) {
+            return bcadd((string) $direct, '0', 6);
+        }
+
+        $inverse = ExchangeRate::query()
+            ->where('source', $presentationCurrency)
+            ->where('target', $functionalCurrency)
+            ->whereDate('effective_date', '<=', $startDate->toDateString())
+            ->orderByDesc('effective_date')
+            ->value('rate');
+
+        if ($inverse !== null && Decimal::isPositive((string) $inverse)) {
+            return bcadd(bcround(Decimal::div('1', (string) $inverse), 6, RoundingMode::HalfAwayFromZero), '0', 6);
+        }
+
+        return $fallbackRate;
+    }
+
+    private function averageTranslationRate(
+        string $functionalCurrency,
+        string $presentationCurrency,
+        CarbonImmutable $from,
+        CarbonImmutable $to,
+        string $fallbackRate,
+    ): string {
+        $directRates = ExchangeRate::query()
+            ->where('source', $functionalCurrency)
+            ->where('target', $presentationCurrency)
+            ->whereBetween('effective_date', [$from->toDateString(), $to->toDateString()])
+            ->pluck('rate')
+            ->filter(static fn ($rate): bool => Decimal::isPositive((string) $rate))
+            ->values();
+
+        if ($directRates->isNotEmpty()) {
+            $sum = '0';
+            foreach ($directRates as $rate) {
+                $sum = bcadd($sum, (string) $rate, 8);
+            }
+
+            return bcadd(bcround(Decimal::div($sum, (string) $directRates->count()), 6, RoundingMode::HalfAwayFromZero), '0', 6);
+        }
+
+        $inverseRates = ExchangeRate::query()
+            ->where('source', $presentationCurrency)
+            ->where('target', $functionalCurrency)
+            ->whereBetween('effective_date', [$from->toDateString(), $to->toDateString()])
+            ->pluck('rate')
+            ->filter(static fn ($rate): bool => Decimal::isPositive((string) $rate))
+            ->values();
+
+        if ($inverseRates->isNotEmpty()) {
+            $sum = '0';
+            foreach ($inverseRates as $rate) {
+                $sum = bcadd($sum, Decimal::div('1', (string) $rate), 8);
+            }
+
+            return bcadd(bcround(Decimal::div($sum, (string) $inverseRates->count()), 6, RoundingMode::HalfAwayFromZero), '0', 6);
+        }
+
+        return $fallbackRate;
+    }
+
+    private function translateAmount(string $functionalAmount, string $rate): string
+    {
+        return bcadd(bcround(bcmul($functionalAmount, $rate, 8), self::Scale, RoundingMode::HalfAwayFromZero), '0', self::Scale);
     }
 
     /**

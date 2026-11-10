@@ -29,6 +29,9 @@ final class UpdateLedgerSettingsRequest extends FormRequest
             'posting_accounts' => ['sometimes', 'array:'.implode(',', PostingAccountRole::values())],
             'manual_journal_approval_required' => ['sometimes', 'boolean'],
             'manual_journal_approval_threshold' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:99999999999'],
+            'fx_unrealised_gain_provision_account_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('chart_of_accounts')],
+            'enforce_swiss_imparity_principle' => ['sometimes', 'boolean'],
+            'unrealised_gain_treatment' => ['sometimes', 'nullable', 'string', 'in:provision,suppress,recognise'],
         ];
 
         foreach (PostingAccountRole::values() as $role) {

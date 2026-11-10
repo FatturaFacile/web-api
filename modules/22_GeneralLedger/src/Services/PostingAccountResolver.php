@@ -9,6 +9,7 @@ use Modules\GeneralLedger\Enums\PostingAccountRole;
 use Modules\GeneralLedger\Exceptions\LedgerPostingException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\DefaultPostingAccount;
+use Modules\GeneralLedger\Models\LedgerSetting;
 
 /**
  * The default posting accounts of a tenant (sales, purchases, VAT, receivables, payables, retained earnings, exchange
@@ -73,6 +74,24 @@ final class PostingAccountResolver
 
             if ($account !== null) {
                 return ['account' => $account, 'source' => 'settings'];
+            }
+        }
+
+        if ($role === PostingAccountRole::FxUnrealisedGainProvision) {
+            $settingAccountId = LedgerSetting::withoutGlobalScopes()
+                ->where('tenant_id', $tenantId)
+                ->whereNull('deleted_at')
+                ->value('fx_unrealised_gain_provision_account_id');
+
+            if ($settingAccountId !== null) {
+                $account = ChartOfAccount::withoutGlobalScopes()
+                    ->where('tenant_id', $tenantId)
+                    ->whereKey($settingAccountId)
+                    ->first();
+
+                if ($account !== null) {
+                    return ['account' => $account, 'source' => 'settings'];
+                }
             }
         }
 

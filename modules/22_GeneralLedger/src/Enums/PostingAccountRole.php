@@ -19,6 +19,7 @@ enum PostingAccountRole: string
     case Payables = 'payables';
     case RetainedEarnings = 'retained_earnings';
     case FxUnrealisedGain = 'fx_unrealised_gain';
+    case FxUnrealisedGainProvision = 'fx_unrealised_gain_provision';
     case FxUnrealisedLoss = 'fx_unrealised_loss';
     case FxRealisedGain = 'fx_realised_gain';
     case FxRealisedLoss = 'fx_realised_loss';
@@ -39,6 +40,7 @@ enum PostingAccountRole: string
             self::InputVat, self::Receivables => ['asset'],
             self::RetainedEarnings => ['equity'],
             self::FxUnrealisedGain, self::FxRealisedGain => ['revenue'],
+            self::FxUnrealisedGainProvision => ['liability', 'equity'],
             self::FxUnrealisedLoss, self::FxRealisedLoss => ['expense'],
             self::Rounding => ['revenue', 'expense'],
         };
@@ -62,6 +64,7 @@ enum PostingAccountRole: string
             self::Payables => ['accounting', 'accounts', 'payables_account_code'],
             self::Rounding => ['accounting', 'accounts', 'rounding_account_code'],
             self::FxUnrealisedGain => ['banking', 'ledger_defaults', 'fx_unrealised_gain_account_code'],
+            self::FxUnrealisedGainProvision => ['banking', 'ledger_defaults', 'fx_unrealised_gain_provision_account_code'],
             self::FxUnrealisedLoss => ['banking', 'ledger_defaults', 'fx_unrealised_loss_account_code'],
             self::RetainedEarnings, self::FxRealisedGain, self::FxRealisedLoss => null,
         };

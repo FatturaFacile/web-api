@@ -134,11 +134,13 @@ final class LedgerReportController extends Controller
     public function balanceSheet(BalanceSheetReportRequest $request): JsonResponse
     {
         $compare = $request->validated('compare_as_of');
+        $presentationCurrency = $request->validated('presentation_currency');
 
         return $this->successResponse($this->reports->balanceSheet(
             $this->tenantId(),
             CarbonImmutable::parse((string) $request->validated('as_of')),
-            $compare !== null ? CarbonImmutable::parse((string) $compare) : null
+            $compare !== null ? CarbonImmutable::parse((string) $compare) : null,
+            is_string($presentationCurrency) ? $presentationCurrency : null
         ));
     }
 
@@ -171,8 +173,17 @@ final class LedgerReportController extends Controller
     public function incomeStatement(LedgerRangeReportRequest $request): JsonResponse
     {
         [$from, $to, $compareFrom, $compareTo] = $this->range($request);
+        $presentationCurrency = $request->validated('presentation_currency');
 
-        return $this->successResponse($this->reports->incomeStatement($this->tenantId(), $from, $to, $compareFrom, $compareTo, $request->dimensions()));
+        return $this->successResponse($this->reports->incomeStatement(
+            $this->tenantId(),
+            $from,
+            $to,
+            $compareFrom,
+            $compareTo,
+            $request->dimensions(),
+            is_string($presentationCurrency) ? $presentationCurrency : null
+        ));
     }
 
     /**

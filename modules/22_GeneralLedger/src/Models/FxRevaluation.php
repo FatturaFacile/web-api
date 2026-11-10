@@ -25,6 +25,7 @@ final class FxRevaluation extends BaseEnterpriseModel
             'revalued_value' => 'decimal:4',
             'difference' => 'decimal:4',
             'open_items' => 'integer',
+            'imparity_deferred' => 'boolean',
         ];
     }
 }
