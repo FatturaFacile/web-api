@@ -96,6 +96,20 @@ function goldenAbsences(array $absences): array
     return array_map(static fn (array $a): AbsenceData => new AbsenceData($a['type'], goldenDate($a['start']), goldenDate($a['end']), $a['percent']), $absences);
 }
 
+/**
+ * Swiss scenarios whose payslip no longer matches the desktop on purpose: the PHP engine applies rules the C# engine of
+ * the desktop does not have yet (family allowances withheld below the LAFam minimum income, art. 13 para. 3 LAFam;
+ * non-occupational accident insurance due by weekly hours whatever the pay type; withholding tax rate income extrapolated
+ * to a full month and to the workload, Circular 45). They are skipped until the desktop engine and this fixture are
+ * regenerated with the same rules; every other scenario is still compared line by line.
+ *
+ * @return list<int>
+ */
+function goldenDivergentSwissCases(): array
+{
+    return [3, 4, 7, 8, 14, 21, 29, 30, 43, 56, 61, 62, 63, 66];
+}
+
 function goldenSame(?string $actual, ?string $expected, string $label): void
 {
     if ($actual === null || $expected === null) {
@@ -182,7 +196,11 @@ test('the Swiss engine gives the payslips of the desktop', function (): void {
 
     expect(count($cases))->toBeGreaterThan(50);
 
-    foreach ($cases as $case) {
+    foreach ($cases as $index => $case) {
+        if (in_array($index, goldenDivergentSwissCases(), true)) {
+            continue;
+        }
+
         $settings = $case['settings'];
 
         goldenCheck($case['result'], SwissPayrollEngine::calculate(new SwissPayrollContext(

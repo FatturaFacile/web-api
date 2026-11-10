@@ -15,7 +15,11 @@ final class SwissdecCertificationStatus
     /** The version whose public field overview the structure follows. */
     public const string StructureBasis = 'ELM 5.0, SalaryDeclarationDomainOverview 20200220';
 
-    /** The schema of that overview. No XSD file was available: nothing here is validated against one. */
+    /**
+     * The schema of that overview. The official XSD of Swissdec was not available: SwissdecXsdValidator checks the
+     * structure against a schema written by hand from the public field overview, which is an internal consistency check
+     * and not a validation against the official schema, so `schema_validated` stays false.
+     */
     public const string SchemaNamespace = 'http://www.swissdec.ch/schema/sd/20200220/SalaryDeclaration';
 
     public const string Elm60SchemaNamespace = 'http://www.swissdec.ch/schema/sd/20260306/SalaryDeclaration';
@@ -48,7 +52,7 @@ final class SwissdecCertificationStatus
             'is_certified' => false,
             'structure_basis' => self::StructureBasis,
             'schema_namespace' => self::SchemaNamespace,
-            'schema_validated' => true,
+            'schema_validated' => false,
             'current_certification_basis' => self::CurrentCertificationBasis,
             'domains_built' => self::Domains,
             'domains_not_built' => self::DomainsNotBuilt,
