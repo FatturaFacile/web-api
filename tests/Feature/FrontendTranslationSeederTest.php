@@ -62,6 +62,53 @@ test('no value is empty and the placeholders match across languages', function (
     }
 });
 
+/**
+ * Base plus frontend strings of every language, as the translations endpoint serves them.
+ *
+ * @return array<string, array<string, string>>
+ */
+function completeDictionaries(): array
+{
+    $dictionaries = [];
+
+    foreach (TranslationSeeder::LOCALES as $locale) {
+        $dictionaries[$locale] = (new TranslationSeeder)->dictionary($locale) + FrontendTranslationSeeder::dictionary($locale);
+    }
+
+    return $dictionaries;
+}
+
+test('the complete dictionaries hold the same keys in the four languages', function (): void {
+    $dictionaries = completeDictionaries();
+
+    foreach (['it', 'de', 'fr'] as $locale) {
+        expect(array_values(array_diff(array_keys($dictionaries['en']), array_keys($dictionaries[$locale]))))->toBe([], "{$locale} lacks keys")
+            ->and(array_values(array_diff(array_keys($dictionaries[$locale]), array_keys($dictionaries['en']))))->toBe([], "{$locale} has extra keys");
+    }
+});
+
+test('the complete dictionaries keep the placeholders of the English text', function (): void {
+    $dictionaries = completeDictionaries();
+    $broken = [];
+
+    foreach ($dictionaries['en'] as $key => $english) {
+        foreach (['it', 'de', 'fr'] as $locale) {
+            if (placeholdersOf($dictionaries[$locale][$key] ?? '') !== placeholdersOf($english)) {
+                $broken[] = "{$locale} {$key}";
+            }
+        }
+    }
+
+    expect($broken)->toBe([]);
+});
+
+test('the dump command prints the complete dictionary of a language', function (): void {
+    $this->artisan('translations:dump', ['locale' => 'de'])->assertSuccessful();
+    $this->artisan('translations:dump', ['locale' => 'xx'])->assertFailed();
+
+    expect(completeDictionaries()['de'])->toHaveKeys(['NAV.DASHBOARD', 'exportsPage.csvTitle', 'ANALYTICS.MONTH_12', 'ANALYTICS.EDIT_REPORT']);
+});
+
 test('the keys never overlap the ones of the base TranslationSeeder', function (): void {
     Translation::query()->whereNull('tenant_id')->delete();
     $this->seed(TranslationSeeder::class);

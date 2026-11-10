@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * French UI strings used by the Angular frontend that the base TranslationSeeder does not hold (6574 keys).
+ * French UI strings used by the Angular frontend that the base TranslationSeeder does not hold (6587 keys).
  */
 final class FrenchFrontendTranslations
 {
@@ -31,11 +31,24 @@ final class FrenchFrontendTranslations
             'ANALYTICS.DIM_REGION' => 'Région',
             'ANALYTICS.DIRECTION' => 'Sens',
             'ANALYTICS.DUE_DATE' => 'Échéance',
+            'ANALYTICS.EDIT_REPORT' => 'Modifier le rapport',
             'ANALYTICS.EXECUTION_RESULT' => 'Résultat de l\'exécution',
             'ANALYTICS.EXPORT_KPIS' => 'Exporter les KPI',
             'ANALYTICS.INFLOW' => 'Encaissement',
             'ANALYTICS.KPIS' => 'KPI',
             'ANALYTICS.MONTH' => 'Mois',
+            'ANALYTICS.MONTH_1' => 'Janvier',
+            'ANALYTICS.MONTH_10' => 'Octobre',
+            'ANALYTICS.MONTH_11' => 'Novembre',
+            'ANALYTICS.MONTH_12' => 'Décembre',
+            'ANALYTICS.MONTH_2' => 'Février',
+            'ANALYTICS.MONTH_3' => 'Mars',
+            'ANALYTICS.MONTH_4' => 'Avril',
+            'ANALYTICS.MONTH_5' => 'Mai',
+            'ANALYTICS.MONTH_6' => 'Juin',
+            'ANALYTICS.MONTH_7' => 'Juillet',
+            'ANALYTICS.MONTH_8' => 'Août',
+            'ANALYTICS.MONTH_9' => 'Septembre',
             'ANALYTICS.NET_LIQUIDITY' => 'Liquidité nette',
             'ANALYTICS.NEW_REPORT' => 'Nouveau rapport',
             'ANALYTICS.NO_PERMISSION' => 'Vous n\'avez pas l\'autorisation de consulter les analyses.',

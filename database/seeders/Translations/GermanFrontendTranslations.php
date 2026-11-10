@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * German UI strings used by the Angular frontend that the base TranslationSeeder does not hold (6574 keys).
+ * German UI strings used by the Angular frontend that the base TranslationSeeder does not hold (6587 keys).
  */
 final class GermanFrontendTranslations
 {
@@ -31,11 +31,24 @@ final class GermanFrontendTranslations
             'ANALYTICS.DIM_REGION' => 'Region',
             'ANALYTICS.DIRECTION' => 'Richtung',
             'ANALYTICS.DUE_DATE' => 'Fälligkeit',
+            'ANALYTICS.EDIT_REPORT' => 'Bericht bearbeiten',
             'ANALYTICS.EXECUTION_RESULT' => 'Ausführungsergebnis',
             'ANALYTICS.EXPORT_KPIS' => 'KPIs exportieren',
             'ANALYTICS.INFLOW' => 'Einnahme',
             'ANALYTICS.KPIS' => 'KPIs',
             'ANALYTICS.MONTH' => 'Monat',
+            'ANALYTICS.MONTH_1' => 'Januar',
+            'ANALYTICS.MONTH_10' => 'Oktober',
+            'ANALYTICS.MONTH_11' => 'November',
+            'ANALYTICS.MONTH_12' => 'Dezember',
+            'ANALYTICS.MONTH_2' => 'Februar',
+            'ANALYTICS.MONTH_3' => 'März',
+            'ANALYTICS.MONTH_4' => 'April',
+            'ANALYTICS.MONTH_5' => 'Mai',
+            'ANALYTICS.MONTH_6' => 'Juni',
+            'ANALYTICS.MONTH_7' => 'Juli',
+            'ANALYTICS.MONTH_8' => 'August',
+            'ANALYTICS.MONTH_9' => 'September',
             'ANALYTICS.NET_LIQUIDITY' => 'Nettoliquidität',
             'ANALYTICS.NEW_REPORT' => 'Neuer Bericht',
             'ANALYTICS.NO_PERMISSION' => 'Sie haben keine Berechtigung, die Analysen einzusehen.',

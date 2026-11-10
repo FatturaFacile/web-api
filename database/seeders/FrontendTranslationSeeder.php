@@ -11,6 +11,7 @@ use Database\Seeders\Translations\ItalianFrontendTranslations;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 /**
  * Global UI strings (it, en, de, fr) of the Angular frontend that TranslationSeeder does not hold.
@@ -26,16 +27,31 @@ use Illuminate\Support\Facades\DB;
 class FrontendTranslationSeeder extends Seeder
 {
     /**
-     * Run the database seeds.
+     * The strings of one language that TranslationSeeder does not hold.
+     *
+     * @return array<string, string>
      */
-    public function run(): void
+    public static function dictionary(string $locale): array
     {
-        $locales = [
+        return match ($locale) {
             'it' => ItalianFrontendTranslations::all(),
             'en' => EnglishFrontendTranslations::all(),
             'de' => GermanFrontendTranslations::all(),
             'fr' => FrenchFrontendTranslations::all(),
-        ];
+            default => throw new InvalidArgumentException("Unsupported locale [{$locale}]."),
+        };
+    }
+
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        $locales = [];
+
+        foreach (TranslationSeeder::LOCALES as $locale) {
+            $locales[$locale] = self::dictionary($locale);
+        }
 
         DB::transaction(function () use ($locales): void {
             $now = now();

@@ -6,20 +6,25 @@ use App\Models\Translation;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use InvalidArgumentException;
 
 class TranslationSeeder extends Seeder
 {
+    /**
+     * @var list<string>
+     */
+    public const LOCALES = ['it', 'en', 'de', 'fr'];
+
     /**
      * Run the database seeds.
      */
     public function run(): void
     {
-        $locales = [
-            'it' => $this->getItalianTranslations(),
-            'en' => $this->getEnglishTranslations(),
-            'de' => $this->getGermanTranslations(),
-            'fr' => $this->getFrenchTranslations(),
-        ];
+        $locales = [];
+
+        foreach (self::LOCALES as $locale) {
+            $locales[$locale] = $this->dictionary($locale);
+        }
 
         DB::transaction(function () use ($locales) {
             foreach ($locales as $locale => $translations) {
@@ -52,6 +57,22 @@ class TranslationSeeder extends Seeder
         foreach (array_keys($locales) as $locale) {
             Cache::forget("translations_global_{$locale}");
         }
+    }
+
+    /**
+     * The base dictionary of one language, without the strings of FrontendTranslationSeeder.
+     *
+     * @return array<string, string>
+     */
+    public function dictionary(string $locale): array
+    {
+        return match ($locale) {
+            'it' => $this->getItalianTranslations(),
+            'en' => $this->getEnglishTranslations(),
+            'de' => $this->getGermanTranslations(),
+            'fr' => $this->getFrenchTranslations(),
+            default => throw new InvalidArgumentException("Unsupported locale [{$locale}]."),
+        };
     }
 
     private function getItalianTranslations(): array

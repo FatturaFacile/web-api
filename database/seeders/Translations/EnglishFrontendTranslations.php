@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * English UI strings used by the Angular frontend that the base TranslationSeeder does not hold (6574 keys).
+ * English UI strings used by the Angular frontend that the base TranslationSeeder does not hold (6587 keys).
  */
 final class EnglishFrontendTranslations
 {
@@ -31,11 +31,24 @@ final class EnglishFrontendTranslations
             'ANALYTICS.DIM_REGION' => 'Region',
             'ANALYTICS.DIRECTION' => 'Direction',
             'ANALYTICS.DUE_DATE' => 'Due date',
+            'ANALYTICS.EDIT_REPORT' => 'Edit report',
             'ANALYTICS.EXECUTION_RESULT' => 'Execution result',
             'ANALYTICS.EXPORT_KPIS' => 'Export KPIs',
             'ANALYTICS.INFLOW' => 'Inflow',
             'ANALYTICS.KPIS' => 'KPIs',
             'ANALYTICS.MONTH' => 'Month',
+            'ANALYTICS.MONTH_1' => 'January',
+            'ANALYTICS.MONTH_10' => 'October',
+            'ANALYTICS.MONTH_11' => 'November',
+            'ANALYTICS.MONTH_12' => 'December',
+            'ANALYTICS.MONTH_2' => 'February',
+            'ANALYTICS.MONTH_3' => 'March',
+            'ANALYTICS.MONTH_4' => 'April',
+            'ANALYTICS.MONTH_5' => 'May',
+            'ANALYTICS.MONTH_6' => 'June',
+            'ANALYTICS.MONTH_7' => 'July',
+            'ANALYTICS.MONTH_8' => 'August',
+            'ANALYTICS.MONTH_9' => 'September',
             'ANALYTICS.NET_LIQUIDITY' => 'Net liquidity',
             'ANALYTICS.NEW_REPORT' => 'New report',
             'ANALYTICS.NO_PERMISSION' => 'You do not have permission to view analytics.',
