@@ -45,11 +45,13 @@ jobs:
         run: |
           RELEASE_TAG="${{ inputs.tag || github.ref_name }}"
           echo "tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          # Docker rejects uppercase repository names (the GitHub owner is FatturaFacile): lowercase the image name.
+          echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> $GITHUB_OUTPUT
 
       - name: Build and Push Docker Release Image
         run: |
-          docker build -t ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }} .
-          docker push ghcr.io/${{ github.repository }}:${{ steps.vars.outputs.tag }}
+          docker build -t "${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}" .
+          docker push "${{ steps.vars.outputs.image }}:${{ steps.vars.outputs.tag }}"
 
       - name: Publish Release Notes
         uses: softprops/action-gh-release@v3

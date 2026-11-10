@@ -42,6 +42,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->statefulApi();
         $middleware->throttleApi();
 
+        // The `web` group starts a database session per request: cap it per address (limiter `web-public`).
+        $middleware->web(append: ['throttle:web-public']);
+
         // The tenant context and, after it, the two-factor requirement of that tenant.
         $middleware->group('tenant', [
             IdentifyTenant::class,

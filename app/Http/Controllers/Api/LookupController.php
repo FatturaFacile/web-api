@@ -9,6 +9,7 @@ use App\Http\Requests\Lookups\SaveLookupTranslationRequest;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
+use App\Models\Translation;
 use App\Services\Tenancy\PublicTenantResolver;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -65,7 +66,7 @@ class LookupController extends Controller
             ], Response::HTTP_NOT_FOUND);
         }
 
-        $locale = (string) $request->query('locale', 'it');
+        $locale = Translation::normalizeLocale((string) $request->query('locale', Translation::DEFAULT_LOCALE));
         $tenantId = $tenantResolver->resolve($request);
 
         $cacheKey = $tenantId
