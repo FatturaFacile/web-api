@@ -7,7 +7,7 @@
 - {{ __('password_reset.mail.changed.ip', ['ip' => $ipAddress ?? __('password_reset.mail.changed.unknown')]) }}
 - {{ __('password_reset.mail.changed.device', ['device' => $device ?? __('password_reset.mail.changed.unknown')]) }}
 
-> {{ __('password_reset.mail.changed.security') }}
+> {{ __($afterRecovery ? 'password_reset.mail.changed.security' : 'password_reset.mail.changed.security_profile') }}
 
 @if (config('mail.support_address'))
 {{ __('registration.mail.support', ['email' => config('mail.support_address')]) }}

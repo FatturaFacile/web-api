@@ -15,7 +15,8 @@ use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
 
 /**
- * Encrypted on the queue: the payload carries the IP address and the device of the change.
+ * Encrypted on the queue: the payload carries the IP address and the device of the change. It follows both a
+ * password recovery and a change from the profile; only the security advice differs.
  */
 class PasswordChangedMail extends Mailable implements ShouldBeEncrypted, ShouldQueue
 {
@@ -26,6 +27,7 @@ class PasswordChangedMail extends Mailable implements ShouldBeEncrypted, ShouldQ
         public readonly CarbonInterface $changedAt,
         public readonly ?string $ipAddress,
         public readonly ?string $device,
+        public readonly bool $afterRecovery = true,
     ) {
         $this->afterCommit();
     }

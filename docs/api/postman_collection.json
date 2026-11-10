@@ -319,6 +319,50 @@
                     ]
                 },
                 {
+                    "name": "PUT /v1/auth/password",
+                    "request": {
+                        "method": "PUT",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "password"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"current_password\": \"string\",\n    \"password\": \"string\",\n    \"code\": \"string\",\n    \"recovery_code\": \"string\",\n    \"password_confirmation\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "POST /v1/auth/forgot-password",
                     "request": {
                         "method": "POST",

@@ -77931,6 +77931,108 @@
                 }
             }
         },
+        "/v1/auth/password": {
+            "put": {
+                "operationId": "auth.password.update",
+                "tags": [
+                    "PasswordChange"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/ChangePasswordRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "Password changed. For your security every session has been closed: sign in again with your new password."
+                                        },
+                                        "data": {
+                                            "type": "null"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "string",
+                                            "const": "urn:fatturafacile:problem:password-change-locked"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Too many attempts"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 429
+                                        },
+                                        "detail": {
+                                            "type": "string",
+                                            "const": "Too many failed attempts. Please try again in a few minutes."
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    }
+                }
+            }
+        },
         "/v1/auth/forgot-password": {
             "post": {
                 "operationId": "auth.forgot-password",
@@ -165628,6 +165730,42 @@
                 ],
                 "title": "Certification"
             },
+            "ChangePasswordRequest": {
+                "type": "object",
+                "description": "The shape of a password change. The current password and the second factor are checked by ChangePassword, which\ncounts the failures; here only the new password follows the policy.",
+                "properties": {
+                    "current_password": {
+                        "type": "string",
+                        "maxLength": 255
+                    },
+                    "password": {
+                        "type": "string"
+                    },
+                    "code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 16
+                    },
+                    "recovery_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 32
+                    },
+                    "password_confirmation": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "current_password",
+                    "password",
+                    "password_confirmation"
+                ],
+                "title": "ChangePasswordRequest"
+            },
             "ChangePlanRequest": {
                 "type": "object",
                 "description": "An upgrade or downgrade to another active plan of the company, optionally with a new quantity.",
@@ -229322,6 +229460,10 @@
         {
             "name": "Outbound",
             "description": "Operations of the Outbound module."
+        },
+        {
+            "name": "PasswordChange",
+            "description": "Operations of the PasswordChange module."
         },
         {
             "name": "PasswordReset",

@@ -82,7 +82,7 @@ final class UserSessions
     }
 
     /**
-     * Revokes every token and every session of the user: deactivation, password reset, lost second factor.
+     * Revokes every token and every session of the user: deactivation, password reset or change, lost second factor.
      *
      * @return array{tokens: int, sessions: int}
      */

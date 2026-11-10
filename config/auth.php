@@ -152,6 +152,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Password change by the signed-in user
+    |--------------------------------------------------------------------------
+    |
+    | A wrong current password or second factor counts as a failure for the user; after max_failed_attempts the change
+    | is locked for lockout_minutes, so a stolen session cannot guess the password.
+    |
+    */
+
+    'password_change' => [
+        'max_failed_attempts' => (int) env('AUTH_PASSWORD_CHANGE_MAX_FAILED_ATTEMPTS', 5),
+        'lockout_minutes' => (int) env('AUTH_PASSWORD_CHANGE_LOCKOUT_MINUTES', 15),
+        'rate_limits' => [
+            'attempts_per_minute' => (int) env('AUTH_PASSWORD_CHANGE_ATTEMPTS_PER_MINUTE', 6),
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Two-factor authentication (TOTP)
     |--------------------------------------------------------------------------
     */

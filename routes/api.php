@@ -41,6 +41,7 @@ use App\Http\Controllers\Api\V1\InvoicePaymentController;
 use App\Http\Controllers\Api\V1\InvoiceQrBillController;
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
 use App\Http\Controllers\Api\V1\LoyaltyCardController;
+use App\Http\Controllers\Api\V1\PasswordChangeController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
 use App\Http\Controllers\Api\V1\PaymentReminderController;
@@ -159,6 +160,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
             Route::post('/refresh', [AuthController::class, 'refresh'])->name('refresh');
             Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
+            Route::put('/password', [PasswordChangeController::class, 'update'])->middleware('throttle:password-change')->name('password.update');
             Route::post('/switch-tenant', [AuthController::class, 'switchTenant'])->name('switch-tenant');
             Route::get('/two-factor', [TwoFactorController::class, 'status'])->name('two-factor.status');
             Route::get('/sessions', [SessionController::class, 'index'])->name('sessions.index');

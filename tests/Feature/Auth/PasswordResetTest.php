@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\DeviceDescription;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Totp;
 use Carbon\CarbonInterface;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Contracts\Queue\ShouldBeEncrypted;
@@ -432,4 +433,22 @@ test('expired tokens are pruned after the retention period, recent ones are kept
 
     expect(PasswordResetToken::find($old->id))->toBeNull()
         ->and(PasswordResetToken::find($recent->id))->not->toBeNull();
+});
+
+test('a reset does not bypass two factors: the next login still asks for the code', function (): void {
+    $user = resetUser();
+    $user->forceFill([
+        'two_factor_secret' => app(Totp::class)->generateSecret(),
+        'two_factor_confirmed_at' => now(),
+        'two_factor_recovery_codes' => [],
+    ])->save();
+
+    requestReset();
+    submitReset(lastResetToken())->assertOk();
+
+    expect($user->fresh()->two_factor_confirmed_at)->not->toBeNull();
+    test()->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => newPassword()])
+        ->assertOk()
+        ->assertJsonPath('data.two_factor_required', true)
+        ->assertJsonPath('data.token', null);
 });

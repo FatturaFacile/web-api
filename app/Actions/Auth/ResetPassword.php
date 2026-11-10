@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Auth\DeviceDescription;
 use App\Services\Auth\PasswordResetTokens;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\UserSessions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -23,6 +24,7 @@ class ResetPassword
         private readonly CheckPasswordResetToken $check,
         private readonly PasswordResetTokens $tokens,
         private readonly RegistrationAudit $audit,
+        private readonly UserSessions $sessions,
     ) {}
 
     /**
@@ -75,9 +77,11 @@ class ResetPassword
 
     private function revokeAccess(User $user): void
     {
+        $revoked = $this->sessions->revokeAll($user);
+
         $this->audit->record(RegistrationAudit::PASSWORD_RESET_SESSIONS_REVOKED, $user->id, [
-            'access_tokens' => $user->tokens()->delete(),
-            'sessions' => DB::table('sessions')->where('user_id', $user->id)->delete(),
+            'bearer_clients' => $revoked['tokens'],
+            'browser_sessions' => $revoked['sessions'],
         ]);
     }
 

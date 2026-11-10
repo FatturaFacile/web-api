@@ -26,5 +26,6 @@
 - Run architecture boundary tests: `./vendor/bin/pest tests/Architecture --no-coverage`.
 - Format changed PHP files: `vendor/bin/pint --dirty --format agent`. CI checks formatting with `./vendor/bin/pint --test`.
 - CI runs tests against PostgreSQL and Redis. Locally, test database settings come from `.env.testing` or environment variables; use the repository's configured test database rather than assuming SQLite.
+- Never write passwords, secrets or tokens in tests as fixed strings, not even in part: generate them at runtime as described in `.ai/rules/test-passwords.md`. GitGuardian reports the fixed ones on the pull request.
 
 Keep edits focused, inspect only the relevant code and tests, and prefer concise diffs. Do not introduce third-party dependencies without a concrete need.

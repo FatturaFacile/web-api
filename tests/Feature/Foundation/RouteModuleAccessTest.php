@@ -25,6 +25,7 @@ function writeRoutesWithoutModule(): array
         // The account of the user themselves.
         'POST api/v1/auth/logout' => 'own session',
         'POST api/v1/auth/refresh' => 'own session',
+        'PUT api/v1/auth/password' => 'own password',
         'POST api/v1/auth/switch-tenant' => 'own memberships, checked by the controller',
         'POST api/v1/auth/two-factor/enable' => 'own second factor',
         'POST api/v1/auth/two-factor/confirm' => 'own second factor',

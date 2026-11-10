@@ -32,6 +32,7 @@ return [
             'device' => 'Browser and device: :device',
             'unknown' => 'not available',
             'security' => 'If this was not you, contact support immediately: someone may have had access to your mailbox.',
+            'security_profile' => 'If this was not you, someone knows your password: reset it right away with “Forgot password” and contact support.',
         ],
         'alert' => [
             'subject' => 'Many password recovery requests - :app',
