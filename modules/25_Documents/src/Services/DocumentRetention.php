@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Storage;
 use Modules\Documents\Enums\RetentionAction;
 use Modules\Documents\Models\DmsDocument;
 use Modules\Documents\Models\DmsDocumentVersion;
+use Modules\DocumentTrust\Services\PreservationLock;
 
 /**
  * Runs the retention policies. A legal hold always wins. Files that belong to an attachment are referenced, not owned,
@@ -48,7 +49,7 @@ final readonly class DocumentRetention
     {
         $policy = $document->retentionPolicy;
 
-        if ($policy === null || ! $policy->is_active) {
+        if ($policy === null || ! $policy->is_active || PreservationLock::documentIsPreserved((string) $document->id)) {
             return;
         }
 
