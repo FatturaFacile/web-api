@@ -142,7 +142,7 @@ class TranslationController extends Controller
         $tenantId = $request->wantsGlobal() ? null : $tenantContext->getTenantId();
         $validated = $request->validated();
 
-        $translation = Translation::updateOrCreate(
+        $save = static fn (): Translation => Translation::updateOrCreate(
             [
                 'tenant_id' => $tenantId,
                 'locale' => $validated['locale'],
@@ -152,6 +152,8 @@ class TranslationController extends Controller
                 'value' => $validated['value'],
             ]
         );
+
+        $translation = $request->wantsGlobal() ? $tenantContext->runAsGlobal($save) : $save();
 
         if ($tenantId) {
             Cache::forget("translations_{$tenantId}_{$validated['locale']}");

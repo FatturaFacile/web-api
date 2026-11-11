@@ -8,77 +8,32 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Scope;
-use Illuminate\Support\Facades\Schema;
 
+/**
+ * Visibility rule of the tenant tables: a tenant sees its own rows and, only for the models that allow global records
+ * (AllowsGlobalRecords), the rows with a null tenant_id. Without a tenant context only those global rows are visible.
+ * For every other model a null tenant_id is invisible to everybody.
+ */
 class TenantScope implements Scope
 {
-    /**
-     * Tables that hold system-wide reference lookup data that may be shared across tenants when tenant_id is null.
-     *
-     * @var list<string>
-     */
-    protected array $sharedLookupTables = [
-        'translations',
-        'lookup_items',
-        'lookup_categories',
-        'lookup_item_translations',
-        'payment_terms',
-        'payment_term_translations',
-        'unit_of_measures',
-        'vat_codes',
-        'vat_code_translations',
-        'countries',
-        'country_translations',
-        'currencies',
-        'currency_translations',
-        'regions',
-        'region_translations',
-        'document_statuses',
-        'document_status_translations',
-        'inventory_movement_types',
-        'inventory_movement_type_translations',
-        'expense_categories',
-        'expense_category_translations',
-        'contact_categories',
-        'contact_category_translations',
-        'contact_types',
-        'contact_type_translations',
-        'project_statuses',
-        'project_status_translations',
-        'task_statuses',
-        'task_status_translations',
-        'workflow_states',
-        'workflow_state_translations',
-        'approval_statuses',
-        'approval_status_translations',
-        'notification_types',
-        'notification_type_translations',
-        'payment_methods',
-        'payment_method_translations',
-    ];
-
     public function apply(Builder $builder, Model $model): void
     {
         $tenantContext = app(TenantContext::class);
         $column = $model->qualifyColumn('tenant_id');
-
-        $isShared = method_exists($model, 'isSharedLookup')
-            ? (bool) $model->isSharedLookup()
-            : in_array($model->getTable(), $this->sharedLookupTables, true);
-
-        if ($isShared && ! Schema::hasColumn($model->getTable(), 'tenant_id')) {
-            return;
-        }
-
+        $includesGlobal = method_exists($model, 'allowsGlobalRecords') && $model->allowsGlobalRecords();
         $tenantId = $tenantContext->hasTenant() ? $tenantContext->getTenantId() : null;
 
-        // Each customer has a dedicated database: rows without a tenant are generic data shared by all its tenants.
-        $builder->where(function (Builder $query) use ($column, $tenantId): void {
+        $builder->where(function (Builder $query) use ($column, $tenantId, $includesGlobal): void {
             if (! empty($tenantId)) {
-                $query->where($column, $tenantId)
-                    ->orWhereNull($column);
-            } else {
+                $query->where($column, $tenantId);
+
+                if ($includesGlobal) {
+                    $query->orWhereNull($column);
+                }
+            } elseif ($includesGlobal) {
                 $query->whereNull($column);
+            } else {
+                $query->whereRaw('1 = 0');
             }
         });
     }

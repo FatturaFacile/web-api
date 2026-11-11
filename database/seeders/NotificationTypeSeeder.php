@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\NotificationType;
 use App\Models\NotificationTypeTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class NotificationTypeSeeder extends Seeder
+class NotificationTypeSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $types = [
             [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ConstructionTrades\Models;
 
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -21,6 +22,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class PriceItem extends TradesRecord
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'ct_price_items';
 
     protected function casts(): array

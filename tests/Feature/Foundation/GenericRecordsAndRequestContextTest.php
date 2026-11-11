@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Contact;
+use App\Models\Country;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -20,47 +21,60 @@ beforeEach(function (): void {
     $this->user = User::create(['name' => 'Ada', 'email' => 'ada@example.com', 'password' => bcrypt('secret123')]);
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
 
-    $insert = fn (?string $tenantId, string $name): string => tap((string) Str::uuid(), fn (string $id) => DB::table('contacts')->insert([
+    $insert = fn (?string $tenantId, string $code): string => tap((string) Str::uuid(), fn (string $id) => DB::table('countries')->insert([
         'id' => $id,
         'tenant_id' => $tenantId,
-        'company_name' => $name,
-        'country' => 'CH',
+        'iso_code_2' => $code,
+        'iso_code_3' => $code.'X',
+        'numeric_code' => 'N'.$code,
+        'phone_prefix' => '+999',
+        'currency_code' => 'CHF',
         'created_at' => now(),
         'updated_at' => now(),
     ]));
 
-    $this->genericId = $insert(null, 'Generic');
-    $insert($this->tenant->id, 'Own');
-    $insert($this->otherTenant->id, 'Foreign');
+    $this->genericId = $insert(null, 'ZG');
+    $insert($this->tenant->id, 'ZO');
+    $insert($this->otherTenant->id, 'ZF');
+
+    $this->orphanContactId = (string) Str::uuid();
+    DB::table('contacts')->insert(['id' => $this->orphanContactId, 'tenant_id' => null, 'company_name' => 'Orphan', 'country' => 'CH', 'created_at' => now(), 'updated_at' => now()]);
 });
 
 afterEach(fn () => app(TenantContext::class)->clear());
 
-test('queries return the rows of the tenant together with the generic rows', function (): void {
+test('queries return the rows of the tenant together with the generic rows of a model that allows them', function (): void {
     app(TenantContext::class)->setTenant($this->tenant);
 
-    expect(Contact::orderBy('company_name')->pluck('company_name')->all())->toBe(['Generic', 'Own']);
+    expect(Country::whereIn('iso_code_2', ['ZG', 'ZO', 'ZF'])->orderBy('iso_code_2')->pluck('iso_code_2')->all())->toBe(['ZG', 'ZO']);
 });
 
 test('without a tenant only generic rows are returned', function (): void {
     app(TenantContext::class)->setTenant(null);
 
-    expect(Contact::pluck('company_name')->all())->toBe(['Generic']);
+    expect(Country::whereIn('iso_code_2', ['ZG', 'ZO', 'ZF'])->pluck('iso_code_2')->all())->toBe(['ZG']);
+});
+
+test('a null tenant row of a model that does not allow generic records is invisible to everybody', function (): void {
+    app(TenantContext::class)->setTenant($this->tenant);
+    expect(Contact::where('company_name', 'Orphan')->exists())->toBeFalse();
+
+    app(TenantContext::class)->setTenant(null);
+    expect(Contact::where('company_name', 'Orphan')->exists())->toBeFalse();
 });
 
 test('tenant users cannot change or delete generic rows', function (string $action): void {
     app(TenantContext::class)->setTenant($this->tenant);
-    $contact = Contact::findOrFail($this->genericId);
+    $country = Country::findOrFail($this->genericId);
 
-    $action === 'update' ? $contact->update(['company_name' => 'Changed']) : $contact->delete();
+    $action === 'update' ? $country->update(['currency_code' => 'EUR']) : $country->delete();
 })->with(['update', 'delete'])->throws(AccessDeniedHttpException::class);
 
 test('system code without a tenant can maintain generic rows', function (): void {
     app(TenantContext::class)->clear();
+    Country::findOrFail($this->genericId)->update(['currency_code' => 'EUR']);
 
-    Contact::withoutGlobalScopes()->findOrFail($this->genericId)->update(['company_name' => 'Maintained']);
-
-    expect(DB::table('contacts')->where('id', $this->genericId)->value('company_name'))->toBe('Maintained');
+    expect(DB::table('countries')->where('id', $this->genericId)->value('currency_code'))->toBe('EUR');
 });
 
 describe('with the request context required', function (): void {

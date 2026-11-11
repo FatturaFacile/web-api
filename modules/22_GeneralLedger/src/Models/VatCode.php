@@ -5,11 +5,14 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class VatCode extends BaseEnterpriseModel
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'vat_codes';
 
     protected function casts(): array

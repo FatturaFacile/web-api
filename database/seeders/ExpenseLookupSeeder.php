@@ -7,14 +7,13 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 
-class ExpenseLookupSeeder extends Seeder
+class ExpenseLookupSeeder extends GlobalDataSeeder
 {
     /**
      * Run the expense category multilingual lookups.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $categoriesData = [
             [

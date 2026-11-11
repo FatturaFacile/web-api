@@ -26,15 +26,13 @@ beforeEach(function (): void {
 });
 
 test('GET translations with tenant_id=default returns 200 with tenant_id null and valid dictionary', function (): void {
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'AUTH.SUBTITLE',
         'value' => 'Sign in to your account',
     ]);
 
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'AUTH.EMAIL',
         'value' => 'Email Address',
@@ -59,8 +57,7 @@ test('GET translations with tenant_id=default returns 200 with tenant_id null an
 });
 
 test('translations endpoint does not output __PHP_Incomplete_Class_Name even if collection was previously in cache', function (): void {
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'COMMON.WELCOME',
         'value' => 'Welcome to the platform',
@@ -82,16 +79,14 @@ test('translations endpoint does not output __PHP_Incomplete_Class_Name even if 
 
 test('query with specific tenant ID uses null tenant as fallback and tenant specific values take precedence', function (): void {
     // 1. Global default translation
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'AUTH.LOGIN',
         'value' => 'System Login',
     ]);
 
     // 2. Global fallback translation (not overridden by tenant)
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'AUTH.FORGOT_PASSWORD',
         'value' => 'Forgot your password?',
@@ -161,8 +156,7 @@ test('query with specific tenant ID uses null tenant as fallback and tenant spec
 test('NormalizeTenantInput middleware normalizes tenant_id from header and query', function (): void {
     Cache::flush();
 
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'HEADER.TEST',
         'value' => 'Header Test Passed',
@@ -212,8 +206,7 @@ test('NormalizeTenantInput normalizes tenant_id in authenticated storeOrUpdate r
 });
 
 test('Translation scopeForTenant implements fallback query condition correctly', function (): void {
-    Translation::create([
-        'tenant_id' => null,
+    Translation::createGlobal([
         'locale' => 'en',
         'key' => 'GLOBAL.KEY',
         'value' => 'Global Value',
@@ -227,12 +220,12 @@ test('Translation scopeForTenant implements fallback query condition correctly',
     ]);
 
     // When tenant_id is null: selects whereNull('tenant_id')
-    $nullResults = Translation::forTenant(null)->where('locale', 'en')->pluck('key')->all();
+    $nullResults = Translation::withoutGlobalScopes()->forTenant(null)->where('locale', 'en')->pluck('key')->all();
     expect($nullResults)->toContain('GLOBAL.KEY')
         ->and($nullResults)->not->toContain('TENANT.KEY');
 
     // When tenant_id is provided: selects where tenant_id = :id or tenant_id is null
-    $tenantResults = Translation::forTenant($this->tenant->id)->where('locale', 'en')->pluck('key')->all();
+    $tenantResults = Translation::withoutGlobalScopes()->forTenant($this->tenant->id)->where('locale', 'en')->pluck('key')->all();
     expect($tenantResults)->toContain('GLOBAL.KEY')
         ->and($tenantResults)->toContain('TENANT.KEY');
 });
@@ -259,7 +252,7 @@ test('an empty dictionary is not cached, so translations seeded later are served
     $this->getJson('/api/v1/translations/de?tenant_id=default')->assertOk();
     expect(Cache::has('translations_global_de'))->toBeFalse();
 
-    Translation::create(['tenant_id' => null, 'locale' => 'de', 'key' => 'buttons.save', 'value' => 'Speichern']);
+    Translation::createGlobal(['locale' => 'de', 'key' => 'buttons.save', 'value' => 'Speichern']);
 
     $this->getJson('/api/v1/translations/de?tenant_id=default')
         ->assertOk()

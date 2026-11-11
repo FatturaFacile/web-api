@@ -111,6 +111,7 @@ class PaymentTermTranslationSeeder extends Seeder
                 foreach ($data['translations'] as $locale => $trans) {
                     PaymentTermTranslation::updateOrCreate(
                         [
+                            'tenant_id' => $tenantId,
                             'payment_term_id' => $term->id,
                             'locale' => $locale,
                         ],

@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Models;
 
 use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Modules\HumanResources\Services\Shifts\ShiftCategory;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 
@@ -17,6 +18,8 @@ use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
  */
 final class ShiftType extends BaseEnterpriseModel
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'hr_shift_types';
 
     protected function casts(): array

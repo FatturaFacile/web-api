@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\DocumentStatus;
 use App\Models\DocumentStatusTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class DocumentStatusSeeder extends Seeder
+class DocumentStatusSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $statuses = [
             // Invoices

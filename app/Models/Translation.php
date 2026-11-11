@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\TranslationFactory;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -13,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class Translation extends Model
 {
     /** @use HasFactory<TranslationFactory> */
-    use HasFactory;
+    use AllowsGlobalRecords, BelongsToTenant, HasFactory;
 
     /**
      * Languages the platform ships translations for; also the only values allowed in public cache keys.
@@ -59,14 +61,6 @@ class Translation extends Model
                 $q->whereNull('tenant_id');
             }
         });
-    }
-
-    /**
-     * Indicate that translations is a shared reference dataset with null fallbacks.
-     */
-    public function isSharedLookup(): bool
-    {
-        return true;
     }
 
     /**

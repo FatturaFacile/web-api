@@ -3,10 +3,12 @@
 declare(strict_types=1);
 
 use App\Models\Contact;
+use App\Models\Country;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
@@ -112,26 +114,51 @@ test('without an explicit tenant the console may set the tenant of a record, and
     expect(Contact::query()->whereKey($contact->id)->exists())->toBeFalse();
 });
 
-test('generic records, with no tenant, are readable by a tenant but read-only', function (): void {
-    $generic = Contact::withoutGlobalScopes()->create(['tenant_id' => null, 'company_name' => 'Generic', 'country' => 'CH']);
+function boundaryCountry(string $code, ?Tenant $tenant = null): Country
+{
+    $attributes = ['iso_code_2' => $code, 'iso_code_3' => $code.'X', 'numeric_code' => 'N'.$code, 'phone_prefix' => '+999', 'currency_code' => 'CHF'];
+
+    return $tenant === null ? Country::createGlobal($attributes) : Country::query()->create($attributes + ['tenant_id' => $tenant->id]);
+}
+
+test('generic records, with no tenant, are readable by a tenant for a model that allows them, but read-only', function (): void {
+    $generic = boundaryCountry('ZA');
     app(TenantContext::class)->setTenant($this->tenantA);
 
-    expect(Contact::query()->whereKey($generic->id)->exists())->toBeTrue()
-        ->and(fn () => Contact::query()->whereKey($generic->id)->first()->update(['company_name' => 'Changed']))->toThrow(AccessDeniedHttpException::class)
-        ->and(fn () => Contact::query()->whereKey($generic->id)->first()->delete())->toThrow(AccessDeniedHttpException::class);
+    expect(Country::query()->whereKey($generic->id)->exists())->toBeTrue()
+        ->and(fn () => Country::query()->whereKey($generic->id)->first()->update(['currency_code' => 'EUR']))->toThrow(AccessDeniedHttpException::class)
+        ->and(fn () => Country::query()->whereKey($generic->id)->first()->delete())->toThrow(AccessDeniedHttpException::class);
 
     app(TenantContext::class)->clear();
-    expect(Contact::query()->whereKey($generic->id)->first()->update(['company_name' => 'Changed by the system']))->toBeTrue();
+    expect(Country::query()->whereKey($generic->id)->first()->update(['currency_code' => 'EUR']))->toBeTrue();
 });
 
-test('the forTenant scope returns the rows of the tenant and the generic ones, or the generic ones only', function (): void {
+test('a null tenant is invisible for a model that does not allow global records', function (): void {
+    DB::table('contacts')->insert(['id' => (string) Str::uuid(), 'tenant_id' => null, 'company_name' => 'Orphan', 'country' => 'CH', 'created_at' => now(), 'updated_at' => now()]);
+
+    app(TenantContext::class)->setTenant($this->tenantA);
+    expect(Contact::query()->where('company_name', 'Orphan')->exists())->toBeFalse();
+
+    app(TenantContext::class)->clear();
+    expect(Contact::query()->where('company_name', 'Orphan')->exists())->toBeFalse()
+        ->and(Contact::withoutGlobalScopes()->where('company_name', 'Orphan')->exists())->toBeTrue();
+});
+
+test('the forTenant scope returns the rows of the tenant and, only for a model that allows them, the generic ones', function (): void {
     $own = Contact::withoutGlobalScopes()->create(['tenant_id' => $this->tenantA->id, 'company_name' => 'Own', 'country' => 'CH']);
     $foreign = Contact::withoutGlobalScopes()->create(['tenant_id' => $this->tenantB->id, 'company_name' => 'Foreign', 'country' => 'CH']);
-    $generic = Contact::withoutGlobalScopes()->create(['tenant_id' => null, 'company_name' => 'Generic', 'country' => 'CH']);
 
-    $forA = Contact::withoutGlobalScopes()->forTenant($this->tenantA->id)->pluck('id')->all();
-    $genericOnly = Contact::withoutGlobalScopes()->forTenant(null)->pluck('id')->all();
+    expect(Contact::withoutGlobalScopes()->forTenant($this->tenantA->id)->pluck('id')->all())->toBe([$own->id])
+        ->and(Contact::withoutGlobalScopes()->forTenant(null)->pluck('id')->all())->toBe([])
+        ->and($foreign->id)->not->toBeEmpty();
 
-    expect($forA)->toContain($own->id, $generic->id)->not->toContain($foreign->id)
-        ->and($genericOnly)->toContain($generic->id)->not->toContain($own->id, $foreign->id);
+    $genericCountry = boundaryCountry('ZB');
+    $ownCountry = boundaryCountry('ZC', $this->tenantA);
+    $foreignCountry = boundaryCountry('ZD', $this->tenantB);
+
+    $forA = Country::withoutGlobalScopes()->forTenant($this->tenantA->id)->pluck('id')->all();
+    $genericOnly = Country::withoutGlobalScopes()->forTenant(null)->pluck('id')->all();
+
+    expect($forA)->toContain($ownCountry->id, $genericCountry->id)->not->toContain($foreignCountry->id)
+        ->and($genericOnly)->toContain($genericCountry->id)->not->toContain($ownCountry->id, $foreignCountry->id);
 });

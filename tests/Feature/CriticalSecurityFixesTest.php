@@ -159,12 +159,11 @@ test('CRIT-01: operational models never leak records from other tenants or recor
 
 test('CRIT-01: shared lookup tables allow null tenant_id records to remain globally accessible', function (): void {
     // Shared lookup categories (tenant_id = null)
-    LookupCategory::create([
+    app(TenantContext::class)->runWithoutTenant(static fn () => LookupCategory::createGlobal([
         'code' => 'vat_rates_shared',
         'name' => 'Shared VAT Rates',
         'is_system' => true,
-        'tenant_id' => null,
-    ]);
+    ]));
 
     // With active tenant context, shared lookup is visible
     expect(LookupCategory::where('code', 'vat_rates_shared')->exists())->toBeTrue();

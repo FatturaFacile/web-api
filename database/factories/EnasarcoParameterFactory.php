@@ -36,6 +36,6 @@ final class EnasarcoParameterFactory extends Factory
      */
     public function generic(): self
     {
-        return $this->state(['tenant_id' => null]);
+        return $this->state(['tenant_id' => null])->afterMaking(static fn ($model) => $model->declareGlobal());
     }
 }

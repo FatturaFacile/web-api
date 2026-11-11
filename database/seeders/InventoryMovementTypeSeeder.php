@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\InventoryMovementType;
 use App\Models\InventoryMovementTypeTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class InventoryMovementTypeSeeder extends Seeder
+class InventoryMovementTypeSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $types = [
             [

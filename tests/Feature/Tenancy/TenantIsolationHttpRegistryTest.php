@@ -112,6 +112,8 @@ test('a member of another tenant cannot list, read, change or delete the rows of
     foreach ($seeded as $modelClass => $key) {
         $entry = collect(TenantModelRegistry::models())->firstWhere('class', $modelClass);
         $table = $entry['table'];
+        // A numeric key would match any uuid or count in a response: look for it as an id member.
+        $needle = Str::isUuid($key) ? $key : '"id":'.$key;
         $before = (array) DB::table($table)->where((new $modelClass)->getKeyName(), $key)->first();
 
         foreach ($probes[$modelClass] as $probe) {
@@ -141,14 +143,14 @@ test('a member of another tenant cannot list, read, change or delete the rows of
                     $failures[] = "{$method} {$url} answered {$status} to another tenant, an unknown id answers {$baseline} ({$modelClass})";
                 }
 
-                if (str_contains((string) $response->getContent(), $key) && $status < 400) {
+                if (str_contains((string) $response->getContent(), $needle) && $status < 400) {
                     $failures[] = "{$method} {$url} returned the id of another tenant ({$modelClass})";
                 }
             }
 
             $listing = test()->withHeaders($headers)->getJson('/'.$probe['collection']);
 
-            if ($listing->getStatusCode() < 400 && str_contains((string) $listing->getContent(), $key)) {
+            if ($listing->getStatusCode() < 400 && str_contains((string) $listing->getContent(), $needle)) {
                 $failures[] = "GET /{$probe['collection']} lists the row of another tenant ({$modelClass})";
             }
         }

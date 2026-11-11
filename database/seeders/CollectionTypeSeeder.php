@@ -7,11 +7,10 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 
-final class CollectionTypeSeeder extends Seeder
+final class CollectionTypeSeeder extends GlobalDataSeeder
 {
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $category = LookupCategory::updateOrCreate(
             ['code' => 'collection_type'],

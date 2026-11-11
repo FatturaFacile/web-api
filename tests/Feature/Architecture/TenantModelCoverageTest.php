@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\Tenancy\TenantSchemaPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -14,10 +15,13 @@ uses(RefreshDatabase::class);
  * Architecture guards of the tenant boundary, over every model of app/, modules/ and packages/ and over the whole
  * schema, not only over app/Models.
  *
- * - A model whose table has a tenant_id column must carry the tenant scope, or be listed below with the reason.
- * - Every table has a tenant_id column, or is listed in the baseline with the reason.
+ * Owner policy: every table has a nullable tenant_id (null = global, visible to every tenant, only for shared data).
+ *
+ * - Every table has a nullable tenant_id, except the framework and central tables of TenantSchemaPolicy.
+ * - A model whose table has a tenant_id column must carry the tenant scope, take its tenant from its parent, or be
+ *   listed below with the reason.
  * - Every tenant_id column is indexed with tenant_id as leading column.
- * - A nullable tenant_id (a table that may hold generic rows) is allowed only for the tables of the frozen baseline.
+ * - A model may allow global records only when its table is in the frozen list of TenantSchemaBaseline.
  */
 
 /**
@@ -29,14 +33,7 @@ uses(RefreshDatabase::class);
 function unscopedModelsWithTenantColumn(): array
 {
     return [
-        'App\Models\DeliveryNoteItem' => 'Document line: always read through its scoped delivery note.',
-        'App\Models\InvoiceItem' => 'Document line: always read through its scoped invoice.',
-        'App\Models\QuoteItem' => 'Document line: always read through its scoped quote.',
-        'App\Models\SalesOrderItem' => 'Document line: always read through its scoped order (the order lists join or whereHas the scoped order).',
         'App\Models\EiInboundLog' => 'Inbound SDI log written by webhooks before the tenant is known; every read filters tenant_id or goes through a scoped invoice.',
-        'App\Models\LookupItem' => 'Shared lookup catalog (null tenant = generic).',
-        'App\Models\LookupItemTranslation' => 'Shared lookup catalog (null tenant = generic).',
-        'App\Models\Translation' => 'Shared UI translations (null tenant = generic).',
         'App\Models\PasswordResetToken' => 'Central authentication data, keyed by e-mail.',
         'App\Models\TenantAccessRequest' => 'Central onboarding data read by the platform administrator.',
         'Enterprise\AuditLedger\Models\AuditLedgerEntry' => 'Append-only ledger; the API filters tenant_id explicitly.',
@@ -58,7 +55,7 @@ test('every model whose table has a tenant column carries the tenant scope or a 
             continue;
         }
 
-        if ($entry['scoped']) {
+        if ($entry['scoped'] || $entry['stamped']) {
             continue;
         }
 
@@ -84,19 +81,50 @@ test('the registry finds the models of the modules and of the packages', functio
         ->and($classes)->toContain('App\Models\Invoice');
 });
 
-test('every table has a tenant column or is documented as a child or as non tenant data', function (): void {
-    $withoutColumn = [];
+test('every table has a nullable tenant_id, except the framework and central tables of the policy', function (): void {
+    $schema = Schema::getConnection()->getConfig('search_path') ?: 'public';
+    $columns = DB::table('information_schema.columns')
+        ->where('table_schema', $schema)
+        ->where('column_name', 'tenant_id')
+        ->pluck('is_nullable', 'table_name')
+        ->all();
+    $tables = array_column(Schema::getTables(), 'name');
+    $excluded = TenantSchemaPolicy::EXCLUDED_TABLES;
 
-    foreach (Schema::getTables() as $table) {
-        if (! Schema::hasColumn($table['name'], 'tenant_id')) {
-            $withoutColumn[] = $table['name'];
+    $missing = [];
+    $notNullable = [];
+
+    foreach ($tables as $table) {
+        if (isset($excluded[$table])) {
+            continue;
+        }
+
+        if (! isset($columns[$table])) {
+            $missing[] = $table;
+        } elseif ($columns[$table] !== 'YES') {
+            $notNullable[] = $table;
         }
     }
 
-    $documented = array_keys(TenantSchemaBaseline::TABLES_WITHOUT_TENANT_COLUMN);
+    expect($missing)->toBe([], 'Tables without tenant_id: add a nullable UUID tenant_id (with an index), or list the table in TenantSchemaPolicy::EXCLUDED_TABLES with the reason.')
+        ->and($notNullable)->toBe([], 'Tables whose tenant_id is NOT NULL: the policy is a nullable tenant_id on every table.')
+        ->and(array_values(array_diff(array_keys($excluded), $tables)))->toBe([], 'Stale exclusions: the table no longer exists.');
+});
 
-    expect(array_values(array_diff($withoutColumn, $documented)))->toBe([], 'New tables without tenant_id: add the column or document the reason in TenantSchemaBaseline.')
-        ->and(array_values(array_diff($documented, $withoutColumn)))->toBe([], 'Stale baseline entries: the table now has a tenant_id or no longer exists.');
+test('the excluded tables are only framework or central tables, each with a reason', function (): void {
+    foreach (TenantSchemaPolicy::EXCLUDED_TABLES as $table => $reason) {
+        expect($reason)->not->toBe('', "The exclusion of {$table} has no reason.");
+    }
+
+    expect(count(TenantSchemaPolicy::EXCLUDED_TABLES))->toBeLessThanOrEqual(15, 'The exclusions must stay the exception: a business table needs a nullable tenant_id, not an exclusion.');
+});
+
+test('the child tables declared in the policy exist, have their tenant_id and a foreign key to the parent', function (): void {
+    foreach (TenantSchemaPolicy::CHILD_TABLES as $child => [$parent, $foreignKey]) {
+        expect(Schema::hasColumn($child, 'tenant_id'))->toBeTrue("{$child} has no tenant_id")
+            ->and(Schema::hasColumn($child, $foreignKey))->toBeTrue("{$child} has no {$foreignKey}")
+            ->and(Schema::hasColumn($parent, 'tenant_id'))->toBeTrue("{$parent} has no tenant_id");
+    }
 });
 
 test('every tenant_id column is indexed with tenant_id as leading column', function (): void {
@@ -117,16 +145,27 @@ test('every tenant_id column is indexed with tenant_id as leading column', funct
     expect($unindexed)->toBe([], 'Tables with tenant_id and no leading tenant index: '.implode(', ', $unindexed));
 });
 
-test('only the tables of the frozen baseline may keep a nullable tenant_id', function (): void {
-    $nullable = DB::table('information_schema.columns')
-        ->where('table_schema', Schema::getConnection()->getConfig('search_path') ?: 'public')
-        ->where('column_name', 'tenant_id')
-        ->where('is_nullable', 'YES')
-        ->pluck('table_name')
-        ->all();
+test('only the models of the frozen list may allow global records', function (): void {
+    $allowing = [];
 
-    $baseline = TenantSchemaBaseline::NULLABLE_TENANT_TABLES;
+    foreach (TenantModelRegistry::models() as $entry) {
+        if ($entry['allowsGlobal']) {
+            $allowing[$entry['table']] = true;
+        }
+    }
 
-    expect(array_values(array_diff($nullable, $baseline)))->toBe([], 'New tables with a nullable tenant_id: make it NOT NULL, or add the table to the baseline only if its rows can be generic.')
-        ->and(array_values(array_diff($baseline, $nullable)))->toBe([], 'The table is NOT NULL now: remove it from the baseline.');
+    $declared = array_keys($allowing);
+    sort($declared);
+    $baseline = TenantSchemaBaseline::GLOBAL_TABLES;
+
+    expect(array_values(array_diff($declared, $baseline)))->toBe([], 'A model allows global records (null tenant_id) for a table that is not in TenantSchemaBaseline::GLOBAL_TABLES: add it only if the owner agrees its rows are shared by every tenant.')
+        ->and(array_values(array_diff($baseline, $declared)))->toBe([], 'The model of the table no longer allows global records: remove it from the baseline.');
+});
+
+test('the undecided tables are tenant data for now: no model allows global records for them', function (): void {
+    $allowing = collect(TenantModelRegistry::models())->where('allowsGlobal', true)->pluck('table')->all();
+
+    foreach (array_keys(TenantSchemaBaseline::UNDECIDED_TABLES) as $table) {
+        expect($allowing)->not->toContain($table);
+    }
 });

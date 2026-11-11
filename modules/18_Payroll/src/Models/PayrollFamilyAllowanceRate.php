@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Enterprise\Foundation\Concerns\Auditable;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 
 /**
  * The monthly family allowances of a canton from a date.
  */
 final class PayrollFamilyAllowanceRate extends PayrollRecord
 {
-    use Auditable;
+    use AllowsGlobalRecords, Auditable, BelongsToTenant;
 
     protected $table = 'payroll_family_allowance_rates';
 

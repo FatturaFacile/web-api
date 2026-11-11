@@ -8,15 +8,14 @@ use App\Models\ApprovalStatus;
 use App\Models\ApprovalStatusTranslation;
 use App\Models\WorkflowState;
 use App\Models\WorkflowStateTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class WorkflowApprovalStatusSeeder extends Seeder
+class WorkflowApprovalStatusSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $workflowStates = [
             [

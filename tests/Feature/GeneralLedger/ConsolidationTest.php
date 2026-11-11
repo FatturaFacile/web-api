@@ -150,7 +150,7 @@ beforeEach(function (): void {
     $this->outsiderChart = conChart($this->outsider);
 
     foreach ([['2026-01-01', '1.000000'], ['2026-03-31', '1.050000'], ['2026-06-30', '1.100000']] as [$date, $rate]) {
-        ExchangeRate::query()->create(['source' => 'CHF', 'target' => 'EUR', 'rate' => $rate, 'effective_date' => $date]);
+        ExchangeRate::createGlobal(['source' => 'CHF', 'target' => 'EUR', 'rate' => $rate, 'effective_date' => $date]);
     }
 
     $p = $this->parentChart;

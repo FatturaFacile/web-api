@@ -261,7 +261,7 @@ test('company agreements win over generic ones with the same code', function ():
     $tenant = payrollTenant('IT');
     $manager = payrollMember($tenant, 'owner');
     $generic = CollectiveAgreement::factory()->generic()->create(['code' => 'H011', 'name' => 'Generico', 'installments' => 12]);
-    CollectiveAgreementLevel::query()->create(['tenant_id' => null, 'agreement_id' => $generic->id, 'level' => '4', 'monthly_minimum' => '1000']);
+    CollectiveAgreementLevel::createGlobal(['agreement_id' => $generic->id, 'level' => '4', 'monthly_minimum' => '1000']);
     payrollProfile($tenant, payrollEmployee($tenant, ['base_annual_salary' => '26000.00']), ['collective_agreement_code' => 'H011', 'contract_level' => '4']);
 
     payrollCalculate($tenant, $manager, 2026, 1)->assertCreated();

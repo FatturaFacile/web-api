@@ -15,6 +15,8 @@ class TenantContext
 
     private bool $explicitlyNull = false;
 
+    private int $globalWriteDepth = 0;
+
     public function setTenant(?Tenant $tenant): void
     {
         $this->tenant = $tenant;
@@ -27,6 +29,37 @@ class TenantContext
         $this->tenant = null;
         $this->isExplicit = false;
         $this->explicitlyNull = false;
+    }
+
+    /**
+     * Whether the code running now declared that the records it writes are global (tenant_id null, visible to every
+     * tenant): see runAsGlobal().
+     */
+    public function isWritingGlobal(): bool
+    {
+        return $this->globalWriteDepth > 0;
+    }
+
+    /**
+     * Runs the callback declaring that every record it creates is global data shared by all tenants (lookups,
+     * translations, catalogues, platform settings, legal reference data). Only models that allow global records
+     * (AllowsGlobalRecords) may be written inside it, and from an explicit tenant context only a platform
+     * administrator may. This is the only way to write a row with a null tenant_id.
+     *
+     * @template TReturn
+     *
+     * @param  callable(): TReturn  $callback
+     * @return TReturn
+     */
+    public function runAsGlobal(callable $callback): mixed
+    {
+        $this->globalWriteDepth++;
+
+        try {
+            return $callback();
+        } finally {
+            $this->globalWriteDepth--;
+        }
     }
 
     public function isExplicit(): bool
@@ -79,6 +112,32 @@ class TenantContext
         $previousExplicitlyNull = $this->explicitlyNull;
 
         $this->setTenant($tenant);
+
+        try {
+            return $callback();
+        } finally {
+            $this->tenant = $previousTenant;
+            $this->isExplicit = $previousExplicit;
+            $this->explicitlyNull = $previousExplicitlyNull;
+        }
+    }
+
+    /**
+     * Temporarily executes the callback with no tenant at all (console and system code such as seeders of shared data),
+     * restoring the previous context afterwards.
+     *
+     * @template TReturn
+     *
+     * @param  callable(): TReturn  $callback
+     * @return TReturn
+     */
+    public function runWithoutTenant(callable $callback): mixed
+    {
+        $previousTenant = $this->tenant;
+        $previousExplicit = $this->isExplicit;
+        $previousExplicitlyNull = $this->explicitlyNull;
+
+        $this->clear();
 
         try {
             return $callback();

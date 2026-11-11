@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\ExpenseCategory;
 use App\Models\ExpenseCategoryTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class ExpenseCategorySeeder extends Seeder
+class ExpenseCategorySeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $categories = [
             [

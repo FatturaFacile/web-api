@@ -7,11 +7,10 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 
-final class LotStatusSeeder extends Seeder
+final class LotStatusSeeder extends GlobalDataSeeder
 {
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $cat = LookupCategory::updateOrCreate(
             ['code' => 'stock_lot_status'],

@@ -4,12 +4,17 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Models;
 
+use App\Models\Concerns\BelongsToTenant;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
+
 /**
  * The construction figures of a collective agreement from a date, with the document they come from. minimum_wages holds
  * for each qualification and zone a monthly and an hourly minimum.
  */
 final class CclConstructionParameter extends PayrollRecord
 {
+    use AllowsGlobalRecords, BelongsToTenant;
+
     protected $table = 'payroll_ccl_construction_parameters';
 
     protected function casts(): array

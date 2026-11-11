@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 
@@ -14,7 +15,7 @@ use Illuminate\Database\Eloquent\Model;
  */
 final class EnasarcoParameter extends Model
 {
-    use BelongsToTenant, HasUuids;
+    use AllowsGlobalRecords, BelongsToTenant, HasUuids;
 
     public const array AGENT_TYPES = ['single_mandate', 'multi_mandate'];
 

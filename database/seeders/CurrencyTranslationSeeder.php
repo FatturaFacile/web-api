@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\Currency;
 use App\Models\CurrencyTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class CurrencyTranslationSeeder extends Seeder
+class CurrencyTranslationSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $currencies = [
             [

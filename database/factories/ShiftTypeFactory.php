@@ -56,6 +56,6 @@ final class ShiftTypeFactory extends Factory
      */
     public function generic(): static
     {
-        return $this->state(['tenant_id' => null]);
+        return $this->state(['tenant_id' => null])->afterMaking(static fn ($model) => $model->declareGlobal());
     }
 }

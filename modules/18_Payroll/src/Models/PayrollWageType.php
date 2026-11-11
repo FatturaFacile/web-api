@@ -4,14 +4,16 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Enterprise\Foundation\Concerns\Auditable;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 
 /**
  * A wage type of the company: which bases a line contributes to.
  */
 final class PayrollWageType extends PayrollRecord
 {
-    use Auditable;
+    use AllowsGlobalRecords, Auditable, BelongsToTenant;
 
     protected $table = 'payroll_wage_types';
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ConstructionTrades\Models;
 
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -17,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class PriceList extends TradesRecord
 {
+    use AllowsGlobalRecords;
+
     /** @var list<string> */
     public const array Sources = ['own', 'npk', 'crb', 'asip', 'other'];
 

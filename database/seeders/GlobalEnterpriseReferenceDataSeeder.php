@@ -17,9 +17,9 @@ use Illuminate\Support\Facades\Schema;
  * in 4 languages: Italian (it), English (en), German (de), French (fr).
  * Idempotent via updateOrCreate().
  */
-class GlobalEnterpriseReferenceDataSeeder extends Seeder
+class GlobalEnterpriseReferenceDataSeeder extends GlobalDataSeeder
 {
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $domains = $this->getReferenceDomains();
 

@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ShippingCarrier extends BaseEnterpriseModel
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'shipping_carriers';
 
     /** @var list<string> */

@@ -274,7 +274,7 @@ test('a payment term splits the amount due into installments fixed at emission',
 });
 
 test('the exchange rate of a foreign-currency invoice is frozen at emission from the exchange-rate service', function (): void {
-    ExchangeRate::query()->create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => now()->subDays(2)->toDateString()]);
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => now()->subDays(2)->toDateString()]);
 
     $invoiceId = $this->postJson('/api/v1/sales/invoices', [
         'contact_id' => $this->customer->id, 'invoice_type' => 'standard', 'date' => now()->toDateString(), 'currency' => 'USD', 'jurisdiction' => 'IT',

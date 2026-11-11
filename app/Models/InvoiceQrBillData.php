@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceQrBillData extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, StampsTenantFromParent;
 
     protected $table = 'invoice_qr_bill_data';
 

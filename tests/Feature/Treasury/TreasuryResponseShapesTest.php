@@ -82,7 +82,7 @@ test('the treasury responses carry exactly the keys the OpenAPI documents', func
     $rec('approve', $this->postJson("/api/v1/treasury/reconciliations/{$rc}/approve"));
 
     $this->usd = treasuryBank($this->tenant, 'CH9300762011623852957', $this->accounts['1002'], ['currency' => 'USD', 'current_balance' => '500.00']);
-    ExchangeRate::query()->create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => $this->today]);
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => $this->today]);
     $rec('fx_exposure_usd', $this->getJson('/api/v1/treasury/fx/exposure'));
 
     $contact = Contact::create(['tenant_id' => $this->tenant->id, 'type' => 'customer', 'company_name' => 'Cliente Più Srl', 'vat_number' => '12345678901', 'fiscal_code' => '12345678901', 'iban' => 'IT60X0306909606100000000001']);

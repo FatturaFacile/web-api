@@ -180,7 +180,7 @@ class LookupController extends Controller
         $tenantId = $request->wantsGlobal() ? null : $tenantContext->getTenantId();
         $validated = $request->validated();
 
-        $translation = LookupItemTranslation::updateOrCreate(
+        $save = static fn (): LookupItemTranslation => LookupItemTranslation::updateOrCreate(
             [
                 'tenant_id' => $tenantId,
                 'lookup_item_id' => $validated['lookup_item_id'],
@@ -192,6 +192,8 @@ class LookupController extends Controller
                 'description' => $validated['description'] ?? null,
             ]
         );
+
+        $translation = $request->wantsGlobal() ? $tenantContext->runAsGlobal($save) : $save();
 
         // Invalidate relevant cache keys
         $item = LookupItem::with('category')->find($validated['lookup_item_id']);

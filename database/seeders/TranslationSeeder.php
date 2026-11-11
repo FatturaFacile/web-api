@@ -3,12 +3,11 @@
 namespace Database\Seeders;
 
 use App\Models\Translation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
-class TranslationSeeder extends Seeder
+class TranslationSeeder extends GlobalDataSeeder
 {
     /**
      * @var list<string>
@@ -18,7 +17,7 @@ class TranslationSeeder extends Seeder
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $locales = [];
 
