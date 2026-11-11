@@ -8,12 +8,12 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Modules\Analytics\Http\Requests\DesignerRequest;
 use Modules\Analytics\Semantic\ReportEngine;
 use Modules\Analytics\Semantic\SemanticCatalog;
 use Modules\Analytics\Services\ReportExporter;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
@@ -119,15 +119,10 @@ final class SemanticLayerController extends Controller
             new OA\Response(ref: '#/components/responses/AnaUnprocessable', response: 422),
         ]
     )]
-    public function export(DesignerRequest $request): Response
+    public function export(DesignerRequest $request): StreamedResponse
     {
         $spec = $this->engine->parse((string) $request->input('dataset'), (array) $request->input('spec'), $request->user(), 'spec.');
-        $exported = $this->exporter->export($spec, $request->user(), (string) $request->input('format', 'csv'));
 
-        return response($exported['content'], 200, [
-            'Content-Type' => $exported['mime'],
-            'Content-Disposition' => 'attachment; filename="'.$exported['file_name'].'"',
-            'X-Report-Truncated' => $exported['run']->truncated ? 'true' : 'false',
-        ]);
+        return $this->exporter->response($this->exporter->prepare($spec, $request->user(), (string) $request->input('format', 'csv')));
     }
 }

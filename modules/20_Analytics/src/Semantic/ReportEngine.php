@@ -9,6 +9,7 @@ use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Closure;
+use Generator;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Database\Query\JoinClause;
@@ -112,7 +113,7 @@ final readonly class ReportEngine
             $total = min($found, $cap);
             $offset = ($page - 1) * $perPage;
             $take = max(0, min($perPage, $total - $offset));
-            $rows = $take > 0 ? $this->fetch($dataset, $spec, $periods, $offset, $take) : [];
+            $rows = $take > 0 ? $this->fetch($dataset, $spec, $periods, $offset, $take, $this->previousIndex($dataset, $spec, $periods)) : [];
 
             return [
                 'columns' => $this->columns($dataset, $spec),
@@ -133,32 +134,44 @@ final readonly class ReportEngine
     }
 
     /**
-     * Every row of the report up to the row cap, for exports.
+     * Opens an export: validates, counts the rows (under the row cap and the time limit) and returns a generator of rows
+     * that reads the report in chunks, so a file can be written while it is produced instead of being built in memory.
+     * Access, period and count errors surface here, before any byte is sent; each chunk runs under the statement timeout.
      *
-     * @return array{columns: list<array<string, mixed>>, rows: list<array<string, mixed>>, meta: array<string, mixed>}
+     * @return array{columns: list<array<string, mixed>>, meta: array<string, mixed>, rows: Closure(): iterable<array<string, mixed>>}
      */
-    public function export(ReportSpec $spec, User $user): array
+    public function openExport(ReportSpec $spec, User $user): array
     {
         $dataset = $this->datasetFor($spec->dataset, $user);
+        $chunk = 1000;
 
-        return $this->guarded(function () use ($dataset, $spec): array {
+        [$periods, $cap, $found, $previous] = $this->guarded(function () use ($dataset, $spec): array {
             $periods = $this->periods($spec);
             $cap = min($spec->limit ?? $this->maxRows(), $this->maxRows());
-            $rows = $this->fetch($dataset, $spec, $periods, 0, $cap + 1);
-            $truncated = $spec->limit === null && count($rows) > $cap;
+            $found = DB::query()->fromSub((clone $this->query($dataset, $spec, $periods['current']))->reorder()->limit($cap + 1), 'r')->count();
 
-            return [
-                'columns' => $this->columns($dataset, $spec),
-                'rows' => array_slice($rows, 0, $cap),
-                'meta' => [
-                    'dataset' => $dataset->key,
-                    'truncated' => $truncated,
-                    'row_limit' => $cap,
-                    'period' => $periods['current'],
-                    'comparison_period' => $periods['comparison'],
-                ],
-            ];
+            return [$periods, $cap, $found, $this->previousIndex($dataset, $spec, $periods)];
         });
+        $total = min($found, $cap);
+
+        return [
+            'columns' => $this->columns($dataset, $spec),
+            'meta' => [
+                'dataset' => $dataset->key,
+                'row_count' => $total,
+                'truncated' => $spec->limit === null && $found > $cap,
+                'row_limit' => $cap,
+                'period' => $periods['current'],
+                'comparison_period' => $periods['comparison'],
+            ],
+            'rows' => function () use ($dataset, $spec, $periods, $previous, $total, $chunk): Generator {
+                for ($offset = 0; $offset < $total; $offset += $chunk) {
+                    $rows = $this->guarded(fn (): array => $this->fetch($dataset, $spec, $periods, $offset, min($chunk, $total - $offset), $previous));
+
+                    yield from $rows;
+                }
+            },
+        ];
     }
 
     /**
@@ -205,7 +218,7 @@ final readonly class ReportEngine
     /**
      * @param  array{from: string, to: string}|null  $period
      */
-    private function query(Dataset $dataset, ReportSpec $spec, ?array $period): Builder
+    private function query(Dataset $dataset, ReportSpec $spec, ?array $period, bool $having = true): Builder
     {
         $tenantId = $this->tenantContext->getTenantId();
 
@@ -228,6 +241,16 @@ final readonly class ReportEngine
         }
 
         foreach ($spec->filters as $filter) {
+            $measure = $dataset->measure($filter['field']);
+
+            if ($measure !== null) {
+                if ($having) {
+                    $this->having($query, $measure, $filter['operator'], $filter['value']);
+                }
+
+                continue;
+            }
+
             $this->filter($query, $dataset->dimension($filter['field']) ?? throw new \LogicException('Unvalidated filter.'), $filter['operator'], $filter['value']);
         }
 
@@ -302,6 +325,27 @@ final readonly class ReportEngine
         };
     }
 
+    /**
+     * A condition on an aggregate. The expression is the one declared for the measure; the value is bound and cast.
+     */
+    private function having(Builder $query, Measure $measure, string $operator, mixed $value): void
+    {
+        $column = "({$measure->sql})";
+
+        match ($operator) {
+            'eq' => $query->havingRaw("{$column} = CAST(? AS numeric)", [$value]),
+            'neq' => $query->havingRaw("{$column} IS DISTINCT FROM CAST(? AS numeric)", [$value]),
+            'gt' => $query->havingRaw("{$column} > CAST(? AS numeric)", [$value]),
+            'gte' => $query->havingRaw("{$column} >= CAST(? AS numeric)", [$value]),
+            'lt' => $query->havingRaw("{$column} < CAST(? AS numeric)", [$value]),
+            'lte' => $query->havingRaw("{$column} <= CAST(? AS numeric)", [$value]),
+            'between' => $query->havingRaw("{$column} BETWEEN CAST(? AS numeric) AND CAST(? AS numeric)", $value),
+            'is_null' => $query->havingRaw("{$column} IS NULL"),
+            'not_null' => $query->havingRaw("{$column} IS NOT NULL"),
+            default => throw new \LogicException("Unvalidated operator [{$operator}]."),
+        };
+    }
+
     private function escapeLike(string $value): string
     {
         return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
@@ -330,21 +374,14 @@ final readonly class ReportEngine
      * @param  array{current: ?array{from: string, to: string}, comparison: ?array{from: string, to: string}}  $periods
      * @return list<array<string, mixed>>
      */
-    private function fetch(Dataset $dataset, ReportSpec $spec, array $periods, int $offset, int $take): array
+    private function fetch(Dataset $dataset, ReportSpec $spec, array $periods, int $offset, int $take, ?array $previous = null): array
     {
         $rows = $this->query($dataset, $spec, $periods['current'])->offset($offset)->limit($take)->get()
             ->map(fn (object $row): array => $this->normalise($dataset, $spec, (array) $row))
             ->all();
 
-        if ($periods['comparison'] === null) {
+        if ($previous === null) {
             return $rows;
-        }
-
-        $previous = [];
-
-        foreach ($this->query($dataset, $spec, $periods['comparison'])->limit($this->maxRows())->get() as $row) {
-            $normalised = $this->normalise($dataset, $spec, (array) $row);
-            $previous[$this->groupKey($spec, $normalised)] = $normalised;
         }
 
         return array_map(function (array $row) use ($dataset, $spec, $previous): array {
@@ -367,11 +404,57 @@ final readonly class ReportEngine
     }
 
     /**
+     * The rows of the comparison period indexed by the group they belong to in the current period. Date buckets are
+     * moved forward by the distance between the two periods (a year, or the length of the period) and cut again to their
+     * granularity, so every previous bucket lands on the current bucket it is compared with. The filters on measures
+     * are not applied here: they select the current rows, the previous value is whatever it was.
+     *
+     * @param  array{current: ?array{from: string, to: string}, comparison: ?array{from: string, to: string}}  $periods
+     * @return array<string, array<string, mixed>>|null
+     */
+    private function previousIndex(Dataset $dataset, ReportSpec $spec, array $periods): ?array
+    {
+        if ($periods['comparison'] === null || $periods['current'] === null) {
+            return null;
+        }
+
+        $length = (int) CarbonImmutable::parse($periods['current']['from'])->diffInDays(CarbonImmutable::parse($periods['current']['to'])) + 1;
+        $index = [];
+
+        foreach ($this->query($dataset, $spec, $periods['comparison'], having: false)->limit($this->maxRows())->get() as $row) {
+            $normalised = $this->normalise($dataset, $spec, (array) $row);
+            $index[$this->groupKey($spec, $normalised, $spec->compare, $length)] ??= $normalised;
+        }
+
+        return $index;
+    }
+
+    private function alignBucket(string $value, string $granularity, string $compare, int $length): string
+    {
+        $date = CarbonImmutable::parse($value);
+        $moved = $compare === ReportPeriod::ComparePreviousYear ? $date->addYearNoOverflow() : $date->addDays($length);
+
+        return match ($granularity) {
+            'week' => $moved->startOfWeek()->toDateString(),
+            'month' => $moved->startOfMonth()->toDateString(),
+            'quarter' => $moved->startOfQuarter()->toDateString(),
+            'year' => $moved->startOfYear()->toDateString(),
+            default => $moved->toDateString(),
+        };
+    }
+
+    /**
      * @param  array<string, mixed>  $row
      */
-    private function groupKey(ReportSpec $spec, array $row): string
+    private function groupKey(ReportSpec $spec, array $row, ?string $alignCompare = null, int $alignLength = 0): string
     {
-        return json_encode(array_map(static fn (array $dimension): mixed => $row[$dimension['key']] ?? null, $spec->dimensions), JSON_THROW_ON_ERROR);
+        return json_encode(array_map(function (array $dimension) use ($row, $alignCompare, $alignLength): mixed {
+            $value = $row[$dimension['key']] ?? null;
+
+            return $alignCompare !== null && $dimension['granularity'] !== null && $value !== null
+                ? $this->alignBucket((string) $value, $dimension['granularity'], $alignCompare, $alignLength)
+                : $value;
+        }, $spec->dimensions), JSON_THROW_ON_ERROR);
     }
 
     /**

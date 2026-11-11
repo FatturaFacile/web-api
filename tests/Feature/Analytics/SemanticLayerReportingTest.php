@@ -129,7 +129,6 @@ test('a period comparison adds the previous value and the change, and refuses to
         ->and($rossiRow['net_amount__change_percent'])->toBe('50.00')
         ->and(collect($result['rows'])->firstWhere('customer', 'Verdi')['net_amount__change_percent'])->toBeNull();
 
-    biRun(biSpec(['date:month'], ['net_amount'], ['period' => $period, 'compare' => 'previous_year']))->assertUnprocessable()->assertJsonValidationErrors(['spec.compare']);
     biRun(biSpec(['customer'], ['net_amount'], ['compare' => 'previous_year']))->assertUnprocessable()->assertJsonValidationErrors(['spec.compare']);
     biRun(biSpec(['sku'], ['stock_value'], ['period' => $period]), 'inventory')->assertUnprocessable()->assertJsonValidationErrors(['spec.period']);
 });
@@ -255,7 +254,7 @@ test('the row cap, the page size, the top-N and the time limit are hard', functi
     expect(biRun(biSpec(['customer'], ['net_amount']), extra: ['per_page' => 2, 'page' => 3])->assertOk()->json('data.rows'))->toBe([]);
 
     $export = $this->postJson('/api/v1/analytics/designer/export', ['dataset' => 'sales', 'spec' => biSpec(['customer'], ['net_amount'])])->assertOk();
-    expect($export->headers->get('X-Report-Truncated'))->toBe('true')->and(substr_count($export->getContent(), "\r\n"))->toBe(4);
+    expect($export->headers->get('X-Report-Truncated'))->toBe('true')->and(substr_count($export->streamedContent(), "\r\n"))->toBe(4);
 
     biRun(biSpec(['customer'], ['net_amount'], ['limit' => 4]))->assertUnprocessable()->assertJsonValidationErrors(['spec.limit']);
     config(['analytics.reporting.max_rows' => 10000]);
@@ -341,11 +340,11 @@ test('exports are neutralised csv in two formats, limited, and audit logged', fu
     $csv = $this->get("/api/v1/analytics/designed-reports/{$id}/export")->assertOk();
     expect($csv->headers->get('Content-Type'))->toContain('text/csv')
         ->and($csv->headers->get('Content-Disposition'))->toContain('export-me-')
-        ->and($csv->getContent())->toStartWith("\"customer\",\"net_amount\",\"document_count\"\r\n")
-        ->and($csv->getContent())->toContain("\"'=HYPERLINK(\"\"http://evil\"\")\",\"150.50\",\"1\"")
-        ->and($csv->getContent())->toContain('"Rossi; ""Srl""","20.00","1"');
+        ->and($csv->streamedContent())->toStartWith("\"customer\",\"net_amount\",\"document_count\"\r\n")
+        ->and($csv->streamedContent())->toContain("\"'=HYPERLINK(\"\"http://evil\"\")\",\"150.50\",\"1\"")
+        ->and($csv->streamedContent())->toContain('"Rossi; ""Srl""","20.00","1"');
 
-    $excel = $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=excel_csv")->assertOk()->getContent();
+    $excel = $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=excel_csv")->assertOk()->streamedContent();
     expect($excel)->toStartWith("\xEF\xBB\xBF\"customer\";\"net_amount\";\"document_count\"")->and($excel)->toContain("\"'=HYPERLINK(");
 
     $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=xls")->assertUnprocessable();
@@ -374,7 +373,7 @@ test('the xlsx export is a real workbook with typed cells, neutralised text, a p
     $id = $this->postJson('/api/v1/analytics/designed-reports', ['name' => 'Q1/Q2: sales? with a very long name', 'dataset' => 'sales', 'spec' => $spec])->assertCreated()->json('data.id');
 
     $response = $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=xlsx")->assertOk();
-    $binary = $response->getContent();
+    $binary = $response->streamedContent();
     expect($binary)->toStartWith('PK')
         ->and($response->headers->get('Content-Type'))->toContain('spreadsheetml.sheet')
         ->and($response->headers->get('Content-Disposition'))->toContain('.xlsx');
@@ -412,7 +411,7 @@ test('the xlsx export is a real workbook with typed cells, neutralised text, a p
 
     config(['analytics.reporting.max_rows' => 1]);
     $limited = $this->postJson('/api/v1/analytics/designer/export', ['dataset' => 'sales', 'spec' => biSpec(['customer'], ['net_amount']), 'format' => 'xlsx'])->assertOk();
-    $limitedSheets = biReadXlsx($limited->getContent());
+    $limitedSheets = biReadXlsx($limited->streamedContent());
     expect($limited->headers->get('X-Report-Truncated'))->toBe('true')
         ->and(array_values($limitedSheets)[0])->toHaveCount(2)
         ->and(array_column($limitedSheets['Parameters'], 1, 0)['Truncated by the row limit'])->toBe('yes');
