@@ -173,6 +173,24 @@ final readonly class ProcedureService
         });
     }
 
+    /**
+     * The approval workflow expired: nobody decided in time. Conservative rule: the procedure is neither approved nor
+     * rejected (nobody decided); it goes back to draft, as the engine does for the record under approval, so the author
+     * can fix and submit it again. Only a procedure still pending is touched.
+     */
+    public function applyWorkflowExpiry(QmsProcedure $procedure, string $reason): QmsProcedure
+    {
+        return DB::transaction(function () use ($procedure, $reason): QmsProcedure {
+            $locked = QmsProcedure::query()->whereKey($procedure->id)->lockForUpdate()->firstOrFail();
+            $this->assertPending($locked);
+
+            $locked->update(['status' => 'draft', 'submitted_at' => null]);
+            $this->ledger->record('QMS_PROCEDURE_APPROVAL_EXPIRED', $locked, ['code' => $locked->code, 'version' => $locked->version, 'reason' => $reason]);
+
+            return $locked->refresh();
+        });
+    }
+
     public function makeObsolete(QmsProcedure $procedure): QmsProcedure
     {
         if ($procedure->status !== 'approved') {
