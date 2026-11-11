@@ -39,6 +39,7 @@ final class UpdateConsolidationGroupRequest extends FormRequest
             'deferred_tax_on_unrealised_profit' => ['sometimes', 'boolean'],
             'unrealised_profit_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
             'fair_value_first_year_rule' => ['sometimes', Rule::in(['pro_rata', 'full_year'])],
+            'negative_goodwill_treatment' => ['sometimes', Rule::in(['consolidation_reserve', 'immediate_income'])],
             'goodwill_translation' => ['sometimes', Rule::in(['historical', 'closing'])],
             'synthetic_accounts.*' => ['string', 'max:40'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],

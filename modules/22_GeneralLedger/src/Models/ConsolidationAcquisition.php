@@ -23,6 +23,8 @@ use Illuminate\Support\Carbon;
  * @property bool $recognise_deferred_tax
  * @property string|null $deferred_tax_rate
  * @property string|null $input_currency
+ * @property string|null $expected_future_charges
+ * @property int|null $provision_release_years
  */
 final class ConsolidationAcquisition extends BaseEnterpriseModel
 {
@@ -37,6 +39,8 @@ final class ConsolidationAcquisition extends BaseEnterpriseModel
             'acquired_percentage' => 'decimal:4',
             'recognise_deferred_tax' => 'boolean',
             'deferred_tax_rate' => 'decimal:4',
+            'expected_future_charges' => 'decimal:4',
+            'provision_release_years' => 'integer',
         ];
     }
 

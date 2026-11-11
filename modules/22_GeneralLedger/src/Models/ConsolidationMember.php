@@ -21,6 +21,7 @@ use Modules\GeneralLedger\Enums\ConsolidationMethod;
  * @property string|null $holder_tenant_id
  * @property int $fiscal_year_offset_months
  * @property string|null $tax_rate
+ * @property string $consolidation_basis
  */
 final class ConsolidationMember extends BaseEnterpriseModel
 {

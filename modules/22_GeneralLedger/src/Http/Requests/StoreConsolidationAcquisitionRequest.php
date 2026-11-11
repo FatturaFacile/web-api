@@ -25,6 +25,8 @@ final class StoreConsolidationAcquisitionRequest extends FormRequest
             'cost' => ['nullable', 'numeric', 'decimal:0,4'],
             'net_assets_at_acquisition' => ['required', 'numeric', 'decimal:0,4'],
             'acquired_percentage' => ['nullable', 'numeric', 'gt:0', 'lte:100', 'decimal:0,4'],
+            'expected_future_charges' => ['nullable', 'numeric', 'gt:0', 'decimal:0,4'],
+            'provision_release_years' => ['nullable', 'integer', 'between:1,100', 'required_with:expected_future_charges'],
             'input_currency' => ['nullable', 'string', 'size:3', 'alpha'],
             'recognise_deferred_tax' => ['nullable', 'boolean'],
             'deferred_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],

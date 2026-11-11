@@ -19,4 +19,5 @@ enum ConsolidationAdjustmentType: string
     case UnrealisedProfit = 'unrealised_profit';
     case Dividend = 'dividend';
     case FairValueRelease = 'fair_value_release';
+    case ProvisionRelease = 'provision_release';
 }

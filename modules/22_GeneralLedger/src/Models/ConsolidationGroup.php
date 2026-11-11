@@ -29,6 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $unrealised_profit_tax_rate
  * @property string $fair_value_first_year_rule
  * @property string $goodwill_translation
+ * @property string $negative_goodwill_treatment
  * @property array<string, string>|null $synthetic_accounts
  */
 final class ConsolidationGroup extends BaseEnterpriseModel
@@ -58,6 +59,11 @@ final class ConsolidationGroup extends BaseEnterpriseModel
         'deferred_tax_income' => 'CONS-DEFTAX-PL',
         'fair_value_depreciation' => 'CONS-FV-DEPR',
         'fair_value_prior' => 'CONS-FV-PRIOR',
+        'consolidation_provision' => 'CONS-PROV',
+        'provision_release_income' => 'CONS-PROV-REL',
+        'provision_release_prior' => 'CONS-PROV-PRIOR',
+        'bargain_purchase_gain' => 'CONS-BARGAIN',
+        'bargain_purchase_prior' => 'CONS-BARGAIN-PRIOR',
     ];
 
     protected function casts(): array

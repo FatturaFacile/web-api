@@ -35,6 +35,7 @@ final class ConsolidationGroupResource extends JsonResource
             'unrealised_profit_tax_rate' => $this->unrealised_profit_tax_rate,
             'fair_value_first_year_rule' => $this->fair_value_first_year_rule,
             'goodwill_translation' => $this->goodwill_translation,
+            'negative_goodwill_treatment' => $this->negative_goodwill_treatment,
             'synthetic_accounts' => collect(ConsolidationGroup::SyntheticDefaults)->map(fn (string $default, string $role): string => $this->resource->syntheticCode($role))->all(),
             'is_active' => (bool) $this->is_active,
             'notes' => $this->notes,
@@ -48,6 +49,7 @@ final class ConsolidationGroupResource extends JsonResource
                 'holder_tenant_id' => $member->holder_tenant_id,
                 'fiscal_year_offset_months' => (int) $member->fiscal_year_offset_months,
                 'tax_rate' => $member->tax_rate,
+                'consolidation_basis' => $member->consolidation_basis,
             ])->all()),
             'relations' => IntercompanyRelationResource::collection($this->whenLoaded('relations')),
         ];

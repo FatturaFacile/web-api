@@ -52,5 +52,6 @@ Route::prefix('api/v1/general-ledger/consolidation')
         Route::get('runs/{runId}/trial-balance', [ConsolidationRunController::class, 'trialBalance'])->whereUuid('runId');
         Route::get('runs/{runId}/balance-sheet', [ConsolidationRunController::class, 'balanceSheet'])->whereUuid('runId');
         Route::get('runs/{runId}/income-statement', [ConsolidationRunController::class, 'incomeStatement'])->whereUuid('runId');
+        Route::get('runs/{runId}/goodwill-schedule', [ConsolidationRunController::class, 'goodwillSchedule'])->whereUuid('runId');
         Route::get('runs/{runId}/reclassified', [ConsolidationRunController::class, 'reclassified'])->whereUuid('runId');
     });
