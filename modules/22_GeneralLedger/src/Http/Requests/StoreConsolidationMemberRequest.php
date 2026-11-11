@@ -29,6 +29,7 @@ final class StoreConsolidationMemberRequest extends FormRequest
             'consolidation_method' => ['required', Rule::enum(ConsolidationMethod::class)],
             'holder_tenant_id' => ['nullable', 'uuid'],
             'fiscal_year_offset_months' => ['nullable', 'integer', 'between:-11,11'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
         ];
     }
 }

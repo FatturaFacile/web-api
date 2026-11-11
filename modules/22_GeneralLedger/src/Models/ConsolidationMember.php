@@ -20,6 +20,7 @@ use Modules\GeneralLedger\Enums\ConsolidationMethod;
  * @property bool $is_parent
  * @property string|null $holder_tenant_id
  * @property int $fiscal_year_offset_months
+ * @property string|null $tax_rate
  */
 final class ConsolidationMember extends BaseEnterpriseModel
 {

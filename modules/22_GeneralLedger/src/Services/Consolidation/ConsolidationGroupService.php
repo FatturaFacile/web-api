@@ -120,7 +120,7 @@ final readonly class ConsolidationGroupService
      * @throws AccessDeniedHttpException when the user cannot read the ledger of the entity
      * @throws ConflictHttpException when the entity is already a member
      */
-    public function addMember(User $user, ConsolidationGroup $group, string $memberTenantId, string $ownershipPercentage, ConsolidationMethod $method, ?string $holderTenantId = null, int $fiscalYearOffsetMonths = 0): ConsolidationMember
+    public function addMember(User $user, ConsolidationGroup $group, string $memberTenantId, string $ownershipPercentage, ConsolidationMethod $method, ?string $holderTenantId = null, int $fiscalYearOffsetMonths = 0, ?string $taxRate = null): ConsolidationMember
     {
         if (! Tenant::withoutGlobalScopes()->whereKey($memberTenantId)->exists() || ! $this->guard->canReadEntity($user, $memberTenantId)) {
             throw new AccessDeniedHttpException('You cannot add an entity whose ledger you cannot read.');
@@ -141,6 +141,7 @@ final readonly class ConsolidationGroupService
             'is_parent' => false,
             'holder_tenant_id' => $holderTenantId,
             'fiscal_year_offset_months' => $fiscalYearOffsetMonths,
+            'tax_rate' => $taxRate,
         ]);
     }
 
@@ -187,7 +188,7 @@ final readonly class ConsolidationGroupService
     /**
      * @throws ConsolidationException for the parent entity
      */
-    public function updateMember(ConsolidationMember $member, string $ownershipPercentage, ConsolidationMethod $method, ?string $holderTenantId = null, ?int $fiscalYearOffsetMonths = null, bool $changeHolder = false): ConsolidationMember
+    public function updateMember(ConsolidationMember $member, string $ownershipPercentage, ConsolidationMethod $method, ?string $holderTenantId = null, ?int $fiscalYearOffsetMonths = null, bool $changeHolder = false, ?string $taxRate = null, bool $changeTaxRate = false): ConsolidationMember
     {
         if ($member->is_parent) {
             throw new ConsolidationException('The parent entity is always fully consolidated at 100 %.');
@@ -206,6 +207,10 @@ final readonly class ConsolidationGroupService
 
         if ($fiscalYearOffsetMonths !== null) {
             $changes['fiscal_year_offset_months'] = $fiscalYearOffsetMonths;
+        }
+
+        if ($changeTaxRate) {
+            $changes['tax_rate'] = $taxRate;
         }
 
         $member->update($changes);

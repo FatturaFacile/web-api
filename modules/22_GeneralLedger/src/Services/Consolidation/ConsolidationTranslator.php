@@ -14,7 +14,11 @@ use Modules\GeneralLedger\Services\Tax\TenantAccountingCurrency;
 /**
  * Translates the trial balance of an entity from its accounting currency into the group currency, with the rates and
  * the rule the existing balance sheet and income statement use for a presentation currency (LedgerReportService, which
- * reads the `exchange_rates` table; concept of IAS 21 / Swiss CO art. 958d para. 3, no compliance claimed):
+ * reads the `exchange_rates` table). Verified against OIC 17 (edition of August 2014, read on 2026-11-11, para. 125-126 and
+ * 130): assets and liabilities at the spot rate of the balance sheet date, income at the rate of the transaction or the
+ * average rate of the period, the net effect in a translation reserve, intragroup balances compared at the closing rate.
+ * The historical rate for equity is not stated there and is an approximation made here. IAS 21 and the Swiss CO were
+ * not read for this class (see ConsolidationCalculator for the sources). The rates:
  *
  * - assets, liabilities: closing rate, the last rate published on or before the period end;
  * - equity: historical rate, the last rate published on or before the start of the fiscal year (an approximation: the
@@ -99,6 +103,21 @@ final readonly class ConsolidationTranslator
             'average' => $this->rates->averageTranslationRate($currency, $groupCurrency, $yearStart, $periodEnd, $closing),
             'historical' => $this->rates->historicalTranslationRate($currency, $groupCurrency, $yearStart, $closing),
         ];
+    }
+
+    /**
+     * The rate of a currency into the group currency on a date (the last one published on or before it), for the
+     * amounts of an acquisition entered in a local currency.
+     *
+     * @throws ConsolidationException
+     */
+    public function rateOn(string $currency, string $groupCurrency, CarbonImmutable $date): string
+    {
+        try {
+            return $this->rates->closingTranslationRate($currency, $groupCurrency, $date);
+        } catch (LedgerPostingException) {
+            throw new ConsolidationException("No {$currency}/{$groupCurrency} exchange rate is published on or before {$date->toDateString()}: publish it to enter the acquisition in {$currency}.");
+        }
     }
 
     public function basisOf(string $accountType): string

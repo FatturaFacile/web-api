@@ -66,8 +66,8 @@ final readonly class ConsolidationService
                 array_keys($draft->members),
             );
             $trial = $this->statements->trialBalanceOf($accounts);
-            $sheet = $this->statements->balanceSheetOf($accounts, $draft->nonControllingInterests);
-            $income = $this->statements->incomeStatementOf($accounts, $draft->nonControllingInterests);
+            $sheet = $this->statements->balanceSheetOf($accounts, $draft->nonControllingInterests, $this->statements->codesOf($group));
+            $income = $this->statements->incomeStatementOf($accounts, $draft->nonControllingInterests, $this->statements->codesOf($group));
 
             $version = 1 + (int) ConsolidationRun::withoutGlobalScopes()->withTrashed()
                 ->where('group_id', $group->id)

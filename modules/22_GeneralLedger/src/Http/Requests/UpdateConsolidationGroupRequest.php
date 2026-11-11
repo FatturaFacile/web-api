@@ -36,6 +36,10 @@ final class UpdateConsolidationGroupRequest extends FormRequest
             'goodwill_amortisation_years' => ['nullable', 'integer', 'between:1,100'],
             'require_account_mapping' => ['sometimes', 'boolean'],
             'synthetic_accounts' => ['sometimes', 'array'],
+            'deferred_tax_on_unrealised_profit' => ['sometimes', 'boolean'],
+            'unrealised_profit_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
+            'fair_value_first_year_rule' => ['sometimes', Rule::in(['pro_rata', 'full_year'])],
+            'goodwill_translation' => ['sometimes', Rule::in(['historical', 'closing'])],
             'synthetic_accounts.*' => ['string', 'max:40'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
         ];
