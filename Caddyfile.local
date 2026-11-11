@@ -1,0 +1,13 @@
+{
+	auto_https disable_redirects
+	admin off
+}
+
+https://localhost:8080, https://127.0.0.1:8080 {
+	tls certs/localhost.crt certs/localhost.key
+
+	reverse_proxy 127.0.0.1:8001 {
+		header_up X-Forwarded-Proto https
+		header_up X-Forwarded-Port 8080
+	}
+}

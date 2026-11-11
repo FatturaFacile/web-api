@@ -36,6 +36,9 @@ auth.json
 .claude/
 
 # Local dev TLS certs
+certs/*.crt
+certs/*.key
+certs/*.pem
 deploy/local/certs/*.crt
 deploy/local/certs/*.key
 deploy/local/certs/*.pem

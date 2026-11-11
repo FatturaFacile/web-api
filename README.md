@@ -228,8 +228,9 @@ php artisan erp:bootstrap
 ```bash
 docker compose -f docker-compose.local.yml up -d --wait
 
-php artisan serve        # terminal 1: API (by default listens on HTTPS localhost:8080)
-php artisan queue:work   # terminal 2: without it, queued emails are not sent
+php artisan serve --host=127.0.0.1 --port=8001             # terminal 1: PHP worker on internal HTTP port 8001
+caddy run --config Caddyfile.local --adapter caddyfile     # terminal 2: TLS reverse proxy on https://localhost:8080
+php artisan queue:work                                     # terminal 3: without it, queued emails are not sent
 ```
 
 Then start the frontend in `web-frontend` with `corepack pnpm install` (first time only) and
@@ -237,11 +238,12 @@ Then start the frontend in `web-frontend` with `corepack pnpm install` (first ti
 and proxies `/api` and `/sanctum` to `https://localhost:8080` forwarding `X-Forwarded-Proto: https`
 (trusted because `127.0.0.1` is in `TRUSTED_PROXIES`).
 
-> **Direct API HTTPS access**: Because the application enforces HTTPS only, direct browser or tool access
-> to `https://localhost:8080` (e.g. Swagger UI or Postman) requires TLS in front of `artisan serve`.
-> You can place a TLS proxy in front (e.g. Caddy:
-> `caddy reverse-proxy --from https://localhost:8080 --to 127.0.0.1:8001`
-> with `php artisan serve --port=8001`), or navigate through the frontend dev proxy at `https://localhost:4200/api/...`.
+> **Local HTTPS certificates & Caddy**: `Caddyfile.local` serves `https://localhost:8080` using `certs/localhost.crt`
+> and `certs/localhost.key` (see [`certs/README.md`](certs/README.md) to generate them with `mkcert`).
+> Alternatively, you can run a one-liner without a config file:
+> `caddy reverse-proxy --from https://localhost:8080 --to 127.0.0.1:8001`.
+> For Node.js dev-server proxying (`ng serve`), ensure `NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"` is set so
+> Node trusts the local `mkcert` root CA.
 
 | Service       | Address                                                          |
 |---------------|------------------------------------------------------------------|
