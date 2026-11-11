@@ -50,7 +50,7 @@ final class SubledgerController extends Controller
             ->when($request->query('customer_id'), fn ($q, $cid) => $q->where('customer_id', $cid))
             ->when($request->query('status'), fn ($q, $st) => $q->where('status', $st))
             ->orderBy('due_date')
-            ->paginate((int) $request->query('per_page', 50));
+            ->paginate(min(200, max(1, (int) $request->query('per_page', 50))));
 
         return response()->json([
             'data' => $items,
@@ -89,7 +89,7 @@ final class SubledgerController extends Controller
             ->when($request->query('supplier_id'), fn ($q, $sid) => $q->where('supplier_id', $sid))
             ->when($request->query('status'), fn ($q, $st) => $q->where('status', $st))
             ->orderBy('due_date')
-            ->paginate((int) $request->query('per_page', 50));
+            ->paginate(min(200, max(1, (int) $request->query('per_page', 50))));
 
         return response()->json([
             'data' => $items,

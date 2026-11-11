@@ -236,6 +236,7 @@ final class VatSettlementService implements VatSettlementServiceInterface
                 $settings->sss_rate_1 !== null ? (string) $settings->sss_rate_1 : null,
                 $settings->sss_rate_2 !== null ? (string) $settings->sss_rate_2 : null,
                 is_array($settings->flat_tax_rates) ? $settings->flat_tax_rates : [],
+                (bool) ($settings->carry_over_below_minimum ?? true),
             ),
             'snapshot' => $snapshot,
             'previous' => $previous,

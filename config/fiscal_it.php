@@ -37,11 +37,12 @@ return [
     ],
 
     'withholding' => [
-        // F24 tax code of the withholding on self-employed income. Not verified on a primary source: see the report of
-        // the change. A causale with its own code goes in `f24_codes_by_reason`.
+        // F24 tax code of the withholding on self-employed income (art. 25 D.P.R. 600/1973): 1040, verified on the Agenzia
+        // delle Entrate pages "F24 Ritenute reddito lavoro autonomo" and "Codice tributo 1040" and on the F24/770 2026 table
+        // (read 2026-11-11). A causale with its own code goes in `f24_codes_by_reason`.
         'f24_code' => env('FISCAL_IT_WITHHOLDING_F24_CODE', '1040'),
         'f24_codes_by_reason' => [],
-        // D.P.R. 602/1973, art. 18: paid by the 16th of the month after the payment.
+        // Paid by the 16th of the month after the payment (Agenzia delle Entrate, F24 ritenute lavoro autonomo, read 2026-11-11).
         'due_day' => 16,
     ],
 

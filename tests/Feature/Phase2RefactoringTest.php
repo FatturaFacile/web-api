@@ -127,6 +127,8 @@ test('sync exchange rates endpoint populates exchange rates via provider', funct
     };
 
     $this->app->instance(ExchangeRateProviderInterface::class, $fakeProvider);
+    // Central data: only a platform administrator writes the rates.
+    $this->user->forceFill(['is_platform_admin' => true])->save();
 
     $response = $this->actingAs($this->user)
         ->withHeaders(['X-Tenant' => $this->tenant->id])

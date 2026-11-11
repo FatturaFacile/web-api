@@ -121,3 +121,17 @@ test('exempt turnover goes in the box stated on the line, and in 220 when none i
         ->and($result->estvBoxes['289'])->toBe('700.00')
         ->and($result->estvBoxes['299'])->toBe('1000.00');
 });
+
+test('with the carry-over option off an Italian debt not above EUR 100 is not flagged for carry-over', function (): void {
+    $from = CarbonImmutable::parse('2026-04-01');
+    $to = CarbonImmutable::parse('2026-04-30');
+    $sales = [new VatSaleDocument('100.00', [new VatSaleItem('100.00', '22')])];
+
+    $carried = VatReturnCalculator::compute('IT', $from, $to, $sales, []);
+    $paid = VatReturnCalculator::compute('IT', $from, $to, $sales, [], '0', '0', 'effective', null, null, [], false);
+
+    // 22.00 is not above the EUR 100 minimum (circolare AdE 9/E of 2 May 2024).
+    expect($carried->belowMinimumPayment)->toBeTrue()
+        ->and($paid->belowMinimumPayment)->toBeFalse()
+        ->and($paid->payable)->toBe('22.00');
+});

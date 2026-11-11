@@ -39,6 +39,7 @@ final class UpdateVatTaxSettingRequest extends FormRequest
             'interest_expense_account_id' => ['nullable', 'uuid', $this->tenantAccount()],
             'declarant_tax_code' => ['nullable', 'string', 'max:16', 'alpha_num'],
             'declarant_role_code' => ['nullable', 'string', 'max:2'],
+            'carry_over_below_minimum' => ['sometimes', 'boolean'],
         ];
     }
 

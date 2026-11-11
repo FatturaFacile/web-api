@@ -1052,3 +1052,32 @@ test('a supplier liability of a Swiss tenant reaches the return with its taxable
     expect((string) $settlement->input_vat_amount)->toBe('81.0000')
         ->and((string) $settlement->passive_operations)->toBe('1000.00');
 });
+
+test('with the carry-over option off a debt not above EUR 100 is paid in its own period', function (): void {
+    ['tenant' => $tenant] = vatTenant('IT');
+    VatTaxSetting::create(['tenant_id' => (string) $tenant->id, 'carry_over_below_minimum' => false]);
+    vatSale($tenant, '2026-01-10', '100.00', '22.00', '22');
+    $january = vatMonth($tenant, 1);
+
+    expect($january->below_minimum_payment)->toBeFalse()
+        ->and((string) $january->payable_amount)->toBe('22.00');
+
+    vatService($tenant)->post((string) $tenant->id, (string) $january->id);
+    $bank = vatAccount($tenant, '1020', 'asset');
+    $paid = vatService($tenant)->markPaid((string) $tenant->id, (string) $january->id, '2026-02-16', (string) $bank->id);
+
+    expect($paid->status)->toBe('paid');
+
+    vatSale($tenant, '2026-02-10', '100.00', '22.00', '22');
+    expect((string) vatMonth($tenant, 2)->previous_debit)->toBe('0.00');
+});
+
+test('the carry-over option is part of the VAT settings API and defaults to carrying over', function (): void {
+    ['tenant' => $tenant, 'user' => $user] = vatTenant('IT');
+    Sanctum::actingAs($user);
+    $headers = ['X-Tenant-Id' => (string) $tenant->id];
+
+    $this->withHeaders($headers)->getJson('/api/v1/general-ledger/tax-settings')->assertOk()->assertJsonPath('data.carry_over_below_minimum', true);
+    $this->withHeaders($headers)->putJson('/api/v1/general-ledger/tax-settings', ['carry_over_below_minimum' => false])->assertOk()->assertJsonPath('data.carry_over_below_minimum', false);
+    $this->withHeaders($headers)->putJson('/api/v1/general-ledger/tax-settings', ['carry_over_below_minimum' => 'maybe'])->assertUnprocessable();
+});

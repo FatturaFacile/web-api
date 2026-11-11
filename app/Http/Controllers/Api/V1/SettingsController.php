@@ -193,7 +193,7 @@ class SettingsController extends Controller
     #[OA\Post(
         path: '/api/v1/settings/exchange-rates/sync',
         operationId: 'syncExchangeRates',
-        description: 'Synchronize daily currency exchange rates between EUR, CHF and USD.',
+        description: 'Synchronize daily currency exchange rates between EUR, CHF and USD. The rates are central data shared by every tenant: platform administrators only.',
         summary: 'Sync exchange rates',
         security: [['bearerAuth' => []]],
         tags: ['Settings', 'Banking'],
@@ -202,6 +202,11 @@ class SettingsController extends Controller
                 response: 200,
                 description: 'Exchange rates synchronized successfully',
                 content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')
+            ),
+            new OA\Response(
+                response: 403,
+                description: 'Not a platform administrator',
+                content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')
             ),
             new OA\Response(
                 response: 401,

@@ -96,7 +96,7 @@ final class TenantRecordSeeder
     /**
      * @param  class-string<Model>  $modelClass
      */
-    public static function insert(string $modelClass, ?Tenant $tenant): string
+    public static function insert(string $modelClass, ?Tenant $tenant, bool $enforceForeignKeys = false): string
     {
         /** @var Model $model */
         $model = new $modelClass;
@@ -136,7 +136,9 @@ final class TenantRecordSeeder
             $values[$key] = (string) Str::uuid7();
         }
 
-        DB::statement('SET LOCAL session_replication_role = replica');
+        if (! $enforceForeignKeys) {
+            DB::statement('SET LOCAL session_replication_role = replica');
+        }
 
         if ($model->getIncrementing() && ! isset($values[$key])) {
             return (string) DB::table($table)->insertGetId($values, $key);

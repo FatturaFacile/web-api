@@ -530,7 +530,8 @@ Route::prefix('v1')->group(function (): void {
             Route::middleware('module.access:system')->group(function (): void {
                 Route::put('/preferences/{group}', [TenantPreferencesController::class, 'update'])->name('preferences.update');
                 Route::put('/tenant', [SettingsController::class, 'updateTenant'])->name('tenant.update');
-                Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->name('exchange-rates.sync');
+                // Exchange rates are central data shared by every tenant: only a platform administrator may write them.
+                Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->middleware('platform.admin')->name('exchange-rates.sync');
                 Route::get('/users', [SettingsController::class, 'users'])->name('users');
                 Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
