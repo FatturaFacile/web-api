@@ -10,15 +10,20 @@ use DateTimeInterface;
 /**
  * Computes a periodic VAT return: Swiss MWST statement with the effective method (turnover, tax by rate, input tax) or
  * Italian periodic liquidation (VAT on sales without split payment and reverse charge, deductible VAT, previous credit,
- * 1% interest for quarterly taxpayers, minimum payment of EUR 25.82).
+ * 1% interest for quarterly taxpayers, minimum payment of EUR 100: it was EUR 25.82 until the end of 2023).
  *
  * Port of FatturaFacile.Application.Taxation.VatReturnCalculator. The only additions are optional and neutral at their
  * defaults: `VatSaleItem::$tax` (tax as posted in the ledger) and `$previousDebit` (debt below the minimum carried over).
  */
 final class VatReturnCalculator
 {
-    /** The Italian minimum amount to pay; smaller debts are carried to the next period. */
-    public const string ITALIAN_MINIMUM_PAYMENT = '25.82';
+    /**
+     * The Italian minimum amount to pay: a periodic debt that does not exceed it is carried to the next period. Raised from
+     * EUR 25.82 to EUR 100 for the periods from January 2024 by the "decreto Adempimenti" (art. 1 c. 4 D.P.R. 100/1998 and
+     * art. 7 c. 1 lett. a D.P.R. 542/1999 as amended), see Agenzia delle Entrate circolare 9/E of 2 May 2024 and the
+     * instructions of the LIPE communication 2024 (rigo VP7, "debito periodo precedente non superiore a 100 euro").
+     */
+    public const string ITALIAN_MINIMUM_PAYMENT = '100.00';
 
     /** A period longer than this many days is a quarter. */
     private const int MONTHLY_PERIOD_MAX_DAYS = 40;
@@ -178,10 +183,10 @@ final class VatReturnCalculator
         $payable = Decimal::add($balance, $interest);
         $belowMinimum = $italian
             && Decimal::isPositive($payable)
-            && Decimal::compare($payable, self::ITALIAN_MINIMUM_PAYMENT) < 0;
+            && Decimal::compare($payable, self::ITALIAN_MINIMUM_PAYMENT) <= 0;
 
         if ($belowMinimum) {
-            $details[] = 'Importo inferiore a 25.82 EUR: non si versa, si riporta al periodo successivo.';
+            $details[] = 'Importo non superiore a 100 EUR: non si versa, si riporta al periodo successivo.';
         }
 
         $grossTurnover = $isFlatRateSwiss ? Decimal::add($turnover, $grossSalesVat) : $turnover;

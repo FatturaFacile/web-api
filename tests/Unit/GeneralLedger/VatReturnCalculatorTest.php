@@ -145,14 +145,14 @@ test('an Italian debt below the minimum payment is flagged and the amount is unc
 
     expect($result->payable)->toBe('22.00')
         ->and($result->belowMinimumPayment)->toBeTrue()
-        ->and($result->details)->toContain('Importo inferiore a 25.82 EUR');
+        ->and($result->details)->toContain('Importo non superiore a 100 EUR');
 });
 
-test('the minimum payment does not apply at exactly 25.82 nor to Swiss taxpayers', function (): void {
+test('the minimum payment does not apply above 100.00 nor to Swiss taxpayers', function (): void {
     $from = CarbonImmutable::parse('2026-01-01');
     $to = CarbonImmutable::parse('2026-01-31');
 
-    $exact = VatReturnCalculator::compute('IT', $from, $to, [new VatSaleDocument('10', [new VatSaleItem('10', '22', '25.82')])], []);
+    $exact = VatReturnCalculator::compute('IT', $from, $to, [new VatSaleDocument('100', [new VatSaleItem('100', '22', '100.01')])], []);
     $swiss = VatReturnCalculator::compute('CH', $from, $to, [new VatSaleDocument('100', [new VatSaleItem('100', '8.1')])], []);
 
     expect($exact->belowMinimumPayment)->toBeFalse()
@@ -179,11 +179,11 @@ test('a debt carried over adds to the balance', function (): void {
         [new VatSaleDocument('100', [new VatSaleItem('100', '22')])],
         [],
         '0',
-        '20',
+        '90',
     );
 
-    expect($result->previousDebit)->toBe('20.00')
-        ->and($result->payable)->toBe('42.00')
+    expect($result->previousDebit)->toBe('90.00')
+        ->and($result->payable)->toBe('112.00')
         ->and($result->belowMinimumPayment)->toBeFalse();
 });
 

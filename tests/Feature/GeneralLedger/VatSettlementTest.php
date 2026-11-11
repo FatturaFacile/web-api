@@ -479,11 +479,11 @@ test('a debt below the minimum is not paid and moves to the next period', functi
 
     expect(fn () => vatService($tenant)->markPaid((string) $tenant->id, (string) $january->id, '2026-02-16'))->toThrow(VatSettlementException::class, 'no amount to pay');
 
-    vatSale($tenant, '2026-02-10', '100.00', '22.00', '22');
+    vatSale($tenant, '2026-02-10', '400.00', '88.00', '22');
     $february = vatMonth($tenant, 2);
 
     expect((string) $february->previous_debit)->toBe('22.00')
-        ->and((string) $february->payable_amount)->toBe('44.00')
+        ->and((string) $february->payable_amount)->toBe('110.00')
         ->and($february->below_minimum_payment)->toBeFalse();
 });
 

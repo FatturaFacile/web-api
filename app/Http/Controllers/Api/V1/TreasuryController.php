@@ -70,6 +70,7 @@ class TreasuryController extends Controller
                 // Check if reference matches Swiss SCOR
                 $cleanRef = strtoupper((string) preg_replace('/\s+/', '', (string) $tx->reference));
                 $qrMatch = InvoiceQrBillData::whereRaw("replace(upper(scor_reference), ' ', '') = ?", [$cleanRef])
+                    ->whereHas('invoice')
                     ->first();
 
                 if ($qrMatch) {
