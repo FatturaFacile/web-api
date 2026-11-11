@@ -8,6 +8,7 @@ use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Contracts\InventoryReplenishmentServiceInterface;
 use Modules\Inventory\Events\ReorderPointReachedEvent;
+use Modules\Inventory\Events\StockBelowMinimumEvent;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockReorderRule;
@@ -50,6 +51,49 @@ final class InventoryReplenishmentService implements InventoryReplenishmentServi
             suggestedOrderQty: (float) $suggestion['suggested_quantity'],
             preferredSupplierId: $rule->preferred_supplier_id,
             tenantId: $rule->tenant_id,
+            companyId: (string) ($rule->company_id ?? '')
+        );
+
+        $this->dispatcher->publishAndDispatch($event);
+
+        return $event->getEventId();
+    }
+
+    /**
+     * Crossing detection for the minimum stock level of a rule (monitored when the level is above zero). The state is
+     * kept in below_minimum_since: set when the available stock is found below the minimum (and the event is announced,
+     * claimed with an atomic update so concurrent evaluations announce once), cleared when it is back at or above it.
+     * Evaluations while it stays below announce nothing.
+     */
+    public function evaluateMinimumStock(StockReorderRule $rule): ?string
+    {
+        $item = $rule->item;
+        $minimum = (string) $rule->min_stock_level;
+
+        if ($item === null || Quantity::compare($minimum, '0') <= 0) {
+            return null;
+        }
+
+        $available = $this->availableInWarehouse($item, (string) $rule->warehouse_id);
+        $rules = StockReorderRule::withoutGlobalScopes()->whereKey($rule->id);
+
+        if (Quantity::compare($available, $minimum) >= 0) {
+            (clone $rules)->whereNotNull('below_minimum_since')->update(['below_minimum_since' => null]);
+
+            return null;
+        }
+
+        if ((clone $rules)->whereNull('below_minimum_since')->update(['below_minimum_since' => now()]) !== 1) {
+            return null;
+        }
+
+        $event = new StockBelowMinimumEvent(
+            reorderRuleId: (string) $rule->id,
+            stockItemId: (string) $rule->stock_item_id,
+            warehouseId: (string) $rule->warehouse_id,
+            availableStock: (float) $available,
+            minimumStock: (float) $minimum,
+            tenantId: (string) $rule->tenant_id,
             companyId: (string) ($rule->company_id ?? '')
         );
 

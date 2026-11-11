@@ -11,6 +11,12 @@ interface InventoryReplenishmentServiceInterface
 {
     public function evaluateReorderRule(StockReorderRule $rule): ?string;
 
+    /**
+     * Announces StockBelowMinimumEvent when the available stock of the rule drops below its minimum stock level, once per
+     * crossing (never again while it stays below); returns the event id, or null when nothing was announced.
+     */
+    public function evaluateMinimumStock(StockReorderRule $rule): ?string;
+
     public function computeAbcClassification(string $tenantId): array;
 
     public function calculateSafetyStock(StockItem $item, int $leadTimeDays, float $serviceLevelFactor = 1.65): float;

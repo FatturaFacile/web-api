@@ -36,6 +36,7 @@ use Modules\Inventory\Events\StockReservedEvent;
 use Modules\Inventory\Events\StockTransferredEvent;
 use Modules\Inventory\Listeners\AuditInventoryMovementListener;
 use Modules\Inventory\Listeners\BlockAvailabilityOnLotExpiredListener;
+use Modules\Inventory\Listeners\CheckMinimumStockListener;
 use Modules\Inventory\Listeners\CheckReorderRulesListener;
 use Modules\Inventory\Listeners\DispatchOutboxOnInventoryEventListener;
 use Modules\Inventory\Listeners\ProcurementGoodsReceivedListener;
@@ -145,6 +146,8 @@ final class InventoryServiceProvider extends ServiceProvider
 
         // Automations
         Event::listen(StockTransferredEvent::class, CheckReorderRulesListener::class);
+        Event::listen(StockTransferredEvent::class, [CheckMinimumStockListener::class, 'handleTransfer']);
+        Event::listen(StockReservedEvent::class, [CheckMinimumStockListener::class, 'handleReservation']);
         Event::listen(StockTransferredEvent::class, AuditInventoryMovementListener::class);
         // Synchronous: incoming stock settles what was sold beyond the stock inside the same transaction.
         Event::listen(StockTransferredEvent::class, SettleStockShortfallsListener::class);
