@@ -4,9 +4,6 @@
       <envFiles>
         <find>$PROJECT_DIR$/.env</find>
       </envFiles>
-      <PhpTestInterpreterSettings>
-        <option name="interpreterName" value="$USER_HOME$/AppData/Local/Microsoft/WinGet/Packages/PHP.PHP.8.5_Microsoft.Winget.Source_8wekyb3d8bbwe/php.exe" />
-      </PhpTestInterpreterSettings>
       <envs>
         <env name="PHP_IDE_CONFIG" value="serverName=localhost" />
         <env name="XDEBUG_MODE" value="debug" />
@@ -18,7 +15,7 @@
       </list>
     </option>
     <method v="2">
-      <option name="ToolBeforeRunTask" enabled="true" actionId="Tool_External Tools_Docker Compose Up" />
+      <option name="RunConfigurationTask" enabled="true" run_configuration_name="Migrate" run_configuration_type="PhpLocalRunConfigurationType" />
     </method>
   </configuration>
 </component>

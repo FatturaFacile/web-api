@@ -42,3 +42,5 @@ certs/*.pem
 deploy/local/certs/*.crt
 deploy/local/certs/*.key
 deploy/local/certs/*.pem
+
+database/database.sqlite
