@@ -85,6 +85,7 @@
             "Modules\\Hospitality\\": "modules/37_Hospitality/src/",
             "Modules\\Visitors\\": "modules/38_Visitors/src/",
             "Modules\\Intrastat\\": "modules/39_Intrastat/src/",
+            "Modules\\Quality\\": "modules/40_Quality/src/",
             "Modules\\": "modules/"
         }
     },

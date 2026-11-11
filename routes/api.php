@@ -554,6 +554,7 @@ Route::prefix('v1')->group(function (): void {
                     Route::get('/breaches', [PrivacyComplianceController::class, 'breaches'])->name('breaches.index');
                     Route::post('/breaches', [PrivacyComplianceController::class, 'storeBreach'])->name('breaches.store');
                     Route::get('/sensitive-access-logs', [PrivacyComplianceController::class, 'sensitiveAccessLogs'])->name('sensitive-access-logs.index');
+                    require base_path('routes/privacy_operations.php');
                 });
             });
 

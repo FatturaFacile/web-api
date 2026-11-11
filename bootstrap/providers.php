@@ -36,6 +36,7 @@ use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
+use Modules\Quality\Providers\QualityServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
@@ -90,4 +91,5 @@ return [
     HospitalityServiceProvider::class,
     VisitorsServiceProvider::class,
     IntrastatServiceProvider::class,
+    QualityServiceProvider::class,
 ];
