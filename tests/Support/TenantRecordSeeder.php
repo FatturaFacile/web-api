@@ -79,9 +79,24 @@ final class TenantRecordSeeder
     }
 
     /**
+     * Stores one row of the model with a null tenant_id by a synthesised insert (the model would refuse it), to prove
+     * what the tenant policy shows and hides. Returns its key, or null when the row could not be built.
+     *
      * @param  class-string<Model>  $modelClass
      */
-    public static function insert(string $modelClass, Tenant $tenant): string
+    public static function seedNullTenantRow(string $modelClass): ?string
+    {
+        try {
+            return DB::transaction(static fn (): string => self::insert($modelClass, null));
+        } catch (Throwable) {
+            return null;
+        }
+    }
+
+    /**
+     * @param  class-string<Model>  $modelClass
+     */
+    public static function insert(string $modelClass, ?Tenant $tenant): string
     {
         /** @var Model $model */
         $model = new $modelClass;
@@ -93,7 +108,7 @@ final class TenantRecordSeeder
             $name = $column['name'];
 
             if ($name === 'tenant_id') {
-                $values[$name] = $tenant->id;
+                $values[$name] = $tenant?->id;
 
                 continue;
             }

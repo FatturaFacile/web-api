@@ -25,7 +25,7 @@ beforeEach(function (): void {
     fiscalCalendar($this->tenant);
 
     // A franc invoice of a euro company takes the rate of the exchange-rate service at emission.
-    ExchangeRate::query()->create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2027-01-01']);
+    ExchangeRate::createGlobal(['source' => 'EUR', 'target' => 'CHF', 'rate' => '1.000000', 'effective_date' => '2027-01-01']);
 });
 
 /**

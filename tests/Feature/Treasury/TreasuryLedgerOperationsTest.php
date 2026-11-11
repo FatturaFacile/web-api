@@ -184,7 +184,7 @@ test('the period-end FX revaluation posts the unrealised difference and refuses 
     $this->postJson('/api/v1/treasury/fx/revalue', ['period_end_date' => $date, 'spot_rate' => 1.2])->assertUnprocessable()->assertJsonValidationErrors(['spot_rate']);
 
     // Closing rate 0.94 CHF per EUR: 1,000 CHF are worth 1,063.83 EUR, an unrealised gain of 11.20 EUR.
-    ExchangeRate::create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '0.940000', 'effective_date' => $date]);
+    ExchangeRate::createGlobal(['source' => 'EUR', 'target' => 'CHF', 'rate' => '0.940000', 'effective_date' => $date]);
     $result = $this->postJson('/api/v1/treasury/fx/revalue', ['period_end_date' => $date])->assertCreated()->json('data');
 
     expect($result)->toHaveCount(1)
@@ -197,7 +197,7 @@ test('the period-end FX revaluation posts the unrealised difference and refuses 
     expect(FxRevaluation::query()->count())->toBe(1);
 
     $next = now()->startOfMonth()->addDays(1)->toDateString();
-    ExchangeRate::create(['source' => 'EUR', 'target' => 'CHF', 'rate' => '0.960000', 'effective_date' => $next]);
+    ExchangeRate::createGlobal(['source' => 'EUR', 'target' => 'CHF', 'rate' => '0.960000', 'effective_date' => $next]);
     $loss = $this->postJson('/api/v1/treasury/fx/revalue', ['period_end_date' => $next, 'currency' => 'CHF'])->assertCreated()->json('data.0');
     expect($loss['book_value_base'])->toBe('1063.83')->and($loss['revalued_market_base'])->toBe('1041.67')->and($loss['unrealized_gain_loss'])->toBe('-22.16')
         ->and(treasuryPostings('treasury_fx_revaluation', $loss['id']))->toBe([['6890', '22.16', '0.00'], ['1002', '0.00', '22.16']]);

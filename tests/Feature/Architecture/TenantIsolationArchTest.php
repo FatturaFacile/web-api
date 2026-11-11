@@ -3,33 +3,12 @@
 declare(strict_types=1);
 
 use App\Models\Concerns\BelongsToTenant;
-use App\Models\ContactAddress;
-use App\Models\DeliveryNoteItem;
 use App\Models\EiInboundLog;
-use App\Models\ExchangeRate;
-use App\Models\GeneralLedgerLine;
-use App\Models\GoodsReceiptItem;
-use App\Models\InvoiceItem;
-use App\Models\InvoiceQrBillData;
-use App\Models\InvoiceSdiMetadata;
-use App\Models\LookupCategory;
-use App\Models\LookupItem;
-use App\Models\LookupItemTranslation;
-use App\Models\PasswordResetToken;
-use App\Models\PaymentTermInstallment;
-use App\Models\PosSaleItem;
-use App\Models\PriceListItem;
-use App\Models\ProductionOrderStage;
-use App\Models\PurchaseOrderItem;
-use App\Models\QuoteItem;
-use App\Models\RtFiscalReceipt;
-use App\Models\SalesOrderItem;
-use App\Models\SubscriptionItem;
-use App\Models\Tenant;
+use App\Models\PasswordHistory;
 use App\Models\TenantAccessRequest;
-use App\Models\Translation;
-use App\Models\User;
-use App\Models\WorkOrderLine;
+use App\Services\Tenancy\TenantSchemaPolicy;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Illuminate\Database\Eloquent\Model;
 use Symfony\Component\Finder\Finder;
 
@@ -79,36 +58,13 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
         ->files()
         ->name('*.php');
 
+    /**
+     * Models outside the trait besides the framework and central tables of TenantSchemaPolicy: they filter by tenant in
+     * their own code (the entries of TenantModelCoverageTest explain why).
+     */
     $excludedModels = [
-        // Central models
-        Tenant::class,
         TenantAccessRequest::class,
-        PasswordResetToken::class,
-        User::class,
-        Translation::class,
-        ExchangeRate::class,
         EiInboundLog::class,
-        LookupCategory::class,
-        LookupItem::class,
-        LookupItemTranslation::class,
-        // Child lines, sub-resources, and dependent metadata
-        ContactAddress::class,
-        DeliveryNoteItem::class,
-        GeneralLedgerLine::class,
-        GoodsReceiptItem::class,
-        InvoiceItem::class,
-        InvoiceQrBillData::class,
-        InvoiceSdiMetadata::class,
-        PaymentTermInstallment::class,
-        PosSaleItem::class,
-        PriceListItem::class,
-        ProductionOrderStage::class,
-        PurchaseOrderItem::class,
-        QuoteItem::class,
-        RtFiscalReceipt::class,
-        SalesOrderItem::class,
-        SubscriptionItem::class,
-        WorkOrderLine::class,
     ];
 
     $nonCompliant = [];
@@ -130,17 +86,22 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
             continue;
         }
 
-        if (in_array($className, $excludedModels, true)) {
+        if (in_array($className, $excludedModels, true) || TenantSchemaPolicy::isExcluded((new $className)->getTable())) {
             continue;
         }
 
         $traits = class_uses_recursive($className);
-        if (! in_array(BelongsToTenant::class, $traits, true)) {
+        if (! in_array(BelongsToTenant::class, $traits, true) && ! in_array(StampsTenantFromParent::class, $traits, true)) {
             $nonCompliant[] = $className;
         }
     }
 
     expect($nonCompliant)->toBeEmpty(
-        'The following concrete models are missing BelongsToTenant: '.implode(', ', $nonCompliant)
+        'The following concrete models are missing BelongsToTenant (or StampsTenantFromParent for a child table): '.implode(', ', $nonCompliant)
     );
+});
+
+test('PasswordHistory is global user data: it uses the tenant policy and allows global records', function (): void {
+    expect(class_uses_recursive(PasswordHistory::class))->toContain(BelongsToTenant::class, AllowsGlobalRecords::class)
+        ->and(PasswordHistory::allowsGlobalRecords())->toBeTrue();
 });

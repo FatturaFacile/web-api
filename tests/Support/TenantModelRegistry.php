@@ -6,6 +6,7 @@ namespace Tests\Support;
 
 use App\Models\Concerns\BelongsToTenant as AppBelongsToTenant;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Schema;
@@ -16,18 +17,21 @@ use ReflectionClass;
 /**
  * Discovers every concrete Eloquent model of the application, of the modules and of the internal packages.
  *
+ * A model is "scoped" when it carries the tenant scope, "stamped" when it takes its tenant from its parent (child
+ * tables), and "allowsGlobal" when a null tenant_id means global for it.
+ *
  * The registry drives the generic tenant isolation tests: a new model is picked up with no change to the tests, so a
  * model added without the tenant scope (or without a documented exception) fails the architecture test.
  */
 final class TenantModelRegistry
 {
     /**
-     * @var list<array{class: class-string<Model>, table: string, hasTenantColumn: bool, scoped: bool, hasFactory: bool}>|null
+     * @var list<array{class: class-string<Model>, table: string, hasTenantColumn: bool, scoped: bool, stamped: bool, allowsGlobal: bool, hasFactory: bool}>|null
      */
     private static ?array $models = null;
 
     /**
-     * @return list<array{class: class-string<Model>, table: string, hasTenantColumn: bool, scoped: bool, hasFactory: bool}>
+     * @return list<array{class: class-string<Model>, table: string, hasTenantColumn: bool, scoped: bool, stamped: bool, allowsGlobal: bool, hasFactory: bool}>
      */
     public static function models(): array
     {
@@ -87,6 +91,8 @@ final class TenantModelRegistry
                     'table' => $table,
                     'hasTenantColumn' => Schema::hasColumn($table, 'tenant_id'),
                     'scoped' => $scoped || in_array(BelongsToTenant::class, $traits, true) || in_array(AppBelongsToTenant::class, $traits, true),
+                    'stamped' => in_array(StampsTenantFromParent::class, $traits, true),
+                    'allowsGlobal' => ($scoped || in_array(BelongsToTenant::class, $traits, true) || in_array(AppBelongsToTenant::class, $traits, true)) && $className::allowsGlobalRecords(),
                     'hasFactory' => method_exists($className, 'factory'),
                 ];
             }

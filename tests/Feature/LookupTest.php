@@ -79,7 +79,7 @@ class LookupTest extends TestCase
     public function test_translations_endpoint_falls_back_to_the_default_locale_for_unsupported_values(): void
     {
         Cache::flush();
-        Translation::create(['tenant_id' => null, 'locale' => 'it', 'group' => 'ui', 'key' => 'greeting', 'value' => 'Ciao']);
+        Translation::createGlobal(['locale' => 'it', 'group' => 'ui', 'key' => 'greeting', 'value' => 'Ciao']);
 
         $response = $this->getJson('/api/v1/translations/not-a-locale');
 

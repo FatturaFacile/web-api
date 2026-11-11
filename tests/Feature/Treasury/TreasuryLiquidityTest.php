@@ -130,7 +130,7 @@ test('can compute currency exposure matrix and execute IAS 21 FX revaluation', f
     ]);
 
     // 1. Exposure Matrix: positions exist only for currencies with a published rate
-    ExchangeRate::create(['source' => TenantAccountingCurrency::of($this->tenantId), 'target' => 'USD', 'rate' => 1.085, 'effective_date' => now()->toDateString()]);
+    ExchangeRate::createGlobal(['source' => TenantAccountingCurrency::of($this->tenantId), 'target' => 'USD', 'rate' => 1.085, 'effective_date' => now()->toDateString()]);
     $exposure = $this->fxService->computeCurrencyExposure($this->tenantId, now()->toDateString());
     expect($exposure)->toBeArray()
         ->and(count($exposure))->toBeGreaterThanOrEqual(1);

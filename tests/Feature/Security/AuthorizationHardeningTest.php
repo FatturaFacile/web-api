@@ -100,7 +100,7 @@ test('only a platform administrator writes the global dictionary', function (): 
 });
 
 test('a guest naming a tenant gets only the global translations and lookups', function (): void {
-    Translation::create(['tenant_id' => null, 'locale' => 'en', 'key' => 'APP.TITLE', 'value' => 'Public']);
+    Translation::createGlobal(['locale' => 'en', 'key' => 'APP.TITLE', 'value' => 'Public']);
     Translation::create(['tenant_id' => $this->tenant->id, 'locale' => 'en', 'key' => 'APP.SECRET', 'value' => 'Private']);
 
     $response = $this->getJson("/api/v1/translations/en?tenant_id={$this->tenant->id}")->assertOk();
@@ -117,9 +117,9 @@ test('a guest naming a tenant gets only the global translations and lookups', fu
 });
 
 test('lookup labels go to the own tenant and only for lookup items the tenant can see', function (): void {
-    $category = LookupCategory::create(['code' => 'payment_type', 'name' => 'Payment type']);
+    $category = LookupCategory::createGlobal(['code' => 'payment_type', 'name' => 'Payment type']);
     $foreignItem = LookupItem::create(['category_id' => $category->id, 'tenant_id' => $this->otherTenant->id, 'code' => 'SECRET', 'is_active' => true]);
-    $globalItem = LookupItem::create(['category_id' => $category->id, 'tenant_id' => null, 'code' => 'CASH', 'is_active' => true]);
+    $globalItem = LookupItem::createGlobal(['category_id' => $category->id, 'code' => 'CASH', 'is_active' => true]);
 
     hardeningActor('admin');
     $this->postJson('/api/v1/lookups/translations', ['lookup_item_id' => $foreignItem->id, 'locale' => 'it', 'label' => 'X'])
