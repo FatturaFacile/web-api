@@ -63,7 +63,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        if ($this->app->runningInConsole()) {
+        if ($this->app->runningInConsole() || PHP_SAPI === 'cli-server') {
             @ini_set('memory_limit', '1G');
         }
 
