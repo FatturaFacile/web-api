@@ -35,6 +35,6 @@ final class ScheduledReportMail extends Mailable
         $note = $this->truncated ? '<p>The report reached the row limit and is incomplete: narrow its period or filters.</p>' : '';
 
         return new Content(htmlString: '<p>The scheduled report <strong>'.e($this->reportName).'</strong> is ready ('.$this->rows.' rows).</p>'
-            .'<p><a href="'.e($this->link).'">Download the CSV file</a>. The link is valid until '.e($this->expiresOn).'.</p>'.$note);
+            .'<p><a href="'.e($this->link).'">Download the file</a>. The link is valid until '.e($this->expiresOn).'.</p>'.$note);
     }
 }

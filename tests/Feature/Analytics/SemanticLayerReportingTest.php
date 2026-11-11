@@ -348,7 +348,7 @@ test('exports are neutralised csv in two formats, limited, and audit logged', fu
     $excel = $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=excel_csv")->assertOk()->getContent();
     expect($excel)->toStartWith("\xEF\xBB\xBF\"customer\";\"net_amount\";\"document_count\"")->and($excel)->toContain("\"'=HYPERLINK(");
 
-    $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=xlsx")->assertUnprocessable();
+    $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=xls")->assertUnprocessable();
     $this->postJson('/api/v1/analytics/designer/export', ['dataset' => 'sales', 'spec' => $spec, 'format' => 'excel_csv'])->assertOk();
 
     expect(ExportRun::query()->count())->toBe(3);
@@ -365,4 +365,57 @@ test('the existing kpi and report definition endpoints keep their shape', functi
     expect($kpi['key'])->toBe('sales')->and($kpi['value'])->toBe('150.00');
     $this->postJson('/api/v1/analytics/report-definitions', ['name' => 'Old', 'kpis' => ['sales'], 'period_preset' => 'month_to_date'])->assertCreated();
     $this->getJson('/api/v1/analytics/report-definitions')->assertOk()->assertJsonCount(1, 'data');
+});
+
+test('the xlsx export is a real workbook with typed cells, neutralised text, a parameters sheet, the row limit and the audit entry', function (): void {
+    biInvoice($this->tenant, biCustomer($this->tenant, '=HYPERLINK("http://evil")'), '2027-03-05', '150.50');
+    biInvoice($this->tenant, biCustomer($this->tenant, '007'), '2027-02-06', '20.00');
+    $spec = biSpec(['customer', 'date:month'], ['net_amount', 'document_count'], ['filters' => [['field' => 'customer_country', 'operator' => 'eq', 'value' => 'IT']], 'period' => ['from' => '2027-01-01', 'to' => '2027-03-31'], 'sort' => [['field' => 'net_amount', 'direction' => 'desc']]]);
+    $id = $this->postJson('/api/v1/analytics/designed-reports', ['name' => 'Q1/Q2: sales? with a very long name', 'dataset' => 'sales', 'spec' => $spec])->assertCreated()->json('data.id');
+
+    $response = $this->get("/api/v1/analytics/designed-reports/{$id}/export?format=xlsx")->assertOk();
+    $binary = $response->getContent();
+    expect($binary)->toStartWith('PK')
+        ->and($response->headers->get('Content-Type'))->toContain('spreadsheetml.sheet')
+        ->and($response->headers->get('Content-Disposition'))->toContain('.xlsx');
+
+    $sheets = biReadXlsx($binary);
+    expect(array_keys($sheets))->toBe(['Q1 Q2 sales with a very long', 'Parameters']);
+    $rows = array_values($sheets)[0];
+    expect($rows[0])->toBe(['customer', 'date', 'net_amount', 'document_count'])
+        ->and($rows[1][0])->toBe("'=HYPERLINK(\"http://evil\")")
+        ->and($rows[1][1])->toBeInstanceOf(DateTimeInterface::class)
+        ->and($rows[1][1]->format('Y-m-d'))->toBe('2027-03-01')
+        ->and($rows[1][2])->toBe(150.5)
+        ->and($rows[1][3])->toBe(1)
+        ->and($rows[2][0])->toBe('007')
+        ->and($rows)->toHaveCount(3);
+
+    $parameters = array_column($sheets['Parameters'], 1, 0);
+    expect($parameters['Dataset'])->toBe('sales')
+        ->and($parameters['Report'])->toBe('Q1/Q2: sales? with a very long name')
+        ->and($parameters['Filters'])->toBe('customer_country eq "IT"')
+        ->and($parameters['Period'])->toBe('2027-01-01 - 2027-03-31')
+        ->and($parameters['Truncated by the row limit'])->toBe('no')
+        ->and($parameters['Generated at'])->toBeInstanceOf(DateTimeInterface::class);
+
+    $zip = new ZipArchive;
+    $path = tempnam(sys_get_temp_dir(), 'bi');
+    file_put_contents($path, $binary);
+    $zip->open($path);
+    expect($zip->getFromName('xl/worksheets/sheet1.xml'))->toContain('<pane')->toContain('<cols>');
+    $zip->close();
+    unlink($path);
+
+    $entry = AuditLedgerEntry::query()->where('action', 'ANALYTICS_REPORT_EXPORTED')->sole();
+    expect($entry->payload_after['format'])->toBe('xlsx')->and($entry->payload_after['row_count'])->toBe(2);
+
+    config(['analytics.reporting.max_rows' => 1]);
+    $limited = $this->postJson('/api/v1/analytics/designer/export', ['dataset' => 'sales', 'spec' => biSpec(['customer'], ['net_amount']), 'format' => 'xlsx'])->assertOk();
+    $limitedSheets = biReadXlsx($limited->getContent());
+    expect($limited->headers->get('X-Report-Truncated'))->toBe('true')
+        ->and(array_values($limitedSheets)[0])->toHaveCount(2)
+        ->and(array_column($limitedSheets['Parameters'], 1, 0)['Truncated by the row limit'])->toBe('yes');
+
+    $this->postJson('/api/v1/analytics/designer/export', ['dataset' => 'sales', 'spec' => $spec, 'format' => 'xls'])->assertUnprocessable();
 });

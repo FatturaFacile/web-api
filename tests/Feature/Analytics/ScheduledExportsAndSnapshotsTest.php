@@ -274,3 +274,30 @@ test('the scheduler runs the two commands every night', function (): void {
 
     expect($output)->toContain('analytics:refresh-kpi-snapshots')->toContain('analytics:run-scheduled-exports');
 });
+
+test('a schedule can deliver an xlsx workbook by link and to the documents module', function (): void {
+    biSchedule(['delivery' => 'both', 'format' => 'xlsx']);
+    $this->postJson('/api/v1/analytics/export-schedules', ['designed_report_id' => $this->report->id, 'frequency' => 'daily', 'delivery' => 'documents', 'format' => 'xlsx'])->assertCreated()->assertJsonPath('data.format', 'xlsx');
+    Carbon::setTestNow('2027-03-16 06:00:00');
+
+    expect(Artisan::call('analytics:run-scheduled-exports', ['--tenant' => [$this->tenant->id]]))->toBe(0);
+
+    $run = ExportRun::query()->where('schedule_id', ExportSchedule::query()->where('delivery', 'both')->value('id'))->sole();
+    expect($run->format)->toBe('xlsx')->and($run->path)->toEndWith('.xlsx')->and($run->file_name)->toEndWith('.xlsx');
+    $sheets = biReadXlsx(Storage::disk((string) $run->disk)->get((string) $run->path));
+    expect(array_values($sheets)[0][1])->toEqual(['Rossi', 150]);
+
+    $link = null;
+    Mail::assertSent(ScheduledReportMail::class, function (ScheduledReportMail $mail) use (&$link): bool {
+        $link = $mail->link;
+
+        return true;
+    });
+    app('auth')->forgetGuards();
+    $download = $this->get($link)->assertOk();
+    expect($download->headers->get('Content-Type'))->toContain('spreadsheetml.sheet');
+
+    Sanctum::actingAs($this->user);
+    $version = DmsDocumentVersion::query()->where('document_id', $run->document_id)->sole();
+    expect($version->mime_type)->toContain('spreadsheetml')->and(AuditLedgerEntry::query()->where('action', 'ANALYTICS_SCHEDULED_EXPORT_GENERATED')->first()->payload_after['format'])->toBe('xlsx');
+});

@@ -9,6 +9,7 @@ use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Modules\Analytics\Models\ExportRun;
+use Modules\Analytics\Services\ReportExportFormatter;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -21,7 +22,7 @@ final class ExportDownloadController extends Controller
     /**
      * Inject the collaborators.
      */
-    public function __construct(private readonly AuditLedgerInterface $auditLedger) {}
+    public function __construct(private readonly AuditLedgerInterface $auditLedger, private readonly ReportExportFormatter $formatter) {}
 
     /**
      * Download a stored export.
@@ -38,7 +39,7 @@ final class ExportDownloadController extends Controller
             new OA\Parameter(name: 'signature', in: 'query', required: true, schema: new OA\Schema(type: 'string')),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'CSV file', content: new OA\MediaType(mediaType: 'text/csv', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 200, description: 'CSV or xlsx file, as scheduled', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
             new OA\Response(response: 403, description: 'Invalid or expired link', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'The file is no longer available', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
@@ -68,6 +69,6 @@ final class ExportDownloadController extends Controller
             'user_agent' => $request->userAgent(),
         ]);
 
-        return $disk->download((string) $export->path, (string) $export->file_name, ['Content-Type' => 'text/csv; charset=UTF-8']);
+        return $disk->download((string) $export->path, (string) $export->file_name, ['Content-Type' => $this->formatter->mimeType((string) $export->format)]);
     }
 }

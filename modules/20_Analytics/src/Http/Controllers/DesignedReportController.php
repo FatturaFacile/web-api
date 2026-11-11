@@ -195,13 +195,13 @@ final class DesignedReportController extends Controller
     #[OA\Get(
         path: '/api/v1/analytics/designed-reports/{id}/export',
         operationId: 'exportAnalyticsDesignedReport',
-        description: 'Runs the report and returns it as CSV, up to the row limit (header `X-Report-Truncated` says whether it was cut). Text cells are neutralised against spreadsheet formula injection. Every export is audit logged.',
+        description: 'Runs the report and returns it as CSV, Excel-compatible CSV or xlsx (query `format`), up to the row limit (header `X-Report-Truncated` says whether it was cut). Text cells are neutralised against spreadsheet formula injection. Every export is audit logged.',
         summary: 'Export a designed report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Analytics BI'],
         parameters: [new OA\Parameter(ref: '#/components/parameters/AnaDesignedReportId'), new OA\Parameter(ref: '#/components/parameters/AnaExportFormat')],
         responses: [
-            new OA\Response(response: 200, description: 'CSV file', content: new OA\MediaType(mediaType: 'text/csv', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 200, description: 'CSV or xlsx file', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
             new OA\Response(ref: '#/components/responses/AnaUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/AnaForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/AnaNotFound', response: 404),

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
+use OpenSpout\Reader\XLSX\Reader;
 
 require_once __DIR__.'/../Compliance/ComplianceHelpers.php';
 
@@ -81,4 +82,33 @@ function biInvoice(Tenant $tenant, Contact $customer, string $date, string $net,
 function biSpec(array $dimensions, array $measures, array $extra = []): array
 {
     return ['dimensions' => $dimensions, 'measures' => $measures, ...$extra];
+}
+
+/**
+ * Reads an xlsx workbook with the OpenSpout reader: sheet name => rows (list of cell values, typed as stored).
+ *
+ * @return array<string, list<list<mixed>>>
+ */
+function biReadXlsx(string $binary): array
+{
+    $path = tempnam(sys_get_temp_dir(), 'bi');
+    file_put_contents($path, $binary);
+    $reader = new Reader;
+    $reader->open($path);
+    $sheets = [];
+
+    foreach ($reader->getSheetIterator() as $sheet) {
+        $rows = [];
+
+        foreach ($sheet->getRowIterator() as $row) {
+            $rows[] = array_map(static fn ($cell): mixed => $cell->getValue(), $row->cells);
+        }
+
+        $sheets[$sheet->getName()] = $rows;
+    }
+
+    $reader->close();
+    unlink($path);
+
+    return $sheets;
 }

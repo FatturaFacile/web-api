@@ -107,13 +107,13 @@ final class SemanticLayerController extends Controller
     #[OA\Post(
         path: '/api/v1/analytics/designer/export',
         operationId: 'exportAnalyticsDesignerReport',
-        description: 'Exports the report as CSV, up to the row limit (the response header `X-Report-Truncated` says whether it was cut). Text cells are neutralised against spreadsheet formula injection. The export is audit logged.',
+        description: 'Exports the report as CSV, Excel-compatible CSV or xlsx (field `format`), up to the row limit (the response header `X-Report-Truncated` says whether it was cut). Text cells are neutralised against spreadsheet formula injection. The export is audit logged.',
         summary: 'Export an ad-hoc report',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AnalyticsDesignerRequest')),
         tags: ['Analytics BI'],
         responses: [
-            new OA\Response(response: 200, description: 'CSV file', content: new OA\MediaType(mediaType: 'text/csv', schema: new OA\Schema(type: 'string'))),
+            new OA\Response(response: 200, description: 'CSV or xlsx file', content: new OA\MediaType(mediaType: 'application/octet-stream', schema: new OA\Schema(type: 'string', format: 'binary'))),
             new OA\Response(ref: '#/components/responses/AnaUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/AnaForbidden', response: 403),
             new OA\Response(ref: '#/components/responses/AnaUnprocessable', response: 422),

@@ -43,7 +43,7 @@ final readonly class ReportExporter
     public function export(ReportSpec $spec, User $user, string $format, ?DesignedReport $report = null, ?ExportSchedule $schedule = null, bool $store = false): array
     {
         $result = $this->engine->export($spec, $user);
-        $content = $this->formatter->format($result, $format);
+        $content = $this->formatter->format($result, $format, ['sheet_name' => $report === null ? $spec->dataset : $report->name, 'dataset' => $spec->dataset, 'report' => $report?->name, 'spec' => $spec->toArray(), 'generated_at' => now()]);
         $fileName = Str::slug($report === null ? $spec->dataset : $report->name).'-'.now()->format('Ymd-His').'.'.$this->formatter->extension($format);
         $tenantId = (string) $this->tenantContext->getTenantId();
 
@@ -62,7 +62,7 @@ final readonly class ReportExporter
 
         if ($store) {
             $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
-            $path = "tenants/{$tenantId}/analytics-exports/".Str::uuid().'.csv';
+            $path = "tenants/{$tenantId}/analytics-exports/".Str::uuid().'.'.$this->formatter->extension($format);
             Storage::disk($disk)->put($path, $content);
             $run->fill(['disk' => $disk, 'path' => $path, 'expires_at' => now()->addDays(max(1, (int) config('analytics.reporting.link_ttl_days', 7)))]);
         }

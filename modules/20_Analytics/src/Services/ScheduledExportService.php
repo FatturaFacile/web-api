@@ -38,6 +38,7 @@ final readonly class ScheduledExportService
     public function __construct(
         private ReportEngine $engine,
         private ReportExporter $exporter,
+        private ReportExportFormatter $formatter,
         private TenantClock $clock,
         private TenantContext $tenantContext,
         private ModuleAccessGate $gate,
@@ -186,7 +187,7 @@ final readonly class ScheduledExportService
             file_put_contents($temporary, $content);
             $document = $this->documents->create(
                 ['title' => $report->name.' ('.now()->toDateString().')', 'document_type' => 'analytics_export', 'description' => 'Scheduled export of the report "'.$report->name.'"', 'metadata' => ['analytics_export_run_id' => $run->id, 'dataset' => $run->dataset]],
-                new UploadedFile($temporary, $fileName, 'text/csv', null, true),
+                new UploadedFile($temporary, $fileName, $this->formatter->mimeType($run->format), null, true),
                 null,
                 true,
                 [],

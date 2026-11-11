@@ -16,7 +16,7 @@ use OpenApi\Attributes as OA;
 #[OA\Parameter(parameter: 'AnaScheduleId', name: 'id', description: 'Identifier of the scheduled export', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Parameter(parameter: 'AnaPage', name: 'page', description: 'Page number, from 1', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, default: 1))]
 #[OA\Parameter(parameter: 'AnaPerPage', name: 'per_page', description: 'Rows per page, at most 500. A report never returns more than the row limit (10000 by default) in total.', in: 'query', required: false, schema: new OA\Schema(type: 'integer', minimum: 1, maximum: 500, default: 50))]
-#[OA\Parameter(parameter: 'AnaExportFormat', name: 'format', description: '`csv`: comma separated UTF-8. `excel_csv`: semicolons and byte order mark, opens correctly in Excel (no real XLSX file is produced).', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['csv', 'excel_csv'], default: 'csv'))]
+#[OA\Parameter(parameter: 'AnaExportFormat', name: 'format', description: '`csv`: comma separated UTF-8. `excel_csv`: semicolons and byte order mark, opens correctly in Excel. `xlsx`: a real Excel workbook (typed cells, bold frozen header, a second sheet `Parameters` with dataset, filters, period and generation time). Same row limit for every format.', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['csv', 'excel_csv', 'xlsx'], default: 'csv'))]
 #[OA\Schema(
     schema: 'AnalyticsReportSpec',
     description: 'What the designer chose. Every key is checked against the catalogue of the dataset: an unknown dimension, measure, operator or granularity is a 422. Measures cannot be filtered (no HAVING).',
@@ -75,7 +75,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'spec', ref: '#/components/schemas/AnalyticsReportSpec'),
         new OA\Property(property: 'page', type: 'integer', minimum: 1),
         new OA\Property(property: 'per_page', type: 'integer', minimum: 1, maximum: 500),
-        new OA\Property(property: 'format', type: 'string', enum: ['csv', 'excel_csv'], description: 'Used by the export endpoint only'),
+        new OA\Property(property: 'format', type: 'string', enum: ['csv', 'excel_csv', 'xlsx'], description: 'Used by the export endpoint only'),
     ]
 )]
 #[OA\Schema(
@@ -118,7 +118,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'frequency', type: 'string', enum: ['daily', 'weekly', 'monthly']),
         new OA\Property(property: 'day_of_week', type: 'integer', nullable: true, description: '1 Monday to 7 Sunday'),
         new OA\Property(property: 'day_of_month', type: 'integer', nullable: true, description: '1 to 28'),
-        new OA\Property(property: 'format', type: 'string', enum: ['csv', 'excel_csv']),
+        new OA\Property(property: 'format', type: 'string', enum: ['csv', 'excel_csv', 'xlsx']),
         new OA\Property(property: 'delivery', type: 'string', enum: ['email', 'documents', 'both']),
         new OA\Property(property: 'recipients', type: 'array', items: new OA\Items(type: 'string', format: 'email')),
         new OA\Property(property: 'is_active', type: 'boolean'),
@@ -137,7 +137,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'frequency', type: 'string', enum: ['daily', 'weekly', 'monthly']),
         new OA\Property(property: 'day_of_week', type: 'integer', minimum: 1, maximum: 7, description: 'Required for weekly'),
         new OA\Property(property: 'day_of_month', type: 'integer', minimum: 1, maximum: 28, description: 'Required for monthly'),
-        new OA\Property(property: 'format', type: 'string', enum: ['csv', 'excel_csv'], default: 'csv'),
+        new OA\Property(property: 'format', type: 'string', enum: ['csv', 'excel_csv', 'xlsx'], default: 'csv'),
         new OA\Property(property: 'delivery', type: 'string', enum: ['email', 'documents', 'both'], description: '`email` sends a signed link to the file, `documents` stores it in the Documents module (needs write access to it), `both` does both'),
         new OA\Property(property: 'recipients', type: 'array', description: 'Required for email delivery; members of the company unless the installation allows external recipients', items: new OA\Items(type: 'string', format: 'email')),
         new OA\Property(property: 'is_active', type: 'boolean', default: true),
