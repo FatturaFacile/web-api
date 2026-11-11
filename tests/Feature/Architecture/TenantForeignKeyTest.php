@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Tenant;
+use App\Services\Backup\TenantBackupService;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -44,7 +45,7 @@ function tablesExpectedToHaveTenantKey(): array
 
     return array_values(array_filter(
         array_map(static fn (object $row): string => (string) $row->table_name, $rows),
-        static fn (string $table): bool => ! str_starts_with($table, 'enterprise_audit_ledger') && ! str_starts_with($table, 'transactional_outbox') && ! str_starts_with($table, 'transactional_inbox'),
+        static fn (string $table): bool => ! in_array($table, TenantBackupService::APPEND_ONLY_TABLES, true) && ! str_starts_with($table, 'enterprise_audit_ledger') && ! str_starts_with($table, 'transactional_outbox') && ! str_starts_with($table, 'transactional_inbox'),
     ));
 }
 

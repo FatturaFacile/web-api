@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\Backup\TenantBackupService;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -20,13 +21,15 @@ use Illuminate\Support\Facades\Schema;
  * - idempotent: tables that already have a key to tenants on tenant_id are skipped.
  *
  * ON DELETE, by class of table:
- * - evidence tables (journals, ledgers, audit trails, retention and consent records, payroll, legal archives): RESTRICT. Deleting
+ * - evidence tables (journals, ledgers, audit trails, retention and consent records, payroll, legal archives, append-only logs and histories): RESTRICT. Deleting
  *   a tenant must never silently erase accounting, payroll or audit evidence; the tenant has to be purged on purpose.
  * - every other tenant table: CASCADE, the convention of the 476 keys that already exist (the data of a tenant has no meaning
  *   without it).
  *
  * Left without a key, on purpose: partitions and partitioned tables (PostgreSQL cannot add a NOT VALID key to a partitioned table)
- * and the high-volume append-only infrastructure tables (the enterprise audit ledger, the transactional outbox and inbox).
+ * the high-volume append-only infrastructure tables (the enterprise audit ledger, the transactional outbox and inbox) and the
+ * immutable histories listed in TenantBackupService::APPEND_ONLY_TABLES, which by design have no foreign key (nothing may
+ * cascade into them and a restore never deletes their rows).
  */
 return new class extends Migration
 {
@@ -59,6 +62,11 @@ return new class extends Migration
             if (str_contains($table, $pattern)) {
                 return 'RESTRICT';
             }
+        }
+
+        // Append-only logs and histories (access logs, message logs, password histories...): nothing may cascade into them.
+        if (preg_match('/(^|_)(logs?|histor(y|ies))($|_)/', $table) === 1) {
+            return 'RESTRICT';
         }
 
         return 'CASCADE';
@@ -132,6 +140,10 @@ return new class extends Migration
         return array_values(array_filter(
             array_map(static fn (object $row): string => (string) $row->table_name, $rows),
             static function (string $table): bool {
+                if (in_array($table, TenantBackupService::APPEND_ONLY_TABLES, true)) {
+                    return false;
+                }
+
                 foreach (self::EXCLUDED_PREFIXES as $prefix) {
                     if (str_starts_with($table, $prefix)) {
                         return false;
