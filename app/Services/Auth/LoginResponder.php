@@ -11,6 +11,7 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\Security\ConcurrentSessionLimit;
 use App\Services\Auth\Security\TenantSecurityPolicies;
+use App\Services\Auth\Sso\SsoBrowserBinding;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -45,6 +46,8 @@ final class LoginResponder
         private readonly ConcurrentSessionLimit $sessionLimit,
         private readonly TokenMode $tokenModes,
         private readonly SsoSignInCodes $signInCodes,
+        private readonly SsoBrowserBinding $binding,
+        private readonly RegistrationAudit $audit,
     ) {}
 
     /**
@@ -70,12 +73,24 @@ final class LoginResponder
      * factors, a challenge that keeps the SSO method and the tenant. Without a session (and without the token mode) the
      * sign-in is handed over with a single-use code.
      */
-    public function respondToSso(Request $request, User $user, Tenant $tenant, bool $tokenMode = false): Response
+    public function respondToSso(Request $request, User $user, Tenant $tenant, bool $tokenMode = false, ?string $bindingHash = null, bool $bindingChecked = false): Response
     {
         $tenants = $user->tenants()->get();
 
         if (! $tokenMode && ! $request->hasSession()) {
-            return $this->handOver($request, $user, $tenant);
+            return $this->handOver($request, $user, $tenant, $bindingHash);
+        }
+
+        // A request that finishes the login itself must come from the browser that started it.
+        if (! $bindingChecked && ! $this->binding->matches($request, $bindingHash)) {
+            $this->audit->record(RegistrationAudit::SSO_LOGIN_FAILED, (string) $user->id, ['reason' => 'browser_mismatch'], (string) $tenant->id);
+
+            return $this->problemDetailsResponse(
+                title: __('enterprise_auth.errors.sso_failed_title'),
+                detail: __('enterprise_auth.errors.sso_failed_detail'),
+                status: Response::HTTP_UNAUTHORIZED,
+                type: AuthProblem::SsoLoginFailed->value,
+            );
         }
 
         if ($this->twoFactor->isEnabled($user)) {
@@ -96,9 +111,9 @@ final class LoginResponder
      * The sign-in code of a single sign-on that finished without a session: JSON for a client that asked for JSON, a 303
      * redirect to the SPA (the code in the URL fragment) for the browser navigation of the identity provider.
      */
-    private function handOver(Request $request, User $user, Tenant $tenant): Response
+    private function handOver(Request $request, User $user, Tenant $tenant, ?string $bindingHash): Response
     {
-        $code = $this->signInCodes->issue($user, $tenant);
+        $code = $this->signInCodes->issue($user, $tenant, $bindingHash);
 
         if ($request->expectsJson() || $request->isJson()) {
             return $this->successResponse(

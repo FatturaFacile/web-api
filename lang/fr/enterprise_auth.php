@@ -55,5 +55,6 @@ return [
         'saml_metadata_failed' => 'Les métadonnées sont inutilisables (:reason).',
         'logout_invalid_title' => 'Échec de la déconnexion',
         'logout_invalid_detail' => 'Le message de déconnexion est absent, non signé ou invalide.',
+        'auth_method_unsupported' => 'Le fournisseur n\'annonce pas cette méthode d\'authentification du client.',
     ],
 ];

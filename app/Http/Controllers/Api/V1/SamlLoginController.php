@@ -9,9 +9,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\Auth\LoginResponder;
 use App\Services\Auth\Saml\SamlLogin;
+use App\Services\Auth\Sso\SsoBrowserBinding;
 use App\Services\Auth\Sso\SsoException;
 use App\Services\Auth\TokenMode;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -31,12 +31,13 @@ class SamlLoginController extends Controller
         private readonly SamlLogin $saml,
         private readonly LoginResponder $responder,
         private readonly TokenMode $tokenModes,
+        private readonly SsoBrowserBinding $binding,
     ) {}
 
     #[OA\Post(
         path: '/api/v1/auth/saml/start',
         operationId: 'startSamlLogin',
-        description: 'Starts a SAML login for a tenant and returns the URL of its identity provider (AuthnRequest, HTTP-Redirect binding, with a RelayState valid once for a few minutes). A tenant without a ready SAML provider is a 404.',
+        description: 'Starts a SAML login for a tenant and returns the URL of its identity provider (AuthnRequest, HTTP-Redirect binding, with a RelayState valid once for a few minutes). A tenant without a ready SAML provider is a 404. The response sets the cookie `sso_flow` that binds the login to this browser. SPA contract (cookie sessions, no bearer token): 1) POST /auth/sso/discover with the email to learn the protocol and tenant; 2) call the start endpoint of that protocol with credentials included, so the browser keeps the binding cookie `sso_flow` (HttpOnly, Secure, SameSite=Lax, 10 minutes); 3) send the browser to the returned URL; 4) the identity provider returns the browser to the SPA (OIDC: redirect_uri with code and state, which the SPA posts to /auth/sso/callback with credentials) or posts the assertion cross-site to the SAML ACS, which answers 303 to the SPA with `#code=`; 5) the SPA posts that single-use code to POST /auth/sso/exchange with credentials, the CSRF token and the same browser, and receives the cookie session; 6) to sign out, POST /auth/logout and follow `data.idp_logout_url` when it is not null.',
         summary: 'Start a SAML login',
         tags: ['Authentication'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/SsoStartRequest')),
@@ -47,12 +48,14 @@ class SamlLoginController extends Controller
             new OA\Response(response: 429, description: 'Too many requests', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function start(Request $request): JsonResponse
+    public function start(Request $request): Response
     {
         $validated = $request->validate(['tenant_id' => ['required', 'uuid']]);
 
+        [$secret, $hash] = $this->binding->issue();
+
         try {
-            $url = $this->saml->start($validated['tenant_id']);
+            $url = $this->saml->start($validated['tenant_id'], $hash);
         } catch (SsoException) {
             return $this->problemDetailsResponse(
                 title: __('enterprise_auth.errors.sso_unavailable_title'),
@@ -61,13 +64,13 @@ class SamlLoginController extends Controller
             );
         }
 
-        return $this->successResponse(data: ['redirect_url' => $url]);
+        return $this->binding->attach($this->successResponse(data: ['redirect_url' => $url]), $secret);
     }
 
     #[OA\Post(
         path: '/api/v1/auth/saml/{tenantId}/acs',
         operationId: 'samlAssertionConsumerService',
-        description: 'Assertion consumer service of the tenant (HTTP-POST binding): receives `SAMLResponse` and `RelayState` from the identity provider. Strict mode: the assertion must be signed by a configured certificate, addressed to this tenant (Audience, Destination), within its validity (NotOnOrAfter), an answer to the request this RelayState started (InResponseTo), and not seen before. IdP-initiated responses are refused. Without a cookie session (the identity provider posts it as a cross-site navigation) a browser is redirected (303) to the SPA with the single-use sign-in code in the URL fragment (`#code=`), and a JSON client gets `sign_in_code`; the SPA exchanges it at POST /auth/sso/exchange. When the SPA relays the posted values itself on a stateful request, it answers like the password login (cookie set). The access is bound to the tenant.',
+        description: 'Assertion consumer service of the tenant (HTTP-POST binding): receives `SAMLResponse` and `RelayState` from the identity provider. Strict mode: the assertion must be signed by a configured certificate, addressed to this tenant (Audience, Destination), within its validity (NotOnOrAfter), an answer to the request this RelayState started (InResponseTo), and not seen before. IdP-initiated responses are refused. Without a cookie session (the identity provider posts it as a cross-site navigation) a browser is redirected (303) to the SPA with the single-use sign-in code in the URL fragment (`#code=`), and a JSON client gets `sign_in_code`; the SPA exchanges it at POST /auth/sso/exchange. When the SPA relays the posted values itself on a stateful request, it answers like the password login (cookie set). The access is bound to the tenant. The ACS never issues a bearer token unless `token_mode: true` is sent while the server enables the token mode (otherwise 422). The binding cookie is not sent with the identity provider cross-site POST: the sign-in code keeps its hash and the exchange requires the cookie.',
         summary: 'SAML assertion consumer service',
         tags: ['Authentication'],
         parameters: [new OA\Parameter(name: 'tenantId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
@@ -99,7 +102,7 @@ class SamlLoginController extends Controller
         $tokenMode = $this->tokenModes->resolve($request);
 
         try {
-            [$user, $tenant] = $this->saml->complete($tenantId, $validated['SAMLResponse'], $validated['RelayState'], $request);
+            $completion = $this->saml->complete($tenantId, $validated['SAMLResponse'], $validated['RelayState'], $request);
         } catch (SsoException) {
             return $this->problemDetailsResponse(
                 title: __('enterprise_auth.errors.sso_failed_title'),
@@ -109,7 +112,8 @@ class SamlLoginController extends Controller
             );
         }
 
-        return $this->responder->respondToSso($request, $user, $tenant, $tokenMode);
+        // Posted by the identity provider (cross-site) the request has no cookie: the code keeps the binding hash.
+        return $this->responder->respondToSso($request, $completion->user, $completion->tenant, $tokenMode, $completion->bindingHash);
     }
 
     #[OA\Get(
@@ -164,6 +168,11 @@ class SamlLoginController extends Controller
             );
         }
 
-        return $url === null ? response()->noContent() : redirect()->away($url);
+        if ($url !== null) {
+            return redirect()->away($url);
+        }
+
+        // The answer to a logout this service provider started: the browser returns to the SPA.
+        return $request->has('SAMLResponse') ? redirect()->away(rtrim((string) config('app.frontend_url'), '/').'/') : response()->noContent();
     }
 }

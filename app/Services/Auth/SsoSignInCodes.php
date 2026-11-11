@@ -16,7 +16,8 @@ use Illuminate\Support\Str;
  * credential: only the SPA, on a stateful request with the CSRF token, can exchange it for the cookie session
  * (POST /auth/sso/exchange). The code is random (256 bits), stored only as a hash, valid `auth.sso_exchange.ttl_seconds`
  * (60 by default) and spent by the first exchange; a replay or an expired code is refused. It travels in the URL
- * fragment of the redirect, which browsers do not send to servers or in the Referer.
+ * fragment of the redirect, which browsers do not send to servers or in the Referer. The code also keeps the hash of the
+ * browser binding of the login (SsoBrowserBinding): the exchange needs the cookie it matches.
  */
 final class SsoSignInCodes
 {
@@ -27,13 +28,14 @@ final class SsoSignInCodes
         return max(1, (int) config('auth.sso_exchange.ttl_seconds'));
     }
 
-    public function issue(User $user, Tenant $tenant): string
+    public function issue(User $user, Tenant $tenant, ?string $bindingHash = null): string
     {
         $code = Str::random(64);
 
         Cache::put(self::PREFIX.hash('sha256', $code), [
             'user_id' => (string) $user->getKey(),
             'tenant_id' => (string) $tenant->getKey(),
+            'binding' => $bindingHash,
         ], now()->addSeconds($this->ttlSeconds()));
 
         return $code;
@@ -42,7 +44,7 @@ final class SsoSignInCodes
     /**
      * Spends the code: the first call gets what it was issued for, every other call (replay, expiry, guess) gets null.
      *
-     * @return array{user_id: string, tenant_id: string}|null
+     * @return array{user_id: string, tenant_id: string, binding: string|null}|null
      */
     public function redeem(string $code): ?array
     {
@@ -56,6 +58,6 @@ final class SsoSignInCodes
 
         Cache::forget($key);
 
-        return ['user_id' => (string) $payload['user_id'], 'tenant_id' => (string) $payload['tenant_id']];
+        return ['user_id' => (string) $payload['user_id'], 'tenant_id' => (string) $payload['tenant_id'], 'binding' => isset($payload['binding']) ? (string) $payload['binding'] : null];
     }
 }

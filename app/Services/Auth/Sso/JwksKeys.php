@@ -25,18 +25,18 @@ final class JwksKeys
 
     /**
      * The PEM public key for the `kid` of a token. A token without `kid` is accepted only when the provider publishes a
-     * single signing key.
+     * single signing key of the type the algorithm needs (RSA for RS*, EC for ES256).
      *
      * @throws SsoException when no matching key is available
      */
-    public function pemFor(SsoProvider $provider, ?string $kid): string
+    public function pemFor(SsoProvider $provider, ?string $kid, string $keyType = 'RSA'): string
     {
         $cached = $this->cached($provider);
-        $jwk = $this->select($cached['keys'] ?? [], $kid);
+        $jwk = $this->select($cached['keys'] ?? [], $kid, $keyType);
 
         if ($jwk === null && (time() - (int) ($cached['fetched_at'] ?? 0)) >= self::REFRESH_COOLDOWN_SECONDS) {
             $cached = $this->refresh($provider);
-            $jwk = $this->select($cached['keys'], $kid);
+            $jwk = $this->select($cached['keys'], $kid, $keyType);
         }
 
         if ($jwk === null) {
@@ -50,9 +50,9 @@ final class JwksKeys
      * @param  list<array<string, mixed>>  $keys
      * @return array<string, mixed>|null
      */
-    private function select(array $keys, ?string $kid): ?array
+    private function select(array $keys, ?string $kid, string $keyType): ?array
     {
-        $signing = array_values(array_filter($keys, fn (array $key): bool => ($key['kty'] ?? null) === 'RSA' && (($key['use'] ?? 'sig') === 'sig')));
+        $signing = array_values(array_filter($keys, fn (array $key): bool => ($key['kty'] ?? null) === $keyType && (($key['use'] ?? 'sig') === 'sig')));
 
         if ($kid === null) {
             return count($signing) === 1 ? $signing[0] : null;

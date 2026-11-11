@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Http;
  *
  * `begin` stores a one-time login state (state and nonce as hashes, PKCE verifier encrypted) and returns the URL the
  * browser goes to. `complete` consumes that state atomically (a replayed or forged state finds nothing), exchanges the
- * code at the token endpoint and validates the id_token. Client authentication at the token endpoint is
- * `client_secret_post`, or none for a public client without a secret.
+ * code at the token endpoint and validates the id_token. Client authentication at the token endpoint is the setting of
+ * the provider: `client_secret_post` (default) or `client_secret_basic`; a public client without a secret sends none.
  */
 final class OidcClient
 {
@@ -27,7 +27,7 @@ final class OidcClient
     /**
      * @return string the authorization URL to send the browser to
      */
-    public function begin(SsoProvider $provider): string
+    public function begin(SsoProvider $provider, ?string $bindingHash = null): string
     {
         $state = $this->randomToken();
         $nonce = $this->randomToken();
@@ -39,6 +39,7 @@ final class OidcClient
             'state_hash' => hash('sha256', $state),
             'nonce_hash' => hash('sha256', $nonce),
             'code_verifier' => $verifier,
+            'browser_binding_hash' => $bindingHash,
             'expires_at' => now()->addMinutes((int) config('sso.state_ttl_minutes')),
         ]);
         $record->forceFill(['tenant_id' => $provider->tenant_id])->save();
@@ -61,7 +62,7 @@ final class OidcClient
     /**
      * Resolves the state to its provider, spends it, and returns the validated claims of the id_token.
      *
-     * @return array{0: SsoProvider, 1: array<string, mixed>}
+     * @return array{0: SsoProvider, 1: array<string, mixed>, 2: string|null, 3: string} the provider, the claims, the browser binding hash of the login and the raw id_token
      *
      * @throws SsoException
      */
@@ -79,7 +80,7 @@ final class OidcClient
 
             $idToken = $this->exchangeCode($provider, $code, $login->code_verifier);
 
-            return [$provider, $this->validator->validate($idToken, $provider, $login->nonce_hash)];
+            return [$provider, $this->validator->validate($idToken, $provider, $login->nonce_hash), $login->browser_binding_hash, $idToken];
         } catch (SsoException $exception) {
             throw $exception->forTenant($login->tenant_id);
         }
@@ -130,12 +131,20 @@ final class OidcClient
             'code_verifier' => $verifier,
         ];
 
+        $request = Http::timeout((int) config('sso.http_timeout_seconds'))->withoutRedirecting()->asForm()->acceptJson();
+
         if ($provider->client_secret !== null && $provider->client_secret !== '') {
-            $form['client_secret'] = $provider->client_secret;
+            if ($provider->token_endpoint_auth_method === 'client_secret_basic') {
+                // RFC 6749 section 2.3.1: the id and the secret are form-urlencoded before they are put in the Basic header.
+                unset($form['client_id']);
+                $request = $request->withBasicAuth(urlencode($provider->client_id), urlencode($provider->client_secret));
+            } else {
+                $form['client_secret'] = $provider->client_secret;
+            }
         }
 
         try {
-            $response = Http::timeout((int) config('sso.http_timeout_seconds'))->withoutRedirecting()->asForm()->acceptJson()->post($endpoint, $form);
+            $response = $request->post($endpoint, $form);
         } catch (ConnectionException) {
             throw new SsoException('token_endpoint_unreachable');
         }
