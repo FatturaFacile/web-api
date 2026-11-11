@@ -9,6 +9,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.5",
+        "ext-dom": "*",
         "barryvdh/laravel-dompdf": "^3.1",
         "darkaonline/l5-swagger": "^11.2",
         "dedoc/scramble": "^0.13.49",
@@ -17,11 +18,11 @@
         "laravel/sanctum": "^4.0",
         "laravel/telescope": "^5.26",
         "laravel/tinker": "^3.0",
+        "openspout/openspout": "^5.13",
         "picqer/php-barcode-generator": "^3.3",
         "spatie/laravel-permission": "^8.3",
         "spatie/laravel-query-builder": "^7.3",
-        "sprain/swiss-qr-bill": "^5.3",
-        "ext-dom": "*"
+        "sprain/swiss-qr-bill": "^5.3"
     },
     "require-dev": {
         "fakerphp/faker": "^1.23",
