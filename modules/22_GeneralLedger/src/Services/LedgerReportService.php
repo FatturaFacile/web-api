@@ -530,7 +530,7 @@ final class LedgerReportService
     /**
      * Resolves presentation currency units per 1 functional currency unit at a given date (closing rate).
      */
-    private function closingTranslationRate(string $functionalCurrency, string $presentationCurrency, CarbonImmutable $asOf): string
+    public function closingTranslationRate(string $functionalCurrency, string $presentationCurrency, CarbonImmutable $asOf): string
     {
         $direct = ExchangeRate::query()
             ->where('source', $functionalCurrency)
@@ -557,7 +557,7 @@ final class LedgerReportService
         throw new LedgerPostingException("No {$functionalCurrency}/{$presentationCurrency} exchange rate available on or before {$asOf->toDateString()}.");
     }
 
-    private function historicalTranslationRate(string $functionalCurrency, string $presentationCurrency, CarbonImmutable $startDate, string $fallbackRate): string
+    public function historicalTranslationRate(string $functionalCurrency, string $presentationCurrency, CarbonImmutable $startDate, string $fallbackRate): string
     {
         $direct = ExchangeRate::query()
             ->where('source', $functionalCurrency)
@@ -584,7 +584,7 @@ final class LedgerReportService
         return $fallbackRate;
     }
 
-    private function averageTranslationRate(
+    public function averageTranslationRate(
         string $functionalCurrency,
         string $presentationCurrency,
         CarbonImmutable $from,

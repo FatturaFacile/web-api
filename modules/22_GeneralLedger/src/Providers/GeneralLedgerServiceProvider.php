@@ -104,6 +104,7 @@ final class GeneralLedgerServiceProvider extends ServiceProvider
         $this->registerEventListeners();
         $this->registerConsoleCommands();
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/consolidation.php');
         $this->loadViewsFrom(__DIR__.'/../../resources/views', 'general-ledger');
     }
 
