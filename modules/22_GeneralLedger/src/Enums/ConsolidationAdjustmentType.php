@@ -14,4 +14,8 @@ enum ConsolidationAdjustmentType: string
     case InvestmentEquity = 'investment_equity';
     case EquityMethod = 'equity_method';
     case TranslationDifference = 'translation_difference';
+    case Goodwill = 'goodwill';
+    case GoodwillAmortisation = 'goodwill_amortisation';
+    case UnrealisedProfit = 'unrealised_profit';
+    case Dividend = 'dividend';
 }

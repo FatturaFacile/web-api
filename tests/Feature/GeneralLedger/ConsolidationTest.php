@@ -455,14 +455,17 @@ test('the equity method brings the investment to the share of net assets and sho
     expect($tb['4000']['net'])->toBe('-20000.0000');
 });
 
-test('a proportional member refuses the run', function (): void {
+test('a proportional member is consolidated at its ownership and no longer refuses the run', function (): void {
     $group = conBuildGroup();
     $memberId = collect(test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}")->json('data.members'))->firstWhere('member_tenant_id', $this->italia->id)['id'];
     test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}/members/{$memberId}", ['ownership_percentage' => 50, 'consolidation_method' => 'proportional'])->assertOk();
 
-    conRun($group)->assertStatus(422);
+    $run = conRun($group)->assertCreated()->json('data');
 
-    expect(ConsolidationRun::withoutGlobalScopes()->count())->toBe(0);
+    // no non-controlling interests for a proportional member, and the trial balance still balances
+    expect(collect($run['totals']['non_controlling_interests'])->pluck('member_tenant_id')->all())->not->toContain($this->italia->id)
+        ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue()
+        ->and(ConsolidationRun::withoutGlobalScopes()->count())->toBe(1);
 });
 
 test('a missing exchange rate stops the run without storing anything', function (): void {

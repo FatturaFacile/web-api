@@ -271,7 +271,7 @@ final readonly class ConsolidatedStatementService
         $balances = ConsolidationRunBalance::withoutGlobalScopes()
             ->where('run_id', $run->id)
             ->where('tenant_id', $run->tenant_id)
-            ->where('consolidation_method', ConsolidationMethod::Full->value)
+            ->whereIn('consolidation_method', [ConsolidationMethod::Full->value, ConsolidationMethod::Proportional->value])
             ->get()
             ->map(static fn (ConsolidationRunBalance $row): array => $row->only(['member_tenant_id', 'account_code', 'account_name', 'account_type', 'group_net']))
             ->all();

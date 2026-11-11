@@ -9,8 +9,8 @@ namespace Modules\GeneralLedger\Services\Consolidation;
  * translated balances, the adjustments generated so far and the warnings. Amounts are decimal strings in group currency
  * unless the key says local; `group_net` is debit minus credit.
  *
- * @phpstan-type MemberInfo array{tenant_id: string, name: string, currency: string, ownership_percentage: string, consolidation_method: string, is_parent: bool}
- * @phpstan-type BalanceRow array{member_tenant_id: string, consolidation_method: string, ownership_percentage: string, local_currency: string, account_id: ?string, account_code: string, account_name: string, account_type: string, normal_balance: string, local_net: string, rate_basis: string, rate: string, group_net: string, is_residual: bool}
+ * @phpstan-type MemberInfo array{tenant_id: string, name: string, currency: string, ownership_percentage: string, consolidation_method: string, is_parent: bool, holder_tenant_id: ?string, effective_ownership: string, consolidation_share: string, fiscal_year_offset_months: int, year_start: string}
+ * @phpstan-type BalanceRow array{member_tenant_id: string, consolidation_method: string, ownership_percentage: string, consolidated_share: string, local_currency: string, account_id: ?string, account_code: string, account_name: string, account_type: string, normal_balance: string, local_net: string, rate_basis: string, rate: string, group_net: string, is_residual: bool}
  * @phpstan-type AdjustmentLine array{entity_tenant_id: ?string, account_code: string, account_name: string, account_type: string, debit: string, credit: string}
  * @phpstan-type Adjustment array{type: string, relation_id: ?string, member_tenant_id: ?string, description: string, amount: string, lines: list<AdjustmentLine>}
  */
@@ -59,6 +59,52 @@ final class ConsolidationDraft
     public array $mappings = [];
 
     /**
+     * Inputs of the extensions that differ from the defaults (indirect holdings, offsets, acquisitions, transactions,
+     * dividends, account mappings, group settings), kept in the run and in its fingerprint.
+     *
+     * @var array<string, mixed>
+     */
+    public array $extensions = [];
+
+    /**
+     * Acquisition records by investee, with their fair-value adjustments and impairments.
+     *
+     * @var array<string, array<string, mixed>>
+     */
+    public array $acquisitions = [];
+
+    /**
+     * Investment eliminated against the equity of a subsidiary, by investor: it leaves the net assets that the
+     * minority interests of the investor are measured on.
+     *
+     * @var array<string, string>
+     */
+    public array $investmentsEliminated = [];
+
+    /**
+     * Fair-value adjustments net of deferred tax (100 %) by investee, which belong to its net assets.
+     *
+     * @var array<string, string>
+     */
+    public array $fairValueNet = [];
+
+    /**
+     * @var array<string, array<string, array{code: string, name: string, type: string}>>
+     */
+    public array $accountRefs = [];
+
+    /**
+     * Account mappings of the members to the group chart: member, source account id, group code and name.
+     *
+     * @var array<string, array<string, array{code: string, name: ?string}>>
+     */
+    public array $accountMaps = [];
+
+    public string $yearStart = '';
+
+    public string $periodEnd = '';
+
+    /**
      * @param  array<string, mixed>  $warning
      */
     public function warn(string $code, string $message, array $warning = []): void
@@ -69,6 +115,22 @@ final class ConsolidationDraft
     public function isFull(string $tenantId): bool
     {
         return ($this->members[$tenantId]['consolidation_method'] ?? null) === 'full';
+    }
+
+    /**
+     * Full or proportional: the entity is added line by line.
+     */
+    public function isConsolidated(string $tenantId): bool
+    {
+        return in_array($this->members[$tenantId]['consolidation_method'] ?? null, ['full', 'proportional'], true);
+    }
+
+    /**
+     * The share of an entity that enters the consolidated accounts as a fraction (1 for a full member).
+     */
+    public function shareFraction(string $tenantId): string
+    {
+        return bcdiv($this->members[$tenantId]['consolidation_share'] ?? '100', '100', 10);
     }
 
     /**

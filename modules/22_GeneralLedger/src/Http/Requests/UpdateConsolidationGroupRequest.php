@@ -31,6 +31,12 @@ final class UpdateConsolidationGroupRequest extends FormRequest
             'equity_method_result_code' => ['sometimes', 'string', 'max:40'],
             'equity_method_reserve_code' => ['sometimes', 'string', 'max:40'],
             'is_active' => ['sometimes', 'boolean'],
+            'elimination_difference_policy' => ['sometimes', Rule::in(['keep_difference', 'post_to_difference_account'])],
+            'goodwill_method' => ['sometimes', Rule::in(['none', 'straight_line', 'impairment_only'])],
+            'goodwill_amortisation_years' => ['nullable', 'integer', 'between:1,100'],
+            'require_account_mapping' => ['sometimes', 'boolean'],
+            'synthetic_accounts' => ['sometimes', 'array'],
+            'synthetic_accounts.*' => ['string', 'max:40'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
         ];
     }

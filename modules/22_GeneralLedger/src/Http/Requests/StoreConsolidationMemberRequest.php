@@ -27,6 +27,8 @@ final class StoreConsolidationMemberRequest extends FormRequest
             'member_tenant_id' => [$this->isMethod('POST') ? 'required' : 'prohibited', 'uuid'],
             'ownership_percentage' => ['required', 'numeric', 'gt:0', 'lte:100', 'decimal:0,4'],
             'consolidation_method' => ['required', Rule::enum(ConsolidationMethod::class)],
+            'holder_tenant_id' => ['nullable', 'uuid'],
+            'fiscal_year_offset_months' => ['nullable', 'integer', 'between:-11,11'],
         ];
     }
 }

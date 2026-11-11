@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\GeneralLedger\Http\Controllers\ConsolidationGroupController;
+use Modules\GeneralLedger\Http\Controllers\ConsolidationInputController;
 use Modules\GeneralLedger\Http\Controllers\ConsolidationRunController;
 use Modules\GeneralLedger\Http\Middleware\RejectApiKeyAccess;
 
@@ -26,6 +27,20 @@ Route::prefix('api/v1/general-ledger/consolidation')
         Route::delete('relations/{relationId}', [ConsolidationGroupController::class, 'destroyRelation'])->whereUuid('relationId');
         Route::post('relations/{relationId}/mappings', [ConsolidationGroupController::class, 'storeMapping'])->whereUuid('relationId');
         Route::delete('mappings/{mappingId}', [ConsolidationGroupController::class, 'destroyMapping'])->whereUuid('mappingId');
+
+        Route::get('groups/{id}/account-mappings', [ConsolidationInputController::class, 'indexAccountMappings'])->whereUuid('id');
+        Route::post('groups/{id}/account-mappings', [ConsolidationInputController::class, 'storeAccountMapping'])->whereUuid('id');
+        Route::delete('account-mappings/{mappingId}', [ConsolidationInputController::class, 'destroyAccountMapping'])->whereUuid('mappingId');
+        Route::get('groups/{id}/acquisitions', [ConsolidationInputController::class, 'indexAcquisitions'])->whereUuid('id');
+        Route::post('groups/{id}/acquisitions', [ConsolidationInputController::class, 'storeAcquisition'])->whereUuid('id');
+        Route::post('acquisitions/{acquisitionId}/impairments', [ConsolidationInputController::class, 'storeImpairment'])->whereUuid('acquisitionId');
+        Route::delete('acquisitions/{acquisitionId}', [ConsolidationInputController::class, 'destroyAcquisition'])->whereUuid('acquisitionId');
+        Route::get('groups/{id}/intragroup-transactions', [ConsolidationInputController::class, 'indexTransactions'])->whereUuid('id');
+        Route::post('groups/{id}/intragroup-transactions', [ConsolidationInputController::class, 'storeTransaction'])->whereUuid('id');
+        Route::delete('intragroup-transactions/{transactionId}', [ConsolidationInputController::class, 'destroyTransaction'])->whereUuid('transactionId');
+        Route::get('groups/{id}/intragroup-dividends', [ConsolidationInputController::class, 'indexDividends'])->whereUuid('id');
+        Route::post('groups/{id}/intragroup-dividends', [ConsolidationInputController::class, 'storeDividend'])->whereUuid('id');
+        Route::delete('intragroup-dividends/{dividendId}', [ConsolidationInputController::class, 'destroyDividend'])->whereUuid('dividendId');
 
         Route::get('groups/{id}/intercompany-reconciliation', [ConsolidationRunController::class, 'reconciliation'])->whereUuid('id');
         Route::get('groups/{id}/runs', [ConsolidationRunController::class, 'index'])->whereUuid('id');

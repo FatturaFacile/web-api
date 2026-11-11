@@ -36,6 +36,8 @@ final readonly class ConsolidationGroupService
      */
     public function createGroup(string $ownerTenantId, array $data): ConsolidationGroup
     {
+        $this->assertSettings($data, null);
+
         return DB::transaction(function () use ($ownerTenantId, $data): ConsolidationGroup {
             $group = ConsolidationGroup::create([
                 ...array_filter($data, static fn (mixed $value): bool => $value !== null),
@@ -61,6 +63,8 @@ final readonly class ConsolidationGroupService
      */
     public function updateGroup(ConsolidationGroup $group, array $data): ConsolidationGroup
     {
+        $this->assertSettings($data, $group);
+
         if (isset($data['group_currency'])) {
             $data['group_currency'] = strtoupper((string) $data['group_currency']);
         }
@@ -68,6 +72,29 @@ final readonly class ConsolidationGroupService
         $group->update(array_filter($data, static fn (mixed $value): bool => $value !== null));
 
         return $group->load('members');
+    }
+
+    /**
+     * The synthetic account roles must be known and a straight-line goodwill method needs its number of years.
+     *
+     * @param  array<string, mixed>  $data
+     *
+     * @throws ConsolidationException
+     */
+    private function assertSettings(array $data, ?ConsolidationGroup $group): void
+    {
+        foreach (array_keys($data['synthetic_accounts'] ?? []) as $role) {
+            if (! array_key_exists((string) $role, ConsolidationGroup::SyntheticDefaults)) {
+                throw new ConsolidationException("Unknown synthetic account role [{$role}]: use one of ".implode(', ', array_keys(ConsolidationGroup::SyntheticDefaults)).'.');
+            }
+        }
+
+        $method = $data['goodwill_method'] ?? $group->goodwill_method ?? 'none';
+        $years = $data['goodwill_amortisation_years'] ?? $group?->goodwill_amortisation_years;
+
+        if ($method === 'straight_line' && ($years === null || (int) $years < 1)) {
+            throw new ConsolidationException('The straight-line goodwill method needs goodwill_amortisation_years: the period is an input of the group and none is assumed.');
+        }
     }
 
     /**
@@ -93,7 +120,7 @@ final readonly class ConsolidationGroupService
      * @throws AccessDeniedHttpException when the user cannot read the ledger of the entity
      * @throws ConflictHttpException when the entity is already a member
      */
-    public function addMember(User $user, ConsolidationGroup $group, string $memberTenantId, string $ownershipPercentage, ConsolidationMethod $method): ConsolidationMember
+    public function addMember(User $user, ConsolidationGroup $group, string $memberTenantId, string $ownershipPercentage, ConsolidationMethod $method, ?string $holderTenantId = null, int $fiscalYearOffsetMonths = 0): ConsolidationMember
     {
         if (! Tenant::withoutGlobalScopes()->whereKey($memberTenantId)->exists() || ! $this->guard->canReadEntity($user, $memberTenantId)) {
             throw new AccessDeniedHttpException('You cannot add an entity whose ledger you cannot read.');
@@ -103,6 +130,8 @@ final readonly class ConsolidationGroupService
             throw new ConflictHttpException('The entity is already a member of the group.');
         }
 
+        $this->assertHolderAllowed($group, $memberTenantId, $holderTenantId);
+
         return ConsolidationMember::create([
             'tenant_id' => $group->tenant_id,
             'group_id' => $group->id,
@@ -110,19 +139,76 @@ final readonly class ConsolidationGroupService
             'ownership_percentage' => $ownershipPercentage,
             'consolidation_method' => $method->value,
             'is_parent' => false,
+            'holder_tenant_id' => $holderTenantId,
+            'fiscal_year_offset_months' => $fiscalYearOffsetMonths,
         ]);
+    }
+
+    /**
+     * The holder of a member must be a member of the same group, the parent or fully consolidated, and the chain of
+     * holders must not come back to the member (indirect holdings, ConsolidationCalculator assumption 4).
+     *
+     * @throws ConsolidationException
+     */
+    private function assertHolderAllowed(ConsolidationGroup $group, string $memberTenantId, ?string $holderTenantId): void
+    {
+        if ($holderTenantId === null) {
+            return;
+        }
+
+        $members = $group->members()->get()->keyBy(static fn (ConsolidationMember $member): string => (string) $member->member_tenant_id);
+        $holder = $members->get($holderTenantId);
+
+        if ($holder === null) {
+            throw new ConsolidationException('The holder must be a member of the group.');
+        }
+
+        if ($holderTenantId === $memberTenantId) {
+            throw new ConsolidationException('An entity cannot hold itself.');
+        }
+
+        if (! $holder->is_parent && $holder->consolidation_method !== ConsolidationMethod::Full) {
+            throw new ConsolidationException('An entity can be held only by the parent or by a fully consolidated member.');
+        }
+
+        $current = $holder;
+        $seen = [];
+
+        while ($current !== null && ! $current->is_parent && ! in_array((string) $current->member_tenant_id, $seen, true)) {
+            if ((string) $current->holder_tenant_id === $memberTenantId) {
+                throw new ConsolidationException('The holdings of the group would form a cycle.');
+            }
+
+            $seen[] = (string) $current->member_tenant_id;
+            $current = $current->holder_tenant_id === null ? null : $members->get((string) $current->holder_tenant_id);
+        }
     }
 
     /**
      * @throws ConsolidationException for the parent entity
      */
-    public function updateMember(ConsolidationMember $member, string $ownershipPercentage, ConsolidationMethod $method): ConsolidationMember
+    public function updateMember(ConsolidationMember $member, string $ownershipPercentage, ConsolidationMethod $method, ?string $holderTenantId = null, ?int $fiscalYearOffsetMonths = null, bool $changeHolder = false): ConsolidationMember
     {
         if ($member->is_parent) {
             throw new ConsolidationException('The parent entity is always fully consolidated at 100 %.');
         }
 
-        $member->update(['ownership_percentage' => $ownershipPercentage, 'consolidation_method' => $method->value]);
+        $changes = ['ownership_percentage' => $ownershipPercentage, 'consolidation_method' => $method->value];
+
+        if ($changeHolder) {
+            $this->assertHolderAllowed($member->group()->firstOrFail(), (string) $member->member_tenant_id, $holderTenantId);
+            $changes['holder_tenant_id'] = $holderTenantId;
+        }
+
+        if ($method !== ConsolidationMethod::Full && ConsolidationMember::query()->where('group_id', $member->group_id)->where('holder_tenant_id', $member->member_tenant_id)->exists()) {
+            throw new ConsolidationException('A member that holds other members must stay fully consolidated.');
+        }
+
+        if ($fiscalYearOffsetMonths !== null) {
+            $changes['fiscal_year_offset_months'] = $fiscalYearOffsetMonths;
+        }
+
+        $member->update($changes);
 
         return $member;
     }
@@ -135,6 +221,10 @@ final readonly class ConsolidationGroupService
     {
         if ($member->is_parent) {
             throw new ConsolidationException('The parent entity cannot be removed from its group.');
+        }
+
+        if (ConsolidationMember::query()->where('group_id', $member->group_id)->where('holder_tenant_id', $member->member_tenant_id)->exists()) {
+            throw new ConflictHttpException('The entity holds other members: change their holder first.');
         }
 
         $used = IntercompanyRelation::query()

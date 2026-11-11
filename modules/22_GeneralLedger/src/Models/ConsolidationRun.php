@@ -53,6 +53,7 @@ final class ConsolidationRun extends BaseEnterpriseModel
             'rates' => 'array',
             'warnings' => 'array',
             'totals' => 'array',
+            'inputs_snapshot' => 'array',
             'locked_at' => 'datetime',
         ];
     }

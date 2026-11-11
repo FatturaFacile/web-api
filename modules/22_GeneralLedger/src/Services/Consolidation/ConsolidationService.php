@@ -89,6 +89,7 @@ final readonly class ConsolidationService
                 'mappings_snapshot' => $draft->mappings,
                 'rates' => $draft->rates,
                 'warnings' => $draft->warnings,
+                'inputs_snapshot' => $draft->extensions,
                 'totals' => [
                     'adjustment_count' => count($draft->adjustments),
                     'warning_count' => count($draft->warnings),
@@ -248,7 +249,7 @@ final readonly class ConsolidationService
      */
     private function fullBalances(ConsolidationDraft $draft): array
     {
-        return array_values(array_filter($draft->balances, static fn (array $row): bool => $row['consolidation_method'] === 'full'));
+        return array_values(array_filter($draft->balances, static fn (array $row): bool => in_array($row['consolidation_method'], ['full', 'proportional'], true)));
     }
 
     /**
@@ -283,6 +284,7 @@ final readonly class ConsolidationService
                 'normal_balance' => $row['normal_balance'],
                 'consolidation_method' => $row['consolidation_method'],
                 'ownership_percentage' => $row['ownership_percentage'],
+                'consolidated_share' => $row['consolidated_share'],
                 'local_currency' => $row['local_currency'],
                 'local_net' => $row['local_net'],
                 'rate_basis' => $row['rate_basis'],

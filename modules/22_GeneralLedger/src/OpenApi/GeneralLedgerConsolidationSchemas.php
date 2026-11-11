@@ -24,6 +24,11 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'equity_method_result_code', type: 'string', example: 'CONS-EQM-PL'),
         new OA\Property(property: 'equity_method_reserve_code', type: 'string', example: 'CONS-EQM-RES'),
         new OA\Property(property: 'is_active', type: 'boolean'),
+        new OA\Property(property: 'elimination_difference_policy', description: 'keep_difference (default): eliminate the smaller of two intercompany balances and report the difference; post_to_difference_account: eliminate both and post the residual to the difference account', type: 'string', enum: ['keep_difference', 'post_to_difference_account']),
+        new OA\Property(property: 'goodwill_method', description: 'none (default), straight_line (needs goodwill_amortisation_years) or impairment_only. No legal period is assumed.', type: 'string', enum: ['none', 'straight_line', 'impairment_only']),
+        new OA\Property(property: 'goodwill_amortisation_years', type: 'integer', minimum: 1, maximum: 100),
+        new OA\Property(property: 'require_account_mapping', description: 'Refuse a run when an account with a balance is not mapped to the group chart', type: 'boolean'),
+        new OA\Property(property: 'synthetic_accounts', description: 'Role => code override: goodwill, goodwill_accumulated, goodwill_amortisation, goodwill_impairment, goodwill_prior, negative_goodwill, preacquisition_reserves, fair_value_reserve, deferred_tax, intercompany_difference, intercompany_pl_difference, prior_unrealised_profit', type: 'object'),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
         new OA\Property(property: 'members', type: 'array', items: new OA\Items(properties: [
             new OA\Property(property: 'id', type: 'string', format: 'uuid'),
@@ -32,6 +37,8 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'ownership_percentage', type: 'string', example: '80.0000'),
             new OA\Property(property: 'consolidation_method', type: 'string', enum: ['full', 'proportional', 'equity']),
             new OA\Property(property: 'is_parent', type: 'boolean'),
+            new OA\Property(property: 'holder_tenant_id', type: 'string', format: 'uuid', nullable: true),
+            new OA\Property(property: 'fiscal_year_offset_months', type: 'integer'),
         ], type: 'object')),
         new OA\Property(property: 'relations', type: 'array', items: new OA\Items(ref: '#/components/schemas/GeneralLedgerIntercompanyRelationResource')),
     ]
@@ -47,6 +54,11 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'consolidation_difference_code', description: 'Code of the synthetic account of the difference between investment and equity (default CONS-DIFF)', type: 'string', maxLength: 40, nullable: true),
         new OA\Property(property: 'equity_method_result_code', description: 'Code of the account of the share of profit of equity-accounted entities (default CONS-EQM-PL)', type: 'string', maxLength: 40, nullable: true),
         new OA\Property(property: 'equity_method_reserve_code', description: 'Code of the equity-method reserve (default CONS-EQM-RES)', type: 'string', maxLength: 40, nullable: true),
+        new OA\Property(property: 'elimination_difference_policy', description: 'keep_difference (default): eliminate the smaller of two intercompany balances and report the difference; post_to_difference_account: eliminate both and post the residual to the difference account', type: 'string', enum: ['keep_difference', 'post_to_difference_account'], nullable: true),
+        new OA\Property(property: 'goodwill_method', description: 'none (default), straight_line (needs goodwill_amortisation_years) or impairment_only. No legal period is assumed.', type: 'string', enum: ['none', 'straight_line', 'impairment_only'], nullable: true),
+        new OA\Property(property: 'goodwill_amortisation_years', type: 'integer', minimum: 1, maximum: 100, nullable: true),
+        new OA\Property(property: 'require_account_mapping', description: 'Refuse a run when an account with a balance is not mapped to the group chart', type: 'boolean', nullable: true),
+        new OA\Property(property: 'synthetic_accounts', description: 'Role => code override: goodwill, goodwill_accumulated, goodwill_amortisation, goodwill_impairment, goodwill_prior, negative_goodwill, preacquisition_reserves, fair_value_reserve, deferred_tax, intercompany_difference, intercompany_pl_difference, prior_unrealised_profit', type: 'object', nullable: true),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
     ]
 )]
@@ -60,6 +72,11 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'consolidation_difference_code', type: 'string', maxLength: 40),
         new OA\Property(property: 'equity_method_result_code', type: 'string', maxLength: 40),
         new OA\Property(property: 'equity_method_reserve_code', type: 'string', maxLength: 40),
+        new OA\Property(property: 'elimination_difference_policy', description: 'keep_difference (default): eliminate the smaller of two intercompany balances and report the difference; post_to_difference_account: eliminate both and post the residual to the difference account', type: 'string', enum: ['keep_difference', 'post_to_difference_account'], nullable: true),
+        new OA\Property(property: 'goodwill_method', description: 'none (default), straight_line (needs goodwill_amortisation_years) or impairment_only. No legal period is assumed.', type: 'string', enum: ['none', 'straight_line', 'impairment_only'], nullable: true),
+        new OA\Property(property: 'goodwill_amortisation_years', type: 'integer', minimum: 1, maximum: 100, nullable: true),
+        new OA\Property(property: 'require_account_mapping', description: 'Refuse a run when an account with a balance is not mapped to the group chart', type: 'boolean', nullable: true),
+        new OA\Property(property: 'synthetic_accounts', description: 'Role => code override: goodwill, goodwill_accumulated, goodwill_amortisation, goodwill_impairment, goodwill_prior, negative_goodwill, preacquisition_reserves, fair_value_reserve, deferred_tax, intercompany_difference, intercompany_pl_difference, prior_unrealised_profit', type: 'object', nullable: true),
         new OA\Property(property: 'is_active', type: 'boolean'),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
     ]
@@ -71,7 +88,9 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'member_tenant_id', description: 'The entity to add (required to add, not allowed when changing a member)', type: 'string', format: 'uuid'),
         new OA\Property(property: 'ownership_percentage', description: 'Share of the entity owned by the group, above 0 and up to 100', type: 'number', example: 80),
-        new OA\Property(property: 'consolidation_method', description: 'full: line by line; equity: the investment is brought to the share of net assets; proportional is stored but refused by a run', type: 'string', enum: ['full', 'proportional', 'equity']),
+        new OA\Property(property: 'consolidation_method', description: 'full: line by line; proportional: line by line at the effective ownership, no minority interests; equity: the investment is brought to the share of net assets', type: 'string', enum: ['full', 'proportional', 'equity']),
+        new OA\Property(property: 'holder_tenant_id', description: 'The member that holds this one (indirect holding); null = the parent. The holder must be fully consolidated and the chain must not loop; effective ownership is the product of the direct percentages', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'fiscal_year_offset_months', description: 'Months between the start of the parent fiscal year and the one of the member, -11 to 11 (default 0)', type: 'integer', nullable: true),
     ]
 )]
 #[OA\Schema(
@@ -81,6 +100,8 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'ownership_percentage', type: 'number', example: 100),
         new OA\Property(property: 'consolidation_method', type: 'string', enum: ['full', 'proportional', 'equity']),
+        new OA\Property(property: 'holder_tenant_id', description: 'The member that holds this one (indirect holding); null = the parent. The holder must be fully consolidated and the chain must not loop; effective ownership is the product of the direct percentages', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'fiscal_year_offset_months', description: 'Months between the start of the parent fiscal year and the one of the member, -11 to 11 (default 0)', type: 'integer', nullable: true),
     ]
 )]
 #[OA\Schema(
@@ -176,5 +197,85 @@ use OpenApi\Attributes as OA;
     schema: 'GeneralLedgerConsolidatedStatement',
     description: 'A consolidated statement of a run in group currency: header (run_id, version, status, currency, period_start, period_end) and the statement body. Trial balance: accounts with aggregated_net, adjustments_net, net, debit, credit, totals and is_balanced. Balance sheet: assets, liabilities, equity, result_of_the_period, totals, non_controlling_interests, is_balanced. Income statement: revenues, cogs, operating_expenses, net_income and its split between owners and non-controlling interests. Reclassified: rows of the scheme and unmapped_accounts.',
     type: 'object'
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerConsolidationInput',
+    description: 'An input of the consolidation as stored (account mapping, acquisition with fair_value_adjustments and impairments, intragroup transaction, intragroup dividend). Amounts are decimal strings in group currency.',
+    type: 'object'
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreConsolidationAccountMappingRequest',
+    required: ['member_tenant_id', 'account_id', 'group_account_code'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'member_tenant_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'account_id', description: 'Account of the chart of the member', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'group_account_code', type: 'string', maxLength: 40, example: '4000'),
+        new OA\Property(property: 'group_account_name', type: 'string', maxLength: 255, nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreConsolidationAcquisitionRequest',
+    required: ['member_tenant_id', 'acquisition_date', 'net_assets_at_acquisition'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'member_tenant_id', description: 'The acquired member (not the parent)', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'acquisition_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'cost', description: 'Cost of the investment in group currency; when omitted the balance of the mapped investment accounts', type: 'number', nullable: true),
+        new OA\Property(property: 'net_assets_at_acquisition', description: 'Book net assets of the member at the acquisition date, group currency', type: 'number'),
+        new OA\Property(property: 'acquired_percentage', description: 'Percentage bought; when omitted the direct ownership of the member', type: 'number', nullable: true),
+        new OA\Property(property: 'recognise_deferred_tax', description: 'Whether deferred tax is recognised on the fair-value adjustments', type: 'boolean', default: false),
+        new OA\Property(property: 'deferred_tax_rate', description: 'Rate in percent applied to the net fair-value adjustments; required when recognise_deferred_tax is true, no rate is assumed', type: 'number', nullable: true),
+        new OA\Property(property: 'fair_value_adjustments', type: 'array', items: new OA\Items(required: ['account_code', 'account_type', 'amount'], properties: [
+            new OA\Property(property: 'account_code', description: 'Account of the group chart', type: 'string'),
+            new OA\Property(property: 'account_name', type: 'string', nullable: true),
+            new OA\Property(property: 'account_type', type: 'string', enum: ['asset', 'liability']),
+            new OA\Property(property: 'amount', description: 'Increase of the balance on the normal side of the account at 100 %', type: 'number'),
+        ], type: 'object')),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreGoodwillImpairmentRequest',
+    required: ['fiscal_year', 'amount'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'fiscal_year', description: 'Year of the start of the fiscal year of the parent', type: 'integer', example: 2026),
+        new OA\Property(property: 'amount', description: 'Impairment charged in that year, group currency', type: 'number', example: 1000),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreIntragroupTransactionRequest',
+    required: ['seller_tenant_id', 'buyer_tenant_id', 'asset_type', 'transaction_date', 'asset_account_id', 'profit_account_id'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'relation_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'seller_tenant_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'buyer_tenant_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'asset_type', type: 'string', enum: ['inventory', 'fixed_asset']),
+        new OA\Property(property: 'description', type: 'string', nullable: true),
+        new OA\Property(property: 'transaction_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'sale_price', type: 'number', nullable: true),
+        new OA\Property(property: 'seller_cost', description: 'Book cost of the seller; margin = sale_price - seller_cost', type: 'number', nullable: true),
+        new OA\Property(property: 'margin_amount', description: 'The margin directly (wins over price and cost)', type: 'number', nullable: true),
+        new OA\Property(property: 'remaining_percentage', description: 'Share still in stock at the period end (inventory); default 100', type: 'number', nullable: true),
+        new OA\Property(property: 'opening_remaining_percentage', description: 'Share in stock at the start of the fiscal year; default the same as remaining_percentage', type: 'number', nullable: true),
+        new OA\Property(property: 'useful_life_years', description: 'Required for a fixed asset: the margin is released over it by whole months', type: 'integer', nullable: true),
+        new OA\Property(property: 'asset_account_id', description: 'Asset account of the buyer that holds the goods', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'profit_account_id', description: 'Income account of the seller charged with the elimination', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'depreciation_account_id', description: 'Depreciation expense account of the buyer (fixed assets)', type: 'string', format: 'uuid', nullable: true),
+    ]
+)]
+#[OA\Schema(
+    schema: 'GeneralLedgerStoreIntragroupDividendRequest',
+    required: ['payer_tenant_id', 'receiver_tenant_id', 'dividend_date', 'amount', 'income_account_id', 'equity_account_id'],
+    type: 'object',
+    properties: [
+        new OA\Property(property: 'payer_tenant_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'receiver_tenant_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'dividend_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'amount', description: 'Amount received by the receiver, group currency', type: 'number'),
+        new OA\Property(property: 'income_account_id', description: 'Revenue account of the receiver that holds the dividend', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'equity_account_id', description: 'Equity account of the payer the dividend was charged to', type: 'string', format: 'uuid'),
+    ]
 )]
 final class GeneralLedgerConsolidationSchemas {}

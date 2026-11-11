@@ -18,6 +18,8 @@ use Modules\GeneralLedger\Enums\ConsolidationMethod;
  * @property string $ownership_percentage
  * @property ConsolidationMethod $consolidation_method
  * @property bool $is_parent
+ * @property string|null $holder_tenant_id
+ * @property int $fiscal_year_offset_months
  */
 final class ConsolidationMember extends BaseEnterpriseModel
 {
@@ -29,6 +31,7 @@ final class ConsolidationMember extends BaseEnterpriseModel
             'ownership_percentage' => 'decimal:4',
             'consolidation_method' => ConsolidationMethod::class,
             'is_parent' => 'boolean',
+            'fiscal_year_offset_months' => 'integer',
         ];
     }
 

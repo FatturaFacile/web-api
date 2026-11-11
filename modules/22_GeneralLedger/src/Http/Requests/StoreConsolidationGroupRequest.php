@@ -30,6 +30,12 @@ final class StoreConsolidationGroupRequest extends FormRequest
             'consolidation_difference_code' => ['nullable', 'string', 'max:40'],
             'equity_method_result_code' => ['nullable', 'string', 'max:40'],
             'equity_method_reserve_code' => ['nullable', 'string', 'max:40'],
+            'elimination_difference_policy' => ['nullable', Rule::in(['keep_difference', 'post_to_difference_account'])],
+            'goodwill_method' => ['nullable', Rule::in(['none', 'straight_line', 'impairment_only'])],
+            'goodwill_amortisation_years' => ['nullable', 'integer', 'between:1,100'],
+            'require_account_mapping' => ['nullable', 'boolean'],
+            'synthetic_accounts' => ['nullable', 'array'],
+            'synthetic_accounts.*' => ['string', 'max:40'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];
     }
