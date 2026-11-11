@@ -23,7 +23,7 @@ beforeEach(function (): void {
     Http::preventStrayRequests();
 });
 
-function createEndpointPayload(array $overrides = []): array
+function webhookEndpointPayload(array $overrides = []): array
 {
     return [
         'name' => 'Data warehouse',
@@ -45,7 +45,7 @@ test('the catalogue lists only events the application raises, with their data fi
 });
 
 test('creating an endpoint returns the secret once and never again', function (): void {
-    $created = $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload())->assertCreated()->json('data');
+    $created = $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload())->assertCreated()->json('data');
 
     expect($created['secret'])->toStartWith('whsec_')->and($created['status'])->toBe('active')->and($created['secret_hint'])->toBe(substr($created['secret'], -4));
 
@@ -60,7 +60,7 @@ test('creating an endpoint returns the secret once and never again', function ()
 });
 
 test('an unsafe or malformed endpoint is refused with a validation error', function (array $overrides, string $field): void {
-    $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload($overrides))->assertUnprocessable()->assertJsonValidationErrors($field);
+    $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload($overrides))->assertUnprocessable()->assertJsonValidationErrors($field);
     expect(WebhookEndpoint::query()->count())->toBe(0);
 })->with([
     'http url' => [['url' => 'http://hooks.example.com/x'], 'url'],
@@ -80,7 +80,7 @@ test('an unsafe or malformed endpoint is refused with a validation error', funct
 test('a URL that resolves to a private address is refused on creation and on update', function (): void {
     app()->instance(HostResolver::class, new StaticHostResolver(['evil.example.com' => ['93.184.215.14', '192.168.0.10']]));
 
-    $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload(['url' => 'https://evil.example.com/x']))->assertUnprocessable()->assertJsonValidationErrors('url');
+    $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload(['url' => 'https://evil.example.com/x']))->assertUnprocessable()->assertJsonValidationErrors('url');
 
     $endpoint = webhookEndpointFor($this->tenant);
     $this->putJson("/api/v1/integrations/webhook-endpoints/{$endpoint->id}", ['url' => 'https://evil.example.com/x'])->assertUnprocessable()->assertJsonValidationErrors('url');
@@ -100,9 +100,9 @@ test('an endpoint can be updated and deleted', function (): void {
 test('the number of endpoints per tenant is limited', function (): void {
     config(['webhooks.max_endpoints_per_tenant' => 2]);
 
-    $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload())->assertCreated();
-    $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload())->assertCreated();
-    $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload())->assertUnprocessable();
+    $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload())->assertCreated();
+    $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload())->assertCreated();
+    $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload())->assertUnprocessable();
 });
 
 test('rotating the secret keeps the previous one signing for the overlap, then only the new one', function (): void {
@@ -190,7 +190,7 @@ test('disabling and enabling an endpoint', function (): void {
 
 test('every sensitive action is written to the audit trail, and no secret is', function (): void {
     Http::fake(['*' => Http::response('ok', 200)]);
-    $created = $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload())->assertCreated()->json('data');
+    $created = $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload())->assertCreated()->json('data');
     $id = $created['id'];
     $rotated = $this->postJson("/api/v1/integrations/webhook-endpoints/{$id}/rotate-secret")->assertOk()->json('data.secret');
     $this->putJson("/api/v1/integrations/webhook-endpoints/{$id}", ['name' => 'X'])->assertOk();
@@ -249,7 +249,7 @@ test('only owners and admins reach the webhook endpoints', function (): void {
     actingAsMember($this->tenant, 'member');
 
     $this->getJson('/api/v1/integrations/webhook-endpoints')->assertForbidden();
-    $this->postJson('/api/v1/integrations/webhook-endpoints', createEndpointPayload())->assertForbidden();
+    $this->postJson('/api/v1/integrations/webhook-endpoints', webhookEndpointPayload())->assertForbidden();
     $this->postJson("/api/v1/integrations/webhook-endpoints/{$endpoint->id}/test")->assertForbidden();
     $this->getJson('/api/v1/integrations/webhook-events')->assertForbidden();
     $this->getJson('/api/v1/integrations/webhook-deliveries')->assertForbidden();

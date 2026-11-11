@@ -217,6 +217,47 @@ use OpenApi\Attributes as OA;
     ]
 )]
 #[OA\Schema(
+    schema: 'WebhookDataInvoicingInvoicePaid',
+    description: 'Member "data" of the event invoicing.invoice.paid. A sales invoice has become fully settled (payments and applied credit notes cover what is due). Raised once per transition to paid.',
+    required: ['invoice_id', 'invoice_number', 'currency', 'total_gross', 'total_paid', 'paid_at'],
+    properties: [
+        new OA\Property(property: 'invoice_id', type: 'string', description: 'Invoice id (UUID)'),
+        new OA\Property(property: 'invoice_number', type: 'string', description: 'Invoice number'),
+        new OA\Property(property: 'customer_id', type: 'string', nullable: true, description: 'Customer id (UUID)'),
+        new OA\Property(property: 'currency', type: 'string', description: 'ISO 4217 currency code'),
+        new OA\Property(property: 'total_gross', type: 'number', description: 'Total including tax'),
+        new OA\Property(property: 'total_paid', type: 'number', description: 'Amount settled by payments'),
+        new OA\Property(property: 'paid_at', type: 'string', description: 'When the invoice became paid, ISO 8601'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WebhookDataCrmContactCreated',
+    description: 'Member "data" of the event crm.contact.created. A contact (customer, supplier or person) has been created, by any path: API, import, lead conversion. It carries personal data: subscribe only if the receiver is entitled to it.',
+    required: ['contact_id', 'contact_type'],
+    properties: [
+        new OA\Property(property: 'contact_id', type: 'string', description: 'Contact id (UUID)'),
+        new OA\Property(property: 'contact_type', type: 'string', description: 'customer, supplier or another contact type'),
+        new OA\Property(property: 'company_name', type: 'string', nullable: true, description: 'Company name'),
+        new OA\Property(property: 'first_name', type: 'string', nullable: true, description: 'First name'),
+        new OA\Property(property: 'last_name', type: 'string', nullable: true, description: 'Last name'),
+        new OA\Property(property: 'email', type: 'string', nullable: true, description: 'Email address'),
+        new OA\Property(property: 'country', type: 'string', nullable: true, description: 'ISO 3166-1 alpha-2 country'),
+        new OA\Property(property: 'vat_number', type: 'string', nullable: true, description: 'VAT number'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'WebhookDataInventoryStockBelowMinimum',
+    description: 'Member "data" of the event inventory.stock_below_minimum. The available stock of an item in a warehouse dropped below the minimum stock level of its reorder rule. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event.',
+    required: ['reorder_rule_id', 'stock_item_id', 'warehouse_id', 'available_stock', 'minimum_stock'],
+    properties: [
+        new OA\Property(property: 'reorder_rule_id', type: 'string', description: 'Reorder rule id (UUID)'),
+        new OA\Property(property: 'stock_item_id', type: 'string', description: 'Stock item id (UUID)'),
+        new OA\Property(property: 'warehouse_id', type: 'string', description: 'Warehouse id (UUID)'),
+        new OA\Property(property: 'available_stock', type: 'number', description: 'Available stock: on hand minus reserved, outside quarantine and transit'),
+        new OA\Property(property: 'minimum_stock', type: 'number', description: 'Minimum stock level of the rule'),
+    ]
+)]
+#[OA\Schema(
     schema: 'WebhookDataProcurementPurchaseOrderApproved',
     description: 'Member "data" of the event procurement.purchase_order.approved. A purchase order has been approved.',
     required: ['purchase_order_id', 'po_number', 'supplier_id', 'total_amount'],
@@ -240,6 +281,9 @@ use OpenApi\Attributes as OA;
         new OA\Schema(ref: '#/components/schemas/WebhookDataEsmTicketCreated'),
         new OA\Schema(ref: '#/components/schemas/WebhookDataCrmLeadCreated'),
         new OA\Schema(ref: '#/components/schemas/WebhookDataCrmOpportunityWon'),
+        new OA\Schema(ref: '#/components/schemas/WebhookDataInvoicingInvoicePaid'),
+        new OA\Schema(ref: '#/components/schemas/WebhookDataCrmContactCreated'),
+        new OA\Schema(ref: '#/components/schemas/WebhookDataInventoryStockBelowMinimum'),
         new OA\Schema(ref: '#/components/schemas/WebhookDataProcurementPurchaseOrderApproved'),
     ]
 )]

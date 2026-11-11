@@ -32,7 +32,7 @@ function webhookEndpointFor(Tenant $tenant, array $events = ['invoicing.invoice.
     ]));
 }
 
-function invoicePostedEventFor(string $tenantId, string $invoiceNumber = 'FT-1'): InvoicePostedEvent
+function webhookInvoicePostedEvent(string $tenantId, string $invoiceNumber = 'FT-1'): InvoicePostedEvent
 {
     return new InvoicePostedEvent(
         invoiceId: (string) Str::uuid7(),
@@ -53,7 +53,7 @@ function invoicePostedEventFor(string $tenantId, string $invoiceNumber = 'FT-1')
     );
 }
 
-function collectionReceivedEventFor(string $tenantId): CollectionReceivedEvent
+function webhookCollectionReceivedEvent(string $tenantId): CollectionReceivedEvent
 {
     return new CollectionReceivedEvent(
         collectionId: (string) Str::uuid7(),

@@ -33,6 +33,7 @@ final class EvaluateWarehouseReorderRulesJob implements ShouldQueue
         $query->chunkById(100, function ($rules) use ($service): void {
             foreach ($rules as $rule) {
                 $service->evaluateReorderRule($rule);
+                $service->evaluateMinimumStock($rule);
             }
         });
     }

@@ -29,7 +29,7 @@ beforeEach(function (): void {
     RateLimiter::clear('webhooks:tenant:'.$this->tenant->id);
 });
 
-function pendingDeliveryFor(WebhookEndpoint $endpoint, array $attributes = []): WebhookDelivery
+function webhookPendingDelivery(WebhookEndpoint $endpoint, array $attributes = []): WebhookDelivery
 {
     return WebhookDelivery::factory()->create([
         'tenant_id' => $endpoint->tenant_id,
@@ -39,7 +39,7 @@ function pendingDeliveryFor(WebhookEndpoint $endpoint, array $attributes = []): 
     ]);
 }
 
-function processDelivery(WebhookDelivery $delivery): WebhookDelivery
+function webhookProcessDelivery(WebhookDelivery $delivery): WebhookDelivery
 {
     app(WebhookDeliveryService::class)->process((string) $delivery->id);
 
@@ -49,7 +49,7 @@ function processDelivery(WebhookDelivery $delivery): WebhookDelivery
 test('an event is delivered signed, with the idempotency key, the version and the documented envelope', function (): void {
     Http::fake(['*' => Http::response('received', 200)]);
     $endpoint = webhookEndpointFor($this->tenant);
-    $event = invoicePostedEventFor($this->tenant->id, 'FT-42');
+    $event = webhookInvoicePostedEvent($this->tenant->id, 'FT-42');
 
     ingestWebhookEvent($event);
 
@@ -82,7 +82,7 @@ test('a redirect is never followed and counts as a failure', function (): void {
     Http::fake(['*' => Http::response('', 302, ['Location' => 'https://169.254.169.254/latest/meta-data'])]);
     $endpoint = webhookEndpointFor($this->tenant);
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id));
 
     $delivery = WebhookDelivery::withoutGlobalScopes()->sole();
 
@@ -97,7 +97,7 @@ test('a host that resolves to a private address at delivery time is blocked and 
     webhookEndpointFor($this->tenant, attributes: ['url' => 'https://later-private.example.com/hook']);
     app()->instance(HostResolver::class, new StaticHostResolver(['later-private.example.com' => ['10.0.0.9']]));
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id));
 
     $delivery = WebhookDelivery::withoutGlobalScopes()->sole();
 
@@ -111,7 +111,7 @@ test('failed attempts back off exponentially, keep the same idempotency key, and
     $endpoint = webhookEndpointFor($this->tenant);
     $this->travelTo(now()->startOfSecond());
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id));
     $delivery = WebhookDelivery::withoutGlobalScopes()->sole();
 
     // First failure: next attempt in 30 s (+ up to 10 % of jitter).
@@ -120,11 +120,11 @@ test('failed attempts back off exponentially, keep the same idempotency key, and
         ->and($delivery->last_response_code)->toBe(500);
 
     // Not due yet: nothing is sent.
-    expect(processDelivery($delivery)->attempts)->toBe(1);
+    expect(webhookProcessDelivery($delivery)->attempts)->toBe(1);
     Http::assertSentCount(1);
 
     $this->travel(40)->seconds();
-    $delivery = processDelivery($delivery);
+    $delivery = webhookProcessDelivery($delivery);
 
     // Second failure: 60 s.
     expect($delivery->status)->toBe('retrying')->and($delivery->attempts)->toBe(2)
@@ -132,7 +132,7 @@ test('failed attempts back off exponentially, keep the same idempotency key, and
         ->and($endpoint->refresh()->consecutive_failures)->toBe(2);
 
     $this->travel(70)->seconds();
-    $delivery = processDelivery($delivery);
+    $delivery = webhookProcessDelivery($delivery);
 
     expect($delivery->status)->toBe('succeeded')->and($delivery->attempts)->toBe(3)->and($delivery->next_attempt_at)->toBeNull()
         ->and($endpoint->refresh()->consecutive_failures)->toBe(0)->and($endpoint->last_success_at)->not->toBeNull();
@@ -154,13 +154,13 @@ test('after the last attempt a delivery is a dead letter, kept in the log, and i
     Http::fake(['*' => Http::response('down', 500)]);
     $endpoint = webhookEndpointFor($this->tenant);
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id));
     $delivery = WebhookDelivery::withoutGlobalScopes()->sole();
 
     foreach ([1, 2] as $round) {
         expect($delivery->status)->toBe('retrying')->and($delivery->attempts)->toBe($round);
         $this->travel(3)->hours();
-        $delivery = processDelivery($delivery);
+        $delivery = webhookProcessDelivery($delivery);
     }
 
     expect($delivery->status)->toBe('dead')->and($delivery->attempts)->toBe(3)->and($delivery->next_attempt_at)->toBeNull()
@@ -171,7 +171,7 @@ test('after the last attempt a delivery is a dead letter, kept in the log, and i
 
     // Nothing more happens by itself.
     $this->travel(30)->hours();
-    processDelivery($delivery);
+    webhookProcessDelivery($delivery);
     $this->artisan('webhooks:dispatch-overdue')->assertSuccessful();
     Http::assertSentCount(3);
     expect(WebhookDelivery::withoutGlobalScopes()->whereKey($delivery->id)->value('status'))->toBe('dead');
@@ -183,7 +183,7 @@ test('a dead letter can be redelivered by hand with the same idempotency key', f
     webhookEndpointFor($this->tenant);
     $actor = actingAsMember($this->tenant);
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id));
     $delivery = WebhookDelivery::withoutGlobalScopes()->sole();
     expect($delivery->status)->toBe('dead');
 
@@ -206,12 +206,12 @@ test('an endpoint that keeps failing is disabled, its waiting deliveries become 
     $member = actingAsMember($this->tenant, 'member');
     $endpoint = webhookEndpointFor($this->tenant);
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id, 'FT-1'));
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id, 'FT-2'));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id, 'FT-1'));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id, 'FT-2'));
     $first = WebhookDelivery::withoutGlobalScopes()->orderBy('created_at')->first();
 
     $this->travel(2)->minutes();
-    processDelivery($first);
+    webhookProcessDelivery($first);
 
     $endpoint->refresh();
     expect($endpoint->status)->toBe('disabled')->and($endpoint->disabled_at)->not->toBeNull()->and($endpoint->disabled_reason)->toContain('automatically')
@@ -224,17 +224,17 @@ test('an endpoint that keeps failing is disabled, its waiting deliveries become 
 
     // A disabled endpoint receives no new events.
     $sent = count(Http::recorded());
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id, 'FT-3'));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id, 'FT-3'));
     expect(count(Http::recorded()))->toBe($sent);
 });
 
 test('a delivery of an endpoint that was disabled meanwhile is not sent', function (): void {
     Http::fake(['*' => Http::response('', 200)]);
     $endpoint = webhookEndpointFor($this->tenant);
-    $disabled = pendingDeliveryFor($endpoint);
+    $disabled = webhookPendingDelivery($endpoint);
     $endpoint->update(['status' => 'disabled']);
 
-    expect(processDelivery($disabled)->status)->toBe('dead')->and($disabled->last_error)->toContain('disabled');
+    expect(webhookProcessDelivery($disabled)->status)->toBe('dead')->and($disabled->last_error)->toContain('disabled');
 
     Http::assertNothingSent();
 });
@@ -242,18 +242,18 @@ test('a delivery of an endpoint that was disabled meanwhile is not sent', functi
 test('a delivery already claimed by a worker is not sent twice, a stale claim is taken over', function (): void {
     Http::fake(['*' => Http::response('', 200)]);
     $endpoint = webhookEndpointFor($this->tenant);
-    $delivery = pendingDeliveryFor($endpoint, ['claimed_at' => now()]);
+    $delivery = webhookPendingDelivery($endpoint, ['claimed_at' => now()]);
 
-    expect(processDelivery($delivery)->status)->toBe('pending');
+    expect(webhookProcessDelivery($delivery)->status)->toBe('pending');
     Http::assertNothingSent();
 
     $delivery->forceFill(['claimed_at' => now()->subMinutes(10)])->save();
 
-    expect(processDelivery($delivery)->status)->toBe('succeeded');
+    expect(webhookProcessDelivery($delivery)->status)->toBe('succeeded');
     Http::assertSentCount(1);
 
     // A job that arrives late for a delivery that already succeeded does nothing.
-    processDelivery($delivery);
+    webhookProcessDelivery($delivery);
     Http::assertSentCount(1);
 });
 
@@ -262,9 +262,9 @@ test('a delivery over the per-tenant rate limit is postponed, not lost nor count
     Http::fake(['*' => Http::response('', 200)]);
     Queue::fake();
     $endpoint = webhookEndpointFor($this->tenant);
-    $deliveries = collect(range(1, 3))->map(fn (): WebhookDelivery => pendingDeliveryFor($endpoint));
+    $deliveries = collect(range(1, 3))->map(fn (): WebhookDelivery => webhookPendingDelivery($endpoint));
 
-    $statuses = $deliveries->map(fn (WebhookDelivery $delivery): string => processDelivery($delivery)->status)->all();
+    $statuses = $deliveries->map(fn (WebhookDelivery $delivery): string => webhookProcessDelivery($delivery)->status)->all();
 
     expect($statuses)->toBe(['succeeded', 'succeeded', 'pending']);
     Http::assertSentCount(2);
@@ -273,19 +273,19 @@ test('a delivery over the per-tenant rate limit is postponed, not lost nor count
 
     // The limit is per tenant: another tenant is not affected.
     $other = complianceTenant('Beta');
-    $otherDelivery = pendingDeliveryFor(webhookEndpointFor($other));
+    $otherDelivery = webhookPendingDelivery(webhookEndpointFor($other));
 
-    expect(processDelivery($otherDelivery)->status)->toBe('succeeded');
+    expect(webhookProcessDelivery($otherDelivery)->status)->toBe('succeeded');
 
     $this->travel(61)->seconds();
-    expect(processDelivery($deliveries[2])->status)->toBe('succeeded');
+    expect(webhookProcessDelivery($deliveries[2])->status)->toBe('succeeded');
 });
 
 test('the overdue sweeper queues again a due delivery whose job was lost', function (): void {
     Http::fake(['*' => Http::response('', 200)]);
     $endpoint = webhookEndpointFor($this->tenant);
-    $lost = pendingDeliveryFor($endpoint, ['next_attempt_at' => now()->subMinutes(10)]);
-    $fresh = pendingDeliveryFor($endpoint, ['next_attempt_at' => now()->subSeconds(5)]);
+    $lost = webhookPendingDelivery($endpoint, ['next_attempt_at' => now()->subMinutes(10)]);
+    $fresh = webhookPendingDelivery($endpoint, ['next_attempt_at' => now()->subSeconds(5)]);
 
     $this->artisan('webhooks:dispatch-overdue')->assertSuccessful();
 
@@ -294,9 +294,9 @@ test('the overdue sweeper queues again a due delivery whose job was lost', funct
 
 test('old finished deliveries are pruned, open ones never', function (): void {
     $endpoint = webhookEndpointFor($this->tenant);
-    $old = pendingDeliveryFor($endpoint, ['status' => 'succeeded']);
-    $oldOpen = pendingDeliveryFor($endpoint, ['status' => 'retrying']);
-    $recent = pendingDeliveryFor($endpoint, ['status' => 'dead']);
+    $old = webhookPendingDelivery($endpoint, ['status' => 'succeeded']);
+    $oldOpen = webhookPendingDelivery($endpoint, ['status' => 'retrying']);
+    $recent = webhookPendingDelivery($endpoint, ['status' => 'dead']);
     DB::table('webhook_deliveries')->whereIn('id', [$old->id, $oldOpen->id])->update(['updated_at' => now()->subDays(120)]);
 
     $this->artisan('webhooks:prune')->assertSuccessful();
@@ -309,7 +309,7 @@ test('on the database queue driver the delivery is a queued job, and the retry i
     Http::fake(['*' => Http::sequence()->push('down', 500)->push('ok', 200)]);
     webhookEndpointFor($this->tenant);
 
-    ingestWebhookEvent(invoicePostedEventFor($this->tenant->id));
+    ingestWebhookEvent(webhookInvoicePostedEvent($this->tenant->id));
 
     $jobs = DB::table('jobs')->get();
     expect($jobs)->toHaveCount(1)->and(json_decode($jobs[0]->payload, true)['displayName'])->toBe(DeliverWebhookJob::class);

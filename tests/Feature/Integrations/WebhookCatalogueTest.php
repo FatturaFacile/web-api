@@ -5,10 +5,13 @@ declare(strict_types=1);
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\CRM\Events\ContactCreatedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
 use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\Integrations\Webhooks\WebhookEventCatalog;
 use Modules\Inventory\Events\ReorderPointReachedEvent;
+use Modules\Inventory\Events\StockBelowMinimumEvent;
+use Modules\Invoicing\Events\InvoicePaidEvent;
 use Modules\Invoicing\Events\SalesOrderApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
 use Modules\Procurement\Events\PurchaseOrderApprovedEvent;
@@ -22,14 +25,14 @@ require_once __DIR__.'/WebhookHelpers.php';
  *
  * @return array<string, DomainEventInterface>
  */
-function catalogueEventInstances(): array
+function webhookCatalogueEventInstances(): array
 {
     $id = fn (): string => (string) Str::uuid7();
     $tenant = $id();
 
     return [
-        'invoicing.invoice.posted' => invoicePostedEventFor($tenant),
-        'treasury.collection.received' => collectionReceivedEventFor($tenant),
+        'invoicing.invoice.posted' => webhookInvoicePostedEvent($tenant),
+        'treasury.collection.received' => webhookCollectionReceivedEvent($tenant),
         'sales.order.approved' => new SalesOrderApprovedEvent(salesOrderId: $id(), approvedBy: $id(), tenantId: $tenant, companyId: $tenant),
         'sales.quote.accepted' => new SalesQuoteAcceptedEvent(quoteId: $id(), salesOrderId: null, tenantId: $tenant, companyId: $tenant, quoteNumber: 'Q-1', customerId: $id(), totalAmount: 10.0, salesQuoteId: $id()),
         'treasury.payment.executed' => new PaymentExecutedEvent(paymentBatchId: $id(), bankAccountId: $id(), totalAmount: 5.0, currency: 'EUR', protocol: 'cbi', bankTransmissionReference: 'REF', tenantId: $tenant, companyId: $tenant, executedLineIds: [$id()], valueDate: '2027-01-01'),
@@ -37,12 +40,15 @@ function catalogueEventInstances(): array
         'esm.ticket.created' => new TicketCreatedEvent(ticketId: $id(), ticketNumber: 'T-1', title: 'Broken', priority: 'high', status: 'open', customerId: null, tenantId: $tenant, companyId: $tenant),
         'crm.lead.created' => new LeadCreatedEvent(leadId: $id(), fullName: 'Mario Rossi', companyName: null, email: null, score: 10, status: 'new', tenantId: $tenant, companyId: $tenant),
         'crm.opportunity.won' => new OpportunityWonEvent(opportunityId: $id(), accountId: $id(), contactId: null, amount: 100.0, currency: 'EUR', salesQuoteId: null, actorUserId: $id(), tenantId: $tenant, companyId: $tenant),
+        'invoicing.invoice.paid' => new InvoicePaidEvent(invoiceId: $id(), invoiceNumber: 'FT-1', customerId: null, currency: 'EUR', totalGross: 122.0, totalPaid: 122.0, paidAt: now()->toIso8601String(), tenantId: $tenant, companyId: $tenant),
+        'crm.contact.created' => new ContactCreatedEvent(contactId: $id(), contactType: 'customer', companyName: 'ACME', firstName: null, lastName: null, email: null, country: 'IT', vatNumber: null, tenantId: $tenant, companyId: $tenant),
+        'inventory.stock_below_minimum' => new StockBelowMinimumEvent(reorderRuleId: $id(), stockItemId: $id(), warehouseId: $id(), availableStock: 1.0, minimumStock: 5.0, tenantId: $tenant, companyId: $tenant),
         'procurement.purchase_order.approved' => new PurchaseOrderApprovedEvent(purchaseOrderId: $id(), poNumber: 'PO-1', approvedByUserId: $id(), totalAmount: 50.0, currency: 'EUR', tenantId: $tenant, companyId: $tenant, supplierId: $id()),
     ];
 }
 
 test('every catalogue entry is an event class the codebase defines, with the name the class reports', function (): void {
-    $instances = catalogueEventInstances();
+    $instances = webhookCatalogueEventInstances();
 
     expect(array_keys($instances))->toEqualCanonicalizing(WebhookEventCatalog::names());
 
@@ -52,7 +58,7 @@ test('every catalogue entry is an event class the codebase defines, with the nam
 });
 
 test('the documented data fields match the payload of every event', function (): void {
-    foreach (catalogueEventInstances() as $name => $event) {
+    foreach (webhookCatalogueEventInstances() as $name => $event) {
         $documented = array_keys(WebhookEventCatalog::get($name)['fields']);
         $actual = array_keys(WebhookEventCatalog::dataFrom($event->toPayload()));
 
@@ -61,7 +67,7 @@ test('the documented data fields match the payload of every event', function ():
 });
 
 test('the envelope keys are not repeated in the data', function (): void {
-    foreach (catalogueEventInstances() as $event) {
+    foreach (webhookCatalogueEventInstances() as $event) {
         expect(WebhookEventCatalog::dataFrom($event->toPayload()))->not->toHaveKeys(['tenant_id', 'company_id', 'event_id', 'occurred_at', 'tenantId', 'companyId']);
     }
 });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Providers;
 
+use App\Models\Invoice;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -43,6 +44,7 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Invoicing\Models\SalesOrder;
 use Modules\Invoicing\Models\SalesQuote;
+use Modules\Invoicing\Observers\InvoicePaidObserver;
 use Modules\Invoicing\Policies\CustomerCreditProfilePolicy;
 use Modules\Invoicing\Policies\SalesCommissionPolicy;
 use Modules\Invoicing\Policies\SalesDeliveryNotePolicy;
@@ -78,6 +80,8 @@ final class InvoicingServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
         $this->registerEventConsumers();
+        Invoice::observe(InvoicePaidObserver::class);
+        SalesInvoice::observe(InvoicePaidObserver::class);
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         $this->loadRoutesFrom(__DIR__.'/../../routes/commissions.php');
     }

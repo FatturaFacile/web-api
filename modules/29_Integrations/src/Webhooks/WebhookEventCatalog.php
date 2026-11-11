@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\Integrations\Webhooks;
 
 use Illuminate\Support\Str;
+use Modules\CRM\Events\ContactCreatedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
 use Modules\CRM\Events\OpportunityWonEvent;
 use Modules\Integrations\Webhooks\Exceptions\UnknownWebhookEvent;
 use Modules\Inventory\Events\ReorderPointReachedEvent;
+use Modules\Inventory\Events\StockBelowMinimumEvent;
+use Modules\Invoicing\Events\InvoicePaidEvent;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Invoicing\Events\SalesOrderApprovedEvent;
 use Modules\Invoicing\Events\SalesQuoteAcceptedEvent;
@@ -31,9 +34,11 @@ use Modules\Treasury\Events\PaymentExecutedEvent;
  * keys the envelope carries (tenant, company, event id, occurrence time). A test keeps the fields in line with the
  * payload of each event class.
  *
- * Not in the catalogue because nothing raises them: a paid-invoice event (the receipt of a payment is
- * treasury.collection.received, whose payload names the invoice), a contact-created event (the CRM raises
- * crm.lead.created) and a stock-below-minimum event distinct from the reorder point.
+ * Three events were added to the business code for webhooks, each raised by a model observer or a service at the one
+ * place where the state changes: invoicing.invoice.paid (InvoicePaidObserver, on the transition to "paid"),
+ * crm.contact.created (ContactCreatedObserver, on insert, whichever path creates the contact) and
+ * inventory.stock_below_minimum (InventoryReplenishmentService::evaluateMinimumStock, on the crossing of the minimum
+ * stock level of a reorder rule).
  */
 final class WebhookEventCatalog
 {
@@ -196,6 +201,53 @@ final class WebhookEventCatalog
                     'currency' => $str('ISO 4217 currency code'),
                     'sales_quote_id' => $str('Linked quote id (UUID)', true),
                     'actor_user_id' => $str('Id of the user who won it'),
+                ],
+            ],
+            'invoicing.invoice.paid' => [
+                'label' => 'Invoice paid',
+                'module' => 'invoicing',
+                'description' => 'A sales invoice has become fully settled (payments and applied credit notes cover what is due). Raised once per transition to paid.',
+                'channel' => self::ChannelClass,
+                'event_class' => InvoicePaidEvent::class,
+                'fields' => [
+                    'invoice_id' => $str('Invoice id (UUID)'),
+                    'invoice_number' => $str('Invoice number'),
+                    'customer_id' => $str('Customer id (UUID)', true),
+                    'currency' => $str('ISO 4217 currency code'),
+                    'total_gross' => $num('Total including tax'),
+                    'total_paid' => $num('Amount settled by payments'),
+                    'paid_at' => $str('When the invoice became paid, ISO 8601'),
+                ],
+            ],
+            'crm.contact.created' => [
+                'label' => 'Contact created',
+                'module' => 'crm',
+                'description' => 'A contact (customer, supplier or person) has been created, by any path: API, import, lead conversion. It carries personal data: subscribe only if the receiver is entitled to it.',
+                'channel' => self::ChannelClass,
+                'event_class' => ContactCreatedEvent::class,
+                'fields' => [
+                    'contact_id' => $str('Contact id (UUID)'),
+                    'contact_type' => $str('customer, supplier or another contact type'),
+                    'company_name' => $str('Company name', true),
+                    'first_name' => $str('First name', true),
+                    'last_name' => $str('Last name', true),
+                    'email' => $str('Email address', true),
+                    'country' => $str('ISO 3166-1 alpha-2 country', true),
+                    'vat_number' => $str('VAT number', true),
+                ],
+            ],
+            'inventory.stock_below_minimum' => [
+                'label' => 'Stock below minimum',
+                'module' => 'inventory',
+                'description' => 'The available stock of an item in a warehouse dropped below the minimum stock level of its reorder rule. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event.',
+                'channel' => self::ChannelClass,
+                'event_class' => StockBelowMinimumEvent::class,
+                'fields' => [
+                    'reorder_rule_id' => $str('Reorder rule id (UUID)'),
+                    'stock_item_id' => $str('Stock item id (UUID)'),
+                    'warehouse_id' => $str('Warehouse id (UUID)'),
+                    'available_stock' => $num('Available stock: on hand minus reserved, outside quarantine and transit'),
+                    'minimum_stock' => $num('Minimum stock level of the rule'),
                 ],
             ],
             'procurement.purchase_order.approved' => [
