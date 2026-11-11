@@ -239,15 +239,17 @@ final class WebhookEventCatalog
             'inventory.stock_below_minimum' => [
                 'label' => 'Stock below minimum',
                 'module' => 'inventory',
-                'description' => 'The available stock of an item in a warehouse dropped below the minimum stock level of its reorder rule. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event.',
+                'description' => 'Stock dropped below a configured minimum. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event. Two scopes with independent minimums, told apart by scope: warehouse (available stock of an item in one warehouse below min_stock_level of its reorder rule) and product (stock of a catalog product across all warehouses below the product min_stock, the figure of the Low stock widget). When both minimums exist both can fire for one movement: filter on scope to get one signal.',
                 'channel' => self::ChannelClass,
                 'event_class' => StockBelowMinimumEvent::class,
                 'fields' => [
-                    'reorder_rule_id' => $str('Reorder rule id (UUID)'),
-                    'stock_item_id' => $str('Stock item id (UUID)'),
-                    'warehouse_id' => $str('Warehouse id (UUID)'),
-                    'available_stock' => $num('Available stock: on hand minus reserved, outside quarantine and transit'),
-                    'minimum_stock' => $num('Minimum stock level of the rule'),
+                    'scope' => $str('warehouse or product'),
+                    'reorder_rule_id' => $str('Reorder rule id (UUID); scope warehouse only', true),
+                    'stock_item_id' => $str('Stock item id (UUID); scope warehouse only', true),
+                    'warehouse_id' => $str('Warehouse id (UUID); scope warehouse only', true),
+                    'product_id' => $str('Catalog product id (UUID): always for scope product, for scope warehouse when the item belongs to a product', true),
+                    'available_stock' => $num('Scope warehouse: on hand minus reserved, outside quarantine and transit. Scope product: stock across warehouses net of what was sold beyond it'),
+                    'minimum_stock' => $num('The minimum that was crossed: min_stock_level of the rule or min_stock of the product'),
                 ],
             ],
             'procurement.purchase_order.approved' => [

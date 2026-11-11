@@ -42,7 +42,7 @@ function webhookCatalogueEventInstances(): array
         'crm.opportunity.won' => new OpportunityWonEvent(opportunityId: $id(), accountId: $id(), contactId: null, amount: 100.0, currency: 'EUR', salesQuoteId: null, actorUserId: $id(), tenantId: $tenant, companyId: $tenant),
         'invoicing.invoice.paid' => new InvoicePaidEvent(invoiceId: $id(), invoiceNumber: 'FT-1', customerId: null, currency: 'EUR', totalGross: 122.0, totalPaid: 122.0, paidAt: now()->toIso8601String(), tenantId: $tenant, companyId: $tenant),
         'crm.contact.created' => new ContactCreatedEvent(contactId: $id(), contactType: 'customer', companyName: 'ACME', firstName: null, lastName: null, email: null, country: 'IT', vatNumber: null, tenantId: $tenant, companyId: $tenant),
-        'inventory.stock_below_minimum' => new StockBelowMinimumEvent(reorderRuleId: $id(), stockItemId: $id(), warehouseId: $id(), availableStock: 1.0, minimumStock: 5.0, tenantId: $tenant, companyId: $tenant),
+        'inventory.stock_below_minimum' => new StockBelowMinimumEvent(scope: 'warehouse', reorderRuleId: $id(), stockItemId: $id(), warehouseId: $id(), productId: $id(), availableStock: 1.0, minimumStock: 5.0, tenantId: $tenant, companyId: $tenant),
         'procurement.purchase_order.approved' => new PurchaseOrderApprovedEvent(purchaseOrderId: $id(), poNumber: 'PO-1', approvedByUserId: $id(), totalAmount: 50.0, currency: 'EUR', tenantId: $tenant, companyId: $tenant, supplierId: $id()),
     ];
 }

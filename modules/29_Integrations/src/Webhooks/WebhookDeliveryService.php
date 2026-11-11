@@ -263,14 +263,14 @@ final class WebhookDeliveryService
                 ->withBody($body, 'application/json')
                 ->connectTimeout((int) config('webhooks.connect_timeout_seconds'))
                 ->timeout((int) config('webhooks.timeout_seconds'))
-                ->withOptions([
-                    'curl' => [CURLOPT_PROXY => ''],
+                ->withOptions(array_merge([
+                    'proxy' => '',
                     'on_headers' => static function ($response): void {
                         if ((int) $response->getHeaderLine('Content-Length') > 1_048_576) {
                             throw new RuntimeException('The response is larger than 1 MiB.');
                         }
                     },
-                ]);
+                ], app()->environment('testing') ? (array) config('webhooks.testing_http_options', []) : []));
 
             // The guard checks the host again, pins the addresses it checked (no DNS rebinding) and refuses redirects.
             $response = $this->outbound->protect($request)->post((string) $endpoint->url);

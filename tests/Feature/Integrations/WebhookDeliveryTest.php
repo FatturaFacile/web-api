@@ -14,7 +14,6 @@ use Illuminate\Support\Facades\RateLimiter;
 use Modules\Integrations\Jobs\DeliverWebhookJob;
 use Modules\Integrations\Models\WebhookDelivery;
 use Modules\Integrations\Models\WebhookDeliveryAttempt;
-use Modules\Integrations\Models\WebhookEndpoint;
 use Modules\Integrations\Webhooks\WebhookDeliveryService;
 use Modules\Integrations\Webhooks\WebhookSigner;
 use Tests\Support\StaticHostResolver;
@@ -28,23 +27,6 @@ beforeEach(function (): void {
     Http::preventStrayRequests();
     RateLimiter::clear('webhooks:tenant:'.$this->tenant->id);
 });
-
-function webhookPendingDelivery(WebhookEndpoint $endpoint, array $attributes = []): WebhookDelivery
-{
-    return WebhookDelivery::factory()->create([
-        'tenant_id' => $endpoint->tenant_id,
-        'webhook_endpoint_id' => $endpoint->id,
-        'event_name' => 'invoicing.invoice.posted',
-        ...$attributes,
-    ]);
-}
-
-function webhookProcessDelivery(WebhookDelivery $delivery): WebhookDelivery
-{
-    app(WebhookDeliveryService::class)->process((string) $delivery->id);
-
-    return $delivery->refresh();
-}
 
 test('an event is delivered signed, with the idempotency key, the version and the documented envelope', function (): void {
     Http::fake(['*' => Http::response('received', 200)]);

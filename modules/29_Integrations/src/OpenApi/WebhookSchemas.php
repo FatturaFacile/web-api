@@ -247,14 +247,16 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'WebhookDataInventoryStockBelowMinimum',
-    description: 'Member "data" of the event inventory.stock_below_minimum. The available stock of an item in a warehouse dropped below the minimum stock level of its reorder rule. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event.',
-    required: ['reorder_rule_id', 'stock_item_id', 'warehouse_id', 'available_stock', 'minimum_stock'],
+    description: 'Member "data" of the event inventory.stock_below_minimum. Stock dropped below a configured minimum. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event. Two scopes with independent minimums, told apart by scope: warehouse (available stock of an item in one warehouse below min_stock_level of its reorder rule) and product (stock of a catalog product across all warehouses below the product min_stock, the figure of the Low stock widget). When both minimums exist both can fire for one movement: filter on scope to get one signal.',
+    required: ['scope', 'available_stock', 'minimum_stock'],
     properties: [
-        new OA\Property(property: 'reorder_rule_id', type: 'string', description: 'Reorder rule id (UUID)'),
-        new OA\Property(property: 'stock_item_id', type: 'string', description: 'Stock item id (UUID)'),
-        new OA\Property(property: 'warehouse_id', type: 'string', description: 'Warehouse id (UUID)'),
-        new OA\Property(property: 'available_stock', type: 'number', description: 'Available stock: on hand minus reserved, outside quarantine and transit'),
-        new OA\Property(property: 'minimum_stock', type: 'number', description: 'Minimum stock level of the rule'),
+        new OA\Property(property: 'scope', type: 'string', description: 'warehouse or product'),
+        new OA\Property(property: 'reorder_rule_id', type: 'string', nullable: true, description: 'Reorder rule id (UUID); scope warehouse only'),
+        new OA\Property(property: 'stock_item_id', type: 'string', nullable: true, description: 'Stock item id (UUID); scope warehouse only'),
+        new OA\Property(property: 'warehouse_id', type: 'string', nullable: true, description: 'Warehouse id (UUID); scope warehouse only'),
+        new OA\Property(property: 'product_id', type: 'string', nullable: true, description: 'Catalog product id (UUID): always for scope product, for scope warehouse when the item belongs to a product'),
+        new OA\Property(property: 'available_stock', type: 'number', description: 'Scope warehouse: on hand minus reserved, outside quarantine and transit. Scope product: stock across warehouses net of what was sold beyond it'),
+        new OA\Property(property: 'minimum_stock', type: 'number', description: 'The minimum that was crossed: min_stock_level of the rule or min_stock of the product'),
     ]
 )]
 #[OA\Schema(

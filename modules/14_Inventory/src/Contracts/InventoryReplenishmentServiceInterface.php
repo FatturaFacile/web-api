@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Contracts;
 
+use App\Models\Product;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockReorderRule;
 
@@ -16,6 +17,12 @@ interface InventoryReplenishmentServiceInterface
      * crossing (never again while it stays below); returns the event id, or null when nothing was announced.
      */
     public function evaluateMinimumStock(StockReorderRule $rule): ?string;
+
+    /**
+     * Same crossing rule for the minimum stock of a catalog product (products.min_stock) on its stock across all
+     * warehouses; announces StockBelowMinimumEvent with scope "product". Independent of the per-warehouse minimum.
+     */
+    public function evaluateProductMinimumStock(Product $product): ?string;
 
     public function computeAbcClassification(string $tenantId): array;
 
