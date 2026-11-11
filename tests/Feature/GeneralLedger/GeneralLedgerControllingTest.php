@@ -450,7 +450,7 @@ test('open foreign-currency receivables are revalued at the closing rate and rev
             ['account_id' => $this->sales->id, 'debit_amount' => '0', 'credit_amount' => '1000', 'currency' => 'USD', 'exchange_rate' => '0.900000'],
         ],
     ]);
-    ExchangeRate::createGlobal(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.000000', 'effective_date' => '2026-12-30']);
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.000000', 'effective_date' => '2026-12-30']);
 
     glcActAs($this->accountant, $this->tenant);
     $this->postJson('/api/v1/general-ledger/fx-revaluations', ['revaluation_date' => '2026-12-31'])->assertUnprocessable();

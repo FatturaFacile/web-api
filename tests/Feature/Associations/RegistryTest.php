@@ -82,7 +82,12 @@ test('types have validity periods and a history per year', function (): void {
 });
 
 test('generic registry types are visible to every tenant and read-only', function (): void {
-    $generic = inTenant(null, fn () => RegistryType::factory()->create(['tenant_id' => null, 'code' => 'generic-type']));
+    $generic = inTenant(null, function (): RegistryType {
+        $type = RegistryType::factory()->make(['tenant_id' => null, 'code' => 'generic-type'])->declareGlobal();
+        $type->save();
+
+        return $type;
+    });
 
     expect(collect($this->getJson('/api/v1/associations/catalogs/registry-types')->json('data'))->pluck('id'))->toContain($generic->id);
 

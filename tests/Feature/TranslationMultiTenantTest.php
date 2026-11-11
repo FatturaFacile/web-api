@@ -220,12 +220,12 @@ test('Translation scopeForTenant implements fallback query condition correctly',
     ]);
 
     // When tenant_id is null: selects whereNull('tenant_id')
-    $nullResults = Translation::forTenant(null)->where('locale', 'en')->pluck('key')->all();
+    $nullResults = Translation::withoutGlobalScopes()->forTenant(null)->where('locale', 'en')->pluck('key')->all();
     expect($nullResults)->toContain('GLOBAL.KEY')
         ->and($nullResults)->not->toContain('TENANT.KEY');
 
     // When tenant_id is provided: selects where tenant_id = :id or tenant_id is null
-    $tenantResults = Translation::forTenant($this->tenant->id)->where('locale', 'en')->pluck('key')->all();
+    $tenantResults = Translation::withoutGlobalScopes()->forTenant($this->tenant->id)->where('locale', 'en')->pluck('key')->all();
     expect($tenantResults)->toContain('GLOBAL.KEY')
         ->and($tenantResults)->toContain('TENANT.KEY');
 });

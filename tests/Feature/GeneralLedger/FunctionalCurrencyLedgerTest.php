@@ -101,8 +101,8 @@ beforeEach(function (): void {
     $this->rounding = fcAccount($this->tenant, '6960', 'expense', 'debit');
 
     // 1 EUR = 1.25 USD at the invoice (0.8 EUR per USD), 1 EUR = 1.20 USD at the collection (0.833333 EUR per USD)
-    ExchangeRate::createGlobal(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => '2026-06-01']);
-    ExchangeRate::createGlobal(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.200000', 'effective_date' => '2026-06-25']);
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.250000', 'effective_date' => '2026-06-01']);
+    ExchangeRate::create(['source' => 'EUR', 'target' => 'USD', 'rate' => '1.200000', 'effective_date' => '2026-06-25']);
 });
 
 afterEach(fn () => app(TenantContext::class)->clear());

@@ -148,7 +148,7 @@ test('Phase A.1: Swiss CO Art. 960a Imparity Principle defers unrealised FX gain
     ], (string) $user->id);
 
     // Closing rate on 2026-01-31: 1 CHF = 1.00 EUR -> revalued value = 1000.00 CHF -> unrealised GAIN of +80.00 CHF
-    ExchangeRate::createGlobal([
+    ExchangeRate::create([
         'source' => 'CHF',
         'target' => 'EUR',
         'rate' => '1.00000000',
@@ -214,7 +214,7 @@ test('Phase A.2, A.3 & A.4: Swiss Anhang (CO Art. 959c), CHF Presentation Curren
     ], (string) $user->id);
 
     // Rate EUR -> CHF for CO Art. 958d para. 3 dual presentation
-    ExchangeRate::createGlobal([
+    ExchangeRate::create([
         'source' => 'EUR',
         'target' => 'CHF',
         'rate' => '0.95000000',

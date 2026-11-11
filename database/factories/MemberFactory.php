@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Factories;
 
 use App\Models\Contact;
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Modules\Associations\Enums\MemberStatus;
 use Modules\Associations\Models\Member;
@@ -22,7 +23,9 @@ class MemberFactory extends Factory
     public function definition(): array
     {
         return [
+            'tenant_id' => Tenant::factory(),
             'contact_id' => fn (array $attributes): string => Contact::create([
+                'tenant_id' => $attributes['tenant_id'],
                 'first_name' => fake()->firstName(),
                 'last_name' => fake()->lastName(),
                 'email' => fake()->unique()->safeEmail(),

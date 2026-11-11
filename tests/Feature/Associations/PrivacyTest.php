@@ -173,7 +173,7 @@ test('once the retention period configured has passed, erasure anonymizes the pe
     $service = app(MembershipService::class);
     $member = Member::factory()->create(['left_on' => now()->subYears(4)->toDateString(), 'status' => MemberStatus::Ceased]);
     $service->activate($service->request($member, AssociativeYear::factory()->create(), MembershipType::factory()->create()));
-    inTenant(null, static fn () => LegalParameter::query()->create(['code' => LegalParameterService::MembersBookRetentionYears, 'year' => (int) now()->year, 'value' => '99', 'source_reference' => 'generic row, must not win']));
+    inTenant(null, static fn () => LegalParameter::createGlobal(['code' => LegalParameterService::MembersBookRetentionYears, 'year' => (int) now()->year, 'value' => '99', 'source_reference' => 'generic row, must not win']));
     LegalParameter::query()->create(['code' => LegalParameterService::MembersBookRetentionYears, 'year' => (int) now()->year, 'value' => '2', 'source_reference' => 'company statute, test value']);
     $name = $member->contact->last_name;
 
