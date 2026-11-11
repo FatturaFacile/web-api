@@ -214,10 +214,12 @@ class SettingsController extends Controller
     {
         $today = now()->toDateString();
         $rates = $rateProvider->getRates();
+        // A tenant stores its own copy of the rates: the global rows (null tenant) are changed by platform code only.
+        $tenantId = app(TenantContext::class)->getTenantId();
 
         foreach ($rates as $r) {
             ExchangeRate::updateOrCreate(
-                ['source' => $r['source'], 'target' => $r['target'], 'effective_date' => $today],
+                ['tenant_id' => $tenantId, 'source' => $r['source'], 'target' => $r['target'], 'effective_date' => $today],
                 ['rate' => $r['rate']]
             );
         }

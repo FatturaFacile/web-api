@@ -12,12 +12,12 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-class ProcurementLookupSeeder extends Seeder
+class ProcurementLookupSeeder extends GlobalDataSeeder
 {
     /**
      * Run the procurement lookups and reference data seeder.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $this->seedLookupCategoriesAndItems();
         $this->seedTenantSupplierCategories();

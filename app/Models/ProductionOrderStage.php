@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -15,7 +16,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 class ProductionOrderStage extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, StampsTenantFromParent;
 
     protected $table = 'production_order_stages';
 

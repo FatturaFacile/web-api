@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Seeder;
 use Modules\Associations\Enums\RegistryKind;
 use Modules\Associations\Models\RegistryType;
 use Modules\Associations\Models\SocialRole;
@@ -13,9 +12,9 @@ use Modules\Associations\Models\SocialRole;
  * The generic registry types and offices, shared by every company and read-only for them. Disciplines are left to each
  * company: their official codes depend on the body it is affiliated to.
  */
-class AssociationsReferenceSeeder extends Seeder
+class AssociationsReferenceSeeder extends GlobalDataSeeder
 {
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         foreach (RegistryKind::cases() as $order => $kind) {
             if ($kind !== RegistryKind::Custom) {

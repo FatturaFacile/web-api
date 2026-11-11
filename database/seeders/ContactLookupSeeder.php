@@ -8,15 +8,14 @@ use App\Models\ContactCategory;
 use App\Models\ContactCategoryTranslation;
 use App\Models\ContactType;
 use App\Models\ContactTypeTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class ContactLookupSeeder extends Seeder
+class ContactLookupSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $types = [
             'CLIENT' => [

@@ -7,15 +7,14 @@ namespace Database\Seeders;
 use App\Models\Country;
 use App\Models\Region;
 use App\Models\RegionTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class RegionSeeder extends Seeder
+class RegionSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $ch = Country::where('iso_code_2', 'CH')->first();
         $it = Country::where('iso_code_2', 'IT')->first();

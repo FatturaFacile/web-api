@@ -7,14 +7,13 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 
-class PermissionSeeder extends Seeder
+class PermissionSeeder extends GlobalDataSeeder
 {
     /**
      * Seed standardized enterprise permissions into the global lookup catalog.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $category = LookupCategory::updateOrCreate(
             ['code' => 'enterprise_permission'],

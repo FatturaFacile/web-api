@@ -105,6 +105,12 @@ class BackfillTenantRecords extends Command
             return 0;
         }
 
+        if (method_exists($modelClass, 'allowsGlobalRecords') && $modelClass::allowsGlobalRecords()) {
+            $this->line(sprintf('[%s] Allows global records: a null tenant_id means shared data, not orphaned. Skipping.', class_basename($modelClass)));
+
+            return 0;
+        }
+
         // Bypass all global scopes (including TenantScope and SoftDeletes)
         $query = $modelClass::withoutGlobalScopes()
             ->whereNull('tenant_id');

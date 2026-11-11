@@ -8,15 +8,14 @@ use App\Models\ProjectStatus;
 use App\Models\ProjectStatusTranslation;
 use App\Models\TaskStatus;
 use App\Models\TaskStatusTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class ProjectTaskStatusSeeder extends Seeder
+class ProjectTaskStatusSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $projectStatuses = [
             [

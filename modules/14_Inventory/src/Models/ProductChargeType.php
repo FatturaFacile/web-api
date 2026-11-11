@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 final class ProductChargeType extends BaseEnterpriseModel
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'product_charge_types';
 
     public const array BASES = ['per_unit', 'per_kg', 'per_litre', 'percent_of_net'];

@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\PaymentMethod;
 use App\Models\PaymentMethodTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class PaymentMethodSeeder extends Seeder
+class PaymentMethodSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $methods = [
             [

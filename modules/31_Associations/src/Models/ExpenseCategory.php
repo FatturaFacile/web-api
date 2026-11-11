@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\AssociationsExpenseCategoryFactory;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 
 /**
@@ -14,6 +16,8 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 #[UseFactory(AssociationsExpenseCategoryFactory::class)]
 final class ExpenseCategory extends AssociationRecord
 {
+    use AllowsGlobalRecords, BelongsToTenant;
+
     public const string FivePerMille = 'five_per_mille';
 
     protected $table = 'assoc_expense_categories';

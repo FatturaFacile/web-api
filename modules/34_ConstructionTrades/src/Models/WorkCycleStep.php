@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\ConstructionTrades\Models;
 
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
+
 /**
  * A step of a work cycle, per unit of the cycle times its quantity factor.
  *
@@ -17,6 +19,8 @@ namespace Modules\ConstructionTrades\Models;
  */
 final class WorkCycleStep extends TradesRecord
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'ct_work_cycle_steps';
 
     protected function casts(): array

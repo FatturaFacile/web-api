@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ConstructionTrades\Models;
 
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -16,6 +17,8 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  */
 final class WorkCycle extends TradesRecord
 {
+    use AllowsGlobalRecords;
+
     protected $table = 'ct_work_cycles';
 
     protected function casts(): array

@@ -6,15 +6,14 @@ namespace Database\Seeders;
 
 use App\Models\Country;
 use App\Models\CountryTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
-class CountrySeeder extends Seeder
+class CountrySeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $countries = [
             [

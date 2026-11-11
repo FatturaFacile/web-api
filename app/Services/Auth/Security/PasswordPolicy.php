@@ -6,6 +6,7 @@ namespace App\Services\Auth\Security;
 
 use App\Models\PasswordHistory;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
 
@@ -65,7 +66,10 @@ final class PasswordPolicy
      */
     public function remember(User $user, string $passwordHash): void
     {
-        PasswordHistory::query()->create(['user_id' => $user->getKey(), 'password_hash' => $passwordHash]);
+        // The history belongs to the user, not to the tenant the request acts for: it is written as global data even
+        // from a tenant context, which a tenant user could not do for any other global model.
+        $context = app(TenantContext::class);
+        $context->runWithoutTenant(static fn (): PasswordHistory => PasswordHistory::createGlobal(['user_id' => $user->getKey(), 'password_hash' => $passwordHash]));
 
         $stale = PasswordHistory::query()->where('user_id', $user->getKey())
             ->orderByDesc('created_at')->orderByDesc('id')->skip(24)->take(PHP_INT_MAX)->pluck('id');

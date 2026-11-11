@@ -7,14 +7,13 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-final class ProjectReferenceSeeder extends Seeder
+final class ProjectReferenceSeeder extends GlobalDataSeeder
 {
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         // 1. Resource Trades & Roles Lookup
         $definitions = [

@@ -7,15 +7,14 @@ namespace Database\Seeders;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
-use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Schema;
 
-class ErpLookupsSeeder extends Seeder
+class ErpLookupsSeeder extends GlobalDataSeeder
 {
     /**
      * Run the database seeds.
      */
-    public function run(): void
+    protected function seedGlobalData(): void
     {
         $categoriesData = $this->getCategoriesData();
 

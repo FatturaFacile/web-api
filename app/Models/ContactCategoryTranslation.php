@@ -5,13 +5,14 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class ContactCategoryTranslation extends Model
 {
-    use BelongsToTenant, HasFactory;
+    use AllowsGlobalRecords, BelongsToTenant, HasFactory;
 
     protected $table = 'contact_category_translations';
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -11,7 +12,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceItem extends Model
 {
-    use HasFactory, HasUuids;
+    use HasFactory, HasUuids, StampsTenantFromParent;
 
     protected $fillable = [
         'invoice_id',
@@ -25,15 +26,6 @@ class InvoiceItem extends Model
         'revenue_account_id',
         'product_charge_type_id',
     ];
-
-    protected static function booted(): void
-    {
-        static::creating(function (InvoiceItem $item): void {
-            if (empty($item->tenant_id) && ! empty($item->invoice_id)) {
-                $item->tenant_id = Invoice::withoutGlobalScopes()->where('id', $item->invoice_id)->value('tenant_id');
-            }
-        });
-    }
 
     protected function casts(): array
     {

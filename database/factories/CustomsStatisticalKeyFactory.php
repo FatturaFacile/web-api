@@ -39,6 +39,6 @@ final class CustomsStatisticalKeyFactory extends Factory
      */
     public function generic(): self
     {
-        return $this->state(['tenant_id' => null, 'source' => 'bazg_edec']);
+        return $this->state(['tenant_id' => null, 'source' => 'bazg_edec'])->afterMaking(static fn ($model) => $model->declareGlobal());
     }
 }
