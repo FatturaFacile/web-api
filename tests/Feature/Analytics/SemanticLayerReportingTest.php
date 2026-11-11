@@ -380,7 +380,7 @@ test('the xlsx export is a real workbook with typed cells, neutralised text, a p
         ->and($response->headers->get('Content-Disposition'))->toContain('.xlsx');
 
     $sheets = biReadXlsx($binary);
-    expect(array_keys($sheets))->toBe(['Q1 Q2 sales with a very long', 'Parameters']);
+    expect(array_keys($sheets))->toBe(['Q1 Q2 sales with a very long na', 'Parameters']);
     $rows = array_values($sheets)[0];
     expect($rows[0])->toBe(['customer', 'date', 'net_amount', 'document_count'])
         ->and($rows[1][0])->toBe("'=HYPERLINK(\"http://evil\")")
