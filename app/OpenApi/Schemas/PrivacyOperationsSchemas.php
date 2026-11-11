@@ -49,7 +49,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'models', type: 'array', items: new OA\Items(type: 'string')),
     new OA\Property(property: 'personal_columns', type: 'array', items: new OA\Items(type: 'string')),
     new OA\Property(property: 'undeclared_personal_columns', description: 'Columns that look personal and are not declared in the registry: the registry must be updated', type: 'array', items: new OA\Items(type: 'string')),
-    new OA\Property(property: 'subject_types', type: 'array', items: new OA\Items(type: 'string', enum: ['contact', 'employee', 'lead'])),
+    new OA\Property(property: 'subject_types', type: 'array', items: new OA\Items(type: 'string', enum: ['contact', 'employee', 'lead', 'user', 'member', 'child', 'visitor', 'applicant'])),
     new OA\Property(property: 'retention', type: 'string', enum: ['erasable', 'fiscal_record', 'statutory_employment', 'evidence']),
     new OA\Property(property: 'retention_note', type: 'string'),
     new OA\Property(property: 'retention_policy_available', type: 'boolean'),
@@ -97,6 +97,29 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(schema: 'PrivacyRetentionPolicyListResponse', type: 'object', properties: [
     new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PrivacyRetentionPolicy')),
     new OA\Property(property: 'available_tables', description: 'Tables of the registry that can have a policy', type: 'array', items: new OA\Items(type: 'object')),
+])]
+#[OA\Schema(schema: 'PrivacyRetentionAdoptRequest', required: ['confirm'], type: 'object', properties: [
+    new OA\Property(property: 'confirm', description: 'Must be true: the company confirms the period', type: 'boolean'),
+    new OA\Property(property: 'retention_days', description: 'Overrides the suggested period', type: 'integer', minimum: 1, maximum: 36500, nullable: true),
+    new OA\Property(property: 'activate', description: 'Defaults to false: the policy is created inactive', type: 'boolean', nullable: true),
+])]
+#[OA\Schema(schema: 'PrivacyRetentionSuggestion', type: 'object', properties: [
+    new OA\Property(property: 'entry_key', type: 'string', example: 'crm_leads'),
+    new OA\Property(property: 'label', type: 'string'),
+    new OA\Property(property: 'personal_columns', type: 'array', items: new OA\Items(type: 'string')),
+    new OA\Property(property: 'age_column', type: 'string', nullable: true),
+    new OA\Property(property: 'suggested_retention_days', type: 'integer'),
+    new OA\Property(property: 'rationale', type: 'string'),
+    new OA\Property(property: 'requires_confirmation', description: 'Always true', type: 'boolean'),
+    new OA\Property(property: 'applied_automatically', description: 'Always false', type: 'boolean'),
+    new OA\Property(property: 'basis', description: 'The suggestion is not a legal requirement and is not verified against any statute', type: 'string'),
+    new OA\Property(property: 'current_policy', type: 'object', nullable: true, properties: [
+        new OA\Property(property: 'retention_days', type: 'integer'),
+        new OA\Property(property: 'is_active', type: 'boolean'),
+    ]),
+])]
+#[OA\Schema(schema: 'PrivacyRetentionSuggestionListResponse', type: 'object', properties: [
+    new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/PrivacyRetentionSuggestion')),
 ])]
 #[OA\Schema(schema: 'PrivacyRetentionRunRequest', type: 'object', properties: [
     new OA\Property(property: 'dry_run', description: 'Defaults to true: rows are only counted', type: 'boolean', nullable: true),

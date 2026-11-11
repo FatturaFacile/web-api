@@ -13,6 +13,7 @@ use Modules\Documents\Models\DmsDocument;
 use Modules\Quality\Listeners\WorkflowApprovalQualityListener;
 use Modules\Quality\Models\QmsProcedure;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
+use Modules\Workflow\Events\WorkflowInstanceExpiredEvent;
 use Modules\Workflow\Models\WorkflowAuditEntry;
 use Modules\Workflow\Models\WorkflowDefinition;
 use Modules\Workflow\Models\WorkflowEscalationRule;
@@ -398,4 +399,36 @@ test('another company cannot act on the workflow or on the procedure, and its de
 
     // and the instance of the other company's definition is never ours
     expect(WorkflowInstance::withoutGlobalScopes()->findOrFail($instance)->tenant_id)->toBe($this->tenant->id);
+});
+
+test('an expired approval workflow takes the procedure back to draft, never approved or rejected, and it can be submitted again', function (): void {
+    pwfDefinition($this->tenant, [$this->first->id]);
+    pwfAct($this->author, $this->tenant);
+    $procedure = pwfProcedure('PRO-EXP');
+    $instance = pwfSubmit($procedure)['workflow_instance_id'];
+    $step = pwfPendingStep($instance);
+
+    // nobody decides in time and the definition has no timeout path: the engine expires the instance
+    app(WorkflowEngineService::class)->handleStepTimeout($step);
+    expect(WorkflowInstance::withoutGlobalScopes()->findOrFail($instance)->status)->toBe('expired');
+
+    $draft = QmsProcedure::withoutGlobalScopes()->findOrFail($procedure['id']);
+    expect($draft->status)->toBe('draft')
+        ->and($draft->submitted_at)->toBeNull()
+        ->and($draft->approved_by)->toBeNull()
+        ->and($draft->rejected_by)->toBeNull()
+        ->and(AuditLedgerEntry::query()->where('tenant_id', $this->tenant->id)->where('action', 'QMS_PROCEDURE_APPROVAL_EXPIRED')->count())->toBe(1);
+
+    // a late decision on the expired step is refused, and the author starts again
+    pwfAct($this->first, $this->tenant);
+    pwfDecide($step)->assertStatus(409);
+    pwfAct($this->author, $this->tenant);
+    $again = pwfSubmit($procedure);
+    expect($again['status'])->toBe('pending_approval')->and($again['workflow_instance_id'])->not->toBe($instance);
+
+    // a redelivered expiry event changes nothing once the procedure is not pending any more
+    pwfAct($this->first, $this->tenant);
+    pwfDecide(pwfPendingStep($again['workflow_instance_id']))->assertOk();
+    app(WorkflowApprovalQualityListener::class)->handleExpired(new WorkflowInstanceExpiredEvent($instance, 'no_decision_in_time', (string) $this->tenant->id, (string) $this->tenant->id));
+    expect(pwfProcedureStatus($procedure['id']))->toBe('approved');
 });

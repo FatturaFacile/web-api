@@ -16,6 +16,7 @@ use Modules\Quality\Models\QmsNonconformity;
 use Modules\Quality\Models\QmsProcedure;
 use Modules\Quality\Policies\QualityPolicy;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
+use Modules\Workflow\Events\WorkflowInstanceExpiredEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 
 /**
@@ -35,5 +36,6 @@ final class QualityServiceProvider extends ServiceProvider
 
         Event::listen(WorkflowInstanceCompletedEvent::class, [WorkflowApprovalQualityListener::class, 'handleCompleted']);
         Event::listen(WorkflowInstanceRejectedEvent::class, [WorkflowApprovalQualityListener::class, 'handleRejected']);
+        Event::listen(WorkflowInstanceExpiredEvent::class, [WorkflowApprovalQualityListener::class, 'handleExpired']);
     }
 }
