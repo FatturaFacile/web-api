@@ -52,6 +52,10 @@ final class ExportDownloadController extends Controller
             ->where('expires_at', '>', now())
             ->firstOrFail();
 
+        // The signature is the credential, but a request that names another company is not for this file.
+        $header = (string) $request->header('X-Tenant-Id', '');
+        abort_if($header !== '' && $header !== (string) $export->tenant_id, 403, 'This link belongs to another company.');
+
         $disk = Storage::disk((string) $export->disk);
         abort_unless($disk->exists((string) $export->path), 404);
 

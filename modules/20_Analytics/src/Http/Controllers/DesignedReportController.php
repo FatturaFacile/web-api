@@ -8,7 +8,6 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
 use Modules\Analytics\Http\Requests\SaveDesignedReportRequest;
 use Modules\Analytics\Http\Resources\DesignedReportResource;
@@ -19,6 +18,7 @@ use Modules\Analytics\Services\ReportExporter;
 use Modules\Analytics\Services\ReportExportFormatter;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response as HttpResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Reports designed on the semantic layer: saved, shared, run page by page and exported.
@@ -208,18 +208,13 @@ final class DesignedReportController extends Controller
             new OA\Response(ref: '#/components/responses/AnaUnprocessable', response: 422),
         ]
     )]
-    public function export(Request $request, string $id): Response
+    public function export(Request $request, string $id): StreamedResponse
     {
         $format = (string) ($request->validate(['format' => ['nullable', Rule::in(ReportExportFormatter::Formats)]])['format'] ?? 'csv');
         $report = $this->find($request, $id);
         $spec = $this->engine->parse($report->dataset, $report->spec, $request->user());
-        $exported = $this->exporter->export($spec, $request->user(), $format, $report);
 
-        return response($exported['content'], 200, [
-            'Content-Type' => $exported['mime'],
-            'Content-Disposition' => 'attachment; filename="'.$exported['file_name'].'"',
-            'X-Report-Truncated' => $exported['run']->truncated ? 'true' : 'false',
-        ]);
+        return $this->exporter->response($this->exporter->prepare($spec, $request->user(), $format, $report));
     }
 
     /**

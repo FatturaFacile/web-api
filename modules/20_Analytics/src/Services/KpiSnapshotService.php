@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Analytics\Services;
 
+use App\Models\User;
 use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
@@ -24,6 +25,75 @@ final readonly class KpiSnapshotService
      * Inject the collaborators.
      */
     public function __construct(private KpiCatalog $catalog, private TenantClock $clock) {}
+
+    /**
+     * The KPI report served from the snapshots, in the shape of {@see KpiCatalog::report()} plus `source` and
+     * `snapshot_date` on every indicator. The snapshot is the latest one up to the end of the requested period (the
+     * `from` date is ignored: a snapshot is the month to date of its day). Indicators that are not snapshotted, or have no
+     * snapshot yet, are calculated live, so a dashboard never shows a hole; an indicator the caller cannot read is
+     * reported as unavailable, as in the live report.
+     *
+     * @param  list<string>  $keys  empty for every indicator
+     * @return array{period: array{from: string, to: string}, comparison_period: ?array{from: string, to: string}, kpis: list<array<string, mixed>>}
+     */
+    public function report(array $keys, ReportPeriod $period, User $user): array
+    {
+        $keys = $keys === [] ? array_keys($this->catalog->calculators()) : $keys;
+        $entries = [];
+        $snapshotPeriod = null;
+        $comparisonPeriod = null;
+
+        foreach ($keys as $key) {
+            $calculator = $this->catalog->calculator($key);
+            $snapshot = $this->catalog->canRead($calculator, $user) && in_array($key, $this->keys(), true) ? $this->latest($key, $period->to) : null;
+
+            if ($snapshot === null) {
+                $entries[] = [...$this->catalog->report([$key], $period, $user)['kpis'][0], 'source' => 'live', 'snapshot_date' => null];
+
+                continue;
+            }
+
+            $snapshotPeriod ??= ['from' => $snapshot->period_from->toDateString(), 'to' => $snapshot->period_to->toDateString()];
+            $entry = [
+                'key' => $calculator->key(), 'label' => $calculator->label(), 'unit' => $calculator->unit(), 'kind' => $calculator->kind(),
+                'available' => true, 'reason' => null, 'value' => $snapshot->value, 'details' => $snapshot->details,
+                'comparison' => null, 'change' => null, 'change_percent' => null, 'source' => 'snapshot', 'snapshot_date' => $snapshot->snapshot_date->toDateString(),
+            ];
+
+            if ($period->compare !== ReportPeriod::CompareNone) {
+                if ($calculator->kind() === 'snapshot') {
+                    $entry['reason'] = 'snapshot_not_comparable';
+                } else {
+                    $earlier = $period->compare === ReportPeriod::ComparePreviousYear ? $snapshot->snapshot_date->subYearNoOverflow() : $snapshot->snapshot_date->subMonthNoOverflow();
+                    $before = KpiSnapshot::query()->where('kpi_key', $key)->whereDate('snapshot_date', $earlier->toDateString())->first();
+
+                    if ($before !== null) {
+                        $comparisonPeriod ??= ['from' => $before->period_from->toDateString(), 'to' => $before->period_to->toDateString()];
+                        $entry['comparison'] = ['period' => ['from' => $before->period_from->toDateString(), 'to' => $before->period_to->toDateString()], 'value' => $before->value, 'details' => $before->details];
+
+                        if ($snapshot->value !== null && $before->value !== null) {
+                            $scale = $calculator->unit() === 'count' ? 0 : 2;
+                            $entry['change'] = bcsub($snapshot->value, $before->value, $scale);
+                            $base = ltrim($before->value, '-');
+                            $entry['change_percent'] = bccomp($base, '0', $scale) === 0 ? null : bcround(bcdiv(bcmul($entry['change'], '100', 4), $base, 4), 2);
+                        }
+                    }
+                }
+            }
+
+            $entries[] = $entry;
+        }
+
+        return ['period' => $snapshotPeriod ?? $period->toArray(), 'comparison_period' => $comparisonPeriod, 'kpis' => $entries];
+    }
+
+    /**
+     * The latest snapshot of a KPI up to a day.
+     */
+    public function latest(string $key, CarbonImmutable $day): ?KpiSnapshot
+    {
+        return KpiSnapshot::query()->where('kpi_key', $key)->whereDate('snapshot_date', '<=', $day->toDateString())->orderByDesc('snapshot_date')->first();
+    }
 
     /**
      * KPIs that are materialised.

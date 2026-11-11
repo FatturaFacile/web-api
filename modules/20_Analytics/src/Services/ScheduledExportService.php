@@ -148,12 +148,16 @@ final readonly class ScheduledExportService
             throw new RuntimeException('The owner of this schedule cannot write documents.');
         }
 
-        $exported = $this->exporter->export($spec, $owner, $schedule->format, $report, $schedule, store: true);
-        /** @var ExportRun $run */
-        $run = $exported['run'];
+        $prepared = $this->exporter->prepare($spec, $owner, $schedule->format, $report, $schedule, store: true);
+        $run = $prepared['run'];
+        $temporary = $this->exporter->store($prepared);
 
-        if ($wantsDocument) {
-            $this->storeDocument($report, $run, $exported['content'], $exported['file_name'], $owner);
+        try {
+            if ($wantsDocument) {
+                $this->storeDocument($report, $run, $temporary, $prepared['file_name'], $owner);
+            }
+        } finally {
+            @unlink($temporary);
         }
 
         if (in_array($schedule->delivery, ['email', 'both'], true)) {
@@ -162,7 +166,7 @@ final readonly class ScheduledExportService
 
             foreach ($schedule->recipients as $recipient) {
                 try {
-                    Mail::to($recipient)->send(new ScheduledReportMail($report->name, $link, (string) $run->expires_at?->toDateString(), $run->row_count, $run->truncated));
+                    Mail::to($recipient)->locale((string) ($owner->locale ?: app()->getLocale()))->send(new ScheduledReportMail($report->name, $link, (string) $run->expires_at?->toDateString(), $run->row_count, $run->truncated));
                 } catch (Throwable $exception) {
                     report($exception);
                     $failures[] = $recipient;
@@ -175,27 +179,16 @@ final readonly class ScheduledExportService
         }
     }
 
-    private function storeDocument(DesignedReport $report, ExportRun $run, string $content, string $fileName, User $owner): void
+    private function storeDocument(DesignedReport $report, ExportRun $run, string $path, string $fileName, User $owner): void
     {
-        $temporary = tempnam(sys_get_temp_dir(), 'analytics');
-
-        if ($temporary === false) {
-            throw new RuntimeException('A temporary file could not be created.');
-        }
-
-        try {
-            file_put_contents($temporary, $content);
-            $document = $this->documents->create(
-                ['title' => $report->name.' ('.now()->toDateString().')', 'document_type' => 'analytics_export', 'description' => 'Scheduled export of the report "'.$report->name.'"', 'metadata' => ['analytics_export_run_id' => $run->id, 'dataset' => $run->dataset]],
-                new UploadedFile($temporary, $fileName, $this->formatter->mimeType($run->format), null, true),
-                null,
-                true,
-                [],
-                $owner,
-            );
-            $run->update(['document_id' => $document->id]);
-        } finally {
-            @unlink($temporary);
-        }
+        $document = $this->documents->create(
+            ['title' => $report->name.' ('.now()->toDateString().')', 'document_type' => 'analytics_export', 'description' => 'Scheduled export of the report "'.$report->name.'"', 'metadata' => ['analytics_export_run_id' => $run->id, 'dataset' => $run->dataset]],
+            new UploadedFile($path, $fileName, $this->formatter->mimeType($run->format), null, true),
+            null,
+            true,
+            [],
+            $owner,
+        );
+        $run->update(['document_id' => $document->id]);
     }
 }

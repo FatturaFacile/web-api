@@ -36,6 +36,7 @@ final class KpiQueryRequest extends FormRequest
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d', 'after_or_equal:from'],
             'compare' => ['nullable', Rule::in([ReportPeriod::CompareNone, ReportPeriod::ComparePreviousPeriod, ReportPeriod::ComparePreviousYear])],
+            'source' => ['nullable', Rule::in(['live', 'snapshot'])],
             'kpis' => ['nullable', 'array', 'max:'.count(KpiCatalog::keys())],
             'kpis.*' => ['string', Rule::in(KpiCatalog::keys())],
         ];
@@ -57,6 +58,15 @@ final class KpiQueryRequest extends FormRequest
         } catch (InvalidArgumentException $exception) {
             throw ValidationException::withMessages(['to' => $exception->getMessage()]);
         }
+    }
+
+    /**
+     * Whether the caller opted in to the materialised daily snapshots (`source=snapshot`). The default is the live
+     * calculation, whose response shape does not change.
+     */
+    public function wantsSnapshots(): bool
+    {
+        return $this->input('source') === 'snapshot';
     }
 
     /**
