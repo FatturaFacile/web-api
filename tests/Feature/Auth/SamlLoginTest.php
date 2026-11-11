@@ -21,6 +21,9 @@ use Tests\Support\SamlTestIdp;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     config(['sso.allow_insecure_endpoints' => true]);
     $this->password = Str::password(16).chr(random_int(65, 90)).chr(random_int(97, 122)).random_int(0, 9);
@@ -85,7 +88,7 @@ function samlPost(Tenant $tenant, SamlTestIdp $idp, array $start, array $overrid
 {
     $response = $idp->response(samlOptions($tenant, $start, $overrides));
 
-    return test()->postJson('/api/v1/auth/saml/'.($postTo ?? $tenant)->id.'/acs', ['SAMLResponse' => $response, 'RelayState' => $relayState ?? $start['relay_state']]);
+    return test()->postJson('/api/v1/auth/saml/'.($postTo ?? $tenant)->id.'/acs', ['SAMLResponse' => $response, 'RelayState' => $relayState ?? $start['relay_state'], 'token_mode' => true]);
 }
 
 /**
@@ -284,7 +287,7 @@ test('an access opened by the SAML of one tenant does not work in the other tena
 test('SSO-only mode refuses the password and lets SAML through', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'sso_only' => true]);
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertForbidden();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertForbidden();
     samlLogin($this->tenant, $this->idp)->assertOk();
 });
 

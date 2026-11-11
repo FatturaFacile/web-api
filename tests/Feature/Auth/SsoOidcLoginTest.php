@@ -7,9 +7,14 @@ use App\Models\SsoProvider;
 use App\Models\Tenant;
 use App\Models\TenantSecurityPolicy;
 use App\Models\User;
+use App\Services\Auth\LoginResponder;
+use App\Services\Auth\Sso\SsoException;
+use App\Services\Auth\Sso\SsoUrlGuard;
+use App\Services\Auth\SsoSignInCodes;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Factory;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
@@ -19,6 +24,9 @@ use Laravel\Sanctum\Sanctum;
 use Tests\Support\OidcTestIdp;
 
 uses(RefreshDatabase::class);
+
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
 
 beforeEach(function (): void {
     config(['sso.allow_insecure_endpoints' => true]);
@@ -94,7 +102,7 @@ function ssoFakeProvider(OidcTestIdp $idp, string $idToken): void
 
 function ssoCallback(string $state, string $code = 'auth-code'): TestResponse
 {
-    return test()->postJson('/api/v1/auth/sso/callback', ['code' => $code, 'state' => $state]);
+    return test()->postJson('/api/v1/auth/sso/callback', ['code' => $code, 'state' => $state, 'token_mode' => true]);
 }
 
 function ssoAuditCount(string $action, ?string $tenantId = null): int
@@ -352,7 +360,7 @@ test('a refreshed SSO token stays bound to its tenant', function (): void {
 test('SSO-only mode refuses a password login and a password token, and lets SSO through', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'sso_only' => true]);
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])
         ->assertForbidden()->assertJsonPath('type', 'urn:fatturafacile:problem:sso-required');
 
     $legacyToken = $this->member->createToken('legacy')->plainTextToken;
@@ -466,4 +474,79 @@ test('the provider cannot be disabled or removed while SSO-only mode is on', fun
     Sanctum::actingAs($admin);
 
     $this->withHeader('X-Tenant-Id', $this->tenant->id)->deleteJson('/api/v1/settings/security/sso')->assertStatus(409);
+});
+
+test('the SPA relaying the callback gets the cookie session and no token', function (): void {
+    config(['auth.token_mode.enabled' => false]);
+    $start = ssoStart($this->tenant);
+    ssoFakeProvider($this->idp, $this->idp->idToken(ssoClaims($this->provider, $start['nonce'])));
+
+    $this->withHeaders(spaHeaders())
+        ->postJson('/api/v1/auth/sso/callback', ['code' => 'auth-code', 'state' => $start['state']])
+        ->assertOk()
+        ->assertJsonPath('data.auth_mode', 'cookie')
+        ->assertJsonMissingPath('data.token')
+        ->assertJsonPath('data.active_tenant.id', $this->tenant->id);
+
+    expect($this->member->tokens()->count())->toBe(0);
+});
+
+test('a callback without a session hands over a single-use code that only the SPA turns into the cookie session', function (): void {
+    config(['auth.token_mode.enabled' => false]);
+    $start = ssoStart($this->tenant);
+    ssoFakeProvider($this->idp, $this->idp->idToken(ssoClaims($this->provider, $start['nonce'])));
+
+    $handOver = $this->postJson('/api/v1/auth/sso/callback', ['code' => 'auth-code', 'state' => $start['state']])
+        ->assertOk()
+        ->assertJsonMissingPath('data.token')
+        ->assertJsonPath('data.expires_in', 60);
+    $code = $handOver->json('data.sign_in_code');
+
+    expect($code)->toHaveLength(64)->and($this->member->tokens()->count())->toBe(0);
+
+    // The code is not a credential: without a stateful request it opens nothing and is not even spent.
+    $this->postJson('/api/v1/auth/sso/exchange', ['code' => $code])->assertStatus(400);
+
+    $this->withHeaders(spaHeaders())->postJson('/api/v1/auth/sso/exchange', ['code' => $code])
+        ->assertOk()
+        ->assertJsonPath('data.auth_mode', 'cookie')
+        ->assertJsonMissingPath('data.token')
+        ->assertJsonPath('data.active_tenant.id', $this->tenant->id);
+
+    // Replay: the code was spent.
+    $this->withHeaders(spaHeaders())->postJson('/api/v1/auth/sso/exchange', ['code' => $code])->assertUnauthorized();
+});
+
+test('a sign-in code expires and an unknown code is refused', function (): void {
+    $code = app(SsoSignInCodes::class)->issue($this->member, $this->tenant);
+
+    $this->travel(61)->seconds();
+    $this->withHeaders(spaHeaders())->postJson('/api/v1/auth/sso/exchange', ['code' => $code])->assertUnauthorized();
+    $this->withHeaders(spaHeaders())->postJson('/api/v1/auth/sso/exchange', ['code' => Str::random(64)])->assertUnauthorized();
+});
+
+test('a browser navigation without a session is redirected to the SPA with the code in the URL fragment', function (): void {
+    $request = Request::create('/api/v1/auth/saml/'.$this->tenant->id.'/acs', 'POST', ['SAMLResponse' => 'x']);
+    $response = app(LoginResponder::class)->respondToSso($request, $this->member, $this->tenant);
+
+    expect($response->getStatusCode())->toBe(303)
+        ->and($response->headers->get('Location'))->toStartWith('https://localhost:4200/auth/sso/complete#code=');
+
+    $code = Str::after((string) $response->headers->get('Location'), '#code=');
+    $this->withHeaders(spaHeaders())->postJson('/api/v1/auth/sso/exchange', ['code' => $code])->assertOk()->assertJsonPath('data.auth_mode', 'cookie');
+});
+
+test('a token requested in the SSO callback is a 422 while the token mode is off', function (): void {
+    config(['auth.token_mode.enabled' => false]);
+
+    $this->postJson('/api/v1/auth/sso/callback', ['code' => 'auth-code', 'state' => Str::random(40), 'token_mode' => true])
+        ->assertUnprocessable()
+        ->assertJsonValidationErrors('token_mode');
+});
+
+test('an SSO provider endpoint over plain http is refused even in development', function (): void {
+    config(['sso.allow_insecure_endpoints' => true]);
+
+    expect(fn () => app(SsoUrlGuard::class)->assertSafe('http://idp.example.com/jwks', 'jwks'))->toThrow(SsoException::class)
+        ->and(fn () => app(SsoUrlGuard::class)->assertSafe('https://idp.example.com/jwks', 'jwks'))->not->toThrow(SsoException::class);
 });

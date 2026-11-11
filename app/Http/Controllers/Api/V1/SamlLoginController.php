@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Services\Auth\LoginResponder;
 use App\Services\Auth\Saml\SamlLogin;
 use App\Services\Auth\Sso\SsoException;
+use App\Services\Auth\TokenMode;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -29,6 +30,7 @@ class SamlLoginController extends Controller
     public function __construct(
         private readonly SamlLogin $saml,
         private readonly LoginResponder $responder,
+        private readonly TokenMode $tokenModes,
     ) {}
 
     #[OA\Post(
@@ -65,7 +67,7 @@ class SamlLoginController extends Controller
     #[OA\Post(
         path: '/api/v1/auth/saml/{tenantId}/acs',
         operationId: 'samlAssertionConsumerService',
-        description: 'Assertion consumer service of the tenant (HTTP-POST binding): receives `SAMLResponse` and `RelayState` from the identity provider. Strict mode: the assertion must be signed by a configured certificate, addressed to this tenant (Audience, Destination), within its validity (NotOnOrAfter), an answer to the request this RelayState started (InResponseTo), and not seen before. IdP-initiated responses are refused. Answers like the password login, in token mode (a page of the SPA can relay the posted values and the cookie mode applies). The access is bound to the tenant.',
+        description: 'Assertion consumer service of the tenant (HTTP-POST binding): receives `SAMLResponse` and `RelayState` from the identity provider. Strict mode: the assertion must be signed by a configured certificate, addressed to this tenant (Audience, Destination), within its validity (NotOnOrAfter), an answer to the request this RelayState started (InResponseTo), and not seen before. IdP-initiated responses are refused. Without a cookie session (the identity provider posts it as a cross-site navigation) a browser is redirected (303) to the SPA with the single-use sign-in code in the URL fragment (`#code=`), and a JSON client gets `sign_in_code`; the SPA exchanges it at POST /auth/sso/exchange. When the SPA relays the posted values itself on a stateful request, it answers like the password login (cookie set). The access is bound to the tenant.',
         summary: 'SAML assertion consumer service',
         tags: ['Authentication'],
         parameters: [new OA\Parameter(name: 'tenantId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
@@ -86,12 +88,15 @@ class SamlLoginController extends Controller
             new OA\Response(response: 429, description: 'Too many requests', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function acs(Request $request, string $tenantId): JsonResponse
+    public function acs(Request $request, string $tenantId): Response
     {
         $validated = $request->validate([
             'SAMLResponse' => ['required', 'string', 'max:2097152'],
             'RelayState' => ['required', 'string', 'max:256'],
+            TokenMode::PARAMETER => ['sometimes', 'boolean'],
         ]);
+
+        $tokenMode = $this->tokenModes->resolve($request);
 
         try {
             [$user, $tenant] = $this->saml->complete($tenantId, $validated['SAMLResponse'], $validated['RelayState'], $request);
@@ -104,7 +109,7 @@ class SamlLoginController extends Controller
             );
         }
 
-        return $this->responder->respondToSso($request, $user, $tenant);
+        return $this->responder->respondToSso($request, $user, $tenant, $tokenMode);
     }
 
     #[OA\Get(

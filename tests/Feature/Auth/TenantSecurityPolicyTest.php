@@ -14,6 +14,9 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     $this->password = Str::password(16).chr(random_int(65, 90)).chr(random_int(97, 122)).random_int(0, 9);
     $this->tenant = Tenant::factory()->create();
@@ -129,52 +132,52 @@ test('repeated wrong passwords lock the account; a wrong password still looks th
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'lockout_max_attempts' => 3, 'lockout_minutes' => 10]);
 
     for ($attempt = 0; $attempt < 3; $attempt++) {
-        $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x'])->assertUnauthorized();
+        $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x', 'token_mode' => true])->assertUnauthorized();
     }
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x'])
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x', 'token_mode' => true])
         ->assertUnauthorized()->assertJsonPath('title', 'Invalid Credentials');
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])
         ->assertStatus(423)->assertJsonPath('type', 'urn:fatturafacile:problem:account-locked');
 
     expect(AuditLedgerEntry::query()->where('action', 'LOGIN_LOCKED')->count())->toBe(1);
 
     $this->travel(11)->minutes();
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk();
     expect($this->member->fresh()->failed_login_attempts)->toBe(0);
 });
 
 test('a successful login resets the failure counter', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'lockout_max_attempts' => 3]);
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x'])->assertUnauthorized();
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x', 'token_mode' => true])->assertUnauthorized();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk();
 
     expect($this->member->fresh()->failed_login_attempts)->toBe(0);
 });
 
 test('without a lockout policy nobody is locked', function (): void {
     for ($attempt = 0; $attempt < 4; $attempt++) {
-        $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x'])->assertUnauthorized();
+        $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password.'x', 'token_mode' => true])->assertUnauthorized();
     }
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk();
 });
 
 test('a password older than the maximum age cannot sign in until it is reset', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'password_max_age_days' => 30]);
     $this->member->forceFill(['password_changed_at' => now()->subDays(31)])->save();
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])
         ->assertForbidden()->assertJsonPath('type', 'urn:fatturafacile:problem:password-expired');
 
     $this->member->forceFill(['password_changed_at' => now()->subDays(5)])->save();
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk();
 });
 
 test('an access idle for longer than the limit is revoked', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'session_idle_timeout_minutes' => 15]);
-    $token = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk()->json('data.token');
+    $token = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk()->json('data.token');
 
     $this->withToken($token)->withHeader('X-Tenant-Id', $this->tenant->id)->getJson('/api/v1/auth/profile')->assertOk();
 
@@ -187,7 +190,7 @@ test('an access idle for longer than the limit is revoked', function (): void {
 
 test('activity keeps an access alive', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'session_idle_timeout_minutes' => 15]);
-    $token = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk()->json('data.token');
+    $token = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk()->json('data.token');
 
     for ($step = 0; $step < 3; $step++) {
         $this->travel(10)->minutes();
@@ -198,11 +201,11 @@ test('activity keeps an access alive', function (): void {
 test('opening an access beyond the concurrent limit revokes the least recently used one', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'max_concurrent_sessions' => 2]);
 
-    $first = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk()->json('data.token');
+    $first = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk()->json('data.token');
     $this->travel(1)->minutes();
-    $second = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk()->json('data.token');
+    $second = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk()->json('data.token');
     $this->travel(1)->minutes();
-    $third = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertOk()->json('data.token');
+    $third = $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertOk()->json('data.token');
 
     expect(DB::table('personal_access_tokens')->count())->toBe(2);
     $this->app['auth']->forgetGuards();
@@ -226,7 +229,7 @@ test('two factors can be required of some roles only', function (): void {
     Sanctum::actingAs($this->member);
     $this->withHeader('X-Tenant-Id', $this->tenant->id)->getJson('/api/v1/settings/tenant')->assertOk();
 
-    $login = $this->postJson('/api/v1/auth/login', ['email' => $accountant->email, 'password' => $this->password])->assertOk();
+    $login = $this->postJson('/api/v1/auth/login', ['email' => $accountant->email, 'password' => $this->password, 'token_mode' => true])->assertOk();
     expect($login->json('data.two_factor_setup_required'))->toBeTrue();
 });
 
@@ -251,6 +254,6 @@ test('SSO-only cannot be turned on without a ready provider and an own SSO ident
 test('a suspended membership is no membership', function (): void {
     DB::table('tenant_user')->where('user_id', $this->member->id)->update(['suspended_at' => now()]);
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertForbidden();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertForbidden();
     expect($this->member->fresh()->belongsToTenant($this->tenant->id))->toBeFalse();
 });

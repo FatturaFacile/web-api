@@ -16,6 +16,9 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     $this->password = Str::password(16).chr(random_int(65, 90)).chr(random_int(97, 122)).random_int(0, 9);
     $this->tenant = Tenant::factory()->create();
@@ -237,7 +240,7 @@ test('deleting the only membership revokes every access of the user', function (
     scimCall('DELETE', '/Users/'.$user->id, $this->token)->assertNoContent();
 
     expect($user->tokens()->count())->toBe(0);
-    $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $this->password])->assertForbidden();
+    $this->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => $this->password, 'token_mode' => true])->assertForbidden();
 });
 
 test('profile attributes of a user who belongs to several tenants are not written by one tenant', function (): void {
