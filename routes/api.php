@@ -143,6 +143,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/attachments/{token}/{attachment}', [CustomerPortalController::class, 'downloadAttachment'])->name('attachments.download');
     });
 
+    // Enterprise authentication: SSO (OpenID Connect), tenant security policy, SCIM 2.0.
+    require __DIR__.'/enterprise_auth.php';
+
     // ----------------------------------------------------
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
     // ----------------------------------------------------

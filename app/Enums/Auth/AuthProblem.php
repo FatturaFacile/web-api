@@ -21,4 +21,10 @@ enum AuthProblem: string
     case TwoFactorChallengeInvalid = 'urn:fatturafacile:problem:two-factor-challenge-invalid';
     case TwoFactorCodeInvalid = 'urn:fatturafacile:problem:two-factor-code-invalid';
     case TwoFactorSetupRequired = 'urn:fatturafacile:problem:two-factor-setup-required';
+    case AccountLocked = 'urn:fatturafacile:problem:account-locked';
+    case PasswordExpired = 'urn:fatturafacile:problem:password-expired';
+    case SsoRequired = 'urn:fatturafacile:problem:sso-required';
+    case SsoLoginFailed = 'urn:fatturafacile:problem:sso-login-failed';
+    case SessionExpired = 'urn:fatturafacile:problem:session-expired';
+    case SessionTenantMismatch = 'urn:fatturafacile:problem:session-tenant-mismatch';
 }

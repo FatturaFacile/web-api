@@ -195,7 +195,7 @@ final class TwoFactorAuthentication
     /**
      * A login challenge for a user who passed the password check. Only the hash of the token is a cache key.
      */
-    public function createChallenge(User $user, ?string $tenantId): string
+    public function createChallenge(User $user, ?string $tenantId, string $authMethod = 'password'): string
     {
         $token = Str::random(64);
 
@@ -203,13 +203,14 @@ final class TwoFactorAuthentication
             'user_id' => (string) $user->getKey(),
             'tenant_id' => $tenantId,
             'failed_attempts' => 0,
+            'auth_method' => $authMethod,
         ], now()->addMinutes($this->challengeTtlMinutes()));
 
         return $token;
     }
 
     /**
-     * @return array{user_id: string, tenant_id: string|null, failed_attempts: int}|null
+     * @return array{user_id: string, tenant_id: string|null, failed_attempts: int, auth_method?: string}|null
      */
     public function findChallenge(string $token): ?array
     {

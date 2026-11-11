@@ -77,6 +77,42 @@ final class RegistrationAudit
 
     public const OTHER_SESSIONS_REVOKED = 'OTHER_SESSIONS_REVOKED';
 
+    public const LOGIN_LOCKED = 'LOGIN_LOCKED';
+
+    public const PASSWORD_EXPIRED_LOGIN_DENIED = 'PASSWORD_EXPIRED_LOGIN_DENIED';
+
+    public const PASSWORD_LOGIN_DENIED_SSO_ONLY = 'PASSWORD_LOGIN_DENIED_SSO_ONLY';
+
+    public const SECURITY_POLICY_CHANGED = 'SECURITY_POLICY_CHANGED';
+
+    public const SESSION_IDLE_EXPIRED = 'SESSION_IDLE_EXPIRED';
+
+    public const SESSION_LIMIT_REVOKED = 'SESSION_LIMIT_REVOKED';
+
+    public const SSO_PROVIDER_SAVED = 'SSO_PROVIDER_SAVED';
+
+    public const SSO_PROVIDER_REMOVED = 'SSO_PROVIDER_REMOVED';
+
+    public const SSO_LOGIN_STARTED = 'SSO_LOGIN_STARTED';
+
+    public const SSO_LOGIN_SUCCEEDED = 'SSO_LOGIN_SUCCEEDED';
+
+    public const SSO_LOGIN_FAILED = 'SSO_LOGIN_FAILED';
+
+    public const SSO_USER_PROVISIONED = 'SSO_USER_PROVISIONED';
+
+    public const SSO_IDENTITY_LINKED = 'SSO_IDENTITY_LINKED';
+
+    public const SCIM_TOKEN_ROTATED = 'SCIM_TOKEN_ROTATED';
+
+    public const SCIM_TOKEN_REVOKED = 'SCIM_TOKEN_REVOKED';
+
+    public const SCIM_USER_CREATED = 'SCIM_USER_CREATED';
+
+    public const SCIM_USER_UPDATED = 'SCIM_USER_UPDATED';
+
+    public const SCIM_USER_DEACTIVATED = 'SCIM_USER_DEACTIVATED';
+
     public function __construct(private readonly AuditLedgerInterface $ledger) {}
 
     /**

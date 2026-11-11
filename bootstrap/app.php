@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
@@ -48,6 +49,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // The tenant context and, after it, the two-factor requirement of that tenant.
         $middleware->group('tenant', [
             IdentifyTenant::class,
+            EnforceSessionPolicy::class,
             EnsureTwoFactorEnrolled::class,
         ]);
 

@@ -15,9 +15,14 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Carbon;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
+/**
+ * @property int $failed_login_attempts
+ * @property Carbon|null $login_locked_until
+ */
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -73,16 +78,21 @@ class User extends Authenticatable
             'two_factor_recovery_codes' => 'encrypted:array',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_last_used_step' => 'integer',
+            'failed_login_attempts' => 'integer',
+            'login_locked_until' => 'datetime',
         ];
     }
 
     /**
+     * The tenants the user can act in: a membership suspended by the identity provider (SCIM deactivation) is not one.
+     *
      * @return BelongsToMany<Tenant, $this>
      */
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user')
             ->withPivot(['id', 'role', 'permissions'])
+            ->wherePivotNull('suspended_at')
             ->withTimestamps();
     }
 

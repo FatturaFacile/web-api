@@ -1,0 +1,48 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'password' => [
+        'too_short' => 'Das Passwort muss mindestens :min Zeichen lang sein.',
+        'mixed_case' => 'Das Passwort muss Gross- und Kleinbuchstaben enthalten.',
+        'numbers' => 'Das Passwort muss mindestens eine Zahl enthalten.',
+        'symbols' => 'Das Passwort muss mindestens ein Sonderzeichen enthalten.',
+        'reused' => 'Das Passwort wurde kürzlich verwendet: Wählen Sie ein anderes als die letzten :count.',
+    ],
+    'messages' => [
+        'policy_updated' => 'Sicherheitsrichtlinie aktualisiert.',
+        'sso_saved' => 'Single-Sign-on-Anbieter gespeichert.',
+        'sso_removed' => 'Single-Sign-on-Anbieter entfernt.',
+        'scim_token_rotated' => 'SCIM-Token erstellt. Kopieren Sie es jetzt: Es wird nicht erneut angezeigt.',
+        'scim_token_revoked' => 'SCIM-Token widerrufen.',
+    ],
+    'errors' => [
+        'account_locked_title' => 'Konto gesperrt',
+        'account_locked_detail' => 'Zu viele falsche Passwörter. Das Konto ist für eine Weile gesperrt: Versuchen Sie es später erneut.',
+        'password_expired_title' => 'Passwort abgelaufen',
+        'password_expired_detail' => 'Ihr Passwort ist älter als das von Ihrer Organisation festgelegte Höchstalter. Setzen Sie es über den Link "Passwort vergessen" zurück, um sich anzumelden.',
+        'sso_required_title' => 'Single Sign-on erforderlich',
+        'sso_required_detail' => 'Ihre Organisation verlangt Single Sign-on: Melden Sie sich über den Identitätsanbieter Ihres Unternehmens an.',
+        'session_expired_title' => 'Sitzung abgelaufen',
+        'session_expired_detail' => 'Die Sitzung wurde nach einer Zeit der Inaktivität geschlossen. Melden Sie sich erneut an.',
+        'session_tenant_mismatch_title' => 'Falsche Organisation',
+        'session_tenant_mismatch_detail' => 'Diese Sitzung wurde über das Single Sign-on einer anderen Organisation geöffnet und kann hier nicht verwendet werden. Melden Sie sich erneut an.',
+        'sso_not_ready_title' => 'Single Sign-on nicht bereit',
+        'sso_not_ready_detail' => 'Der reine SSO-Modus braucht einen aktiven Identitätsanbieter und Ihr damit verknüpftes Konto, sonst sperren Sie sich aus. Melden Sie sich zuerst einmal über SSO an.',
+        'sso_only_active_title' => 'Reiner SSO-Modus aktiv',
+        'sso_only_active_detail' => 'Schalten Sie den reinen SSO-Modus aus, bevor Sie den Identitätsanbieter deaktivieren oder entfernen.',
+        'sso_not_configured_title' => 'Kein Identitätsanbieter',
+        'sso_not_configured_detail' => 'Für diese Organisation ist kein Single-Sign-on-Anbieter konfiguriert.',
+        'sso_unavailable_title' => 'Single Sign-on nicht verfügbar',
+        'sso_unavailable_detail' => 'Single Sign-on ist für diese Organisation nicht verfügbar.',
+        'sso_failed_title' => 'Anmeldung fehlgeschlagen',
+        'sso_failed_detail' => 'Die Anmeldung beim Identitätsanbieter konnte nicht abgeschlossen werden.',
+        'roles_required' => 'Wählen Sie mindestens eine Rolle.',
+        'https_required' => 'Die Adresse muss https verwenden.',
+        'endpoint_required' => 'Dieser Endpunkt ist erforderlich, wenn keine Discovery verwendet wird.',
+        'jit_needs_role' => 'Just-in-time-Provisionierung braucht eine Standardrolle oder eine Zuordnung von Claim zu Rolle.',
+        'endpoint_unsafe' => 'Der Endpunkt ist nicht erlaubt (:reason).',
+        'discovery_failed' => 'Das Discovery-Dokument ist nicht verwendbar (:reason).',
+    ],
+];
