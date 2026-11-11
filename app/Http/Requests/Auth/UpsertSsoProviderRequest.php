@@ -58,12 +58,11 @@ class UpsertSsoProviderRequest extends FormRequest
     {
         return [
             function (Validator $validator): void {
-                $insecure = (bool) config('sso.allow_insecure_endpoints');
 
                 foreach (['issuer', 'redirect_uri', 'authorization_endpoint', 'token_endpoint', 'jwks_uri'] as $field) {
                     $value = $this->input($field);
 
-                    if (is_string($value) && $value !== '' && ! $insecure && ! str_starts_with(strtolower($value), 'https://')) {
+                    if (is_string($value) && $value !== '' && ! str_starts_with(strtolower($value), 'https://')) {
                         $validator->errors()->add($field, __('enterprise_auth.errors.https_required'));
                     }
                 }

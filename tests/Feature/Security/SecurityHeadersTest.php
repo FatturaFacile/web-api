@@ -13,16 +13,17 @@ test('api responses carry the hardening headers and a deny-all content security 
         ->assertHeader('X-Frame-Options', 'DENY')
         ->assertHeader('Referrer-Policy', 'no-referrer')
         ->assertHeader('Content-Security-Policy', SecurityHeaders::CONTENT_SECURITY_POLICY)
-        ->assertHeaderMissing('Strict-Transport-Security');
+        ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 
     expect(SecurityHeaders::CONTENT_SECURITY_POLICY)->toContain("default-src 'none'")->toContain("frame-ancestors 'none'");
 });
 
-test('file responses get the policy too and hsts is sent over https only', function (): void {
+test('file responses get the policy and the hsts header too', function (): void {
     Route::get('/_test/file', fn () => response('%PDF-1.4', 200, ['Content-Type' => 'application/pdf']));
 
-    $this->get('/_test/file')->assertHeader('Content-Security-Policy', SecurityHeaders::CONTENT_SECURITY_POLICY)->assertHeaderMissing('Strict-Transport-Security');
-    $this->get('https://localhost/_test/file')->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    $this->get('/_test/file')
+        ->assertHeader('Content-Security-Policy', SecurityHeaders::CONTENT_SECURITY_POLICY)
+        ->assertHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 });
 
 test('the interactive api documentation keeps working without the deny-all policy', function (): void {

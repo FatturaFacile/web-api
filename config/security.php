@@ -6,6 +6,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | HTTPS only
+    |--------------------------------------------------------------------------
+    |
+    | The system works over HTTPS only, in every environment (local development and tests included): there is no switch
+    | to turn it off. A plain-HTTP GET/HEAD is redirected (308) to the same path on the host of APP_URL; any other method
+    | is refused with 426 and its body is never processed. Behind a reverse proxy the scheme comes from X-Forwarded-Proto,
+    | and only from the proxies listed in TRUSTED_PROXIES.
+    |
+    | `insecure_allowed_paths` lists the only paths answered over plain HTTP (GET/HEAD only, nothing read from the
+    | request): the liveness probe of the container or load balancer, which calls the application directly.
+    |
+    | HSTS is sent on every secure response. `preload` is off by default: the preload list is a one-way door, enable it
+    | only after the whole domain (subdomains included) is HTTPS-only and the domain was submitted on purpose.
+    |
+    */
+
+    'https' => [
+        'insecure_allowed_paths' => array_values(array_filter(array_map('trim', explode(',', (string) env('SECURITY_HTTP_ALLOWED_PATHS', 'up'))))),
+    ],
+
+    'hsts' => [
+        'max_age' => (int) env('SECURITY_HSTS_MAX_AGE', 31536000),
+        'include_subdomains' => filter_var(env('SECURITY_HSTS_INCLUDE_SUBDOMAINS', true), FILTER_VALIDATE_BOOL),
+        'preload' => filter_var(env('SECURITY_HSTS_PRELOAD', false), FILTER_VALIDATE_BOOL),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Trusted Reverse Proxies
     |--------------------------------------------------------------------------
     |

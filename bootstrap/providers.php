@@ -1,6 +1,8 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Providers\CookieAuthenticationServiceProvider;
+use App\Providers\HttpsServiceProvider;
 use Enterprise\AiGateway\Providers\AiGatewayServiceProvider;
 use Enterprise\AuditLedger\Providers\AuditLedgerServiceProvider;
 use Enterprise\EventBus\Providers\EventBusServiceProvider;
@@ -48,6 +50,8 @@ use Modules\WorkspaceSync\Providers\WorkspaceSyncServiceProvider;
 
 return [
     AppServiceProvider::class,
+    HttpsServiceProvider::class,
+    CookieAuthenticationServiceProvider::class,
     EnterpriseFoundationServiceProvider::class,
     MultiTenantServiceProvider::class,
     AuditLedgerServiceProvider::class,
