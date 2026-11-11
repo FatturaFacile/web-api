@@ -18,7 +18,7 @@ final class OidcDiscovery
     public function __construct(private readonly SsoUrlGuard $guard) {}
 
     /**
-     * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string}
+     * @return array{authorization_endpoint: string, token_endpoint: string, jwks_uri: string, end_session_endpoint: string|null, token_endpoint_auth_methods_supported: list<string>|null}
      *
      * @throws SsoException when the document cannot be read or is not trustworthy
      */
@@ -62,7 +62,21 @@ final class OidcDiscovery
             $endpoints[$key] = $value;
         }
 
-        return $endpoints;
+        $endSession = $document['end_session_endpoint'] ?? null;
+
+        if (is_string($endSession) && $endSession !== '') {
+            $this->guard->assertSafe($endSession, 'end_session_endpoint');
+        } else {
+            $endSession = null;
+        }
+
+        // Section 3 of OpenID Connect Discovery: when the document does not say, the methods are client_secret_basic only.
+        $authMethods = $document['token_endpoint_auth_methods_supported'] ?? null;
+
+        return $endpoints + [
+            'end_session_endpoint' => $endSession,
+            'token_endpoint_auth_methods_supported' => is_array($authMethods) ? array_values(array_filter($authMethods, 'is_string')) : null,
+        ];
     }
 
     private function client(): PendingRequest

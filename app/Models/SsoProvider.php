@@ -25,6 +25,9 @@ use Illuminate\Support\Carbon;
  * @property string $redirect_uri
  * @property string $client_id
  * @property string|null $client_secret
+ * @property string $token_endpoint_auth_method
+ * @property string|null $end_session_endpoint
+ * @property string|null $post_logout_redirect_uri
  * @property string $scopes
  * @property list<string> $allowed_email_domains
  * @property string|null $role_claim

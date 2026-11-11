@@ -11,6 +11,7 @@ use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Services\Auth\Sso\SsoBrowserBinding;
 use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\Authorize;
@@ -50,6 +51,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
         // Hardening headers (nosniff, no framing, no referrer, CSP, HSTS over HTTPS) on every response.
         $middleware->append(SecurityHeaders::class);
+
+        // The cookie that binds a single sign-on to the browser holds a random secret that means nothing without its stored
+        // hash: it is not encrypted (see SsoBrowserBinding).
+        $middleware->encryptCookies(except: [SsoBrowserBinding::COOKIE]);
 
         $middleware->statefulApi();
         $middleware->throttleApi();

@@ -55,5 +55,6 @@ return [
         'saml_metadata_failed' => 'Die Metadaten sind nicht verwendbar (:reason).',
         'logout_invalid_title' => 'Abmeldung fehlgeschlagen',
         'logout_invalid_detail' => 'Die Abmeldenachricht fehlt, ist nicht signiert oder ungültig.',
+        'auth_method_unsupported' => 'Der Anbieter nennt diese Client-Authentifizierungsmethode nicht.',
     ],
 ];

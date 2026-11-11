@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\Auth\AuthProblem;
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Requests\Auth\TwoFactorChallengeRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
@@ -15,6 +16,7 @@ use App\Services\Auth\RegistrationAudit;
 use App\Services\Auth\Security\LoginLockout;
 use App\Services\Auth\Security\PasswordPolicy;
 use App\Services\Auth\Security\TenantSecurityPolicies;
+use App\Services\Auth\Sso\SsoLogout;
 use App\Services\Auth\TokenMode;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
@@ -43,6 +45,7 @@ class AuthController extends Controller
         private readonly PasswordPolicy $passwordPolicy,
         private readonly TenantSecurityPolicies $policies,
         private readonly TokenMode $tokenModes,
+        private readonly SsoLogout $ssoLogout,
     ) {}
 
     /**
@@ -509,7 +512,7 @@ class AuthController extends Controller
     #[OA\Post(
         path: '/api/v1/auth/logout',
         operationId: 'logout',
-        description: 'Cookie session: the session is invalidated (cookie and server-side state). Token mode: the current Bearer token is revoked.',
+        description: 'Cookie session: the session is invalidated (cookie and server-side state). Token mode: the current Bearer token is revoked. The local session always ends first. When the access was opened through the single sign-on of the tenant and the identity provider supports a logout (OIDC end_session_endpoint, SAML single logout service), `data.idp_logout_url` is the URL the SPA must send the browser to so the identity provider ends its session too (OIDC RP-initiated logout with id_token_hint and the https post_logout_redirect_uri; SAML LogoutRequest); otherwise it is null.',
         summary: 'User logout',
         security: [['cookieAuth' => []], ['bearerAuth' => []]],
         tags: ['Authentication'],
@@ -532,6 +535,10 @@ class AuthController extends Controller
         $user = $request->user();
         $token = $user?->currentAccessToken();
 
+        // How this access was opened, read before it is ended: an SSO access also ends at the identity provider.
+        $ssoTenantId = $this->ssoTenantOf($request, $token);
+
+        // The local session always ends first, whatever happens at the identity provider.
         if ($token instanceof PersonalAccessToken) {
             $token->delete();
         }
@@ -546,9 +553,30 @@ class AuthController extends Controller
             event(new Logout('sanctum', $user));
         }
 
+        $idpLogoutUrl = $user !== null && $ssoTenantId !== null ? $this->ssoLogout->urlFor($user, $ssoTenantId) : null;
+
         return $this->successResponse(
+            data: ['idp_logout_url' => $idpLogoutUrl],
             message: 'Successfully logged out'
         );
+    }
+
+    /**
+     * The tenant whose single sign-on opened the access of the request, or null for a password access.
+     */
+    private function ssoTenantOf(Request $request, mixed $token): ?string
+    {
+        if ($token instanceof PersonalAccessToken && $token->exists) {
+            return $token->getAttribute('auth_method') === LoginResponder::METHOD_SSO ? ($token->getAttribute('auth_tenant_id') ?: null) : null;
+        }
+
+        if (! $request->hasSession() || $request->session()->get(EnforceSessionPolicy::SESSION_METHOD) !== LoginResponder::METHOD_SSO) {
+            return null;
+        }
+
+        $tenantId = $request->session()->get(EnforceSessionPolicy::SESSION_TENANT);
+
+        return is_string($tenantId) && $tenantId !== '' ? $tenantId : null;
     }
 
     /**

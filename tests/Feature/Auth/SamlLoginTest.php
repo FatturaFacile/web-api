@@ -18,6 +18,7 @@ use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\SamlTestIdp;
+use Tests\Support\SsoFlow;
 
 uses(RefreshDatabase::class);
 
@@ -61,7 +62,9 @@ function samlMember(Tenant $tenant, string $role, string $email, string $passwor
  */
 function samlStart(Tenant $tenant): array
 {
-    $url = test()->postJson('/api/v1/auth/saml/start', ['tenant_id' => $tenant->id])->assertOk()->json('data.redirect_url');
+    $response = test()->postJson('/api/v1/auth/saml/start', ['tenant_id' => $tenant->id])->assertOk();
+    $url = $response->json('data.redirect_url');
+    SsoFlow::keepCookie($response);
 
     return ['request_id' => SamlTestIdp::requestIdOf($url), 'relay_state' => SamlTestIdp::relayStateOf($url), 'url' => $url];
 }

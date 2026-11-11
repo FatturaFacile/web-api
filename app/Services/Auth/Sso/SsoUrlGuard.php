@@ -47,6 +47,20 @@ final class SsoUrlGuard
     }
 
     /**
+     * For a URL the browser is sent to (not fetched by the server): https, a host and no credentials; no address check.
+     *
+     * @throws SsoException
+     */
+    public function assertHttps(string $url, string $what): void
+    {
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host']) || isset($parts['user']) || isset($parts['pass']) || strtolower((string) $parts['scheme']) !== 'https') {
+            throw new SsoException('endpoint_not_https', $what);
+        }
+    }
+
+    /**
      * @return list<string>
      *
      * @throws SsoException when the host does not resolve

@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property string $saml_provider_id
  * @property string $relay_state_hash
  * @property string $request_id
+ * @property string|null $browser_binding_hash
  * @property Carbon $expires_at
  * @property Carbon|null $consumed_at
  */
@@ -30,7 +31,7 @@ class SamlLoginState extends Model
     /**
      * @var list<string>
      */
-    protected $hidden = ['relay_state_hash', 'request_id'];
+    protected $hidden = ['relay_state_hash', 'request_id', 'browser_binding_hash'];
 
     protected function casts(): array
     {

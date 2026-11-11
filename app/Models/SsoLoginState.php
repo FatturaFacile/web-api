@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string $state_hash
  * @property string $nonce_hash
  * @property string $code_verifier
+ * @property string|null $browser_binding_hash
  * @property Carbon $expires_at
  * @property Carbon|null $consumed_at
  */
@@ -31,7 +32,7 @@ class SsoLoginState extends Model
     /**
      * @var list<string>
      */
-    protected $hidden = ['code_verifier', 'state_hash', 'nonce_hash'];
+    protected $hidden = ['code_verifier', 'state_hash', 'nonce_hash', 'browser_binding_hash'];
 
     protected function casts(): array
     {

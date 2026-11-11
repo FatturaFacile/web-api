@@ -55,5 +55,6 @@ return [
         'saml_metadata_failed' => 'I metadati non sono utilizzabili (:reason).',
         'logout_invalid_title' => 'Logout non riuscito',
         'logout_invalid_detail' => 'Il messaggio di logout manca, non è firmato o non è valido.',
+        'auth_method_unsupported' => 'Il provider non dichiara questo metodo di autenticazione del client.',
     ],
 ];

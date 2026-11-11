@@ -10,6 +10,7 @@ use App\Models\SsoIdentity;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Sso\SsoCompletion;
 use App\Services\Auth\Sso\SsoConnection;
 use App\Services\Auth\Sso\SsoException;
 use App\Services\Auth\Sso\SsoLogin;
@@ -95,7 +96,7 @@ final class SamlLogin
      *
      * @throws SsoException when the tenant has no ready SAML provider
      */
-    public function start(string $tenantId): string
+    public function start(string $tenantId, ?string $bindingHash = null): string
     {
         $provider = $this->provider($tenantId);
 
@@ -116,6 +117,7 @@ final class SamlLogin
             'saml_provider_id' => $provider->id,
             'relay_state_hash' => hash('sha256', $relayState),
             'request_id' => $requestId,
+            'browser_binding_hash' => $bindingHash,
             'expires_at' => now()->addMinutes((int) config('sso.state_ttl_minutes')),
         ]);
         $state->forceFill(['tenant_id' => $tenantId])->save();
@@ -128,11 +130,9 @@ final class SamlLogin
     /**
      * Completes a login with the SAMLResponse posted to the assertion consumer service of the tenant.
      *
-     * @return array{0: User, 1: Tenant}
-     *
      * @throws SsoException
      */
-    public function complete(string $tenantId, string $samlResponse, string $relayState, Request $request): array
+    public function complete(string $tenantId, string $samlResponse, string $relayState, Request $request): SsoCompletion
     {
         try {
             $state = $this->consume($tenantId, $relayState);
@@ -144,10 +144,11 @@ final class SamlLogin
                     throw new SsoException('provider_unavailable');
                 }
 
-                [$nameId, $attributes] = $this->validatedAssertion($provider, $samlResponse, $state->request_id, $request);
+                [$nameId, $attributes, $sessionIndex] = $this->validatedAssertion($provider, $samlResponse, $state->request_id, $request);
                 $claims = $this->claims($provider, $nameId, $attributes);
+                [$user, $tenant] = $this->login->signInConnection(SsoConnection::fromSaml($provider), $nameId, $claims, ['session_index' => $sessionIndex]);
 
-                return $this->login->signInConnection(SsoConnection::fromSaml($provider), $nameId, $claims);
+                return new SsoCompletion($user, $tenant, $state->browser_binding_hash);
             } catch (SsoException $exception) {
                 throw $exception->forTenant($tenantId);
             }
@@ -203,7 +204,7 @@ final class SamlLogin
     }
 
     /**
-     * @return array{0: string, 1: array<string, list<string>>} the NameID and the attributes of a valid assertion
+     * @return array{0: string, 1: array<string, list<string>>, 2: string|null} the NameID, the attributes and the session index of a valid assertion
      *
      * @throws SsoException
      */
@@ -237,7 +238,9 @@ final class SamlLogin
         /** @var array<string, list<string>> $attributes */
         $attributes = $auth->getAttributes();
 
-        return [$nameId, $attributes];
+        $sessionIndex = $auth->getSessionIndex();
+
+        return [$nameId, $attributes, is_string($sessionIndex) && $sessionIndex !== '' ? $sessionIndex : null];
     }
 
     /**

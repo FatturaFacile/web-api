@@ -38,6 +38,9 @@ class UpsertSsoProviderRequest extends FormRequest
             'redirect_uri' => ['required', 'string', 'url', 'max:2000'],
             'client_id' => ['required', 'string', 'max:255'],
             'client_secret' => ['sometimes', 'nullable', 'string', 'max:2000'],
+            'token_endpoint_auth_method' => ['sometimes', 'nullable', 'string', Rule::in(['client_secret_post', 'client_secret_basic'])],
+            'end_session_endpoint' => ['sometimes', 'nullable', 'string', 'url', 'max:2000'],
+            'post_logout_redirect_uri' => ['sometimes', 'nullable', 'string', 'url', 'max:2000'],
             'scopes' => ['sometimes', 'string', 'max:255', 'regex:/(^|\s)openid(\s|$)/'],
             'allowed_email_domains' => ['required', 'array', 'min:1', 'max:50'],
             'allowed_email_domains.*' => ['string', 'max:253', 'regex:/^(?!-)[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$/'],
@@ -65,6 +68,12 @@ class UpsertSsoProviderRequest extends FormRequest
                     if (is_string($value) && $value !== '' && ! str_starts_with(strtolower($value), 'https://')) {
                         $validator->errors()->add($field, __('enterprise_auth.errors.https_required'));
                     }
+                }
+
+                $logoutRedirect = $this->input('post_logout_redirect_uri');
+
+                if (is_string($logoutRedirect) && $logoutRedirect !== '' && ! str_starts_with(strtolower($logoutRedirect), 'https://')) {
+                    $validator->errors()->add('post_logout_redirect_uri', __('enterprise_auth.errors.https_required'));
                 }
 
                 $discovery = $this->boolean('use_discovery', true);

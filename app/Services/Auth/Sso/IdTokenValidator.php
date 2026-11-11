@@ -10,15 +10,15 @@ use App\Models\SsoProvider;
  * Validates an OpenID Connect id_token (OpenID Connect Core 1.0, section 3.1.3.7, and RFC 7519) without a JWT library:
  *
  * - the signature is verified with openssl_verify against the key of the provider JWKS selected by `kid`; only the
- *   RS256, RS384 and RS512 algorithms (config `sso.allowed_algorithms`) are accepted, never `none` or an HMAC (so a
- *   token cannot be forged by signing it with the public key);
+ *   RS256, RS384, RS512 and ES256 algorithms (config `sso.allowed_algorithms`) are accepted, never `none` or an HMAC (so a
+ *   token cannot be forged by signing it with the public key), and the key must be of the type of the algorithm;
  * - `iss` must equal the configured issuer exactly, `aud` must contain the client id (and `azp`, when there are several
  *   audiences, must be the client id);
  * - `exp` must be in the future, `nbf` and `iat` not in the future, within `sso.clock_skew_seconds`;
  * - `nonce` must match the one of the login that was started;
  * - `sub` must be present.
  *
- * Only RSA keys are supported; an ES256 provider cannot be used (documented limit).
+ * Supported keys: RSA (RS*) and EC P-256 (ES256). ES384, ES512 and EdDSA are not supported.
  */
 final class IdTokenValidator
 {
@@ -26,9 +26,13 @@ final class IdTokenValidator
         'RS256' => OPENSSL_ALGO_SHA256,
         'RS384' => OPENSSL_ALGO_SHA384,
         'RS512' => OPENSSL_ALGO_SHA512,
+        'ES256' => OPENSSL_ALGO_SHA256,
     ];
 
-    public function __construct(private readonly JwksKeys $keys) {}
+    public function __construct(
+        private readonly JwksKeys $keys,
+        private readonly JwkConverter $converter,
+    ) {}
 
     /**
      * @param  string  $expectedNonceHash  SHA-256 (hex) of the nonce sent in the authorization request
@@ -59,10 +63,19 @@ final class IdTokenValidator
         }
 
         $kid = isset($header['kid']) && is_string($header['kid']) ? $header['kid'] : null;
-        $key = openssl_pkey_get_public($this->keys->pemFor($provider, $kid));
+        // The key type follows the algorithm of the header: a token cannot pick an RSA key to be checked as ECDSA or the reverse.
+        $key = openssl_pkey_get_public($this->keys->pemFor($provider, $kid, $algorithm === 'ES256' ? 'EC' : 'RSA'));
 
         if ($key === false) {
             throw new SsoException('key_unusable');
+        }
+
+        if ($algorithm === 'ES256') {
+            $signature = $this->converter->es256SignatureToDer($signature);
+
+            if ($signature === '') {
+                throw new SsoException('signature_invalid');
+            }
         }
 
         if (openssl_verify($parts[0].'.'.$parts[1], $signature, $key, self::OPENSSL_ALGORITHMS[$algorithm]) !== 1) {

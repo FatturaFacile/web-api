@@ -8,6 +8,7 @@ use App\Models\Tenant;
 use App\Models\TenantSecurityPolicy;
 use App\Models\User;
 use App\Services\Auth\LoginResponder;
+use App\Services\Auth\Sso\SsoBrowserBinding;
 use App\Services\Auth\Sso\SsoException;
 use App\Services\Auth\Sso\SsoUrlGuard;
 use App\Services\Auth\SsoSignInCodes;
@@ -22,6 +23,7 @@ use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\OidcTestIdp;
+use Tests\Support\SsoFlow;
 
 uses(RefreshDatabase::class);
 
@@ -62,7 +64,9 @@ function ssoMember(Tenant $tenant, string $role, string $email, string $password
  */
 function ssoStart(Tenant $tenant): array
 {
-    $url = test()->postJson('/api/v1/auth/sso/start', ['tenant_id' => $tenant->id])->assertOk()->json('data.authorization_url');
+    $response = test()->postJson('/api/v1/auth/sso/start', ['tenant_id' => $tenant->id])->assertOk();
+    $url = $response->json('data.authorization_url');
+    SsoFlow::keepCookie($response);
     parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
 
     return ['state' => $query['state'], 'nonce' => $query['nonce'], 'query' => $query];
@@ -527,7 +531,9 @@ test('a sign-in code expires and an unknown code is refused', function (): void 
 
 test('a browser navigation without a session is redirected to the SPA with the code in the URL fragment', function (): void {
     $request = Request::create('/api/v1/auth/saml/'.$this->tenant->id.'/acs', 'POST', ['SAMLResponse' => 'x']);
-    $response = app(LoginResponder::class)->respondToSso($request, $this->member, $this->tenant);
+    [$secret, $hash] = app(SsoBrowserBinding::class)->issue();
+    $response = app(LoginResponder::class)->respondToSso($request, $this->member, $this->tenant, false, $hash);
+    $this->withCredentials()->withUnencryptedCookie('sso_flow', $secret);
 
     expect($response->getStatusCode())->toBe(303)
         ->and($response->headers->get('Location'))->toStartWith('https://localhost:4200/auth/sso/complete#code=');

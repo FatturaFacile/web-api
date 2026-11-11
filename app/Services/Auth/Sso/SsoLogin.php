@@ -37,7 +37,7 @@ final class SsoLogin
      *
      * @throws SsoException when the tenant has no ready provider
      */
-    public function start(string $tenantId): string
+    public function start(string $tenantId, ?string $bindingHash = null): string
     {
         /** @var SsoProvider|null $provider */
         $provider = SsoProvider::withoutGlobalScopes()->where('tenant_id', $tenantId)->first();
@@ -46,26 +46,25 @@ final class SsoLogin
             throw (new SsoException('provider_unavailable'))->forTenant($tenantId);
         }
 
-        $url = $this->client->begin($provider);
+        $url = $this->client->begin($provider, $bindingHash);
         $this->audit->record(RegistrationAudit::SSO_LOGIN_STARTED, null, ['provider' => $provider->id], $tenantId);
 
         return $url;
     }
 
     /**
-     * @return array{0: User, 1: Tenant}
-     *
      * @throws SsoException
      */
-    public function complete(string $code, string $state): array
+    public function complete(string $code, string $state): SsoCompletion
     {
         $tenantId = null;
 
         try {
-            [$provider, $claims] = $this->client->complete($code, $state);
+            [$provider, $claims, $bindingHash, $idToken] = $this->client->complete($code, $state);
             $tenantId = (string) $provider->tenant_id;
+            [$user, $tenant] = $this->signInConnection(SsoConnection::fromOidc($provider), (string) $claims['sub'], $claims, ['id_token' => $idToken]);
 
-            return $this->signInConnection(SsoConnection::fromOidc($provider), (string) $claims['sub'], $claims);
+            return new SsoCompletion($user, $tenant, $bindingHash);
         } catch (SsoException $exception) {
             throw $this->failed($exception, $tenantId);
         }
@@ -87,11 +86,12 @@ final class SsoLogin
      * `email_verified` once the signed assertion is valid (see SamlLogin).
      *
      * @param  array<string, mixed>  $claims
+     * @param  array{id_token?: string, session_index?: string|null}  $session  what the logout started by the service provider needs later
      * @return array{0: User, 1: Tenant}
      *
      * @throws SsoException
      */
-    public function signInConnection(SsoConnection $provider, string $subject, array $claims): array
+    public function signInConnection(SsoConnection $provider, string $subject, array $claims, array $session = []): array
     {
         $tenantId = $provider->tenantId;
         $email = $this->verifiedEmail($provider, $claims);
@@ -127,9 +127,9 @@ final class SsoLogin
                 throw new SsoException('identity_conflict');
             }
 
-            $this->link($provider, $user, $subject, $provisioned);
+            $this->link($provider, $user, $subject, $provisioned, $session);
         } else {
-            $identity->forceFill(['last_login_at' => now()])->save();
+            $identity->forceFill(['last_login_at' => now()] + $this->sessionColumns($session))->save();
         }
 
         $this->completeAccount($provider, $user, $tenantId, $claims, $provisioned);
@@ -249,9 +249,21 @@ final class SsoLogin
         }
     }
 
-    private function link(SsoConnection $provider, User $user, string $subject, bool $provisioned): void
+    /**
+     * @param  array{id_token?: string, session_index?: string|null}  $session
+     * @return array<string, string|null>
+     */
+    private function sessionColumns(array $session): array
     {
-        $identity = new SsoIdentity([$provider->identityColumn() => $provider->providerId, 'user_id' => $user->id, 'subject' => $subject, 'last_login_at' => now()]);
+        return ['last_id_token' => $session['id_token'] ?? null, 'last_session_index' => $session['session_index'] ?? null];
+    }
+
+    /**
+     * @param  array{id_token?: string, session_index?: string|null}  $session
+     */
+    private function link(SsoConnection $provider, User $user, string $subject, bool $provisioned, array $session = []): void
+    {
+        $identity = new SsoIdentity([$provider->identityColumn() => $provider->providerId, 'user_id' => $user->id, 'subject' => $subject, 'last_login_at' => now()] + $this->sessionColumns($session));
         $identity->forceFill(['tenant_id' => $provider->tenantId])->save();
 
         $this->audit->record($provisioned ? RegistrationAudit::SSO_USER_PROVISIONED : RegistrationAudit::SSO_IDENTITY_LINKED, (string) $user->id, ['provider' => $provider->providerId, 'protocol' => $provider->protocol], $provider->tenantId);
