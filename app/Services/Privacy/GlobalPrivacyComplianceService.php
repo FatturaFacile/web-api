@@ -8,6 +8,7 @@ use App\Models\Contact;
 use App\Models\Invoice;
 use App\Models\Privacy\PrivacyDataBreach;
 use App\Models\Privacy\PrivacyDataSubjectRequest;
+use App\Models\Privacy\PrivacyDsrEvent;
 use App\Models\Privacy\PrivacyProcessingActivity;
 use App\Models\Privacy\PrivacySensitiveAccessLog;
 use App\Models\Privacy\PrivacySubprocessor;
@@ -27,6 +28,14 @@ use Modules\Payroll\Models\SalaryCertificate;
  */
 final class GlobalPrivacyComplianceService
 {
+    public function __construct(
+        private readonly PrivacySettings $settings,
+        private readonly SubjectResolver $resolver,
+        private readonly PrivacyAudit $audit,
+        private readonly PersonalDataRegistry $registry,
+        private readonly PersonalDataAnonymizer $anonymizer,
+    ) {}
+
     /** Countries recognized as providing adequate protection by the Swiss Federal Council (Annex 1 DPOOP). */
     public const array NLPD_ADEQUATE_COUNTRIES = [
         'CH', 'LI', 'AT', 'BE', 'BG', 'HR', 'CY', 'CZ', 'DK', 'EE', 'FI', 'FR', 'DE', 'GR', 'HU',
@@ -105,9 +114,12 @@ final class GlobalPrivacyComplianceService
      */
     public function createDataSubjectRequest(string $tenantId, array $payload, ?string $actorId = null): PrivacyDataSubjectRequest
     {
-        $now = CarbonImmutable::now();
+        $this->resolver->resolve($tenantId, (string) $payload['subject_type'], (string) $payload['subject_id']);
 
-        return PrivacyDataSubjectRequest::create([
+        $now = CarbonImmutable::now();
+        $days = $this->settings->deadlineDays($tenantId);
+
+        $dsr = PrivacyDataSubjectRequest::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $tenantId,
             'request_type' => (string) $payload['request_type'],
@@ -115,10 +127,22 @@ final class GlobalPrivacyComplianceService
             'subject_type' => (string) $payload['subject_type'],
             'subject_id' => (string) $payload['subject_id'],
             'status' => 'received',
-            'deadline_at' => $now->addDays(30),
+            'deadline_at' => $now->addDays($days),
+            'deadline_days' => $days,
+            'requester_reference' => $payload['requester_reference'] ?? null,
             'notes' => $payload['notes'] ?? null,
             'handled_by' => $actorId,
         ]);
+
+        PrivacyDsrEvent::record($dsr, 'received', null, 'received', $actorId);
+        $this->audit->recordRequestEvent($dsr, 'PRIVACY_DSR_RECEIVED', [
+            'request_type' => $dsr->request_type,
+            'subject_type' => $dsr->subject_type,
+            'subject_id' => $dsr->subject_id,
+            'deadline_days' => $days,
+        ], $actorId);
+
+        return $dsr;
     }
 
     /**
@@ -323,9 +347,20 @@ final class GlobalPrivacyComplianceService
                 if ($legalHolds === []) {
                     $erasedFields = array_merge($erasedFields, ['first_name', 'last_name']);
                 }
+            } elseif ($dsr->subject_type === 'lead') {
+                $this->resolver->resolve($tenantId, 'lead', (string) $dsr->subject_id);
+                $result = $this->anonymizer->anonymize(
+                    $this->registry->findOrFail('crm_leads'),
+                    static function ($query) use ($tenantId, $dsr): void {
+                        $query->where('tenant_id', $tenantId)->where('id', $dsr->subject_id);
+                    },
+                );
+                $erasedFields = $result['columns'];
             } else {
                 throw new InvalidArgumentException("Unsupported subject_type [{$dsr->subject_type}].");
             }
+
+            $related = $this->handleRelatedRecords($tenantId, (string) $dsr->subject_type, (string) $dsr->subject_id, $legalHolds !== []);
 
             $status = $legalHolds === [] ? 'completed' : 'partially_completed_legal_hold';
 
@@ -337,13 +372,131 @@ final class GlobalPrivacyComplianceService
                     'processing_restricted' => true,
                     'full_anonymization' => $legalHolds === [],
                     'executed_at' => $now->toIso8601String(),
+                    'anonymised_records' => $related['anonymised'],
+                    'retained_records' => $related['retained'],
                 ],
                 'handled_by' => $actorId,
                 'completed_at' => $now,
             ]);
 
+            PrivacyDsrEvent::record($dsr, 'erasure_executed', null, $status, $actorId, 'Erasure executed with statutory retention check.');
+            $this->audit->recordRequestEvent($dsr, 'PRIVACY_ERASURE_EXECUTED', [
+                'subject_type' => $dsr->subject_type,
+                'subject_id' => $dsr->subject_id,
+                'status' => $status,
+                'legal_holds' => count($legalHolds),
+                'retained_tables' => array_column($related['retained'], 'table'),
+            ], $actorId);
+
             return $dsr->fresh();
         });
+    }
+
+    /**
+     * Restriction of processing (GDPR art. 18, nLPD art. 32): the data stay, but are marked as restricted and must not
+     * be used. Nothing is erased.
+     */
+    public function restrictProcessing(string $tenantId, PrivacyDataSubjectRequest $dsr, ?string $actorId = null): PrivacyDataSubjectRequest
+    {
+        return DB::transaction(function () use ($tenantId, $dsr, $actorId): PrivacyDataSubjectRequest {
+            $table = match ($dsr->subject_type) {
+                'contact' => 'contacts',
+                'employee' => 'hr_employees',
+                'lead' => 'crm_leads',
+                default => throw new InvalidArgumentException("Unsupported subject_type [{$dsr->subject_type}]."),
+            };
+
+            $this->resolver->resolve($tenantId, (string) $dsr->subject_type, (string) $dsr->subject_id);
+            $now = CarbonImmutable::now();
+            DB::table($table)->where('tenant_id', $tenantId)->where('id', $dsr->subject_id)->update(['processing_restricted_at' => $now, 'updated_at' => $now]);
+
+            $dsr->update([
+                'erasure_summary' => ['processing_restricted' => true, 'erased_fields' => [], 'full_anonymization' => false, 'executed_at' => $now->toIso8601String()],
+            ]);
+            $this->audit->recordRequestEvent($dsr, 'PRIVACY_PROCESSING_RESTRICTED', ['subject_type' => $dsr->subject_type, 'subject_id' => $dsr->subject_id], $actorId);
+
+            return $dsr->fresh();
+        });
+    }
+
+    /**
+     * Anonymises the erasable records tied to the subject and lists, with the reason, every record that is kept: the
+     * accounting, payroll and evidence records are never deleted (CO art. 958f, ArG art. 46), only reported.
+     *
+     * @return array{anonymised: list<array{table: string, rows: int}>, retained: list<array{table: string, label: string, retention: string, rows: int, reason: string}>}
+     */
+    private function handleRelatedRecords(string $tenantId, string $subjectType, string $subjectId, bool $hasLegalHold): array
+    {
+        $anonymised = [];
+        $retained = [];
+
+        foreach ($this->registry->entriesForSubject($subjectType) as $entry) {
+            $column = $entry->subjectLinks[$subjectType];
+            if ($column === 'id') {
+                continue;
+            }
+
+            $scope = static function ($query) use ($entry, $tenantId, $column, $subjectId): void {
+                if ($entry->hasTenantColumn) {
+                    $query->where('tenant_id', $tenantId);
+                }
+                $query->where($column, $subjectId);
+            };
+
+            if ($entry->table === 'crm_consents') {
+                $rows = DB::table('crm_consents')->where('tenant_id', $tenantId)->where($column, $subjectId)->whereNotNull('ip_address')->update(['ip_address' => null]);
+                $anonymised[] = ['table' => 'crm_consents.ip_address', 'rows' => $rows];
+                $kept = DB::table('crm_consents')->where('tenant_id', $tenantId)->where($column, $subjectId)->count();
+                if ($kept > 0) {
+                    $retained[] = ['table' => $entry->table, 'label' => $entry->label, 'retention' => $entry->retention->value, 'rows' => $kept, 'reason' => $entry->retentionNote];
+                }
+
+                continue;
+            }
+
+            if ($entry->retention->isErasable()) {
+                if ($entry->table === 'contact_addresses' && $hasLegalHold) {
+                    $kept = DB::table($entry->table)->where($column, $subjectId)->count();
+                    if ($kept > 0) {
+                        $retained[] = ['table' => $entry->table, 'label' => $entry->label, 'retention' => PersonalDataRetention::FiscalRecord->value, 'rows' => $kept, 'reason' => 'Addresses kept while the contact is on accounting hold (CO art. 958f), to be confirmed.'];
+                    }
+
+                    continue;
+                }
+
+                $result = $this->anonymizer->anonymize($entry, $scope);
+                if ($result['rows'] > 0) {
+                    $anonymised[] = ['table' => $entry->table, 'rows' => $result['rows']];
+                }
+
+                continue;
+            }
+
+            $query = DB::table($entry->table);
+            $scope($query);
+            $kept = $query->count();
+            if ($kept > 0) {
+                $retained[] = ['table' => $entry->table, 'label' => $entry->label, 'retention' => $entry->retention->value, 'rows' => $kept, 'reason' => $entry->retentionNote];
+            }
+        }
+
+        foreach ($this->registry->linkedRecords() as $table => $link) {
+            if (! isset($link['links'][$subjectType])) {
+                continue;
+            }
+
+            $query = DB::table($table)->where($link['links'][$subjectType], $subjectId);
+            if ($link['hasTenantColumn']) {
+                $query->where('tenant_id', $tenantId);
+            }
+
+            $kept = $query->count();
+            if ($kept > 0) {
+                $retained[] = ['table' => $table, 'label' => $table, 'retention' => $link['retention']->value, 'rows' => $kept, 'reason' => $link['note']];
+            }
+        }
+
+        return ['anonymised' => $anonymised, 'retained' => $retained];
     }
 
     /**
@@ -351,7 +504,7 @@ final class GlobalPrivacyComplianceService
      *
      * @param  array<string, mixed>  $payload
      */
-    public function reportDataBreach(string $tenantId, array $payload): PrivacyDataBreach
+    public function reportDataBreach(string $tenantId, array $payload, ?string $actorId = null): PrivacyDataBreach
     {
         $discoveredAt = isset($payload['discovered_at'])
             ? CarbonImmutable::parse((string) $payload['discovered_at'])
@@ -361,7 +514,7 @@ final class GlobalPrivacyComplianceService
         $requiresAuthority = in_array($severity, ['medium', 'high', 'critical'], true);
         $requiresSubjects = in_array($severity, ['high', 'critical'], true);
 
-        return PrivacyDataBreach::create([
+        $breach = PrivacyDataBreach::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $tenantId,
             'title' => (string) $payload['title'],
@@ -369,13 +522,24 @@ final class GlobalPrivacyComplianceService
             'discovered_at' => $discoveredAt,
             'notification_deadline_at' => $discoveredAt->addHours(72),
             'affected_records_count' => (int) ($payload['affected_records_count'] ?? 0),
+            'affected_subjects_count' => isset($payload['affected_subjects_count']) ? (int) $payload['affected_subjects_count'] : null,
+            'description' => $payload['description'] ?? null,
             'data_categories' => array_values((array) ($payload['data_categories'] ?? [])),
             'likely_consequences' => $payload['likely_consequences'] ?? null,
             'mitigation_measures' => $payload['mitigation_measures'] ?? null,
             'requires_authority_notification' => $requiresAuthority,
             'requires_subject_notification' => $requiresSubjects,
             'status' => (string) ($payload['status'] ?? 'investigating'),
+            'reported_by' => $actorId !== null && Str::isUuid($actorId) ? $actorId : null,
         ]);
+
+        $this->audit->record($tenantId, 'PRIVACY_BREACH_REGISTERED', PrivacyDataBreach::class, (string) $breach->id, [
+            'severity' => $severity,
+            'discovered_at' => $discoveredAt->toIso8601String(),
+            'notification_deadline_at' => $breach->notification_deadline_at->toIso8601String(),
+        ], $actorId);
+
+        return $breach;
     }
 
     /**

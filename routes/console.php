@@ -67,6 +67,8 @@ Schedule::command('model:prune', ['--model' => [PasswordResetToken::class]])->da
 Schedule::command('ecommerce:sync-orders')->everyFifteenMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('sdi:poll')->everyFiveMinutes()->withoutOverlapping()->onOneServer();
 Schedule::command('time:purge-expired')->dailyAt('03:30')->withoutOverlapping()->onOneServer();
+// Anonymises personal data past the retention policies of each company (privacy:apply-retention --dry-run only counts).
+Schedule::command('privacy:apply-retention')->dailyAt('03:55')->withoutOverlapping()->onOneServer();
 
 // Mantiene snella la tabella telescope_entries eliminando i dati oltre le 24 ore. Telescope e' una dipendenza di sviluppo
 // spenta in produzione (TELESCOPE_ENABLED=false) e le sue tabelle non sono migrate: il prune gira solo se e' attivo

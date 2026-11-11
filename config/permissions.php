@@ -108,6 +108,13 @@ return [
             'read' => [...$financeReaders, 'customs'],
             'write' => [...$finance, 'customs'],
         ],
+        // Quality management (non-conformities, CAPA, audits, controlled procedures): every member reads and raises
+        // quality issues; owners, administrators, production and service staff manage them. Approving a procedure is
+        // reserved by the policy to owners, administrators and members granted quality.approve.
+        'quality' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'production', 'technician', 'service_manager', 'procurement_manager', 'member'],
+        ],
     ],
 
     /*

@@ -9,6 +9,7 @@ use App\Models\Privacy\PrivacyDataBreach;
 use App\Models\Privacy\PrivacyDataSubjectRequest;
 use App\Models\Privacy\PrivacySensitiveAccessLog;
 use App\Services\Privacy\GlobalPrivacyComplianceService;
+use App\Services\Privacy\PersonalDataRegistry;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Http\JsonResponse;
@@ -150,10 +151,14 @@ final class PrivacyComplianceController extends Controller
     #[OA\Get(
         path: '/api/v1/settings/privacy/data-subject-requests',
         operationId: 'listPrivacyDataSubjectRequests',
-        description: 'Requests of data subjects (access, portability, erasure, restriction, rectification) of the active company, newest first, with their statutory deadline.',
+        description: 'Requests of data subjects (access, portability, rectification, erasure, restriction, objection) of the active company, newest first, with their statutory deadline (deadline_at, effective_deadline_at, is_overdue, days_remaining). Optional filters: status, overdue=1 (open requests past their deadline).',
         summary: 'List data subject requests',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Settings', 'Privacy'],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['received', 'identity_verified', 'in_progress', 'completed', 'rejected', 'partially_completed_legal_hold'])),
+            new OA\Parameter(name: 'overdue', in: 'query', required: false, schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Data subject requests', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataSubjectRequestListResponse')),
             new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
@@ -165,8 +170,13 @@ final class PrivacyComplianceController extends Controller
         $tenantId = $this->tenantId($request);
         $requests = PrivacyDataSubjectRequest::withoutGlobalScope(TenantScope::class)
             ->where('tenant_id', $tenantId)
+            ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->orderByDesc('created_at')
             ->get();
+
+        if ($request->boolean('overdue')) {
+            $requests = $requests->filter(static fn (PrivacyDataSubjectRequest $dsr): bool => $dsr->is_overdue)->values();
+        }
 
         return response()->json(['data' => $requests]);
     }
@@ -174,7 +184,7 @@ final class PrivacyComplianceController extends Controller
     #[OA\Post(
         path: '/api/v1/settings/privacy/data-subject-requests',
         operationId: 'storePrivacyDataSubjectRequest',
-        description: 'Registers the request of a data subject. The request starts as received, handled by the current user, with a deadline of 30 days from now. Registering does not execute anything: use the portability export and execute-erasure endpoints.',
+        description: 'Registers the request of a data subject. The request starts as received, handled by the current user, with the deadline of the company (tenant setting, 30 days by default, to be confirmed) from now. The subject must belong to the active company. Registering does not execute anything: move the request through verify-identity, start and complete.',
         summary: 'Register a data subject request',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PrivacyDataSubjectRequestRequest')),
@@ -190,10 +200,11 @@ final class PrivacyComplianceController extends Controller
     {
         $tenantId = $this->tenantId($request);
         $validated = $request->validate([
-            'request_type' => ['required', Rule::in(['access', 'portability', 'erasure', 'restriction', 'rectification'])],
+            'request_type' => ['required', Rule::in(PrivacyDataSubjectRequest::RequestTypes)],
             'regulation' => ['nullable', Rule::in(['nLPD', 'GDPR', 'both'])],
-            'subject_type' => ['required', Rule::in(['contact', 'employee'])],
+            'subject_type' => ['required', Rule::in(PersonalDataRegistry::subjectTypes())],
             'subject_id' => ['required', 'uuid'],
+            'requester_reference' => ['nullable', 'string', 'max:120'],
             'notes' => ['nullable', 'string', 'max:2000'],
         ]);
 
@@ -266,6 +277,14 @@ final class PrivacyComplianceController extends Controller
             ->whereKey($id)
             ->firstOrFail();
 
+        if ($dsr->isClosed()) {
+            abort(422, 'The request is already closed.');
+        }
+
+        if ($dsr->request_type !== 'erasure') {
+            abort(422, 'Only erasure requests are executed here: other request types go through the workflow (verify-identity, start, complete).');
+        }
+
         $updated = $this->privacyService->executeErasureOrRestriction(
             $tenantId,
             $dsr,
@@ -325,13 +344,15 @@ final class PrivacyComplianceController extends Controller
             'severity' => ['required', Rule::in(['low', 'medium', 'high', 'critical'])],
             'discovered_at' => ['nullable', 'date'],
             'affected_records_count' => ['nullable', 'integer', 'min:0'],
+            'affected_subjects_count' => ['nullable', 'integer', 'min:0'],
+            'description' => ['nullable', 'string', 'max:4000'],
             'data_categories' => ['required', 'array', 'min:1'],
             'data_categories.*' => ['string', 'max:80'],
             'likely_consequences' => ['nullable', 'string', 'max:2000'],
             'mitigation_measures' => ['nullable', 'string', 'max:2000'],
         ]);
 
-        $breach = $this->privacyService->reportDataBreach($tenantId, $validated);
+        $breach = $this->privacyService->reportDataBreach($tenantId, $validated, $request->user() ? (string) $request->user()->id : null);
 
         return response()->json([
             'message' => 'Data breach logged with 72-hour FDPIC/GDPR notification deadline',
