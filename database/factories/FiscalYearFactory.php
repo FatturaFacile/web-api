@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Tenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 use Modules\GeneralLedger\Models\FiscalYear;
@@ -21,7 +22,7 @@ final class FiscalYearFactory extends Factory
 
         return [
             'id' => (string) Str::uuid7(),
-            'tenant_id' => (string) Str::uuid7(),
+            'tenant_id' => static fn (): string => (string) Tenant::factory()->create()->id,
             'company_id' => (string) Str::uuid7(),
             'year_code' => 'FY'.$year.'-'.Str::random(4),
             'start_date' => "{$year}-01-01",
