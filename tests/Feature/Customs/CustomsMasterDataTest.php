@@ -27,7 +27,7 @@ function customsGenericPackaging(string $code = 'CT'): CustomsPackagingType
 {
     app(TenantContext::class)->clear();
 
-    return CustomsPackagingType::query()->create(['code' => $code, 'name_it' => 'Cartone generico', 'source' => 'bazg_edec']);
+    return CustomsPackagingType::createGlobal(['code' => $code, 'name_it' => 'Cartone generico', 'source' => 'bazg_edec']);
 }
 
 test('the seeder loads the official domains and countries as generic rows', function (): void {
