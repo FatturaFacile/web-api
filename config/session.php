@@ -169,8 +169,9 @@ return [
     |
     */
 
-    // Secure by default outside local development, so the session cookie never travels over plain HTTP.
-    'secure' => env('SESSION_SECURE_COOKIE', ! in_array(env('APP_ENV', 'production'), ['local', 'testing'], true)),
+    // The system works over HTTPS only, in every environment: the cookie is always Secure, and a value that is not true
+    // stops the application at boot (HttpsRequirements).
+    'secure' => filter_var(env('SESSION_SECURE_COOKIE', true), FILTER_VALIDATE_BOOL),
 
     /*
     |--------------------------------------------------------------------------
@@ -183,7 +184,7 @@ return [
     |
     */
 
-    'http_only' => env('SESSION_HTTP_ONLY', true),
+    'http_only' => filter_var(env('SESSION_HTTP_ONLY', true), FILTER_VALIDATE_BOOL),
 
     /*
     |--------------------------------------------------------------------------

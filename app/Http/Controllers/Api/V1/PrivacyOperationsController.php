@@ -15,6 +15,7 @@ use App\Services\Privacy\PersonalDataMapService;
 use App\Services\Privacy\PersonalDataRegistry;
 use App\Services\Privacy\PrivacyRetentionService;
 use App\Services\Privacy\PrivacySettings;
+use App\Services\Privacy\RetentionSuggestions;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Closure;
@@ -40,6 +41,7 @@ final class PrivacyOperationsController extends Controller
         private readonly DataBreachService $breaches,
         private readonly PersonalDataMapService $dataMap,
         private readonly PrivacyRetentionService $retention,
+        private readonly RetentionSuggestions $suggestions,
         private readonly PrivacySettings $settings,
         private readonly PersonalDataRegistry $registry,
         private readonly TenantContext $tenantContext,
@@ -425,6 +427,57 @@ final class PrivacyOperationsController extends Controller
             ->get();
 
         return response()->json(['data' => $runs]);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/settings/privacy/retention-suggestions',
+        operationId: 'listPrivacyRetentionSuggestions',
+        description: 'Suggested retention periods for the tables that can have a retention policy, with the rationale and the policy the company has now. They are operational suggestions, not legal requirements and not verified against any statute: they are never applied automatically and the company must confirm them (save a policy, or adopt a suggestion, which creates it inactive).',
+        summary: 'List suggested retention periods',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Settings', 'Privacy'],
+        responses: [
+            new OA\Response(response: 200, description: 'Suggestions', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyRetentionSuggestionListResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
+    public function retentionSuggestions(Request $request): JsonResponse
+    {
+        return response()->json(['data' => $this->suggestions->list($this->tenantId($request))]);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/settings/privacy/retention-suggestions/{entryKey}/adopt',
+        operationId: 'adoptPrivacyRetentionSuggestion',
+        description: 'Creates the retention policy of the table from its suggestion, only with confirm=true, and inactive unless activate=true. A policy already present is never overwritten. Nothing is anonymised until the policy is active and run.',
+        summary: 'Adopt a suggested retention period',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/PrivacyRetentionAdoptRequest')),
+        tags: ['Settings', 'Privacy'],
+        parameters: [new OA\Parameter(name: 'entryKey', in: 'path', required: true, schema: new OA\Schema(type: 'string'))],
+        responses: [
+            new OA\Response(response: 201, description: 'Policy created', content: new OA\JsonContent(ref: '#/components/schemas/PrivacyRetentionPolicyResponse')),
+            new OA\Response(ref: '#/components/responses/PrivacyUnprocessable', response: 422),
+            new OA\Response(ref: '#/components/responses/PrivacyUnauthenticated', response: 401),
+            new OA\Response(ref: '#/components/responses/PrivacyForbidden', response: 403),
+        ]
+    )]
+    public function adoptSuggestion(Request $request, string $entryKey): JsonResponse
+    {
+        $validated = $request->validate([
+            'confirm' => ['required', 'accepted'],
+            'retention_days' => ['nullable', 'integer', 'min:1', 'max:36500'],
+            'activate' => ['nullable', 'boolean'],
+        ]);
+
+        try {
+            $policy = $this->suggestions->adopt($this->tenantId($request), $entryKey, $this->retention, isset($validated['retention_days']) ? (int) $validated['retention_days'] : null, (bool) ($validated['activate'] ?? false));
+        } catch (InvalidArgumentException $exception) {
+            throw ValidationException::withMessages(['entry_key' => [$exception->getMessage()]]);
+        }
+
+        return response()->json(['message' => 'Retention policy created from the suggestion', 'data' => $policy], 201);
     }
 
     #[OA\Get(

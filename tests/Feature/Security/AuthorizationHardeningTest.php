@@ -526,5 +526,5 @@ test('a login with an unknown email still checks a password hash', function (): 
     Hash::shouldReceive('make')->zeroOrMoreTimes()->andReturn(password_hash('dummy', PASSWORD_BCRYPT));
     Hash::shouldReceive('check')->once()->andReturnFalse();
 
-    $this->postJson('/api/v1/auth/login', ['email' => 'nobody@example.com', 'password' => 'whatever'])->assertUnauthorized();
+    $this->withHeaders(spaHeaders())->postJson('/api/v1/auth/login', ['email' => 'nobody@example.com', 'password' => 'whatever'])->assertUnauthorized();
 });

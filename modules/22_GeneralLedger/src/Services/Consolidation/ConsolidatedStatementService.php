@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Support\Collection;
 use Modules\GeneralLedger\Enums\ConsolidationMethod;
 use Modules\GeneralLedger\Models\ConsolidationAdjustmentLine;
+use Modules\GeneralLedger\Models\ConsolidationGroup;
 use Modules\GeneralLedger\Models\ConsolidationRun;
 use Modules\GeneralLedger\Models\ConsolidationRunBalance;
 use Modules\GeneralLedger\Models\StatementScheme;
@@ -97,9 +98,10 @@ final readonly class ConsolidatedStatementService
     /**
      * @param  array<string, array{account_code: string, account_name: string, account_type: string, aggregated_net: string, adjustments_net: string, net: string}>  $accounts
      * @param  list<array{nci_net_assets: string, nci_profit: string}>  $nonControllingInterests
+     * @param  array<string, string>  $codes  Codes of the synthetic tax accounts of the group (see codesOf)
      * @return array<string, mixed>
      */
-    public function balanceSheetOf(array $accounts, array $nonControllingInterests): array
+    public function balanceSheetOf(array $accounts, array $nonControllingInterests, array $codes = []): array
     {
         $assets = $liabilities = $equity = [];
         $totals = ['assets' => ConsolidationMath::zero(), 'liabilities' => ConsolidationMath::zero(), 'reserves' => ConsolidationMath::zero()];
@@ -143,6 +145,8 @@ final readonly class ConsolidatedStatementService
             'non_controlling_interests' => $nci,
             'equity_attributable_to_owners' => ConsolidationMath::sub($totalEquity, $nci),
             'total_liabilities_and_equity' => $liabilitiesAndEquity,
+            'deferred_tax_asset' => isset($codes['deferred_tax_asset'], $accounts[$codes['deferred_tax_asset']]) ? $accounts[$codes['deferred_tax_asset']]['net'] : ConsolidationMath::zero(),
+            'deferred_tax_liability' => isset($codes['deferred_tax'], $accounts[$codes['deferred_tax']]) ? ConsolidationMath::neg($accounts[$codes['deferred_tax']]['net']) : ConsolidationMath::zero(),
             'is_balanced' => ConsolidationMath::cmp($totals['assets'], $liabilitiesAndEquity) === 0,
         ];
     }
@@ -150,14 +154,23 @@ final readonly class ConsolidatedStatementService
     /**
      * @param  array<string, array{account_code: string, account_name: string, account_type: string, aggregated_net: string, adjustments_net: string, net: string}>  $accounts
      * @param  list<array{nci_net_assets: string, nci_profit: string}>  $nonControllingInterests
+     * @param  array<string, string>  $codes  Codes of the synthetic tax accounts of the group (see codesOf)
      * @return array<string, mixed>
      */
-    public function incomeStatementOf(array $accounts, array $nonControllingInterests): array
+    public function incomeStatementOf(array $accounts, array $nonControllingInterests, array $codes = []): array
     {
         $revenues = $costOfSales = $expenses = [];
         $totals = ['revenue' => ConsolidationMath::zero(), 'cogs' => ConsolidationMath::zero(), 'expense' => ConsolidationMath::zero()];
 
+        $incomeTax = ConsolidationMath::zero();
+
         foreach ($accounts as $account) {
+            if (isset($codes['deferred_tax_income']) && $account['account_code'] === $codes['deferred_tax_income'] && $account['account_type'] === 'expense') {
+                $incomeTax = ConsolidationMath::add($incomeTax, $account['net']);
+
+                continue;
+            }
+
             match ($account['account_type']) {
                 'revenue' => $this->addIncome($revenues, $totals, 'revenue', $account, ConsolidationMath::neg($account['net'])),
                 'cogs' => $this->addIncome($costOfSales, $totals, 'cogs', $account, $account['net']),
@@ -167,7 +180,7 @@ final readonly class ConsolidatedStatementService
         }
 
         $grossProfit = ConsolidationMath::sub($totals['revenue'], $totals['cogs']);
-        $netIncome = ConsolidationMath::sub($grossProfit, $totals['expense']);
+        $netIncome = ConsolidationMath::sub(ConsolidationMath::sub($grossProfit, $totals['expense']), $incomeTax);
         $nci = $this->sum($nonControllingInterests, 'nci_profit');
 
         return [
@@ -178,6 +191,7 @@ final readonly class ConsolidatedStatementService
             'gross_profit' => $grossProfit,
             'operating_expenses' => $expenses,
             'total_operating_expenses' => $totals['expense'],
+            'income_tax' => $incomeTax,
             'net_income' => $netIncome,
             'net_income_attributable_to_non_controlling_interests' => $nci,
             'net_income_attributable_to_owners' => ConsolidationMath::sub($netIncome, $nci),
@@ -197,7 +211,7 @@ final readonly class ConsolidatedStatementService
      */
     public function balanceSheet(User $user, ConsolidationRun $run): array
     {
-        return [...$this->header($user, $run), ...$this->balanceSheetOf($this->accountsOf($run), $this->nciOf($run))];
+        return [...$this->header($user, $run), ...$this->balanceSheetOf($this->accountsOf($run), $this->nciOf($run), $this->codesOf($run))];
     }
 
     /**
@@ -205,7 +219,7 @@ final readonly class ConsolidatedStatementService
      */
     public function incomeStatement(User $user, ConsolidationRun $run): array
     {
-        return [...$this->header($user, $run), ...$this->incomeStatementOf($this->accountsOf($run), $this->nciOf($run))];
+        return [...$this->header($user, $run), ...$this->incomeStatementOf($this->accountsOf($run), $this->nciOf($run), $this->codesOf($run))];
     }
 
     /**
@@ -286,6 +300,22 @@ final readonly class ConsolidatedStatementService
         $order = array_map(static fn (array $member): string => (string) $member['tenant_id'], $run->members_snapshot);
 
         return $this->consolidatedAccounts($balances, $lines, $order);
+    }
+
+    /**
+     * The codes of the synthetic tax accounts of a group, which the statements show on their own lines.
+     *
+     * @return array<string, string>
+     */
+    public function codesOf(ConsolidationRun|ConsolidationGroup $source): array
+    {
+        $group = $source instanceof ConsolidationGroup ? $source : ConsolidationGroup::withoutGlobalScopes()->where('tenant_id', $source->tenant_id)->findOrFail($source->group_id);
+
+        return [
+            'deferred_tax_income' => $group->syntheticCode('deferred_tax_income'),
+            'deferred_tax_asset' => $group->syntheticCode('deferred_tax_asset'),
+            'deferred_tax' => $group->syntheticCode('deferred_tax'),
+        ];
     }
 
     /**

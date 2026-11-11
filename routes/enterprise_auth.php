@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Scim\ScimDiscoveryController;
 use App\Http\Controllers\Api\V1\Scim\ScimUserController;
 use App\Http\Controllers\Api\V1\ScimTokenController;
 use App\Http\Controllers\Api\V1\SecurityPolicyController;
+use App\Http\Controllers\Api\V1\SsoDiscoveryController;
 use App\Http\Controllers\Api\V1\SsoLoginController;
 use App\Http\Controllers\Api\V1\SsoProviderController;
 use App\Http\Middleware\AuthenticateScim;
@@ -25,8 +26,10 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::prefix('auth/sso')->middleware('locale')->name('auth.sso.')->group(function (): void {
+    Route::post('/discover', [SsoDiscoveryController::class, 'discover'])->middleware('throttle:20,1')->name('discover');
     Route::post('/start', [SsoLoginController::class, 'start'])->middleware('throttle:20,1')->name('start');
     Route::post('/callback', [SsoLoginController::class, 'callback'])->middleware('throttle:20,1')->name('callback');
+    Route::post('/exchange', [SsoLoginController::class, 'exchange'])->middleware('throttle:20,1')->name('exchange');
 });
 
 Route::prefix('auth/saml')->middleware('locale')->name('auth.saml.')->whereUuid('tenantId')->group(function (): void {

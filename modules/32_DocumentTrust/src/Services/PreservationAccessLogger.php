@@ -22,7 +22,7 @@ final readonly class PreservationAccessLogger
      *
      * @var list<string>
      */
-    private const array Ledgered = ['close', 'export', 'verify', 'settings'];
+    private const array Ledgered = ['close', 'export', 'verify', 'settings', 'seal', 'hold_place', 'hold_release', 'disposal_propose', 'disposal_approve', 'disposal_reject', 'disposal_execute'];
 
     /**
      * Inject the audit ledger.

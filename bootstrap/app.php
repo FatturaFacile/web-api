@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Middleware\EnforceHttps;
 use App\Http\Middleware\EnforceSessionPolicy;
+use App\Http\Middleware\EnsureHttpsFrontendRequestsAreStateful;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
@@ -9,6 +11,7 @@ use App\Http\Middleware\MarkDeprecated;
 use App\Http\Middleware\NormalizeTenantInput;
 use App\Http\Middleware\SecurityHeaders;
 use App\Http\Middleware\SetLocale;
+use App\Services\Auth\Sso\SsoBrowserBinding;
 use Enterprise\MultiTenant\Http\Middleware\EnsureModuleAccess;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Auth\Middleware\Authorize;
@@ -16,10 +19,12 @@ use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Middleware\TrustProxies;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -35,10 +40,21 @@ return Application::configure(basePath: dirname(__DIR__))
             : array_values(array_filter(array_map('trim', explode(',', $rawTrustedProxies)), fn (string $ip): bool => $ip !== '' && $ip !== '*'));
         $middleware->trustProxies(at: $trustedProxies);
 
+        // HTTPS only, in every environment. EnforceHttps does the job of Laravel's TrustProxies (so X-Forwarded-Proto counts only
+        // from the trusted proxies) and is the very first middleware: an insecure request is redirected or refused before
+        // anything reads its input.
+        $middleware->remove(TrustProxies::class);
+        $middleware->api(replace: [EnsureFrontendRequestsAreStateful::class => EnsureHttpsFrontendRequestsAreStateful::class]);
+
         $middleware->prepend(NormalizeTenantInput::class);
+        $middleware->prepend(EnforceHttps::class);
 
         // Hardening headers (nosniff, no framing, no referrer, CSP, HSTS over HTTPS) on every response.
         $middleware->append(SecurityHeaders::class);
+
+        // The cookie that binds a single sign-on to the browser holds a random secret that means nothing without its stored
+        // hash: it is not encrypted (see SsoBrowserBinding).
+        $middleware->encryptCookies(except: [SsoBrowserBinding::COOKIE]);
 
         $middleware->statefulApi();
         $middleware->throttleApi();

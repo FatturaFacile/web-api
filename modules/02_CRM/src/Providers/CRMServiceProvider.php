@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Providers;
 
+use App\Models\Contact;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -39,6 +40,7 @@ use Modules\CRM\Models\Campaign;
 use Modules\CRM\Models\Forecast;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\Opportunity;
+use Modules\CRM\Observers\ContactCreatedObserver;
 use Modules\CRM\Policies\AccountPolicy;
 use Modules\CRM\Policies\ActivityPolicy;
 use Modules\CRM\Policies\CampaignPolicy;
@@ -73,6 +75,7 @@ final class CRMServiceProvider extends ServiceProvider
     {
         $this->registerPolicies();
         $this->registerEventListeners();
+        Contact::observe(ContactCreatedObserver::class);
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
 
         if ($this->app->runningInConsole()) {

@@ -103,6 +103,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Cookie sessions and the optional token mode
+    |--------------------------------------------------------------------------
+    |
+    | Users authenticate with the Sanctum session cookie (HttpOnly, Secure, CSRF-protected): login, two-factor challenge,
+    | single sign-on and every flow that signs a user in set the cookie and never put a bearer token in the body.
+    |
+    | `token_mode.enabled` (AUTH_TOKEN_MODE_ENABLED, default false) is the only way to get a bearer token: when it is on, a
+    | client may ask for one with `token_mode: true` on the login (or SSO callback); the token is then accepted as the
+    | credential of that user. When it is off, `token_mode: true` is a 422 and a Sanctum personal access token is not
+    | accepted as a user credential (the rows stay in the database, inert, until they expire or are revoked). Integration
+    | API keys (`ff_...`, module Integrations) are a different mechanism and are not affected.
+    |
+    | `sso_exchange.ttl_seconds` is the life of the single-use sign-in code that a cross-site SSO callback (SAML ACS posted
+    | by the identity provider) hands to the SPA, which exchanges it for the cookie session.
+    |
+    */
+
+    'token_mode' => [
+        'enabled' => filter_var(env('AUTH_TOKEN_MODE_ENABLED', false), FILTER_VALIDATE_BOOL),
+    ],
+
+    'sso_exchange' => [
+        'ttl_seconds' => (int) env('AUTH_SSO_EXCHANGE_TTL_SECONDS', 60),
+        'frontend_path' => env('AUTH_SSO_EXCHANGE_FRONTEND_PATH', '/auth/sso/complete'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Password Confirmation Timeout
     |--------------------------------------------------------------------------
     |

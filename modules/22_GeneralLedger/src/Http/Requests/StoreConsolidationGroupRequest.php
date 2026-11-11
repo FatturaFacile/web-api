@@ -35,6 +35,11 @@ final class StoreConsolidationGroupRequest extends FormRequest
             'goodwill_amortisation_years' => ['nullable', 'integer', 'between:1,100'],
             'require_account_mapping' => ['nullable', 'boolean'],
             'synthetic_accounts' => ['nullable', 'array'],
+            'deferred_tax_on_unrealised_profit' => ['nullable', 'boolean'],
+            'unrealised_profit_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
+            'fair_value_first_year_rule' => ['nullable', Rule::in(['pro_rata', 'full_year'])],
+            'negative_goodwill_treatment' => ['nullable', Rule::in(['consolidation_reserve', 'immediate_income'])],
+            'goodwill_translation' => ['nullable', Rule::in(['historical', 'closing'])],
             'synthetic_accounts.*' => ['string', 'max:40'],
             'notes' => ['nullable', 'string', 'max:5000'],
         ];

@@ -11,6 +11,7 @@ return [
         'reused' => 'Das Passwort wurde kürzlich verwendet: Wählen Sie ein anderes als die letzten :count.',
     ],
     'messages' => [
+        'sign_in_code_issued' => 'Anmeldecode ausgestellt: gegen die Sitzung eintauschen.',
         'policy_updated' => 'Sicherheitsrichtlinie aktualisiert.',
         'sso_saved' => 'Single-Sign-on-Anbieter gespeichert.',
         'sso_removed' => 'Single-Sign-on-Anbieter entfernt.',
@@ -18,6 +19,10 @@ return [
         'scim_token_revoked' => 'SCIM-Token widerrufen.',
     ],
     'errors' => [
+        'cookie_session_required_title' => 'Cookie-Sitzung nicht verfügbar',
+        'cookie_session_required_detail' => 'Melden Sie sich über die Webanwendung an: Die Anfrage muss von einem https-Ursprung der Anwendung kommen, damit das Sitzungscookie gesetzt werden kann.',
+        'token_mode_disabled_title' => 'Token-Modus deaktiviert',
+        'token_mode_disabled' => 'Bearer-Token sind auf diesem Server deaktiviert: Melden Sie sich mit dem Sitzungscookie an.',
         'account_locked_title' => 'Konto gesperrt',
         'account_locked_detail' => 'Zu viele falsche Passwörter. Das Konto ist für eine Weile gesperrt: Versuchen Sie es später erneut.',
         'password_expired_title' => 'Passwort abgelaufen',
@@ -50,5 +55,6 @@ return [
         'saml_metadata_failed' => 'Die Metadaten sind nicht verwendbar (:reason).',
         'logout_invalid_title' => 'Abmeldung fehlgeschlagen',
         'logout_invalid_detail' => 'Die Abmeldenachricht fehlt, ist nicht signiert oder ungültig.',
+        'auth_method_unsupported' => 'Der Anbieter nennt diese Client-Authentifizierungsmethode nicht.',
     ],
 ];

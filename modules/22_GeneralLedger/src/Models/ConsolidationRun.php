@@ -31,6 +31,7 @@ use Illuminate\Support\Carbon;
  * @property list<array<string, mixed>> $members_snapshot
  * @property list<array<string, mixed>> $mappings_snapshot
  * @property list<array<string, mixed>> $rates
+ * @property array<string, mixed> $inputs_snapshot
  * @property list<array<string, mixed>> $warnings
  */
 final class ConsolidationRun extends BaseEnterpriseModel

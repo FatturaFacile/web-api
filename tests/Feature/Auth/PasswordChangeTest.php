@@ -20,6 +20,9 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     Mail::fake();
     config(['session.driver' => 'database']);
@@ -56,7 +59,7 @@ function passwordChangeRandomPassword(): string
 function passwordChangeLogin(string $password, string $userAgent = 'FatturaFacile Mobile/1.0'): string
 {
     return (string) test()->withHeader('User-Agent', $userAgent)
-        ->postJson('/api/v1/auth/login', ['email' => 'marco.rossi@example.com', 'password' => $password])
+        ->postJson('/api/v1/auth/login', ['email' => 'marco.rossi@example.com', 'password' => $password, 'token_mode' => true])
         ->assertOk()
         ->json('data.token');
 }
@@ -183,7 +186,7 @@ test('only the new password signs in after the change', function (): void {
     submitPasswordChange(passwordChangeLogin($this->password), passwordChangePayload())->assertOk();
     $this->app['auth']->forgetGuards();
 
-    $this->postJson('/api/v1/auth/login', ['email' => 'marco.rossi@example.com', 'password' => $this->password])->assertUnauthorized();
+    $this->postJson('/api/v1/auth/login', ['email' => 'marco.rossi@example.com', 'password' => $this->password, 'token_mode' => true])->assertUnauthorized();
     passwordChangeLogin($this->newPassword);
 });
 
@@ -275,7 +278,7 @@ test('the lock of one user does not affect another', function (): void {
     }
 
     $this->app['auth']->forgetGuards();
-    $otherToken = (string) $this->postJson('/api/v1/auth/login', ['email' => 'anna.neri@example.com', 'password' => $this->password])->json('data.token');
+    $otherToken = (string) $this->postJson('/api/v1/auth/login', ['email' => 'anna.neri@example.com', 'password' => $this->password, 'token_mode' => true])->json('data.token');
 
     submitPasswordChange($otherToken, passwordChangePayload())->assertOk();
 });

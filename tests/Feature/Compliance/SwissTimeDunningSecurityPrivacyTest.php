@@ -352,6 +352,7 @@ test('Phase I: Global GDPR & Swiss nLPD Compliance Module (Art. 30/12 RoPA, Art.
         ->assertOk()
         ->json('data');
 
+    // Entries written within the same second have no defined order: look for the entry, not at a position.
     expect($logs)->not->toBeEmpty()
-        ->and($logs[0]['action'])->toBe('portability_export');
+        ->and(collect($logs)->pluck('action')->all())->toContain('portability_export');
 });

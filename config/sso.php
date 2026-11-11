@@ -25,12 +25,17 @@ return [
     // Tolerance for clock differences between this server and the provider, on exp / nbf / iat.
     'clock_skew_seconds' => (int) env('SSO_CLOCK_SKEW_SECONDS', 60),
 
-    // Signature algorithms accepted for the id_token (RSASSA-PKCS1-v1_5 only; "none" and HMAC are never accepted).
-    'allowed_algorithms' => ['RS256', 'RS384', 'RS512'],
+    // Signature algorithms accepted for the id_token (RSASSA-PKCS1-v1_5 and ECDSA P-256; "none" and HMAC are never accepted).
+    'allowed_algorithms' => ['RS256', 'RS384', 'RS512', 'ES256'],
 
-    // Endpoints of the provider are tenant-configured URLs fetched by the server. By default they must be https and must
-    // not resolve to private, loopback or link-local addresses (SSRF). Only for development against a local provider.
+    // Endpoints of the provider are tenant-configured URLs fetched by the server: always https (never http, in every
+    // environment). By default they must also not resolve to private, loopback or link-local addresses (SSRF).
+    // This flag only lifts the address check, for development against a local provider.
     'allow_insecure_endpoints' => (bool) env('SSO_ALLOW_INSECURE_ENDPOINTS', false),
+
+    // The public discovery of the SSO of an email domain always takes at least this long, found or not, so the time does not
+    // tell a domain with SSO from one without.
+    'discovery_min_milliseconds' => (int) env('SSO_DISCOVERY_MIN_MILLISECONDS', 120),
 
     // Roles a provider mapping or a SCIM request can never grant.
     'forbidden_provisioned_roles' => ['owner'],

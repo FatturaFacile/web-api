@@ -6,6 +6,7 @@ namespace Modules\DocumentTrust\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Rules\PublicHttpUrl;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -19,6 +20,7 @@ use Modules\DocumentTrust\Http\Resources\PreservationVerificationResource;
 use Modules\DocumentTrust\Models\PreservationAccessLog;
 use Modules\DocumentTrust\Models\PreservationItem;
 use Modules\DocumentTrust\Models\PreservationPackage;
+use Modules\DocumentTrust\Models\PreservationSetting;
 use Modules\DocumentTrust\Services\PreservationAccessLogger;
 use Modules\DocumentTrust\Services\PreservationPackageService;
 use Modules\DocumentTrust\Services\PreservationRetention;
@@ -62,7 +64,7 @@ final class PreservationController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $page = PreservationPackage::with('latestVerification')
+        $page = PreservationPackage::with(['latestVerification', 'disposal'])
             ->when($filters['document_class'] ?? null, fn ($query, string $class) => $query->where('document_class', $class))
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
             ->latest()
@@ -106,7 +108,7 @@ final class PreservationController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $package = PreservationPackage::with('latestVerification')->findOrFail($id);
+        $package = PreservationPackage::with(['latestVerification', 'disposal'])->findOrFail($id);
         $this->logger->record('view', $package);
 
         return $this->successResponse([
@@ -322,6 +324,13 @@ final class PreservationController extends Controller
         new OA\Property(property: 'retention_years', type: 'object', example: ['issued_invoice' => 10], additionalProperties: new OA\AdditionalProperties(type: 'integer', minimum: 1, maximum: 100)),
         new OA\Property(property: 'confirmed_by_accountant', type: 'boolean'),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
+        new OA\Property(property: 'timestamp', type: 'object', nullable: true, description: 'RFC 3161 time-stamp authority of the tenant. `tsa_url` must be https and a public address (null removes the authority and its credentials); the optional basic-auth credentials are stored encrypted and never returned. `tsa_declared_qualified` is the tenant declaration that the TSA is a qualified provider; it is never assumed. When an authority is set, closing a package uses it and fails (package stays open) if it does not answer validly.', properties: [
+            new OA\Property(property: 'tsa_url', type: 'string', format: 'uri', nullable: true),
+            new OA\Property(property: 'tsa_username', type: 'string', nullable: true),
+            new OA\Property(property: 'tsa_password', type: 'string', nullable: true),
+            new OA\Property(property: 'tsa_provider_name', type: 'string', nullable: true),
+            new OA\Property(property: 'tsa_declared_qualified', type: 'boolean'),
+        ]),
     ])), tags: ['Document Trust'], responses: [
         new OA\Response(response: 200, description: 'Settings saved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
         new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -338,7 +347,18 @@ final class PreservationController extends Controller
             'retention_years.*' => ['integer', 'min:1', 'max:100'],
             'confirmed_by_accountant' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string', 'max:1000'],
+            'timestamp' => ['nullable', 'array'],
+            'timestamp.tsa_url' => ['nullable', 'string', 'max:2048', new PublicHttpUrl(['https'])],
+            'timestamp.tsa_username' => ['nullable', 'string', 'max:255'],
+            'timestamp.tsa_password' => ['nullable', 'string', 'max:255'],
+            'timestamp.tsa_provider_name' => ['nullable', 'string', 'max:120'],
+            'timestamp.tsa_declared_qualified' => ['nullable', 'boolean'],
         ]);
+
+        if (isset($data['timestamp'])) {
+            $this->retention->updateTimestamp(array_intersect_key($request->input('timestamp'), array_flip(['tsa_url', 'tsa_username', 'tsa_password', 'tsa_provider_name', 'tsa_declared_qualified'])));
+            $this->logger->record('settings', null, ['timestamp_authority' => $data['timestamp']['tsa_url'] ?? null, 'declared_qualified' => (bool) ($data['timestamp']['tsa_declared_qualified'] ?? false)], subject: PreservationSetting::firstOrFail());
+        }
 
         $years = (array) ($data['retention_years'] ?? []);
         $unknown = array_diff(array_keys($years), PreservationDocumentClass::values());

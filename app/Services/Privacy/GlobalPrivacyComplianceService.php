@@ -22,6 +22,7 @@ use Modules\HumanResources\Models\Employee;
 use Modules\Payroll\Models\PayrollEmployeeProfile;
 use Modules\Payroll\Models\Payslip;
 use Modules\Payroll\Models\SalaryCertificate;
+use RuntimeException;
 
 /**
  * Tenant-wide GDPR (EU 2016/679) and Swiss nLPD (RS 235.1 / DPOOP RS 235.11) compliance service.
@@ -34,6 +35,8 @@ final class GlobalPrivacyComplianceService
         private readonly PrivacyAudit $audit,
         private readonly PersonalDataRegistry $registry,
         private readonly PersonalDataAnonymizer $anonymizer,
+        private readonly UserErasureService $users,
+        private readonly VerticalSubjectErasure $verticals,
     ) {}
 
     /** Countries recognized as providing adequate protection by the Swiss Federal Council (Annex 1 DPOOP). */
@@ -261,6 +264,8 @@ final class GlobalPrivacyComplianceService
 
             $legalHolds = [];
             $erasedFields = [];
+            $extraRetained = [];
+            $extraAnonymised = [];
 
             if ($dsr->subject_type === 'contact') {
                 $contact = Contact::withoutGlobalScope('tenant')
@@ -356,11 +361,26 @@ final class GlobalPrivacyComplianceService
                     },
                 );
                 $erasedFields = $result['columns'];
+            } elseif ($dsr->subject_type === 'user') {
+                $this->resolver->resolve($tenantId, 'user', (string) $dsr->subject_id);
+                $result = $this->users->erase($tenantId, (string) $dsr->subject_id, $actorId);
+                $legalHolds = $result['legal_holds'];
+                $erasedFields = $result['erased_fields'];
+                $extraRetained = $result['retained'];
+                $extraAnonymised = $result['anonymised'];
+            } elseif (in_array($dsr->subject_type, ['member', 'child', 'visitor', 'applicant'], true)) {
+                $this->resolver->resolve($tenantId, (string) $dsr->subject_type, (string) $dsr->subject_id);
+                $result = $this->verticals->erase($tenantId, (string) $dsr->subject_type, (string) $dsr->subject_id);
+                $legalHolds = $result['legal_holds'];
+                $erasedFields = $result['erased_fields'];
             } else {
                 throw new InvalidArgumentException("Unsupported subject_type [{$dsr->subject_type}].");
             }
 
             $related = $this->handleRelatedRecords($tenantId, (string) $dsr->subject_type, (string) $dsr->subject_id, $legalHolds !== []);
+
+            $related['retained'] = array_merge($related['retained'], $extraRetained);
+            $related['anonymised'] = array_merge($related['anonymised'], $extraAnonymised);
 
             $status = $legalHolds === [] ? 'completed' : 'partially_completed_legal_hold';
 
@@ -403,7 +423,8 @@ final class GlobalPrivacyComplianceService
                 'contact' => 'contacts',
                 'employee' => 'hr_employees',
                 'lead' => 'crm_leads',
-                default => throw new InvalidArgumentException("Unsupported subject_type [{$dsr->subject_type}]."),
+                'member' => 'assoc_members',
+                default => throw new RuntimeException("Processing of a {$dsr->subject_type} cannot be marked as restricted: the module has no restriction marker. Reject the request or handle it by hand."),
             };
 
             $this->resolver->resolve($tenantId, (string) $dsr->subject_type, (string) $dsr->subject_id);

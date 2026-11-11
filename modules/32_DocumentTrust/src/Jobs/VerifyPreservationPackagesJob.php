@@ -9,6 +9,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Modules\DocumentTrust\Models\PreservationDisposal;
 use Modules\DocumentTrust\Models\PreservationPackage;
 use Modules\DocumentTrust\Services\PreservationPackageService;
 
@@ -40,6 +41,7 @@ final class VerifyPreservationPackagesJob implements ShouldQueue
         PreservationPackage::withoutGlobalScopes()
             ->where('tenant_id', $this->tenantId)
             ->where('status', PreservationPackage::Closed)
+            ->whereNotIn('id', PreservationDisposal::withoutGlobalScopes()->select('package_id'))
             ->orderBy('id')
             ->each(function (PreservationPackage $package) use ($packages, &$failed): void {
                 if ($packages->verify($package, 'scheduled')->result === 'failed') {

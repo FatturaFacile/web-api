@@ -111,6 +111,14 @@ class PreservationPackage extends Model
     }
 
     /**
+     * @return HasOne<PreservationDisposal, $this>
+     */
+    public function disposal(): HasOne
+    {
+        return $this->hasOne(PreservationDisposal::class, 'package_id');
+    }
+
+    /**
      * @return HasOne<PreservationVerification, $this>
      */
     public function latestVerification(): HasOne

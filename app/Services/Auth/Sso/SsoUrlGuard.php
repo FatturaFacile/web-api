@@ -6,8 +6,8 @@ namespace App\Services\Auth\Sso;
 
 /**
  * The endpoints of an identity provider are URLs typed by a tenant administrator and fetched by the server, so they are a
- * server-side request forgery vector. A URL is accepted only if it is https (http is accepted only when
- * `sso.allow_insecure_endpoints` is on, for development), has a host and no credentials, and its host is not, and does
+ * server-side request forgery vector. A URL is accepted only if it is https (http never, in every environment), has a
+ * host and no credentials, and its host is not, and does
  * not resolve to, a private, loopback, link-local or reserved address.
  *
  * Limit: the HTTP client resolves the name again when it connects, so a DNS answer that changes between the check and
@@ -29,7 +29,7 @@ final class SsoUrlGuard
 
         $scheme = strtolower((string) $parts['scheme']);
 
-        if ($scheme !== 'https' && ! ($insecureAllowed && $scheme === 'http')) {
+        if ($scheme !== 'https') {
             throw new SsoException('endpoint_not_https', $what);
         }
 
@@ -43,6 +43,20 @@ final class SsoUrlGuard
             if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false) {
                 throw new SsoException('endpoint_private_address', $what);
             }
+        }
+    }
+
+    /**
+     * For a URL the browser is sent to (not fetched by the server): https, a host and no credentials; no address check.
+     *
+     * @throws SsoException
+     */
+    public function assertHttps(string $url, string $what): void
+    {
+        $parts = parse_url($url);
+
+        if (! is_array($parts) || ! isset($parts['scheme'], $parts['host']) || isset($parts['user']) || isset($parts['pass']) || strtolower((string) $parts['scheme']) !== 'https') {
+            throw new SsoException('endpoint_not_https', $what);
         }
     }
 

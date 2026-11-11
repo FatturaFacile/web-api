@@ -16,6 +16,7 @@ use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\StatementScheme;
 use Modules\GeneralLedger\Services\Consolidation\ConsolidatedStatementService;
 use Modules\GeneralLedger\Services\Consolidation\ConsolidationService;
+use Modules\GeneralLedger\Services\Consolidation\GoodwillScheduleService;
 use Modules\GeneralLedger\Services\Consolidation\IntercompanyReconciliationService;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,6 +34,7 @@ final class ConsolidationRunController extends Controller
         private readonly ConsolidationService $consolidation,
         private readonly ConsolidatedStatementService $statements,
         private readonly IntercompanyReconciliationService $reconciliation,
+        private readonly GoodwillScheduleService $goodwillSchedule,
     ) {}
 
     #[OA\Get(
@@ -262,6 +264,25 @@ final class ConsolidationRunController extends Controller
     public function incomeStatement(Request $request, string $runId): JsonResponse
     {
         return $this->successResponse($this->statements->incomeStatement($request->user(), ConsolidationRun::query()->findOrFail($runId)));
+    }
+
+    #[OA\Get(
+        path: '/api/v1/general-ledger/consolidation/runs/{runId}/goodwill-schedule',
+        operationId: 'getConsolidationGoodwillSchedule',
+        description: 'The goodwill schedule of the acquisitions of a run for audit: per fiscal year of the parent the straight-line amortisation by whole months over the years of the group, the impairments entered, the opening and closing balance, and for the year of the run the charges to the period end that the run posted. Built from the amounts and inputs stored with the run, so it does not change when the configuration does.',
+        summary: 'Goodwill schedule of a run',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['General Ledger Consolidation'],
+        parameters: [new OA\Parameter(name: 'runId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Goodwill schedule', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/GeneralLedgerGoodwillSchedule')])),
+            new OA\Response(response: 403, description: 'The ledger of a member entity is not accessible', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function goodwillSchedule(Request $request, string $runId): JsonResponse
+    {
+        return $this->successResponse($this->goodwillSchedule->forRun($request->user(), ConsolidationRun::query()->findOrFail($runId)));
     }
 
     #[OA\Get(

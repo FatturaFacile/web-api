@@ -9,7 +9,6 @@ use App\Models\Privacy\PrivacyRetentionRun;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Database\Query\Builder;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Throwable;
@@ -97,17 +96,15 @@ final readonly class PrivacyRetentionService
             }
 
             $query->where((string) $entry->ageColumn, '<', $cutoff);
-            $this->anonymizer->scopeToUnanonymised($entry, $query);
         };
 
         try {
-            $matchQuery = DB::table($entry->table);
-            $scope($matchQuery);
-            $matched = (clone $matchQuery)->count();
+            $pending = $this->anonymizer->pendingIds($entry, $scope);
+            $matched = count($pending);
             $details = ['cutoff' => $cutoff->toIso8601String(), 'retention_days' => (int) $policy->retention_days];
 
             if ($dryRun) {
-                $details['sample_ids'] = (clone $matchQuery)->orderBy('id')->limit(20)->pluck('id')->all();
+                $details['sample_ids'] = array_slice($pending, 0, 20);
 
                 return $this->store($policy, true, $started, $matched, 0, 'completed', $details, $actorId);
             }

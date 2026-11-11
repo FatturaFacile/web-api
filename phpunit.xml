@@ -40,6 +40,11 @@
          setup-php in CI runs with no limit, local PHP/Docker images do not. -->
     <ini name="memory_limit" value="2G"/>
     <env name="APP_ENV" value="testing"/>
+    <!-- The system works over HTTPS only, tests included: requests are built as https and a plain-HTTP APP_URL stops the boot. -->
+    <env name="APP_URL" value="https://localhost" force="true"/>
+    <env name="FRONTEND_URL" value="https://localhost:4200" force="true"/>
+    <env name="SESSION_SECURE_COOKIE" value="true" force="true"/>
+    <env name="AUTH_TOKEN_MODE_ENABLED" value="false" force="true"/>
     <env name="APP_MAINTENANCE_DRIVER" value="file"/>
     <env name="BCRYPT_ROUNDS" value="4"/>
     <env name="BROADCAST_CONNECTION" value="null"/>

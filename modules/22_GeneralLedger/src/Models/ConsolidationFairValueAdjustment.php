@@ -14,6 +14,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
  * @property string|null $account_name
  * @property string $account_type
  * @property string $amount
+ * @property int|null $useful_life_years
  */
 final class ConsolidationFairValueAdjustment extends BaseEnterpriseModel
 {
@@ -21,6 +22,6 @@ final class ConsolidationFairValueAdjustment extends BaseEnterpriseModel
 
     protected function casts(): array
     {
-        return ['amount' => 'decimal:4'];
+        return ['amount' => 'decimal:4', 'useful_life_years' => 'integer'];
     }
 }

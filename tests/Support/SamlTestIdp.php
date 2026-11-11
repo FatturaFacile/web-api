@@ -187,6 +187,21 @@ XML;
         return $query + ['SigAlg' => $algorithm, 'Signature' => base64_encode($signature)];
     }
 
+    /**
+     * The query of the LogoutResponse the identity provider sends after a logout the service provider started (unsigned).
+     *
+     * @return array<string, string>
+     */
+    public function logoutResponseQuery(string $destination, string $inResponseTo): array
+    {
+        $instant = gmdate('Y-m-d\TH:i:s\Z');
+        $issuer = self::ENTITY_ID;
+        $xml = '<samlp:LogoutResponse xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="_lr'.bin2hex(random_bytes(8)).'" Version="2.0" IssueInstant="'.$instant.'" Destination="'.$destination.'" InResponseTo="'.$inResponseTo.'">'
+            .'<saml:Issuer>'.$issuer.'</saml:Issuer><samlp:Status><samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/></samlp:Status></samlp:LogoutResponse>';
+
+        return ['SAMLResponse' => base64_encode((string) gzdeflate($xml))];
+    }
+
     private function signAssertion(DOMDocument $document): void
     {
         $assertion = $document->getElementsByTagNameNS('urn:oasis:names:tc:SAML:2.0:assertion', 'Assertion')->item(0);

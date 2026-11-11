@@ -25,6 +25,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $goodwill_method
  * @property int|null $goodwill_amortisation_years
  * @property bool $require_account_mapping
+ * @property bool $deferred_tax_on_unrealised_profit
+ * @property string|null $unrealised_profit_tax_rate
+ * @property string $fair_value_first_year_rule
+ * @property string $goodwill_translation
+ * @property string $negative_goodwill_treatment
  * @property array<string, string>|null $synthetic_accounts
  */
 final class ConsolidationGroup extends BaseEnterpriseModel
@@ -50,6 +55,15 @@ final class ConsolidationGroup extends BaseEnterpriseModel
         'intercompany_difference' => 'CONS-IC-DIFF',
         'intercompany_pl_difference' => 'CONS-IC-PL-DIFF',
         'prior_unrealised_profit' => 'CONS-PRIOR-UNREAL',
+        'deferred_tax_asset' => 'CONS-DTA',
+        'deferred_tax_income' => 'CONS-DEFTAX-PL',
+        'fair_value_depreciation' => 'CONS-FV-DEPR',
+        'fair_value_prior' => 'CONS-FV-PRIOR',
+        'consolidation_provision' => 'CONS-PROV',
+        'provision_release_income' => 'CONS-PROV-REL',
+        'provision_release_prior' => 'CONS-PROV-PRIOR',
+        'bargain_purchase_gain' => 'CONS-BARGAIN',
+        'bargain_purchase_prior' => 'CONS-BARGAIN-PRIOR',
     ];
 
     protected function casts(): array
@@ -57,6 +71,7 @@ final class ConsolidationGroup extends BaseEnterpriseModel
         return [
             'is_active' => 'boolean',
             'require_account_mapping' => 'boolean',
+            'deferred_tax_on_unrealised_profit' => 'boolean',
             'goodwill_amortisation_years' => 'integer',
             'synthetic_accounts' => 'array',
         ];

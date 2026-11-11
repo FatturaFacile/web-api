@@ -27,4 +27,5 @@ enum AuthProblem: string
     case SsoLoginFailed = 'urn:fatturafacile:problem:sso-login-failed';
     case SessionExpired = 'urn:fatturafacile:problem:session-expired';
     case SessionTenantMismatch = 'urn:fatturafacile:problem:session-tenant-mismatch';
+    case CookieSessionRequired = 'urn:fatturafacile:problem:cookie-session-required';
 }

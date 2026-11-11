@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Services;
 
+use App\Models\Product;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
 use Modules\Inventory\Contracts\InventoryReplenishmentServiceInterface;
 use Modules\Inventory\Events\ReorderPointReachedEvent;
+use Modules\Inventory\Events\StockBelowMinimumEvent;
 use Modules\Inventory\Models\StockItem;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockReorderRule;
@@ -26,7 +28,8 @@ final class InventoryReplenishmentService implements InventoryReplenishmentServi
 {
     public function __construct(
         private readonly EventDispatcher $dispatcher,
-        private readonly AbcClassificationService $abc
+        private readonly AbcClassificationService $abc,
+        private readonly ProductStockLedger $productStock
     ) {}
 
     /**
@@ -51,6 +54,104 @@ final class InventoryReplenishmentService implements InventoryReplenishmentServi
             preferredSupplierId: $rule->preferred_supplier_id,
             tenantId: $rule->tenant_id,
             companyId: (string) ($rule->company_id ?? '')
+        );
+
+        $this->dispatcher->publishAndDispatch($event);
+
+        return $event->getEventId();
+    }
+
+    /**
+     * Crossing detection for the minimum stock level of a rule (monitored when the level is above zero). The state is
+     * kept in below_minimum_since: set when the available stock is found below the minimum (and the event is announced,
+     * claimed with an atomic update so concurrent evaluations announce once), cleared when it is back at or above it.
+     * Evaluations while it stays below announce nothing.
+     */
+    public function evaluateMinimumStock(StockReorderRule $rule): ?string
+    {
+        $item = $rule->item;
+        $minimum = (string) $rule->min_stock_level;
+
+        if ($item === null || Quantity::compare($minimum, '0') <= 0) {
+            return null;
+        }
+
+        $available = $this->availableInWarehouse($item, (string) $rule->warehouse_id);
+        $rules = StockReorderRule::withoutGlobalScopes()->whereKey($rule->id);
+
+        if (Quantity::compare($available, $minimum) >= 0) {
+            (clone $rules)->whereNotNull('below_minimum_since')->update(['below_minimum_since' => null]);
+
+            return null;
+        }
+
+        if ((clone $rules)->whereNull('below_minimum_since')->update(['below_minimum_since' => now()]) !== 1) {
+            return null;
+        }
+
+        $event = new StockBelowMinimumEvent(
+            scope: StockBelowMinimumEvent::ScopeWarehouse,
+            reorderRuleId: (string) $rule->id,
+            stockItemId: (string) $rule->stock_item_id,
+            warehouseId: (string) $rule->warehouse_id,
+            productId: $item->product_id !== null ? (string) $item->product_id : null,
+            availableStock: (float) $available,
+            minimumStock: (float) $minimum,
+            tenantId: (string) $rule->tenant_id,
+            companyId: (string) ($rule->company_id ?? '')
+        );
+
+        $this->dispatcher->publishAndDispatch($event);
+
+        return $event->getEventId();
+    }
+
+    /**
+     * Crossing detection for the minimum stock of a catalog product (products.min_stock), on the stock of the product
+     * across all warehouses: the figure of the Low stock dashboard widget, ProductStockLedger::levels() "quantity" (on
+     * hand net of the quantity sold beyond the stock). A product is monitored while it is active, tracks inventory and
+     * has a minimum above zero; otherwise its state is cleared. Same crossing rule as evaluateMinimumStock(): the event
+     * is announced when the stock is found below the minimum and products.below_minimum_since is empty, which is then
+     * set; it is cleared when the stock is back at or above the minimum.
+     *
+     * When a reorder rule minimum (per warehouse) and the product minimum both exist they are independent thresholds on
+     * different quantities (one warehouse, all warehouses): each has its own crossing and its own event, told apart by
+     * the payload "scope". One movement can therefore announce both; a receiver that wants one signal per item filters
+     * on scope.
+     */
+    public function evaluateProductMinimumStock(Product $product): ?string
+    {
+        $products = Product::withoutGlobalScopes()->whereKey($product->id);
+        $minimum = $product->min_stock !== null ? (string) $product->min_stock : '0';
+
+        if (! $product->track_inventory || ! $product->is_active || Quantity::compare($minimum, '0') <= 0) {
+            (clone $products)->whereNotNull('below_minimum_since')->update(['below_minimum_since' => null]);
+
+            return null;
+        }
+
+        $stock = Quantity::of((string) ($this->productStock->levels(null, [(string) $product->id])->first()['quantity'] ?? 0));
+
+        if (Quantity::compare($stock, $minimum) >= 0) {
+            (clone $products)->whereNotNull('below_minimum_since')->update(['below_minimum_since' => null]);
+
+            return null;
+        }
+
+        if ((clone $products)->whereNull('below_minimum_since')->update(['below_minimum_since' => now()]) !== 1) {
+            return null;
+        }
+
+        $event = new StockBelowMinimumEvent(
+            scope: StockBelowMinimumEvent::ScopeProduct,
+            reorderRuleId: null,
+            stockItemId: null,
+            warehouseId: null,
+            productId: (string) $product->id,
+            availableStock: (float) $stock,
+            minimumStock: (float) $minimum,
+            tenantId: (string) $product->tenant_id,
+            companyId: (string) ($product->company_id ?? '')
         );
 
         $this->dispatcher->publishAndDispatch($event);

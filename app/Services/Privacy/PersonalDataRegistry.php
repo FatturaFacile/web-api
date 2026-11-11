@@ -34,9 +34,11 @@ use Modules\Childcare\Models\ReferencePerson;
 use Modules\Contracts\Models\ContractParty;
 use Modules\CRM\Models\Consent;
 use Modules\CRM\Models\Lead;
+use Modules\DocumentTrust\Models\PreservationAccessLog;
 use Modules\HealthExpenses\Models\HealthExpense;
 use Modules\Hospitality\Models\Reservation;
 use Modules\HumanResources\Models\Employee;
+use Modules\HumanResources\Models\InterviewNote;
 use Modules\HumanResources\Models\JobApplication;
 use Modules\Inventory\Models\InventoryAuditEntry;
 use Modules\Inventory\Models\SafetyDataSheetDelivery;
@@ -88,7 +90,7 @@ final class PersonalDataRegistry
      */
     public static function subjectTypes(): array
     {
-        return ['contact', 'employee', 'lead'];
+        return ['contact', 'employee', 'lead', 'user', 'member', 'child', 'visitor', 'applicant'];
     }
 
     /**
@@ -133,6 +135,7 @@ final class PersonalDataRegistry
         $fiscal = PersonalDataRetention::FiscalRecord;
         $employment = PersonalDataRetention::StatutoryEmployment;
         $operational = PersonalDataRetention::Erasable;
+        $evidenceClass = PersonalDataRetention::Evidence;
         $commercial = 'Commercial record kept with the accounting documents.';
         $hr = 'Employment record, kept while the statutory period of the employer runs.';
 
@@ -142,6 +145,17 @@ final class PersonalDataRegistry
 
         return [
             'quotes' => $link('contact', 'contact_id', $fiscal, $commercial),
+            'tenant_user' => $link('user', 'user_id', $evidenceClass, 'Membership of the user in the company (role and permissions): removed by a user erasure.'),
+            'sso_identities' => $link('user', 'user_id', $operational, 'Identity of the user at the identity provider of the company: removed by a user erasure.'),
+            'assoc_receipts' => $link('member', 'member_id', $fiscal, 'Fee receipt: fiscal record of the association.'),
+            'assoc_fee_payments' => $link('member', 'member_id', $fiscal, 'Fee payment: fiscal record of the association.'),
+            'assoc_memberships' => $link('member', 'member_id', $evidenceClass, 'Members book entry, kept by the statutes and by law.'),
+            'assoc_consents' => $link('member', 'member_id', $evidenceClass, 'Consent history: proof of consent (art. 7(1) GDPR).'),
+            'cc_monthly_bills' => $link('child', 'child_id', $fiscal, 'Childcare bill: accounting record.'),
+            'cc_child_fees' => $link('child', 'child_id', $fiscal, 'Childcare fee: accounting record.'),
+            'cc_attendances' => $link('child', 'child_id', $fiscal, 'Attendance register used for billing and subsidies; erased by the childcare module once no longer needed (not automated).'),
+            'visitor_visits' => $link('visitor', 'visitor_id', $operational, 'Visit log: holds no personal data once the visitor is anonymised; purged by the visitors purge job.'),
+            'hr_application_stage_events' => $link('applicant', 'job_application_id', $operational, 'Stage history of the application: no personal data of the applicant beyond the link.'),
             'sales_returns' => $link('contact', 'contact_id', $fiscal, $commercial),
             'subscriptions' => $link('contact', 'contact_id', $fiscal, $commercial),
             'pos_sales' => $link('contact', 'contact_id', $fiscal, $commercial),
@@ -192,6 +206,8 @@ final class PersonalDataRegistry
             'customs_settings' => 'Address of the customs declarant (the company).',
             'ct_price_lists' => 'Reference to a licence in a price list (not a person).',
             'health_expense_settings' => 'Tax code of the owner of the company.',
+            'sso_providers' => 'Configuration of the identity provider of the company: the allowed email domains are company data, not data of data subjects.',
+            'saml_providers' => 'Configuration of the identity provider of the company: the allowed email domains and the attribute names are company data, not data of data subjects.',
         ];
     }
 
@@ -235,7 +251,8 @@ final class PersonalDataRegistry
             new PersonalDataEntry('weighbridge_vehicles', [WeighbridgeVehicle::class], 'Weighbridge vehicles', 'identity', ['license_plate'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('portal_activity_logs', [PortalActivityLog::class], 'Customer portal activity', 'technical', ['ip_address'], $erasable, 'Access log of the portal: erased with the contact and by retention policy.', ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('audit_logs', [AuditLog::class], 'Audit log', 'technical', ['ip_address'], $evidence, $evidenceNote),
-            new PersonalDataEntry('privacy_sensitive_access_logs', [PrivacySensitiveAccessLog::class], 'Sensitive access log', 'technical', ['ip_address'], $evidence, $evidenceNote),
+            new PersonalDataEntry('preservation_access_logs', [PreservationAccessLog::class], 'Preservation access log', 'technical', ['ip_address'], $evidence, $evidenceNote),
+            new PersonalDataEntry('privacy_sensitive_access_logs', [PrivacySensitiveAccessLog::class], 'Sensitive access log', 'technical', ['ip_address'], $evidence, $evidenceNote, ['user' => 'user_id']),
             new PersonalDataEntry('inventory_audit_entries', [InventoryAuditEntry::class], 'Inventory audit entries', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('approval_decisions', [ApprovalDecision::class], 'Approval decisions', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('workflow_audit_entries', [WorkflowAuditEntry::class], 'Workflow audit entries', 'technical', ['ip_address'], $evidence, $evidenceNote),
@@ -248,24 +265,25 @@ final class PersonalDataRegistry
             new PersonalDataEntry('esm_service_technicians', [ServiceTechnician::class], 'Service technicians', 'identity', ['first_name', 'last_name', 'email', 'phone'], $employment, 'Staff data: handled with the employee record.'),
             new PersonalDataEntry('esm_support_mailbox_messages', [SupportMailboxMessage::class], 'Support mailbox messages', 'contact', ['from_email'], $erasable, $operationalNote, [], 'created_at'),
             new PersonalDataEntry('esm_ticket_messages', [TicketMessage::class], 'Ticket messages', 'contact', ['author_email'], $erasable, $operationalNote, [], 'created_at'),
-            new PersonalDataEntry('hr_employees', [Employee::class], 'Employees', 'hr', ['first_name', 'last_name', 'full_name', 'work_email', 'personal_email', 'phone', 'birth_date', 'gender', 'nationality', 'tax_code', 'social_security_number', 'emergency_contact'], $employment, 'Contact data erased on request; identity kept while payroll vouchers (10 years) or working time records (5 years) are within the statutory period, to be confirmed.', ['employee' => 'id']),
-            new PersonalDataEntry('employee_profiles', [EmployeeProfile::class], 'Employee profiles', 'hr', ['social_security_number'], $employment, 'Employment record.'),
-            new PersonalDataEntry('hr_job_applications', [JobApplication::class], 'Job applications', 'hr', ['first_name', 'last_name', 'email', 'phone'], $erasable, 'Erased at the end of the consent period by the recruiting purge job, and by retention policy.', [], 'created_at'),
+            new PersonalDataEntry('hr_employees', [Employee::class], 'Employees', 'hr', ['first_name', 'last_name', 'full_name', 'work_email', 'personal_email', 'phone', 'birth_date', 'gender', 'nationality', 'tax_code', 'social_security_number', 'emergency_contact'], $employment, 'Contact data erased on request; identity kept while payroll vouchers (10 years) or working time records (5 years) are within the statutory period, to be confirmed.', ['employee' => 'id', 'user' => 'user_id']),
+            new PersonalDataEntry('employee_profiles', [EmployeeProfile::class], 'Employee profiles', 'hr', ['social_security_number'], $employment, 'Employment record.', ['user' => 'user_id']),
+            new PersonalDataEntry('hr_job_applications', [JobApplication::class], 'Job applications', 'hr', ['first_name', 'last_name', 'email', 'phone', 'cover_note'], $erasable, 'Erased at the end of the consent period by the recruiting purge job, and by retention policy.', ['applicant' => 'id'], 'created_at'),
+            new PersonalDataEntry('hr_interview_notes', [InterviewNote::class], 'Interview notes on applicants', 'hr', ['note'], $erasable, $operationalNote, ['applicant' => 'job_application_id'], 'created_at'),
             new PersonalDataEntry('payroll_employee_profiles', [PayrollEmployeeProfile::class], 'Payroll profiles', 'hr', ['social_security_number', 'iban', 'street', 'house_number', 'postal_code', 'city', 'gender', 'birth_place', 'italian_tax_code', 'swiss_permit_number', 'withholding_tax_code'], $employment, 'Payroll basis: kept with the payslips (10 years, CO art. 958f), to be confirmed.', ['employee' => 'employee_id']),
             new PersonalDataEntry('payroll_employee_children', [PayrollEmployeeChild::class], 'Children of employees (allowances)', 'hr', ['first_name', 'last_name', 'date_of_birth'], $employment, 'Basis of family allowances: kept with the payslips.', ['employee' => 'employee_id']),
             new PersonalDataEntry('payroll_payslips', [Payslip::class], 'Payslips', 'hr', ['withholding_tax_code'], $fiscal, 'Payroll voucher: 10 years (CO art. 958f), to be confirmed. Never deleted.', ['employee' => 'employee_id']),
             new PersonalDataEntry('contract_parties', [ContractParty::class], 'Contract parties', 'contact', ['email'], $fiscal, 'Contract record kept for the limitation period.'),
             new PersonalDataEntry('health_expenses', [HealthExpense::class], 'Health expenses', 'special', ['patient_fiscal_code'], $fiscal, 'Health data used for tax deductions (special category, art. 9 GDPR): kept for the tax period only.'),
             new PersonalDataEntry('assoc_donors', [Donor::class], 'Association donors', 'identity', ['tax_code', 'tax_code_hash', 'email', 'address'], $erasable, $manualNote),
-            new PersonalDataEntry('assoc_members', [Member::class], 'Association members', 'special', ['birth_date', 'birth_place', 'gender', 'tax_code', 'tax_code_hash', 'emergency_contact'], $erasable, $manualNote),
+            new PersonalDataEntry('assoc_members', [Member::class], 'Association members', 'special', ['birth_date', 'birth_place', 'gender', 'tax_code', 'tax_code_hash', 'emergency_contact', 'identity_document', 'health_notes', 'allergies', 'internal_notes'], $erasable, 'Erased through the associations erasure service, which checks the fiscal and members book retention (holds are reported).', ['member' => 'id']),
             new PersonalDataEntry('assoc_privacy_subjects', [PrivacySubject::class], 'Association privacy subjects', 'identity', ['tax_code', 'email', 'address'], $erasable, $manualNote),
             new PersonalDataEntry('assoc_sponsors', [Sponsor::class], 'Association sponsors', 'identity', ['email'], $erasable, $manualNote),
-            new PersonalDataEntry('cc_children', [Child::class], 'Children in care', 'special', ['first_name', 'last_name', 'birth_date'], $erasable, 'Children data: erased by the childcare module.'),
-            new PersonalDataEntry('cc_reference_persons', [ReferencePerson::class], 'Reference persons of children', 'contact', ['full_name', 'phone', 'email'], $erasable, 'Erased by the childcare module.'),
+            new PersonalDataEntry('cc_children', [Child::class], 'Children in care', 'special', ['first_name', 'last_name', 'birth_date', 'allergies', 'dietary_notes', 'health_notes'], $erasable, 'Health data are erased on request; the identity is kept while billing records are within the statutory period (to be confirmed).', ['child' => 'id']),
+            new PersonalDataEntry('cc_reference_persons', [ReferencePerson::class], 'Reference persons of children', 'contact', ['full_name', 'phone', 'email'], $erasable, 'Guardians and pick-up persons: erased with the child.', ['child' => 'child_id']),
             new PersonalDataEntry('hosp_reservations', [Reservation::class], 'Hospitality reservations', 'contact', ['guest_phone', 'guest_email'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
-            new PersonalDataEntry('visitors', [Visitor::class], 'Visitors', 'identity', ['first_name', 'last_name', 'company_name', 'email', 'phone', 'document_number'], $erasable, 'Erased by the visitors purge job at the end of the retention period, and by retention policy.', ['contact' => 'contact_id'], 'created_at'),
+            new PersonalDataEntry('visitors', [Visitor::class], 'Visitors', 'identity', ['first_name', 'last_name', 'company_name', 'email', 'phone', 'document_number'], $erasable, 'Erased by the visitors purge job at the end of the retention period, and by retention policy.', ['contact' => 'contact_id', 'visitor' => 'id'], 'created_at'),
             new PersonalDataEntry('sales_representatives', [SalesRepresentative::class], 'Sales representatives', 'identity', ['email', 'phone'], $employment, 'Staff or agent data.'),
-            new PersonalDataEntry('users', [User::class], 'User accounts', 'identity', ['name', 'first_name', 'last_name', 'email', 'phone'], $erasable, 'Accounts are closed through the user management; audit trails keep the user id only.', [], null, false, ['column' => 'id', 'table' => 'tenant_user', 'parentColumn' => 'user_id']),
+            new PersonalDataEntry('users', [User::class], 'User accounts', 'identity', ['name', 'first_name', 'last_name', 'email', 'phone'], $erasable, 'Membership removed per company; the global profile is anonymised only without other memberships and without employment records. Audit trails keep the user id only.', ['user' => 'id'], null, false, ['column' => 'id', 'table' => 'tenant_user', 'parentColumn' => 'user_id']),
         ];
 
         $entries = [];

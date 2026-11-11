@@ -19,6 +19,7 @@ use App\Services\Auth\Sso\SsoUrlGuard;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\ValidationException;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -104,6 +105,16 @@ class SsoProviderController extends Controller
         }
 
         $attributes += $this->endpoints($input);
+        $supported = Arr::pull($attributes, 'token_endpoint_auth_methods_supported');
+        $attributes['token_endpoint_auth_method'] = $this->authMethod($input['token_endpoint_auth_method'] ?? null, $supported, $existing?->token_endpoint_auth_method);
+
+        if (array_key_exists('end_session_endpoint', $input)) {
+            $attributes['end_session_endpoint'] = $this->safeUrl($input['end_session_endpoint'], 'end_session_endpoint');
+        }
+
+        if (array_key_exists('post_logout_redirect_uri', $input)) {
+            $attributes['post_logout_redirect_uri'] = $input['post_logout_redirect_uri'];
+        }
 
         if ($attributes['enabled'] === false && $this->policies->forTenant($tenantId)->ssoOnly) {
             return $this->ssoOnlyConflict();
@@ -153,7 +164,9 @@ class SsoProviderController extends Controller
             );
         }
 
-        $provider->forceFill($this->discover($provider->issuer))->save();
+        $discovered = $this->discover($provider->issuer);
+        Arr::pull($discovered, 'token_endpoint_auth_methods_supported');
+        $provider->forceFill($discovered)->save();
         $this->audit->record(RegistrationAudit::SSO_PROVIDER_SAVED, (string) $admin->id, ['provider' => $provider->id, 'discovery_refreshed' => true], $tenantId);
 
         return $this->successResponse(data: SsoProviderResource::make($provider->refresh()), message: __('enterprise_auth.messages.sso_saved'));
@@ -239,6 +252,54 @@ class SsoProviderController extends Controller
         } catch (SsoException $exception) {
             throw ValidationException::withMessages(['issuer' => __('enterprise_auth.errors.discovery_failed', ['reason' => $exception->reason])]);
         }
+    }
+
+    /**
+     * The client authentication method of the token endpoint: the one asked for (it must be among those the provider
+     * advertises), else, with a discovery document, client_secret_basic when advertised, else client_secret_post, else
+     * what the provider already had, else client_secret_post.
+     *
+     * @param  list<string>|null  $supported
+     *
+     * @throws ValidationException
+     */
+    private function authMethod(?string $requested, ?array $supported, ?string $current): string
+    {
+        if ($requested !== null) {
+            if ($supported !== null && ! in_array($requested, $supported, true)) {
+                throw ValidationException::withMessages(['token_endpoint_auth_method' => __('enterprise_auth.errors.auth_method_unsupported')]);
+            }
+
+            return $requested;
+        }
+
+        if ($supported !== null) {
+            foreach (['client_secret_basic', 'client_secret_post'] as $method) {
+                if (in_array($method, $supported, true)) {
+                    return $method;
+                }
+            }
+        }
+
+        return $current ?? 'client_secret_post';
+    }
+
+    /**
+     * @throws ValidationException
+     */
+    private function safeUrl(mixed $url, string $field): ?string
+    {
+        if (blank($url)) {
+            return null;
+        }
+
+        try {
+            $this->guard->assertSafe((string) $url, $field);
+        } catch (SsoException $exception) {
+            throw ValidationException::withMessages([$field => __('enterprise_auth.errors.endpoint_unsafe', ['reason' => $exception->reason])]);
+        }
+
+        return (string) $url;
     }
 
     private function ssoOnlyConflict(): JsonResponse

@@ -19,6 +19,8 @@ use Illuminate\Support\Carbon;
  * @property string $user_id
  * @property string $subject
  * @property Carbon|null $last_login_at
+ * @property string|null $last_id_token
+ * @property string|null $last_session_index
  */
 class SsoIdentity extends Model
 {
@@ -26,9 +28,14 @@ class SsoIdentity extends Model
 
     protected $guarded = ['id', 'tenant_id', 'created_at', 'updated_at'];
 
+    /**
+     * @var list<string>
+     */
+    protected $hidden = ['last_id_token'];
+
     protected function casts(): array
     {
-        return ['last_login_at' => 'datetime'];
+        return ['last_login_at' => 'datetime', 'last_id_token' => 'encrypted'];
     }
 
     /**

@@ -80,7 +80,7 @@ use OpenApi\Attributes as OA;
 #[OA\Schema(schema: 'PrivacyDataSubjectRequestRequest', description: 'Registration of a request of a data subject. Validated inline by PrivacyComplianceController::storeDataSubjectRequest.', required: ['request_type', 'subject_type', 'subject_id'], type: 'object', properties: [
     new OA\Property(property: 'request_type', type: 'string', enum: ['access', 'portability', 'rectification', 'erasure', 'restriction', 'objection']),
     new OA\Property(property: 'regulation', type: 'string', enum: ['nLPD', 'GDPR', 'both'], nullable: true, description: 'Defaults to nLPD'),
-    new OA\Property(property: 'subject_type', type: 'string', enum: ['contact', 'employee', 'lead']),
+    new OA\Property(property: 'subject_type', type: 'string', enum: ['contact', 'employee', 'lead', 'user', 'member', 'child', 'visitor', 'applicant']),
     new OA\Property(property: 'requester_reference', description: 'Own reference of the request (ticket or protocol number): do not enter personal data', type: 'string', maxLength: 120, nullable: true),
     new OA\Property(property: 'subject_id', description: 'Identifier of the contact, employee or lead the request is about; it must belong to the active company', type: 'string', format: 'uuid'),
     new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true, description: 'Free text: do not paste personal data of the subject here'),
@@ -90,7 +90,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'tenant_id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'request_type', type: 'string', enum: ['access', 'portability', 'rectification', 'erasure', 'restriction', 'objection']),
     new OA\Property(property: 'regulation', type: 'string', enum: ['nLPD', 'GDPR', 'both']),
-    new OA\Property(property: 'subject_type', type: 'string', enum: ['contact', 'employee', 'lead']),
+    new OA\Property(property: 'subject_type', type: 'string', enum: ['contact', 'employee', 'lead', 'user', 'member', 'child', 'visitor', 'applicant']),
     new OA\Property(property: 'subject_id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'status', description: 'received, identity_verified, in_progress, completed, rejected; partially_completed_legal_hold for requests closed by the one-step erasure', type: 'string', example: 'received'),
     new OA\Property(property: 'deadline_at', description: 'Registration date plus the deadline of the company (tenant setting, 30 days by default, to be confirmed)', type: 'string', format: 'date-time'),
@@ -117,7 +117,7 @@ use OpenApi\Attributes as OA;
 ])]
 #[OA\Schema(schema: 'PrivacyLegalHold', type: 'object', properties: [
     new OA\Property(property: 'statute', type: 'string', example: 'Swiss CO Art. 958f'),
-    new OA\Property(property: 'retention_years', type: 'integer', example: 10),
+    new OA\Property(property: 'retention_years', type: 'integer', example: 10, nullable: true),
     new OA\Property(property: 'reason', type: 'string'),
 ])]
 #[OA\Schema(schema: 'PrivacyErasureSummary', type: 'object', properties: [

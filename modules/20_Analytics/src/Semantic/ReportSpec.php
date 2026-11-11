@@ -21,6 +21,13 @@ use Throwable;
  */
 final readonly class ReportSpec
 {
+    /**
+     * Operators a filter on a measure accepts (it becomes a HAVING condition on the aggregate).
+     *
+     * @var list<string>
+     */
+    public const array MeasureOperators = ['eq', 'neq', 'gt', 'gte', 'lt', 'lte', 'between', 'is_null', 'not_null'];
+
     public const int MaxDimensions = 4;
 
     public const int MaxMeasures = 8;
@@ -116,14 +123,6 @@ final readonly class ReportSpec
             if ($dataset->periodDimension === null || $period === null) {
                 $errors['compare'][] = 'A comparison needs a dataset with a period and a period.';
             }
-
-            foreach ($dimensions as $dimension) {
-                if ($dataset->dimension($dimension['key'])?->type === Dimension::TypeDate) {
-                    $errors['compare'][] = 'A comparison cannot be combined with grouping by a date: the groups of the two periods would not match.';
-
-                    break;
-                }
-            }
         }
 
         if ($errors !== []) {
@@ -188,18 +187,21 @@ final readonly class ReportSpec
         $filters = [];
 
         foreach ($raw as $index => $filter) {
-            $dimension = is_array($filter) && is_string($filter['field'] ?? null) ? $dataset->dimension($filter['field']) : null;
+            $field = is_array($filter) && is_string($filter['field'] ?? null) ? $filter['field'] : null;
+            $measure = $field === null ? null : $dataset->measure($field);
+            $dimension = $field === null ? null : ($measure !== null ? new Dimension($measure->key, $measure->label, Dimension::TypeNumber, '1') : $dataset->dimension($field));
 
             if ($dimension === null) {
-                $errors["filters.{$index}.field"][] = 'Unknown dimension for this dataset.';
+                $errors["filters.{$index}.field"][] = 'Unknown dimension or measure for this dataset.';
 
                 continue;
             }
 
             $operator = $filter['operator'] ?? null;
+            $allowed = $measure !== null ? self::MeasureOperators : $dimension->operators();
 
-            if (! is_string($operator) || ! in_array($operator, $dimension->operators(), true)) {
-                $errors["filters.{$index}.operator"][] = 'Operator not allowed for a '.$dimension->type.' dimension.';
+            if (! is_string($operator) || ! in_array($operator, $allowed, true)) {
+                $errors["filters.{$index}.operator"][] = 'Operator not allowed for this field.';
 
                 continue;
             }

@@ -73,6 +73,9 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'redirect_uri', type: 'string', format: 'uri', description: 'Where the identity provider sends the browser back; the client then posts code and state to /api/v1/auth/sso/callback.'),
         new OA\Property(property: 'client_id', type: 'string'),
         new OA\Property(property: 'client_secret', type: 'string', nullable: true, writeOnly: true, description: 'Stored encrypted, never returned. Omit on update to keep the current one; empty for a public client.'),
+        new OA\Property(property: 'token_endpoint_auth_method', type: 'string', enum: ['client_secret_post', 'client_secret_basic'], description: 'How the client authenticates at the token endpoint. Default: client_secret_basic when the discovery document advertises it, else client_secret_post. A value the provider does not advertise is refused.'),
+        new OA\Property(property: 'end_session_endpoint', type: 'string', format: 'uri', nullable: true, description: 'RP-initiated logout endpoint; read from discovery unless given.'),
+        new OA\Property(property: 'post_logout_redirect_uri', type: 'string', format: 'uri', nullable: true, description: 'https URL the provider sends the browser to after the logout; it must be registered at the provider.'),
         new OA\Property(property: 'scopes', type: 'string', example: 'openid email profile'),
         new OA\Property(property: 'allowed_email_domains', type: 'array', items: new OA\Items(type: 'string', example: 'example.com')),
         new OA\Property(property: 'role_claim', type: 'string', nullable: true, example: 'groups'),
@@ -96,6 +99,9 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'redirect_uri', type: 'string'),
         new OA\Property(property: 'client_id', type: 'string'),
         new OA\Property(property: 'has_client_secret', type: 'boolean'),
+        new OA\Property(property: 'token_endpoint_auth_method', type: 'string', enum: ['client_secret_post', 'client_secret_basic']),
+        new OA\Property(property: 'end_session_endpoint', type: 'string', nullable: true),
+        new OA\Property(property: 'post_logout_redirect_uri', type: 'string', nullable: true),
         new OA\Property(property: 'scopes', type: 'string'),
         new OA\Property(property: 'allowed_email_domains', type: 'array', items: new OA\Items(type: 'string')),
         new OA\Property(property: 'role_claim', type: 'string', nullable: true),
@@ -119,6 +125,7 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'code', type: 'string', description: 'Authorization code returned by the identity provider.'),
         new OA\Property(property: 'state', type: 'string', description: 'The state of the started login; it is valid once, for a few minutes.'),
+        new OA\Property(property: 'token_mode', type: 'boolean', default: false, description: 'Ask for a Bearer token instead of the cookie session. Accepted only when the server enables the token mode (auth.token_mode.enabled); otherwise a 422.'),
     ]
 )]
 #[OA\Schema(

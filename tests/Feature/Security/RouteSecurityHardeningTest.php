@@ -54,7 +54,7 @@ function resolveRouteUri(RouteDefinition $route): string
 {
     return preg_replace_callback('/\{([a-zA-Z_]+)\??\}/', function (array $parameter) use ($route): string {
         $constraint = $route->wheres[$parameter[1]] ?? null;
-        $candidates = [(string) Str::uuid(), '2026', ...explode('|', (string) $constraint)];
+        $candidates = [(string) Str::uuid(), '2026', 'sample', ...explode('|', (string) $constraint)];
 
         return $constraint === null ? $candidates[0] : collect($candidates)->first(fn (string $value): bool => preg_match("#^(?:{$constraint})$#", $value) === 1);
     }, $route->uri());
@@ -74,6 +74,14 @@ function isPublicApiEndpoint(string $uri, string $method): bool
         'api/v1/auth/resend-reset-password-email',
         'api/v1/auth/validate-reset-token',
         'api/v1/auth/reset-password',
+        // Single sign-on: the sign-in itself, so there is no session yet. Protected by a single-use state/nonce (OIDC, SAML),
+        // by the signature of the assertion/id_token and by the tenant policy, see Auth\SsoOidcLoginTest and Auth\SamlLoginTest.
+        'api/v1/auth/sso',
+        'api/v1/auth/saml',
+        // SCIM 2.0 provisioning: authenticated by the per-tenant SCIM bearer token (AuthenticateScim), see Auth\ScimProvisioningTest.
+        'api/v1/scim/v2',
+        // Report download links: authenticated by the signature of the URL (signed, expiring), see Analytics\ScheduledExportsAndSnapshotsTest.
+        'api/v1/report-downloads',
         'api/v1/system/bootstrap-support',
         'api/v1/translations',
         'api/v1/lookups',

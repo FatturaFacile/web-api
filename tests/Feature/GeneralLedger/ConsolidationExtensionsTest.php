@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Models\ExchangeRate;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
@@ -202,15 +203,15 @@ test('goodwill is computed from the acquisition record with fair value, deferred
 
     $run = extRun($group)->assertCreated()->json('data');
 
-    // goodwill = 100 000 - 80 % x (70 000 + 10 000 - 2 500 deferred tax) = 38 000
+    // goodwill = 100 000 - 80 % x (70 000 + 10 000 - 2 500 deferred tax) = 38 000; fair value and its tax enter at 80 % only
     $entry = extLines(extAdjustments($run, 'goodwill')[0]);
     expect($entry['CONS-GOODWILL']['debit'])->toBe('38000.0000')
         ->and($entry['3000']['debit'])->toBe('40000.0000')
         ->and($entry['CONS-PRE-ACQ']['debit'])->toBe('16000.0000')
-        ->and($entry['1700']['debit'])->toBe('10000.0000')
-        ->and($entry['CONS-DTL']['credit'])->toBe('2500.0000')
+        ->and($entry['1700']['debit'])->toBe('8000.0000')
+        ->and($entry['CONS-DTL']['credit'])->toBe('2000.0000')
         ->and($entry['1500']['credit'])->toBe('100000.0000')
-        ->and($entry['CONS-FV-RES']['credit'])->toBe('1500.0000');
+        ->and($entry)->not->toHaveKey('CONS-FV-RES');
 
     // 120 months: 9 months before the year (2 850) and 6 in it (1 900); impairments 500 earlier, 1 000 this year
     $charges = extLines(extAdjustments($run, 'goodwill_amortisation')[0]);
@@ -219,9 +220,9 @@ test('goodwill is computed from the acquisition record with fair value, deferred
         ->and($charges['CONS-GW-IMP']['debit'])->toBe('1000.0000')
         ->and($charges['CONS-GW-ACC']['credit'])->toBe('6250.0000');
 
-    // minority 20 % of (80 000 net assets + 7 500 fair value net of tax) and of the profit 10 000
+    // minority 20 % of the 80 000 net assets (no fair value for them, OIC 17 para. 99) and of the profit 10 000
     $nci = $run['totals']['non_controlling_interests'][0];
-    expect($nci['nci_net_assets'])->toBe('17500.0000')
+    expect($nci['nci_net_assets'])->toBe('16000.0000')
         ->and($nci['nci_profit'])->toBe('2000.0000')
         ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue()
         ->and($run['totals']['balance_sheet_is_balanced'])->toBeTrue();
@@ -471,4 +472,386 @@ test('runs made without the extensions keep the fingerprint they had', function 
     expect($run['input_fingerprint'])->toHaveLength(64)
         ->and(DB::table('gl_consolidation_runs')->where('id', $run['id'])->value('inputs_snapshot'))->toBe('[]')
         ->and(test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/verify")->json('data.matches'))->toBeTrue();
+});
+
+/**
+ * @param  array<string, mixed>  $adjustment
+ * @return array<string, string> Debit minus credit by account code
+ */
+function extNets(array $adjustment): array
+{
+    $nets = [];
+
+    foreach ($adjustment['lines'] as $line) {
+        $nets[$line['account_code']] = bcadd($nets[$line['account_code']] ?? '0', bcsub($line['debit'], $line['credit'], 4), 4);
+    }
+
+    return $nets;
+}
+
+test('fair-value adjustments are released over their useful life with the deferred tax and without reaching the minority', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '300000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '100000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions", [
+        'member_tenant_id' => $this->sub->id, 'acquisition_date' => '2025-04-01', 'net_assets_at_acquisition' => 70000,
+        'recognise_deferred_tax' => true, 'deferred_tax_rate' => 25,
+        'fair_value_adjustments' => [
+            ['account_code' => '1700', 'account_name' => 'Building', 'account_type' => 'asset', 'amount' => 12000, 'useful_life_years' => 6],
+            ['account_code' => '1710', 'account_name' => 'Land', 'account_type' => 'asset', 'amount' => 1000],
+        ],
+    ])->assertCreated();
+
+    // pro rata from 1 April 2025: 9 months before the year and 6 in it, over 72 months, on 80 % of 12 000
+    $run = extRun($group)->assertCreated()->json('data');
+    $release = extNets(extAdjustments($run, 'fair_value_release')[0]);
+
+    expect(extAdjustments($run, 'fair_value_release'))->toHaveCount(1)
+        ->and($release['1700'])->toBe('-2000.0000')
+        ->and($release['CONS-FV-DEPR'])->toBe('800.0000')
+        ->and($release['CONS-FV-PRIOR'])->toBe('900.0000')
+        ->and($release['CONS-DTL'])->toBe('500.0000')
+        ->and($release['CONS-DEFTAX-PL'])->toBe('-200.0000');
+
+    // goodwill is untouched by the release: 100 000 - 80 % x (70 000 + 13 000 - 3 250)
+    $goodwill = extLines(extAdjustments($run, 'goodwill')[0]);
+    expect($goodwill['CONS-GOODWILL']['debit'])->toBe('36200.0000');
+
+    // the minority share does not include fair value: 20 % of the 70 000 net assets
+    expect($run['totals']['non_controlling_interests'][0]['nci_net_assets'])->toBe('14000.0000')
+        ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue();
+
+    // the other first-year rule counts the whole acquisition year: 12 months before the year
+    test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}", ['fair_value_first_year_rule' => 'full_year'])->assertOk();
+    $full = extNets(extAdjustments(extRun($group)->assertCreated()->json('data'), 'fair_value_release')[0]);
+
+    expect($full['1700'])->toBe('-2400.0000')
+        ->and($full['CONS-FV-DEPR'])->toBe('800.0000')
+        ->and($full['CONS-FV-PRIOR'])->toBe('1200.0000')
+        ->and($full['CONS-DTL'])->toBe('600.0000');
+});
+
+test('deferred tax on unrealised profit, the minority bearing an upstream sale and a transaction before the acquisition', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-03-01', $this->p['inventory'], $this->p['bank'], '12000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '50000');
+    extPost($this->sub, '2026-03-01', $this->s['bank'], $this->s['sales'], '12000');
+    extPost($this->sub, '2026-03-02', $this->s['cost'], $this->s['bank'], '9000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['deferred_tax_on_unrealised_profit' => true]);
+    extMember($group, $this->sub, 80)->assertCreated();
+    $url = "/api/v1/general-ledger/consolidation/groups/{$group}/intragroup-transactions";
+    // upstream: the 80 % subsidiary sold goods with a margin of 3 000 to the parent
+    test()->postJson($url, ['seller_tenant_id' => $this->sub->id, 'buyer_tenant_id' => $this->parent->id, 'asset_type' => 'inventory', 'transaction_date' => '2026-03-01', 'sale_price' => 12000, 'seller_cost' => 9000, 'asset_account_id' => $this->p['inventory']->id, 'profit_account_id' => $this->s['sales']->id])->assertCreated();
+
+    // the toggle is on and no rate exists: no rate is assumed
+    extRun($group)->assertStatus(422);
+
+    $parentMember = collect(test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}")->json('data.members'))->firstWhere('is_parent', true)['id'];
+    test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}/members/{$parentMember}", ['ownership_percentage' => 100, 'consolidation_method' => 'full'])->assertStatus(422);
+    test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}", ['unrealised_profit_tax_rate' => 25])->assertOk();
+
+    $run = extRun($group)->assertCreated()->json('data');
+    $entry = extNets(extAdjustments($run, 'unrealised_profit')[0]);
+
+    // margin 3 000 removed from the inventory of the parent, tax at 25 % on it deferred
+    expect($entry['1300'])->toBe('-3000.0000')
+        ->and($entry['4000'])->toBe('3000.0000')
+        ->and($entry['CONS-DTA'])->toBe('750.0000')
+        ->and($entry['CONS-DEFTAX-PL'])->toBe('-750.0000');
+
+    $sheet = test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/balance-sheet")->json('data');
+    $income = test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/income-statement")->json('data');
+    expect($sheet['deferred_tax_asset'])->toBe('750.0000')
+        ->and($sheet['is_balanced'])->toBeTrue()
+        ->and($income['income_tax'])->toBe('-750.0000')
+        ->and($income['net_income'])->toBe('750.0000');
+
+    // upstream: the minority (20 %) bears its share of the profit net of tax (2 250) and of the net assets (53 000 - 2 250)
+    $nci = $run['totals']['non_controlling_interests'][0];
+    expect($nci['nci_net_assets'])->toBe('10150.0000')->and($nci['nci_profit'])->toBe('150.0000');
+
+    // a transaction dated before the acquisition of one of its parties is not eliminated (OIC 17 para. 47)
+    test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions", ['member_tenant_id' => $this->sub->id, 'acquisition_date' => '2026-04-01', 'net_assets_at_acquisition' => 50000])->assertCreated();
+    $skipped = extRun($group)->assertCreated()->json('data');
+    expect(extAdjustments($skipped, 'unrealised_profit'))->toBe([])
+        ->and(collect($skipped['warnings'])->pluck('code')->all())->toContain('transaction_before_consolidation');
+});
+
+test('a sale from the parent leaves the minority interests alone', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-03-01', $this->p['bank'], $this->p['sales'], '12000');
+    extPost($this->parent, '2026-03-02', $this->p['cost'], $this->p['bank'], '9000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '50000');
+    extPost($this->sub, '2026-03-01', $this->s['inventory'], $this->s['bank'], '12000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['deferred_tax_on_unrealised_profit' => true, 'unrealised_profit_tax_rate' => 25]);
+    extMember($group, $this->sub, 80, 'full', ['tax_rate' => 20])->assertCreated();
+    test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/intragroup-transactions", ['seller_tenant_id' => $this->parent->id, 'buyer_tenant_id' => $this->sub->id, 'asset_type' => 'inventory', 'transaction_date' => '2026-03-01', 'margin_amount' => 3000, 'asset_account_id' => $this->s['inventory']->id, 'profit_account_id' => $this->p['sales']->id])->assertCreated();
+
+    $run = extRun($group)->assertCreated()->json('data');
+    $entry = extNets(extAdjustments($run, 'unrealised_profit')[0]);
+    $nci = $run['totals']['non_controlling_interests'][0];
+
+    // the buying member has its own rate (20 %), which wins over the group rate
+    expect($entry['1300'])->toBe('-3000.0000')
+        ->and($entry['CONS-DTA'])->toBe('600.0000')
+        ->and($nci['nci_net_assets'])->toBe('10000.0000')
+        ->and($nci['nci_profit'])->toBe('0.0000');
+});
+
+test('acquisition amounts in a local currency are translated at the acquisition date and goodwill can be retranslated', function (): void {
+    $k = Tenant::create(['name' => 'Elvetica', 'legal_name' => 'Elvetica AG', 'default_currency' => 'CHF']);
+    $this->accountant->tenants()->attach($k->id, ['id' => (string) Str::uuid(), 'role' => 'accountant']);
+    $pk = extChart($k);
+
+    foreach ([['2025-04-01', '0.900000'], ['2026-01-01', '1.000000'], ['2026-06-30', '1.100000']] as [$date, $rate]) {
+        ExchangeRate::query()->create(['source' => 'CHF', 'target' => 'EUR', 'rate' => $rate, 'effective_date' => $date]);
+    }
+
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '300000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '108000');
+    extPost($k, '2026-01-02', $pk['bank'], $pk['capital'], '100000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $k, 100)->assertCreated();
+    extMap(extRelation($group, $this->parent, $k), 'investment_equity', $this->p['invest']->id, $pk['capital']->id);
+    test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions", [
+        'member_tenant_id' => $k->id, 'acquisition_date' => '2025-04-01', 'input_currency' => 'CHF', 'cost' => 120000, 'net_assets_at_acquisition' => 100000,
+        'fair_value_adjustments' => [['account_code' => '1700', 'account_type' => 'asset', 'amount' => 10000]],
+    ])->assertCreated();
+
+    // CHF 120 000 - CHF 110 000 = CHF 10 000 of goodwill at 0.90 = 9 000; fair value 9 000
+    $run = extRun($group)->assertCreated()->json('data');
+    $entry = extLines(extAdjustments($run, 'goodwill')[0]);
+    $retranslations = fn (array $r): array => array_values(array_filter(extAdjustments($r, 'translation_difference'), fn (array $a): bool => str_contains($a['description'], 'Retranslation')));
+
+    expect($entry['CONS-GOODWILL']['debit'])->toBe('9000.0000')
+        ->and($entry['1700']['debit'])->toBe('9000.0000')
+        ->and($retranslations($run))->toBe([]);
+
+    // retranslated at the closing rate 1.10: 9 000 x 1.10 / 0.90 = 11 000 each, the difference to the translation reserve
+    test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}", ['goodwill_translation' => 'closing'])->assertOk();
+    $closing = extRun($group)->assertCreated()->json('data');
+    $lines = extLines($retranslations($closing)[0]);
+
+    expect($lines['CONS-GOODWILL']['debit'])->toBe('2000.0000')
+        ->and($lines['1700']['debit'])->toBe('2000.0000')
+        ->and($lines['CONS-CTA']['credit'])->toBe('4000.0000')
+        ->and($closing['totals']['trial_balance_is_balanced'])->toBeTrue();
+
+    // without a rate on the acquisition date nothing is guessed
+    ExchangeRate::query()->whereDate('effective_date', '2025-04-01')->delete();
+    extRun($group)->assertStatus(422);
+});
+
+test('the intercompany reconciliation reads a member from its own year and shows the mapped code', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '100000');
+    extPost($this->parent, '2026-03-01', $this->p['receivable'], $this->p['ic_sales'], '3000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '50000');
+    extPost($this->sub, '2026-02-10', $this->s['cost'], $this->s['bank'], '2000');
+    extPost($this->sub, '2026-05-10', $this->s['cost'], $this->s['bank'], '3000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 100)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'revenue_cost', $this->p['ic_sales']->id, $this->s['cost']->id);
+    test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/account-mappings", ['member_tenant_id' => $this->sub->id, 'account_id' => $this->s['cost']->id, 'group_account_code' => '6999', 'group_account_name' => 'Group cost'])->assertCreated();
+    $period = (string) FiscalPeriod::withoutGlobalScopes()->where('tenant_id', $this->parent->id)->whereDate('start_date', '<=', '2026-06-30')->whereDate('end_date', '>=', '2026-06-30')->firstOrFail()->id;
+    $report = fn (): array => test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}/intercompany-reconciliation?fiscal_period_id={$period}")->assertOk()->json('data.rows.0');
+
+    // the year of the subsidiary starts in January: 5 000 of cost against 3 000 of revenue
+    expect($report()['difference'])->toBe('-2000.0000')
+        ->and($report()['entity_b']['account_code'])->toBe('6999')
+        ->and($report()['entity_b']['year_start'])->toBe('2026-01-01');
+
+    // with the offset of the run only April to June counts: the pair matches
+    $memberId = collect(test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}")->json('data.members'))->firstWhere('member_tenant_id', $this->sub->id)['id'];
+    test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}/members/{$memberId}", ['ownership_percentage' => 100, 'consolidation_method' => 'full', 'fiscal_year_offset_months' => 3])->assertOk();
+
+    expect($report()['difference'])->toBe('0.0000')
+        ->and($report()['status'])->toBe('matched')
+        ->and($report()['entity_b']['year_start'])->toBe('2026-04-01');
+});
+
+test('a proportional member under twenty percent is reported', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '100000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '50000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 15, 'proportional')->assertCreated();
+
+    $codes = collect(extRun($group)->assertCreated()->json('data.warnings'))->pluck('code')->all();
+    expect($codes)->toContain('proportional_below_threshold');
+});
+
+test('a negative difference splits into a consolidation provision, used over time, and a consolidation reserve', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '50000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    $url = "/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions";
+    $base = ['member_tenant_id' => $this->sub->id, 'acquisition_date' => '2025-07-01', 'cost' => 50000, 'net_assets_at_acquisition' => 70000];
+
+    // the years of use are required with the expected charges
+    test()->postJson($url, [...$base, 'expected_future_charges' => 4000])->assertStatus(422);
+    $acquisition = test()->postJson($url, [...$base, 'expected_future_charges' => 4000, 'provision_release_years' => 4])->assertCreated()->json('data');
+
+    // 50 000 - 80 % x 70 000 = -6 000: 4 000 expected charges in a provision, 2 000 in the reserve (para. 73-74)
+    $run = extRun($group)->assertCreated()->json('data');
+    $first = extNets(extAdjustments($run, 'goodwill')[0]);
+    expect($first['CONS-PROV'])->toBe('-4000.0000')->and($first['CONS-NEG-GW'])->toBe('-2000.0000');
+
+    // used straight-line over 48 months from 1 July 2025: 6 months before the year, 6 in it
+    $use = extNets(extAdjustments($run, 'provision_release')[0]);
+    expect($use['CONS-PROV'])->toBe('1000.0000')
+        ->and($use['CONS-PROV-REL'])->toBe('-500.0000')
+        ->and($use['CONS-PROV-PRIOR'])->toBe('-500.0000')
+        ->and(extTb($run['id'])['CONS-PROV']['net'])->toBe('-3000.0000')
+        ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue();
+
+    // expected charges above the negative difference are limited to it: no reserve is left
+    test()->deleteJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}")->assertOk();
+    test()->postJson($url, [...$base, 'expected_future_charges' => 9000, 'provision_release_years' => 4])->assertCreated();
+    $capped = extNets(extAdjustments(extRun($group)->assertCreated()->json('data'), 'goodwill')[0]);
+    expect($capped['CONS-PROV'])->toBe('-6000.0000')->and($capped)->not->toHaveKey('CONS-NEG-GW');
+});
+
+test('the IFRS 3 treatment of a bargain purchase is an explicit group option', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '50000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['negative_goodwill_treatment' => 'immediate_income']);
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    $url = "/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions";
+    $base = ['member_tenant_id' => $this->sub->id, 'cost' => 50000, 'net_assets_at_acquisition' => 70000, 'expected_future_charges' => 4000, 'provision_release_years' => 4];
+
+    // acquired in the year: income of the year, and the provision of OIC 17 does not apply
+    $acquisition = test()->postJson($url, [...$base, 'acquisition_date' => '2026-02-01'])->assertCreated()->json('data');
+    $run = extRun($group)->assertCreated()->json('data');
+    $nets = extNets(extAdjustments($run, 'goodwill')[0]);
+    $income = test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/income-statement")->json('data');
+
+    expect($nets['CONS-BARGAIN'])->toBe('-6000.0000')
+        ->and($nets)->not->toHaveKey('CONS-PROV')
+        ->and(collect($run['warnings'])->pluck('code')->all())->toContain('provision_ignored')
+        ->and($income['total_revenue'])->toBe('6000.0000');
+
+    // acquired in an earlier year: the gain is already in retained earnings
+    test()->deleteJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}")->assertOk();
+    test()->postJson($url, [...$base, 'acquisition_date' => '2025-07-01'])->assertCreated();
+    $earlier = extNets(extAdjustments(extRun($group)->assertCreated()->json('data'), 'goodwill')[0]);
+    expect($earlier['CONS-BARGAIN-PRIOR'])->toBe('-6000.0000')->and($earlier)->not->toHaveKey('CONS-BARGAIN');
+});
+
+test('the goodwill schedule can be audited year by year and agrees with the run', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '100000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['goodwill_method' => 'straight_line', 'goodwill_amortisation_years' => 10]);
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    $acquisition = test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions", ['member_tenant_id' => $this->sub->id, 'acquisition_date' => '2025-04-01', 'net_assets_at_acquisition' => 70000])->assertCreated()->json('data');
+    test()->postJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}/impairments", ['fiscal_year' => 2025, 'amount' => 500])->assertCreated();
+    test()->postJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}/impairments", ['fiscal_year' => 2026, 'amount' => 1000])->assertCreated();
+
+    $run = extRun($group)->assertCreated()->json('data');
+    $schedule = test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/goodwill-schedule")->assertOk()->json('data');
+    $rows = $schedule['acquisitions'][0]['rows'];
+
+    // goodwill 100 000 - 80 % x 70 000 = 44 000 over 120 months
+    expect($schedule['goodwill_method'])->toBe('straight_line')
+        ->and($schedule['acquisitions'][0]['goodwill'])->toBe('44000.0000')
+        ->and($rows[0])->toMatchArray(['fiscal_year' => 2025, 'opening_balance' => '44000.0000', 'amortisation' => '3300.0000', 'impairment' => '500.0000', 'closing_balance' => '40200.0000', 'is_run_year' => false])
+        ->and($rows[1])->toMatchArray(['fiscal_year' => 2026, 'opening_balance' => '40200.0000', 'amortisation' => '4400.0000', 'impairment' => '1000.0000', 'closing_balance' => '34800.0000', 'is_run_year' => true, 'amortisation_to_period_end' => '2200.0000'])
+        ->and($rows[2]['opening_balance'])->toBe('34800.0000')
+        ->and(end($rows)['closing_balance'])->toBe('0.0000');
+
+    // the run posted the same charges to the period end
+    $charges = extNets(extAdjustments($run, 'goodwill_amortisation')[0]);
+    expect($charges['CONS-GW-AMORT'])->toBe($rows[1]['amortisation_to_period_end'])
+        ->and($charges['CONS-GW-IMP'])->toBe($rows[1]['impairment'])
+        ->and($charges['CONS-GW-PRIOR'])->toBe('3800.0000');
+
+    // another tenant cannot read the schedule of a run it does not own
+    $outsider = extTenant('Estranea');
+    $user = User::create(['name' => 'estraneo', 'email' => Str::uuid().'@example.com', 'password' => Str::password(16).chr(random_int(65, 90)).chr(random_int(97, 122)).random_int(0, 9)]);
+    $user->tenants()->attach($outsider->id, ['id' => (string) Str::uuid(), 'role' => 'owner']);
+    extActAs($user, $outsider);
+    test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/goodwill-schedule")->assertNotFound();
+});
+
+test('a member can be read from an interim statement of twelve months ending at the consolidation date', function (): void {
+    app(TenantContext::class)->setTenant($this->sub);
+    app(OpenFiscalYearAction::class)->execute((string) $this->sub->id, 2025);
+    app(TenantContext::class)->clear();
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '100000');
+    extPost($this->sub, '2025-01-02', $this->s['bank'], $this->s['capital'], '50000');
+    extPost($this->sub, '2025-05-10', $this->s['bank'], $this->s['sales'], '3000');
+    extPost($this->sub, '2025-08-10', $this->s['bank'], $this->s['sales'], '4000');
+    extPost($this->sub, '2026-02-10', $this->s['bank'], $this->s['sales'], '5000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 100)->assertCreated();
+    $memberId = collect(test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}")->json('data.members'))->firstWhere('member_tenant_id', $this->sub->id)['id'];
+    $update = fn (array $extra) => test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}/members/{$memberId}", ['ownership_percentage' => 100, 'consolidation_method' => 'full', ...$extra]);
+
+    // own year: the income of 2026 only
+    expect(extTb(extRun($group)->assertCreated()->json('data.id'))['4000']['net'])->toBe('-5000.0000');
+
+    // interim statement: 1 July 2025 to 30 June 2026, and the earlier result that is not closed is carried over
+    $update(['consolidation_basis' => 'interim_twelve_months'])->assertOk();
+    $run = extRun($group)->assertCreated()->json('data');
+    $tb = extTb($run['id']);
+
+    expect($tb['4000']['net'])->toBe('-9000.0000')
+        ->and($tb['CONS-RETAINED']['net'])->toBe('-3000.0000')
+        ->and(collect($run['members'])->firstWhere('tenant_id', $this->sub->id)['year_start'])->toBe('2025-07-01')
+        ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue();
+
+    // the interim basis has no offset
+    $update(['consolidation_basis' => 'interim_twelve_months', 'fiscal_year_offset_months' => 3])->assertStatus(422);
+    $update(['consolidation_basis' => 'own_year', 'fiscal_year_offset_months' => 3])->assertOk();
+    $update(['consolidation_basis' => 'interim_twelve_months'])->assertStatus(422);
+});
+
+test('the reconciliation scales a proportional member like the run', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '100000');
+    extPost($this->parent, '2026-03-01', $this->p['receivable'], $this->p['ic_sales'], '10000');
+    extPost($this->sub, '2026-03-01', $this->s['cost'], $this->s['payable'], '10000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 50, 'proportional')->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'receivable_payable', $this->p['receivable']->id, $this->s['payable']->id);
+    $period = (string) FiscalPeriod::withoutGlobalScopes()->where('tenant_id', $this->parent->id)->whereDate('start_date', '<=', '2026-06-30')->whereDate('end_date', '>=', '2026-06-30')->firstOrFail()->id;
+
+    $row = test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}/intercompany-reconciliation?fiscal_period_id={$period}")->assertOk()->json('data.rows.0');
+
+    // the joint venture contributes half of its payable, and the receivable is compared with that half
+    expect($row['entity_a']['group_amount'])->toBe('10000.0000')
+        ->and($row['entity_b']['local_amount'])->toBe('10000.0000')
+        ->and($row['entity_b']['group_amount'])->toBe('5000.0000')
+        ->and($row['entity_b']['consolidated_share'])->toBe('50.0000')
+        ->and($row['difference'])->toBe('0.0000')
+        ->and($row['status'])->toBe('matched');
 });

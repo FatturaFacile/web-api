@@ -31,6 +31,8 @@ Route::put('/settings', [PrivacyOperationsController::class, 'updateSettings'])-
 Route::get('/retention-policies', [PrivacyOperationsController::class, 'retentionPolicies'])->name('retention-policies.index');
 Route::put('/retention-policies/{entryKey}', [PrivacyOperationsController::class, 'savePolicy'])->name('retention-policies.save');
 Route::delete('/retention-policies/{entryKey}', [PrivacyOperationsController::class, 'deletePolicy'])->name('retention-policies.destroy');
+Route::get('/retention-suggestions', [PrivacyOperationsController::class, 'retentionSuggestions'])->name('retention-suggestions.index');
+Route::post('/retention-suggestions/{entryKey}/adopt', [PrivacyOperationsController::class, 'adoptSuggestion'])->name('retention-suggestions.adopt');
 Route::get('/retention-runs', [PrivacyOperationsController::class, 'retentionRuns'])->name('retention-runs.index');
 Route::post('/retention-runs', [PrivacyOperationsController::class, 'runRetention'])->name('retention-runs.store');
 

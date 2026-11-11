@@ -25,6 +25,9 @@ use Mockery\MockInterface;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     Mail::fake();
 });
@@ -85,7 +88,7 @@ function platformAdmin(): User
 
 function loginAs(string $email = 'giuliabianchitest@example.com', ?string $password = null)
 {
-    return test()->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password ?? registrationPassword()]);
+    return test()->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password ?? registrationPassword(), 'token_mode' => true]);
 }
 
 function ledgerActions(): array

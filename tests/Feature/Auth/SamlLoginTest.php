@@ -18,8 +18,12 @@ use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Tests\Support\SamlTestIdp;
+use Tests\Support\SsoFlow;
 
 uses(RefreshDatabase::class);
+
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
 
 beforeEach(function (): void {
     config(['sso.allow_insecure_endpoints' => true]);
@@ -58,7 +62,9 @@ function samlMember(Tenant $tenant, string $role, string $email, string $passwor
  */
 function samlStart(Tenant $tenant): array
 {
-    $url = test()->postJson('/api/v1/auth/saml/start', ['tenant_id' => $tenant->id])->assertOk()->json('data.redirect_url');
+    $response = test()->postJson('/api/v1/auth/saml/start', ['tenant_id' => $tenant->id])->assertOk();
+    $url = $response->json('data.redirect_url');
+    SsoFlow::keepCookie($response);
 
     return ['request_id' => SamlTestIdp::requestIdOf($url), 'relay_state' => SamlTestIdp::relayStateOf($url), 'url' => $url];
 }
@@ -85,7 +91,7 @@ function samlPost(Tenant $tenant, SamlTestIdp $idp, array $start, array $overrid
 {
     $response = $idp->response(samlOptions($tenant, $start, $overrides));
 
-    return test()->postJson('/api/v1/auth/saml/'.($postTo ?? $tenant)->id.'/acs', ['SAMLResponse' => $response, 'RelayState' => $relayState ?? $start['relay_state']]);
+    return test()->postJson('/api/v1/auth/saml/'.($postTo ?? $tenant)->id.'/acs', ['SAMLResponse' => $response, 'RelayState' => $relayState ?? $start['relay_state'], 'token_mode' => true]);
 }
 
 /**
@@ -284,7 +290,7 @@ test('an access opened by the SAML of one tenant does not work in the other tena
 test('SSO-only mode refuses the password and lets SAML through', function (): void {
     TenantSecurityPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'sso_only' => true]);
 
-    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password])->assertForbidden();
+    $this->postJson('/api/v1/auth/login', ['email' => $this->member->email, 'password' => $this->password, 'token_mode' => true])->assertForbidden();
     samlLogin($this->tenant, $this->idp)->assertOk();
 });
 

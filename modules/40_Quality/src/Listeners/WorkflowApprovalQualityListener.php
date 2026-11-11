@@ -12,6 +12,7 @@ use Illuminate\Validation\ValidationException;
 use Modules\Quality\Models\QmsProcedure;
 use Modules\Quality\Services\ProcedureService;
 use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
+use Modules\Workflow\Events\WorkflowInstanceExpiredEvent;
 use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
 use Modules\Workflow\Models\ApprovalDecision;
 use Modules\Workflow\Models\WorkflowInstance;
@@ -42,6 +43,13 @@ final readonly class WorkflowApprovalQualityListener implements ShouldQueueAfter
     {
         $this->withProcedure($event->instanceId, $event->tenantId, 'rejected', function (QmsProcedure $procedure, ?string $actor): void {
             $this->procedures->applyWorkflowRejection($procedure, 'Rejected by workflow', $actor);
+        });
+    }
+
+    public function handleExpired(WorkflowInstanceExpiredEvent $event): void
+    {
+        $this->withProcedure($event->instanceId, $event->tenantId, 'expired', function (QmsProcedure $procedure, ?string $actor) use ($event): void {
+            $this->procedures->applyWorkflowExpiry($procedure, $event->reason);
         });
     }
 

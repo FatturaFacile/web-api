@@ -11,6 +11,7 @@ use Illuminate\Http\Response;
 use Modules\Analytics\Http\Requests\KpiQueryRequest;
 use Modules\Analytics\Services\KpiCatalog;
 use Modules\Analytics\Services\KpiCsvExporter;
+use Modules\Analytics\Services\KpiSnapshotService;
 use OpenApi\Attributes as OA;
 
 /**
@@ -23,7 +24,7 @@ final class KpiController extends Controller
     /**
      * Inject the collaborators.
      */
-    public function __construct(private readonly KpiCatalog $catalog, private readonly KpiCsvExporter $exporter) {}
+    public function __construct(private readonly KpiCatalog $catalog, private readonly KpiCsvExporter $exporter, private readonly KpiSnapshotService $snapshots) {}
 
     /**
      * All indicators in one call.
@@ -39,6 +40,7 @@ final class KpiController extends Controller
             new OA\Parameter(ref: '#/components/parameters/AnaPeriodFrom'),
             new OA\Parameter(ref: '#/components/parameters/AnaPeriodTo'),
             new OA\Parameter(ref: '#/components/parameters/AnaCompare'),
+            new OA\Parameter(ref: '#/components/parameters/AnaKpiSource'),
             new OA\Parameter(name: 'kpis[]', description: 'Indicators to include (default: all)', in: 'query', required: false, schema: new OA\Schema(type: 'array', items: new OA\Items(type: 'string', enum: ['sales', 'purchases', 'margin', 'receivables-aging', 'payables-aging', 'stock-value', 'project-margin', 'hr-headcount']))),
         ],
         responses: [
@@ -50,6 +52,10 @@ final class KpiController extends Controller
     )]
     public function index(KpiQueryRequest $request): JsonResponse
     {
+        if ($request->wantsSnapshots()) {
+            return $this->successResponse($this->snapshots->report($request->kpiKeys(), $request->period(), $request->user()), 'KPIs retrieved from the daily snapshots');
+        }
+
         return $this->successResponse($this->catalog->report($request->kpiKeys(), $request->period(), $request->user()), 'KPIs retrieved');
     }
 
@@ -68,6 +74,7 @@ final class KpiController extends Controller
             new OA\Parameter(ref: '#/components/parameters/AnaPeriodFrom'),
             new OA\Parameter(ref: '#/components/parameters/AnaPeriodTo'),
             new OA\Parameter(ref: '#/components/parameters/AnaCompare'),
+            new OA\Parameter(ref: '#/components/parameters/AnaKpiSource'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'The KPI', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'success', type: 'boolean'), new OA\Property(property: 'message', type: 'string'), new OA\Property(property: 'data', ref: '#/components/schemas/AnalyticsKpiResult')])),
@@ -80,6 +87,10 @@ final class KpiController extends Controller
     public function show(KpiQueryRequest $request, string $kpi): JsonResponse
     {
         abort_unless(in_array($kpi, KpiCatalog::keys(), true), 404, 'Unknown indicator.');
+
+        if ($request->wantsSnapshots()) {
+            return $this->successResponse($this->snapshots->report([$kpi], $request->period(), $request->user())['kpis'][0], 'KPI retrieved from the daily snapshots');
+        }
 
         return $this->successResponse($this->catalog->report([$kpi], $request->period(), $request->user())['kpis'][0], 'KPI retrieved');
     }

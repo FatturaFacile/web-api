@@ -25,6 +25,9 @@ use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     Mail::fake();
 });
@@ -182,7 +185,7 @@ test('resetting updates the password and its dates and allows signing in only wi
         ->and($user->last_password_reset_at)->not->toBeNull()
         ->and($user->password_reset_required)->toBeFalse();
 
-    test()->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => newPassword()])->assertOk();
+    test()->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => newPassword(), 'token_mode' => true])->assertOk();
 });
 
 test('resetting revokes every access token and session of that user only', function (): void {
@@ -447,7 +450,7 @@ test('a reset does not bypass two factors: the next login still asks for the cod
     submitReset(lastResetToken())->assertOk();
 
     expect($user->fresh()->two_factor_confirmed_at)->not->toBeNull();
-    test()->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => newPassword()])
+    test()->postJson('/api/v1/auth/login', ['email' => $user->email, 'password' => newPassword(), 'token_mode' => true])
         ->assertOk()
         ->assertJsonPath('data.two_factor_required', true)
         ->assertJsonPath('data.token', null);

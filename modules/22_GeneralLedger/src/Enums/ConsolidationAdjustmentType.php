@@ -18,4 +18,6 @@ enum ConsolidationAdjustmentType: string
     case GoodwillAmortisation = 'goodwill_amortisation';
     case UnrealisedProfit = 'unrealised_profit';
     case Dividend = 'dividend';
+    case FairValueRelease = 'fair_value_release';
+    case ProvisionRelease = 'provision_release';
 }

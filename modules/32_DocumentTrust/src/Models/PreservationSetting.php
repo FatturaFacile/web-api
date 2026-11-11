@@ -25,10 +25,17 @@ class PreservationSetting extends Model
     /** @use HasFactory<PreservationSettingFactory> */
     use BelongsToTenant, HasFactory, HasUuids;
 
-    protected $fillable = ['tenant_id', 'retention_years', 'retention_confirmed_at', 'retention_confirmed_by', 'notes'];
+    protected $fillable = ['tenant_id', 'retention_years', 'retention_confirmed_at', 'retention_confirmed_by', 'notes', 'tsa_url', 'tsa_username', 'tsa_password', 'tsa_provider_name', 'tsa_declared_qualified'];
+
+    /**
+     * The TSA credentials are never returned.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['tsa_username', 'tsa_password'];
 
     protected function casts(): array
     {
-        return ['retention_years' => 'array', 'retention_confirmed_at' => 'datetime'];
+        return ['retention_years' => 'array', 'retention_confirmed_at' => 'datetime', 'tsa_username' => 'encrypted', 'tsa_password' => 'encrypted', 'tsa_declared_qualified' => 'boolean'];
     }
 }

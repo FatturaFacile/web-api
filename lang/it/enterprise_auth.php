@@ -11,6 +11,7 @@ return [
         'reused' => 'La password è stata usata di recente: scegline una diversa dalle ultime :count.',
     ],
     'messages' => [
+        'sign_in_code_issued' => 'Codice di accesso emesso: scambialo con la sessione.',
         'policy_updated' => 'Politica di sicurezza aggiornata.',
         'sso_saved' => 'Provider di single sign-on salvato.',
         'sso_removed' => 'Provider di single sign-on rimosso.',
@@ -18,6 +19,10 @@ return [
         'scim_token_revoked' => 'Token SCIM revocato.',
     ],
     'errors' => [
+        'cookie_session_required_title' => 'Sessione con cookie non disponibile',
+        'cookie_session_required_detail' => 'Accedi dall\x27applicazione web: la richiesta deve arrivare da un\x27origine https dell\x27applicazione, in modo che il cookie di sessione possa essere impostato.',
+        'token_mode_disabled_title' => 'Modalità token disattivata',
+        'token_mode_disabled' => 'I token Bearer sono disattivati su questo server: accedi con il cookie di sessione.',
         'account_locked_title' => 'Account bloccato',
         'account_locked_detail' => 'Troppe password errate. L\'account è bloccato per un po\': riprova più tardi.',
         'password_expired_title' => 'Password scaduta',
@@ -50,5 +55,6 @@ return [
         'saml_metadata_failed' => 'I metadati non sono utilizzabili (:reason).',
         'logout_invalid_title' => 'Logout non riuscito',
         'logout_invalid_detail' => 'Il messaggio di logout manca, non è firmato o non è valido.',
+        'auth_method_unsupported' => 'Il provider non dichiara questo metodo di autenticazione del client.',
     ],
 ];
