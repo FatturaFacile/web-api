@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Enums\Auth\AuthProblem;
 use App\Http\Responses\ApiResponse;
 use App\Models\User;
+use App\Services\Auth\Security\TenantSecurityPolicies;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
 use Closure;
@@ -14,7 +15,8 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * When the active tenant requires two factors, a member without them reaches only the authentication routes (profile,
+ * When the active tenant requires two factors of everyone, or of the role of the member (tenant security policy), a
+ * member without them reaches only the authentication routes (profile,
  * logout, refresh, tenant switch and the two-factor setup) until the setup is complete. API keys are not users and
  * are not affected.
  */
@@ -30,6 +32,7 @@ final class EnsureTwoFactorEnrolled
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly TwoFactorAuthentication $twoFactor,
+        private readonly TenantSecurityPolicies $policies,
     ) {}
 
     /**
@@ -47,7 +50,10 @@ final class EnsureTwoFactorEnrolled
             return $next($request);
         }
 
-        if ($this->twoFactor->isEnabled($user) || ! $this->twoFactor->isRequiredBy($this->tenantContext->getTenant())) {
+        $tenant = $this->tenantContext->getTenant();
+        $role = $tenant === null ? null : $user->getRoleInTenant((string) $tenant->id);
+
+        if ($this->twoFactor->isEnabled($user) || ! $this->policies->requiresTwoFactor($tenant, $role)) {
             return $next($request);
         }
 

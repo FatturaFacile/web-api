@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Auth\DeviceDescription;
 use App\Services\Auth\PasswordResetTokens;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Security\PasswordPolicy;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Auth\UserSessions;
 use Illuminate\Support\Carbon;
@@ -32,6 +33,7 @@ class ChangePassword
         private readonly UserSessions $sessions,
         private readonly PasswordResetTokens $resetTokens,
         private readonly RegistrationAudit $audit,
+        private readonly PasswordPolicy $passwordPolicy,
     ) {}
 
     /**
@@ -69,10 +71,14 @@ class ChangePassword
             }
         }
 
+        $this->passwordPolicy->assertAcceptable($user, $newPassword);
+
         $hashedPassword = Hash::make($newPassword);
 
         DB::transaction(function () use ($user, $hashedPassword): void {
             $now = Carbon::now();
+
+            $this->passwordPolicy->remember($user, (string) $user->password);
 
             $user->forceFill([
                 'password' => $hashedPassword,

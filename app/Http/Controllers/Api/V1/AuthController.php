@@ -10,16 +10,20 @@ use App\Http\Requests\Auth\TwoFactorChallengeRequest;
 use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Auth\LoginResponder;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Security\LoginLockout;
+use App\Services\Auth\Security\PasswordPolicy;
+use App\Services\Auth\Security\TenantSecurityPolicies;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Auth\Events\Failed;
-use Illuminate\Auth\Events\Login;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
@@ -34,6 +38,10 @@ class AuthController extends Controller
         private readonly TenantContext $tenantContext,
         private readonly TwoFactorAuthentication $twoFactor,
         private readonly RegistrationAudit $audit,
+        private readonly LoginResponder $responder,
+        private readonly LoginLockout $lockout,
+        private readonly PasswordPolicy $passwordPolicy,
+        private readonly TenantSecurityPolicies $policies,
     ) {}
 
     /**
@@ -107,12 +115,28 @@ class AuthController extends Controller
         if ($user === null || ! $passwordMatches) {
             event(new Failed('sanctum', $user, ['email' => $validated['email']]));
 
+            if ($user !== null) {
+                $this->lockout->recordFailure($user);
+            }
+
             return $this->problemDetailsResponse(
                 title: 'Invalid Credentials',
                 detail: 'The provided email or password does not match our records.',
                 status: Response::HTTP_UNAUTHORIZED
             );
         }
+
+        // Only someone who knows the password learns that the account is locked: the answer to a wrong password stays the same.
+        if ($this->lockout->isLocked($user)) {
+            return $this->problemDetailsResponse(
+                title: __('enterprise_auth.errors.account_locked_title'),
+                detail: __('enterprise_auth.errors.account_locked_detail'),
+                status: Response::HTTP_LOCKED,
+                type: AuthProblem::AccountLocked->value,
+            );
+        }
+
+        $this->lockout->clear($user);
 
         if (! $user->is_active) {
             return $this->problemDetailsResponse(
@@ -132,6 +156,16 @@ class AuthController extends Controller
         }
 
         $tenants = $user->tenants;
+
+        // Every membership was suspended by the identity provider (SCIM deactivation): the account has nowhere to sign in.
+        if ($tenants->isEmpty() && DB::table('tenant_user')->where('user_id', $user->id)->whereNotNull('suspended_at')->exists()) {
+            return $this->problemDetailsResponse(
+                title: 'Account Disabled',
+                detail: 'Your user account has been disabled. Please contact your organization administrator.',
+                status: Response::HTTP_FORBIDDEN
+            );
+        }
+
         $accessRequest = $tenants->isEmpty() ? $user->tenantAccessRequest : null;
 
         if ($accessRequest?->isPending()) {
@@ -165,6 +199,28 @@ class AuthController extends Controller
             }
         } else {
             $activeTenant = $tenants->first();
+        }
+
+        if ($activeTenant !== null && ! $user->is_platform_admin && $this->policies->forTenant($activeTenant)->ssoOnly) {
+            $this->audit->record(RegistrationAudit::PASSWORD_LOGIN_DENIED_SSO_ONLY, (string) $user->id, [], (string) $activeTenant->id);
+
+            return $this->problemDetailsResponse(
+                title: __('enterprise_auth.errors.sso_required_title'),
+                detail: __('enterprise_auth.errors.sso_required_detail'),
+                status: Response::HTTP_FORBIDDEN,
+                type: AuthProblem::SsoRequired->value,
+            );
+        }
+
+        if ($this->passwordPolicy->passwordIsExpired($user)) {
+            $this->audit->record(RegistrationAudit::PASSWORD_EXPIRED_LOGIN_DENIED, (string) $user->id, [], $activeTenant?->id);
+
+            return $this->problemDetailsResponse(
+                title: __('enterprise_auth.errors.password_expired_title'),
+                detail: __('enterprise_auth.errors.password_expired_detail'),
+                status: Response::HTTP_FORBIDDEN,
+                type: AuthProblem::PasswordExpired->value,
+            );
         }
 
         // With two factors the password alone gives no access token: a short-lived challenge is exchanged for one.
@@ -271,7 +327,7 @@ class AuthController extends Controller
             ]);
         }
 
-        return $this->authenticatedResponse($request, $user, $activeTenant, $tenants);
+        return $this->authenticatedResponse($request, $user, $activeTenant, $tenants, (string) ($challenge['auth_method'] ?? LoginResponder::METHOD_PASSWORD));
     }
 
     /**
@@ -279,55 +335,9 @@ class AuthController extends Controller
      *
      * @param  Collection<int, Tenant>  $tenants
      */
-    private function authenticatedResponse(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants): JsonResponse
+    private function authenticatedResponse(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants, string $authMethod = LoginResponder::METHOD_PASSWORD): JsonResponse
     {
-        // Cookie mode: the request comes from a first-party SPA (Sanctum stateful domain), so it carries a session. The
-        // session cookie is HttpOnly and CSRF-protected, and no token is put in the body, where a script could read it.
-        // Token mode: every other client gets an expiring Bearer token.
-        $cookieMode = $request->hasSession();
-        $token = null;
-        $expiresAt = null;
-
-        if ($cookieMode) {
-            Auth::guard('web')->login($user);
-            $request->session()->regenerate();
-        } else {
-            [$token, $expiresAt] = $this->issueToken($request, $user);
-        }
-
-        event(new Login('sanctum', $user, false));
-
-        return $this->successResponse(
-            data: [
-                'auth_mode' => $cookieMode ? 'cookie' : 'token',
-                'token' => $token,
-                'token_type' => $cookieMode ? null : 'Bearer',
-                'expires_at' => $expiresAt,
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'locale' => $user->locale,
-                    'two_factor_enabled' => $this->twoFactor->isEnabled($user),
-                ],
-                'two_factor_setup_required' => ! $this->twoFactor->isEnabled($user) && $this->twoFactor->isRequiredBy($activeTenant),
-                'active_tenant' => $activeTenant ? [
-                    'id' => $activeTenant->id,
-                    'name' => $activeTenant->name,
-                    'legal_name' => $activeTenant->legal_name,
-                    'country' => $activeTenant->country,
-                    'default_currency' => $activeTenant->default_currency,
-                    'role' => $activeTenant->pivot?->role,
-                ] : null,
-                'available_tenants' => $tenants->map(fn (Tenant $t) => [
-                    'id' => $t->id,
-                    'name' => $t->name,
-                    'country' => $t->country,
-                    'role' => $t->pivot?->role,
-                ]),
-            ],
-            message: 'Authenticated successfully'
-        );
+        return $this->responder->respond($request, $user, $activeTenant, $tenants, $authMethod);
     }
 
     /**
@@ -562,7 +572,7 @@ class AuthController extends Controller
 
         // A token is rotated: the old one stops working as soon as the new one is issued.
         $token->delete();
-        [$newToken, $expiresAt] = $this->issueToken($request, $user);
+        [$newToken, $expiresAt] = $this->responder->issueToken($request, $user, (string) ($token->getAttribute('auth_method') ?: LoginResponder::METHOD_PASSWORD), $token->getAttribute('auth_tenant_id') ?: null);
 
         return $this->successResponse(
             data: [
@@ -573,22 +583,5 @@ class AuthController extends Controller
             ],
             message: 'Token refreshed successfully'
         );
-    }
-
-    /**
-     * A Bearer token with an explicit expiry, named after the client so the user can recognise it among the sessions.
-     *
-     * @return array{0: string, 1: string|null} the plain token and its expiry
-     */
-    private function issueToken(Request $request, User $user): array
-    {
-        $minutes = config('sanctum.expiration');
-        $expiresAt = $minutes === null ? null : now()->addMinutes((int) $minutes);
-        $client = mb_substr(trim((string) $request->userAgent()), 0, 120);
-        $name = $client === '' ? 'api-token' : $client;
-
-        $token = $user->createToken($name, ['*'], $expiresAt)->plainTextToken;
-
-        return [$token, $expiresAt?->toIso8601String()];
     }
 }

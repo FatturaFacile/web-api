@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\OpenApi\Processors;
 
+use App\Http\Middleware\AuthenticateScim;
 use App\Http\Middleware\IdentifyTenant;
 use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Routing\Route as LaravelRoute;
@@ -71,6 +72,7 @@ final class DocumentRequestContext
         $operation->security = match (true) {
             $isAuthenticated && $isTenantScoped => [['bearerAuth' => [], 'tenantHeader' => []]],
             $isAuthenticated => [['bearerAuth' => []]],
+            $this->hasMiddleware($middleware, AuthenticateScim::class) => [['scimBearerAuth' => []]],
             default => [],
         };
 

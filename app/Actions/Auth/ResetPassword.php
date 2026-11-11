@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Services\Auth\DeviceDescription;
 use App\Services\Auth\PasswordResetTokens;
 use App\Services\Auth\RegistrationAudit;
+use App\Services\Auth\Security\PasswordPolicy;
 use App\Services\Auth\UserSessions;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -24,6 +25,7 @@ class ResetPassword
         private readonly CheckPasswordResetToken $check,
         private readonly PasswordResetTokens $tokens,
         private readonly RegistrationAudit $audit,
+        private readonly PasswordPolicy $passwordPolicy,
         private readonly UserSessions $sessions,
     ) {}
 
@@ -39,6 +41,8 @@ class ResetPassword
         }
 
         $user = $token->user;
+        $this->passwordPolicy->assertAcceptable($user, $password);
+
         $hashedPassword = Hash::make($password);
 
         $consumed = DB::transaction(function () use ($token, $user, $hashedPassword): bool {
@@ -55,12 +59,16 @@ class ResetPassword
                 return false;
             }
 
+            $this->passwordPolicy->remember($user, (string) $user->password);
+
             $user->forceFill([
                 'password' => $hashedPassword,
                 'remember_token' => Str::random(60),
                 'password_changed_at' => $now,
                 'last_password_reset_at' => $now,
                 'password_reset_required' => false,
+                'failed_login_attempts' => 0,
+                'login_locked_until' => null,
             ])->save();
 
             $this->tokens->invalidateFor($user);
