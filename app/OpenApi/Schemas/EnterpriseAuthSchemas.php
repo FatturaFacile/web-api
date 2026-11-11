@@ -119,6 +119,7 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'code', type: 'string', description: 'Authorization code returned by the identity provider.'),
         new OA\Property(property: 'state', type: 'string', description: 'The state of the started login; it is valid once, for a few minutes.'),
+        new OA\Property(property: 'token_mode', type: 'boolean', default: false, description: 'Ask for a Bearer token instead of the cookie session. Accepted only when the server enables the token mode (auth.token_mode.enabled); otherwise a 422.'),
     ]
 )]
 #[OA\Schema(

@@ -34,25 +34,19 @@ beforeEach(function (): void {
     $this->user->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'admin']);
 });
 
-/**
- * @return array<string, string>
- */
-function spaHeaders(): array
-{
-    return ['Origin' => 'https://localhost:4200', 'Referer' => 'https://localhost:4200/login'];
-}
-
 function tokenLogin(string $email, string $password, string $userAgent = 'FatturaFacile Mobile/1.0'): string
 {
     return (string) test()->withHeader('User-Agent', $userAgent)
-        ->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password])
+        ->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password, 'token_mode' => true])
         ->assertOk()
         ->json('data.token');
 }
 
-test('a client outside the SPA domains gets an expiring Bearer token named after the client', function (): void {
+test('a client that asks for the token mode gets an expiring Bearer token named after the client', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+
     $response = $this->withHeader('User-Agent', 'FatturaFacile Mobile/1.0')
-        ->postJson('/api/v1/auth/login', ['email' => 'giulia.bianchi@example.com', 'password' => $this->password])
+        ->postJson('/api/v1/auth/login', ['email' => 'giulia.bianchi@example.com', 'password' => $this->password, 'token_mode' => true])
         ->assertOk()
         ->assertJsonPath('data.auth_mode', 'token')
         ->assertJsonPath('data.token_type', 'Bearer');
@@ -72,8 +66,8 @@ test('the SPA logs in with an HttpOnly session cookie and never receives a token
         ->postJson('/api/v1/auth/login', ['email' => 'giulia.bianchi@example.com', 'password' => $this->password, 'tenant_id' => $this->tenant->id])
         ->assertOk()
         ->assertJsonPath('data.auth_mode', 'cookie')
-        ->assertJsonPath('data.token', null)
-        ->assertJsonPath('data.token_type', null);
+        ->assertJsonMissingPath('data.token')
+        ->assertJsonMissingPath('data.token_type');
 
     expect(PersonalAccessToken::count())->toBe(0);
 
@@ -87,7 +81,7 @@ test('the SPA logs in with an HttpOnly session cookie and never receives a token
         ->postJson('/api/v1/auth/refresh')
         ->assertOk()
         ->assertJsonPath('data.auth_mode', 'cookie')
-        ->assertJsonPath('data.token', null);
+        ->assertJsonMissingPath('data.token');
 
     expect(PersonalAccessToken::count())->toBe(0);
 });
@@ -112,12 +106,14 @@ test('the SPA completes a login with two factors in cookie mode', function (): v
         ->postJson('/api/v1/auth/two-factor-challenge', ['challenge_token' => $challenge, 'code' => $totp->codeAt($secret, time())])
         ->assertOk()
         ->assertJsonPath('data.auth_mode', 'cookie')
-        ->assertJsonPath('data.token', null);
+        ->assertJsonMissingPath('data.token');
 
     $this->withHeaders([...spaHeaders(), 'X-Tenant-Id' => $this->tenant->id])->getJson('/api/v1/auth/profile')->assertOk();
 });
 
 test('refreshing a token rotates it: the old one stops working', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+
     $old = tokenLogin('giulia.bianchi@example.com', $this->password);
 
     $new = $this->withHeaders(['Authorization' => "Bearer {$old}", 'X-Tenant-Id' => $this->tenant->id])
@@ -134,6 +130,8 @@ test('refreshing a token rotates it: the old one stops working', function (): vo
 });
 
 test('a user lists and revokes their own tokens and signs out everywhere else', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+
     $phone = tokenLogin('giulia.bianchi@example.com', $this->password, 'Phone');
     $laptop = tokenLogin('giulia.bianchi@example.com', $this->password, 'Laptop');
     tokenLogin('giulia.bianchi@example.com', $this->password, 'Tablet');
@@ -164,6 +162,8 @@ test('a user lists and revokes their own tokens and signs out everywhere else', 
 });
 
 test('a user cannot revoke the tokens of another user', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+
     $other = User::create(['name' => 'Altro', 'email' => 'altro@example.com', 'password' => Hash::make($this->password), 'is_active' => true, 'email_verified_at' => now()]);
     $other->tenants()->attach($this->tenant->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
     $otherToken = $other->createToken('Other')->accessToken;
@@ -177,6 +177,8 @@ test('a user cannot revoke the tokens of another user', function (): void {
 });
 
 test('deactivating a user revokes every token and browser session', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+
     tokenLogin('giulia.bianchi@example.com', $this->password);
     DB::table('sessions')->insert(['id' => Str::random(40), 'user_id' => $this->user->id, 'ip_address' => null, 'user_agent' => null, 'payload' => '', 'last_activity' => time()]);
 
@@ -187,6 +189,8 @@ test('deactivating a user revokes every token and browser session', function ():
 });
 
 test('turning two factors on ends the other accesses opened with the password alone', function (): void {
+    config(['auth.token_mode.enabled' => true]);
+
     tokenLogin('giulia.bianchi@example.com', $this->password, 'Old phone');
     $current = tokenLogin('giulia.bianchi@example.com', $this->password, 'Laptop');
     $headers = ['Authorization' => "Bearer {$current}", 'X-Tenant-Id' => $this->tenant->id];
@@ -197,11 +201,12 @@ test('turning two factors on ends the other accesses opened with the password al
     expect($this->user->tokens()->pluck('name')->all())->toBe(['Laptop']);
 });
 
-test('session cookies are encrypted, HttpOnly and secure outside local development', function (): void {
+test('session cookies are encrypted, HttpOnly, Secure and SameSite in every environment', function (): void {
     expect(config('session.http_only'))->toBeTrue()
         ->and(config('session.encrypt'))->toBeTrue()
+        ->and(config('session.secure'))->toBeTrue()
         ->and(config('session.same_site'))->toBe('lax');
 
-    // The default is decided by the environment: only local and testing may send the cookie over plain HTTP.
-    expect(file_get_contents(base_path('config/session.php')))->toContain("env('SESSION_SECURE_COOKIE', ! in_array(env('APP_ENV', 'production'), ['local', 'testing'], true))");
+    // No environment (local and testing included) decides the Secure flag any more.
+    expect(file_get_contents(base_path('config/session.php')))->not->toContain("'local', 'testing'");
 });

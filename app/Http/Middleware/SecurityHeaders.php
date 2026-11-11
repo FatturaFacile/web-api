@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
  * Hardening headers on every response. The application serves JSON and files, never pages of its own, so the content
  * security policy forbids everything (`default-src 'none'`): a file opened in the browser cannot run scripts or be
  * framed. The interactive API documentation is the exception: it is an HTML page with its own scripts and styles, and
- * keeps everything but that policy. HSTS is only sent over HTTPS.
+ * keeps everything but that policy. HSTS (`security.hsts`) is sent on every HTTPS response, never over plain HTTP.
  */
 final class SecurityHeaders
 {
@@ -42,9 +42,27 @@ final class SecurityHeaders
         }
 
         if ($request->isSecure()) {
-            $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+            $headers->set('Strict-Transport-Security', $this->strictTransportSecurity());
         }
 
         return $response;
+    }
+
+    /**
+     * The HSTS value from `security.hsts`: max-age one year and includeSubDomains by default, no preload unless asked.
+     */
+    private function strictTransportSecurity(): string
+    {
+        $value = 'max-age='.max(0, (int) config('security.hsts.max_age', 31536000));
+
+        if (config('security.hsts.include_subdomains', true)) {
+            $value .= '; includeSubDomains';
+        }
+
+        if (config('security.hsts.preload', false)) {
+            $value .= '; preload';
+        }
+
+        return $value;
     }
 }

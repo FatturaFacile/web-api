@@ -14,6 +14,9 @@ use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
 
+// These tests exercise the optional bearer-token mode, which is off by default: they turn it on and ask for it.
+beforeEach(fn () => config(['auth.token_mode.enabled' => true]));
+
 beforeEach(function (): void {
     $this->password = 'Bb2!'.Str::random(16);
     $this->tenant = Tenant::create([
@@ -64,7 +67,7 @@ function enableTwoFactor(User $user, Tenant $tenant, string $password): array
 
 function loginChallenge(string $email, string $password): string
 {
-    $response = test()->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password])->assertOk();
+    $response = test()->postJson('/api/v1/auth/login', ['email' => $email, 'password' => $password, 'token_mode' => true])->assertOk();
 
     expect($response->json('data.two_factor_required'))->toBeTrue()
         ->and($response->json('data.token'))->toBeNull();
@@ -247,7 +250,7 @@ test('a tenant that requires two factors confines members without them to the au
 
     // The member logs in, is told to set up two factors, and after the setup reaches the other routes.
     $this->app['auth']->forgetGuards();
-    $this->postJson('/api/v1/auth/login', ['email' => 'paolo.neri@example.com', 'password' => $this->password])
+    $this->postJson('/api/v1/auth/login', ['email' => 'paolo.neri@example.com', 'password' => $this->password, 'token_mode' => true])
         ->assertOk()
         ->assertJsonPath('data.two_factor_setup_required', true);
 
@@ -290,7 +293,7 @@ test('an administrator resets the two factors of a member of this tenant alone',
 });
 
 test('a login without two factors still returns the token directly', function (): void {
-    $this->postJson('/api/v1/auth/login', ['email' => 'laura.verdi@example.com', 'password' => $this->password])
+    $this->postJson('/api/v1/auth/login', ['email' => 'laura.verdi@example.com', 'password' => $this->password, 'token_mode' => true])
         ->assertOk()
         ->assertJsonPath('data.user.two_factor_enabled', false)
         ->assertJsonPath('data.two_factor_setup_required', false)

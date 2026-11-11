@@ -22,7 +22,8 @@ return [
     'allowed_origins' => env('CORS_ALLOWED_ORIGINS', 'https://demo.fatturafacile.eu')
             |> (fn ($x) => explode(',', $x))
             |> (fn ($x) => array_map('trim', $x))
-            |> array_filter(...),
+            |> array_filter(...)
+            |> array_values(...),
 
     'allowed_origins_patterns' => [],
 

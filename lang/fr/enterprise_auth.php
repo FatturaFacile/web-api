@@ -11,6 +11,7 @@ return [
         'reused' => 'Le mot de passe a été utilisé récemment : choisissez-en un différent des :count derniers.',
     ],
     'messages' => [
+        'sign_in_code_issued' => 'Code de connexion émis : échangez-le contre la session.',
         'policy_updated' => 'Politique de sécurité mise à jour.',
         'sso_saved' => 'Fournisseur d\'authentification unique enregistré.',
         'sso_removed' => 'Fournisseur d\'authentification unique supprimé.',
@@ -18,6 +19,10 @@ return [
         'scim_token_revoked' => 'Jeton SCIM révoqué.',
     ],
     'errors' => [
+        'cookie_session_required_title' => 'Session par cookie indisponible',
+        'cookie_session_required_detail' => 'Connectez-vous depuis l\x27application web : la requête doit provenir d\x27une origine https de l\x27application, afin que le cookie de session puisse être défini.',
+        'token_mode_disabled_title' => 'Mode jeton désactivé',
+        'token_mode_disabled' => 'Les jetons Bearer sont désactivés sur ce serveur : connectez-vous avec le cookie de session.',
         'account_locked_title' => 'Compte verrouillé',
         'account_locked_detail' => 'Trop de mots de passe erronés. Le compte est verrouillé pour un moment : réessayez plus tard.',
         'password_expired_title' => 'Mot de passe expiré',

@@ -11,6 +11,7 @@ return [
         'reused' => 'The password was used recently: choose one different from the last :count.',
     ],
     'messages' => [
+        'sign_in_code_issued' => 'Sign-in code issued: exchange it for the session.',
         'policy_updated' => 'Security policy updated.',
         'sso_saved' => 'Single sign-on provider saved.',
         'sso_removed' => 'Single sign-on provider removed.',
@@ -18,6 +19,10 @@ return [
         'scim_token_revoked' => 'SCIM token revoked.',
     ],
     'errors' => [
+        'cookie_session_required_title' => 'Cookie session unavailable',
+        'cookie_session_required_detail' => 'Sign in from the web application: the request must come from an https origin of the application, so that the session cookie can be set.',
+        'token_mode_disabled_title' => 'Token mode disabled',
+        'token_mode_disabled' => 'Bearer tokens are disabled on this server: sign in with the session cookie.',
         'account_locked_title' => 'Account locked',
         'account_locked_detail' => 'Too many wrong passwords. The account is locked for a while: try again later.',
         'password_expired_title' => 'Password expired',

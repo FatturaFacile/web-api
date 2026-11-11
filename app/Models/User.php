@@ -84,6 +84,14 @@ class User extends Authenticatable
     }
 
     /**
+     * Whether a tenant membership of the user was suspended (SCIM deactivation by the identity provider).
+     */
+    public function hasSuspendedTenantMembership(): bool
+    {
+        return $this->belongsToMany(Tenant::class, 'tenant_user')->wherePivotNotNull('suspended_at')->exists();
+    }
+
+    /**
      * The tenants the user can act in: a membership suspended by the identity provider (SCIM deactivation) is not one.
      *
      * @return BelongsToMany<Tenant, $this>

@@ -70,3 +70,16 @@ function fiscalCalendar(Tenant $tenant, int $year = 2027): void
         ]);
     }
 }
+
+/**
+ * Headers of a request that comes from the first-party SPA (https origin listed in the Sanctum stateful domains): the
+ * only kind of request that can open the cookie session.
+ *
+ * @return array<string, string>
+ */
+function spaHeaders(): array
+{
+    $origin = rtrim((string) config('app.frontend_url'), '/');
+
+    return ['Origin' => $origin, 'Referer' => $origin.'/'];
+}

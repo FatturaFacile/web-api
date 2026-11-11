@@ -36,10 +36,14 @@ beforeEach(function (): void {
 });
 
 test('external client logs in with bearer token, accesses protected route and logs out', function (): void {
+    // The bearer token mode exists only when the server enables it AND the client asks for it.
+    config(['auth.token_mode.enabled' => true]);
+
     $loginResponse = $this->postJson('/api/v1/auth/login', [
         'email' => 'mario.rossi@example.com',
         'password' => 'Password123!',
         'tenant_id' => $this->tenant->id,
+        'token_mode' => true,
     ]);
 
     $loginResponse->assertStatus(200)
