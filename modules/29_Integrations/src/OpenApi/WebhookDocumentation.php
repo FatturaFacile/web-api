@@ -23,5 +23,6 @@ final class WebhookDocumentation
         .'Example (Node): crypto.timingSafeEqual(Buffer.from(crypto.createHmac("sha256", secret).update(t + "." + rawBody).digest("hex")), Buffer.from(v1)).';
 
     public const string RetryPolicy = 'RETRIES. A delivery succeeds on any 2xx answer within 10 seconds. Any other outcome (no answer, timeout, 4xx, 5xx, a redirect: redirects are never followed) is retried with exponential backoff (30 s, 1 min, 2 min, ... capped at 6 hours) up to 8 attempts; then the delivery is a dead letter (status "dead"), kept in the log and redeliverable by hand. '
-        .'After 20 consecutive failed attempts without a success the endpoint is disabled and the owners and admins of the tenant are notified. Deliveries are rate limited per tenant (300 a minute): a delivery over the limit is postponed, not lost.';
+        .'After 20 consecutive failed attempts without a success the endpoint is disabled and the owners and admins of the tenant are notified. Deliveries are rate limited per tenant (300 a minute): a delivery over the limit is postponed, not lost. '
+        .'RETENTION. The delivery log is kept 30 days for succeeded deliveries, 90 days for dead letters (they wait for a manual redelivery) and 7 days for test pings, counted from the last change of the delivery, then deleted with its attempts; deliveries still pending or retrying are never deleted. The audit trail of endpoint changes is kept apart and untouched.';
 }

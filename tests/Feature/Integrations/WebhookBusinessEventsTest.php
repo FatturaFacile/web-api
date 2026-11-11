@@ -20,6 +20,7 @@ use Modules\Inventory\Jobs\EvaluateWarehouseReorderRulesJob;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Models\StockReorderRule;
+use Modules\Inventory\Models\WarehouseBin;
 use Modules\Invoicing\Models\SalesInvoice;
 
 require_once __DIR__.'/WebhookHelpers.php';
@@ -257,7 +258,7 @@ describe('inventory.stock_below_minimum', function (): void {
 
         $deliveries = webhookDeliveriesOf('inventory.stock_below_minimum');
         expect($deliveries)->toHaveCount(1)->and($deliveries[0]->payload['data'])->toEqual([
-            'reorder_rule_id' => $this->rule->id, 'stock_item_id' => $this->item->id, 'warehouse_id' => $this->warehouse->id, 'available_stock' => 4, 'minimum_stock' => 5,
+            'scope' => 'warehouse', 'reorder_rule_id' => $this->rule->id, 'stock_item_id' => $this->item->id, 'warehouse_id' => $this->warehouse->id, 'product_id' => null, 'available_stock' => 4, 'minimum_stock' => 5,
         ])->and($this->rule->refresh()->below_minimum_since)->not->toBeNull();
 
         // Still below: more issues and the hourly evaluation announce nothing.
@@ -329,6 +330,127 @@ describe('inventory.stock_below_minimum', function (): void {
             ->and(webhookDeliveriesOf('inventory.stock_below_minimum', $other->id))->toHaveCount(0)
             ->and(WebhookDelivery::withoutGlobalScopes()->where('webhook_endpoint_id', $otherEndpoint->id)->count())->toBe(0);
         Http::assertSent(fn ($request): bool => $request->url() === 'https://alfa.example.com/hook' && json_decode($request->body(), true)['tenant_id'] === $this->tenant->id);
+        Http::assertNotSent(fn ($request): bool => $request->url() === 'https://beta.example.com/hook');
+    });
+});
+
+// ------------------------------------------------------------------------ product minimum (products.min_stock)
+
+describe('inventory.stock_below_minimum, scope product', function (): void {
+    beforeEach(function (): void {
+        $this->tenant = logisticsTenant('Alfa Logistica');
+        logisticsUser($this->tenant);
+        $this->warehouse = logisticsWarehouse();
+        $this->bin = logisticsBin($this->warehouse);
+        ['product' => $this->product, 'item' => $this->item] = wmsProduct('SKU-MIN-'.Str::random(4));
+        $this->product->update(['min_stock' => 5]);
+        $this->endpoint = webhookEndpointFor($this->tenant, ['inventory.stock_below_minimum'], ['url' => 'https://alfa.example.com/hook']);
+    });
+
+    function webhookIssueProduct(object $test, WarehouseBin $bin, string $quantity): void
+    {
+        app(DoubleEntryMovementServiceInterface::class)->executeTransfer(new StockTransferDTO(
+            stockItemId: (string) $test->item->id, sourceBinId: (string) $bin->id, destinationBinId: null, quantity: (float) $quantity, movementType: 'customer_delivery',
+        ));
+    }
+
+    test('it fires on the crossing of the product minimum only, with the product payload, and again after a recovery', function (): void {
+        wmsReceive($this->bin, $this->item, '20');
+        webhookIssueProduct($this, $this->bin, '10');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(0);
+
+        webhookIssueProduct($this, $this->bin, '6');
+
+        $deliveries = webhookDeliveriesOf('inventory.stock_below_minimum');
+        expect($deliveries)->toHaveCount(1)->and($deliveries[0]->payload['data'])->toEqual([
+            'scope' => 'product', 'reorder_rule_id' => null, 'stock_item_id' => null, 'warehouse_id' => null, 'product_id' => $this->product->id, 'available_stock' => 4, 'minimum_stock' => 5,
+        ])->and($this->product->refresh()->below_minimum_since)->not->toBeNull();
+
+        webhookIssueProduct($this, $this->bin, '1');
+        app(InventoryReplenishmentServiceInterface::class)->evaluateProductMinimumStock($this->product->refresh());
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(1);
+
+        wmsReceive($this->bin, $this->item, '10');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(1)->and($this->product->refresh()->below_minimum_since)->toBeNull();
+
+        webhookIssueProduct($this, $this->bin, '9');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(2);
+    });
+
+    test('the stock counted is the product total across warehouses', function (): void {
+        $second = logisticsWarehouse();
+        $secondBin = logisticsBin($second, bin: 'B2');
+        wmsReceive($this->bin, $this->item, '6');
+        wmsReceive($secondBin, $this->item, '6');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(0);
+
+        webhookIssueProduct($this, $secondBin, '6');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(0);
+
+        webhookIssueProduct($this, $this->bin, '2');
+
+        $deliveries = webhookDeliveriesOf('inventory.stock_below_minimum');
+        expect($deliveries)->toHaveCount(1)->and($deliveries[0]->payload['data']['available_stock'])->toEqual(4)->and($deliveries[0]->payload['data']['warehouse_id'])->toBeNull();
+    });
+
+    test('a product that is not monitored announces nothing and clears its state', function (): void {
+        wmsReceive($this->bin, $this->item, '20');
+        webhookIssueProduct($this, $this->bin, '18');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(1);
+
+        $this->product->update(['min_stock' => null]);
+        webhookIssueProduct($this, $this->bin, '1');
+        expect($this->product->refresh()->below_minimum_since)->toBeNull();
+
+        $this->product->update(['min_stock' => 50, 'track_inventory' => false]);
+        webhookIssueProduct($this, $this->bin, '0.5');
+        $this->product->update(['min_stock' => 50, 'track_inventory' => true, 'is_active' => false]);
+        webhookIssueProduct($this, $this->bin, '0.25');
+
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(1);
+    });
+
+    test('when the rule minimum of a warehouse and the product minimum both exist, each crossing announces its own scope', function (): void {
+        StockReorderRule::factory()->create([
+            'tenant_id' => $this->tenant->id, 'warehouse_id' => $this->warehouse->id, 'stock_item_id' => $this->item->id,
+            'min_stock_level' => 5, 'reorder_point' => 8, 'max_stock_level' => 40, 'economic_order_quantity' => 20,
+        ]);
+        wmsReceive($this->bin, $this->item, '20');
+
+        webhookIssueProduct($this, $this->bin, '16');
+
+        $all = webhookDeliveriesOf('inventory.stock_below_minimum');
+        $scopes = collect($all)->map(fn (WebhookDelivery $delivery): string => $delivery->payload['data']['scope'])->sort()->values()->all();
+        $warehouse = collect($all)->first(fn (WebhookDelivery $d): bool => $d->payload['data']['scope'] === 'warehouse');
+
+        expect($scopes)->toBe(['product', 'warehouse'])->and($warehouse->payload['data']['product_id'])->toBe($this->product->id);
+
+        // Neither repeats while the stock stays below.
+        webhookIssueProduct($this, $this->bin, '1');
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(2);
+    });
+
+    test('the hourly job announces a product whose minimum was raised above its stock, once', function (): void {
+        $this->product->update(['min_stock' => null]);
+        wmsReceive($this->bin, $this->item, '3');
+        $this->product->update(['min_stock' => 5]);
+
+        $job = new EvaluateWarehouseReorderRulesJob($this->tenant->id);
+        $job->handle(app(InventoryReplenishmentServiceInterface::class));
+        $job->handle(app(InventoryReplenishmentServiceInterface::class));
+
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum'))->toHaveCount(1);
+    });
+
+    test('the product minimum of a tenant never reaches the endpoints of another tenant', function (): void {
+        $other = Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta SA', 'country' => 'IT', 'default_currency' => 'EUR']);
+        $otherEndpoint = webhookEndpointFor($other, ['inventory.stock_below_minimum'], ['url' => 'https://beta.example.com/hook']);
+
+        wmsReceive($this->bin, $this->item, '20');
+        webhookIssueProduct($this, $this->bin, '18');
+
+        expect(webhookDeliveriesOf('inventory.stock_below_minimum', $this->tenant->id))->toHaveCount(1)
+            ->and(WebhookDelivery::withoutGlobalScopes()->where('webhook_endpoint_id', $otherEndpoint->id)->count())->toBe(0);
         Http::assertNotSent(fn ($request): bool => $request->url() === 'https://beta.example.com/hook');
     });
 });

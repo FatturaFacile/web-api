@@ -120,8 +120,6 @@ test('transactional outbox reliably records published domain events for asynchro
     /** @var DoubleEntryMovementService $movementService */
     $movementService = app(DoubleEntryMovementService::class);
 
-    $outboxCountBefore = DB::table('transactional_outbox')->count();
-
     // Execute inbound movement
     $movementService->executeTransfer(new StockTransferDTO(
         stockItemId: (string) $this->item->id,

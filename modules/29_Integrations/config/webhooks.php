@@ -55,7 +55,20 @@ return [
     'claim_timeout_seconds' => 120,
 
     /*
-    | Delivery rows older than this many days (succeeded or dead) are deleted by webhooks:prune.
+    | Retention of the delivery log, applied daily by webhooks:prune on the time of the last change of the delivery (the
+    | moment it succeeded or became a dead letter). A delivery is deleted with all its attempts.
+    | - succeeded: the log of what was delivered, kept this many days;
+    | - dead: dead letters wait for a manual redelivery, so they are kept longer;
+    | - test: test pings are of no use after a short while, whatever their outcome;
+    | - a delivery that is still pending or retrying is never pruned.
+    | The audit trail of the endpoint changes is not touched by this policy.
     */
-    'retention_days' => 90,
+    'retention' => ['succeeded_days' => 30, 'dead_days' => 90, 'test_days' => 7],
+
+    /*
+    | Extra Guzzle options for the HTTP client of the deliveries, read ONLY when the application environment is testing
+    | (WebhookDeliveryService ignores it in every other environment, whatever is configured). The real delivery tests set
+    | verify to the self-signed certificate of their throwaway listener. Empty by default.
+    */
+    'testing_http_options' => [],
 ];

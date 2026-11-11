@@ -52,6 +52,7 @@ final class WebhookEndpointController extends Controller
         }
 
         return $this->successResponse([
+            'retention' => config('webhooks.retention'),
             'payload_versions' => config('webhooks.payload_versions'),
             'default_payload_version' => config('webhooks.default_payload_version'),
             'signature' => [

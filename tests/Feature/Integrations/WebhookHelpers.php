@@ -6,7 +6,9 @@ use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Illuminate\Support\Str;
+use Modules\Integrations\Models\WebhookDelivery;
 use Modules\Integrations\Models\WebhookEndpoint;
+use Modules\Integrations\Webhooks\WebhookDeliveryService;
 use Modules\Integrations\Webhooks\WebhookEventIngestor;
 use Modules\Invoicing\Events\InvoicePostedEvent;
 use Modules\Treasury\Events\CollectionReceivedEvent;
@@ -73,4 +75,29 @@ function webhookCollectionReceivedEvent(string $tenantId): CollectionReceivedEve
 function ingestWebhookEvent(DomainEventInterface $event): int
 {
     return app(WebhookEventIngestor::class)->fromEvent($event);
+}
+
+/**
+ * Runs one attempt of a delivery now, as the queue job does, and returns it refreshed.
+ */
+function webhookProcessDelivery(WebhookDelivery $delivery): WebhookDelivery
+{
+    app(WebhookDeliveryService::class)->process((string) $delivery->id);
+
+    return $delivery->refresh();
+}
+
+/**
+ * A delivery of the endpoint, pending unless the attributes say otherwise.
+ *
+ * @param  array<string, mixed>  $attributes
+ */
+function webhookPendingDelivery(WebhookEndpoint $endpoint, array $attributes = []): WebhookDelivery
+{
+    return WebhookDelivery::factory()->create([
+        'tenant_id' => $endpoint->tenant_id,
+        'webhook_endpoint_id' => $endpoint->id,
+        'event_name' => 'invoicing.invoice.posted',
+        ...$attributes,
+    ]);
 }
