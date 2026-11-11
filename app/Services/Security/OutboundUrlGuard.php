@@ -65,13 +65,13 @@ final class OutboundUrlGuard
     ) {}
 
     /**
-     * Check an http(s) URL and resolve its host.
+     * Check an https URL (plain http is never accepted by default) and resolve its host.
      *
      * @param  list<string>  $schemes
      *
      * @throws UnsafeOutboundUrlException
      */
-    public function inspectUrl(string $url, array $schemes = ['http', 'https']): OutboundTarget
+    public function inspectUrl(string $url, array $schemes = ['https']): OutboundTarget
     {
         if ($url === '' || strlen($url) > 2048 || preg_match('/[\x00-\x20\x7f\\\\]/', $url) === 1) {
             throw new UnsafeOutboundUrlException(UnsafeOutboundUrlException::INVALID_URL);
