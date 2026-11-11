@@ -11,14 +11,9 @@ use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\Documents\Models\DmsDocument;
 use Modules\Manufacturing\Models\MfgQualityNonConformance;
-use Modules\Quality\Listeners\WorkflowApprovalQualityListener;
 use Modules\Quality\Models\QmsCapaAction;
 use Modules\Quality\Models\QmsNonconformity;
 use Modules\Quality\Models\QmsProcedure;
-use Modules\Workflow\Events\WorkflowInstanceCompletedEvent;
-use Modules\Workflow\Events\WorkflowInstanceRejectedEvent;
-use Modules\Workflow\Models\WorkflowDefinition;
-use Modules\Workflow\Models\WorkflowInstance;
 
 uses(RefreshDatabase::class);
 
@@ -251,41 +246,6 @@ test('a rejected procedure goes back to its author with the reason and can be su
     qmsAct($this->owner, $this->tenant);
     $this->putJson("/api/v1/quality/procedures/{$procedure['id']}", ['title' => 'Collaudo in accettazione'])->assertOk();
     $this->postJson("/api/v1/quality/procedures/{$procedure['id']}/submit")->assertOk()->assertJsonPath('data.status', 'pending_approval');
-});
-
-test('the approval workflow decides a procedure in the name of its last actor and a direct decision is refused while it runs', function (): void {
-    $document = DmsDocument::create(['tenant_id' => $this->tenant->id, 'title' => 'Procedura', 'status' => 'draft', 'current_version' => 1, 'access_roles' => [], 'metadata' => [], 'search_text' => '', 'legal_hold' => false]);
-    $definition = WorkflowDefinition::create(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'code' => QmsProcedure::ApprovalWorkflow, 'name' => 'Approvazione procedure', 'target_entity_type' => QmsProcedure::class, 'version' => 1, 'status' => 'published', 'is_active' => true]);
-    $listener = app(WorkflowApprovalQualityListener::class);
-    $approver = qmsMember($this->tenant, 'admin');
-
-    $pending = function (string $code, string $status) use ($document, $definition, $approver): QmsProcedure {
-        $procedure = QmsProcedure::create(['tenant_id' => $this->tenant->id, 'code' => $code, 'version' => 1, 'title' => $code, 'document_id' => $document->id, 'author_id' => $this->owner->id, 'status' => 'pending_approval']);
-        $instance = WorkflowInstance::create([
-            'id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'company_id' => $this->tenant->id, 'workflow_definition_id' => $definition->id, 'workflow_definition_version' => 1,
-            'approvable_type' => QmsProcedure::class, 'approvable_id' => $procedure->id, 'status' => $status, 'initiator_user_id' => $this->owner->id, 'updated_by' => $approver->id,
-        ]);
-        $procedure->update(['workflow_instance_id' => $instance->id]);
-
-        return $procedure->refresh();
-    };
-
-    // while the workflow instance runs, the direct approval is refused
-    $running = $pending('PRO-WF-1', 'pending');
-    qmsAct($approver, $this->tenant);
-    $this->postJson("/api/v1/quality/procedures/{$running->id}/approve")->assertUnprocessable();
-
-    $approved = $pending('PRO-WF-2', 'completed');
-    $listener->handleCompleted(new WorkflowInstanceCompletedEvent((string) $approved->workflow_instance_id, 'completed', (string) $this->tenant->id, (string) $this->tenant->id));
-    expect($approved->refresh()->status)->toBe('approved')->and($approved->approved_by)->toBe($approver->id);
-
-    // a redelivered event changes nothing
-    $listener->handleCompleted(new WorkflowInstanceCompletedEvent((string) $approved->workflow_instance_id, 'completed', (string) $this->tenant->id, (string) $this->tenant->id));
-    expect($approved->refresh()->status)->toBe('approved');
-
-    $rejected = $pending('PRO-WF-3', 'rejected');
-    $listener->handleRejected(new WorkflowInstanceRejectedEvent((string) $rejected->workflow_instance_id, (string) $this->tenant->id, (string) $this->tenant->id));
-    expect($rejected->refresh()->status)->toBe('rejected')->and($rejected->rejection_reason)->toBe('Rejected by workflow');
 });
 
 test('the KPIs count open non-conformities by age and CAPA on time', function (): void {

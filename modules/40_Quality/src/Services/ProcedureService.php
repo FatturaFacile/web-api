@@ -7,6 +7,7 @@ namespace Modules\Quality\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use Modules\Quality\Models\QmsProcedure;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
@@ -89,14 +90,26 @@ final readonly class ProcedureService
 
             $hasWorkflow = WorkflowDefinition::query()->where('tenant_id', $locked->tenant_id)->where('code', QmsProcedure::ApprovalWorkflow)->where('is_active', true)->exists();
             if ($hasWorkflow) {
-                $instance = $this->workflow->start(new StartWorkflowDTO(
-                    workflowCode: QmsProcedure::ApprovalWorkflow,
-                    approvable: $locked,
-                    contextSnapshot: ['code' => $locked->code, 'version' => $locked->version, 'title' => $locked->title, 'document_id' => $locked->document_id],
-                    tenantId: (string) $locked->tenant_id,
-                    companyId: (string) $locked->tenant_id,
-                    initiatorUserId: $this->uuidOrNull($actorId),
-                ));
+                try {
+                    // four_eyes: the engine itself refuses a decision of the author or of whoever submitted the procedure.
+                    $instance = $this->workflow->start(new StartWorkflowDTO(
+                        workflowCode: QmsProcedure::ApprovalWorkflow,
+                        approvable: $locked,
+                        contextSnapshot: [
+                            'code' => $locked->code,
+                            'version' => $locked->version,
+                            'title' => $locked->title,
+                            'document_id' => $locked->document_id,
+                            'four_eyes' => true,
+                            'maker_user_ids' => array_values(array_filter([(string) $locked->author_id, (string) $this->uuidOrNull($actorId)])),
+                        ],
+                        tenantId: (string) $locked->tenant_id,
+                        companyId: (string) $locked->tenant_id,
+                        initiatorUserId: $this->uuidOrNull($actorId),
+                    ));
+                } catch (InvalidArgumentException $exception) {
+                    throw ValidationException::withMessages(['status' => ['The approval workflow cannot be started: '.$exception->getMessage()]]);
+                }
                 $locked->update(['workflow_instance_id' => (string) $instance->id]);
             }
 
