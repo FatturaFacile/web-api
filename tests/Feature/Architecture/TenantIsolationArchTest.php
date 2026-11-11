@@ -15,6 +15,7 @@ use App\Models\InvoiceSdiMetadata;
 use App\Models\LookupCategory;
 use App\Models\LookupItem;
 use App\Models\LookupItemTranslation;
+use App\Models\PasswordHistory;
 use App\Models\PasswordResetToken;
 use App\Models\PaymentTermInstallment;
 use App\Models\PosSaleItem;
@@ -84,6 +85,7 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
         Tenant::class,
         TenantAccessRequest::class,
         PasswordResetToken::class,
+        PasswordHistory::class,
         User::class,
         Translation::class,
         ExchangeRate::class,

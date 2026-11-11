@@ -232,6 +232,7 @@ final class TenantSchemaBaseline
         'lookup_categories' => 'central reference data',
         'migrations' => 'framework',
         'notifications' => 'framework notifications, addressed to a user',
+        'password_histories' => 'password history of a user: central account data',
         'payment_term_installments' => 'child of payment_terms',
         'personal_access_tokens' => 'framework tokens, owned by a user',
         'pos_sale_items' => 'child of pos_sales',
