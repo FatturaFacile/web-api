@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * German UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8289 keys).
+ * German UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8294 keys).
  */
 final class GermanFrontendTranslations
 {
@@ -2694,10 +2694,11 @@ final class GermanFrontendTranslations
             'NAV.ASSOC_CATALOGS' => 'Kataloge',
             'NAV.ASSOC_COMPLIANCE' => 'Bücher und 5 Promille',
             'NAV.ASSOC_COURSES' => 'Kurse, Veranstaltungen und Buchungen',
+            'NAV.ASSOC_DEADLINES' => 'Fristen und Zertifikate',
             'NAV.ASSOC_ENROLMENT' => 'Online-Anmeldung',
             'NAV.ASSOC_FEES' => 'Beiträge und Quittungen',
             'NAV.ASSOC_FUNDRAISING' => 'Spendensammlung',
-            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Spendensammlung',
+            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Kataloge Spendensammlung',
             'NAV.ASSOC_MEETINGS' => 'Versammlungen und Protokolle',
             'NAV.ASSOC_MEMBERSHIPS' => 'Mitgliedschaften und Mitglieder',
             'NAV.ASSOC_NETWORK' => 'Affiliationsnetzwerk',
@@ -2776,6 +2777,7 @@ final class GermanFrontendTranslations
             'NAV.MOD_MARKETING' => 'Marketing',
             'NAV.MOD_PRODUCTION' => 'Produktion',
             'NAV.MOD_PRODUCTS' => 'Produkte & Dienstleistungen',
+            'NAV.NOT_TESTED_YET' => 'noch nicht freigegeben (im Test)',
             'NAV.PORTAL' => 'Kundenportal',
             'NAV.PROC_ADMIN' => 'Regeln & Analysen',
             'NAV.PROC_ORDERS' => 'Bestellungen & Wareneingänge',
@@ -2798,6 +2800,9 @@ final class GermanFrontendTranslations
             'NAV.SC_REPORTS' => 'Verkaufsjournal und Fälligkeiten',
             'NAV.SC_RETURNS' => 'Kundenretouren',
             'NAV.SDI_CHANNEL' => 'SDI-Kanal',
+            'NAV.SEARCH_CLEAR' => 'Suche löschen',
+            'NAV.SEARCH_EMPTY' => 'Kein Eintrag gefunden',
+            'NAV.SEARCH_PLACEHOLDER' => 'Im Menü suchen...',
             'NAV.SECTION_EXTENSIONS' => 'Werkzeuge & Module',
             'NAV.SECTORS' => 'Branchen',
             'NAV.SECTOR_CRAFT' => 'Handwerksbetrieb',

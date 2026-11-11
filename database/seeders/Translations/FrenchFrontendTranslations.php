@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * French UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8289 keys).
+ * French UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8294 keys).
  */
 final class FrenchFrontendTranslations
 {
@@ -2694,10 +2694,11 @@ final class FrenchFrontendTranslations
             'NAV.ASSOC_CATALOGS' => 'Catalogues',
             'NAV.ASSOC_COMPLIANCE' => 'Livres et 5 pour mille',
             'NAV.ASSOC_COURSES' => 'Cours, événements et réservations',
+            'NAV.ASSOC_DEADLINES' => 'Échéances et certificats',
             'NAV.ASSOC_ENROLMENT' => 'Inscriptions en ligne',
             'NAV.ASSOC_FEES' => 'Cotisations et reçus',
             'NAV.ASSOC_FUNDRAISING' => 'Collecte de fonds',
-            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Collecte de fonds',
+            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Catalogues de collecte de fonds',
             'NAV.ASSOC_MEETINGS' => 'Assemblées et procès-verbaux',
             'NAV.ASSOC_MEMBERSHIPS' => 'Adhésions et membres',
             'NAV.ASSOC_NETWORK' => 'Réseau d\'affiliation',
@@ -2776,6 +2777,7 @@ final class FrenchFrontendTranslations
             'NAV.MOD_MARKETING' => 'Marketing',
             'NAV.MOD_PRODUCTION' => 'Production',
             'NAV.MOD_PRODUCTS' => 'Produits et services',
+            'NAV.NOT_TESTED_YET' => 'pas encore activée (en test)',
             'NAV.PORTAL' => 'Portail Client',
             'NAV.PROC_ADMIN' => 'Règles & analyses',
             'NAV.PROC_ORDERS' => 'Commandes & réceptions',
@@ -2798,6 +2800,9 @@ final class FrenchFrontendTranslations
             'NAV.SC_REPORTS' => 'Journal des ventes et échéancier',
             'NAV.SC_RETURNS' => 'Retours clients',
             'NAV.SDI_CHANNEL' => 'Canal SDI',
+            'NAV.SEARCH_CLEAR' => 'Effacer la recherche',
+            'NAV.SEARCH_EMPTY' => 'Aucune entrée trouvée',
+            'NAV.SEARCH_PLACEHOLDER' => 'Rechercher dans le menu...',
             'NAV.SECTION_EXTENSIONS' => 'Outils et modules',
             'NAV.SECTORS' => 'Secteurs',
             'NAV.SECTOR_CRAFT' => 'Atelier artisanal',

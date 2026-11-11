@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * Italian UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8289 keys).
+ * Italian UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8294 keys).
  */
 final class ItalianFrontendTranslations
 {
@@ -2694,10 +2694,11 @@ final class ItalianFrontendTranslations
             'NAV.ASSOC_CATALOGS' => 'Anagrafiche',
             'NAV.ASSOC_COMPLIANCE' => 'Libri e 5 per mille',
             'NAV.ASSOC_COURSES' => 'Corsi, eventi e prenotazioni',
+            'NAV.ASSOC_DEADLINES' => 'Scadenze e certificati',
             'NAV.ASSOC_ENROLMENT' => 'Iscrizioni online',
             'NAV.ASSOC_FEES' => 'Quote e ricevute',
             'NAV.ASSOC_FUNDRAISING' => 'Raccolta fondi',
-            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Raccolta fondi',
+            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Cataloghi raccolta fondi',
             'NAV.ASSOC_MEETINGS' => 'Assemblee e verbali',
             'NAV.ASSOC_MEMBERSHIPS' => 'Tessere e soci',
             'NAV.ASSOC_NETWORK' => 'Rete di affiliazione',
@@ -2776,6 +2777,7 @@ final class ItalianFrontendTranslations
             'NAV.MOD_MARKETING' => 'Marketing',
             'NAV.MOD_PRODUCTION' => 'Produzione',
             'NAV.MOD_PRODUCTS' => 'Prodotti e Servizi',
+            'NAV.NOT_TESTED_YET' => 'non ancora abilitata (in test)',
             'NAV.PORTAL' => 'Area Clienti & Portale',
             'NAV.PROC_ADMIN' => 'Regole e analisi',
             'NAV.PROC_ORDERS' => 'Ordini e ricevimenti',
@@ -2798,6 +2800,9 @@ final class ItalianFrontendTranslations
             'NAV.SC_REPORTS' => 'Registro vendite e scadenzario',
             'NAV.SC_RETURNS' => 'Resi clienti',
             'NAV.SDI_CHANNEL' => 'Canale SDI',
+            'NAV.SEARCH_CLEAR' => 'Cancella la ricerca',
+            'NAV.SEARCH_EMPTY' => 'Nessuna voce trovata',
+            'NAV.SEARCH_PLACEHOLDER' => 'Cerca nel menu...',
             'NAV.SECTION_EXTENSIONS' => 'Strumenti e Moduli',
             'NAV.SECTORS' => 'Settori',
             'NAV.SECTOR_CRAFT' => 'Laboratorio Artigiano',

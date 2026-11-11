@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders\Translations;
 
 /**
- * English UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8289 keys).
+ * English UI strings used by the Angular frontend that the base TranslationSeeder does not hold (8294 keys).
  */
 final class EnglishFrontendTranslations
 {
@@ -2694,10 +2694,11 @@ final class EnglishFrontendTranslations
             'NAV.ASSOC_CATALOGS' => 'Catalogs',
             'NAV.ASSOC_COMPLIANCE' => 'Books and 5 per mille',
             'NAV.ASSOC_COURSES' => 'Courses, events and bookings',
+            'NAV.ASSOC_DEADLINES' => 'Deadlines and certificates',
             'NAV.ASSOC_ENROLMENT' => 'Online enrolment',
             'NAV.ASSOC_FEES' => 'Fees and receipts',
             'NAV.ASSOC_FUNDRAISING' => 'Fundraising',
-            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Fundraising',
+            'NAV.ASSOC_FUNDRAISING_CATALOGS' => 'Fundraising catalogs',
             'NAV.ASSOC_MEETINGS' => 'Meetings and minutes',
             'NAV.ASSOC_MEMBERSHIPS' => 'Memberships and members',
             'NAV.ASSOC_NETWORK' => 'Affiliation network',
@@ -2776,6 +2777,7 @@ final class EnglishFrontendTranslations
             'NAV.MOD_MARKETING' => 'Marketing',
             'NAV.MOD_PRODUCTION' => 'Production',
             'NAV.MOD_PRODUCTS' => 'Products & Services',
+            'NAV.NOT_TESTED_YET' => 'not enabled yet (being tested)',
             'NAV.PORTAL' => 'Client Portal',
             'NAV.PROC_ADMIN' => 'Rules & analytics',
             'NAV.PROC_ORDERS' => 'Orders & receipts',
@@ -2798,6 +2800,9 @@ final class EnglishFrontendTranslations
             'NAV.SC_REPORTS' => 'Sales register and aging',
             'NAV.SC_RETURNS' => 'Customer returns',
             'NAV.SDI_CHANNEL' => 'SDI channel',
+            'NAV.SEARCH_CLEAR' => 'Clear the search',
+            'NAV.SEARCH_EMPTY' => 'No entry found',
+            'NAV.SEARCH_PLACEHOLDER' => 'Search the menu...',
             'NAV.SECTION_EXTENSIONS' => 'Tools & Modules',
             'NAV.SECTORS' => 'Sectors',
             'NAV.SECTOR_CRAFT' => 'Craft Laboratory',
