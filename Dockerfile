@@ -6,6 +6,8 @@ RUN apk add --no-cache \
     libjpeg-turbo-dev \
     freetype-dev \
     libzip-dev \
+    libxml2-dev \
+    openssl-dev \
     zip \
     unzip \
     icu-dev \
@@ -13,7 +15,11 @@ RUN apk add --no-cache \
     oniguruma-dev \
     linux-headers \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_pgsql pdo_mysql mbstring zip exif pcntl bcmath gd intl
+    && docker-php-ext-install pdo pdo_pgsql pdo_mysql mbstring zip exif pcntl bcmath gd intl \
+    && php -m | grep -qi dom \
+    && php -m | grep -qi openssl \
+    && php -m | grep -qi zip \
+    && php -m | grep -qi xmlwriter
 
 # phpredis (REDIS_CLIENT=phpredis): queues, cache and locks on Redis. Built from PECL with a pinned version and the
 # build toolchain removed afterwards, so the image keeps only the compiled extension.

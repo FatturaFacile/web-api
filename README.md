@@ -124,8 +124,8 @@ docker compose -f deploy/local/compose.yaml exec app php artisan migrate --force
 docker compose -f deploy/local/compose.yaml exec app php artisan erp:bootstrap
 ```
 
-Check it: `curl http://localhost:8000/up` answers 200, the Swagger UI is on http://localhost:8000/api/documentation and
-the OpenAPI file on http://localhost:8000/docs/api-docs.json. Demo login (via `POST /api/v1/auth/login`):
+Check it: `curl https://localhost:8000/up` answers 200, the Swagger UI is on https://localhost:8000/api/documentation and
+the OpenAPI file on https://localhost:8000/docs/api-docs.json. Demo login (via `POST /api/v1/auth/login`):
 `admin@demo-group.com` / `Password123!`.
 
 - The tag is pinned in `deploy/local/compose.yaml`; change it there to try another release (tags on Docker Hub).
@@ -180,7 +180,7 @@ export WWWUSER=$(id -u) WWWGROUP=$(id -g)   # if port 80 is busy: also APP_PORT=
 ./vendor/bin/sail artisan l5-swagger:generate   # regenerate the OpenAPI file
 ```
 
-The API answers on `http://localhost` (or `APP_PORT`): `/up`, `/api/documentation`. Stop with `./vendor/bin/sail down`
+The API answers on `https://localhost` (or `APP_PORT`): `/up`, `/api/documentation`. Stop with `./vendor/bin/sail down`
 (`-v` also removes the database).
 
 #### With PHP on your machine
@@ -225,18 +225,25 @@ php artisan erp:bootstrap
 ```bash
 docker compose -f docker-compose.local.yml up -d --wait
 
-php artisan serve        # terminal 1: API on http://localhost:8000
+php artisan serve        # terminal 1: API (by default listens on HTTP localhost:8000)
 php artisan queue:work   # terminal 2: without it, queued emails are not sent
 ```
 
 Then start the frontend in `web-frontend` with `corepack pnpm install` (first time only) and
-`corepack pnpm run start:local`.
+`corepack pnpm run start:local`. The frontend runs on `https://localhost:4200` with TLS (`mkcert`)
+and proxies `/api` and `/sanctum` to `http://localhost:8000` forwarding `X-Forwarded-Proto: https`
+(trusted because `127.0.0.1` is in `TRUSTED_PROXIES`).
+
+> **Direct API HTTPS access**: Because the application enforces HTTPS only, direct browser or tool access
+> to `https://localhost:8000` (e.g. Swagger UI or Postman) requires TLS in front of `artisan serve`.
+> You can place a TLS proxy in front (e.g. Caddy: `caddy reverse-proxy --from https://localhost:8000 --to 127.0.0.1:8001`
+> with `php artisan serve --port=8001`), or navigate through the frontend dev proxy at `https://localhost:4200/api/...`.
 
 | Service | Address |
 |---|---|
 | Application | https://localhost:4200 (`admin@demo-group.com` / `Password123!`) |
-| API | http://localhost:8000 |
-| Mailpit inbox | http://localhost:8025 |
+| API | https://localhost:8000 |
+| Mailpit inbox | https://localhost:8025 |
 
 #### Managing the local services
 

@@ -69,7 +69,7 @@ services:
     container_name: erp_scheduler
     restart: always
     working_dir: /var/www/html
-    command: sh -c "while true; do php artisan schedule:run --verbose --no-interaction & sleep 60; done"
+    command: php artisan schedule:work
     env_file:
       - .env
     volumes:

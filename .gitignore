@@ -34,3 +34,8 @@ auth.json
 /clients/
 .claude-build/
 .claude/
+
+# Local dev TLS certs
+deploy/local/certs/*.crt
+deploy/local/certs/*.key
+deploy/local/certs/*.pem

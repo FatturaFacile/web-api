@@ -84,6 +84,10 @@ jobs:
       - name: Install Composer Dependencies
         run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
 
+      # Check for known security vulnerabilities in PHP dependencies
+      - name: Composer Security Audit
+        run: composer audit
+
       # Enforce strict code formatting standards via Laravel Pint (fails on any style violation)
       - name: Run Laravel Pint Code Formatter Check
         run: ./vendor/bin/pint --test
@@ -126,3 +130,82 @@ jobs:
       # Execute comprehensive application test suite in parallel (4 processes)
       - name: Run Pest Test Suite (Parallel)
         run: ./vendor/bin/pest --parallel --processes=4 --compact --no-coverage
+
+  coverage:
+    name: Code Coverage (PCOV) & Module Thresholds
+    runs-on: ubuntu-24.04
+    needs: test-and-lint
+
+    env:
+      DB_CONNECTION: pgsql
+      DB_HOST: 127.0.0.1
+      DB_PORT: 5432
+      DB_DATABASE: fatturafacile_test
+      DB_USERNAME: ff_admin
+      DB_PASSWORD: secret_password
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: 6379
+
+    services:
+      redis:
+        image: redis:7.4-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Normalize Line Endings (CRLF to LF)
+        run: |
+          git config --global core.autocrlf false
+          find . -type f -name "*.php" -not -path "./vendor/*" -exec dos2unix {} + 2>/dev/null || true
+
+      - name: Setup PHP 8.5 Runtime with PCOV
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath, pcov
+          coverage: pcov
+          ini-values: memory_limit=2G
+          tools: composer:v2
+
+      - name: Get Composer Cache Directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction --optimize-autoloader
+
+      - name: Start PostgreSQL
+        run: |
+          docker run -d --name ci-postgres-cov -p 5432:5432 --tmpfs /var/lib/postgresql/data:rw \
+            -e POSTGRES_DB=fatturafacile_test -e POSTGRES_USER=ff_admin -e POSTGRES_PASSWORD=secret_password \
+            postgres:16-alpine -c max_locks_per_transaction=256
+          for attempt in $(seq 1 30); do
+            docker exec ci-postgres-cov pg_isready -U ff_admin -d fatturafacile_test && exit 0
+            sleep 2
+          done
+          docker logs ci-postgres-cov
+          exit 1
+
+      - name: Setup Environment & Reset Database
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan migrate:fresh --force
+
+      - name: Run Pest Coverage with PCOV
+        run: ./vendor/bin/pest --coverage --compact --min=70

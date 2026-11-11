@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "docker",
+      "args": [
+        "compose",
+        "-f",
+        "${workspaceFolder}/docker-compose.yml",
+        "-f",
+        "${workspaceFolder}/.vscode/docker-compose.mcp.yml",
+        "run",
+        "--rm",
+        "-T",
+        "postgres-mcp"
+      ]
+    }
+  }
+}

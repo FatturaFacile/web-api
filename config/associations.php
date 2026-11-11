@@ -15,7 +15,7 @@ declare(strict_types=1);
 */
 
 return [
-    'area_url' => env('ASSOCIATIONS_AREA_URL', rtrim((string) env('FRONTEND_URL', 'http://localhost:4200'), '/').'/association-area'),
+    'area_url' => env('ASSOCIATIONS_AREA_URL', rtrim((string) env('FRONTEND_URL', 'https://localhost:4200'), '/').'/association-area'),
     'area_token_days' => (int) env('ASSOCIATIONS_AREA_TOKEN_DAYS', 30),
     'payment_driver' => env('ASSOCIATIONS_PAYMENT_DRIVER', 'local'),
     'payment_credentials' => [
