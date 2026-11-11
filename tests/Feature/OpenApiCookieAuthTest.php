@@ -3,6 +3,18 @@
 declare(strict_types=1);
 
 /**
+ * A tracked artefact, decoded once.
+ *
+ * @return array<string, mixed>
+ */
+function openApiSpec(string $file): array
+{
+    static $specs = [];
+
+    return $specs[$file] ??= json_decode((string) file_get_contents(base_path($file)), true, 512, JSON_THROW_ON_ERROR);
+}
+
+/**
  * The tracked OpenAPI artefacts must describe the real authentication: the session cookie first, the Bearer token only
  * as the alternative of the optional token mode, and nothing on the public operations. Regenerate them with
  * `php -d memory_limit=512M artisan l5-swagger:generate` and `php artisan docs:export` when this test fails.
@@ -11,7 +23,7 @@ declare(strict_types=1);
  */
 function openApiOperations(string $file): array
 {
-    $spec = json_decode((string) file_get_contents(base_path($file)), true, 512, JSON_THROW_ON_ERROR);
+    $spec = openApiSpec($file);
     $operations = [];
 
     foreach ($spec['paths'] as $path => $item) {
@@ -32,7 +44,7 @@ function openApiOperations(string $file): array
  */
 function securitySchemesOf(array $operation, string $file): array
 {
-    $spec = json_decode((string) file_get_contents(base_path($file)), true, 512, JSON_THROW_ON_ERROR);
+    $spec = openApiSpec($file);
     $security = $operation['security'] ?? $spec['security'] ?? [];
 
     return array_values(array_unique(array_merge(...array_map(fn (array $requirement): array => array_keys($requirement), $security ?: [[]]))));
