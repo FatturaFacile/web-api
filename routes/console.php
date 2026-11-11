@@ -58,6 +58,9 @@ Schedule::command('tenants:backup --all')->dailyAt('02:00')->withoutOverlapping(
 Schedule::command('subscriptions:process')->dailyAt('02:00')->withoutOverlapping()->onOneServer();
 // Recurring journals and automatic reversals (accruals, deferrals, FX revaluations) due, per tenant business day.
 Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOverlapping()->onOneServer();
+// Analytics: daily KPI snapshots (the day that just ended) first, then the scheduled report exports.
+Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutOverlapping()->onOneServer();
+Schedule::command('analytics:run-scheduled-exports')->dailyAt('06:00')->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
 Schedule::command('sales:expire-quotes')->dailyAt('00:30')->withoutOverlapping()->onOneServer();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
