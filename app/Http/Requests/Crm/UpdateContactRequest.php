@@ -4,14 +4,17 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Crm;
 
-use App\Models\Contact;
 use Illuminate\Foundation\Http\FormRequest;
 
 class UpdateContactRequest extends FormRequest
 {
+    /**
+     * The ContactPolicy update ability needs the record, which the controller resolves (in the active tenant) and
+     * authorizes; asked here with the class it ended in a TypeError, an HTTP 500 on every update.
+     */
     public function authorize(): bool
     {
-        return $this->user()?->can('update', Contact::class) ?? true;
+        return true;
     }
 
     /**
