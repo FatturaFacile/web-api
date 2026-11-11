@@ -7,7 +7,7 @@ namespace Modules\DocumentTrust\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\DocumentTrust\Contracts\TrustedTimestampProvider;
-use Modules\DocumentTrust\Drivers\LocalClockTimestampProvider;
+use Modules\DocumentTrust\Drivers\TenantTimestampProvider;
 use Modules\DocumentTrust\Models\PreservationPackage;
 use Modules\DocumentTrust\Policies\PreservationPackagePolicy;
 
@@ -17,18 +17,13 @@ use Modules\DocumentTrust\Policies\PreservationPackagePolicy;
 final class DocumentTrustServiceProvider extends ServiceProvider
 {
     /**
-     * Bind the time-stamp provider: `services.preservation.timestamp_provider` is `local` (the server clock, which is not
-     * a qualified time stamp) or the class name of a provider that implements TrustedTimestampProvider.
+     * Bind the time-stamp provider: the RFC 3161 authority of the tenant when configured, otherwise
+     * `services.preservation.timestamp_provider` (`local`, the server clock, which is not a qualified time stamp, or the
+     * class name of a provider that implements TrustedTimestampProvider).
      */
     public function register(): void
     {
-        $this->app->bind(TrustedTimestampProvider::class, static function ($app): TrustedTimestampProvider {
-            $configured = (string) config('services.preservation.timestamp_provider', 'local');
-
-            return $configured !== 'local' && is_a($configured, TrustedTimestampProvider::class, true)
-                ? $app->make($configured)
-                : $app->make(LocalClockTimestampProvider::class);
-        });
+        $this->app->bind(TrustedTimestampProvider::class, TenantTimestampProvider::class);
     }
 
     /**
