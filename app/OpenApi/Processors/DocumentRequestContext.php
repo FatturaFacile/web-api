@@ -19,7 +19,9 @@ use OpenApi\Generator;
 /**
  * Aligns every documented operation with the middleware of its real route, so that the specification cannot drift from
  * what the API enforces: tenant-scoped operations reference the reusable request context parameters and answer 400 and
- * 403 accordingly, and the security requirement of each operation matches its authentication.
+ * 403 accordingly, and the security requirement of each operation matches its authentication: the session cookie
+ * (`cookieAuth`, the default) or, only in the optional token mode, a Bearer token (`bearerAuth`); public operations
+ * list none.
  */
 final class DocumentRequestContext
 {
@@ -70,8 +72,8 @@ final class DocumentRequestContext
         $isTenantScoped = $this->hasMiddleware($middleware, IdentifyTenant::class);
 
         $operation->security = match (true) {
-            $isAuthenticated && $isTenantScoped => [['bearerAuth' => [], 'tenantHeader' => []]],
-            $isAuthenticated => [['bearerAuth' => []]],
+            $isAuthenticated && $isTenantScoped => [['cookieAuth' => [], 'tenantHeader' => []], ['bearerAuth' => [], 'tenantHeader' => []]],
+            $isAuthenticated => [['cookieAuth' => []], ['bearerAuth' => []]],
             $this->hasMiddleware($middleware, AuthenticateScim::class) => [['scimBearerAuth' => []]],
             default => [],
         };

@@ -109,10 +109,11 @@ class ExportApiDocumentation extends Command
 
         $spec->components ??= (object) [];
         $spec->components->securitySchemes = (object) [
+            'CookieAuth' => (object) ['type' => 'apiKey', 'in' => 'cookie', 'name' => (string) config('session.cookie'), 'description' => __('docs.security.cookie')],
             'BearerAuth' => (object) ['type' => 'http', 'scheme' => 'bearer', 'bearerFormat' => 'JWT', 'description' => __('docs.security.bearer')],
             'TenantHeader' => (object) ['type' => 'apiKey', 'in' => 'header', 'name' => 'X-Tenant-Id', 'description' => __('docs.security.tenant')],
         ];
-        $spec->security = [(object) ['BearerAuth' => [], 'TenantHeader' => []]];
+        $spec->security = [(object) ['CookieAuth' => [], 'TenantHeader' => []], (object) ['BearerAuth' => [], 'TenantHeader' => []]];
 
         $this->completeArrays($spec);
 
@@ -201,9 +202,11 @@ class ExportApiDocumentation extends Command
                 'description' => __('docs.postman.description'),
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
             ],
-            'auth' => ['type' => 'bearer', 'bearer' => [['key' => 'token', 'value' => '{{authToken}}', 'type' => 'string']]],
+            'event' => [['listen' => 'prerequest', 'script' => ['type' => 'text/javascript', 'exec' => $this->csrfScript()]]],
             'variable' => [
                 ['key' => 'baseUrl', 'value' => rtrim((string) config('app.url'), '/'), 'type' => 'string'],
+                ['key' => 'frontendUrl', 'value' => rtrim((string) config('app.frontend_url'), '/'), 'type' => 'string'],
+                ['key' => 'xsrfToken', 'value' => '', 'type' => 'string'],
                 ['key' => 'tenantId', 'value' => '', 'type' => 'string'],
                 ['key' => 'authToken', 'value' => '', 'type' => 'string'],
             ],
@@ -248,15 +251,17 @@ class ExportApiDocumentation extends Command
             'method' => strtoupper($method),
             'header' => array_values(array_filter([
                 ['key' => 'Accept', 'value' => 'application/json'],
+                ['key' => 'Origin', 'value' => '{{frontendUrl}}'],
+                ['key' => 'Referer', 'value' => '{{frontendUrl}}/'],
+                $method !== 'get' ? ['key' => 'X-XSRF-TOKEN', 'value' => '{{xsrfToken}}'] : null,
                 ! $public ? ['key' => 'X-Tenant-Id', 'value' => '{{tenantId}}'] : null,
             ])),
             'url' => ['raw' => $raw, 'host' => ['{{baseUrl}}'], 'path' => ['api', ...$segments], 'query' => $query, 'variable' => $variables],
             'description' => (string) ($operation['description'] ?? $operation['summary'] ?? ''),
         ];
 
-        if ($public) {
-            $request['auth'] = ['type' => 'noauth'];
-        }
+        // Cookie session by default: Postman keeps the cookie. A Bearer token is sent only when authToken is filled (token mode).
+        $request['auth'] = ['type' => 'noauth'];
 
         $body = $this->body($operation['requestBody']['content'] ?? [], $doc);
 
@@ -277,6 +282,26 @@ class ExportApiDocumentation extends Command
         }
 
         return $item;
+    }
+
+    /**
+     * Pre-request script of the collection: the session cookie flow needs the CSRF cookie, which the script fetches once
+     * and copies into the X-XSRF-TOKEN header; a filled authToken (token mode) is sent as the Bearer token.
+     *
+     * @return list<string>
+     */
+    private function csrfScript(): array
+    {
+        return [
+            "const base = pm.collectionVariables.get('baseUrl');",
+            "const origin = pm.collectionVariables.get('frontendUrl');",
+            "const xsrf = () => { const cookie = pm.cookies.get('XSRF-TOKEN'); return cookie ? decodeURIComponent(cookie) : ''; };",
+            'if (!xsrf()) {',
+            "    pm.sendRequest({ url: base + '/sanctum/csrf-cookie', method: 'GET', header: { Origin: origin, Referer: origin + '/' } }, () => pm.collectionVariables.set('xsrfToken', xsrf()));",
+            "} else { pm.collectionVariables.set('xsrfToken', xsrf()); }",
+            "const token = pm.collectionVariables.get('authToken');",
+            "if (token) { pm.request.headers.upsert({ key: 'Authorization', value: 'Bearer ' + token }); }",
+        ];
     }
 
     /**
