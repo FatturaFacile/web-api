@@ -58,7 +58,7 @@ final class SalesOrderController extends Controller
             $query->where('sales_rep_id', (string) $request->query('sales_rep_id'));
         }
 
-        $orders = $query->orderBy('created_at', 'desc')->paginate((int) $request->query('per_page', 25));
+        $orders = $query->orderBy('created_at', 'desc')->paginate(min(200, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json(SalesOrderResource::collection($orders)->response()->getData(true));
     }
