@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "7b01b41d-c0d1-476e-95ac-9764d9da40f3",
+        "_postman_id": "918b0a82-725b-4d41-aa5f-256d2651869b",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl and frontendUrl variables, then run Auth > login: the collection fetches the CSRF cookie itself and sends Origin, Referer and X-XSRF-TOKEN; the session cookie is kept by Postman and the active tenant in tenantId. authToken is used only in the optional token mode (login with token_mode true).",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -1249,6 +1249,66 @@
                         "description": "",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/auth/sso/discover",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/auth/sso/discover",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "auth",
+                                "sso",
+                                "discover"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"email\": \"string\",\n    \"domain\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 },
@@ -13388,6 +13448,12 @@
                                     "description": ""
                                 },
                                 {
+                                    "key": "source",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
                                     "key": "kpis[]",
                                     "value": "",
                                     "disabled": true,
@@ -13450,6 +13516,12 @@
                                 },
                                 {
                                     "key": "compare",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "source",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
@@ -13518,6 +13590,12 @@
                                 },
                                 {
                                     "key": "compare",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "source",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
@@ -13593,6 +13671,12 @@
                                 },
                                 {
                                     "key": "compare",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "source",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
@@ -50222,7 +50306,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"retention_years\": [\n        1\n    ],\n    \"confirmed_by_accountant\": false,\n    \"notes\": \"string\"\n}",
+                            "raw": "{\n    \"retention_years\": [\n        1\n    ],\n    \"confirmed_by_accountant\": false,\n    \"notes\": \"string\",\n    \"timestamp\": {\n        \"tsa_url\": \"string\",\n        \"tsa_username\": \"string\",\n        \"tsa_password\": \"string\",\n        \"tsa_provider_name\": \"string\",\n        \"tsa_declared_qualified\": false\n    }\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -50289,6 +50373,634 @@
                         "description": "List the access log",
                         "auth": {
                             "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "List the packages and what blocks their disposal",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposal-candidates",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposal-candidates"
+                            ],
+                            "query": [
+                                {
+                                    "key": "only_eligible",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List the packages and what blocks their disposal",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "List the proposals",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposal-proposals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposal-proposals"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
+                            "variable": []
+                        },
+                        "description": "List the proposals",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Propose a disposal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposal-proposals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposal-proposals"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "Propose a disposal",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"package_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Approve a proposal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposal-proposals/:id/approve",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposal-proposals",
+                                ":id",
+                                "approve"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Approve a proposal",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Reject a proposal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposal-proposals/:id/reject",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposal-proposals",
+                                ":id",
+                                "reject"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Reject a proposal",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"note\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Execute a disposal",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposal-proposals/:id/execute",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposal-proposals",
+                                ":id",
+                                "execute"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Execute a disposal",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "List the disposal records",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-disposals",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-disposals"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "List the disposal records",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "Place a legal hold",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-packages/:id/legal-hold",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-packages",
+                                ":id",
+                                "legal-hold"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Place a legal hold",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"reason\": \"string\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "Release the legal hold",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-packages/:id/legal-hold",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-packages",
+                                ":id",
+                                "legal-hold"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "id",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "Release the legal hold",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "File the ledger book of a fiscal year",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-seal/journal-book",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-seal",
+                                "journal-book"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "File the ledger book of a fiscal year",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"fiscal_year_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"from\": \"2026-01-31\",\n    \"to\": \"2026-01-31\",\n    \"folder_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"package_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
+                    "name": "File the payslips of a month",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/document-trust/preservation-seal/payslips",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "document-trust",
+                                "preservation-seal",
+                                "payslips"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "File the payslips of a month",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"year\": 1,\n    \"month\": 1,\n    \"folder_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"package_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 }
@@ -62168,7 +62880,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"group_currency\": \"string\",\n    \"translation_reserve_code\": \"string\",\n    \"consolidation_difference_code\": \"string\",\n    \"equity_method_result_code\": \"string\",\n    \"equity_method_reserve_code\": \"string\",\n    \"elimination_difference_policy\": \"keep_difference\",\n    \"goodwill_method\": \"none\",\n    \"goodwill_amortisation_years\": 1,\n    \"require_account_mapping\": false,\n    \"synthetic_accounts\": [\n        \"string\"\n    ],\n    \"deferred_tax_on_unrealised_profit\": false,\n    \"unrealised_profit_tax_rate\": 1.5,\n    \"fair_value_first_year_rule\": \"pro_rata\",\n    \"goodwill_translation\": \"historical\",\n    \"notes\": \"string\"\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"group_currency\": \"string\",\n    \"translation_reserve_code\": \"string\",\n    \"consolidation_difference_code\": \"string\",\n    \"equity_method_result_code\": \"string\",\n    \"equity_method_reserve_code\": \"string\",\n    \"elimination_difference_policy\": \"keep_difference\",\n    \"goodwill_method\": \"none\",\n    \"goodwill_amortisation_years\": 1,\n    \"require_account_mapping\": false,\n    \"synthetic_accounts\": [\n        \"string\"\n    ],\n    \"deferred_tax_on_unrealised_profit\": false,\n    \"unrealised_profit_tax_rate\": 1.5,\n    \"fair_value_first_year_rule\": \"pro_rata\",\n    \"negative_goodwill_treatment\": \"consolidation_reserve\",\n    \"goodwill_translation\": \"historical\",\n    \"notes\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -62285,7 +62997,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"group_currency\": \"string\",\n    \"translation_reserve_code\": \"string\",\n    \"consolidation_difference_code\": \"string\",\n    \"equity_method_result_code\": \"string\",\n    \"equity_method_reserve_code\": \"string\",\n    \"is_active\": false,\n    \"elimination_difference_policy\": \"keep_difference\",\n    \"goodwill_method\": \"none\",\n    \"goodwill_amortisation_years\": 1,\n    \"require_account_mapping\": false,\n    \"synthetic_accounts\": [\n        \"string\"\n    ],\n    \"deferred_tax_on_unrealised_profit\": false,\n    \"unrealised_profit_tax_rate\": 1.5,\n    \"fair_value_first_year_rule\": \"pro_rata\",\n    \"goodwill_translation\": \"historical\",\n    \"notes\": \"string\"\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"group_currency\": \"string\",\n    \"translation_reserve_code\": \"string\",\n    \"consolidation_difference_code\": \"string\",\n    \"equity_method_result_code\": \"string\",\n    \"equity_method_reserve_code\": \"string\",\n    \"is_active\": false,\n    \"elimination_difference_policy\": \"keep_difference\",\n    \"goodwill_method\": \"none\",\n    \"goodwill_amortisation_years\": 1,\n    \"require_account_mapping\": false,\n    \"synthetic_accounts\": [\n        \"string\"\n    ],\n    \"deferred_tax_on_unrealised_profit\": false,\n    \"unrealised_profit_tax_rate\": 1.5,\n    \"fair_value_first_year_rule\": \"pro_rata\",\n    \"negative_goodwill_treatment\": \"consolidation_reserve\",\n    \"goodwill_translation\": \"historical\",\n    \"notes\": \"string\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -62407,7 +63119,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"member_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ownership_percentage\": 1.5,\n    \"consolidation_method\": \"full\",\n    \"holder_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"fiscal_year_offset_months\": 1,\n    \"tax_rate\": 1.5\n}",
+                            "raw": "{\n    \"member_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ownership_percentage\": 1.5,\n    \"consolidation_method\": \"full\",\n    \"holder_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"fiscal_year_offset_months\": 1,\n    \"consolidation_basis\": \"own_year\",\n    \"tax_rate\": 1.5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -62481,7 +63193,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"member_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ownership_percentage\": 1.5,\n    \"consolidation_method\": \"full\",\n    \"holder_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"fiscal_year_offset_months\": 1,\n    \"tax_rate\": 1.5\n}",
+                            "raw": "{\n    \"member_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"ownership_percentage\": 1.5,\n    \"consolidation_method\": \"full\",\n    \"holder_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"fiscal_year_offset_months\": 1,\n    \"consolidation_basis\": \"own_year\",\n    \"tax_rate\": 1.5\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -63078,7 +63790,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"member_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"acquisition_date\": \"2026-01-31T12:00:00+00:00\",\n    \"cost\": 1.5,\n    \"net_assets_at_acquisition\": 1.5,\n    \"acquired_percentage\": 1.5,\n    \"input_currency\": \"string\",\n    \"recognise_deferred_tax\": false,\n    \"deferred_tax_rate\": 1.5,\n    \"fair_value_adjustments\": [\n        {\n            \"account_code\": \"string\",\n            \"account_name\": \"string\",\n            \"account_type\": \"asset\",\n            \"amount\": 1.5,\n            \"useful_life_years\": 1\n        }\n    ]\n}",
+                            "raw": "{\n    \"member_tenant_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"acquisition_date\": \"2026-01-31T12:00:00+00:00\",\n    \"cost\": 1.5,\n    \"net_assets_at_acquisition\": 1.5,\n    \"acquired_percentage\": 1.5,\n    \"expected_future_charges\": 1.5,\n    \"provision_release_years\": 1,\n    \"input_currency\": \"string\",\n    \"recognise_deferred_tax\": false,\n    \"deferred_tax_rate\": 1.5,\n    \"fair_value_adjustments\": [\n        {\n            \"account_code\": \"string\",\n            \"account_name\": \"string\",\n            \"account_type\": \"asset\",\n            \"amount\": 1.5,\n            \"useful_life_years\": 1\n        }\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -64086,6 +64798,57 @@
                                 "runs",
                                 ":runId",
                                 "income-statement"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "runId",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "GET /v1/general-ledger/consolidation/runs/:runId/goodwill-schedule",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/general-ledger/consolidation/runs/:runId/goodwill-schedule",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "general-ledger",
+                                "consolidation",
+                                "runs",
+                                ":runId",
+                                "goodwill-schedule"
                             ],
                             "query": [],
                             "variable": [
@@ -69441,7 +70204,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"periodicity\": \"monthly\",\n    \"regime\": \"effective\",\n    \"sss_rate_1\": 1.5,\n    \"sss_rate_2\": 1.5,\n    \"flat_tax_rates\": [\n        1.5\n    ],\n    \"flat_rate_adjustment_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"acquisition_tax_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"output_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"input_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"settlement_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"interest_expense_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"declarant_tax_code\": \"string\",\n    \"declarant_role_code\": \"string\"\n}",
+                            "raw": "{\n    \"periodicity\": \"monthly\",\n    \"regime\": \"effective\",\n    \"sss_rate_1\": 1.5,\n    \"sss_rate_2\": 1.5,\n    \"flat_tax_rates\": [\n        1.5\n    ],\n    \"flat_rate_adjustment_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"acquisition_tax_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"output_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"input_vat_account_ids\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ],\n    \"settlement_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"interest_expense_account_id\": \"00000000-0000-0000-0000-000000000000\",\n    \"declarant_tax_code\": \"string\",\n    \"declarant_role_code\": \"string\",\n    \"carry_over_below_minimum\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -116136,6 +116899,117 @@
                     }
                 },
                 {
+                    "name": "GET /v1/settings/privacy/retention-suggestions",
+                    "request": {
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/retention-suggestions",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "retention-suggestions"
+                            ],
+                            "query": [],
+                            "variable": []
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        }
+                    }
+                },
+                {
+                    "name": "POST /v1/settings/privacy/retention-suggestions/:entryKey/adopt",
+                    "request": {
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Accept",
+                                "value": "application/json"
+                            },
+                            {
+                                "key": "Origin",
+                                "value": "{{frontendUrl}}"
+                            },
+                            {
+                                "key": "Referer",
+                                "value": "{{frontendUrl}}/"
+                            },
+                            {
+                                "key": "X-XSRF-TOKEN",
+                                "value": "{{xsrfToken}}"
+                            },
+                            {
+                                "key": "X-Tenant-Id",
+                                "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
+                            }
+                        ],
+                        "url": {
+                            "raw": "{{baseUrl}}/api/v1/settings/privacy/retention-suggestions/:entryKey/adopt",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "api",
+                                "v1",
+                                "settings",
+                                "privacy",
+                                "retention-suggestions",
+                                ":entryKey",
+                                "adopt"
+                            ],
+                            "query": [],
+                            "variable": [
+                                {
+                                    "key": "entryKey",
+                                    "value": "",
+                                    "description": ""
+                                }
+                            ]
+                        },
+                        "description": "",
+                        "auth": {
+                            "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"confirm\": \"yes\",\n    \"retention_days\": 1,\n    \"activate\": false\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        }
+                    }
+                },
+                {
                     "name": "GET /v1/settings/privacy/retention-runs",
                     "request": {
                         "method": "GET",
@@ -117731,7 +118605,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"issuer\": \"https://example.com\",\n    \"use_discovery\": false,\n    \"authorization_endpoint\": \"https://example.com\",\n    \"token_endpoint\": \"https://example.com\",\n    \"jwks_uri\": \"https://example.com\",\n    \"redirect_uri\": \"https://example.com\",\n    \"client_id\": \"string\",\n    \"client_secret\": \"string\",\n    \"scopes\": \"string\",\n    \"allowed_email_domains\": [\n        \"string\"\n    ],\n    \"role_claim\": \"string\",\n    \"role_mapping\": [\n        \"member\"\n    ],\n    \"default_role\": \"member\",\n    \"sync_role_on_login\": false,\n    \"jit_provisioning\": false,\n    \"enabled\": false\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"issuer\": \"https://example.com\",\n    \"use_discovery\": false,\n    \"authorization_endpoint\": \"https://example.com\",\n    \"token_endpoint\": \"https://example.com\",\n    \"jwks_uri\": \"https://example.com\",\n    \"redirect_uri\": \"https://example.com\",\n    \"client_id\": \"string\",\n    \"client_secret\": \"string\",\n    \"token_endpoint_auth_method\": \"client_secret_post\",\n    \"end_session_endpoint\": \"https://example.com\",\n    \"post_logout_redirect_uri\": \"https://example.com\",\n    \"scopes\": \"string\",\n    \"allowed_email_domains\": [\n        \"string\"\n    ],\n    \"role_claim\": \"string\",\n    \"role_mapping\": [\n        \"member\"\n    ],\n    \"default_role\": \"member\",\n    \"sync_role_on_login\": false,\n    \"jit_provisioning\": false,\n    \"enabled\": false\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"

@@ -123,7 +123,9 @@ paths:
                       id:
                         type: string
                       tenant_id:
-                        type: string
+                        type:
+                          - string
+                          - 'null'
                       area_id:
                         type: string
                       name:
@@ -2176,7 +2178,9 @@ paths:
                       id:
                         type: string
                       tenant_id:
-                        type: string
+                        type:
+                          - string
+                          - 'null'
                       name:
                         type: string
                       prefix:
@@ -2270,7 +2274,9 @@ paths:
                       id:
                         type: string
                       tenant_id:
-                        type: string
+                        type:
+                          - string
+                          - 'null'
                       name:
                         type: string
                       prefix:
@@ -5647,7 +5653,12 @@ paths:
                     type: string
                     const: 'Successfully logged out'
                   data:
-                    type: 'null'
+                    type: object
+                    properties:
+                      idp_logout_url:
+                        type: 'null'
+                    required:
+                      - idp_logout_url
                   meta:
                     type: string
                 required:
@@ -14913,6 +14924,8 @@ paths:
                                   type: string
                                 group_amount:
                                   type: string
+                                consolidated_share:
+                                  type: string
                               required:
                                 - tenant_id
                                 - name
@@ -14923,6 +14936,7 @@ paths:
                                 - local_currency
                                 - local_amount
                                 - group_amount
+                                - consolidated_share
                             entity_b:
                               type: object
                               properties:
@@ -14948,6 +14962,8 @@ paths:
                                   type: string
                                 group_amount:
                                   type: string
+                                consolidated_share:
+                                  type: string
                               required:
                                 - tenant_id
                                 - name
@@ -14958,6 +14974,7 @@ paths:
                                 - local_currency
                                 - local_amount
                                 - group_amount
+                                - consolidated_share
                             difference:
                               type: string
                             tolerance:
@@ -15660,6 +15677,116 @@ paths:
                       - net_income
                       - net_income_attributable_to_non_controlling_interests
                       - net_income_attributable_to_owners
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '404':
+          $ref: '#/components/responses/ModelNotFoundException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/general-ledger/consolidation/runs/{runId}/goodwill-schedule':
+    get:
+      operationId: consolidationRun.goodwillSchedule
+      tags:
+        - ConsolidationRun
+      parameters:
+        -
+          name: runId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      run_id:
+                        type: string
+                      currency:
+                        type: string
+                      goodwill_method:
+                        type: string
+                      goodwill_amortisation_years:
+                        type:
+                          - integer
+                          - 'null'
+                      acquisitions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            member_tenant_id:
+                              type: string
+                            name:
+                              type: string
+                            acquisition_date:
+                              type: string
+                            goodwill:
+                              type: string
+                            rows:
+                              type: array
+                              items:
+                                type: object
+                                properties:
+                                  fiscal_year:
+                                    type: string
+                                  period_start:
+                                    type: string
+                                  period_end:
+                                    type: string
+                                  opening_balance:
+                                    type: string
+                                  amortisation:
+                                    type: string
+                                  impairment:
+                                    type: string
+                                  closing_balance:
+                                    type: string
+                                  is_run_year:
+                                    type: string
+                                  amortisation_to_period_end:
+                                    type: string
+                                  impairment_to_period_end:
+                                    type: string
+                                required:
+                                  - fiscal_year
+                                  - period_start
+                                  - period_end
+                                  - opening_balance
+                                  - amortisation
+                                  - impairment
+                                  - closing_balance
+                                  - is_run_year
+                                  - amortisation_to_period_end
+                                  - impairment_to_period_end
+                          required:
+                            - member_tenant_id
+                            - name
+                            - acquisition_date
+                            - goodwill
+                            - rows
+                    required:
+                      - run_id
+                      - currency
+                      - goodwill_method
+                      - goodwill_amortisation_years
+                      - acquisitions
                   meta:
                     type: string
                 required:
@@ -24370,19 +24497,16 @@ paths:
         '200':
           description: ''
           content:
-            application/json:
+            text/html:
               schema:
                 type: string
           headers:
-            Content-Disposition:
-              schema:
-                type: string
-            X-Report-Truncated:
+            Transfer-Encoding:
+              required: true
               schema:
                 type: string
                 enum:
-                  - 'true'
-                  - 'false'
+                  - chunked
         '422':
           $ref: '#/components/responses/ValidationException'
         '401':
@@ -32443,6 +32567,20 @@ paths:
                 type: string
                 enum:
                   - chunked
+        '403':
+          description: 'An error'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    description: 'Error overview.'
+                    examples:
+                      - 'This link belongs to another company.'
+                required:
+                  - message
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
   /v1/analytics/export-schedules:
@@ -43257,6 +43395,17 @@ paths:
               - previous_year
               - null
         -
+          name: source
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - live
+              - snapshot
+              - null
+        -
           name: 'kpis[]'
           in: query
           schema:
@@ -43287,56 +43436,184 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                    const: 'KPIs retrieved'
-                  data:
+                anyOf:
+                  -
                     type: object
                     properties:
-                      period:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                        const: 'KPIs retrieved'
+                      data:
                         type: object
                         properties:
-                          from:
-                            type: string
-                          to:
-                            type: string
+                          period:
+                            type: object
+                            properties:
+                              from:
+                                type: string
+                              to:
+                                type: string
+                            required:
+                              - from
+                              - to
+                          comparison_period:
+                            type:
+                              - object
+                              - 'null'
+                            properties:
+                              from:
+                                type: string
+                              to:
+                                type: string
+                            required:
+                              - from
+                              - to
+                          kpis:
+                            type: array
+                            items: {}
                         required:
-                          - from
-                          - to
-                      comparison_period:
-                        type:
-                          - object
-                          - 'null'
-                        properties:
-                          from:
-                            type: string
-                          to:
-                            type: string
-                        required:
-                          - from
-                          - to
-                      kpis:
-                        type: array
-                        items: {}
+                          - period
+                          - comparison_period
+                          - kpis
+                      meta:
+                        type: string
                     required:
-                      - period
-                      - comparison_period
-                      - kpis
-                  meta:
-                    type: string
-                required:
-                  - success
-                  - message
-                  - data
-                  - meta
-        '422':
-          $ref: '#/components/responses/ValidationException'
+                      - success
+                      - message
+                      - data
+                      - meta
+                  -
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                        const: 'KPIs retrieved from the daily snapshots'
+                      data:
+                        type: object
+                        properties:
+                          period:
+                            type: object
+                            properties:
+                              from:
+                                type: string
+                              to:
+                                type: string
+                            required:
+                              - from
+                              - to
+                          comparison_period:
+                            type: 'null'
+                          kpis:
+                            type: array
+                            items:
+                              anyOf:
+                                -
+                                  type: object
+                                  properties:
+                                    source:
+                                      type: string
+                                      const: live
+                                    snapshot_date:
+                                      type: 'null'
+                                  required:
+                                    - source
+                                    - snapshot_date
+                                  additionalProperties: {}
+                                -
+                                  type: object
+                                  properties:
+                                    key:
+                                      type: string
+                                    label:
+                                      type: string
+                                    unit:
+                                      type: string
+                                    kind:
+                                      type: string
+                                    available:
+                                      type: boolean
+                                    reason:
+                                      type: string
+                                      const: snapshot_not_comparable
+                                    value:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    details:
+                                      type:
+                                        - object
+                                        - 'null'
+                                      additionalProperties: {}
+                                    comparison:
+                                      type: object
+                                      properties:
+                                        period:
+                                          type: object
+                                          properties:
+                                            from:
+                                              type: string
+                                            to:
+                                              type: string
+                                          required:
+                                            - from
+                                            - to
+                                        value:
+                                          type:
+                                            - string
+                                            - 'null'
+                                        details:
+                                          type:
+                                            - object
+                                            - 'null'
+                                          additionalProperties: {}
+                                      required:
+                                        - period
+                                        - value
+                                        - details
+                                    change:
+                                      type: string
+                                    change_percent:
+                                      type:
+                                        - string
+                                        - 'null'
+                                    source:
+                                      type: string
+                                      const: snapshot
+                                    snapshot_date:
+                                      type: string
+                                  required:
+                                    - key
+                                    - label
+                                    - unit
+                                    - kind
+                                    - available
+                                    - reason
+                                    - value
+                                    - details
+                                    - comparison
+                                    - change
+                                    - change_percent
+                                    - source
+                                    - snapshot_date
+                        required:
+                          - period
+                          - comparison_period
+                          - kpis
+                      meta:
+                        type: string
+                    required:
+                      - success
+                      - message
+                      - data
+                      - meta
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/analytics/kpis-export:
     get:
       operationId: analytics.kpis.export
@@ -43371,6 +43648,17 @@ paths:
               - none
               - previous_period
               - previous_year
+              - null
+        -
+          name: source
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - live
+              - snapshot
               - null
         -
           name: 'kpis[]'
@@ -43459,6 +43747,17 @@ paths:
               - previous_year
               - null
         -
+          name: source
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - live
+              - snapshot
+              - null
+        -
           name: 'kpis[]'
           in: query
           schema:
@@ -43489,27 +43788,134 @@ paths:
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                  message:
-                    type: string
-                    const: 'KPI retrieved'
-                  data: {}
-                  meta:
-                    type: string
-                required:
-                  - success
-                  - message
-                  - data
-                  - meta
+                anyOf:
+                  -
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                        const: 'KPI retrieved'
+                      data: {}
+                      meta:
+                        type: string
+                    required:
+                      - success
+                      - message
+                      - data
+                      - meta
+                  -
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+                        const: 'KPI retrieved from the daily snapshots'
+                      data:
+                        anyOf:
+                          -
+                            type: object
+                            properties:
+                              source:
+                                type: string
+                                const: live
+                              snapshot_date:
+                                type: 'null'
+                            required:
+                              - source
+                              - snapshot_date
+                            additionalProperties: {}
+                          -
+                            type: object
+                            properties:
+                              key:
+                                type: string
+                              label:
+                                type: string
+                              unit:
+                                type: string
+                              kind:
+                                type: string
+                              available:
+                                type: boolean
+                              reason:
+                                type: string
+                                const: snapshot_not_comparable
+                              value:
+                                type:
+                                  - string
+                                  - 'null'
+                              details:
+                                type:
+                                  - object
+                                  - 'null'
+                                additionalProperties: {}
+                              comparison:
+                                type: object
+                                properties:
+                                  period:
+                                    type: object
+                                    properties:
+                                      from:
+                                        type: string
+                                      to:
+                                        type: string
+                                    required:
+                                      - from
+                                      - to
+                                  value:
+                                    type:
+                                      - string
+                                      - 'null'
+                                  details:
+                                    type:
+                                      - object
+                                      - 'null'
+                                    additionalProperties: {}
+                                required:
+                                  - period
+                                  - value
+                                  - details
+                              change:
+                                type: string
+                              change_percent:
+                                type:
+                                  - string
+                                  - 'null'
+                              source:
+                                type: string
+                                const: snapshot
+                              snapshot_date:
+                                type: string
+                            required:
+                              - key
+                              - label
+                              - unit
+                              - kind
+                              - available
+                              - reason
+                              - value
+                              - details
+                              - comparison
+                              - change
+                              - change_percent
+                              - source
+                              - snapshot_date
+                      meta:
+                        type: string
+                    required:
+                      - success
+                      - message
+                      - data
+                      - meta
         '404':
           $ref: '#/components/responses/ModelNotFoundException'
-        '422':
-          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
   '/v1/analytics/kpis/{kpi}/export':
     get:
       operationId: analytics.kpis.export-detail
@@ -43550,6 +43956,17 @@ paths:
               - none
               - previous_period
               - previous_year
+              - null
+        -
+          name: source
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - live
+              - snapshot
               - null
         -
           name: 'kpis[]'
@@ -48410,7 +48827,11 @@ paths:
                     type: string
                     const: 'Lookup translation saved successfully.'
                   data:
-                    $ref: '#/components/schemas/LookupItemTranslation'
+                    anyOf:
+                      -
+                        type: string
+                      -
+                        $ref: '#/components/schemas/LookupItemTranslation'
                 required:
                   - message
                   - data
@@ -64348,12 +64769,36 @@ paths:
                       disclaimer:
                         type: string
                         const: 'The suggested periods are commonly cited defaults that this application has not verified against the law. Have the accountant confirm them before relying on them.'
+                      timestamp:
+                        type: object
+                        properties:
+                          tsa_url:
+                            type:
+                              - string
+                              - 'null'
+                          tsa_username_set:
+                            type: boolean
+                          tsa_password_set:
+                            type: boolean
+                          tsa_provider_name:
+                            type:
+                              - string
+                              - 'null'
+                          tsa_declared_qualified:
+                            type: boolean
+                        required:
+                          - tsa_url
+                          - tsa_username_set
+                          - tsa_password_set
+                          - tsa_provider_name
+                          - tsa_declared_qualified
                     required:
                       - classes
                       - confirmed_by_accountant
                       - confirmed_at
                       - notes
                       - disclaimer
+                      - timestamp
                   meta:
                     type: string
                 required:
@@ -64393,6 +64838,35 @@ paths:
                     - string
                     - 'null'
                   maxLength: 1000
+                timestamp:
+                  type:
+                    - object
+                    - 'null'
+                  properties:
+                    tsa_url:
+                      type:
+                        - string
+                        - 'null'
+                      maxLength: 2048
+                    tsa_username:
+                      type:
+                        - string
+                        - 'null'
+                      maxLength: 255
+                    tsa_password:
+                      type:
+                        - string
+                        - 'null'
+                      maxLength: 255
+                    tsa_provider_name:
+                      type:
+                        - string
+                        - 'null'
+                      maxLength: 120
+                    tsa_declared_qualified:
+                      type:
+                        - boolean
+                        - 'null'
       responses:
         '200':
           description: ''
@@ -64425,12 +64899,36 @@ paths:
                       disclaimer:
                         type: string
                         const: 'The suggested periods are commonly cited defaults that this application has not verified against the law. Have the accountant confirm them before relying on them.'
+                      timestamp:
+                        type: object
+                        properties:
+                          tsa_url:
+                            type:
+                              - string
+                              - 'null'
+                          tsa_username_set:
+                            type: boolean
+                          tsa_password_set:
+                            type: boolean
+                          tsa_provider_name:
+                            type:
+                              - string
+                              - 'null'
+                          tsa_declared_qualified:
+                            type: boolean
+                        required:
+                          - tsa_url
+                          - tsa_username_set
+                          - tsa_password_set
+                          - tsa_provider_name
+                          - tsa_declared_qualified
                     required:
                       - classes
                       - confirmed_by_accountant
                       - confirmed_at
                       - notes
                       - disclaimer
+                      - timestamp
                   meta:
                     type: string
                 required:
@@ -64548,6 +65046,593 @@ paths:
                   - meta
         '403':
           $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/document-trust/preservation-disposal-candidates:
+    get:
+      operationId: document-trust.preservation-disposal.candidates
+      summary: 'List the packages and what blocks their disposal'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: only_eligible
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Disposal candidates retrieved'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        package_id:
+                          type: string
+                        name:
+                          type: string
+                        document_class:
+                          type: string
+                        items_count:
+                          type: integer
+                        closed_at:
+                          type:
+                            - string
+                            - 'null'
+                        retention_until:
+                          type:
+                            - string
+                            - 'null'
+                        expiry_date:
+                          type: string
+                        expired:
+                          type: boolean
+                        eligible:
+                          type: boolean
+                        blockers:
+                          type: array
+                          items:
+                            type: string
+                            enum:
+                              - already_disposed
+                              - retention_not_expired
+                              - retention_not_confirmed
+                              - legal_hold
+                              - proposal_open
+                      required:
+                        - package_id
+                        - name
+                        - document_class
+                        - items_count
+                        - closed_at
+                        - retention_until
+                        - expiry_date
+                        - expired
+                        - eligible
+                        - blockers
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/document-trust/preservation-disposal-proposals:
+    get:
+      operationId: document-trust.preservation-disposal.proposals
+      summary: 'List the proposals'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: status
+          in: query
+          schema:
+            type:
+              - string
+              - 'null'
+            enum:
+              - pending
+              - approved
+              - rejected
+              - executed
+              - null
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Disposal proposals retrieved'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        package_id:
+                          type: string
+                        status:
+                          type: string
+                        expiry_date:
+                          type:
+                            - string
+                            - 'null'
+                        note:
+                          type:
+                            - string
+                            - 'null'
+                        proposed_by:
+                          type: string
+                        proposed_at:
+                          type:
+                            - string
+                            - 'null'
+                        decided_by:
+                          type:
+                            - string
+                            - 'null'
+                        decided_at:
+                          type:
+                            - string
+                            - 'null'
+                        decision_note:
+                          type:
+                            - string
+                            - 'null'
+                        executed_by:
+                          type:
+                            - string
+                            - 'null'
+                        executed_at:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - id
+                        - package_id
+                        - status
+                        - expiry_date
+                        - note
+                        - proposed_by
+                        - proposed_at
+                        - decided_by
+                        - decided_at
+                        - decision_note
+                        - executed_by
+                        - executed_at
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    post:
+      operationId: document-trust.preservation-disposal.propose
+      summary: 'Propose a disposal'
+      tags:
+        - PreservationDisposal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                package_id:
+                  type: string
+                  format: uuid
+                note:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 500
+              required:
+                - package_id
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/document-trust/preservation-disposal-proposals/{id}/approve':
+    post:
+      operationId: document-trust.preservation-disposal.approve
+      summary: 'Approve a proposal'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 500
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/document-trust/preservation-disposal-proposals/{id}/reject':
+    post:
+      operationId: document-trust.preservation-disposal.reject
+      summary: 'Reject a proposal'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                note:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 500
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/document-trust/preservation-disposal-proposals/{id}/execute':
+    post:
+      operationId: document-trust.preservation-disposal.execute
+      summary: 'Execute a disposal'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/document-trust/preservation-disposals:
+    get:
+      operationId: document-trust.preservation-disposal.index
+      summary: 'List the disposal records'
+      tags:
+        - PreservationDisposal
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Disposal records retrieved'
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        package_id:
+                          type: string
+                        proposal_id:
+                          type: string
+                        document_class:
+                          type: string
+                        package_name:
+                          type: string
+                        items_count:
+                          type: integer
+                        total_bytes:
+                          type: integer
+                        retention_until:
+                          type:
+                            - string
+                            - 'null'
+                        expiry_date:
+                          type:
+                            - string
+                            - 'null'
+                        manifest_sha256:
+                          type: string
+                        files:
+                          type: array
+                          items:
+                            type: object
+                            additionalProperties: {}
+                        proposed_by:
+                          type: string
+                        approved_by:
+                          type: string
+                        executed_by:
+                          type: string
+                        executed_at:
+                          type:
+                            - string
+                            - 'null'
+                      required:
+                        - id
+                        - package_id
+                        - proposal_id
+                        - document_class
+                        - package_name
+                        - items_count
+                        - total_bytes
+                        - retention_until
+                        - expiry_date
+                        - manifest_sha256
+                        - files
+                        - proposed_by
+                        - approved_by
+                        - executed_by
+                        - executed_at
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/document-trust/preservation-packages/{id}/legal-hold':
+    post:
+      operationId: document-trust.preservation-packages.hold.place
+      summary: 'Place a legal hold'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  maxLength: 500
+              required:
+                - reason
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+    delete:
+      operationId: document-trust.preservation-packages.hold.release
+      summary: 'Release the legal hold'
+      tags:
+        - PreservationDisposal
+      parameters:
+        -
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Legal hold released'
+                  data:
+                    type: object
+                    properties:
+                      released:
+                        type: integer
+                    required:
+                      - released
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '403':
+          $ref: '#/components/responses/AuthorizationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/document-trust/preservation-seal/journal-book:
+    post:
+      operationId: document-trust.preservation-seal.journal-book
+      summary: 'File the ledger book of a fiscal year'
+      tags:
+        - PreservationSeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                fiscal_year_id:
+                  type: string
+                  format: uuid
+                from:
+                  type:
+                    - string
+                    - 'null'
+                  format: date
+                to:
+                  type:
+                    - string
+                    - 'null'
+                  format: date
+                folder_id:
+                  type:
+                    - string
+                    - 'null'
+                  format: uuid
+                package_id:
+                  type:
+                    - string
+                    - 'null'
+                  format: uuid
+              required:
+                - fiscal_year_id
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+        '422':
+          $ref: '#/components/responses/ValidationException'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/document-trust/preservation-seal/payslips:
+    post:
+      operationId: document-trust.preservation-seal.payslips
+      summary: 'File the payslips of a month'
+      tags:
+        - PreservationSeal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                year:
+                  type: integer
+                  minimum: 2000
+                  maximum: 2100
+                month:
+                  type: integer
+                  minimum: 1
+                  maximum: 12
+                folder_id:
+                  type:
+                    - string
+                    - 'null'
+                  format: uuid
+                package_id:
+                  type:
+                    - string
+                    - 'null'
+                  format: uuid
+              required:
+                - year
+                - month
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
         '422':
           $ref: '#/components/responses/ValidationException'
         '401':
@@ -66269,6 +67354,11 @@ paths:
                     - contact
                     - employee
                     - lead
+                    - user
+                    - member
+                    - child
+                    - visitor
+                    - applicant
                 subject_id:
                   type: string
                   format: uuid
@@ -67412,6 +68502,133 @@ paths:
       responses:
         '204':
           description: 'No content'
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  /v1/settings/privacy/retention-suggestions:
+    get:
+      operationId: settings.privacy.retention-suggestions.index
+      tags:
+        - PrivacyOperations
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        entry_key:
+                          type: string
+                        label:
+                          type: string
+                        personal_columns:
+                          type: array
+                          items:
+                            type: string
+                        age_column:
+                          type:
+                            - string
+                            - 'null'
+                        suggested_retention_days:
+                          type: string
+                        rationale:
+                          type: string
+                        requires_confirmation:
+                          type: boolean
+                        applied_automatically:
+                          type: boolean
+                        basis:
+                          type: string
+                          const: 'Operational suggestion, not a legal requirement and not verified against any statute: to be confirmed by the data protection officer.'
+                        current_policy:
+                          type:
+                            - object
+                            - 'null'
+                          properties:
+                            retention_days:
+                              type: integer
+                            is_active:
+                              type: boolean
+                          required:
+                            - retention_days
+                            - is_active
+                      required:
+                        - entry_key
+                        - label
+                        - personal_columns
+                        - age_column
+                        - suggested_retention_days
+                        - rationale
+                        - requires_confirmation
+                        - applied_automatically
+                        - basis
+                        - current_policy
+                required:
+                  - data
+        '401':
+          $ref: '#/components/responses/AuthenticationException'
+  '/v1/settings/privacy/retention-suggestions/{entryKey}/adopt':
+    post:
+      operationId: settings.privacy.retention-suggestions.adopt
+      tags:
+        - PrivacyOperations
+      parameters:
+        -
+          name: entryKey
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                confirm:
+                  enum:
+                    - 'yes'
+                    - 'on'
+                    - '1'
+                    - 1
+                    - 'true'
+                    - true
+                retention_days:
+                  type:
+                    - integer
+                    - 'null'
+                  minimum: 1
+                  maximum: 36500
+                activate:
+                  type:
+                    - boolean
+                    - 'null'
+              required:
+                - confirm
+      responses:
+        '201':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    const: 'Retention policy created from the suggestion'
+                  data:
+                    $ref: '#/components/schemas/PrivacyRetentionPolicy'
+                required:
+                  - message
+                  - data
+        '422':
+          $ref: '#/components/responses/ValidationException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
   /v1/settings/privacy/retention-runs:
@@ -85651,13 +86868,6 @@ paths:
                       - message
                       - data
                       - meta
-        '303':
-          description: ''
-          headers:
-            Location:
-              required: true
-              schema:
-                type: string
         '401':
           description: ''
           content:
@@ -85688,6 +86898,13 @@ paths:
                   - detail
                   - instance
                   - invalid_params
+        '303':
+          description: ''
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
         '422':
           $ref: '#/components/responses/ValidationException'
   '/v1/auth/saml/{tenantId}/slo':
@@ -85703,8 +86920,6 @@ paths:
           schema:
             type: string
       responses:
-        '204':
-          description: 'No content'
         '302':
           description: ''
           headers:
@@ -85712,6 +86927,8 @@ paths:
               required: true
               schema:
                 type: string
+        '204':
+          description: 'No content'
         '400':
           description: ''
           content:
@@ -87542,19 +88759,16 @@ paths:
         '200':
           description: ''
           content:
-            application/json:
+            text/html:
               schema:
                 type: string
           headers:
-            Content-Disposition:
-              schema:
-                type: string
-            X-Report-Truncated:
+            Transfer-Encoding:
+              required: true
               schema:
                 type: string
                 enum:
-                  - 'true'
-                  - 'false'
+                  - chunked
         '422':
           $ref: '#/components/responses/ValidationException'
         '401':
@@ -92306,6 +93520,67 @@ paths:
           $ref: '#/components/responses/ModelNotFoundException'
         '401':
           $ref: '#/components/responses/AuthenticationException'
+  /v1/auth/sso/discover:
+    post:
+      operationId: auth.sso.discover
+      tags:
+        - SsoDiscovery
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 254
+                domain:
+                  type:
+                    - string
+                    - 'null'
+                  maxLength: 253
+      responses:
+        '200':
+          description: ''
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+                    const: 'Operation successful'
+                  data:
+                    type: object
+                    properties:
+                      sso:
+                        type: object
+                        properties:
+                          available:
+                            type: boolean
+                          protocol:
+                            type: string
+                          tenant_id:
+                            type: string
+                        required:
+                          - available
+                          - protocol
+                          - tenant_id
+                    required:
+                      - sso
+                  meta:
+                    type: string
+                required:
+                  - success
+                  - message
+                  - data
+                  - meta
+        '422':
+          $ref: '#/components/responses/ValidationException'
   /v1/auth/sso/start:
     post:
       operationId: auth.sso.start
@@ -92466,13 +93741,6 @@ paths:
                       - message
                       - data
                       - meta
-        '303':
-          description: ''
-          headers:
-            Location:
-              required: true
-              schema:
-                type: string
         '401':
           description: ''
           content:
@@ -92503,6 +93771,13 @@ paths:
                   - detail
                   - instance
                   - invalid_params
+        '303':
+          description: ''
+          headers:
+            Location:
+              required: true
+              schema:
+                type: string
         '422':
           $ref: '#/components/responses/ValidationException'
   /v1/auth/sso/exchange:
@@ -107273,7 +108548,11 @@ paths:
                     type: string
                     const: 'Translation saved successfully'
                   data:
-                    $ref: '#/components/schemas/Translation'
+                    anyOf:
+                      -
+                        type: string
+                      -
+                        $ref: '#/components/schemas/Translation'
                 required:
                   - message
                   - data
@@ -111091,6 +112370,8 @@ paths:
                   data:
                     type: object
                     properties:
+                      retention:
+                        type: string
                       payload_versions:
                         type: string
                       default_payload_version:
@@ -111160,6 +112441,7 @@ paths:
                             - data_schema
                             - data_fields
                     required:
+                      - retention
                       - payload_versions
                       - default_payload_version
                       - signature
@@ -116050,7 +117332,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         name:
           type: string
         prefix:
@@ -118946,7 +120230,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         score:
           type: integer
         feedback:
@@ -119700,7 +120986,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -119880,7 +121168,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         change_number:
           type: string
         title:
@@ -120319,7 +121609,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         pos_sale_id:
           type:
             - string
@@ -120824,6 +122116,8 @@ components:
           type: string
         goodwill_translation:
           type: string
+        negative_goodwill_treatment:
+          type: string
         synthetic_accounts:
           type: object
           additionalProperties:
@@ -120865,6 +122159,8 @@ components:
                 type:
                   - string
                   - 'null'
+              consolidation_basis:
+                type: string
             required:
               - id
               - member_tenant_id
@@ -120875,6 +122171,7 @@ components:
               - holder_tenant_id
               - fiscal_year_offset_months
               - tax_rate
+              - consolidation_basis
         relations:
           type: array
           items:
@@ -120895,6 +122192,7 @@ components:
         - unrealised_profit_tax_rate
         - fair_value_first_year_rule
         - goodwill_translation
+        - negative_goodwill_treatment
         - synthetic_accounts
         - is_active
         - notes
@@ -120989,6 +122287,7 @@ components:
                   - unrealised_profit
                   - dividend
                   - fair_value_release
+                  - provision_release
               relation_id:
                 type:
                   - string
@@ -123526,7 +124825,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         customer_id:
           type: string
         credit_limit:
@@ -123638,7 +124939,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -123715,7 +125018,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         declaration_id:
           type: string
         line_number:
@@ -123844,7 +125149,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         dossier_number:
           type: string
         status:
@@ -123939,7 +125246,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         gateway:
           type: string
         date_from:
@@ -124004,7 +125313,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         contact_id:
           type: string
         status:
@@ -124109,7 +125420,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         business_date:
           type: string
           format: date-time
@@ -124917,7 +126230,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         channel:
           type: string
         driver:
@@ -125724,7 +127039,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         document_type:
           type: string
         document_id:
@@ -125765,7 +127082,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         driver:
           type: string
         certificate_expires_at:
@@ -125797,7 +127116,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         document_type:
           type: string
         logo_data_uri:
@@ -126003,7 +127324,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -126189,7 +127512,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         employee_number:
           type: string
         first_name:
@@ -126549,7 +127874,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         expense_number:
           type: string
         date:
@@ -126889,7 +128216,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         member_id:
           type: string
         fee_plan_id:
@@ -127057,7 +128386,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -127738,7 +129069,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -128158,7 +129491,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         document_type:
           type: string
         document_id:
@@ -128237,7 +129572,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         is_enabled:
           type: boolean
         subject_type:
@@ -128860,7 +130197,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         incident_number:
           type: string
         title:
@@ -128989,7 +130328,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         cash_pool_id:
           type:
             - string
@@ -129191,7 +130532,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         inventory_count_session_id:
           type: string
         warehouse_bin_id:
@@ -130796,7 +132139,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         leave_type_id:
           type: string
         code:
@@ -130956,7 +132301,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -131884,7 +133231,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         member_id:
           type: string
         social_role_id:
@@ -131942,7 +133291,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         member_id:
           type: string
         year_id:
@@ -133809,7 +135160,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         work_order_number:
           type: string
         title:
@@ -134213,7 +135566,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         code:
           type: string
         name:
@@ -134502,7 +135857,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         passive_invoice_id:
           type: string
         line_number:
@@ -134720,7 +136077,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         invoice_id:
           type: string
         provider:
@@ -134895,7 +136254,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         employee_id:
           type: string
         absence_type:
@@ -135044,7 +136405,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         employee_id:
           type: string
         first_name:
@@ -135097,7 +136460,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         employee_id:
           type: string
         social_security_number:
@@ -135341,7 +136706,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         employee_id:
           type: string
         year:
@@ -135393,7 +136760,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         payroll_run_id:
           type: string
         status:
@@ -135449,7 +136818,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         salary_expense_account_id:
           type:
             - string
@@ -135524,7 +136895,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         payslip_id:
           type: string
         wage_type_code:
@@ -135579,7 +136952,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         payroll_run_id:
           type: string
         employee_id:
@@ -135687,7 +137062,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         payroll_run_id:
           type: string
         action:
@@ -135736,7 +137113,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         year:
           type: integer
         month:
@@ -135837,7 +137216,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         employee_id:
           type: string
         year:
@@ -136420,7 +137801,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         contact_id:
           type: string
         warehouse_id:
@@ -136979,6 +138362,10 @@ components:
           type:
             - string
             - 'null'
+        disposed_at:
+          type:
+            - string
+            - 'null'
         last_verification:
           anyOf:
             -
@@ -137004,6 +138391,7 @@ components:
         - timestamp_qualified
         - timestamped_at
         - created_at
+        - disposed_at
         - last_verification
       title: PreservationPackageResource
     PreservationRecord:
@@ -137012,7 +138400,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         document_type:
           type: string
         document_id:
@@ -137519,7 +138909,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         title:
           type: string
         purpose:
@@ -137700,7 +139092,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         user_id:
           type:
             - string
@@ -137749,7 +139143,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         name:
           type: string
         service_type:
@@ -138254,7 +139650,15 @@ components:
               type:
                 - string
                 - 'null'
+            below_minimum_since:
+              type:
+                - string
+                - 'null'
         min_stock:
+          type:
+            - string
+            - 'null'
+        below_minimum_since:
           type:
             - string
             - 'null'
@@ -138282,6 +139686,7 @@ components:
         - is_variant
         - attributes
         - min_stock
+        - below_minimum_since
       title: Product
     ProductChargeAssignment:
       type: object
@@ -138289,7 +139694,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         product_charge_type_id:
           type: string
         product_id:
@@ -138327,7 +139734,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         product_charge_type_id:
           type: string
         rate:
@@ -139201,7 +140610,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -141716,7 +143127,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         retention_days:
           type: integer
         created_at:
@@ -141987,7 +143400,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         member_id:
           type: string
         registry_type_id:
@@ -142318,7 +143733,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         repair_number:
           type: string
         stock_serial_number_id:
@@ -142420,7 +143837,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         repair_order_id:
           type: string
         stock_item_id:
@@ -143021,7 +144440,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         payment_batch_id:
           type: string
         sia_code:
@@ -143294,7 +144715,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         product_id:
           type: string
         language:
@@ -143337,7 +144760,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         delivery_note_id:
           type: string
         safety_data_sheet_version_id:
@@ -143394,7 +144819,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         safety_data_sheet_id:
           type: string
         version_number:
@@ -143461,7 +144888,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         expense_account_id:
           type:
             - string
@@ -143500,7 +144929,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         sales_representative_id:
           type: string
         period_start:
@@ -144121,7 +145552,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         sales_order_id:
           type: string
         hold_type:
@@ -144683,7 +146116,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         sales_representative_id:
           type:
             - string
@@ -144736,7 +146171,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         name:
           type: string
         created_at:
@@ -149484,7 +150921,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -149555,7 +150994,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         contract_number:
           type: string
         name:
@@ -149703,7 +151144,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         report_number:
           type: string
         report_date:
@@ -149940,7 +151383,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -150439,6 +151884,16 @@ components:
           type: string
         has_client_secret:
           type: boolean
+        token_endpoint_auth_method:
+          type: string
+        end_session_endpoint:
+          type:
+            - string
+            - 'null'
+        post_logout_redirect_uri:
+          type:
+            - string
+            - 'null'
         scopes:
           type: string
         allowed_email_domains:
@@ -150481,6 +151936,9 @@ components:
         - redirect_uri
         - client_id
         - has_client_secret
+        - token_endpoint_auth_method
+        - end_session_endpoint
+        - post_logout_redirect_uri
         - scopes
         - allowed_email_domains
         - role_claim
@@ -150658,7 +152116,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -150836,7 +152296,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -151087,7 +152549,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         stock_pick_list_id:
           type: string
         stock_item_id:
@@ -151232,7 +152696,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -151331,7 +152797,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -151474,7 +152942,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type: string
         warehouse_id:
@@ -153045,6 +154515,16 @@ components:
           type:
             - number
             - 'null'
+        expected_future_charges:
+          type:
+            - number
+            - 'null'
+        provision_release_years:
+          type:
+            - integer
+            - 'null'
+          minimum: 1
+          maximum: 100
         input_currency:
           type:
             - string
@@ -153177,6 +154657,14 @@ components:
             - pro_rata
             - full_year
             - null
+        negative_goodwill_treatment:
+          type:
+            - string
+            - 'null'
+          enum:
+            - consolidation_reserve
+            - immediate_income
+            - null
         goodwill_translation:
           type:
             - string
@@ -153216,6 +154704,14 @@ components:
             - 'null'
           minimum: -11
           maximum: 11
+        consolidation_basis:
+          type:
+            - string
+            - 'null'
+          enum:
+            - own_year
+            - interim_twelve_months
+            - null
         tax_rate:
           type:
             - number
@@ -160235,7 +161731,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         supplier_id:
           type: string
         keyword:
@@ -160314,7 +161812,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -160382,7 +161882,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -161246,7 +162748,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         ticket_number:
           type: string
         type:
@@ -161658,7 +163162,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         user_id:
           type: string
         employee_id:
@@ -161716,7 +163222,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         year:
           type: integer
         month:
@@ -162135,7 +163643,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -163042,6 +164552,11 @@ components:
           enum:
             - pro_rata
             - full_year
+        negative_goodwill_treatment:
+          type: string
+          enum:
+            - consolidation_reserve
+            - immediate_income
         goodwill_translation:
           type: string
           enum:
@@ -165211,6 +166726,8 @@ components:
             - string
             - 'null'
           maxLength: 2
+        carry_over_below_minimum:
+          type: boolean
       title: UpdateVatTaxSettingRequest
     UpdateWarehouseBinRequest:
       type: object
@@ -165609,6 +167126,26 @@ components:
           type:
             - string
             - 'null'
+          maxLength: 2000
+        token_endpoint_auth_method:
+          type:
+            - string
+            - 'null'
+          enum:
+            - client_secret_post
+            - client_secret_basic
+            - null
+        end_session_endpoint:
+          type:
+            - string
+            - 'null'
+          format: uri
+          maxLength: 2000
+        post_logout_redirect_uri:
+          type:
+            - string
+            - 'null'
+          format: uri
           maxLength: 2000
         scopes:
           type: string
@@ -166167,6 +167704,8 @@ components:
           type:
             - string
             - 'null'
+        carry_over_below_minimum:
+          type: boolean
       required:
         - periodicity
         - regime
@@ -166181,6 +167720,7 @@ components:
         - interest_expense_account_id
         - declarant_tax_code
         - declarant_role_code
+        - carry_over_below_minimum
       title: VatTaxSettingResource
     Vehicle:
       type: object
@@ -166680,7 +168220,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         warehouse_aisle_id:
           type: string
         code:
@@ -166783,7 +168325,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         warehouse_id:
           type: string
         code:
@@ -167003,7 +168547,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         device_code:
           type: string
         weight_kg:
@@ -167045,7 +168591,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         ticket_number:
           type: string
         weighbridge_vehicle_id:
@@ -167198,7 +168746,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         license_plate:
           type: string
         card_number:
@@ -167673,7 +169223,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -167998,7 +169550,9 @@ components:
         id:
           type: string
         tenant_id:
-          type: string
+          type:
+            - string
+            - 'null'
         company_id:
           type:
             - string
@@ -168920,6 +170474,12 @@ tags:
     name: Preservation
     description: 'Operations of the Preservation module.'
   -
+    name: PreservationDisposal
+    description: 'Operations of the PreservationDisposal module.'
+  -
+    name: PreservationSeal
+    description: 'Operations of the PreservationSeal module.'
+  -
     name: PriceList
     description: 'Operations of the PriceList module.'
   -
@@ -169210,6 +170770,9 @@ tags:
   -
     name: SportWork
     description: 'Operations of the SportWork module.'
+  -
+    name: SsoDiscovery
+    description: 'Operations of the SsoDiscovery module.'
   -
     name: SsoLogin
     description: 'Operations of the SsoLogin module.'

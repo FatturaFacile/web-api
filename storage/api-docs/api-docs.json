@@ -3474,7 +3474,7 @@
                     "Authentication"
                 ],
                 "summary": "User logout",
-                "description": "Cookie session: the session is invalidated (cookie and server-side state). Token mode: the current Bearer token is revoked.",
+                "description": "Cookie session: the session is invalidated (cookie and server-side state). Token mode: the current Bearer token is revoked. The local session always ends first. When the access was opened through the single sign-on of the tenant and the identity provider supports a logout (OIDC end_session_endpoint, SAML single logout service), `data.idp_logout_url` is the URL the SPA must send the browser to so the identity provider ends its session too (OIDC RP-initiated logout with id_token_hint and the https post_logout_redirect_uri; SAML LogoutRequest); otherwise it is null.",
                 "operationId": "logout",
                 "parameters": [
                     {
@@ -18218,6 +18218,139 @@
                 ]
             }
         },
+        "/api/v1/settings/privacy/retention-suggestions": {
+            "get": {
+                "tags": [
+                    "Settings",
+                    "Privacy"
+                ],
+                "summary": "List suggested retention periods",
+                "description": "Suggested retention periods for the tables that can have a retention policy, with the rationale and the policy the company has now. They are operational suggestions, not legal requirements and not verified against any statute: they are never applied automatically and the company must confirm them (save a policy, or adopt a suggestion, which creates it inactive).",
+                "operationId": "listPrivacyRetentionSuggestions",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Suggestions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrivacyRetentionSuggestionListResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PrivacyUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PrivacyForbidden"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/settings/privacy/retention-suggestions/{entryKey}/adopt": {
+            "post": {
+                "tags": [
+                    "Settings",
+                    "Privacy"
+                ],
+                "summary": "Adopt a suggested retention period",
+                "description": "Creates the retention policy of the table from its suggestion, only with confirm=true, and inactive unless activate=true. A policy already present is never overwritten. Nothing is anonymised until the policy is active and run.",
+                "operationId": "adoptPrivacyRetentionSuggestion",
+                "parameters": [
+                    {
+                        "name": "entryKey",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/PrivacyRetentionAdoptRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Policy created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PrivacyRetentionPolicyResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/PrivacyUnauthenticated"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/PrivacyForbidden"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/PrivacyUnprocessable"
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
         "/api/v1/settings/privacy/breaches/{id}": {
             "get": {
                 "tags": [
@@ -24365,7 +24498,7 @@
                     "Authentication"
                 ],
                 "summary": "Start a SAML login",
-                "description": "Starts a SAML login for a tenant and returns the URL of its identity provider (AuthnRequest, HTTP-Redirect binding, with a RelayState valid once for a few minutes). A tenant without a ready SAML provider is a 404.",
+                "description": "Starts a SAML login for a tenant and returns the URL of its identity provider (AuthnRequest, HTTP-Redirect binding, with a RelayState valid once for a few minutes). A tenant without a ready SAML provider is a 404. The response sets the cookie `sso_flow` that binds the login to this browser. SPA contract (cookie sessions, no bearer token): 1) POST /auth/sso/discover with the email to learn the protocol and tenant; 2) call the start endpoint of that protocol with credentials included, so the browser keeps the binding cookie `sso_flow` (HttpOnly, Secure, SameSite=Lax, 10 minutes); 3) send the browser to the returned URL; 4) the identity provider returns the browser to the SPA (OIDC: redirect_uri with code and state, which the SPA posts to /auth/sso/callback with credentials) or posts the assertion cross-site to the SAML ACS, which answers 303 to the SPA with `#code=`; 5) the SPA posts that single-use code to POST /auth/sso/exchange with credentials, the CSRF token and the same browser, and receives the cookie session; 6) to sign out, POST /auth/logout and follow `data.idp_logout_url` when it is not null.",
                 "operationId": "startSamlLogin",
                 "requestBody": {
                     "required": true,
@@ -24439,7 +24572,7 @@
                     "Authentication"
                 ],
                 "summary": "SAML assertion consumer service",
-                "description": "Assertion consumer service of the tenant (HTTP-POST binding): receives `SAMLResponse` and `RelayState` from the identity provider. Strict mode: the assertion must be signed by a configured certificate, addressed to this tenant (Audience, Destination), within its validity (NotOnOrAfter), an answer to the request this RelayState started (InResponseTo), and not seen before. IdP-initiated responses are refused. Without a cookie session (the identity provider posts it as a cross-site navigation) a browser is redirected (303) to the SPA with the single-use sign-in code in the URL fragment (`#code=`), and a JSON client gets `sign_in_code`; the SPA exchanges it at POST /auth/sso/exchange. When the SPA relays the posted values itself on a stateful request, it answers like the password login (cookie set). The access is bound to the tenant.",
+                "description": "Assertion consumer service of the tenant (HTTP-POST binding): receives `SAMLResponse` and `RelayState` from the identity provider. Strict mode: the assertion must be signed by a configured certificate, addressed to this tenant (Audience, Destination), within its validity (NotOnOrAfter), an answer to the request this RelayState started (InResponseTo), and not seen before. IdP-initiated responses are refused. Without a cookie session (the identity provider posts it as a cross-site navigation) a browser is redirected (303) to the SPA with the single-use sign-in code in the URL fragment (`#code=`), and a JSON client gets `sign_in_code`; the SPA exchanges it at POST /auth/sso/exchange. When the SPA relays the posted values itself on a stateful request, it answers like the password login (cookie set). The access is bound to the tenant. The ACS never issues a bearer token unless `token_mode: true` is sent while the server enables the token mode (otherwise 422). The binding cookie is not sent with the identity provider cross-site POST: the sign-in code keeps its hash and the exchange requires the cookie.",
                 "operationId": "samlAssertionConsumerService",
                 "parameters": [
                     {
@@ -27404,7 +27537,7 @@
                     "Banking"
                 ],
                 "summary": "Sync exchange rates",
-                "description": "Synchronize daily currency exchange rates between EUR, CHF and USD.",
+                "description": "Synchronize daily currency exchange rates between EUR, CHF and USD. The rates are central data shared by every tenant: platform administrators only.",
                 "operationId": "syncExchangeRates",
                 "parameters": [
                     {
@@ -27445,7 +27578,14 @@
                         }
                     },
                     "403": {
-                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                        "description": "Not a platform administrator. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
                     }
                 },
                 "security": [
@@ -27689,13 +27829,110 @@
                 ]
             }
         },
+        "/api/v1/auth/sso/discover": {
+            "post": {
+                "tags": [
+                    "Authentication"
+                ],
+                "summary": "Discover the SSO of an email domain",
+                "description": "Tells the login page whether to offer single sign-on for an email address (or a domain) and which flow to start. Only the domain is looked at. The answer always has the same shape: `data.sso = {available, protocol, tenant_id}`; for an unknown domain and for a domain without SSO it is `{available: false, protocol: null, tenant_id: null}`, produced by the same queries and with the same minimum duration, so the two cannot be told apart. When one tenant has a ready provider for the domain, `available` is true, `protocol` is `oidc` or `saml`, and `tenant_id` is the value to give to POST /auth/sso/start (oidc) or POST /auth/saml/start (saml). A domain claimed by several tenants is ambiguous and is answered as unavailable. Whether the password login is still allowed is not part of the answer. Always HTTP 200 for a well-formed input; a malformed email or domain is a 422 (it says nothing about the tenants). Rate limited per client address.",
+                "operationId": "discoverSso",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "description": "Give `email` or `domain`.",
+                                "properties": {
+                                    "email": {
+                                        "type": "string",
+                                        "format": "email",
+                                        "example": "anna.rossi@example.com"
+                                    },
+                                    "domain": {
+                                        "type": "string",
+                                        "example": "example.com"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The SSO to offer, if any",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "sso": {
+                                                    "properties": {
+                                                        "available": {
+                                                            "type": "boolean"
+                                                        },
+                                                        "protocol": {
+                                                            "type": "string",
+                                                            "nullable": true,
+                                                            "enum": [
+                                                                "oidc",
+                                                                "saml"
+                                                            ]
+                                                        },
+                                                        "tenant_id": {
+                                                            "type": "string",
+                                                            "format": "uuid",
+                                                            "nullable": true
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Malformed email or domain",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "description": "Too many requests",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": []
+            }
+        },
         "/api/v1/auth/sso/start": {
             "post": {
                 "tags": [
                     "Authentication"
                 ],
                 "summary": "Start an SSO login",
-                "description": "Starts a single sign-on login for a tenant and returns the authorization URL of its identity provider (OpenID Connect, authorization code with PKCE). The state is valid once, for a few minutes. A tenant without a ready provider is a 404.",
+                "description": "Starts a single sign-on login for a tenant and returns the authorization URL of its identity provider (OpenID Connect, authorization code with PKCE). The state is valid once, for a few minutes. A tenant without a ready provider is a 404. The response sets the cookie `sso_flow` that binds the login to this browser: only a request that carries it can finish the login. SPA contract (cookie sessions, no bearer token): 1) POST /auth/sso/discover with the email to learn the protocol and tenant; 2) call the start endpoint of that protocol with credentials included, so the browser keeps the binding cookie `sso_flow` (HttpOnly, Secure, SameSite=Lax, 10 minutes); 3) send the browser to the returned URL; 4) the identity provider returns the browser to the SPA (OIDC: redirect_uri with code and state, which the SPA posts to /auth/sso/callback with credentials) or posts the assertion cross-site to the SAML ACS, which answers 303 to the SPA with `#code=`; 5) the SPA posts that single-use code to POST /auth/sso/exchange with credentials, the CSRF token and the same browser, and receives the cookie session; 6) to sign out, POST /auth/logout and follow `data.idp_logout_url` when it is not null.",
                 "operationId": "startSsoLogin",
                 "requestBody": {
                     "required": true,
@@ -27769,7 +28006,7 @@
                     "Authentication"
                 ],
                 "summary": "Complete an SSO login",
-                "description": "Completes a single sign-on login: exchanges the authorization code, validates the id_token (signature against the provider JWKS, issuer, audience, expiry, nonce) and signs the user in like the password login does (cookie session, no token; a user with two factors gets a challenge). Without a cookie session on the request (a cross-site call) the answer is a single-use sign_in_code for POST /auth/sso/exchange. A Bearer token only with token_mode=true while the server enables the token mode (otherwise 422). The access is bound to the tenant of the provider. The state is spent on first use: a replay is refused. Any failure is a 401 with a generic message and an audit entry.",
+                "description": "Completes a single sign-on login: exchanges the authorization code, validates the id_token (signature against the provider JWKS, issuer, audience, expiry, nonce) and signs the user in like the password login does (cookie session, no token; a user with two factors gets a challenge). Without a cookie session on the request (a cross-site call) the answer is a single-use sign_in_code for POST /auth/sso/exchange. A Bearer token only with token_mode=true while the server enables the token mode (otherwise 422). The access is bound to the tenant of the provider. The state is spent on first use: a replay is refused. Any failure is a 401 with a generic message and an audit entry. A request that opens the access itself (cookie session, or token mode) must carry the `sso_flow` cookie of the browser that started the login, otherwise it is a 401; without a session the binding is checked at the exchange of the code.",
                 "operationId": "completeSsoLogin",
                 "requestBody": {
                     "required": true,
@@ -27832,7 +28069,7 @@
                     "Authentication"
                 ],
                 "summary": "Exchange an SSO sign-in code for the cookie session",
-                "description": "Exchanges the single-use sign-in code that a cross-site single sign-on handed to the SPA (the SAML assertion posted by the identity provider finishes without a session and redirects the browser to the SPA with `#code=...`, or answers `sign_in_code` to a JSON client) for the cookie session. A stateful https request with the CSRF token is required (GET /sanctum/csrf-cookie first), so only the SPA can complete the sign-in. The code is valid 60 seconds by default and is spent by the first exchange: a replay or an expired code is a 401. Answers like the password login (cookie set, or a two-factor challenge).",
+                "description": "Exchanges the single-use sign-in code that a cross-site single sign-on handed to the SPA (the SAML assertion posted by the identity provider finishes without a session and redirects the browser to the SPA with `#code=...`, or answers `sign_in_code` to a JSON client) for the cookie session. A stateful https request with the CSRF token is required (GET /sanctum/csrf-cookie first), so only the SPA can complete the sign-in. The code is valid 60 seconds by default and is spent by the first exchange: a replay or an expired code is a 401. It is also bound to the browser that started the login: the request must carry the `sso_flow` cookie set at the start, otherwise it is a 401 and the code is spent. Answers like the password login (cookie set, or a two-factor challenge).",
                 "operationId": "exchangeSsoSignInCode",
                 "requestBody": {
                     "required": true,
@@ -102851,6 +103088,9 @@
                         "$ref": "#/components/parameters/AnaCompare"
                     },
                     {
+                        "$ref": "#/components/parameters/AnaKpiSource"
+                    },
+                    {
                         "name": "kpis[]",
                         "in": "query",
                         "description": "Indicators to include (default: all)",
@@ -102967,6 +103207,9 @@
                     },
                     {
                         "$ref": "#/components/parameters/AnaCompare"
+                    },
+                    {
+                        "$ref": "#/components/parameters/AnaKpiSource"
                     },
                     {
                         "$ref": "#/components/parameters/XTenantId"
@@ -111366,6 +111609,89 @@
                                     "properties": {
                                         "data": {
                                             "$ref": "#/components/schemas/GeneralLedgerConsolidatedStatement"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "description": "The ledger of a member entity is not accessible. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/general-ledger/consolidation/runs/{runId}/goodwill-schedule": {
+            "get": {
+                "tags": [
+                    "General Ledger Consolidation"
+                ],
+                "summary": "Goodwill schedule of a run",
+                "description": "The goodwill schedule of the acquisitions of a run for audit: per fiscal year of the parent the straight-line amortisation by whole months over the years of the group, the impairments entered, the opening and closing balance, and for the year of the run the charges to the period end that the run posted. Built from the amounts and inputs stored with the run, so it does not change when the configuration does.",
+                "operationId": "getConsolidationGoodwillSchedule",
+                "parameters": [
+                    {
+                        "name": "runId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Goodwill schedule",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/components/schemas/GeneralLedgerGoodwillSchedule"
                                         }
                                     },
                                     "type": "object"
@@ -138307,7 +138633,7 @@
                     "Integrations"
                 ],
                 "summary": "Webhook event catalogue",
-                "description": "The events an endpoint can subscribe to, with the schema of their payload \"data\" (components WebhookData...), the payload versions and the signature scheme. Only events that the application already raises are listed. VERIFYING A DELIVERY. Every delivery carries X-FF-Webhook-Signature: t=<unix timestamp>,v1=<hex>[,v1=<hex>]. 1) Read the RAW request body (the exact bytes, before any JSON parsing). 2) Build the signed string: the t value, a dot, the raw body (\"<t>.<body>\"). 3) Compute HMAC-SHA256 of that string with the signing secret of the endpoint (the whole secret, \"whsec_\" prefix included) and hex-encode it. 4) Compare it, in constant time, with every v1 value of the header: the delivery is authentic when ANY matches (during a secret rotation the header carries one v1 per valid secret). 5) Reject the delivery when |now - t| is greater than 300 seconds (replay protection). 6) Deduplicate on the X-FF-Webhook-Id header (idempotency key): it is the same on every retry and manual redelivery of a delivery. Example (PHP): $ok = hash_equals(hash_hmac(\"sha256\", $t.\".\".$rawBody, $secret), $v1) && abs(time() - $t) <= 300; Example (Node): crypto.timingSafeEqual(Buffer.from(crypto.createHmac(\"sha256\", secret).update(t + \".\" + rawBody).digest(\"hex\")), Buffer.from(v1)). RETRIES. A delivery succeeds on any 2xx answer within 10 seconds. Any other outcome (no answer, timeout, 4xx, 5xx, a redirect: redirects are never followed) is retried with exponential backoff (30 s, 1 min, 2 min, ... capped at 6 hours) up to 8 attempts; then the delivery is a dead letter (status \"dead\"), kept in the log and redeliverable by hand. After 20 consecutive failed attempts without a success the endpoint is disabled and the owners and admins of the tenant are notified. Deliveries are rate limited per tenant (300 a minute): a delivery over the limit is postponed, not lost.",
+                "description": "The events an endpoint can subscribe to, with the schema of their payload \"data\" (components WebhookData...), the payload versions and the signature scheme. Only events that the application already raises are listed. VERIFYING A DELIVERY. Every delivery carries X-FF-Webhook-Signature: t=<unix timestamp>,v1=<hex>[,v1=<hex>]. 1) Read the RAW request body (the exact bytes, before any JSON parsing). 2) Build the signed string: the t value, a dot, the raw body (\"<t>.<body>\"). 3) Compute HMAC-SHA256 of that string with the signing secret of the endpoint (the whole secret, \"whsec_\" prefix included) and hex-encode it. 4) Compare it, in constant time, with every v1 value of the header: the delivery is authentic when ANY matches (during a secret rotation the header carries one v1 per valid secret). 5) Reject the delivery when |now - t| is greater than 300 seconds (replay protection). 6) Deduplicate on the X-FF-Webhook-Id header (idempotency key): it is the same on every retry and manual redelivery of a delivery. Example (PHP): $ok = hash_equals(hash_hmac(\"sha256\", $t.\".\".$rawBody, $secret), $v1) && abs(time() - $t) <= 300; Example (Node): crypto.timingSafeEqual(Buffer.from(crypto.createHmac(\"sha256\", secret).update(t + \".\" + rawBody).digest(\"hex\")), Buffer.from(v1)). RETRIES. A delivery succeeds on any 2xx answer within 10 seconds. Any other outcome (no answer, timeout, 4xx, 5xx, a redirect: redirects are never followed) is retried with exponential backoff (30 s, 1 min, 2 min, ... capped at 6 hours) up to 8 attempts; then the delivery is a dead letter (status \"dead\"), kept in the log and redeliverable by hand. After 20 consecutive failed attempts without a success the endpoint is disabled and the owners and admins of the tenant are notified. Deliveries are rate limited per tenant (300 a minute): a delivery over the limit is postponed, not lost. RETENTION. The delivery log is kept 30 days for succeeded deliveries, 90 days for dead letters (they wait for a manual redelivery) and 7 days for test pings, counted from the last change of the delivery, then deleted with its attempts; deliveries still pending or retrying are never deleted. The audit trail of endpoint changes is kept apart and untouched.",
                 "operationId": "listWebhookEvents",
                 "parameters": [
                     {
@@ -171129,6 +171455,33 @@
                                     "notes": {
                                         "type": "string",
                                         "nullable": true
+                                    },
+                                    "timestamp": {
+                                        "description": "RFC 3161 time-stamp authority of the tenant. `tsa_url` must be https and a public address (null removes the authority and its credentials); the optional basic-auth credentials are stored encrypted and never returned. `tsa_declared_qualified` is the tenant declaration that the TSA is a qualified provider; it is never assumed. When an authority is set, closing a package uses it and fails (package stays open) if it does not answer validly.",
+                                        "properties": {
+                                            "tsa_url": {
+                                                "type": "string",
+                                                "format": "uri",
+                                                "nullable": true
+                                            },
+                                            "tsa_username": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "tsa_password": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "tsa_provider_name": {
+                                                "type": "string",
+                                                "nullable": true
+                                            },
+                                            "tsa_declared_qualified": {
+                                                "type": "boolean"
+                                            }
+                                        },
+                                        "type": "object",
+                                        "nullable": true
                                     }
                                 },
                                 "type": "object"
@@ -171250,6 +171603,992 @@
                             "application/json": {
                                 "schema": {
                                     "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-disposal-candidates": {
+            "get": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "List disposal candidates",
+                "description": "Closed packages not yet disposed of, with the computed expiry (the longer of the retention fixed at closing and the current tenant setting counted from the closing date) and what blocks disposal: retention_not_expired, retention_not_confirmed (the accountant has not confirmed the retention periods), legal_hold, proposal_open. For owners and administrators.",
+                "operationId": "listPreservationDisposalCandidates",
+                "parameters": [
+                    {
+                        "name": "only_eligible",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "boolean"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The packages with their assessment",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-packages/{id}/legal-hold": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Place a legal hold on a package",
+                "description": "Puts a legal hold on a closed package: while it is active the package cannot be proposed or disposed of. For owners and administrators.",
+                "operationId": "placePreservationLegalHold",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "reason"
+                                ],
+                                "properties": {
+                                    "reason": {
+                                        "type": "string"
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Hold placed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Package not closed, or validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "delete": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Release the legal hold of a package",
+                "description": "Releases the active legal holds of a package. For owners and administrators.",
+                "operationId": "releasePreservationLegalHold",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hold released",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-disposal-proposals": {
+            "get": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "List disposal proposals",
+                "description": "Disposal proposals of the tenant, newest first. For owners and administrators.",
+                "operationId": "listPreservationDisposalProposals",
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string",
+                            "enum": [
+                                "pending",
+                                "approved",
+                                "rejected",
+                                "executed"
+                            ]
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The proposals",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            },
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Propose a disposal",
+                "description": "Proposes the disposal of an eligible package (retention expired, retention confirmed by the accountant, no legal hold, no open proposal). A different owner or administrator must approve it. For owners and administrators.",
+                "operationId": "createPreservationDisposalProposal",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "package_id"
+                                ],
+                                "properties": {
+                                    "package_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "note": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Proposal created",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Package not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "The package is not eligible (the message lists the blockers)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-disposal-proposals/{id}/approve": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Approve a disposal proposal",
+                "description": "Approves a pending proposal. The approver must be an owner or administrator other than the proposer. For owners and administrators.",
+                "operationId": "approvePreservationDisposalProposal",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "note": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Approved",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Same person as the proposer, or already decided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-disposal-proposals/{id}/reject": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Reject a disposal proposal",
+                "description": "Rejects a pending proposal. Must be another owner or administrator than the proposer. For owners and administrators.",
+                "operationId": "rejectPreservationDisposalProposal",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "properties": {
+                                    "note": {
+                                        "type": "string",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Rejected",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Same person as the proposer, or already decided",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-disposal-proposals/{id}/execute": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "Execute a disposal",
+                "description": "Executes an approved proposal: re-checks every blocker, deletes the preserved files from the storage and writes the irrevocable disposal record (who proposed, approved and executed, when, the manifest and its SHA-256). The manifest, the item records and the audit trail stay. IRREVERSIBLE. For owners and administrators.",
+                "operationId": "executePreservationDisposalProposal",
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The disposal record",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/ForbiddenRequestContext"
+                    },
+                    "404": {
+                        "description": "Not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Not approved, blocked now, or the manifest was tampered with",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-disposals": {
+            "get": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "List disposal records",
+                "description": "The irrevocable disposal records of the tenant: what was disposed of, by whom, when, with the SHA-256 of the manifest kept as proof. For owners and administrators.",
+                "operationId": "listPreservationDisposals",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The records",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-seal/journal-book": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "File the ledger book for preservation",
+                "description": "Generates the libro giornale CSV of a fiscal year (the same export as the General Ledger download) and files it in the document library as a `ledger_book` document, with its metadata. With `package_id` the document is also added to that open `ledger_book` package. Repeating it with unchanged data returns the same document (`reused`). Needs ledger write access.",
+                "operationId": "sealJournalBook",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "fiscal_year_id"
+                                ],
+                                "properties": {
+                                    "fiscal_year_id": {
+                                        "type": "string",
+                                        "format": "uuid"
+                                    },
+                                    "from": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "to": {
+                                        "type": "string",
+                                        "format": "date",
+                                        "nullable": true
+                                    },
+                                    "folder_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "package_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The library document (and the package item when requested)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Fiscal year or package not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The package is closed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
+                                }
+                            }
+                        }
+                    }
+                },
+                "security": [
+                    {
+                        "cookieAuth": [],
+                        "tenantHeader": []
+                    },
+                    {
+                        "bearerAuth": [],
+                        "tenantHeader": []
+                    }
+                ]
+            }
+        },
+        "/api/v1/document-trust/preservation-seal/payslips": {
+            "post": {
+                "tags": [
+                    "Document Trust"
+                ],
+                "summary": "File the payslips of a month for preservation",
+                "description": "Renders the payslips of the closed payroll runs of a month with the Payroll PDF generator and files each in the document library as a `payslip` document. With `package_id` they are also added to that open `payslip` package. A payslip already filed is reused, not rendered again. Needs payroll write access.",
+                "operationId": "sealPayslips",
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/XTenantId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/XUserId"
+                    },
+                    {
+                        "$ref": "#/components/parameters/TenantIdQuery"
+                    },
+                    {
+                        "$ref": "#/components/parameters/UserIdQuery"
+                    }
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "required": [
+                                    "year",
+                                    "month"
+                                ],
+                                "properties": {
+                                    "year": {
+                                        "type": "integer",
+                                        "example": 2027
+                                    },
+                                    "month": {
+                                        "type": "integer",
+                                        "example": 3
+                                    },
+                                    "folder_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    },
+                                    "package_id": {
+                                        "type": "string",
+                                        "format": "uuid",
+                                        "nullable": true
+                                    }
+                                },
+                                "type": "object"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "The library documents (and the package items when requested)",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiSuccessResponse"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/MissingRequestContext"
+                    },
+                    "403": {
+                        "description": "Forbidden. Also returned when the declared user_id differs from the access token or the user is not authorized on the tenant.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Package not found in the active tenant",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "409": {
+                        "description": "The package is closed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiErrorResponse"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "No payslip of a closed run, or validation error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ApiValidationErrorResponse"
                                 }
                             }
                         }
@@ -188272,6 +189611,26 @@
                         "writeOnly": true,
                         "nullable": true
                     },
+                    "token_endpoint_auth_method": {
+                        "description": "How the client authenticates at the token endpoint. Default: client_secret_basic when the discovery document advertises it, else client_secret_post. A value the provider does not advertise is refused.",
+                        "type": "string",
+                        "enum": [
+                            "client_secret_post",
+                            "client_secret_basic"
+                        ]
+                    },
+                    "end_session_endpoint": {
+                        "description": "RP-initiated logout endpoint; read from discovery unless given.",
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
+                    "post_logout_redirect_uri": {
+                        "description": "https URL the provider sends the browser to after the logout; it must be registered at the provider.",
+                        "type": "string",
+                        "format": "uri",
+                        "nullable": true
+                    },
                     "scopes": {
                         "type": "string",
                         "example": "openid email profile"
@@ -188352,6 +189711,21 @@
                     },
                     "has_client_secret": {
                         "type": "boolean"
+                    },
+                    "token_endpoint_auth_method": {
+                        "type": "string",
+                        "enum": [
+                            "client_secret_post",
+                            "client_secret_basic"
+                        ]
+                    },
+                    "end_session_endpoint": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "post_logout_redirect_uri": {
+                        "type": "string",
+                        "nullable": true
                     },
                     "scopes": {
                         "type": "string"
@@ -189477,7 +190851,12 @@
                         "enum": [
                             "contact",
                             "employee",
-                            "lead"
+                            "lead",
+                            "user",
+                            "member",
+                            "child",
+                            "visitor",
+                            "applicant"
                         ]
                     },
                     "requester_reference": {
@@ -189535,7 +190914,12 @@
                         "enum": [
                             "contact",
                             "employee",
-                            "lead"
+                            "lead",
+                            "user",
+                            "member",
+                            "child",
+                            "visitor",
+                            "applicant"
                         ]
                     },
                     "subject_id": {
@@ -189665,7 +191049,8 @@
                     },
                     "retention_years": {
                         "type": "integer",
-                        "example": 10
+                        "example": 10,
+                        "nullable": true
                     },
                     "reason": {
                         "type": "string"
@@ -190249,7 +191634,12 @@
                             "enum": [
                                 "contact",
                                 "employee",
-                                "lead"
+                                "lead",
+                                "user",
+                                "member",
+                                "child",
+                                "visitor",
+                                "applicant"
                             ]
                         }
                     },
@@ -190435,6 +191825,93 @@
                         "type": "array",
                         "items": {
                             "type": "object"
+                        }
+                    }
+                },
+                "type": "object"
+            },
+            "PrivacyRetentionAdoptRequest": {
+                "required": [
+                    "confirm"
+                ],
+                "properties": {
+                    "confirm": {
+                        "description": "Must be true: the company confirms the period",
+                        "type": "boolean"
+                    },
+                    "retention_days": {
+                        "description": "Overrides the suggested period",
+                        "type": "integer",
+                        "nullable": true,
+                        "maximum": 36500,
+                        "minimum": 1
+                    },
+                    "activate": {
+                        "description": "Defaults to false: the policy is created inactive",
+                        "type": "boolean",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PrivacyRetentionSuggestion": {
+                "properties": {
+                    "entry_key": {
+                        "type": "string",
+                        "example": "crm_leads"
+                    },
+                    "label": {
+                        "type": "string"
+                    },
+                    "personal_columns": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "age_column": {
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "suggested_retention_days": {
+                        "type": "integer"
+                    },
+                    "rationale": {
+                        "type": "string"
+                    },
+                    "requires_confirmation": {
+                        "description": "Always true",
+                        "type": "boolean"
+                    },
+                    "applied_automatically": {
+                        "description": "Always false",
+                        "type": "boolean"
+                    },
+                    "basis": {
+                        "description": "The suggestion is not a legal requirement and is not verified against any statute",
+                        "type": "string"
+                    },
+                    "current_policy": {
+                        "properties": {
+                            "retention_days": {
+                                "type": "integer"
+                            },
+                            "is_active": {
+                                "type": "boolean"
+                            }
+                        },
+                        "type": "object",
+                        "nullable": true
+                    }
+                },
+                "type": "object"
+            },
+            "PrivacyRetentionSuggestionListResponse": {
+                "properties": {
+                    "data": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/PrivacyRetentionSuggestion"
                         }
                     }
                 },
@@ -219933,7 +221410,7 @@
                 "type": "object"
             },
             "AnalyticsReportSpec": {
-                "description": "What the designer chose. Every key is checked against the catalogue of the dataset: an unknown dimension, measure, operator or granularity is a 422. Measures cannot be filtered (no HAVING).",
+                "description": "What the designer chose. Every key is checked against the catalogue of the dataset: an unknown dimension, measure, operator or granularity is a 422. A filter may also name a measure (a HAVING condition on the aggregate): only eq, neq, gt, gte, lt, lte, between, is_null and not_null, with numeric values.",
                 "required": [
                     "measures"
                 ],
@@ -219961,7 +221438,7 @@
                         ]
                     },
                     "filters": {
-                        "description": "Up to 20 conditions on dimensions. Operators by type: string eq, neq, in, not_in, contains, starts_with, is_null, not_null; number and date eq, neq (number), gt, gte, lt, lte, between, in, not_in (number), is_null, not_null; boolean eq, neq. `in` takes a list, `between` a pair.",
+                        "description": "Up to 20 conditions on dimensions or measures. Operators by type: string eq, neq, in, not_in, contains, starts_with, is_null, not_null; number and date eq, neq (number), gt, gte, lt, lte, between, in, not_in (number), is_null, not_null; boolean eq, neq. `in` takes a list, `between` a pair.",
                         "type": "array",
                         "items": {
                             "required": [
@@ -220041,7 +221518,7 @@
                         "nullable": true
                     },
                     "compare": {
-                        "description": "Adds `<measure>__previous`, `__change` and `__change_percent` to every row. Not available when grouping by a date.",
+                        "description": "Adds `<measure>__previous`, `__change` and `__change_percent` to every row. When grouping by a date, each previous bucket is moved forward by a year (previous_year) or by the length of the period (previous_period) and matched to the current bucket of the same granularity. Filters on measures select the current rows only.",
                         "type": "string",
                         "default": "none",
                         "enum": [
@@ -221559,6 +223036,15 @@
                             "full_year"
                         ]
                     },
+                    "negative_goodwill_treatment": {
+                        "description": "consolidation_reserve (default, OIC 17 para. 71-72, with the provision of para. 73 when expected charges are entered on the acquisition) or immediate_income (the IFRS 3 treatment: income of the year of the acquisition)",
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "consolidation_reserve",
+                            "immediate_income"
+                        ]
+                    },
                     "goodwill_translation": {
                         "description": "historical (default): goodwill and fair value stay at the rate of the acquisition date; closing: their balance is retranslated at the closing rate of the period against the translation reserve (only for acquisitions entered in a local currency)",
                         "type": "string",
@@ -221718,6 +223204,15 @@
                             "full_year"
                         ]
                     },
+                    "negative_goodwill_treatment": {
+                        "description": "consolidation_reserve (default, OIC 17 para. 71-72, with the provision of para. 73 when expected charges are entered on the acquisition) or immediate_income (the IFRS 3 treatment: income of the year of the acquisition)",
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "consolidation_reserve",
+                            "immediate_income"
+                        ]
+                    },
                     "goodwill_translation": {
                         "description": "historical (default): goodwill and fair value stay at the rate of the acquisition date; closing: their balance is retranslated at the closing rate of the period against the translation reserve (only for acquisitions entered in a local currency)",
                         "type": "string",
@@ -221815,6 +223310,15 @@
                             "full_year"
                         ]
                     },
+                    "negative_goodwill_treatment": {
+                        "description": "consolidation_reserve (default, OIC 17 para. 71-72, with the provision of para. 73 when expected charges are entered on the acquisition) or immediate_income (the IFRS 3 treatment: income of the year of the acquisition)",
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "consolidation_reserve",
+                            "immediate_income"
+                        ]
+                    },
                     "goodwill_translation": {
                         "description": "historical (default): goodwill and fair value stay at the rate of the acquisition date; closing: their balance is retranslated at the closing rate of the period against the translation reserve (only for acquisitions entered in a local currency)",
                         "type": "string",
@@ -221875,6 +223379,15 @@
                         "type": "integer",
                         "nullable": true
                     },
+                    "consolidation_basis": {
+                        "description": "own_year (default): income accounts from the start of the fiscal year of the member (see fiscal_year_offset_months); interim_twelve_months: income of the twelve months ending at the consolidation date, built from the ledger by date range (OIC 17 para. 40-42); cannot be combined with an offset",
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "own_year",
+                            "interim_twelve_months"
+                        ]
+                    },
                     "tax_rate": {
                         "description": "Tax rate in percent of the member, used for the deferred tax on unrealised intragroup profit when the member is the buyer",
                         "type": "number",
@@ -221911,6 +223424,15 @@
                         "description": "Months between the start of the parent fiscal year and the one of the member, -11 to 11 (default 0)",
                         "type": "integer",
                         "nullable": true
+                    },
+                    "consolidation_basis": {
+                        "description": "own_year (default): income accounts from the start of the fiscal year of the member (see fiscal_year_offset_months); interim_twelve_months: income of the twelve months ending at the consolidation date, built from the ledger by date range (OIC 17 para. 40-42); cannot be combined with an offset",
+                        "type": "string",
+                        "nullable": true,
+                        "enum": [
+                            "own_year",
+                            "interim_twelve_months"
+                        ]
                     },
                     "tax_rate": {
                         "description": "Tax rate in percent of the member, used for the deferred tax on unrealised intragroup profit when the member is the buyer",
@@ -222197,6 +223719,10 @@
                 "description": "A consolidated statement of a run in group currency: header (run_id, version, status, currency, period_start, period_end) and the statement body. Trial balance: accounts with aggregated_net, adjustments_net, net, debit, credit, totals and is_balanced. Balance sheet: assets, liabilities, equity, result_of_the_period, totals, non_controlling_interests, is_balanced. Income statement: revenues, cogs, operating_expenses, net_income and its split between owners and non-controlling interests. Reclassified: rows of the scheme and unmapped_accounts.",
                 "type": "object"
             },
+            "GeneralLedgerGoodwillSchedule": {
+                "description": "Goodwill schedule of a run: goodwill_method, goodwill_amortisation_years and, per acquisition with a goodwill, member_tenant_id, name, acquisition_date, goodwill and rows per fiscal year of the parent (fiscal_year, period_start, period_end, opening_balance, amortisation, impairment, closing_balance, is_run_year and, for the year of the run, amortisation_to_period_end and impairment_to_period_end).",
+                "type": "object"
+            },
             "GeneralLedgerConsolidationInput": {
                 "description": "An input of the consolidation as stored (account mapping, acquisition with fair_value_adjustments and impairments, intragroup transaction, intragroup dividend). Amounts are decimal strings in group currency.",
                 "type": "object"
@@ -222258,6 +223784,16 @@
                     "acquired_percentage": {
                         "description": "Percentage bought; when omitted the direct ownership of the member",
                         "type": "number",
+                        "nullable": true
+                    },
+                    "expected_future_charges": {
+                        "description": "Negative difference only: the part of it that corresponds to expected unfavourable results, in the input currency; it becomes a consolidation provision for future risks and charges (OIC 17 para. 73), the rest a consolidation reserve. Needs provision_release_years",
+                        "type": "number",
+                        "nullable": true
+                    },
+                    "provision_release_years": {
+                        "description": "Years over which the provision is used, straight-line by whole months from the acquisition date, whether or not the losses occur (para. 73)",
+                        "type": "integer",
                         "nullable": true
                     },
                     "input_currency": {
@@ -223981,6 +225517,11 @@
                         "type": "string",
                         "nullable": true,
                         "maxLength": 2
+                    },
+                    "carry_over_below_minimum": {
+                        "description": "Italian periodic VAT: a debt not above EUR 100 moves to the next period (true, default) or is paid in its own period (false)",
+                        "type": "boolean",
+                        "default": true
                     }
                 },
                 "type": "object"
@@ -224870,6 +226411,9 @@
                     "declarant_role_code": {
                         "type": "string",
                         "nullable": true
+                    },
+                    "carry_over_below_minimum": {
+                        "type": "boolean"
                     }
                 },
                 "type": "object"
@@ -230862,33 +232406,43 @@
                 "type": "object"
             },
             "WebhookDataInventoryStockBelowMinimum": {
-                "description": "Member \"data\" of the event inventory.stock_below_minimum. The available stock of an item in a warehouse dropped below the minimum stock level of its reorder rule. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event.",
+                "description": "Member \"data\" of the event inventory.stock_below_minimum. Stock dropped below a configured minimum. Raised on the crossing only, not again while the stock stays below; distinct from the reorder point event. Two scopes with independent minimums, told apart by scope: warehouse (available stock of an item in one warehouse below min_stock_level of its reorder rule) and product (stock of a catalog product across all warehouses below the product min_stock, the figure of the Low stock widget). When both minimums exist both can fire for one movement: filter on scope to get one signal.",
                 "required": [
-                    "reorder_rule_id",
-                    "stock_item_id",
-                    "warehouse_id",
+                    "scope",
                     "available_stock",
                     "minimum_stock"
                 ],
                 "properties": {
-                    "reorder_rule_id": {
-                        "description": "Reorder rule id (UUID)",
+                    "scope": {
+                        "description": "warehouse or product",
                         "type": "string"
+                    },
+                    "reorder_rule_id": {
+                        "description": "Reorder rule id (UUID); scope warehouse only",
+                        "type": "string",
+                        "nullable": true
                     },
                     "stock_item_id": {
-                        "description": "Stock item id (UUID)",
-                        "type": "string"
+                        "description": "Stock item id (UUID); scope warehouse only",
+                        "type": "string",
+                        "nullable": true
                     },
                     "warehouse_id": {
-                        "description": "Warehouse id (UUID)",
-                        "type": "string"
+                        "description": "Warehouse id (UUID); scope warehouse only",
+                        "type": "string",
+                        "nullable": true
+                    },
+                    "product_id": {
+                        "description": "Catalog product id (UUID): always for scope product, for scope warehouse when the item belongs to a product",
+                        "type": "string",
+                        "nullable": true
                     },
                     "available_stock": {
-                        "description": "Available stock: on hand minus reserved, outside quarantine and transit",
+                        "description": "Scope warehouse: on hand minus reserved, outside quarantine and transit. Scope product: stock across warehouses net of what was sold beyond it",
                         "type": "number"
                     },
                     "minimum_stock": {
-                        "description": "Minimum stock level of the rule",
+                        "description": "The minimum that was crossed: min_stock_level of the rule or min_stock of the product",
                         "type": "number"
                     }
                 },
@@ -245504,6 +247058,20 @@
                         "none",
                         "previous_period",
                         "previous_year"
+                    ]
+                }
+            },
+            "AnaKpiSource": {
+                "name": "source",
+                "in": "query",
+                "description": "`live` (default) calculates from the posted data. `snapshot` serves the value materialised by the nightly refresh for the latest day up to `to` (`from` is ignored; the period returned is the month to date of that day), for the KPIs that are snapshotted, and falls back to the live calculation for the others or when no snapshot exists. With `snapshot` every indicator carries `source` and `snapshot_date`, and comparisons use the snapshot of the same day one year (`previous_year`) or one month (`previous_period`) earlier. The shape of the default response does not change.",
+                "required": false,
+                "schema": {
+                    "type": "string",
+                    "default": "live",
+                    "enum": [
+                        "live",
+                        "snapshot"
                     ]
                 }
             },
