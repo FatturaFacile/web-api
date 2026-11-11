@@ -30,7 +30,9 @@ return new class extends Migration
             $table->index(['tenant_id', 'status', 'assigned_technician_id']);
         });
 
-        DB::statement('CREATE INDEX esm_tickets_tags_gin ON esm_tickets USING GIN (tags)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('CREATE INDEX esm_tickets_tags_gin ON esm_tickets USING GIN (tags)');
+        }
 
         // Queues: the last agent a team handed a ticket to in round robin, and the team's default strategy.
         Schema::table('esm_service_teams', function (Blueprint $table): void {
@@ -91,7 +93,9 @@ return new class extends Migration
         Schema::dropIfExists('esm_helpdesk_settings');
         Schema::dropIfExists('esm_ticket_activities');
         Schema::dropIfExists('esm_ticket_watchers');
-        DB::statement('DROP INDEX IF EXISTS esm_tickets_tags_gin');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('DROP INDEX IF EXISTS esm_tickets_tags_gin');
+        }
 
         Schema::table('esm_business_hours_calendars', function (Blueprint $table): void {
             $table->dropConstrainedForeignId('hr_holiday_calendar_id');

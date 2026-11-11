@@ -43,7 +43,9 @@ return new class extends Migration
             $table->index(['tenant_id', 'is_published', 'visibility']);
         });
 
-        DB::statement("CREATE INDEX esm_knowledge_articles_search_idx ON esm_knowledge_articles USING GIN (to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(content, '')))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("CREATE INDEX esm_knowledge_articles_search_idx ON esm_knowledge_articles USING GIN (to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(content, '')))");
+        }
 
         Schema::create('esm_knowledge_article_versions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -80,7 +82,9 @@ return new class extends Migration
     {
         Schema::dropIfExists('esm_ticket_knowledge_links');
         Schema::dropIfExists('esm_knowledge_article_versions');
-        DB::statement('DROP INDEX IF EXISTS esm_knowledge_articles_search_idx');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('DROP INDEX IF EXISTS esm_knowledge_articles_search_idx');
+        }
 
         Schema::table('esm_knowledge_articles', function (Blueprint $table): void {
             $table->dropIndex(['tenant_id', 'is_published', 'visibility']);

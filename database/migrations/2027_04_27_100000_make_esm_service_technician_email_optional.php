@@ -3,7 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -15,12 +17,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE esm_service_technicians ALTER COLUMN email DROP NOT NULL');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE esm_service_technicians ALTER COLUMN email DROP NOT NULL');
+        } else {
+            Schema::table('esm_service_technicians', function (Blueprint $table): void {
+                $table->string('email')->nullable()->change();
+            });
+        }
     }
 
     public function down(): void
     {
         DB::statement("UPDATE esm_service_technicians SET email = 'technician-' || id || '@invalid.example' WHERE email IS NULL");
-        DB::statement('ALTER TABLE esm_service_technicians ALTER COLUMN email SET NOT NULL');
+
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE esm_service_technicians ALTER COLUMN email SET NOT NULL');
+        } else {
+            Schema::table('esm_service_technicians', function (Blueprint $table): void {
+                $table->string('email')->nullable(false)->change();
+            });
+        }
     }
 };

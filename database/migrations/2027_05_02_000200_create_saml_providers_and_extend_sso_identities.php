@@ -59,7 +59,13 @@ return new class extends Migration
             $table->unique(['saml_provider_id', 'user_id']);
         });
 
-        DB::statement('ALTER TABLE sso_identities ALTER COLUMN sso_provider_id DROP NOT NULL');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE sso_identities ALTER COLUMN sso_provider_id DROP NOT NULL');
+        } else {
+            Schema::table('sso_identities', function (Blueprint $table): void {
+                $table->uuid('sso_provider_id')->nullable()->change();
+            });
+        }
     }
 
     public function down(): void

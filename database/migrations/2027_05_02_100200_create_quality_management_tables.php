@@ -45,9 +45,11 @@ return new class extends Migration
             $table->index(['tenant_id', 'detected_at']);
         });
 
-        DB::statement("ALTER TABLE qms_nonconformities ADD CONSTRAINT qms_nonconformities_source_check CHECK (source IN ('supplier', 'customer_complaint', 'internal', 'audit', 'manufacturing'))");
-        DB::statement("ALTER TABLE qms_nonconformities ADD CONSTRAINT qms_nonconformities_severity_check CHECK (severity IN ('minor', 'major', 'critical'))");
-        DB::statement("ALTER TABLE qms_nonconformities ADD CONSTRAINT qms_nonconformities_status_check CHECK (status IN ('open', 'investigating', 'capa_in_progress', 'closed', 'cancelled'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE qms_nonconformities ADD CONSTRAINT qms_nonconformities_source_check CHECK (source IN ('supplier', 'customer_complaint', 'internal', 'audit', 'manufacturing'))");
+            DB::statement("ALTER TABLE qms_nonconformities ADD CONSTRAINT qms_nonconformities_severity_check CHECK (severity IN ('minor', 'major', 'critical'))");
+            DB::statement("ALTER TABLE qms_nonconformities ADD CONSTRAINT qms_nonconformities_status_check CHECK (status IN ('open', 'investigating', 'capa_in_progress', 'closed', 'cancelled'))");
+        }
 
         Schema::create('qms_capa_actions', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -76,9 +78,11 @@ return new class extends Migration
             $table->index(['tenant_id', 'nonconformity_id']);
         });
 
-        DB::statement("ALTER TABLE qms_capa_actions ADD CONSTRAINT qms_capa_actions_type_check CHECK (type IN ('corrective', 'preventive'))");
-        DB::statement("ALTER TABLE qms_capa_actions ADD CONSTRAINT qms_capa_actions_status_check CHECK (status IN ('open', 'in_progress', 'completed', 'verified', 'ineffective', 'cancelled'))");
-        DB::statement("ALTER TABLE qms_capa_actions ADD CONSTRAINT qms_capa_actions_result_check CHECK (effectiveness_result IS NULL OR effectiveness_result IN ('effective', 'not_effective'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE qms_capa_actions ADD CONSTRAINT qms_capa_actions_type_check CHECK (type IN ('corrective', 'preventive'))");
+            DB::statement("ALTER TABLE qms_capa_actions ADD CONSTRAINT qms_capa_actions_status_check CHECK (status IN ('open', 'in_progress', 'completed', 'verified', 'ineffective', 'cancelled'))");
+            DB::statement("ALTER TABLE qms_capa_actions ADD CONSTRAINT qms_capa_actions_result_check CHECK (effectiveness_result IS NULL OR effectiveness_result IN ('effective', 'not_effective'))");
+        }
 
         Schema::create('qms_audits', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -101,8 +105,10 @@ return new class extends Migration
             $table->index(['tenant_id', 'planned_date']);
         });
 
-        DB::statement("ALTER TABLE qms_audits ADD CONSTRAINT qms_audits_type_check CHECK (audit_type IN ('internal', 'process', 'supplier'))");
-        DB::statement("ALTER TABLE qms_audits ADD CONSTRAINT qms_audits_status_check CHECK (status IN ('planned', 'in_progress', 'completed', 'cancelled'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE qms_audits ADD CONSTRAINT qms_audits_type_check CHECK (audit_type IN ('internal', 'process', 'supplier'))");
+            DB::statement("ALTER TABLE qms_audits ADD CONSTRAINT qms_audits_status_check CHECK (status IN ('planned', 'in_progress', 'completed', 'cancelled'))");
+        }
 
         Schema::create('qms_audit_checklist_items', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -119,7 +125,9 @@ return new class extends Migration
             $table->index(['tenant_id', 'audit_id']);
         });
 
-        DB::statement("ALTER TABLE qms_audit_checklist_items ADD CONSTRAINT qms_audit_checklist_items_result_check CHECK (result IN ('pending', 'conforming', 'nonconforming', 'observation', 'not_applicable'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE qms_audit_checklist_items ADD CONSTRAINT qms_audit_checklist_items_result_check CHECK (result IN ('pending', 'conforming', 'nonconforming', 'observation', 'not_applicable'))");
+        }
 
         Schema::create('qms_audit_findings', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -138,8 +146,10 @@ return new class extends Migration
             $table->index(['tenant_id', 'audit_id']);
         });
 
-        DB::statement("ALTER TABLE qms_audit_findings ADD CONSTRAINT qms_audit_findings_classification_check CHECK (classification IN ('major_nc', 'minor_nc', 'observation', 'opportunity'))");
-        DB::statement("ALTER TABLE qms_audit_findings ADD CONSTRAINT qms_audit_findings_status_check CHECK (status IN ('open', 'closed'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE qms_audit_findings ADD CONSTRAINT qms_audit_findings_classification_check CHECK (classification IN ('major_nc', 'minor_nc', 'observation', 'opportunity'))");
+            DB::statement("ALTER TABLE qms_audit_findings ADD CONSTRAINT qms_audit_findings_status_check CHECK (status IN ('open', 'closed'))");
+        }
 
         Schema::create('qms_procedures', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -169,7 +179,9 @@ return new class extends Migration
             $table->index(['tenant_id', 'document_id']);
         });
 
-        DB::statement("ALTER TABLE qms_procedures ADD CONSTRAINT qms_procedures_status_check CHECK (status IN ('draft', 'pending_approval', 'approved', 'rejected', 'obsolete'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE qms_procedures ADD CONSTRAINT qms_procedures_status_check CHECK (status IN ('draft', 'pending_approval', 'approved', 'rejected', 'obsolete'))");
+        }
     }
 
     public function down(): void

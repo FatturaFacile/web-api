@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use Illuminate\Contracts\Encryption\DecryptException;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
@@ -16,7 +18,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement('ALTER TABLE bank_connections ALTER COLUMN auth_credentials_json TYPE text USING auth_credentials_json::text');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE bank_connections ALTER COLUMN auth_credentials_json TYPE text USING auth_credentials_json::text');
+        } else {
+            Schema::table('bank_connections', function (Blueprint $table): void {
+                $table->text('auth_credentials_json')->nullable()->change();
+            });
+        }
 
         DB::table('bank_connections')->whereNotNull('auth_credentials_json')->orderBy('id')->lazyById(100, 'id')->each(function (object $row): void {
             if ($this->isEncrypted((string) $row->auth_credentials_json)) {
@@ -35,7 +43,13 @@ return new class extends Migration
             }
         });
 
-        DB::statement('ALTER TABLE bank_connections ALTER COLUMN auth_credentials_json TYPE jsonb USING auth_credentials_json::jsonb');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE bank_connections ALTER COLUMN auth_credentials_json TYPE jsonb USING auth_credentials_json::jsonb');
+        } else {
+            Schema::table('bank_connections', function (Blueprint $table): void {
+                $table->json('auth_credentials_json')->nullable()->change();
+            });
+        }
     }
 
     private function isEncrypted(string $value): bool

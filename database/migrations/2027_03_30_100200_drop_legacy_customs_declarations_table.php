@@ -24,7 +24,9 @@ return new class extends Migration
         }
 
         DB::transaction(function (): void {
-            DB::statement('LOCK TABLE customs_declarations IN ACCESS EXCLUSIVE MODE');
+            if (DB::getDriverName() === 'pgsql') {
+                DB::statement('LOCK TABLE customs_declarations IN ACCESS EXCLUSIVE MODE');
+            }
 
             $rows = DB::table('customs_declarations')->count();
 

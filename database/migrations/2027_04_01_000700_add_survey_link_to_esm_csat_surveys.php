@@ -17,9 +17,17 @@ return new class extends Migration
 {
     public function up(): void
     {
-        DB::statement('ALTER TABLE esm_csat_surveys ALTER COLUMN customer_id DROP NOT NULL');
-        DB::statement('ALTER TABLE esm_csat_surveys ALTER COLUMN responded_at DROP NOT NULL');
-        DB::statement('ALTER TABLE esm_csat_surveys ALTER COLUMN score DROP NOT NULL');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE esm_csat_surveys ALTER COLUMN customer_id DROP NOT NULL');
+            DB::statement('ALTER TABLE esm_csat_surveys ALTER COLUMN responded_at DROP NOT NULL');
+            DB::statement('ALTER TABLE esm_csat_surveys ALTER COLUMN score DROP NOT NULL');
+        } else {
+            Schema::table('esm_csat_surveys', function (Blueprint $table): void {
+                $table->uuid('customer_id')->nullable()->change();
+                $table->timestamp('responded_at')->nullable()->change();
+                $table->unsignedTinyInteger('score')->nullable()->change();
+            });
+        }
 
         Schema::table('esm_csat_surveys', function (Blueprint $table): void {
             if (! Schema::hasColumn('esm_csat_surveys', 'respondent_email')) {

@@ -45,9 +45,11 @@ return new class extends Migration
             $table->index(['tenant_id', 'flow', 'year', 'period']);
         });
 
-        DB::statement("ALTER TABLE intrastat_declarations ADD CONSTRAINT intrastat_declarations_flow_check CHECK (flow IN ('sales', 'purchases'))");
-        DB::statement("ALTER TABLE intrastat_declarations ADD CONSTRAINT intrastat_declarations_periodicity_check CHECK (periodicity IN ('M', 'T'))");
-        DB::statement("ALTER TABLE intrastat_declarations ADD CONSTRAINT intrastat_declarations_status_check CHECK (status IN ('draft', 'validated', 'submitted'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE intrastat_declarations ADD CONSTRAINT intrastat_declarations_flow_check CHECK (flow IN ('sales', 'purchases'))");
+            DB::statement("ALTER TABLE intrastat_declarations ADD CONSTRAINT intrastat_declarations_periodicity_check CHECK (periodicity IN ('M', 'T'))");
+            DB::statement("ALTER TABLE intrastat_declarations ADD CONSTRAINT intrastat_declarations_status_check CHECK (status IN ('draft', 'validated', 'submitted'))");
+        }
 
         Schema::create('intrastat_declaration_lines', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -92,7 +94,9 @@ return new class extends Migration
             $table->index(['tenant_id', 'declaration_id']);
         });
 
-        DB::statement('ALTER TABLE intrastat_declaration_lines ADD CONSTRAINT intrastat_declaration_lines_section_check CHECK (section BETWEEN 1 AND 4)');
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('ALTER TABLE intrastat_declaration_lines ADD CONSTRAINT intrastat_declaration_lines_section_check CHECK (section BETWEEN 1 AND 4)');
+        }
 
         Schema::create('intrastat_product_profiles', function (Blueprint $table): void {
             $table->uuid('id')->primary();
@@ -110,7 +114,9 @@ return new class extends Migration
             $table->unique(['tenant_id', 'product_id']);
         });
 
-        DB::statement("ALTER TABLE intrastat_product_profiles ADD CONSTRAINT intrastat_product_profiles_kind_check CHECK (supply_kind IN ('goods', 'services'))");
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement("ALTER TABLE intrastat_product_profiles ADD CONSTRAINT intrastat_product_profiles_kind_check CHECK (supply_kind IN ('goods', 'services'))");
+        }
     }
 
     public function down(): void
