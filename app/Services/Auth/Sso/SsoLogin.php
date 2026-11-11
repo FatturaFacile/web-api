@@ -65,24 +65,35 @@ final class SsoLogin
             [$provider, $claims] = $this->client->complete($code, $state);
             $tenantId = (string) $provider->tenant_id;
 
-            return $this->signIn($provider, $claims);
+            return $this->signInConnection(SsoConnection::fromOidc($provider), (string) $claims['sub'], $claims);
         } catch (SsoException $exception) {
-            $this->audit->record(RegistrationAudit::SSO_LOGIN_FAILED, null, ['reason' => $exception->reason], $exception->tenantId ?? $tenantId);
-
-            throw $exception->forTenant($exception->tenantId ?? $tenantId);
+            throw $this->failed($exception, $tenantId);
         }
     }
 
     /**
+     * Writes the failure to the audit ledger and returns the exception with its tenant, ready to be thrown.
+     */
+    public function failed(SsoException $exception, ?string $tenantId = null, string $protocol = SsoConnection::OIDC): SsoException
+    {
+        $this->audit->record(RegistrationAudit::SSO_LOGIN_FAILED, null, ['reason' => $exception->reason, 'protocol' => $protocol, 'detail' => mb_substr($exception->getMessage(), 0, 300)], $exception->tenantId ?? $tenantId);
+
+        return $exception->forTenant($exception->tenantId ?? $tenantId);
+    }
+
+    /**
+     * Signs a user in for a verified identity of the tenant provider: the account rules above. The claims carry `email`,
+     * `email_verified`, optionally `name` and `locale`, and whatever the role mapping reads. For SAML the caller sets
+     * `email_verified` once the signed assertion is valid (see SamlLogin).
+     *
      * @param  array<string, mixed>  $claims
      * @return array{0: User, 1: Tenant}
      *
      * @throws SsoException
      */
-    private function signIn(SsoProvider $provider, array $claims): array
+    public function signInConnection(SsoConnection $provider, string $subject, array $claims): array
     {
-        $tenantId = (string) $provider->tenant_id;
-        $subject = (string) $claims['sub'];
+        $tenantId = $provider->tenantId;
         $email = $this->verifiedEmail($provider, $claims);
 
         /** @var Tenant|null $tenant */
@@ -92,7 +103,7 @@ final class SsoLogin
             throw new SsoException('tenant_unavailable');
         }
 
-        $identity = SsoIdentity::withoutGlobalScopes()->where('sso_provider_id', $provider->id)->where('subject', $subject)->first();
+        $identity = SsoIdentity::withoutGlobalScopes()->where($provider->identityColumn(), $provider->providerId)->where('subject', $subject)->first();
         $user = $identity === null ? null : User::query()->find($identity->user_id);
         $provisioned = false;
 
@@ -112,7 +123,7 @@ final class SsoLogin
 
         if ($identity === null) {
             // A user is linked to one subject of a provider: another subject for the same email is not the same person.
-            if (SsoIdentity::withoutGlobalScopes()->where('sso_provider_id', $provider->id)->where('user_id', $user->id)->exists()) {
+            if (SsoIdentity::withoutGlobalScopes()->where($provider->identityColumn(), $provider->providerId)->where('user_id', $user->id)->exists()) {
                 throw new SsoException('identity_conflict');
             }
 
@@ -123,7 +134,7 @@ final class SsoLogin
 
         $this->completeAccount($provider, $user, $tenantId, $claims, $provisioned);
 
-        $this->audit->record(RegistrationAudit::SSO_LOGIN_SUCCEEDED, (string) $user->id, ['provider' => $provider->id, 'provisioned' => $provisioned], $tenantId);
+        $this->audit->record(RegistrationAudit::SSO_LOGIN_SUCCEEDED, (string) $user->id, ['provider' => $provider->providerId, 'protocol' => $provider->protocol, 'provisioned' => $provisioned], $tenantId);
 
         return [$user, $tenant];
     }
@@ -133,7 +144,7 @@ final class SsoLogin
      *
      * @throws SsoException
      */
-    private function verifiedEmail(SsoProvider $provider, array $claims): string
+    private function verifiedEmail(SsoConnection $provider, array $claims): string
     {
         $email = $claims['email'] ?? null;
 
@@ -149,7 +160,7 @@ final class SsoLogin
 
         $email = Str::lower(trim($email));
         $domain = Str::after($email, '@');
-        $allowed = array_map(fn (mixed $item): string => Str::lower(trim((string) $item)), (array) $provider->allowed_email_domains);
+        $allowed = array_map(fn (mixed $item): string => Str::lower(trim((string) $item)), $provider->allowedDomains);
 
         if (! in_array($domain, $allowed, true)) {
             throw new SsoException('email_domain_not_allowed', $domain);
@@ -164,7 +175,7 @@ final class SsoLogin
      *
      * @throws SsoException
      */
-    private function userForEmail(SsoProvider $provider, Tenant $tenant, string $email, array $claims): array
+    private function userForEmail(SsoConnection $provider, Tenant $tenant, string $email, array $claims): array
     {
         $existing = User::withTrashed()->whereRaw('lower(email) = ?', [$email])->first();
 
@@ -180,7 +191,7 @@ final class SsoLogin
             return [$existing, false];
         }
 
-        if (! $provider->jit_provisioning) {
+        if (! $provider->jitProvisioning) {
             throw new SsoException('user_not_provisioned');
         }
 
@@ -238,12 +249,12 @@ final class SsoLogin
         }
     }
 
-    private function link(SsoProvider $provider, User $user, string $subject, bool $provisioned): void
+    private function link(SsoConnection $provider, User $user, string $subject, bool $provisioned): void
     {
-        $identity = new SsoIdentity(['sso_provider_id' => $provider->id, 'user_id' => $user->id, 'subject' => $subject, 'last_login_at' => now()]);
-        $identity->forceFill(['tenant_id' => $provider->tenant_id])->save();
+        $identity = new SsoIdentity([$provider->identityColumn() => $provider->providerId, 'user_id' => $user->id, 'subject' => $subject, 'last_login_at' => now()]);
+        $identity->forceFill(['tenant_id' => $provider->tenantId])->save();
 
-        $this->audit->record($provisioned ? RegistrationAudit::SSO_USER_PROVISIONED : RegistrationAudit::SSO_IDENTITY_LINKED, (string) $user->id, ['provider' => $provider->id], (string) $provider->tenant_id);
+        $this->audit->record($provisioned ? RegistrationAudit::SSO_USER_PROVISIONED : RegistrationAudit::SSO_IDENTITY_LINKED, (string) $user->id, ['provider' => $provider->providerId, 'protocol' => $provider->protocol], $provider->tenantId);
     }
 
     /**
@@ -252,13 +263,13 @@ final class SsoLogin
      *
      * @param  array<string, mixed>  $claims
      */
-    private function completeAccount(SsoProvider $provider, User $user, string $tenantId, array $claims, bool $provisioned): void
+    private function completeAccount(SsoConnection $provider, User $user, string $tenantId, array $claims, bool $provisioned): void
     {
         if ($user->email_verified_at === null) {
             $user->forceFill(['email_verified_at' => now()])->save();
         }
 
-        if ($provider->sync_role_on_login && ! $provisioned) {
+        if ($provider->syncRoleOnLogin && ! $provisioned) {
             $role = $this->roles->resolve($provider, $claims);
             $current = $user->getRoleInTenant($tenantId);
 

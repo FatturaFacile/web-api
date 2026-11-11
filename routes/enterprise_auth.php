@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Api\V1\SamlLoginController;
+use App\Http\Controllers\Api\V1\SamlProviderController;
 use App\Http\Controllers\Api\V1\Scim\ScimDiscoveryController;
 use App\Http\Controllers\Api\V1\Scim\ScimUserController;
 use App\Http\Controllers\Api\V1\ScimTokenController;
@@ -27,6 +29,13 @@ Route::prefix('auth/sso')->middleware('locale')->name('auth.sso.')->group(functi
     Route::post('/callback', [SsoLoginController::class, 'callback'])->middleware('throttle:20,1')->name('callback');
 });
 
+Route::prefix('auth/saml')->middleware('locale')->name('auth.saml.')->whereUuid('tenantId')->group(function (): void {
+    Route::post('/start', [SamlLoginController::class, 'start'])->middleware('throttle:20,1')->name('start');
+    Route::get('/{tenantId}/metadata', [SamlLoginController::class, 'metadata'])->middleware('throttle:60,1')->name('metadata');
+    Route::post('/{tenantId}/acs', [SamlLoginController::class, 'acs'])->middleware('throttle:20,1')->name('acs');
+    Route::get('/{tenantId}/slo', [SamlLoginController::class, 'slo'])->middleware('throttle:20,1')->name('slo');
+});
+
 Route::middleware(['auth:sanctum', 'tenant', 'locale', 'module.access:system'])
     ->prefix('settings/security')
     ->name('settings.security.')
@@ -38,6 +47,11 @@ Route::middleware(['auth:sanctum', 'tenant', 'locale', 'module.access:system'])
         Route::put('/sso', [SsoProviderController::class, 'upsert'])->name('sso.update');
         Route::post('/sso/discovery', [SsoProviderController::class, 'refreshDiscovery'])->middleware('throttle:10,1')->name('sso.discovery');
         Route::delete('/sso', [SsoProviderController::class, 'destroy'])->name('sso.destroy');
+
+        Route::get('/saml', [SamlProviderController::class, 'show'])->name('saml');
+        Route::put('/saml', [SamlProviderController::class, 'upsert'])->name('saml.update');
+        Route::post('/saml/metadata', [SamlProviderController::class, 'refreshMetadata'])->middleware('throttle:10,1')->name('saml.metadata');
+        Route::delete('/saml', [SamlProviderController::class, 'destroy'])->name('saml.destroy');
 
         Route::get('/scim', [ScimTokenController::class, 'show'])->name('scim');
         Route::post('/scim/token', [ScimTokenController::class, 'rotate'])->middleware('throttle:6,1')->name('scim.rotate');

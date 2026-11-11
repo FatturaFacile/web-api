@@ -44,5 +44,11 @@ return [
         'jit_needs_role' => 'Le provisionnement à la volée exige un rôle par défaut ou une correspondance entre claim et rôle.',
         'endpoint_unsafe' => 'Le point de terminaison n\'est pas autorisé (:reason).',
         'discovery_failed' => 'Le document de découverte est inutilisable (:reason).',
+        'saml_source_required' => 'Indiquez une URL de métadonnées, collez le XML des métadonnées, ou saisissez l\'entity id, l\'URL de connexion et un certificat.',
+        'sp_key_pair' => 'La clé et le certificat du fournisseur de service doivent être fournis ensemble et correspondre.',
+        'saml_no_metadata_url' => 'Ce fournisseur n\'a pas d\'URL de métadonnées à actualiser.',
+        'saml_metadata_failed' => 'Les métadonnées sont inutilisables (:reason).',
+        'logout_invalid_title' => 'Échec de la déconnexion',
+        'logout_invalid_detail' => 'Le message de déconnexion est absent, non signé ou invalide.',
     ],
 ];

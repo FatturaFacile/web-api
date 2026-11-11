@@ -92,6 +92,19 @@ final class UserSessions
     }
 
     /**
+     * Ends the accesses a user opened through the single sign-on of one tenant (the tokens bound to it); when the user
+     * has no active membership left, every access ends.
+     */
+    public function revokeTenantBound(User $user, string $tenantId): void
+    {
+        $user->tokens()->where('auth_tenant_id', $tenantId)->delete();
+
+        if (! DB::table('tenant_user')->where('user_id', $user->getKey())->whereNull('suspended_at')->exists()) {
+            $this->revokeAll($user);
+        }
+    }
+
+    /**
      * The id of the Bearer token of the request, or null for a cookie session (or a token without a stored row).
      */
     public static function currentTokenId(User $user): ?string

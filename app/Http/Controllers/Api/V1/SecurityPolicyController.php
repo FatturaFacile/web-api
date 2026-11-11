@@ -10,11 +10,11 @@ use App\Http\Requests\Auth\UpdateSecurityPolicyRequest;
 use App\Http\Resources\SecurityPolicyResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\SsoIdentity;
-use App\Models\SsoProvider;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
 use App\Services\Auth\Security\TenantSecurityPolicies;
+use App\Services\Auth\Sso\SsoConnection;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
@@ -158,9 +158,9 @@ class SecurityPolicyController extends Controller
      */
     private function ssoReadyFor(User $admin, string $tenantId): bool
     {
-        $provider = SsoProvider::withoutGlobalScopes()->where('tenant_id', $tenantId)->first();
+        $connection = SsoConnection::forTenant($tenantId);
 
-        if ($provider === null || ! $provider->isReady()) {
+        if ($connection === null || ! $connection->ready) {
             return false;
         }
 

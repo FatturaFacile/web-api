@@ -38,6 +38,28 @@ final class LoginResponder
     ) {}
 
     /**
+     * The answer to a user who signed in through the single sign-on of a tenant: the access, or, when the user has two
+     * factors, a challenge that keeps the SSO method and the tenant.
+     */
+    public function respondToSso(Request $request, User $user, Tenant $tenant): JsonResponse
+    {
+        $tenants = $user->tenants()->get();
+
+        if ($this->twoFactor->isEnabled($user)) {
+            return $this->successResponse(
+                data: [
+                    'two_factor_required' => true,
+                    'challenge_token' => $this->twoFactor->createChallenge($user, (string) $tenant->id, self::METHOD_SSO),
+                    'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
+                ],
+                message: __('two_factor.messages.challenge_required')
+            );
+        }
+
+        return $this->respond($request, $user, $tenants->firstWhere('id', $tenant->id), $tenants, self::METHOD_SSO);
+    }
+
+    /**
      * @param  Collection<int, Tenant>  $tenants
      */
     public function respond(Request $request, User $user, ?Tenant $activeTenant, Collection $tenants, string $authMethod = self::METHOD_PASSWORD): JsonResponse

@@ -8,7 +8,7 @@ use OpenApi\Attributes as OA;
 
 /**
  * Schemas of the enterprise authentication endpoints: tenant security policy, OpenID Connect single sign-on, SCIM 2.0.
- * SAML is not supported (it would need an XML signature package).
+ * SAML 2.0 is supported next to OpenID Connect (onelogin/php-saml).
  */
 #[OA\SecurityScheme(
     securityScheme: 'scimBearerAuth',
@@ -185,6 +185,62 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'status', type: 'string', example: '409'),
         new OA\Property(property: 'scimType', type: 'string', example: 'uniqueness', nullable: true),
         new OA\Property(property: 'detail', type: 'string'),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SamlProviderInput',
+    required: ['name', 'allowed_email_domains'],
+    description: 'Give one source of the identity provider: idp_metadata_url, idp_metadata_xml, or idp_entity_id with idp_sso_url and idp_certificates.',
+    properties: [
+        new OA\Property(property: 'name', type: 'string', example: 'Corporate SAML IdP'),
+        new OA\Property(property: 'idp_metadata_url', type: 'string', format: 'uri', nullable: true),
+        new OA\Property(property: 'idp_metadata_xml', type: 'string', nullable: true, description: 'Metadata XML of the identity provider.'),
+        new OA\Property(property: 'idp_entity_id', type: 'string', nullable: true),
+        new OA\Property(property: 'idp_sso_url', type: 'string', format: 'uri', nullable: true),
+        new OA\Property(property: 'idp_slo_url', type: 'string', format: 'uri', nullable: true),
+        new OA\Property(property: 'idp_certificates', type: 'array', items: new OA\Items(type: 'string'), nullable: true, description: 'X.509 signing certificates (PEM or bare base64).'),
+        new OA\Property(property: 'email_attribute', type: 'string', nullable: true, description: 'Attribute with the email; common names and the NameID are tried when empty.'),
+        new OA\Property(property: 'name_attribute', type: 'string', nullable: true),
+        new OA\Property(property: 'role_attribute', type: 'string', nullable: true, example: 'groups'),
+        new OA\Property(property: 'role_mapping', type: 'object', nullable: true, additionalProperties: new OA\AdditionalProperties(type: 'string'), example: ['erp-accounting' => 'accountant']),
+        new OA\Property(property: 'default_role', type: 'string', nullable: true),
+        new OA\Property(property: 'sync_role_on_login', type: 'boolean', default: false),
+        new OA\Property(property: 'jit_provisioning', type: 'boolean', default: false),
+        new OA\Property(property: 'allowed_email_domains', type: 'array', items: new OA\Items(type: 'string', example: 'example.com')),
+        new OA\Property(property: 'sp_private_key', type: 'string', nullable: true, writeOnly: true, description: 'Private key the service provider signs requests with; stored encrypted, never returned.'),
+        new OA\Property(property: 'sp_certificate', type: 'string', nullable: true, description: 'Certificate of that key, published in the metadata.'),
+        new OA\Property(property: 'enabled', type: 'boolean', default: false),
+    ]
+)]
+#[OA\Schema(
+    schema: 'SamlProvider',
+    description: 'The SAML 2.0 provider of the tenant, with the service provider URLs to give to the identity provider.',
+    properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'idp_entity_id', type: 'string'),
+        new OA\Property(property: 'idp_sso_url', type: 'string'),
+        new OA\Property(property: 'idp_slo_url', type: 'string', nullable: true),
+        new OA\Property(property: 'idp_certificates_count', type: 'integer'),
+        new OA\Property(property: 'idp_metadata_url', type: 'string', nullable: true),
+        new OA\Property(property: 'metadata_refreshed_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'email_attribute', type: 'string', nullable: true),
+        new OA\Property(property: 'name_attribute', type: 'string', nullable: true),
+        new OA\Property(property: 'role_attribute', type: 'string', nullable: true),
+        new OA\Property(property: 'role_mapping', type: 'object', nullable: true),
+        new OA\Property(property: 'default_role', type: 'string', nullable: true),
+        new OA\Property(property: 'sync_role_on_login', type: 'boolean'),
+        new OA\Property(property: 'jit_provisioning', type: 'boolean'),
+        new OA\Property(property: 'allowed_email_domains', type: 'array', items: new OA\Items(type: 'string')),
+        new OA\Property(property: 'has_sp_signing_key', type: 'boolean'),
+        new OA\Property(property: 'enabled', type: 'boolean'),
+        new OA\Property(property: 'ready', type: 'boolean'),
+        new OA\Property(property: 'sp', type: 'object', properties: [
+            new OA\Property(property: 'entity_id', type: 'string'),
+            new OA\Property(property: 'acs_url', type: 'string'),
+            new OA\Property(property: 'slo_url', type: 'string'),
+            new OA\Property(property: 'metadata_url', type: 'string'),
+        ]),
     ]
 )]
 class EnterpriseAuthSchemas {}

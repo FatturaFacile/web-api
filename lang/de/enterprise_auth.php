@@ -44,5 +44,11 @@ return [
         'jit_needs_role' => 'Just-in-time-Provisionierung braucht eine Standardrolle oder eine Zuordnung von Claim zu Rolle.',
         'endpoint_unsafe' => 'Der Endpunkt ist nicht erlaubt (:reason).',
         'discovery_failed' => 'Das Discovery-Dokument ist nicht verwendbar (:reason).',
+        'saml_source_required' => 'Geben Sie eine Metadaten-URL an, fügen Sie das Metadaten-XML ein oder tragen Sie Entity-ID, Anmelde-URL und ein Zertifikat ein.',
+        'sp_key_pair' => 'Schlüssel und Zertifikat des Service Providers müssen zusammen angegeben werden und zusammenpassen.',
+        'saml_no_metadata_url' => 'Dieser Anbieter hat keine Metadaten-URL zum Aktualisieren.',
+        'saml_metadata_failed' => 'Die Metadaten sind nicht verwendbar (:reason).',
+        'logout_invalid_title' => 'Abmeldung fehlgeschlagen',
+        'logout_invalid_detail' => 'Die Abmeldenachricht fehlt, ist nicht signiert oder ungültig.',
     ],
 ];

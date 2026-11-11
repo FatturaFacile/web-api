@@ -44,5 +44,11 @@ return [
         'jit_needs_role' => 'Il provisioning just-in-time richiede un ruolo predefinito o una mappatura da claim a ruolo.',
         'endpoint_unsafe' => 'L\'endpoint non è consentito (:reason).',
         'discovery_failed' => 'Il documento di discovery non è utilizzabile (:reason).',
+        'saml_source_required' => 'Indica un URL dei metadati, incolla l\'XML dei metadati, oppure inserisci entity id, URL di accesso e un certificato.',
+        'sp_key_pair' => 'Chiave e certificato del service provider vanno indicati insieme e devono corrispondere.',
+        'saml_no_metadata_url' => 'Questo provider non ha un URL dei metadati da cui aggiornare.',
+        'saml_metadata_failed' => 'I metadati non sono utilizzabili (:reason).',
+        'logout_invalid_title' => 'Logout non riuscito',
+        'logout_invalid_detail' => 'Il messaggio di logout manca, non è firmato o non è valido.',
     ],
 ];

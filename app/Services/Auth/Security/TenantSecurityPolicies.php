@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Auth\Security;
 
-use App\Models\SsoProvider;
 use App\Models\Tenant;
 use App\Models\TenantSecurityPolicy;
 use App\Models\User;
+use App\Services\Auth\Sso\SsoConnection;
 use App\Services\Auth\TwoFactorAuthentication;
 
 /**
@@ -102,7 +102,7 @@ final class TenantSecurityPolicies
     public function describe(Tenant $tenant): array
     {
         $policy = $this->forTenant($tenant);
-        $provider = SsoProvider::withoutGlobalScopes()->where('tenant_id', $tenant->id)->first();
+        $connection = SsoConnection::forTenant((string) $tenant->id);
 
         return [
             'password' => [
@@ -126,7 +126,7 @@ final class TenantSecurityPolicies
                 'roles' => $policy->twoFactorRoles,
             ],
             'sso_only' => $policy->ssoOnly,
-            'sso_ready' => $provider?->isReady() ?? false,
+            'sso_ready' => $connection !== null && $connection->ready,
         ];
     }
 

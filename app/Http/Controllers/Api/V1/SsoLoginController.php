@@ -10,7 +10,6 @@ use App\Http\Responses\ApiResponse;
 use App\Services\Auth\LoginResponder;
 use App\Services\Auth\Sso\SsoException;
 use App\Services\Auth\Sso\SsoLogin;
-use App\Services\Auth\TwoFactorAuthentication;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -32,7 +31,6 @@ class SsoLoginController extends Controller
     public function __construct(
         private readonly SsoLogin $login,
         private readonly LoginResponder $responder,
-        private readonly TwoFactorAuthentication $twoFactor,
     ) {}
 
     #[OA\Post(
@@ -98,20 +96,6 @@ class SsoLoginController extends Controller
             );
         }
 
-        $tenants = $user->tenants()->get();
-        $activeTenant = $tenants->firstWhere('id', $tenant->id);
-
-        if ($this->twoFactor->isEnabled($user)) {
-            return $this->successResponse(
-                data: [
-                    'two_factor_required' => true,
-                    'challenge_token' => $this->twoFactor->createChallenge($user, (string) $tenant->id, LoginResponder::METHOD_SSO),
-                    'expires_in' => $this->twoFactor->challengeTtlMinutes() * 60,
-                ],
-                message: __('two_factor.messages.challenge_required')
-            );
-        }
-
-        return $this->responder->respond($request, $user, $activeTenant, $tenants, LoginResponder::METHOD_SSO);
+        return $this->responder->respondToSso($request, $user, $tenant);
     }
 }

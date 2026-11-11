@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Services\Auth\Scim;
 
-use App\Models\SsoProvider;
 use App\Models\User;
 use App\Services\Auth\RegistrationAudit;
 use App\Services\Auth\Sso\ProvisionableRoles;
+use App\Services\Auth\Sso\SsoConnection;
 use App\Services\Auth\UserSessions;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -344,14 +344,13 @@ final class ScimUsers
      */
     private function assertDomainAllowed(string $tenantId, string $email): void
     {
-        /** @var SsoProvider|null $provider */
-        $provider = SsoProvider::withoutGlobalScopes()->where('tenant_id', $tenantId)->first();
+        $connection = SsoConnection::forTenant($tenantId);
 
-        if ($provider === null || (array) $provider->allowed_email_domains === []) {
+        if ($connection === null || $connection->allowedDomains === []) {
             return;
         }
 
-        $allowed = array_map(fn (mixed $domain): string => Str::lower(trim((string) $domain)), (array) $provider->allowed_email_domains);
+        $allowed = array_map(fn (mixed $domain): string => Str::lower(trim((string) $domain)), $connection->allowedDomains);
 
         if (! in_array(Str::after($email, '@'), $allowed, true)) {
             throw new ScimException(400, 'invalidValue', 'The email domain is not allowed for this organization.');
@@ -371,11 +370,10 @@ final class ScimUsers
             }
         }
 
-        /** @var SsoProvider|null $provider */
-        $provider = SsoProvider::withoutGlobalScopes()->where('tenant_id', $tenantId)->first();
+        $default = SsoConnection::forTenant($tenantId)?->defaultRole;
 
-        if ($provider !== null && ProvisionableRoles::isAllowed($provider->default_role)) {
-            return (string) $provider->default_role;
+        if (ProvisionableRoles::isAllowed($default)) {
+            return (string) $default;
         }
 
         $default = (string) config('sso.scim_default_role');
@@ -531,11 +529,7 @@ final class ScimUsers
      */
     private function revokeAccess(User $user, string $tenantId): void
     {
-        $user->tokens()->where('auth_tenant_id', $tenantId)->delete();
-
-        if (! DB::table('tenant_user')->where('user_id', $user->id)->whereNull('suspended_at')->exists()) {
-            $this->sessions->revokeAll($user);
-        }
+        $this->sessions->revokeTenantBound($user, $tenantId);
     }
 
     private function toBool(mixed $value): ?bool

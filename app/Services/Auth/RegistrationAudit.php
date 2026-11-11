@@ -93,6 +93,8 @@ final class RegistrationAudit
 
     public const SSO_PROVIDER_REMOVED = 'SSO_PROVIDER_REMOVED';
 
+    public const SSO_LOGOUT = 'SSO_LOGOUT';
+
     public const SSO_LOGIN_STARTED = 'SSO_LOGIN_STARTED';
 
     public const SSO_LOGIN_SUCCEEDED = 'SSO_LOGIN_SUCCEEDED';

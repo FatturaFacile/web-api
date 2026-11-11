@@ -44,5 +44,11 @@ return [
         'jit_needs_role' => 'Just-in-time provisioning needs a default role or a claim to role mapping.',
         'endpoint_unsafe' => 'The endpoint is not allowed (:reason).',
         'discovery_failed' => 'The discovery document could not be used (:reason).',
+        'saml_source_required' => 'Choose a metadata URL, paste the metadata XML, or type the entity id, the sign-on URL and a certificate.',
+        'sp_key_pair' => 'The service provider key and certificate must be given together and must match.',
+        'saml_no_metadata_url' => 'This provider has no metadata URL to refresh from.',
+        'saml_metadata_failed' => 'The metadata could not be used (:reason).',
+        'logout_invalid_title' => 'Logout failed',
+        'logout_invalid_detail' => 'The logout message is missing, unsigned or invalid.',
     ],
 ];
