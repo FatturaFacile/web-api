@@ -38,6 +38,7 @@ final class VatReturnCalculator
      * @param  ?string  $sssRate1  primary SSS rate percentage for Swiss net_tax_rate
      * @param  ?string  $sssRate2  secondary SSS rate percentage for Swiss net_tax_rate
      * @param  array<int, float|string>  $flatTaxRates  rates for Swiss flat_tax_rate
+     * @param  bool  $carryOverBelowMinimum  Italy: a debt not above the minimum is carried to the next period; false pays it in its own period (the law only says it may be paid with the next one)
      */
     public static function compute(
         string $country,
@@ -51,6 +52,7 @@ final class VatReturnCalculator
         ?string $sssRate1 = null,
         ?string $sssRate2 = null,
         array $flatTaxRates = [],
+        bool $carryOverBelowMinimum = true,
     ): VatReturnResult {
         $italian = strcasecmp($country, 'IT') === 0;
         $isFlatRateSwiss = ! $italian && in_array($regime, ['net_tax_rate', 'flat_tax_rate'], true);
@@ -182,6 +184,7 @@ final class VatReturnCalculator
 
         $payable = Decimal::add($balance, $interest);
         $belowMinimum = $italian
+            && $carryOverBelowMinimum
             && Decimal::isPositive($payable)
             && Decimal::compare($payable, self::ITALIAN_MINIMUM_PAYMENT) <= 0;
 

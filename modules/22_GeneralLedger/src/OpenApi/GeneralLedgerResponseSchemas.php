@@ -240,6 +240,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'interest_expense_account_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'declarant_tax_code', type: 'string', nullable: true),
         new OA\Property(property: 'declarant_role_code', type: 'string', nullable: true),
+        new OA\Property(property: 'carry_over_below_minimum', type: 'boolean'),
     ]
 )]
 #[OA\Schema(

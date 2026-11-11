@@ -32,6 +32,7 @@ final class VatTaxSettingResource extends JsonResource
             'interest_expense_account_id' => $this->interest_expense_account_id,
             'declarant_tax_code' => $this->declarant_tax_code,
             'declarant_role_code' => $this->declarant_role_code,
+            'carry_over_below_minimum' => (bool) ($this->carry_over_below_minimum ?? true),
         ];
     }
 }
