@@ -369,6 +369,32 @@ final class FinancialStatementService implements FinancialStatementServiceInterf
     }
 
     /**
+     * The rows of a scheme for any set of accounts, not only the ledger of a tenant: the amount of each row and the
+     * accounts that no row picks up. It is what the consolidation uses to put the consolidated accounts in the layout
+     * the users wrote.
+     *
+     * @param  Collection<string, object>  $accounts  Objects with account_code, account_name, normal_balance, debit and credit
+     * @return array{rows: list<array{code: string, label: string, row_type: string, amount: ?string}>, unmapped_accounts: list<array{account_code: string, account_name: string, amount: string}>}
+     */
+    public function reclassifyAccounts(StatementScheme $scheme, Collection $accounts): array
+    {
+        $scheme->loadMissing('rows');
+        $values = $this->schemeValues($scheme, $accounts);
+        $rows = [];
+
+        foreach ($scheme->rows as $row) {
+            $rows[] = [
+                'code' => (string) $row->code,
+                'label' => (string) $row->label,
+                'row_type' => (string) $row->row_type,
+                'amount' => $row->row_type === 'heading' ? null : ($values[$row->code] ?? '0.0000'),
+            ];
+        }
+
+        return ['rows' => $rows, 'unmapped_accounts' => $this->unmappedAccounts($scheme, $accounts)];
+    }
+
+    /**
      * Cash flow statement of a fiscal year, indirect method: the result, corrected by the change of each class of
      * account. Because the ledger balances, the three sections must add up to the change in cash, and `is_reconciled`
      * proves it. Accounts classified only by their type are listed.
