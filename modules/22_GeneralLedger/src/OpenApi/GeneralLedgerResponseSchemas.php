@@ -211,7 +211,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'previous_debit', type: 'string', description: 'Decimal string: debt below the minimum payment carried over'),
         new OA\Property(property: 'interest_amount', type: 'string', description: 'Decimal string: Italian quarterly interest'),
         new OA\Property(property: 'payable_amount', type: 'string', description: 'Decimal string: positive when due, negative when a credit'),
-        new OA\Property(property: 'below_minimum_payment', type: 'boolean', description: 'The Italian debt is below EUR 25.82 and moves to the next period'),
+        new OA\Property(property: 'below_minimum_payment', type: 'boolean', description: 'The Italian debt does not exceed EUR 100 and moves to the next period'),
         new OA\Property(property: 'rate_breakdown', type: 'array', items: new OA\Items(
             properties: [
                 new OA\Property(property: 'rate', type: 'string'),
