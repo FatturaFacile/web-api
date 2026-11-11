@@ -1,5 +1,5 @@
-  [mcp_servers.phpstorm]
-    url = "http://127.0.0.1:65520/stream"
+[mcp_servers.phpstorm]
+url = "https://127.0.0.1:65520/stream"
 
-    [mcp_servers.phpstorm.env_http_headers]
-      IJ_MCP_LAUNCH_ORIGIN = "IJ_MCP_LAUNCH_ORIGIN"
+[mcp_servers.phpstorm.env_http_headers]
+IJ_MCP_LAUNCH_ORIGIN = "IJ_MCP_LAUNCH_ORIGIN"

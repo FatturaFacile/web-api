@@ -124,8 +124,9 @@ docker compose -f deploy/local/compose.yaml exec app php artisan migrate --force
 docker compose -f deploy/local/compose.yaml exec app php artisan erp:bootstrap
 ```
 
-Check it: `curl https://localhost:8000/up` answers 200, the Swagger UI is on https://localhost:8000/api/documentation and
-the OpenAPI file on https://localhost:8000/docs/api-docs.json. Demo login (via `POST /api/v1/auth/login`):
+Check it: `curl https://localhost:8080/up` answers 200, the Swagger UI is on https://localhost:8080/api/documentation
+and
+the OpenAPI file on https://localhost:8080/docs/api-docs.json. Demo login (via `POST /api/v1/auth/login`):
 `admin@demo-group.com` / `Password123!`.
 
 - The tag is pinned in `deploy/local/compose.yaml`; change it there to try another release (tags on Docker Hub).
@@ -136,13 +137,15 @@ the OpenAPI file on https://localhost:8000/docs/api-docs.json. Demo login (via `
 - Port 8000 busy (for example by `php artisan serve`)? Set `API_PORT` in `deploy/local/.env` before `up`.
 - The stack is called `fatturafacile-demo` whatever the folder: a second clone run with the same command reuses the same
   containers and database. To keep two apart, add `-p <name>` to every `docker compose` command.
-- Verified from a clean state (fresh volumes): `up --wait` takes a few seconds, then `/up`, the Swagger UI, `api-docs.json`
+- Verified from a clean state (fresh volumes): `up --wait` takes a few seconds, then `/up`, the Swagger UI,
+  `api-docs.json`
   and the demo login all answer.
 - Stop and keep the data: `docker compose -f deploy/local/compose.yaml stop`. Remove everything, data included:
   `docker compose -f deploy/local/compose.yaml down -v`.
 
 > `docker compose up` without `-f` starts `compose.yaml` (the Laravel Sail development stack), and
-> `docker-compose.yml` is the production stack (nginx on 80/443, certbot, a mandatory `.env` that must define `DB_PASSWORD`
+> `docker-compose.yml` is the production stack (nginx on 80/443, certbot, a mandatory `.env` that must define
+> `DB_PASSWORD`
 > and `REDIS_PASSWORD`: without them it refuses to start): neither is for a first trial.
 
 ### Develop (you change the code)
@@ -225,25 +228,26 @@ php artisan erp:bootstrap
 ```bash
 docker compose -f docker-compose.local.yml up -d --wait
 
-php artisan serve        # terminal 1: API (by default listens on HTTP localhost:8000)
+php artisan serve        # terminal 1: API (by default listens on HTTPS localhost:8080)
 php artisan queue:work   # terminal 2: without it, queued emails are not sent
 ```
 
 Then start the frontend in `web-frontend` with `corepack pnpm install` (first time only) and
 `corepack pnpm run start:local`. The frontend runs on `https://localhost:4200` with TLS (`mkcert`)
-and proxies `/api` and `/sanctum` to `http://localhost:8000` forwarding `X-Forwarded-Proto: https`
+and proxies `/api` and `/sanctum` to `https://localhost:8080` forwarding `X-Forwarded-Proto: https`
 (trusted because `127.0.0.1` is in `TRUSTED_PROXIES`).
 
 > **Direct API HTTPS access**: Because the application enforces HTTPS only, direct browser or tool access
-> to `https://localhost:8000` (e.g. Swagger UI or Postman) requires TLS in front of `artisan serve`.
-> You can place a TLS proxy in front (e.g. Caddy: `caddy reverse-proxy --from https://localhost:8000 --to 127.0.0.1:8001`
+> to `https://localhost:8080` (e.g. Swagger UI or Postman) requires TLS in front of `artisan serve`.
+> You can place a TLS proxy in front (e.g. Caddy:
+> `caddy reverse-proxy --from https://localhost:8080 --to 127.0.0.1:8001`
 > with `php artisan serve --port=8001`), or navigate through the frontend dev proxy at `https://localhost:4200/api/...`.
 
-| Service | Address |
-|---|---|
-| Application | https://localhost:4200 (`admin@demo-group.com` / `Password123!`) |
-| API | https://localhost:8000 |
-| Mailpit inbox | https://localhost:8025 |
+| Service       | Address                                                          |
+|---------------|------------------------------------------------------------------|
+| Application   | https://localhost:4200 (`admin@demo-group.com` / `Password123!`) |
+| API           | https://localhost:8080                                           |
+| Mailpit inbox | https://localhost:8025                                           |
 
 #### Managing the local services
 
@@ -269,7 +273,8 @@ Sign in as that user, list the requests with `GET /api/v1/admin/tenant-access-re
 #### Recovering a password
 
 `POST /api/v1/auth/forgot-password` always answers 202, and sends a link only to active accounts with a confirmed
-address. The link opens `/reset-password` on the frontend and lasts `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`. Completing the
+address. The link opens `/reset-password` on the frontend and lasts `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`. Completing
+the
 reset revokes the user's access tokens and deletes their rows in `sessions`, which requires `SESSION_DRIVER=database`.
 
 #### Changing the password

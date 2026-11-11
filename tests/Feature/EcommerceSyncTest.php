@@ -179,7 +179,7 @@ test('a channel is created with a generated webhook secret shown once and creden
 test('channel validation rejects unknown drivers, missing credentials and private urls', function (): void {
     ecApi()->postJson('/api/v1/ecommerce/channels', ['name' => 'X', 'driver' => 'magento', 'credentials' => ['a' => 'b']])->assertUnprocessable();
     ecApi()->postJson('/api/v1/ecommerce/channels', ['name' => 'X', 'driver' => 'woocommerce', 'api_url' => 'https://x.example.com', 'credentials' => ['consumer_key' => 'ck']])->assertUnprocessable();
-    ecApi()->postJson('/api/v1/ecommerce/channels', ['name' => 'X', 'driver' => 'woocommerce', 'api_url' => 'http://127.0.0.1', 'credentials' => ['consumer_key' => 'ck', 'consumer_secret' => 'cs']])->assertUnprocessable();
+    ecApi()->postJson('/api/v1/ecommerce/channels', ['name' => 'X', 'driver' => 'woocommerce', 'api_url' => 'https://127.0.0.1', 'credentials' => ['consumer_key' => 'ck', 'consumer_secret' => 'cs']])->assertUnprocessable();
     ecApi()->postJson('/api/v1/ecommerce/channels', ['name' => 'X', 'driver' => 'prestashop', 'api_url' => 'https://x.example.com', 'credentials' => []])->assertUnprocessable();
 });
 

@@ -74,7 +74,7 @@ docker compose up -d queue_worker scheduler
 echo "Running health check on /up..."
 HEALTH_OK=0
 for i in $(seq 1 15); do
-  if docker compose exec -T web wget -q -O /dev/null --header 'Host: dev-api.fatturafacile.eu' http://127.0.0.1/up; then
+  if docker compose exec -T web wget -q -O /dev/null --header 'Host: dev-api.fatturafacile.eu' https://127.0.0.1/up; then
     HEALTH_OK=1
     break
   fi

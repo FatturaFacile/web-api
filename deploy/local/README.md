@@ -1,7 +1,7 @@
 # Local Docker Trial (`deploy/local`)
 
 Minimal stack to try FatturaFacile locally from the published image (`docker.io/fatturafacile/api:0.1.2`).
-Runs over **HTTPS** on `https://localhost:8000`.
+Runs over **HTTPS** on `https://localhost:8080`.
 
 ## Quick Start
 
@@ -12,14 +12,15 @@ docker compose -f deploy/local/compose.yaml exec app php artisan migrate --force
 docker compose -f deploy/local/compose.yaml exec app php artisan erp:bootstrap
 ```
 
-Check: `curl -k https://localhost:8000/up` (returns 200).
-Swagger UI: https://localhost:8000/api/documentation
-OpenAPI JSON: https://localhost:8000/docs/api-docs.json
+Check: `curl -k https://localhost:8080/up` (returns 200).
+Swagger UI: https://localhost:8080/api/documentation
+OpenAPI JSON: https://localhost:8080/docs/api-docs.json
 
 ## TLS with mkcert (Browser-trusted)
 
 By default, the `web` container auto-generates a self-signed certificate in `deploy/local/certs/` if none exists.
-To avoid browser security warnings, you can install trusted certificates using [mkcert](https://github.com/FiloSottile/mkcert):
+To avoid browser security warnings, you can install trusted certificates
+using [mkcert](https://github.com/FiloSottile/mkcert):
 
 ```bash
 # 1. Install mkcert local CA (first time only)

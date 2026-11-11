@@ -26,7 +26,7 @@ use OpenApi\Attributes as OA;
     description: 'Production Server'
 )]
 #[OA\Server(
-    url: 'https://localhost:8000',
+    url: 'https://localhost:8080',
     description: 'Local Development Server'
 )]
 #[OA\SecurityScheme(

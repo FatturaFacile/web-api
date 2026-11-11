@@ -20,7 +20,7 @@ info:
     identifier: LicenseRef-Proprietary
 servers:
   -
-    url: 'https://localhost:8000/api'
+    url: 'https://localhost:8080/api'
     description: 'API base URL'
 paths:
   /v1/associations/access-devices:
