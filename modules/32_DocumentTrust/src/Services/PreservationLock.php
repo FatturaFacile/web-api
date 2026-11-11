@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\DocumentTrust\Services;
 
+use Modules\DocumentTrust\Models\PreservationDisposal;
 use Modules\DocumentTrust\Models\PreservationItem;
 use Modules\DocumentTrust\Models\PreservationPackage;
 
@@ -21,7 +22,7 @@ final class PreservationLock
         return PreservationItem::withoutGlobalScopes()
             ->where('source_type', 'dms_document')
             ->where('source_id', $documentId)
-            ->whereIn('package_id', PreservationPackage::withoutGlobalScopes()->select('id')->where('status', PreservationPackage::Closed))
+            ->whereIn('package_id', PreservationPackage::withoutGlobalScopes()->select('id')->where('status', PreservationPackage::Closed)->whereNotIn('id', PreservationDisposal::withoutGlobalScopes()->select('package_id')))
             ->exists();
     }
 }

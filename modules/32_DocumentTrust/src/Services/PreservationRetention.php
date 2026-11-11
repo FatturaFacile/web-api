@@ -55,7 +55,42 @@ final readonly class PreservationRetention
             'confirmed_at' => $settings?->retention_confirmed_at?->toIso8601String(),
             'notes' => $settings?->notes,
             'disclaimer' => 'The suggested periods are commonly cited defaults that this application has not verified against the law. Have the accountant confirm them before relying on them.',
+            'timestamp' => [
+                'tsa_url' => $settings?->tsa_url,
+                'tsa_username_set' => $settings?->tsa_username !== null,
+                'tsa_password_set' => $settings?->tsa_password !== null,
+                'tsa_provider_name' => $settings?->tsa_provider_name,
+                'tsa_declared_qualified' => (bool) $settings?->tsa_declared_qualified,
+            ],
         ];
+    }
+
+    /**
+     * Whether the accountant confirmed the retention periods of the tenant.
+     */
+    public function confirmed(): bool
+    {
+        return $this->settings()?->retention_confirmed_at !== null;
+    }
+
+    /**
+     * Save the RFC 3161 time-stamp authority of the tenant. A missing key keeps the stored value; a null url removes
+     * the authority (and its credentials). `tsa_declared_qualified` is the tenant's own declaration.
+     *
+     * @param  array{tsa_url?: ?string, tsa_username?: ?string, tsa_password?: ?string, tsa_provider_name?: ?string, tsa_declared_qualified?: bool}  $data
+     */
+    public function updateTimestamp(array $data): PreservationSetting
+    {
+        $settings = PreservationSetting::firstOrNew(['tenant_id' => $this->tenantContext->getTenantId()]);
+
+        if (array_key_exists('tsa_url', $data) && $data['tsa_url'] === null) {
+            $data = ['tsa_url' => null, 'tsa_username' => null, 'tsa_password' => null, 'tsa_provider_name' => null, 'tsa_declared_qualified' => false];
+        }
+
+        $settings->fill($data);
+        $settings->save();
+
+        return $settings;
     }
 
     /**

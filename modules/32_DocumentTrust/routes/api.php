@@ -5,6 +5,8 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\DocumentTrust\Http\Controllers\DocumentTrustController;
 use Modules\DocumentTrust\Http\Controllers\PreservationController;
+use Modules\DocumentTrust\Http\Controllers\PreservationDisposalController;
+use Modules\DocumentTrust\Http\Controllers\PreservationSealController;
 
 Route::prefix('api/v1/document-trust')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:document_trust'])
@@ -39,4 +41,25 @@ Route::prefix('api/v1/document-trust')
         Route::get('preservation-settings', [PreservationController::class, 'settings'])->name('document-trust.preservation-settings.show');
         Route::put('preservation-settings', [PreservationController::class, 'updateSettings'])->name('document-trust.preservation-settings.update');
         Route::get('preservation-access-logs', [PreservationController::class, 'accessLogs'])->name('document-trust.preservation-access-logs.index');
+    });
+
+Route::prefix('api/v1/document-trust')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:document_trust'])
+    ->group(function (): void {
+        Route::get('preservation-disposal-candidates', [PreservationDisposalController::class, 'candidates'])->name('document-trust.preservation-disposal.candidates');
+        Route::get('preservation-disposal-proposals', [PreservationDisposalController::class, 'proposals'])->name('document-trust.preservation-disposal.proposals');
+        Route::post('preservation-disposal-proposals', [PreservationDisposalController::class, 'propose'])->name('document-trust.preservation-disposal.propose');
+        Route::post('preservation-disposal-proposals/{id}/approve', [PreservationDisposalController::class, 'approve'])->whereUuid('id')->name('document-trust.preservation-disposal.approve');
+        Route::post('preservation-disposal-proposals/{id}/reject', [PreservationDisposalController::class, 'reject'])->whereUuid('id')->name('document-trust.preservation-disposal.reject');
+        Route::post('preservation-disposal-proposals/{id}/execute', [PreservationDisposalController::class, 'execute'])->whereUuid('id')->name('document-trust.preservation-disposal.execute');
+        Route::get('preservation-disposals', [PreservationDisposalController::class, 'index'])->name('document-trust.preservation-disposal.index');
+        Route::post('preservation-packages/{id}/legal-hold', [PreservationDisposalController::class, 'placeHold'])->whereUuid('id')->name('document-trust.preservation-packages.hold.place');
+        Route::delete('preservation-packages/{id}/legal-hold', [PreservationDisposalController::class, 'releaseHold'])->whereUuid('id')->name('document-trust.preservation-packages.hold.release');
+    });
+
+Route::prefix('api/v1/document-trust/preservation-seal')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:document_trust'])
+    ->group(function (): void {
+        Route::post('journal-book', [PreservationSealController::class, 'journalBook'])->middleware('module.access:ledger')->name('document-trust.preservation-seal.journal-book');
+        Route::post('payslips', [PreservationSealController::class, 'payslips'])->middleware('module.access:payroll')->name('document-trust.preservation-seal.payslips');
     });

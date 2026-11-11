@@ -13,6 +13,7 @@ use Modules\DocumentTrust\Contracts\TrustedTimestampProvider;
 use Modules\DocumentTrust\Enums\PreservationDocumentClass;
 use Modules\DocumentTrust\Exceptions\DocumentTrustException;
 use Modules\DocumentTrust\Exceptions\PreservationImmutableException;
+use Modules\DocumentTrust\Models\PreservationDisposal;
 use Modules\DocumentTrust\Models\PreservationItem;
 use Modules\DocumentTrust\Models\PreservationPackage;
 use Modules\DocumentTrust\Models\PreservationVerification;
@@ -230,8 +231,8 @@ final readonly class PreservationPackageService
      */
     public function verify(PreservationPackage $package, string $trigger = 'manual', ?string $userId = null): PreservationVerification
     {
-        if (! $package->isClosed()) {
-            throw new DocumentTrustException('Only a closed package can be verified.');
+        if (! $package->isClosed() || PreservationDisposal::withoutGlobalScopes()->where('package_id', $package->id)->exists()) {
+            throw new DocumentTrustException('Only a closed package that was not disposed of can be verified.');
         }
 
         $failures = [];

@@ -42,6 +42,7 @@ final class PreservationPackageResource extends JsonResource
             'timestamp_qualified' => (bool) $this->timestamp_qualified,
             'timestamped_at' => $this->timestamped_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'disposed_at' => $this->resource->relationLoaded('disposal') ? $this->resource->disposal?->executed_at?->toIso8601String() : null,
             'last_verification' => $verification instanceof PreservationVerification ? new PreservationVerificationResource($verification) : null,
         ];
     }
