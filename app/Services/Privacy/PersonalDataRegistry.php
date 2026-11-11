@@ -34,6 +34,7 @@ use Modules\Childcare\Models\ReferencePerson;
 use Modules\Contracts\Models\ContractParty;
 use Modules\CRM\Models\Consent;
 use Modules\CRM\Models\Lead;
+use Modules\DocumentTrust\Models\PreservationAccessLog;
 use Modules\HealthExpenses\Models\HealthExpense;
 use Modules\Hospitality\Models\Reservation;
 use Modules\HumanResources\Models\Employee;
@@ -192,6 +193,8 @@ final class PersonalDataRegistry
             'customs_settings' => 'Address of the customs declarant (the company).',
             'ct_price_lists' => 'Reference to a licence in a price list (not a person).',
             'health_expense_settings' => 'Tax code of the owner of the company.',
+            'sso_providers' => 'Configuration of the identity provider of the company: the allowed email domains are company data, not data of data subjects.',
+            'saml_providers' => 'Configuration of the identity provider of the company: the allowed email domains and the attribute names are company data, not data of data subjects.',
         ];
     }
 
@@ -235,6 +238,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('weighbridge_vehicles', [WeighbridgeVehicle::class], 'Weighbridge vehicles', 'identity', ['license_plate'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('portal_activity_logs', [PortalActivityLog::class], 'Customer portal activity', 'technical', ['ip_address'], $erasable, 'Access log of the portal: erased with the contact and by retention policy.', ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('audit_logs', [AuditLog::class], 'Audit log', 'technical', ['ip_address'], $evidence, $evidenceNote),
+            new PersonalDataEntry('preservation_access_logs', [PreservationAccessLog::class], 'Preservation access log', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('privacy_sensitive_access_logs', [PrivacySensitiveAccessLog::class], 'Sensitive access log', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('inventory_audit_entries', [InventoryAuditEntry::class], 'Inventory audit entries', 'technical', ['ip_address'], $evidence, $evidenceNote),
             new PersonalDataEntry('approval_decisions', [ApprovalDecision::class], 'Approval decisions', 'technical', ['ip_address'], $evidence, $evidenceNote),
