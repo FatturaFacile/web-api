@@ -10,6 +10,7 @@ use Carbon\CarbonImmutable;
 use Modules\GeneralLedger\Enums\IntercompanyMappingType;
 use Modules\GeneralLedger\Exceptions\ConsolidationException;
 use Modules\GeneralLedger\Models\ChartOfAccount;
+use Modules\GeneralLedger\Models\ConsolidationAccountMapping;
 use Modules\GeneralLedger\Models\ConsolidationGroup;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
@@ -26,13 +27,17 @@ use Modules\GeneralLedger\Models\IntercompanyRelation;
  * Both amounts are in the natural sign of their account (a receivable and a payable are both positive when they
  * stand on their normal side), so the difference is simply A minus B; a negative balance on an account shows that it
  * stands on the wrong side. Investment and equity mappings are not intercompany balances and are not part of this
- * report. Nothing is stored and nothing is written; reading it needs the access to every member entity.
+ * report. Like a run it reads each entity from its own fiscal year start (the offset of the member, with the same
+ * alignment rules) and shows the account codes of the group mapping. The proportional scaling of a run is not applied:
+ * the report compares the balances of the entities as they stand. Nothing is stored and nothing is written; reading it
+ * needs the access to every member entity.
  */
 final readonly class IntercompanyReconciliationService
 {
     public function __construct(
         private ConsolidationAccessGuard $guard,
         private ConsolidationTranslator $translator,
+        private ConsolidationCalculator $calculator,
     ) {}
 
     /**
@@ -59,6 +64,11 @@ final readonly class IntercompanyReconciliationService
         $groupCurrency = strtoupper($group->group_currency);
         $translated = [];
         $rows = [];
+        $maps = [];
+
+        foreach (ConsolidationAccountMapping::withoutGlobalScopes()->where('group_id', $group->id)->where('tenant_id', $group->tenant_id)->get() as $map) {
+            $maps[(string) $map->member_tenant_id][(string) $map->account_id] = ['code' => (string) $map->group_account_code, 'name' => $map->group_account_name];
+        }
 
         $relations = IntercompanyRelation::withoutGlobalScopes()->where('group_id', $group->id)->where('tenant_id', $group->tenant_id)->orderBy('id')->get();
         $names = Tenant::withoutGlobalScopes()->whereIn('id', $relations->pluck('entity_a_tenant_id')->merge($relations->pluck('entity_b_tenant_id'))->unique()->all())->pluck('name', 'id');
@@ -73,11 +83,14 @@ final readonly class IntercompanyReconciliationService
 
             foreach ($mappings as $mapping) {
                 foreach ([(string) $relation->entity_a_tenant_id, (string) $relation->entity_b_tenant_id] as $tenantId) {
-                    $translated[$tenantId] ??= $this->index($this->translator->translate($tenantId, $groupCurrency, $yearStart, $periodEnd));
+                    if (! isset($translated[$tenantId])) {
+                        $memberStart = $this->calculator->memberYearStart($group, $tenantId, $yearStart, $periodEnd);
+                        $translated[$tenantId] = $this->index($this->translator->translate($tenantId, $groupCurrency, $memberStart, $periodEnd), $memberStart);
+                    }
                 }
 
-                $sideA = $this->side((string) $relation->entity_a_tenant_id, (string) $mapping->account_a_id, $translated, $names);
-                $sideB = $this->side((string) $relation->entity_b_tenant_id, (string) $mapping->account_b_id, $translated, $names);
+                $sideA = $this->side((string) $relation->entity_a_tenant_id, (string) $mapping->account_a_id, $translated, $names, $maps);
+                $sideB = $this->side((string) $relation->entity_b_tenant_id, (string) $mapping->account_b_id, $translated, $names, $maps);
                 $difference = ConsolidationMath::sub($sideA['group_amount'], $sideB['group_amount']);
                 $hasDifference = ConsolidationMath::cmp(ConsolidationMath::abs($difference), (string) $relation->tolerance_amount) > 0;
 
@@ -112,9 +125,9 @@ final readonly class IntercompanyReconciliationService
 
     /**
      * @param  array{tenant_id: string, currency: string, rates: array<string, string>, rows: list<array<string, mixed>>}  $translated
-     * @return array{currency: string, by_account: array<string, array<string, mixed>>}
+     * @return array{currency: string, year_start: string, by_account: array<string, array<string, mixed>>}
      */
-    private function index(array $translated): array
+    private function index(array $translated, CarbonImmutable $yearStart): array
     {
         $byAccount = [];
 
@@ -124,14 +137,15 @@ final readonly class IntercompanyReconciliationService
             }
         }
 
-        return ['currency' => $translated['currency'], 'by_account' => $byAccount];
+        return ['currency' => $translated['currency'], 'year_start' => $yearStart->toDateString(), 'by_account' => $byAccount];
     }
 
     /**
-     * @param  array<string, array{currency: string, by_account: array<string, array<string, mixed>>}>  $translated
+     * @param  array<string, array{currency: string, year_start: string, by_account: array<string, array<string, mixed>>}>  $translated
+     * @param  array<string, array<string, array{code: string, name: ?string}>>  $maps
      * @return array<string, mixed>
      */
-    private function side(string $tenantId, string $accountId, array $translated, mixed $names): array
+    private function side(string $tenantId, string $accountId, array $translated, mixed $names, array $maps): array
     {
         $row = $translated[$tenantId]['by_account'][$accountId] ?? null;
         $account = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->find($accountId);
@@ -143,8 +157,9 @@ final readonly class IntercompanyReconciliationService
             'tenant_id' => $tenantId,
             'name' => (string) ($names[$tenantId] ?? $tenantId),
             'account_id' => $accountId,
-            'account_code' => $account?->account_code,
-            'account_name' => $account?->name,
+            'account_code' => $maps[$tenantId][$accountId]['code'] ?? $account?->account_code,
+            'account_name' => $maps[$tenantId][$accountId]['name'] ?? $account?->name,
+            'year_start' => $translated[$tenantId]['year_start'],
             'local_currency' => $translated[$tenantId]['currency'],
             'local_amount' => $local,
             'group_amount' => $group,

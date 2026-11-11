@@ -31,6 +31,10 @@ final class ConsolidationGroupResource extends JsonResource
             'goodwill_method' => $this->goodwill_method,
             'goodwill_amortisation_years' => $this->goodwill_amortisation_years,
             'require_account_mapping' => (bool) $this->require_account_mapping,
+            'deferred_tax_on_unrealised_profit' => (bool) $this->deferred_tax_on_unrealised_profit,
+            'unrealised_profit_tax_rate' => $this->unrealised_profit_tax_rate,
+            'fair_value_first_year_rule' => $this->fair_value_first_year_rule,
+            'goodwill_translation' => $this->goodwill_translation,
             'synthetic_accounts' => collect(ConsolidationGroup::SyntheticDefaults)->map(fn (string $default, string $role): string => $this->resource->syntheticCode($role))->all(),
             'is_active' => (bool) $this->is_active,
             'notes' => $this->notes,
@@ -43,6 +47,7 @@ final class ConsolidationGroupResource extends JsonResource
                 'is_parent' => (bool) $member->is_parent,
                 'holder_tenant_id' => $member->holder_tenant_id,
                 'fiscal_year_offset_months' => (int) $member->fiscal_year_offset_months,
+                'tax_rate' => $member->tax_rate,
             ])->all()),
             'relations' => IntercompanyRelationResource::collection($this->whenLoaded('relations')),
         ];

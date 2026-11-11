@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $acquired_percentage
  * @property bool $recognise_deferred_tax
  * @property string|null $deferred_tax_rate
+ * @property string|null $input_currency
  */
 final class ConsolidationAcquisition extends BaseEnterpriseModel
 {

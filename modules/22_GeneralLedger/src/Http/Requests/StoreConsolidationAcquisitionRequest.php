@@ -25,6 +25,7 @@ final class StoreConsolidationAcquisitionRequest extends FormRequest
             'cost' => ['nullable', 'numeric', 'decimal:0,4'],
             'net_assets_at_acquisition' => ['required', 'numeric', 'decimal:0,4'],
             'acquired_percentage' => ['nullable', 'numeric', 'gt:0', 'lte:100', 'decimal:0,4'],
+            'input_currency' => ['nullable', 'string', 'size:3', 'alpha'],
             'recognise_deferred_tax' => ['nullable', 'boolean'],
             'deferred_tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100', 'decimal:0,4'],
             'fair_value_adjustments' => ['nullable', 'array', 'max:200'],
@@ -32,6 +33,7 @@ final class StoreConsolidationAcquisitionRequest extends FormRequest
             'fair_value_adjustments.*.account_name' => ['nullable', 'string', 'max:255'],
             'fair_value_adjustments.*.account_type' => ['required', Rule::in(['asset', 'liability'])],
             'fair_value_adjustments.*.amount' => ['required', 'numeric', 'decimal:0,4'],
+            'fair_value_adjustments.*.useful_life_years' => ['nullable', 'integer', 'between:1,100'],
         ];
     }
 }
