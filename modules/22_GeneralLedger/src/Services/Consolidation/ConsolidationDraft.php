@@ -9,7 +9,7 @@ namespace Modules\GeneralLedger\Services\Consolidation;
  * translated balances, the adjustments generated so far and the warnings. Amounts are decimal strings in group currency
  * unless the key says local; `group_net` is debit minus credit.
  *
- * @phpstan-type MemberInfo array{tenant_id: string, name: string, currency: string, ownership_percentage: string, consolidation_method: string, is_parent: bool, holder_tenant_id: ?string, effective_ownership: string, consolidation_share: string, fiscal_year_offset_months: int, year_start: string, tax_rate: ?string}
+ * @phpstan-type MemberInfo array{tenant_id: string, name: string, currency: string, ownership_percentage: string, consolidation_method: string, is_parent: bool, holder_tenant_id: ?string, effective_ownership: string, consolidation_share: string, fiscal_year_offset_months: int, year_start: string, tax_rate: ?string, consolidation_basis: string}
  * @phpstan-type BalanceRow array{member_tenant_id: string, consolidation_method: string, ownership_percentage: string, consolidated_share: string, local_currency: string, account_id: ?string, account_code: string, account_name: string, account_type: string, normal_balance: string, local_net: string, rate_basis: string, rate: string, group_net: string, is_residual: bool}
  * @phpstan-type AdjustmentLine array{entity_tenant_id: ?string, account_code: string, account_name: string, account_type: string, debit: string, credit: string}
  * @phpstan-type Adjustment array{type: string, relation_id: ?string, member_tenant_id: ?string, description: string, amount: string, lines: list<AdjustmentLine>}
@@ -88,6 +88,13 @@ final class ConsolidationDraft
      * @var array<string, array{net_assets: string, profit: string}>
      */
     public array $upstream = [];
+
+    /**
+     * Consolidation provision for future risks and charges by investee (OIC 17 para. 73), in group currency.
+     *
+     * @var array<string, string>
+     */
+    public array $provisions = [];
 
     /**
      * @var array<string, array<string, array{code: string, name: string, type: string}>>

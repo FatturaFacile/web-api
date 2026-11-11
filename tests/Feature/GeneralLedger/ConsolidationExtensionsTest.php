@@ -693,3 +693,165 @@ test('a proportional member under twenty percent is reported', function (): void
     $codes = collect(extRun($group)->assertCreated()->json('data.warnings'))->pluck('code')->all();
     expect($codes)->toContain('proportional_below_threshold');
 });
+
+test('a negative difference splits into a consolidation provision, used over time, and a consolidation reserve', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '50000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    $url = "/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions";
+    $base = ['member_tenant_id' => $this->sub->id, 'acquisition_date' => '2025-07-01', 'cost' => 50000, 'net_assets_at_acquisition' => 70000];
+
+    // the years of use are required with the expected charges
+    test()->postJson($url, [...$base, 'expected_future_charges' => 4000])->assertStatus(422);
+    $acquisition = test()->postJson($url, [...$base, 'expected_future_charges' => 4000, 'provision_release_years' => 4])->assertCreated()->json('data');
+
+    // 50 000 - 80 % x 70 000 = -6 000: 4 000 expected charges in a provision, 2 000 in the reserve (para. 73-74)
+    $run = extRun($group)->assertCreated()->json('data');
+    $first = extNets(extAdjustments($run, 'goodwill')[0]);
+    expect($first['CONS-PROV'])->toBe('-4000.0000')->and($first['CONS-NEG-GW'])->toBe('-2000.0000');
+
+    // used straight-line over 48 months from 1 July 2025: 6 months before the year, 6 in it
+    $use = extNets(extAdjustments($run, 'provision_release')[0]);
+    expect($use['CONS-PROV'])->toBe('1000.0000')
+        ->and($use['CONS-PROV-REL'])->toBe('-500.0000')
+        ->and($use['CONS-PROV-PRIOR'])->toBe('-500.0000')
+        ->and(extTb($run['id'])['CONS-PROV']['net'])->toBe('-3000.0000')
+        ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue();
+
+    // expected charges above the negative difference are limited to it: no reserve is left
+    test()->deleteJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}")->assertOk();
+    test()->postJson($url, [...$base, 'expected_future_charges' => 9000, 'provision_release_years' => 4])->assertCreated();
+    $capped = extNets(extAdjustments(extRun($group)->assertCreated()->json('data'), 'goodwill')[0]);
+    expect($capped['CONS-PROV'])->toBe('-6000.0000')->and($capped)->not->toHaveKey('CONS-NEG-GW');
+});
+
+test('the IFRS 3 treatment of a bargain purchase is an explicit group option', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '50000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['negative_goodwill_treatment' => 'immediate_income']);
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    $url = "/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions";
+    $base = ['member_tenant_id' => $this->sub->id, 'cost' => 50000, 'net_assets_at_acquisition' => 70000, 'expected_future_charges' => 4000, 'provision_release_years' => 4];
+
+    // acquired in the year: income of the year, and the provision of OIC 17 does not apply
+    $acquisition = test()->postJson($url, [...$base, 'acquisition_date' => '2026-02-01'])->assertCreated()->json('data');
+    $run = extRun($group)->assertCreated()->json('data');
+    $nets = extNets(extAdjustments($run, 'goodwill')[0]);
+    $income = test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/income-statement")->json('data');
+
+    expect($nets['CONS-BARGAIN'])->toBe('-6000.0000')
+        ->and($nets)->not->toHaveKey('CONS-PROV')
+        ->and(collect($run['warnings'])->pluck('code')->all())->toContain('provision_ignored')
+        ->and($income['total_revenue'])->toBe('6000.0000');
+
+    // acquired in an earlier year: the gain is already in retained earnings
+    test()->deleteJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}")->assertOk();
+    test()->postJson($url, [...$base, 'acquisition_date' => '2025-07-01'])->assertCreated();
+    $earlier = extNets(extAdjustments(extRun($group)->assertCreated()->json('data'), 'goodwill')[0]);
+    expect($earlier['CONS-BARGAIN-PRIOR'])->toBe('-6000.0000')->and($earlier)->not->toHaveKey('CONS-BARGAIN');
+});
+
+test('the goodwill schedule can be audited year by year and agrees with the run', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
+    extPost($this->parent, '2026-01-05', $this->p['invest'], $this->p['bank'], '100000');
+    extPost($this->sub, '2026-01-02', $this->s['bank'], $this->s['capital'], '70000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['goodwill_method' => 'straight_line', 'goodwill_amortisation_years' => 10]);
+    extMember($group, $this->sub, 80)->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'investment_equity', $this->p['invest']->id, $this->s['capital']->id);
+    $acquisition = test()->postJson("/api/v1/general-ledger/consolidation/groups/{$group}/acquisitions", ['member_tenant_id' => $this->sub->id, 'acquisition_date' => '2025-04-01', 'net_assets_at_acquisition' => 70000])->assertCreated()->json('data');
+    test()->postJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}/impairments", ['fiscal_year' => 2025, 'amount' => 500])->assertCreated();
+    test()->postJson("/api/v1/general-ledger/consolidation/acquisitions/{$acquisition['id']}/impairments", ['fiscal_year' => 2026, 'amount' => 1000])->assertCreated();
+
+    $run = extRun($group)->assertCreated()->json('data');
+    $schedule = test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/goodwill-schedule")->assertOk()->json('data');
+    $rows = $schedule['acquisitions'][0]['rows'];
+
+    // goodwill 100 000 - 80 % x 70 000 = 44 000 over 120 months
+    expect($schedule['goodwill_method'])->toBe('straight_line')
+        ->and($schedule['acquisitions'][0]['goodwill'])->toBe('44000.0000')
+        ->and($rows[0])->toMatchArray(['fiscal_year' => 2025, 'opening_balance' => '44000.0000', 'amortisation' => '3300.0000', 'impairment' => '500.0000', 'closing_balance' => '40200.0000', 'is_run_year' => false])
+        ->and($rows[1])->toMatchArray(['fiscal_year' => 2026, 'opening_balance' => '40200.0000', 'amortisation' => '4400.0000', 'impairment' => '1000.0000', 'closing_balance' => '34800.0000', 'is_run_year' => true, 'amortisation_to_period_end' => '2200.0000'])
+        ->and($rows[2]['opening_balance'])->toBe('34800.0000')
+        ->and(end($rows)['closing_balance'])->toBe('0.0000');
+
+    // the run posted the same charges to the period end
+    $charges = extNets(extAdjustments($run, 'goodwill_amortisation')[0]);
+    expect($charges['CONS-GW-AMORT'])->toBe($rows[1]['amortisation_to_period_end'])
+        ->and($charges['CONS-GW-IMP'])->toBe($rows[1]['impairment'])
+        ->and($charges['CONS-GW-PRIOR'])->toBe('3800.0000');
+
+    // another tenant cannot read the schedule of a run it does not own
+    $outsider = extTenant('Estranea');
+    $user = User::create(['name' => 'estraneo', 'email' => Str::uuid().'@example.com', 'password' => Str::password(16).chr(random_int(65, 90)).chr(random_int(97, 122)).random_int(0, 9)]);
+    $user->tenants()->attach($outsider->id, ['id' => (string) Str::uuid(), 'role' => 'owner']);
+    extActAs($user, $outsider);
+    test()->getJson("/api/v1/general-ledger/consolidation/runs/{$run['id']}/goodwill-schedule")->assertNotFound();
+});
+
+test('a member can be read from an interim statement of twelve months ending at the consolidation date', function (): void {
+    app(TenantContext::class)->setTenant($this->sub);
+    app(OpenFiscalYearAction::class)->execute((string) $this->sub->id, 2025);
+    app(TenantContext::class)->clear();
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '100000');
+    extPost($this->sub, '2025-01-02', $this->s['bank'], $this->s['capital'], '50000');
+    extPost($this->sub, '2025-05-10', $this->s['bank'], $this->s['sales'], '3000');
+    extPost($this->sub, '2025-08-10', $this->s['bank'], $this->s['sales'], '4000');
+    extPost($this->sub, '2026-02-10', $this->s['bank'], $this->s['sales'], '5000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 100)->assertCreated();
+    $memberId = collect(test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}")->json('data.members'))->firstWhere('member_tenant_id', $this->sub->id)['id'];
+    $update = fn (array $extra) => test()->putJson("/api/v1/general-ledger/consolidation/groups/{$group}/members/{$memberId}", ['ownership_percentage' => 100, 'consolidation_method' => 'full', ...$extra]);
+
+    // own year: the income of 2026 only
+    expect(extTb(extRun($group)->assertCreated()->json('data.id'))['4000']['net'])->toBe('-5000.0000');
+
+    // interim statement: 1 July 2025 to 30 June 2026, and the earlier result that is not closed is carried over
+    $update(['consolidation_basis' => 'interim_twelve_months'])->assertOk();
+    $run = extRun($group)->assertCreated()->json('data');
+    $tb = extTb($run['id']);
+
+    expect($tb['4000']['net'])->toBe('-9000.0000')
+        ->and($tb['CONS-RETAINED']['net'])->toBe('-3000.0000')
+        ->and(collect($run['members'])->firstWhere('tenant_id', $this->sub->id)['year_start'])->toBe('2025-07-01')
+        ->and($run['totals']['trial_balance_is_balanced'])->toBeTrue();
+
+    // the interim basis has no offset
+    $update(['consolidation_basis' => 'interim_twelve_months', 'fiscal_year_offset_months' => 3])->assertStatus(422);
+    $update(['consolidation_basis' => 'own_year', 'fiscal_year_offset_months' => 3])->assertOk();
+    $update(['consolidation_basis' => 'interim_twelve_months'])->assertStatus(422);
+});
+
+test('the reconciliation scales a proportional member like the run', function (): void {
+    extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '100000');
+    extPost($this->parent, '2026-03-01', $this->p['receivable'], $this->p['ic_sales'], '10000');
+    extPost($this->sub, '2026-03-01', $this->s['cost'], $this->s['payable'], '10000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup();
+    extMember($group, $this->sub, 50, 'proportional')->assertCreated();
+    extMap(extRelation($group, $this->parent, $this->sub), 'receivable_payable', $this->p['receivable']->id, $this->s['payable']->id);
+    $period = (string) FiscalPeriod::withoutGlobalScopes()->where('tenant_id', $this->parent->id)->whereDate('start_date', '<=', '2026-06-30')->whereDate('end_date', '>=', '2026-06-30')->firstOrFail()->id;
+
+    $row = test()->getJson("/api/v1/general-ledger/consolidation/groups/{$group}/intercompany-reconciliation?fiscal_period_id={$period}")->assertOk()->json('data.rows.0');
+
+    // the joint venture contributes half of its payable, and the receivable is compared with that half
+    expect($row['entity_a']['group_amount'])->toBe('10000.0000')
+        ->and($row['entity_b']['local_amount'])->toBe('10000.0000')
+        ->and($row['entity_b']['group_amount'])->toBe('5000.0000')
+        ->and($row['entity_b']['consolidated_share'])->toBe('50.0000')
+        ->and($row['difference'])->toBe('0.0000')
+        ->and($row['status'])->toBe('matched');
+});

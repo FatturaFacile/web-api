@@ -53,7 +53,7 @@ final readonly class ConsolidationInputService
     }
 
     /**
-     * @param  array{member_tenant_id: string, acquisition_date: string, cost?: numeric-string|float|int|null, net_assets_at_acquisition: numeric-string|float|int, acquired_percentage?: numeric-string|float|int|null, recognise_deferred_tax?: bool, deferred_tax_rate?: numeric-string|float|int|null, input_currency?: ?string, fair_value_adjustments?: list<array{account_code: string, account_name?: ?string, account_type: string, amount: numeric-string|float|int, useful_life_years?: ?int}>}  $data
+     * @param  array{member_tenant_id: string, acquisition_date: string, cost?: numeric-string|float|int|null, net_assets_at_acquisition: numeric-string|float|int, acquired_percentage?: numeric-string|float|int|null, recognise_deferred_tax?: bool, deferred_tax_rate?: numeric-string|float|int|null, input_currency?: ?string, expected_future_charges?: numeric-string|float|int|null, provision_release_years?: ?int, fair_value_adjustments?: list<array{account_code: string, account_name?: ?string, account_type: string, amount: numeric-string|float|int, useful_life_years?: ?int}>}  $data
      *
      * @throws ConsolidationException
      */
@@ -84,6 +84,8 @@ final readonly class ConsolidationInputService
                 'acquired_percentage' => $data['acquired_percentage'] ?? null,
                 'recognise_deferred_tax' => (bool) ($data['recognise_deferred_tax'] ?? false),
                 'deferred_tax_rate' => $data['deferred_tax_rate'] ?? null,
+                'expected_future_charges' => $data['expected_future_charges'] ?? null,
+                'provision_release_years' => $data['provision_release_years'] ?? null,
                 'input_currency' => isset($data['input_currency']) ? strtoupper((string) $data['input_currency']) : null,
             ]);
 

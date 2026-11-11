@@ -31,6 +31,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'deferred_tax_on_unrealised_profit', description: 'Recognise deferred tax on the unrealised intragroup profit that is eliminated (OIC 17 para. 51). The rate comes from the tax_rate of the buying member or unrealised_profit_tax_rate; none is assumed and a run without a rate is refused', type: 'boolean', nullable: true),
         new OA\Property(property: 'unrealised_profit_tax_rate', description: 'Rate in percent used when the buying member has no tax_rate', type: 'number', nullable: true),
         new OA\Property(property: 'fair_value_first_year_rule', description: 'pro_rata (default): the release of a fair-value adjustment counts whole months from the acquisition date; full_year: from the start of the fiscal year of the acquisition', type: 'string', enum: ['pro_rata', 'full_year'], nullable: true),
+        new OA\Property(property: 'negative_goodwill_treatment', description: 'consolidation_reserve (default, OIC 17 para. 71-72, with the provision of para. 73 when expected charges are entered on the acquisition) or immediate_income (the IFRS 3 treatment: income of the year of the acquisition)', type: 'string', enum: ['consolidation_reserve', 'immediate_income'], nullable: true),
         new OA\Property(property: 'goodwill_translation', description: 'historical (default): goodwill and fair value stay at the rate of the acquisition date; closing: their balance is retranslated at the closing rate of the period against the translation reserve (only for acquisitions entered in a local currency)', type: 'string', enum: ['historical', 'closing'], nullable: true),
         new OA\Property(property: 'synthetic_accounts', description: 'Role => code override: goodwill, goodwill_accumulated, goodwill_amortisation, goodwill_impairment, goodwill_prior, negative_goodwill, preacquisition_reserves, fair_value_reserve, deferred_tax, intercompany_difference, intercompany_pl_difference, prior_unrealised_profit', type: 'object'),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
@@ -65,6 +66,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'deferred_tax_on_unrealised_profit', description: 'Recognise deferred tax on the unrealised intragroup profit that is eliminated (OIC 17 para. 51). The rate comes from the tax_rate of the buying member or unrealised_profit_tax_rate; none is assumed and a run without a rate is refused', type: 'boolean', nullable: true),
         new OA\Property(property: 'unrealised_profit_tax_rate', description: 'Rate in percent used when the buying member has no tax_rate', type: 'number', nullable: true),
         new OA\Property(property: 'fair_value_first_year_rule', description: 'pro_rata (default): the release of a fair-value adjustment counts whole months from the acquisition date; full_year: from the start of the fiscal year of the acquisition', type: 'string', enum: ['pro_rata', 'full_year'], nullable: true),
+        new OA\Property(property: 'negative_goodwill_treatment', description: 'consolidation_reserve (default, OIC 17 para. 71-72, with the provision of para. 73 when expected charges are entered on the acquisition) or immediate_income (the IFRS 3 treatment: income of the year of the acquisition)', type: 'string', enum: ['consolidation_reserve', 'immediate_income'], nullable: true),
         new OA\Property(property: 'goodwill_translation', description: 'historical (default): goodwill and fair value stay at the rate of the acquisition date; closing: their balance is retranslated at the closing rate of the period against the translation reserve (only for acquisitions entered in a local currency)', type: 'string', enum: ['historical', 'closing'], nullable: true),
         new OA\Property(property: 'synthetic_accounts', description: 'Role => code override: goodwill, goodwill_accumulated, goodwill_amortisation, goodwill_impairment, goodwill_prior, negative_goodwill, preacquisition_reserves, fair_value_reserve, deferred_tax, intercompany_difference, intercompany_pl_difference, prior_unrealised_profit', type: 'object', nullable: true),
         new OA\Property(property: 'notes', type: 'string', nullable: true),
@@ -87,6 +89,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'deferred_tax_on_unrealised_profit', description: 'Recognise deferred tax on the unrealised intragroup profit that is eliminated (OIC 17 para. 51). The rate comes from the tax_rate of the buying member or unrealised_profit_tax_rate; none is assumed and a run without a rate is refused', type: 'boolean', nullable: true),
         new OA\Property(property: 'unrealised_profit_tax_rate', description: 'Rate in percent used when the buying member has no tax_rate', type: 'number', nullable: true),
         new OA\Property(property: 'fair_value_first_year_rule', description: 'pro_rata (default): the release of a fair-value adjustment counts whole months from the acquisition date; full_year: from the start of the fiscal year of the acquisition', type: 'string', enum: ['pro_rata', 'full_year'], nullable: true),
+        new OA\Property(property: 'negative_goodwill_treatment', description: 'consolidation_reserve (default, OIC 17 para. 71-72, with the provision of para. 73 when expected charges are entered on the acquisition) or immediate_income (the IFRS 3 treatment: income of the year of the acquisition)', type: 'string', enum: ['consolidation_reserve', 'immediate_income'], nullable: true),
         new OA\Property(property: 'goodwill_translation', description: 'historical (default): goodwill and fair value stay at the rate of the acquisition date; closing: their balance is retranslated at the closing rate of the period against the translation reserve (only for acquisitions entered in a local currency)', type: 'string', enum: ['historical', 'closing'], nullable: true),
         new OA\Property(property: 'synthetic_accounts', description: 'Role => code override: goodwill, goodwill_accumulated, goodwill_amortisation, goodwill_impairment, goodwill_prior, negative_goodwill, preacquisition_reserves, fair_value_reserve, deferred_tax, intercompany_difference, intercompany_pl_difference, prior_unrealised_profit', type: 'object', nullable: true),
         new OA\Property(property: 'is_active', type: 'boolean'),
@@ -103,6 +106,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'consolidation_method', description: 'full: line by line; proportional: line by line at the effective ownership, no minority interests; equity: the investment is brought to the share of net assets', type: 'string', enum: ['full', 'proportional', 'equity']),
         new OA\Property(property: 'holder_tenant_id', description: 'The member that holds this one (indirect holding); null = the parent. The holder must be fully consolidated and the chain must not loop; effective ownership is the product of the direct percentages', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'fiscal_year_offset_months', description: 'Months between the start of the parent fiscal year and the one of the member, -11 to 11 (default 0)', type: 'integer', nullable: true),
+        new OA\Property(property: 'consolidation_basis', description: 'own_year (default): income accounts from the start of the fiscal year of the member (see fiscal_year_offset_months); interim_twelve_months: income of the twelve months ending at the consolidation date, built from the ledger by date range (OIC 17 para. 40-42); cannot be combined with an offset', type: 'string', enum: ['own_year', 'interim_twelve_months'], nullable: true),
         new OA\Property(property: 'tax_rate', description: 'Tax rate in percent of the member, used for the deferred tax on unrealised intragroup profit when the member is the buyer', type: 'number', nullable: true),
     ]
 )]
@@ -115,6 +119,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'consolidation_method', type: 'string', enum: ['full', 'proportional', 'equity']),
         new OA\Property(property: 'holder_tenant_id', description: 'The member that holds this one (indirect holding); null = the parent. The holder must be fully consolidated and the chain must not loop; effective ownership is the product of the direct percentages', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'fiscal_year_offset_months', description: 'Months between the start of the parent fiscal year and the one of the member, -11 to 11 (default 0)', type: 'integer', nullable: true),
+        new OA\Property(property: 'consolidation_basis', description: 'own_year (default): income accounts from the start of the fiscal year of the member (see fiscal_year_offset_months); interim_twelve_months: income of the twelve months ending at the consolidation date, built from the ledger by date range (OIC 17 para. 40-42); cannot be combined with an offset', type: 'string', enum: ['own_year', 'interim_twelve_months'], nullable: true),
         new OA\Property(property: 'tax_rate', description: 'Tax rate in percent of the member, used for the deferred tax on unrealised intragroup profit when the member is the buyer', type: 'number', nullable: true),
     ]
 )]
@@ -213,6 +218,11 @@ use OpenApi\Attributes as OA;
     type: 'object'
 )]
 #[OA\Schema(
+    schema: 'GeneralLedgerGoodwillSchedule',
+    description: 'Goodwill schedule of a run: goodwill_method, goodwill_amortisation_years and, per acquisition with a goodwill, member_tenant_id, name, acquisition_date, goodwill and rows per fiscal year of the parent (fiscal_year, period_start, period_end, opening_balance, amortisation, impairment, closing_balance, is_run_year and, for the year of the run, amortisation_to_period_end and impairment_to_period_end).',
+    type: 'object'
+)]
+#[OA\Schema(
     schema: 'GeneralLedgerConsolidationInput',
     description: 'An input of the consolidation as stored (account mapping, acquisition with fair_value_adjustments and impairments, intragroup transaction, intragroup dividend). Amounts are decimal strings in group currency.',
     type: 'object'
@@ -238,6 +248,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'cost', description: 'Cost of the investment in group currency; when omitted the balance of the mapped investment accounts', type: 'number', nullable: true),
         new OA\Property(property: 'net_assets_at_acquisition', description: 'Book net assets of the member at the acquisition date, group currency', type: 'number'),
         new OA\Property(property: 'acquired_percentage', description: 'Percentage bought; when omitted the direct ownership of the member', type: 'number', nullable: true),
+        new OA\Property(property: 'expected_future_charges', description: 'Negative difference only: the part of it that corresponds to expected unfavourable results, in the input currency; it becomes a consolidation provision for future risks and charges (OIC 17 para. 73), the rest a consolidation reserve. Needs provision_release_years', type: 'number', nullable: true),
+        new OA\Property(property: 'provision_release_years', description: 'Years over which the provision is used, straight-line by whole months from the acquisition date, whether or not the losses occur (para. 73)', type: 'integer', nullable: true),
         new OA\Property(property: 'input_currency', description: 'Currency of cost, net assets and fair-value amounts when not the group currency: they are translated at the rate of the acquisition date (impairments are always in group currency)', type: 'string', nullable: true),
         new OA\Property(property: 'recognise_deferred_tax', description: 'Whether deferred tax is recognised on the fair-value adjustments', type: 'boolean', default: false),
         new OA\Property(property: 'deferred_tax_rate', description: 'Rate in percent applied to the net fair-value adjustments; required when recognise_deferred_tax is true, no rate is assumed', type: 'number', nullable: true),

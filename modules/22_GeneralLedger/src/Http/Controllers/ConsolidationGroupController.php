@@ -157,7 +157,7 @@ final class ConsolidationGroupController extends Controller
     public function addMember(StoreConsolidationMemberRequest $request, string $id): JsonResponse
     {
         $group = ConsolidationGroup::query()->findOrFail($id);
-        $this->groups->addMember($request->user(), $group, $request->validated('member_tenant_id'), (string) $request->validated('ownership_percentage'), ConsolidationMethod::from($request->validated('consolidation_method')), $request->validated('holder_tenant_id'), (int) ($request->validated('fiscal_year_offset_months') ?? 0), $request->validated('tax_rate') === null ? null : (string) $request->validated('tax_rate'));
+        $this->groups->addMember($request->user(), $group, $request->validated('member_tenant_id'), (string) $request->validated('ownership_percentage'), ConsolidationMethod::from($request->validated('consolidation_method')), $request->validated('holder_tenant_id'), (int) ($request->validated('fiscal_year_offset_months') ?? 0), $request->validated('tax_rate') === null ? null : (string) $request->validated('tax_rate'), (string) ($request->validated('consolidation_basis') ?? 'own_year'));
 
         return $this->successResponse(new ConsolidationGroupResource($group->load('members.memberTenant')), 'Member added', Response::HTTP_CREATED);
     }
@@ -184,7 +184,7 @@ final class ConsolidationGroupController extends Controller
     {
         $group = ConsolidationGroup::query()->findOrFail($id);
         $member = ConsolidationMember::query()->where('group_id', $group->id)->findOrFail($memberId);
-        $this->groups->updateMember($member, (string) $request->validated('ownership_percentage'), ConsolidationMethod::from($request->validated('consolidation_method')), $request->validated('holder_tenant_id'), $request->validated('fiscal_year_offset_months') === null ? null : (int) $request->validated('fiscal_year_offset_months'), $request->has('holder_tenant_id'), $request->validated('tax_rate') === null ? null : (string) $request->validated('tax_rate'), $request->has('tax_rate'));
+        $this->groups->updateMember($member, (string) $request->validated('ownership_percentage'), ConsolidationMethod::from($request->validated('consolidation_method')), $request->validated('holder_tenant_id'), $request->validated('fiscal_year_offset_months') === null ? null : (int) $request->validated('fiscal_year_offset_months'), $request->has('holder_tenant_id'), $request->validated('tax_rate') === null ? null : (string) $request->validated('tax_rate'), $request->has('tax_rate'), $request->validated('consolidation_basis'));
 
         return $this->successResponse(new ConsolidationGroupResource($group->load('members.memberTenant')), 'Member updated');
     }

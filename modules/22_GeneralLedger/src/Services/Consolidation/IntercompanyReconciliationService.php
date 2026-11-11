@@ -28,8 +28,9 @@ use Modules\GeneralLedger\Models\IntercompanyRelation;
  * stand on their normal side), so the difference is simply A minus B; a negative balance on an account shows that it
  * stands on the wrong side. Investment and equity mappings are not intercompany balances and are not part of this
  * report. Like a run it reads each entity from its own fiscal year start (the offset of the member, with the same
- * alignment rules) and shows the account codes of the group mapping. The proportional scaling of a run is not applied:
- * the report compares the balances of the entities as they stand. Nothing is stored and nothing is written; reading it
+ * alignment rules, or from its interim statement of twelve months), shows the account codes of the group mapping and
+ * scales a proportional member by its share like a run: the group amount of an entity is its balance times its own share,
+ * and the difference compares each group amount with the other entity's share of it (the same rule as the elimination). Nothing is stored and nothing is written; reading it
  * needs the access to every member entity.
  */
 final readonly class IntercompanyReconciliationService
@@ -65,6 +66,7 @@ final readonly class IntercompanyReconciliationService
         $translated = [];
         $rows = [];
         $maps = [];
+        $shares = $this->calculator->consolidationShares($group);
 
         foreach (ConsolidationAccountMapping::withoutGlobalScopes()->where('group_id', $group->id)->where('tenant_id', $group->tenant_id)->get() as $map) {
             $maps[(string) $map->member_tenant_id][(string) $map->account_id] = ['code' => (string) $map->group_account_code, 'name' => $map->group_account_name];
@@ -89,9 +91,12 @@ final readonly class IntercompanyReconciliationService
                     }
                 }
 
-                $sideA = $this->side((string) $relation->entity_a_tenant_id, (string) $mapping->account_a_id, $translated, $names, $maps);
-                $sideB = $this->side((string) $relation->entity_b_tenant_id, (string) $mapping->account_b_id, $translated, $names, $maps);
-                $difference = ConsolidationMath::sub($sideA['group_amount'], $sideB['group_amount']);
+                $sideA = $this->side((string) $relation->entity_a_tenant_id, (string) $mapping->account_a_id, $translated, $names, $maps, $shares[(string) $relation->entity_a_tenant_id] ?? '100.0000');
+                $sideB = $this->side((string) $relation->entity_b_tenant_id, (string) $mapping->account_b_id, $translated, $names, $maps, $shares[(string) $relation->entity_b_tenant_id] ?? '100.0000');
+                $difference = ConsolidationMath::sub(
+                    ConsolidationMath::mul($sideA['group_amount'], bcdiv($sideB['consolidated_share'], '100', 10)),
+                    ConsolidationMath::mul($sideB['group_amount'], bcdiv($sideA['consolidated_share'], '100', 10))
+                );
                 $hasDifference = ConsolidationMath::cmp(ConsolidationMath::abs($difference), (string) $relation->tolerance_amount) > 0;
 
                 $rows[] = [
@@ -145,13 +150,14 @@ final readonly class IntercompanyReconciliationService
      * @param  array<string, array<string, array{code: string, name: ?string}>>  $maps
      * @return array<string, mixed>
      */
-    private function side(string $tenantId, string $accountId, array $translated, mixed $names, array $maps): array
+    private function side(string $tenantId, string $accountId, array $translated, mixed $names, array $maps, string $share): array
     {
         $row = $translated[$tenantId]['by_account'][$accountId] ?? null;
         $account = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->find($accountId);
         $isDebitNormal = ($row['normal_balance'] ?? $account?->normal_balance) === 'debit';
         $local = $row === null ? ConsolidationMath::zero() : ($isDebitNormal ? $row['local_net'] : ConsolidationMath::neg($row['local_net']));
         $group = $row === null ? ConsolidationMath::zero() : ($isDebitNormal ? $row['group_net'] : ConsolidationMath::neg($row['group_net']));
+        $group = ConsolidationMath::percentOf($group, $share);
 
         return [
             'tenant_id' => $tenantId,
@@ -163,6 +169,7 @@ final readonly class IntercompanyReconciliationService
             'local_currency' => $translated[$tenantId]['currency'],
             'local_amount' => $local,
             'group_amount' => $group,
+            'consolidated_share' => ConsolidationMath::norm($share),
         ];
     }
 

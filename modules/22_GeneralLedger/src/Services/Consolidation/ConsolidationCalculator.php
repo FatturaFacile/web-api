@@ -45,7 +45,10 @@ use Modules\GeneralLedger\Models\IntragroupTransaction;
  *   liabilities, with deferred tax, up to current values, and the residual is the consolidation difference, i.e.
  *   goodwill; the allocation is not attributed to the minority shareholders: implemented, so fair-value adjustments
  *   enter at the percentage acquired); 71-72 (a negative difference left after the allocation is a consolidation
- *   reserve: implemented; the provision for expected losses of paragraph 73 is NOT); 75-77 (the adjustments continue
+ *   reserve: implemented; paragraph 73 and 74, the consolidation provision for future risks and charges for the part
+ *   of the negative difference that the user declares as expected unfavourable results, used over the years the
+ *   user enters whether or not the losses occur, with its use shown on its own income line, and the residual to the
+ *   reserve: implemented from explicit inputs, the standard does not say how to estimate them); 75-77 (the adjustments continue
  *   while the assets exist and depreciation is computed on the adjusted value from the acquisition date, with deferred
  *   tax: implemented for the useful lives the user enters); 90 (intragroup dividends are eliminated); 96-98 (minority
  *   equity and result come from the book figures of the subsidiary adjusted for the intragroup eliminations);
@@ -55,9 +58,17 @@ use Modules\GeneralLedger\Models\IntragroupTransaction;
  *   liabilities at the spot rate of the balance sheet date, income at the rate of the transaction or the average rate,
  *   the net effect in the translation reserve; intragroup balances compared at the closing rate: used by the
  *   translation and the reconciliation). Paragraphs 40-42 require a member with another year end to be included on the
- *   basis of an annual interim statement at the consolidation date, i.e. twelve months to that date; this application
- *   instead reads the income accounts of such a member from the start of its own fiscal year (offset) to the period end,
- *   which is a documented difference, not the rule of the standard.
+ *   basis of an annual interim statement at the consolidation date, i.e. twelve months to that date: implemented as the
+ *   member option `consolidation_basis = interim_twelve_months` (income of the twelve months ending at the period end,
+ *   balances at that date, both built from the member ledger by date range, nothing posted); the default basis,
+ *   `own_year`, instead reads the income accounts of the member from the start of its own fiscal year (offset) to the
+ *   period end, which is a documented difference from the standard. The interim basis suits a consolidation at a year
+ *   end; for a shorter period of the parent the twelve months of the member and the year to date of the parent differ.
+ *   Results of the member before the twelve months that are not closed in its ledger are carried to CONS-RETAINED.
+ *
+ *   Out of scope, said here so as not to imply otherwise: deferred tax on the elimination of intragroup dividends and
+ *   on translation differences is not computed. Paragraph 90 only requires intragroup dividends to be eliminated and
+ *   the text read does not state an effect of upstream dividends on the minority interests, so none is implemented.
  * - Swiss Code of Obligations art. 963, 963a, 963b, in the text of the amendment of 23 December 2011 published in the
  *   Federal Gazette (https://fedlex.data.admin.ch/filestore/fedlex.data.admin.ch/eli/fga/2012/10/de/pdf-a/fedlex-data-admin-ch-eli-fga-2012-10-de-pdf-a.pdf);
  *   the consolidated text on fedlex.admin.ch could not be read (the site is a script application) and the thresholds or
@@ -249,6 +260,7 @@ final readonly class ConsolidationCalculator
                 'fiscal_year_offset_months' => (int) $member->fiscal_year_offset_months,
                 'year_start' => $memberYearStart->toDateString(),
                 'tax_rate' => $member->tax_rate === null ? null : (string) $member->tax_rate,
+                'consolidation_basis' => (string) $member->consolidation_basis,
             ];
 
             if ($isProportional && ConsolidationMath::cmp((string) $member->ownership_percentage, '20') < 0) {
@@ -357,6 +369,10 @@ final readonly class ConsolidationCalculator
      */
     private function alignedYearStart(ConsolidationMember $member, CarbonImmutable $yearStart, CarbonImmutable $periodEnd, string $name, ConsolidationDraft $draft): CarbonImmutable
     {
+        if ($member->consolidation_basis === 'interim_twelve_months') {
+            return $periodEnd->subMonthsNoOverflow(12)->addDay();
+        }
+
         $offset = (int) $member->fiscal_year_offset_months;
 
         if ($offset === 0) {
@@ -476,6 +492,11 @@ final readonly class ConsolidationCalculator
                 ])->all(),
                 'impairments' => $acquisition->impairments->map(static fn ($impairment): array => ['fiscal_year' => (int) $impairment->fiscal_year, 'amount' => (string) $impairment->amount])->all(),
             ];
+
+            if ($acquisition->expected_future_charges !== null) {
+                $draft->acquisitions[(string) $acquisition->member_tenant_id]['expected_future_charges'] = (string) $acquisition->expected_future_charges;
+                $draft->acquisitions[(string) $acquisition->member_tenant_id]['provision_release_years'] = (int) $acquisition->provision_release_years;
+            }
         }
     }
 
@@ -721,6 +742,7 @@ final readonly class ConsolidationCalculator
 
             $this->goodwillCharges($group, $draft, $investee, $acquisition, $yearStart, $periodEnd);
             $this->fairValueRelease($group, $draft, $investee, $acquisition, $yearStart, $periodEnd);
+            $this->provisionRelease($group, $draft, $investee, $acquisition, $yearStart, $periodEnd);
 
             return;
         }
@@ -757,8 +779,8 @@ final readonly class ConsolidationCalculator
         $rate = $this->translator->rateOn($currency, $groupCurrency, CarbonImmutable::parse($acquisition['acquisition_date']));
         $acquisition['rate'] = $rate;
 
-        foreach (['cost', 'net_assets_at_acquisition'] as $key) {
-            if ($acquisition[$key] !== null) {
+        foreach (['cost', 'net_assets_at_acquisition', 'expected_future_charges'] as $key) {
+            if (($acquisition[$key] ?? null) !== null) {
                 $acquisition[$key] = ConsolidationMath::mul($acquisition[$key], $rate);
             }
         }
@@ -818,8 +840,12 @@ final readonly class ConsolidationCalculator
             $goodwillLine = $this->groupLine($group->syntheticCode('goodwill'), 'Goodwill', 'asset', $goodwill, $investee);
             $extra[] = $goodwillLine;
             $retranslatable[] = $goodwillLine;
+
+            if (($acquisition['expected_future_charges'] ?? null) !== null) {
+                $draft->warn('provision_ignored', "The expected future charges entered for {$draft->memberName($investee)} are ignored: there is a positive goodwill, not a negative difference (OIC 17 para. 73).", ['member_tenant_id' => $investee]);
+            }
         } else {
-            $extra[] = $this->groupLine($group->syntheticCode('negative_goodwill'), 'Consolidation reserve (negative goodwill)', 'equity', $goodwill, $investee);
+            $this->negativeGoodwillLines($group, $draft, $investee, $acquisition, $goodwill, $yearStart, $periodEnd, $extra);
         }
 
         $net = ConsolidationMath::zero();
@@ -860,6 +886,114 @@ final readonly class ConsolidationCalculator
         }
 
         return $retranslation;
+    }
+
+    /**
+     * The lines for a negative difference at the first consolidation. By default (OIC 17 para. 71-72) it is a
+     * consolidation reserve in equity, except for the part that the user declares as expected unfavourable results,
+     * which goes to a consolidation provision for future risks and charges among the liabilities (para. 73), up to the
+     * negative difference; what remains after the provision is the reserve (para. 74). With the group option
+     * `immediate_income` (the treatment of the IFRS 3 summary of ifrs.org, read on 2026-11-11: a bargain purchase goes
+     * to profit or loss at once) the whole amount is income of the year of the acquisition, or retained earnings in
+     * later years, and the provision does not apply; the reassessment that IFRS 3 asks before recognising the gain is
+     * not performed.
+     *
+     * @param  array<string, mixed>  $acquisition
+     * @param  list<array<string, mixed>>  $extra
+     */
+    private function negativeGoodwillLines(ConsolidationGroup $group, ConsolidationDraft $draft, string $investee, array $acquisition, string $goodwill, CarbonImmutable $yearStart, CarbonImmutable $periodEnd, array &$extra): void
+    {
+        $charges = $acquisition['expected_future_charges'] ?? null;
+
+        if ($group->negative_goodwill_treatment === 'immediate_income') {
+            if ($charges !== null) {
+                $draft->warn('provision_ignored', "The expected future charges entered for {$draft->memberName($investee)} are ignored: the group takes a bargain purchase to income at once.", ['member_tenant_id' => $investee]);
+            }
+
+            $date = CarbonImmutable::parse($acquisition['acquisition_date']);
+            $extra[] = $date >= $yearStart && $date <= $periodEnd
+                ? $this->groupLine($group->syntheticCode('bargain_purchase_gain'), 'Gain on a bargain purchase', 'revenue', $goodwill, $investee)
+                : $this->groupLine($group->syntheticCode('bargain_purchase_prior'), 'Gain on a bargain purchase of earlier years', 'equity', $goodwill, $investee);
+
+            return;
+        }
+
+        $negative = ConsolidationMath::abs($goodwill);
+        $provision = $charges !== null && ConsolidationMath::isPositive($charges) ? ConsolidationMath::min($charges, $negative) : ConsolidationMath::zero();
+
+        if (ConsolidationMath::isPositive($provision)) {
+            $draft->provisions[$investee] = $provision;
+            $extra[] = $this->groupLine($group->syntheticCode('consolidation_provision'), 'Consolidation provision for future risks and charges', 'liability', ConsolidationMath::neg($provision), $investee);
+        }
+
+        $reserve = ConsolidationMath::sub($negative, $provision);
+
+        if (ConsolidationMath::isPositive($reserve)) {
+            $extra[] = $this->groupLine($group->syntheticCode('negative_goodwill'), 'Consolidation reserve (negative goodwill)', 'equity', ConsolidationMath::neg($reserve), $investee);
+        }
+    }
+
+    /**
+     * Use of the consolidation provision (OIC 17 para. 73): straight-line by whole months over the years entered with
+     * the expected charges, from the acquisition date and whether or not the losses occur; the use of the year is shown
+     * on its own income account, the use of earlier years in retained earnings.
+     *
+     * @param  array<string, mixed>  $acquisition
+     */
+    private function provisionRelease(ConsolidationGroup $group, ConsolidationDraft $draft, string $investee, array $acquisition, CarbonImmutable $yearStart, CarbonImmutable $periodEnd): void
+    {
+        $provision = $draft->provisions[$investee] ?? null;
+        $years = (int) ($acquisition['provision_release_years'] ?? 0);
+
+        if ($provision === null || $years < 1) {
+            return;
+        }
+
+        $date = CarbonImmutable::parse($acquisition['acquisition_date']);
+        $months = $years * 12;
+        $priorMonths = $date < $yearStart ? min($months, $this->wholeMonths($date, $yearStart)) : 0;
+        $currentStart = $date > $yearStart ? $date : $yearStart;
+        $currentMonths = max(0, min($months - $priorMonths, $this->wholeMonths($currentStart, $periodEnd->addDay())));
+
+        if ($priorMonths + $currentMonths === 0) {
+            return;
+        }
+
+        $prior = ConsolidationMath::mul($provision, bcdiv((string) $priorMonths, (string) $months, 10));
+        $current = ConsolidationMath::mul($provision, bcdiv((string) $currentMonths, (string) $months, 10));
+        $total = ConsolidationMath::add($prior, $current);
+
+        $this->adjust($draft, ConsolidationAdjustmentType::ProvisionRelease, null, $investee, "Use of the consolidation provision of {$draft->memberName($investee)} to {$periodEnd->toDateString()}", array_values(array_filter([
+            $this->groupLine($group->syntheticCode('consolidation_provision'), 'Consolidation provision for future risks and charges', 'liability', $total, $investee),
+            $this->groupLine($group->syntheticCode('provision_release_income'), 'Use of the consolidation provision', 'revenue', ConsolidationMath::neg($current), $investee),
+            $this->groupLine($group->syntheticCode('provision_release_prior'), 'Use of the consolidation provision in earlier years', 'equity', ConsolidationMath::neg($prior), $investee),
+        ], static fn (array $line): bool => ! ConsolidationMath::isZero($line['debit']) || ! ConsolidationMath::isZero($line['credit']))));
+    }
+
+    /**
+     * The share of every member that enters the consolidated accounts, as a percentage: the effective ownership for a
+     * proportional member, 100 for any other (the same rule as a run), for the reports that must scale like it.
+     *
+     * @return array<string, string>
+     *
+     * @throws ConsolidationException
+     */
+    public function consolidationShares(ConsolidationGroup $group): array
+    {
+        $members = ConsolidationMember::withoutGlobalScopes()->where('group_id', $group->id)->where('tenant_id', $group->tenant_id)->get()->values();
+
+        if ($members->isEmpty()) {
+            return [];
+        }
+
+        $effective = $this->effectiveOwnership($members);
+        $shares = [];
+
+        foreach ($members as $member) {
+            $shares[(string) $member->member_tenant_id] = $member->consolidation_method === ConsolidationMethod::Proportional ? $effective[(string) $member->member_tenant_id] : '100.0000';
+        }
+
+        return $shares;
     }
 
     /**
@@ -1255,14 +1389,15 @@ final readonly class ConsolidationCalculator
         $members = [];
 
         foreach ($draft->members as $tenantId => $member) {
-            if ($member['holder_tenant_id'] !== null || $member['fiscal_year_offset_months'] !== 0 || $member['consolidation_method'] === 'proportional' || $member['tax_rate'] !== null) {
-                $members[$tenantId] = [$member['holder_tenant_id'], $member['effective_ownership'], $member['fiscal_year_offset_months'], $member['year_start'], $member['consolidation_share'], ...($member['tax_rate'] !== null ? [$member['tax_rate']] : [])];
+            if ($member['holder_tenant_id'] !== null || $member['fiscal_year_offset_months'] !== 0 || $member['consolidation_method'] === 'proportional' || $member['tax_rate'] !== null || $member['consolidation_basis'] !== 'own_year') {
+                $members[$tenantId] = [$member['holder_tenant_id'], $member['effective_ownership'], $member['fiscal_year_offset_months'], $member['year_start'], $member['consolidation_share'], ...($member['tax_rate'] !== null ? [$member['tax_rate']] : []), ...($member['consolidation_basis'] !== 'own_year' ? [$member['consolidation_basis']] : [])];
             }
         }
 
         $settings = [
             $group->elimination_difference_policy, $group->goodwill_method, $group->goodwill_amortisation_years, (bool) $group->require_account_mapping, $group->synthetic_accounts ?? [],
             (bool) $group->deferred_tax_on_unrealised_profit, $group->unrealised_profit_tax_rate === null ? null : (string) $group->unrealised_profit_tax_rate, $group->fair_value_first_year_rule, $group->goodwill_translation,
+            ...($group->negative_goodwill_treatment !== 'consolidation_reserve' ? [$group->negative_goodwill_treatment] : []),
         ];
 
         if ($members !== []) {
