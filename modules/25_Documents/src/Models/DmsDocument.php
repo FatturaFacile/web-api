@@ -9,6 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
+use Modules\DocumentTrust\Exceptions\PreservationImmutableException;
+use Modules\DocumentTrust\Services\PreservationLock;
 
 /**
  * Eloquent model of the dms document (tenant scoped where it has a tenant_id).
@@ -17,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property ?string $checked_out_by
  * @property ?Carbon $checked_out_at
  * @property ?string $checkout_note
+ * @property array<string, mixed>|null $metadata
  */
 final class DmsDocument extends BaseEnterpriseModel
 {
@@ -28,6 +31,25 @@ final class DmsDocument extends BaseEnterpriseModel
      * @var list<string>
      */
     protected $hidden = ['search_vector', 'search_text'];
+
+    /**
+     * A document that belongs to a closed preservation package is immutable: it cannot be changed, versioned, deleted or
+     * purged by retention (module 32, PreservationLock).
+     */
+    protected static function booted(): void
+    {
+        self::updating(static function (self $document): void {
+            if (PreservationLock::documentIsPreserved((string) $document->id)) {
+                throw new PreservationImmutableException('This document is part of a closed preservation package and cannot change.');
+            }
+        });
+
+        self::deleting(static function (self $document): void {
+            if (PreservationLock::documentIsPreserved((string) $document->id)) {
+                throw new PreservationImmutableException('This document is part of a closed preservation package and cannot be deleted.');
+            }
+        });
+    }
 
     protected function casts(): array
     {

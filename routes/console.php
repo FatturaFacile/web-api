@@ -21,6 +21,7 @@ use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
 use Modules\CRM\Jobs\SendCrmActivityRemindersJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
+use Modules\DocumentTrust\Jobs\VerifyPreservationPackagesJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
@@ -114,6 +115,7 @@ $forEachTenant('associations:certificate-alerts', static fn (Tenant $tenant): ob
 $forEachTenant('associations:volunteer-alerts', static fn (Tenant $tenant): object => new SendVolunteerAlertsJob($tenant->id))->dailyAt('07:45');
 $forEachTenant('customs:assessment-decisions', static fn (Tenant $tenant): object => new RetrieveAssessmentDecisionsJob($tenant->id))->dailyAt('04:30');
 $forEachTenant('dms:retention', static fn (Tenant $tenant): object => new ApplyDocumentRetentionJob($tenant->id))->dailyAt('03:40');
+$forEachTenant('document-trust:verify-preservation', static fn (Tenant $tenant): object => new VerifyPreservationPackagesJob($tenant->id))->weeklyOn(0, '02:30');
 // Before procurement:expiring-contracts at 05:10, so a supplier contract that renews by itself is not marked expired.
 $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
