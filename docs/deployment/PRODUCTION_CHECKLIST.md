@@ -80,6 +80,24 @@ Scheduled tasks (`php artisan schedule:list`):
 | `invoices:send-reminders` | daily 08:00                                                        |
 | `ecommerce:sync-orders`   | every 15 minutes                                                   |
 
+### Statutory retention of automatic cleanups
+
+The cleanups that delete or archive records skip the records of a statutory class while their period runs. The
+periods live in `App\Services\Privacy\StatutoryRetentionCatalogue`. They are the ones the code already applies, are
+not verified against the official texts and must be confirmed by the accountant or counsel.
+
+| Class                  | Records                                                  | Kept for           | Legal basis already in code                     |
+|------------------------|----------------------------------------------------------|--------------------|-------------------------------------------------|
+| `fiscal_record`        | invoices, ledger books, payroll vouchers, contracts      | 10 years           | Swiss CO art. 958f, Italian c.c. art. 2220      |
+| `statutory_employment` | working time records                                     | 5 years minimum    | ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73      |
+| `evidence`             | consent proof, audit trails                              | held, no period    | GDPR art. 7(1), accountability                  |
+
+- `dms:retention` skips documents whose type is `issued_invoice`, `received_invoice`, `ledger_book`, `payslip` or
+  `contract` until 10 years after their creation, and logs `document_retention_held_statutory`.
+- `hr:purge-employee-documents` skips `payslip` documents until 10 years after their creation.
+- `time:purge-expired` never goes below the 5 year minimum, whatever the company setting.
+- Backups, the outbox archive and the other employee document types are not covered yet (open questions).
+
 ## 5. Storage and backups
 
 - [ ] `storage/` and `bootstrap/cache/` writable by the web and worker user ✔
