@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Documents\Services;
 
+use App\Services\Privacy\StatutoryRetentionCatalogue;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -13,7 +14,8 @@ use Modules\Documents\Models\DmsDocumentVersion;
 use Modules\DocumentTrust\Services\PreservationLock;
 
 /**
- * Runs the retention policies. A legal hold always wins. Files that belong to an attachment are referenced, not owned,
+ * Runs the retention policies. A legal hold always wins, and so does the statutory period of a document whose type the
+ * catalogue classifies (invoices, ledger books, payslips, contracts): it is skipped and the skip is logged. Files that belong to an attachment are referenced, not owned,
  * so they are left in place.
  */
 final readonly class DocumentRetention
@@ -53,6 +55,12 @@ final readonly class DocumentRetention
             return;
         }
 
+        if ($this->isHeldByStatute($document)) {
+            $this->auditLedger->record('document_retention_held_statutory', $document, null, ['retention_until' => $document->retention_until?->toDateString(), 'document_type' => $document->document_type], 'MODULE_25_DOCUMENTS');
+
+            return;
+        }
+
         if (RetentionAction::from((string) $policy->action) === RetentionAction::Archive) {
             $document->update(['status' => 'archived']);
             $this->auditLedger->record('document_retention_archived', $document, null, ['retention_until' => $document->retention_until?->toDateString()], 'MODULE_25_DOCUMENTS');
@@ -61,6 +69,16 @@ final readonly class DocumentRetention
         }
 
         $this->purge($document);
+    }
+
+    /**
+     * True while the statutory period of the document, counted from its creation, has not elapsed.
+     */
+    private function isHeldByStatute(DmsDocument $document): bool
+    {
+        $retention = StatutoryRetentionCatalogue::retentionForDocumentType($document->document_type);
+
+        return $retention !== null && StatutoryRetentionCatalogue::isUnderRetention($retention, $document->created_at);
     }
 
     private function purge(DmsDocument $document): void
