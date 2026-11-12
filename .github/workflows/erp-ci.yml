@@ -172,7 +172,7 @@ jobs:
           php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath, pcov
           coverage: pcov
-          ini-values: memory_limit=2G
+          ini-values: memory_limit=2G, pcov.directory=., pcov.exclude="~vendor~"
           tools: composer:v2
 
       - name: Get Composer Cache Directory
