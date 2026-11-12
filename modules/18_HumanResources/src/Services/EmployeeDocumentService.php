@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Services;
 
 use App\Models\User;
+use App\Services\Privacy\PersonalDataRetention;
+use App\Services\Privacy\StatutoryRetentionCatalogue;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Modules\DocumentTrust\Enums\PreservationDocumentClass;
 use Modules\HumanResources\Exceptions\HumanResourcesException;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\EmployeeDocument;
@@ -95,6 +98,10 @@ final class EmployeeDocumentService
             ->orderBy('id')
             ->lazyById(200)
             ->each(function (EmployeeDocument $document) use (&$erased): void {
+                if (self::isHeldByStatute($document)) {
+                    return;
+                }
+
                 DB::transaction(static function () use ($document): void {
                     Storage::disk(self::disk())->delete((string) $document->file_path);
                     $document->forceDelete();
@@ -103,6 +110,16 @@ final class EmployeeDocumentService
             });
 
         return $erased;
+    }
+
+    /**
+     * A payslip is a payroll voucher: it stays while its statutory period, counted from its creation, runs, whatever
+     * retention date was set on it. The other types follow the retention date.
+     */
+    private static function isHeldByStatute(EmployeeDocument $document): bool
+    {
+        return $document->document_type === PreservationDocumentClass::Payslip->value
+            && StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::FiscalRecord, $document->created_at);
     }
 
     private static function disk(): string
