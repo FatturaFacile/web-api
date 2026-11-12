@@ -11,6 +11,15 @@ use Tests\Support\StaticHostResolver;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function tearDown(): void
+    {
+        parent::tearDown();
+
+        if (gc_enabled()) {
+            gc_collect_cycles();
+        }
+    }
+
     protected function setUp(): void
     {
         parent::setUp();
