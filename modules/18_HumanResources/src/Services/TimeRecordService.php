@@ -45,7 +45,7 @@ final class TimeRecordService
 
             if (! $this->isAllowed($state, $eventType)) {
                 throw ValidationException::withMessages([
-                    'event_type' => "Timbratura non valida nello stato attuale ({$state}).",
+                    'event_type' => __('hr_errors.time_record.invalid_in_state', ['state' => $state]),
                 ]);
             }
 
@@ -76,7 +76,7 @@ final class TimeRecordService
     {
         if ($event->trashed()) {
             throw ValidationException::withMessages([
-                'id' => 'Una timbratura eliminata non può essere modificata: inserirne una nuova.',
+                'id' => __('hr_errors.time_record.deleted_not_editable'),
             ]);
         }
 
@@ -129,7 +129,7 @@ final class TimeRecordService
             }
 
             if ($reason === null) {
-                throw ValidationException::withMessages(['reason' => 'Indicare il motivo della correzione (resta nello storico).']);
+                throw ValidationException::withMessages(['reason' => __('hr_errors.time_record.correction_reason_required')]);
             }
 
             $before = $record->auditValues();

@@ -334,7 +334,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
             $line = BankStatementLine::where('id', $bankStatementLineId)->lockForUpdate()->firstOrFail();
 
             if ($line->reconciled) {
-                throw new InvalidArgumentException('Bank statement line is already reconciled.');
+                throw new InvalidArgumentException(__('treasury_errors.reconciliation.line_already_reconciled'));
             }
 
             $amount = (float) ($matchData['allocated_amount'] ?? abs((float) $line->amount));

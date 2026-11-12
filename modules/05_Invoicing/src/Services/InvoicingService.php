@@ -449,7 +449,7 @@ final class InvoicingService implements InvoicingServiceInterface
             $locked = SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== InvoiceStatus::Draft->value || ! InvoiceStatus::allows($locked->status, InvoiceStatus::Approved)) {
-                throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be approved.");
+                throw new LedgerPostingException(__('invoicing_errors.invoice.cannot_be_approved', ['status' => $locked->status]));
             }
 
             $locked->status = InvoiceStatus::Approved->value;
@@ -485,11 +485,11 @@ final class InvoicingService implements InvoicingServiceInterface
             }
 
             if ($locked->invoice_type === 'proforma') {
-                throw new LedgerPostingException('A proforma is not a fiscal document and cannot be posted.');
+                throw new LedgerPostingException(__('invoicing_errors.invoice.proforma_not_postable'));
             }
 
             if (! InvoiceStatus::allows($locked->status, InvoiceStatus::Posted)) {
-                throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be posted.");
+                throw new LedgerPostingException(__('invoicing_errors.invoice.cannot_be_posted', ['status' => $locked->status]));
             }
 
             return $locked->isCreditNote() ? $this->postCreditNote($locked, $userId) : $this->postLockedInvoice($locked, $userId);
@@ -875,7 +875,7 @@ final class InvoicingService implements InvoicingServiceInterface
     {
         foreach ($items as $item) {
             if (! isset($item['tax_rate'])) {
-                throw new LedgerPostingException('Every invoice line must state its VAT rate.');
+                throw new LedgerPostingException(__('invoicing_errors.invoice.line_vat_rate_required'));
             }
         }
     }

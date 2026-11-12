@@ -35,7 +35,7 @@ final readonly class ProcedureService
         $this->assertDocument($tenantId, $data['document_id'] ?? null);
 
         if (QmsProcedure::query()->where('tenant_id', $tenantId)->where('code', $data['code'])->exists()) {
-            throw ValidationException::withMessages(['code' => ['A procedure with this code exists: revise it to create a new version.']]);
+            throw ValidationException::withMessages(['code' => [__('quality_errors.procedure.code_exists')]]);
         }
 
         $procedure = QmsProcedure::create([
@@ -62,7 +62,7 @@ final readonly class ProcedureService
     public function update(QmsProcedure $procedure, array $data): QmsProcedure
     {
         if (! $procedure->isEditable()) {
-            throw ValidationException::withMessages(['status' => ["The procedure is {$procedure->status}: only a draft or rejected procedure can be changed."]]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.not_editable', ['status' => $procedure->status])]]);
         }
 
         if (array_key_exists('document_id', $data)) {
@@ -79,11 +79,11 @@ final readonly class ProcedureService
         return DB::transaction(function () use ($procedure, $actorId): QmsProcedure {
             $locked = QmsProcedure::query()->whereKey($procedure->id)->lockForUpdate()->firstOrFail();
             if (! $locked->isEditable()) {
-                throw ValidationException::withMessages(['status' => ["The procedure is {$locked->status}: only a draft or rejected procedure is submitted."]]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.submit_status', ['status' => $locked->status])]]);
             }
 
             if ($locked->document_id === null) {
-                throw ValidationException::withMessages(['document_id' => ['Link the document of the procedure before submitting it for approval.']]);
+                throw ValidationException::withMessages(['document_id' => [__('quality_errors.procedure.document_required')]]);
             }
 
             $locked->update(['status' => 'pending_approval', 'submitted_at' => now(), 'rejected_at' => null, 'rejected_by' => null, 'rejection_reason' => null]);
@@ -108,7 +108,7 @@ final readonly class ProcedureService
                         initiatorUserId: $this->uuidOrNull($actorId),
                     ));
                 } catch (InvalidArgumentException $exception) {
-                    throw ValidationException::withMessages(['status' => ['The approval workflow cannot be started: '.$exception->getMessage()]]);
+                    throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.workflow_start_failed', ['reason' => $exception->getMessage()])]]);
                 }
                 $locked->update(['workflow_instance_id' => (string) $instance->id]);
             }
@@ -129,7 +129,7 @@ final readonly class ProcedureService
             $this->assertPending($locked);
 
             if ($this->isDecidedByWorkflow($locked)) {
-                throw ValidationException::withMessages(['status' => ['This procedure is decided by its approval workflow: use the workflow inbox.']]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.decided_by_workflow')]]);
             }
 
             return $this->applyApproval($locked, $approverId);
@@ -143,7 +143,7 @@ final readonly class ProcedureService
             $this->assertPending($locked);
 
             if ($this->isDecidedByWorkflow($locked)) {
-                throw ValidationException::withMessages(['status' => ['This procedure is decided by its approval workflow: use the workflow inbox.']]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.decided_by_workflow')]]);
             }
 
             return $this->applyRejection($locked, $reason, $rejecterId);
@@ -194,7 +194,7 @@ final readonly class ProcedureService
     public function makeObsolete(QmsProcedure $procedure): QmsProcedure
     {
         if ($procedure->status !== 'approved') {
-            throw ValidationException::withMessages(['status' => ['Only an approved procedure can be made obsolete.']]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.obsolete_only_approved')]]);
         }
 
         $procedure->update(['status' => 'obsolete']);
@@ -210,7 +210,7 @@ final readonly class ProcedureService
     public function revise(QmsProcedure $procedure, ?string $actorId): QmsProcedure
     {
         if ($procedure->status !== 'approved') {
-            throw ValidationException::withMessages(['status' => ['Only an approved procedure is revised.']]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.revise_only_approved')]]);
         }
 
         return DB::transaction(function () use ($procedure, $actorId): QmsProcedure {
@@ -236,7 +236,7 @@ final readonly class ProcedureService
     private function applyApproval(QmsProcedure $locked, ?string $approverId): QmsProcedure
     {
         if ($locked->author_id !== null && $approverId !== null && (string) $locked->author_id === $approverId) {
-            throw ValidationException::withMessages(['approved_by' => ['The author of a procedure cannot approve it.']]);
+            throw ValidationException::withMessages(['approved_by' => [__('quality_errors.procedure.author_cannot_approve')]]);
         }
 
         QmsProcedure::query()
@@ -272,7 +272,7 @@ final readonly class ProcedureService
     private function assertPending(QmsProcedure $procedure): void
     {
         if ($procedure->status !== 'pending_approval') {
-            throw ValidationException::withMessages(['status' => ["The procedure is {$procedure->status}, not pending approval."]]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.procedure.not_pending', ['status' => $procedure->status])]]);
         }
     }
 
@@ -294,7 +294,7 @@ final readonly class ProcedureService
         }
 
         if (! DB::table('dms_documents')->where('tenant_id', $tenantId)->where('id', $documentId)->whereNull('deleted_at')->exists()) {
-            throw ValidationException::withMessages(['document_id' => ['The document does not exist in this company.']]);
+            throw ValidationException::withMessages(['document_id' => [__('quality_errors.procedure.document_not_found')]]);
         }
     }
 

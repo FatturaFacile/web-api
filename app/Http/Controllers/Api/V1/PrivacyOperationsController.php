@@ -666,7 +666,7 @@ final class PrivacyOperationsController extends Controller
     {
         $tenantId = $this->tenantContext->getTenantId() ?? $request->user()?->tenant_id;
         if (! $tenantId) {
-            abort(403, 'Missing or unresolvable tenant context');
+            abort(403, __('tenant_errors.missing_or_unresolvable_context'));
         }
 
         return (string) $tenantId;

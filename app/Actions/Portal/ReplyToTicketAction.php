@@ -30,7 +30,7 @@ class ReplyToTicketAction
             $ticket = Ticket::lockForUpdate()->findOrFail($ticket->id);
 
             if ($ticket->client_id !== $token->contact_id || $ticket->tenant_id !== $token->tenant_id) {
-                throw ValidationException::withMessages(['ticket' => 'Unauthorized ticket access.']);
+                throw ValidationException::withMessages(['ticket' => __('portal_errors.ticket.unauthorized')]);
             }
 
             $customerName = $authorName

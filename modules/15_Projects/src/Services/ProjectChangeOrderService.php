@@ -44,11 +44,11 @@ final readonly class ProjectChangeOrderService implements ProjectChangeOrderServ
             $project = Project::query()->whereKey($dto->projectId)->lockForUpdate()->firstOrFail();
 
             if (! $project->isOpen()) {
-                throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: no change orders can be added.");
+                throw new ConflictHttpException(__('projects_errors.change_order.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
             }
 
             if (ProjectChangeOrder::query()->where('project_id', $project->id)->where('order_number', $dto->orderNumber)->exists()) {
-                throw ValidationException::withMessages(['order_number' => 'This change order number is already used on the project.']);
+                throw ValidationException::withMessages(['order_number' => __('projects_errors.change_order.number_already_used')]);
             }
 
             $this->assertLinesMatch($dto);
@@ -112,11 +112,11 @@ final readonly class ProjectChangeOrderService implements ProjectChangeOrderServ
             $locked = ProjectChangeOrder::query()->whereKey($changeOrder->id)->lockForUpdate()->firstOrFail();
 
             if (! in_array($locked->status, ['submitted', 'pending_approval', 'draft'], true)) {
-                throw new ConflictHttpException("Change order is {$locked->status}: it was already decided.");
+                throw new ConflictHttpException(__('projects_errors.change_order.already_decided', ['status' => $locked->status]));
             }
 
             if (! $project->isOpen()) {
-                throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: change orders can no longer be applied.");
+                throw new ConflictHttpException(__('projects_errors.change_order.project_closed_apply', ['number' => $project->project_number, 'status' => $project->status]));
             }
 
             $locked->update(['status' => 'customer_approved', 'approved_by_client_at' => now(), 'approved_by' => $approvedBy, 'applied_at' => now()]);
@@ -135,7 +135,7 @@ final readonly class ProjectChangeOrderService implements ProjectChangeOrderServ
             $locked = ProjectChangeOrder::query()->whereKey($changeOrder->id)->lockForUpdate()->firstOrFail();
 
             if (! in_array($locked->status, ['submitted', 'pending_approval', 'draft'], true)) {
-                throw new ConflictHttpException("Change order is {$locked->status}: it was already decided.");
+                throw new ConflictHttpException(__('projects_errors.change_order.already_decided', ['status' => $locked->status]));
             }
 
             $locked->update(['status' => 'rejected', 'rejected_at' => now(), 'rejection_reason' => $reason]);
@@ -219,13 +219,13 @@ final readonly class ProjectChangeOrderService implements ProjectChangeOrderServ
         $revenueDeltas = array_map(static fn (array $line): string => Money::of($line['revenue_delta'] ?? 0), $dto->lines);
 
         if (Money::compare(Money::add(...$costDeltas), $dto->costImpactAmount) !== 0) {
-            throw ValidationException::withMessages(['cost_impact_amount' => 'The cost impact must equal the sum of the cost deltas of the lines.']);
+            throw ValidationException::withMessages(['cost_impact_amount' => __('projects_errors.change_order.cost_impact_mismatch')]);
         }
 
         $revenueTotal = Money::add(...$revenueDeltas);
 
         if (! Money::isZero($revenueTotal) && Money::compare($revenueTotal, $dto->revenueImpactAmount) !== 0) {
-            throw ValidationException::withMessages(['revenue_impact_amount' => 'The revenue impact must equal the sum of the revenue deltas of the lines.']);
+            throw ValidationException::withMessages(['revenue_impact_amount' => __('projects_errors.change_order.revenue_impact_mismatch')]);
         }
     }
 }

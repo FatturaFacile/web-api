@@ -60,7 +60,7 @@ final readonly class WorkspaceSyncService
         $tenantId = (string) $this->tenantContext->getTenantId();
 
         if (! is_array($pending) || $pending['user_id'] !== (string) $user->id || $pending['tenant_id'] !== $tenantId || $pending['provider'] !== $provider) {
-            throw ValidationException::withMessages(['state' => 'This authorization is not valid.']);
+            throw ValidationException::withMessages(['state' => __('workspace_sync_errors.authorization.invalid')]);
         }
 
         $tokens = $this->providers->make($provider)->exchangeCode($code, (string) config('workspace_sync.redirect_uri'));

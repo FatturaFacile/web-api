@@ -64,7 +64,7 @@ final readonly class AuditService
     public function update(QmsAudit $audit, array $data): QmsAudit
     {
         if ($audit->status !== 'planned') {
-            throw ValidationException::withMessages(['status' => ["The audit is {$audit->status}: only a planned audit can be changed."]]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.audit.only_planned_editable', ['status' => $audit->status])]]);
         }
 
         $audit->update(array_intersect_key($data, array_flip(['title', 'scope', 'audit_type', 'planned_date', 'lead_auditor_id', 'auditee'])));
@@ -81,7 +81,7 @@ final readonly class AuditService
     {
         $pending = QmsAuditChecklistItem::query()->where('audit_id', $audit->id)->where('result', 'pending')->count();
         if ($pending > 0) {
-            throw ValidationException::withMessages(['status' => ["{$pending} checklist item(s) still have no result."]]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.audit.checklist_pending', ['count' => $pending])]]);
         }
 
         return $this->transition($audit, ['in_progress'], 'completed', 'QMS_AUDIT_COMPLETED', ['summary' => $summary]);
@@ -95,7 +95,7 @@ final readonly class AuditService
     public function recordResult(QmsAudit $audit, QmsAuditChecklistItem $item, string $result, ?string $notes): QmsAuditChecklistItem
     {
         if ($audit->status !== 'in_progress' || (string) $item->audit_id !== (string) $audit->id) {
-            throw ValidationException::withMessages(['status' => ['Results can be recorded while the audit is in progress.']]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.audit.results_in_progress_only')]]);
         }
 
         $item->update(['result' => $result, 'notes' => $notes ?? $item->notes]);
@@ -109,7 +109,7 @@ final readonly class AuditService
     public function addFinding(QmsAudit $audit, array $data, ?string $actorId): QmsAuditFinding
     {
         if ($audit->status !== 'in_progress') {
-            throw ValidationException::withMessages(['status' => ['Findings are raised while the audit is in progress.']]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.audit.findings_in_progress_only')]]);
         }
 
         return DB::transaction(function () use ($audit, $data, $actorId): QmsAuditFinding {
@@ -159,7 +159,7 @@ final readonly class AuditService
         return DB::transaction(function () use ($audit, $from, $to, $event, $changes): QmsAudit {
             $locked = QmsAudit::query()->whereKey($audit->id)->lockForUpdate()->firstOrFail();
             if (! in_array($locked->status, $from, true)) {
-                throw ValidationException::withMessages(['status' => ["The audit is {$locked->status}: expected ".implode(' or ', $from).'.']]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.audit.status_expected', ['status' => $locked->status, 'expected' => implode(' / ', $from)])]]);
             }
 
             $locked->update($changes + ['status' => $to]);

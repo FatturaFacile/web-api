@@ -150,6 +150,18 @@ test('a notice stops the notice alert', function (): void {
     expect(app(ContractDeadlineService::class)->run((string) $this->tenant->id, CarbonImmutable::parse('2026-10-05'))['alerts'])->toBe(0);
 });
 
+test('a notice records the day it was given and refuses a future day', function (): void {
+    $id = $this->postJson('/api/v1/contract-register', customerPayload(['auto_renew' => false]))->json('data.id');
+    $past = now()->subDays(3)->toDateString();
+
+    $this->postJson("/api/v1/contract-register/customer/{$id}/notice", ['notice_given_at' => now()->addDay()->toDateString()])
+        ->assertUnprocessable()->assertJsonValidationErrors('notice_given_at');
+
+    $this->postJson("/api/v1/contract-register/customer/{$id}/notice", ['notice_given_at' => $past])->assertOk();
+
+    expect((string) ServiceContract::query()->findOrFail($id)->notice_given_at)->toStartWith($past);
+});
+
 test('the daily job works per tenant', function (): void {
     $this->postJson('/api/v1/contract-register', customerPayload(['end_date' => now()->addDays(10)->toDateString(), 'notice_period_days' => null, 'auto_renew' => false]))->assertCreated();
 

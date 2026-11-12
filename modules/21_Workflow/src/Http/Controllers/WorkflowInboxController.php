@@ -191,7 +191,7 @@ final class WorkflowInboxController extends Controller
         $from = isset($validated['from']) ? CarbonImmutable::parse($validated['from']) : $to->subDays(30);
 
         if ($from->diffInDays($to) > 366) {
-            throw ValidationException::withMessages(['to' => 'The period cannot be longer than 366 days.']);
+            throw ValidationException::withMessages(['to' => __('workflow_errors.inbox.period_too_long')]);
         }
 
         return $this->successResponse($report->report($from, $to), 'SLA report retrieved');

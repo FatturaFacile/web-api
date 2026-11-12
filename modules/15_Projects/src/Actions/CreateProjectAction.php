@@ -33,7 +33,7 @@ final readonly class CreateProjectAction
     {
         return DB::transaction(function () use ($dto, $tenantId): Project {
             if (Project::query()->where('project_number', $dto->projectNumber)->exists()) {
-                throw ValidationException::withMessages(['project_number' => 'This project number is already used.']);
+                throw ValidationException::withMessages(['project_number' => __('projects_errors.project.number_already_used')]);
             }
 
             $project = Project::create([

@@ -7,15 +7,24 @@ return [
     'messages' => [
         'ledger_retrieved' => 'General ledger retrieved successfully',
         'vendor_aging_retrieved' => 'Vendor aging report retrieved successfully',
+        'customer_aging_retrieved' => 'Customer aging report retrieved successfully',
+        'journal_created' => 'Journal entry created successfully',
+        'journal_posted' => 'Journal entry posted successfully',
+        'journal_reversed' => 'Journal entry reversed successfully',
+        'period_closed' => 'Accounting period closed successfully',
+        'financial_statement_generated' => 'Financial statements generated successfully',
     ],
 
     'errors' => [
         'invalid_iban' => 'The key :iban is not a valid IBAN.',
+        'unbalanced_journal' => 'The journal entry is not balanced between debit and credit.',
+        'period_locked' => 'The accounting period is locked for postings.',
         'period_max_one_year' => 'The period cannot be longer than one year.',
     ],
 
     'aging' => [
         'buckets' => [
+            'current' => 'Current',
             'overdue' => 'Overdue',
             'days_0_30' => 'Due within 30 days',
             'days_31_60' => 'Due in 31 to 60 days',

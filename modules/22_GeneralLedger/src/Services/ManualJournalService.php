@@ -67,7 +67,7 @@ final readonly class ManualJournalService
             $entry = JournalEntry::whereKey($journalEntryId)->lockForUpdate()->firstOrFail();
 
             if ($entry->status !== 'draft') {
-                throw new LedgerConflictException("Only a draft can be submitted for approval; this journal is [{$entry->status}].");
+                throw new LedgerConflictException(__('general_ledger_errors.journal.submit_only_draft', ['status' => $entry->status]));
             }
 
             $before = $entry->toArray();
@@ -91,11 +91,11 @@ final readonly class ManualJournalService
             $entry = JournalEntry::whereKey($journalEntryId)->lockForUpdate()->firstOrFail();
 
             if ($entry->status !== 'pending_approval') {
-                throw new LedgerConflictException("Only a journal waiting for approval can be approved; this journal is [{$entry->status}].");
+                throw new LedgerConflictException(__('general_ledger_errors.journal.approve_only_pending', ['status' => $entry->status]));
             }
 
             if (in_array($actorId, array_filter([(string) $entry->created_by, (string) $entry->submitted_by]), true)) {
-                throw new AuthorizationException('Four-eyes principle: the journal must be approved by a person other than the one who wrote or submitted it.');
+                throw new AuthorizationException(__('general_ledger_errors.journal.four_eyes'));
             }
 
             $entry->update(['approved_at' => now(), 'approved_by' => $actorId]);
@@ -117,7 +117,7 @@ final readonly class ManualJournalService
             $entry = JournalEntry::whereKey($journalEntryId)->lockForUpdate()->firstOrFail();
 
             if ($entry->status !== 'pending_approval') {
-                throw new LedgerConflictException("Only a journal waiting for approval can be rejected; this journal is [{$entry->status}].");
+                throw new LedgerConflictException(__('general_ledger_errors.journal.reject_only_pending', ['status' => $entry->status]));
             }
 
             $before = $entry->toArray();
@@ -139,7 +139,7 @@ final readonly class ManualJournalService
         $total = (string) $entry->lines()->sum(DB::raw(FunctionalAmount::debit()));
 
         if ($entry->status === 'pending_approval' || ($entry->status === 'draft' && $this->settings->approvalRequiredFor((string) $entry->tenant_id, $total))) {
-            throw new LedgerConflictException('This journal needs the approval of a second person: submit it and have it approved.');
+            throw new LedgerConflictException(__('general_ledger_errors.journal.needs_second_approval'));
         }
 
         return $this->postingService->postDraft($journalEntryId, $actorId);
@@ -166,17 +166,17 @@ final readonly class ManualJournalService
             $account = $accounts->get((string) ($line['account_id'] ?? ''));
 
             if ($account === null) {
-                $errors["lines.{$index}.account_id"] = ['The account does not belong to the chart of accounts of this tenant.'];
+                $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.journal.account_not_in_chart')];
 
                 continue;
             }
 
             if ($account->is_active === false) {
-                $errors["lines.{$index}.account_id"] = ["Account {$account->account_code} is not active."];
+                $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.journal.account_inactive', ['code' => $account->account_code])];
             } elseif ($account->allows_manual_posting === false) {
-                $errors["lines.{$index}.account_id"] = ["Account {$account->account_code} accepts only automatic postings."];
+                $errors["lines.{$index}.account_id"] = [__('general_ledger_errors.journal.account_automatic_only', ['code' => $account->account_code])];
             } elseif ($account->is_cost_center_mandatory === true && empty($line['cost_center_id'])) {
-                $errors["lines.{$index}.cost_center_id"] = ["Account {$account->account_code} requires a cost centre."];
+                $errors["lines.{$index}.cost_center_id"] = [__('general_ledger_errors.journal.cost_center_required', ['code' => $account->account_code])];
             }
         }
 

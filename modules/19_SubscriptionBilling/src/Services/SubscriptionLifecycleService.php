@@ -62,7 +62,7 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
             $plan = SubscriptionPlan::query()->with(['pricingTiers', 'features'])->where('tenant_id', $dto->tenantId)->whereKey($dto->planId)->first();
 
             if ($plan === null || ! $plan->is_active) {
-                throw ValidationException::withMessages(['plan_id' => __('The plan is not an active plan of this company.')]);
+                throw ValidationException::withMessages(['plan_id' => __('subscriptions_errors.plan.not_active')]);
             }
 
             $start = CarbonImmutable::parse($dto->startDate)->startOfDay();
@@ -250,7 +250,7 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
             $planItem = $subscription->items->firstWhere('item_type', 'plan');
 
             if ($planItem === null) {
-                throw ValidationException::withMessages(['quantity' => __('The subscription has no plan item whose quantity can change.')]);
+                throw ValidationException::withMessages(['quantity' => __('subscriptions_errors.subscription.no_quantity_item')]);
             }
 
             $old = Money::round4((string) $planItem->getRawOriginal('quantity'));
@@ -271,7 +271,7 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
     {
         return $this->locked($dto->subscriptionId, function (Subscription $subscription) use ($dto): Subscription {
             if ($subscription->isCancelled()) {
-                throw ValidationException::withMessages(['status' => __('The subscription is already closed.')]);
+                throw ValidationException::withMessages(['status' => __('subscriptions_errors.subscription.already_closed')]);
             }
 
             $today = CarbonImmutable::today();
@@ -343,20 +343,20 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
             $newPlan = SubscriptionPlan::query()->with('pricingTiers')->where('tenant_id', $subscription->tenant_id)->whereKey($newPlanId)->first();
 
             if ($newPlan === null || ! $newPlan->is_active) {
-                throw ValidationException::withMessages(['new_plan_id' => __('The plan is not an active plan of this company.')]);
+                throw ValidationException::withMessages(['new_plan_id' => __('subscriptions_errors.plan.not_active')]);
             }
 
             $oldPlan = $subscription->plan;
 
             if ($oldPlan !== null && ($newPlan->currency !== $subscription->currency || $newPlan->billing_interval !== $oldPlan->billing_interval || (int) $newPlan->interval_count !== (int) $oldPlan->interval_count)) {
-                throw ValidationException::withMessages(['new_plan_id' => __('The new plan must have the currency and the billing interval of the subscription.')]);
+                throw ValidationException::withMessages(['new_plan_id' => __('subscriptions_errors.plan.currency_interval_mismatch')]);
             }
 
             $preview = $this->calculateProration($subscription, $newPlan, $this->effectiveDate($effectiveDate), $quantity);
             $direction = Money::compare($preview['new_period_amount'], $preview['current_period_amount']);
 
             if (($changeType === 'upgrade' && $direction < 0) || ($changeType === 'downgrade' && $direction > 0)) {
-                throw ValidationException::withMessages(['new_plan_id' => __($changeType === 'upgrade' ? 'The new plan costs less: use a downgrade.' : 'The new plan costs more: use an upgrade.')]);
+                throw ValidationException::withMessages(['new_plan_id' => __($changeType === 'upgrade' ? 'subscriptions_errors.plan.use_downgrade' : 'subscriptions_errors.plan.use_upgrade')]);
             }
 
             $oldPlanId = (string) $subscription->plan_id;
@@ -695,7 +695,7 @@ final readonly class SubscriptionLifecycleService implements SubscriptionLifecyc
     private function assertChangeable(Subscription $subscription): void
     {
         if ($subscription->is_locked) {
-            throw ValidationException::withMessages(['status' => __('The subscription is waiting for approval and cannot change.')]);
+            throw ValidationException::withMessages(['status' => __('subscriptions_errors.subscription.pending_approval')]);
         }
 
         $this->assertStatus($subscription, ['active', 'trialing', 'past_due', 'paused'], 'change');

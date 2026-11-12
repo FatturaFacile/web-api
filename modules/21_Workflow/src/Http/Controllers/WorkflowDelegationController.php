@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Workflow\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Http\Responses\ApiResponse;
 use Carbon\Carbon;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,8 @@ use OpenApi\Attributes as OA;
 
 final class WorkflowDelegationController extends Controller
 {
+    use ApiResponse;
+
     /**
      * Returns the list of delegations of the active tenant.
      */
@@ -27,7 +30,7 @@ final class WorkflowDelegationController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Workflow Delegations'],
         responses: [
-            new OA\Response(response: 200, description: 'List of delegations', content: new OA\JsonContent(type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowDelegationModel'))),
+            new OA\Response(response: 200, description: 'List of delegations', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
@@ -42,7 +45,7 @@ final class WorkflowDelegationController extends Controller
             ->orderBy('starts_at', 'desc')
             ->get();
 
-        return response()->json($delegations);
+        return $this->successResponse($delegations, 'Delegations retrieved');
     }
 
     /**
@@ -57,7 +60,7 @@ final class WorkflowDelegationController extends Controller
         tags: ['Workflow Delegations'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/WorkflowCreateDelegationRequest')),
         responses: [
-            new OA\Response(response: 201, description: 'Delegation created', content: new OA\JsonContent(ref: '#/components/schemas/WorkflowDelegationModel')),
+            new OA\Response(response: 201, description: 'Delegation created', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
@@ -76,7 +79,7 @@ final class WorkflowDelegationController extends Controller
 
         $delegation = $action->execute($dto);
 
-        return response()->json($delegation, 201);
+        return $this->successResponse($delegation, 'Delegation created', 201);
     }
 
     /**

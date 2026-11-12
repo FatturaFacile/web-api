@@ -15,7 +15,7 @@ final class CreateDelegationAction
     public function execute(CreateDelegationDTO $dto): WorkflowDelegation
     {
         if ($dto->delegatorUserId === $dto->delegateUserId) {
-            throw ValidationException::withMessages(['delegate_user_id' => 'Delegator and delegate cannot be the identical user.']);
+            throw ValidationException::withMessages(['delegate_user_id' => __('workflow_errors.delegation.same_user')]);
         }
 
         // Circular delegation defense: check if delegate has already delegated back to delegator
@@ -26,7 +26,7 @@ final class CreateDelegationAction
             ->exists();
 
         if ($circular) {
-            throw ValidationException::withMessages(['delegate_user_id' => 'Circular delegation rejected: the delegate user has already delegated to you.']);
+            throw ValidationException::withMessages(['delegate_user_id' => __('workflow_errors.delegation.circular')]);
         }
 
         // One out-of-office window at a time per delegator and scope: two overlapping delegations would leave it unclear
@@ -39,7 +39,7 @@ final class CreateDelegationAction
             ->exists();
 
         if ($overlapping) {
-            throw ValidationException::withMessages(['starts_at' => 'You already have an active delegation covering part of this period.']);
+            throw ValidationException::withMessages(['starts_at' => __('workflow_errors.delegation.overlap')]);
         }
 
         $tenantId = $dto->tenantId ?? app(TenantContext::class)->getTenantId();

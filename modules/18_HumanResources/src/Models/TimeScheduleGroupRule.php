@@ -18,7 +18,7 @@ final class TimeScheduleGroupRule extends BaseEnterpriseModel
     protected static function booted(): void
     {
         self::updating(static function (): void {
-            throw ValidationException::withMessages(['valid_from' => 'Una versione delle regole non si modifica: aggiungerne una nuova.']);
+            throw ValidationException::withMessages(['valid_from' => __('hr_errors.time_schedule_group_rule.version_immutable')]);
         });
     }
 

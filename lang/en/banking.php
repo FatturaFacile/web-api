@@ -12,6 +12,9 @@ return [
         'matched' => 'Statement line matched successfully',
         'unmatched' => 'Statement line unmatched successfully',
         'categorized' => 'Statement line categorized successfully',
+        'payment_batch_created' => 'Payment batch created successfully',
+        'payment_batch_executed' => 'Payment batch executed (ISO 20022 XML generated)',
+        'collection_recorded' => 'Collection recorded successfully',
     ],
 
     'errors' => [

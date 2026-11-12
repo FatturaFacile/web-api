@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     'messages' => [
         'ledger_retrieved' => 'Grand livre récupéré avec succès',
         'vendor_aging_retrieved' => 'Balance âgée fournisseurs récupérée avec succès',
@@ -47,5 +48,30 @@ return [
         'generic_expense' => 'Charges générales',
         'transfer_clearing' => 'Virements internes',
         'other' => 'Compte général',
+        'bank_account' => 'Banque :iban',
     ],
+
+    'categories' => [
+        'tax_payment' => 'Paiement d\'impôts et taxes',
+        'payroll' => 'Rémunérations',
+        'bank_expense' => 'Frais bancaires',
+        'internal_transfer' => 'Virement interne',
+        'generic_expense' => 'Charge',
+    ],
+
+    'descriptions' => [
+        'receivable' => 'Facture :number',
+        'revenue' => 'Produit de la facture :number',
+        'output_vat' => 'TVA collectée de la facture :number',
+        'cost' => 'Charges de la facture fournisseur :number',
+        'input_vat' => 'TVA déductible de la facture fournisseur :number',
+        'payable' => 'Facture fournisseur :number',
+        'receipt' => 'Encaissement de la facture :number',
+        'supplier_payment' => 'Paiement de la facture fournisseur :number',
+        'bank_fee' => 'Frais bancaires sur la facture :number',
+        'bank_fee_line' => 'Frais bancaires',
+        'write_off' => 'Écart de règlement sur la facture :number',
+        'rounding' => 'Écart d\'arrondi',
+    ],
+
 ];

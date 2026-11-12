@@ -153,7 +153,7 @@ final class EDocumentNetworkController extends Controller
         $payload = base64_decode((string) $request->validated('payload_base64'), true);
 
         if ($payload === false) {
-            throw ValidationException::withMessages(['payload_base64' => 'This is not valid base64.']);
+            throw ValidationException::withMessages(['payload_base64' => __('edocument_networks_errors.payload.invalid_base64')]);
         }
 
         $digest = hash('sha256', $payload);

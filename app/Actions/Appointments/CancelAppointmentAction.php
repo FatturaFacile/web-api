@@ -24,13 +24,13 @@ class CancelAppointmentAction
     {
         if ($appointment->isCancelled()) {
             throw ValidationException::withMessages([
-                'appointment' => 'This appointment is already cancelled.',
+                'appointment' => __('appointments_errors.already_cancelled'),
             ]);
         }
 
         if ($appointment->service_report_id !== null) {
             throw ValidationException::withMessages([
-                'appointment' => 'Cannot cancel an appointment that has already been converted to a service report.',
+                'appointment' => __('appointments_errors.cancel_already_converted'),
             ]);
         }
 

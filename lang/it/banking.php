@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     'messages' => [
         'imported' => 'Estratto conto bancario importato con successo',
         'listed' => 'Estratti conto recuperati con successo',
@@ -42,4 +43,18 @@ return [
     'problem_titles' => [
         'import' => 'Importazione estratto conto bancario',
     ],
+
+    'parse_errors' => [
+        'unsupported_format' => 'Il file non è un estratto conto bancario supportato (CBI, CAMT.053 o CAMT.054).',
+        'invalid_xml' => 'Il file non è un documento XML valido.',
+        'unsafe_xml' => 'I documenti XML con DOCTYPE o dichiarazioni di entità non sono accettati.',
+        'no_statement' => 'Il documento non contiene alcun estratto conto o notifica.',
+        'invalid_line_length' => 'La riga :line ha :length caratteri invece di :expected.',
+        'invalid_record' => 'La riga :line contiene un record :record non valido o inatteso.',
+        'missing_header' => 'L\'estratto conto non ha un\'intestazione valida (IBAN del conto).',
+        'missing_trailer' => 'L\'estratto conto è incompleto: manca il record di coda EF.',
+        'record_count_mismatch' => 'Il record di coda dichiara :expected record ma ne sono stati letti :actual.',
+        'empty_file' => 'Il file è vuoto.',
+    ],
+
 ];

@@ -174,27 +174,27 @@ final readonly class ProjectRevenueRecognitionService implements ProjectRevenueR
     private function assertRunnable(Project $project, RevenueRecognitionDTO $dto): void
     {
         if (! $project->isOpen()) {
-            throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: revenue is no longer recognised on it.");
+            throw new ConflictHttpException(__('projects_errors.revenue.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
         }
 
         if ($project->revenue_recognition_method === null) {
-            throw ValidationException::withMessages(['project' => 'The project has no revenue recognition method: its revenue is the invoiced revenue.']);
+            throw ValidationException::withMessages(['project' => __('projects_errors.revenue.no_method')]);
         }
 
         if ($dto->overrideCompletionPercentage !== null && $project->revenue_recognition_method !== 'percentage_of_completion') {
-            throw ValidationException::withMessages(['override_completion_percentage' => 'A completion percentage can be stated only under the percentage-of-completion method.']);
+            throw ValidationException::withMessages(['override_completion_percentage' => __('projects_errors.revenue.percentage_only_poc')]);
         }
 
         if ($project->revenue_recognition_method === 'percentage_of_completion' && $dto->overrideCompletionPercentage === null && Money::isZero($this->budgets->budgetAtCompletion($project))) {
-            throw ValidationException::withMessages(['project' => 'Cost-to-cost recognition needs an approved budget to estimate the total cost.']);
+            throw ValidationException::withMessages(['project' => __('projects_errors.revenue.budget_required')]);
         }
 
         $latest = ProjectRevenueRecognition::query()->where('project_id', $project->id)->max('accounting_period_date');
 
         if ($latest !== null && (string) $latest >= $dto->accountingPeriodDate) {
             $message = substr((string) $latest, 0, 10) === $dto->accountingPeriodDate
-                ? 'Revenue was already recognised for this date.'
-                : 'Revenue was already recognised for a later date: runs must follow date order.';
+                ? __('projects_errors.revenue.already_recognised_for_date')
+                : __('projects_errors.revenue.already_recognised_later');
 
             throw new ConflictHttpException($message);
         }

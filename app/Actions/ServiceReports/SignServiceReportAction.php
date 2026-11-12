@@ -36,7 +36,7 @@ class SignServiceReportAction
 
             if ($report->signed_at !== null) {
                 throw ValidationException::withMessages([
-                    'service_report' => 'This service report is already signed.',
+                    'service_report' => __('service_reports_errors.sign.already_signed'),
                 ]);
             }
 
@@ -44,7 +44,7 @@ class SignServiceReportAction
 
             if ($binary === null) {
                 throw ValidationException::withMessages([
-                    'signature_base64' => 'Invalid PNG signature image payload.',
+                    'signature_base64' => __('service_reports_errors.sign.invalid_signature'),
                 ]);
             }
 

@@ -31,13 +31,13 @@ class ConvertAppointmentToServiceReportAction
 
             if ($lockedAppointment->service_report_id !== null) {
                 throw ValidationException::withMessages([
-                    'appointment' => "This appointment has already been converted to service report #{$lockedAppointment->service_report_id}.",
+                    'appointment' => __('appointments_errors.already_converted', ['report_id' => $lockedAppointment->service_report_id]),
                 ]);
             }
 
             if ($lockedAppointment->isCancelled()) {
                 throw ValidationException::withMessages([
-                    'appointment' => 'Cannot convert a cancelled appointment to a service report.',
+                    'appointment' => __('appointments_errors.convert_cancelled'),
                 ]);
             }
 
@@ -51,7 +51,7 @@ class ConvertAppointmentToServiceReportAction
 
             if (empty($technicianId)) {
                 throw ValidationException::withMessages([
-                    'technician_id' => 'No technician found on this appointment to assign to the service report.',
+                    'technician_id' => __('appointments_errors.no_technician'),
                 ]);
             }
 

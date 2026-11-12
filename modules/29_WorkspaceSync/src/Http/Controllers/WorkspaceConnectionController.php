@@ -219,7 +219,7 @@ final class WorkspaceConnectionController extends Controller
         try {
             return $call();
         } catch (RequestException|ConnectionException) {
-            throw new HttpException(Response::HTTP_BAD_GATEWAY, 'The provider could not be reached or refused the request.');
+            throw new HttpException(Response::HTTP_BAD_GATEWAY, __('workspace_sync_errors.provider.unreachable'));
         }
     }
 

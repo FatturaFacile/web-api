@@ -53,17 +53,17 @@ final readonly class UsageBillingService implements UsageBillingServiceInterface
         $item = SubscriptionItem::query()->with(['metric', 'subscription'])->where('tenant_id', $dto->tenantId)->whereKey($dto->subscriptionItemId)->first();
 
         if ($item === null || ($item->metric_id === null && $item->item_type !== 'usage_meter')) {
-            throw ValidationException::withMessages(['subscription_item_id' => __('The item is not a metered item of a subscription of this company.')]);
+            throw ValidationException::withMessages(['subscription_item_id' => __('subscriptions_errors.usage.item_not_metered')]);
         }
 
         $subscription = $item->subscription;
 
         if ($subscription === null || in_array($subscription->status, Subscription::CLOSED_STATUSES, true)) {
-            throw ValidationException::withMessages(['subscription_item_id' => __('The subscription of the item is closed.')]);
+            throw ValidationException::withMessages(['subscription_item_id' => __('subscriptions_errors.usage.subscription_closed')]);
         }
 
         if ($item->metric !== null && $item->metric->metric_code !== $dto->metricCode) {
-            throw ValidationException::withMessages(['metric_code' => __('The metric does not match the metric of the item.')]);
+            throw ValidationException::withMessages(['metric_code' => __('subscriptions_errors.usage.metric_mismatch')]);
         }
 
         $timestamp = $dto->eventTimestamp !== null ? CarbonImmutable::parse($dto->eventTimestamp) : CarbonImmutable::now();

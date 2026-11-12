@@ -49,11 +49,11 @@ final readonly class ProjectBillingService
             $this->assertBillable($project);
 
             if (! $milestone->is_completed) {
-                throw new ConflictHttpException('The milestone is not completed yet: complete it before billing.');
+                throw new ConflictHttpException(__('projects_errors.billing.milestone_not_completed'));
             }
 
             if ($milestone->is_billed && $this->invoiceStillExists($milestone->invoice_id)) {
-                throw new ConflictHttpException('The milestone is already billed.');
+                throw new ConflictHttpException(__('projects_errors.billing.milestone_already_billed'));
             }
 
             $amount = Money::isPositive($milestone->billing_amount)
@@ -61,7 +61,7 @@ final readonly class ProjectBillingService
                 : Money::amount(Money::div(Money::mul($project->contract_value, $milestone->billing_percentage), 100));
 
             if (! Money::isPositive($amount)) {
-                throw ValidationException::withMessages(['milestone' => 'The milestone has no billing amount or percentage.']);
+                throw ValidationException::withMessages(['milestone' => __('projects_errors.billing.milestone_no_amount')]);
             }
 
             $invoice = $this->invoicing->createInvoice($this->header($project, $actorUserId, "Milestone {$milestone->name}", $milestone->id), [[
@@ -94,7 +94,7 @@ final readonly class ProjectBillingService
             $costs = $this->unbilledCosts($project)->whereDate('incurred_date', '<=', $upToDate)->lockForUpdate()->orderBy('incurred_date')->get();
 
             if ($timesheets->isEmpty() && $costs->isEmpty()) {
-                throw ValidationException::withMessages(['up_to_date' => 'There are no approved billable hours or costs to invoice up to this date.']);
+                throw ValidationException::withMessages(['up_to_date' => __('projects_errors.billing.nothing_to_invoice')]);
             }
 
             $names = User::query()->whereIn('id', $timesheets->pluck('user_id')->unique())->pluck('name', 'id');
@@ -237,7 +237,7 @@ final readonly class ProjectBillingService
     private function assertBillable(Project $project): void
     {
         if (! $project->isOpen()) {
-            throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: it can no longer be billed.");
+            throw new ConflictHttpException(__('projects_errors.billing.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
         }
     }
 

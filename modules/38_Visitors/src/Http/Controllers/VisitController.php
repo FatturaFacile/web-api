@@ -76,7 +76,7 @@ final class VisitController extends Controller
         $data = $request->validated();
 
         if (! $policy->isReception($request->user()) && (string) $data['host_user_id'] !== (string) $request->user()->id) {
-            throw ValidationException::withMessages(['host_user_id' => 'You can only announce your own visitors.']);
+            throw ValidationException::withMessages(['host_user_id' => __('visitors_errors.visit.announce_own_only')]);
         }
 
         return (new VisitResource($this->visits->expect($data)))->response()->setStatusCode(Response::HTTP_CREATED);

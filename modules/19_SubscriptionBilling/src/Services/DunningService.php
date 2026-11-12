@@ -51,7 +51,7 @@ final readonly class DunningService
             $invoice = $this->subscriptionInvoice($subscription, $invoiceId);
 
             if ($invoice === null || $invoice->status !== 'posted' || $invoice->payment_status === 'paid') {
-                throw ValidationException::withMessages(['invoice_id' => __('The invoice is not an unpaid issued invoice of this subscription.')]);
+                throw ValidationException::withMessages(['invoice_id' => __('subscriptions_errors.dunning.invoice_not_unpaid')]);
             }
 
             $policy = $this->policy((string) $subscription->tenant_id);

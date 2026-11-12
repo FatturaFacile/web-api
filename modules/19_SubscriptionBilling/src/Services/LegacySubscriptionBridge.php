@@ -105,7 +105,7 @@ final readonly class LegacySubscriptionBridge
 
             if (isset($data['start_date']) && CarbonImmutable::parse((string) $data['start_date'])->toDateString() !== $subscription->start_date?->toDateString()) {
                 if ($billed) {
-                    throw ValidationException::withMessages(['start_date' => __('The start date of a subscription already billed cannot change.')]);
+                    throw ValidationException::withMessages(['start_date' => __('subscriptions_errors.subscription.start_date_locked')]);
                 }
 
                 $start = CarbonImmutable::parse((string) $data['start_date']);

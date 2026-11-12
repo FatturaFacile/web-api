@@ -33,7 +33,8 @@ auth.json
 # Generated client SDKs (scripts/generate-clients.sh)
 /clients/
 .claude-build/
-.claude/
+.claude/settings.local.json
+.claude/*.local.md
 
 # Local dev TLS certs
 certs/*.crt

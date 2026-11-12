@@ -146,7 +146,7 @@ final class ProjectResourceController extends Controller
             ->exists();
 
         if ($overlap) {
-            throw ValidationException::withMessages(['valid_from' => 'Another rate card for the same scope overlaps this validity period.']);
+            throw ValidationException::withMessages(['valid_from' => __('projects_errors.rate_card.overlaps')]);
         }
 
         $card = ProjectRateCard::create([
@@ -193,7 +193,7 @@ final class ProjectResourceController extends Controller
         $user = $request->user();
 
         if (! $user instanceof User || ! $this->policy->isManager($user)) {
-            throw new AccessDeniedHttpException('Only the managers of the company can change company-wide rates and capacity.');
+            throw new AccessDeniedHttpException(__('projects_errors.rate_card.managers_only'));
         }
     }
 }

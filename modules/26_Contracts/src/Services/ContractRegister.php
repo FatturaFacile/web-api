@@ -177,11 +177,11 @@ final readonly class ContractRegister
     }
 
     /**
-     * Records that notice was given, which stops the automatic renewal.
+     * Records that notice was given, which stops the automatic renewal. The day defaults to today.
      */
-    public function giveNotice(Model $contract): Model
+    public function giveNotice(Model $contract, ?CarbonImmutable $givenAt = null): Model
     {
-        $contract->update(['notice_given_at' => now()]);
+        $contract->update(['notice_given_at' => $givenAt ?? now()]);
 
         return $contract;
     }

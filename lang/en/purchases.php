@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 return [
-
     'order_locked' => 'Only draft or sent purchase orders can be edited.',
     'order_not_confirmable' => 'Only draft purchase orders can be confirmed.',
     'order_not_receivable' => 'Goods can only be received against sent or partially received orders.',
@@ -33,6 +32,7 @@ return [
         'invoices_received' => 'Supplier invoices received',
         'marked_paid' => 'Supplier invoice marked as paid',
         'webhook_received' => 'Incoming invoice processed',
+        'three_way_match_passed' => 'Three-way match completed successfully',
+        'three_way_match_discrepant' => 'Discrepancy found in the three-way match',
     ],
-
 ];

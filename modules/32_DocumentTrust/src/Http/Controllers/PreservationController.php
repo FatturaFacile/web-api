@@ -364,7 +364,7 @@ final class PreservationController extends Controller
         $unknown = array_diff(array_keys($years), PreservationDocumentClass::values());
 
         if ($unknown !== []) {
-            throw ValidationException::withMessages(['retention_years' => 'Unknown document class: '.implode(', ', $unknown)]);
+            throw ValidationException::withMessages(['retention_years' => __('document_trust_errors.retention.unknown_document_class', ['classes' => implode(', ', $unknown)])]);
         }
 
         $settings = $this->retention->update(array_map('intval', $years), (bool) ($data['confirmed_by_accountant'] ?? false), $data['notes'] ?? null, $request->user());

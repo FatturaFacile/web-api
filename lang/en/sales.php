@@ -3,7 +3,6 @@
 declare(strict_types=1);
 
 return [
-
     'order_already_invoiced' => 'This order has already been invoiced.',
     'order_cancelled' => 'A cancelled order cannot be invoiced.',
     'deposit_line' => 'Deposit for order :number (:percentage%)',
@@ -38,7 +37,6 @@ return [
     'import_line_matched' => 'This line is already matched.',
 
     'signature_invalid' => 'The signature must be a PNG image no larger than :max KB.',
-
     'reminder_not_payable' => 'Only unpaid, payable invoices can be reminded.',
     'reminder_no_email' => 'The contact has no email address.',
     'bank_import_note' => 'Bank import: :detail',
@@ -50,8 +48,18 @@ return [
         'quote_updated' => 'Quote updated successfully',
         'quote_deleted' => 'Quote deleted successfully',
         'quote_to_order' => 'Quote converted to order',
-        'orders_list' => 'Orders retrieved successfully',
+        'quote_submitted' => 'Quote submitted for approval',
         'order_created' => 'Order created successfully',
+        'order_confirmed' => 'Order confirmed',
+        'order_hold_placed' => 'Credit hold placed on the order',
+        'order_hold_released' => 'Credit hold released successfully',
+        'delivery_note_created' => 'Delivery note created successfully',
+        'goods_dispatched' => 'Goods dispatched successfully',
+        'invoice_created' => 'Invoice created successfully',
+        'invoice_posted' => 'Invoice posted successfully',
+        'credit_note_created' => 'Credit note issued successfully',
+        'credit_applied' => 'Credit note applied successfully',
+        'orders_list' => 'Orders retrieved successfully',
         'order_retrieved' => 'Order retrieved successfully',
         'order_updated' => 'Order updated successfully',
         'order_deleted' => 'Order deleted successfully',
@@ -80,7 +88,6 @@ return [
         'quotes_expired' => 'Quotes past their validity date expired',
         'kpis' => 'Sales indicators computed',
         'order_on_credit_hold' => 'The order is on credit hold',
-        'order_confirmed' => 'Order confirmed',
         'order_cancelled' => 'Order cancelled',
         'order_availability' => 'Order availability computed',
         'order_reserved' => 'Order stock reserved',
@@ -100,7 +107,6 @@ return [
         'return_received' => 'Return received',
         'return_credited' => 'Return credited',
     ],
-
     'document_quota_exceeded' => 'The yearly document limit is reached: :used of :limit points used.',
     'corrispettivi_ade_unavailable' => 'Transmission to the Agenzia delle Entrate is not available: no agreement is in place.',
     'commercial_document_already_corrected' => 'This document has already been corrected.',
@@ -161,7 +167,7 @@ return [
     'credit_customer_on_hold' => 'The customer is on credit hold.',
     'credit_order_over_limit' => 'Order total (:total) brings the exposure (:exposure) over the credit limit (:limit).',
     'credit_hold_not_active' => 'This hold has already been released.',
-    'delivery_quantity_exceeds_open' => 'The quantity of \':line\' exceeds the open quantity of the order line.',
+    'delivery_quantity_exceeds_open' => "The quantity of ':line' exceeds the open quantity of the order line.",
     'delivery_note_not_dispatched' => 'The delivery note has not been dispatched.',
     'delivery_note_issued_not_deletable' => 'An issued delivery note cannot be deleted: goods that come back are a sales return.',
     'delivery_note_order_closed' => 'The order of this delivery note is shipped or closed.',
@@ -173,8 +179,8 @@ return [
     'return_documents_other_customer' => 'The delivery note and the invoice belong to different customers.',
     'return_line_not_of_source' => 'This line does not belong to the source document of the return.',
     'return_line_not_of_return' => 'This line does not belong to the return.',
-    'return_quantity_exceeds' => 'The quantity of \':line\' exceeds what can still be returned.',
-    'return_received_exceeds' => 'The received quantity of \':line\' exceeds the returned quantity.',
+    'return_quantity_exceeds' => "The quantity of ':line' exceeds what can still be returned.",
+    'return_received_exceeds' => "The received quantity of ':line' exceeds the returned quantity.",
     'return_stock_note' => 'Sales return :number',
     'return_nothing_received' => 'Nothing was received on this return.',
     'return_credit_note_notes' => 'Credit note for return :number on invoice :invoice',

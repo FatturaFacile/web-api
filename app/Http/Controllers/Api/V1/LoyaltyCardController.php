@@ -70,11 +70,14 @@ class LoyaltyCardController extends Controller
         requestBody: new OA\RequestBody(
             required: true,
             content: new OA\JsonContent(
-                required: ['customer_id'],
+                required: ['type'],
                 properties: [
-                    new OA\Property(property: 'customer_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'card_number', type: 'string'),
-                    new OA\Property(property: 'initial_balance', type: 'number'),
+                    new OA\Property(property: 'type', type: 'string', enum: ['loyalty', 'voucher', 'prepaid']),
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'card_number', type: 'string', nullable: true),
+                    new OA\Property(property: 'currency', type: 'string', nullable: true),
+                    new OA\Property(property: 'expires_at', type: 'string', format: 'date', nullable: true),
+                    new OA\Property(property: 'initial_balance', type: 'number', nullable: true),
                 ]
             )
         ),
@@ -137,8 +140,9 @@ class LoyaltyCardController extends Controller
             required: true,
             content: new OA\JsonContent(
                 properties: [
-                    new OA\Property(property: 'customer_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'status', type: 'string'),
+                    new OA\Property(property: 'type', type: 'string', enum: ['loyalty', 'voucher', 'prepaid']),
+                    new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'status', type: 'string', enum: ['active', 'blocked']),
                 ]
             )
         ),
@@ -202,7 +206,7 @@ class LoyaltyCardController extends Controller
     #[OA\Post(
         path: '/api/v1/loyalty-cards/{id}/transactions',
         summary: 'Record loyalty transaction',
-        description: 'Top-up or spend points/balance on a loyalty card',
+        description: 'Earn, redeem, top up or adjust the points/balance of a loyalty card',
         tags: ['Loyalty Cards'],
         security: [['sanctum' => []]],
         parameters: [
@@ -213,7 +217,7 @@ class LoyaltyCardController extends Controller
             content: new OA\JsonContent(
                 required: ['type', 'amount'],
                 properties: [
-                    new OA\Property(property: 'type', type: 'string', enum: ['topup', 'spend']),
+                    new OA\Property(property: 'type', type: 'string', enum: ['earn', 'redeem', 'topup', 'adjust']),
                     new OA\Property(property: 'amount', type: 'number'),
                     new OA\Property(property: 'description', type: 'string'),
                 ]

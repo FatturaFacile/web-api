@@ -42,13 +42,16 @@ use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Database\SafeDropPostgresConnection;
+use App\Validation\LocalizedAttributeValidator;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Connection;
 use Illuminate\Database\PostgresConnection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -94,6 +97,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Fields are named in the language of the request in every validation message (lang/<locale>/validation_attributes.php).
+        Validator::resolver(static fn (Translator $translator, array $data, array $rules, array $messages, array $attributes): LocalizedAttributeValidator => new LocalizedAttributeValidator($translator, $data, $rules, $messages, $attributes));
+
         // The quota is checked here so every path that creates an invoice stops at the same limit.
         // Both models write the `invoices` table: the module SalesInvoice is the one InvoicingService uses.
         $assertInvoiceQuota = static function (Invoice|SalesInvoice $invoice): void {

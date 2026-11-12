@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     'messages' => [
         'ledger_retrieved' => 'Libro mastro recuperato con successo',
         'vendor_aging_retrieved' => 'Scadenzario fornitori recuperato con successo',
@@ -47,5 +48,30 @@ return [
         'generic_expense' => 'Spese generali',
         'transfer_clearing' => 'Giroconti bancari',
         'other' => 'Conto generico',
+        'bank_account' => 'Banca :iban',
     ],
+
+    'categories' => [
+        'tax_payment' => 'Versamento tributario',
+        'payroll' => 'Retribuzioni',
+        'bank_expense' => 'Spese bancarie',
+        'internal_transfer' => 'Giroconto interno',
+        'generic_expense' => 'Spesa',
+    ],
+
+    'descriptions' => [
+        'receivable' => 'Fattura :number',
+        'revenue' => 'Ricavi della fattura :number',
+        'output_vat' => 'IVA a debito della fattura :number',
+        'cost' => 'Costi della fattura fornitore :number',
+        'input_vat' => 'IVA a credito della fattura fornitore :number',
+        'payable' => 'Fattura fornitore :number',
+        'receipt' => 'Incasso della fattura :number',
+        'supplier_payment' => 'Pagamento della fattura fornitore :number',
+        'bank_fee' => 'Commissioni bancarie sulla fattura :number',
+        'bank_fee_line' => 'Commissioni bancarie',
+        'write_off' => 'Abbuono sulla fattura :number',
+        'rounding' => 'Differenza di arrotondamento',
+    ],
+
 ];

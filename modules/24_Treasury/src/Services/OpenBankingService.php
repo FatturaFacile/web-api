@@ -77,7 +77,7 @@ final readonly class OpenBankingService
             $invoice = PassiveInvoice::query()->findOrFail($data['passive_invoice_id']);
 
             if ($invoice->isPaymentBlocked()) {
-                throw ValidationException::withMessages(['passive_invoice_id' => "Invoice {$invoice->invoice_number} is not approved for payment."]);
+                throw ValidationException::withMessages(['passive_invoice_id' => __('treasury_errors.payment_export.not_approved', ['number' => $invoice->invoice_number])]);
             }
         }
 
@@ -112,7 +112,7 @@ final readonly class OpenBankingService
     private function assertActive(OpenBankingConsent $consent): void
     {
         if (! $consent->isActive()) {
-            throw new ConflictHttpException('This consent is no longer active.');
+            throw new ConflictHttpException(__('treasury_errors.open_banking.consent_inactive'));
         }
     }
 }

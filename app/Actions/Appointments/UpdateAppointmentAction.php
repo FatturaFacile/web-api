@@ -31,7 +31,7 @@ class UpdateAppointmentAction
 
         if ($endsAt->lte($startsAt)) {
             throw ValidationException::withMessages([
-                'ends_at' => 'The end time must be after the start time.',
+                'ends_at' => __('appointments_errors.end_before_start'),
             ]);
         }
 
@@ -47,7 +47,7 @@ class UpdateAppointmentAction
             $conflictResult = $this->conflictService->detectConflicts($userIds, $startsAt, $endsAt, $appointment->id);
             if ($conflictResult['has_conflict']) {
                 throw ValidationException::withMessages([
-                    'attendees' => 'One or more assigned technicians have a scheduling conflict.',
+                    'attendees' => __('appointments_errors.attendee_conflict'),
                     'conflicts' => $conflictResult['conflicts'],
                 ]);
             }

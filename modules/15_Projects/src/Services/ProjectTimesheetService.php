@@ -152,7 +152,7 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
             $locked = ProjectTimesheet::query()->whereKey($timesheet->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== 'submitted') {
-                throw new ConflictHttpException("Timesheet is {$locked->status}: only submitted timesheets can be approved.");
+                throw new ConflictHttpException(__('projects_errors.timesheet.approve_only_submitted', ['status' => $locked->status]));
             }
 
             $project = Project::query()->whereKey($locked->project_id)->firstOrFail();
@@ -219,7 +219,7 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
             $locked = ProjectTimesheet::query()->whereKey($timesheet->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== 'submitted') {
-                throw new ConflictHttpException("Timesheet is {$locked->status}: only submitted timesheets can be rejected.");
+                throw new ConflictHttpException(__('projects_errors.timesheet.reject_only_submitted', ['status' => $locked->status]));
             }
 
             $locked->update(['status' => 'rejected', 'rejected_by' => $rejectedBy, 'rejected_at' => now(), 'rejection_reason' => $reason]);
@@ -236,7 +236,7 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
         $locked = ProjectTimesheet::query()->whereKey($timesheet->id)->lockForUpdate()->firstOrFail();
 
         if (! $locked->isEditable()) {
-            throw new ConflictHttpException("Timesheet is {$locked->status} and locked: only draft or rejected timesheets can be changed.");
+            throw new ConflictHttpException(__('projects_errors.timesheet.locked', ['status' => $locked->status]));
         }
 
         return $locked;
@@ -245,14 +245,14 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
     private function assertProjectAcceptsTime(Project $project): void
     {
         if (! $project->isOpen()) {
-            throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: it no longer accepts time.");
+            throw new ConflictHttpException(__('projects_errors.timesheet.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
         }
     }
 
     private function assertTask(Project $project, ?string $taskId): void
     {
         if ($taskId !== null && ! ProjectTask::query()->whereKey($taskId)->where('project_id', $project->id)->exists()) {
-            throw ValidationException::withMessages(['task_id' => 'The task does not belong to the project.']);
+            throw ValidationException::withMessages(['task_id' => __('projects_errors.task.not_in_project')]);
         }
     }
 
@@ -262,11 +262,11 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
     private function assertHours(string $userId, string $workDate, string $hours, string $overtime, ?string $ignoreTimesheetId): void
     {
         if (! Money::isPositive($hours) || Money::compare($hours, self::MaxHoursPerDay) > 0) {
-            throw ValidationException::withMessages(['hours_worked' => 'Hours worked must be greater than 0 and at most 24.']);
+            throw ValidationException::withMessages(['hours_worked' => __('projects_errors.timesheet.hours_range')]);
         }
 
         if (Money::isNegative($overtime) || Money::compare($overtime, $hours) > 0) {
-            throw ValidationException::withMessages(['overtime_hours' => 'Overtime hours must be between 0 and the hours worked.']);
+            throw ValidationException::withMessages(['overtime_hours' => __('projects_errors.timesheet.overtime_range')]);
         }
 
         $booked = (string) ProjectTimesheet::query()
@@ -277,7 +277,7 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
             ->sum('hours_worked');
 
         if (Money::compare(Money::add($booked, $hours), self::MaxHoursPerDay) > 0) {
-            throw ValidationException::withMessages(['hours_worked' => "The person already has {$booked} hours booked on {$workDate}: a day cannot exceed 24 hours."]);
+            throw ValidationException::withMessages(['hours_worked' => __('projects_errors.timesheet.day_exceeds_24', ['hours' => $booked, 'date' => $workDate])]);
         }
     }
 
@@ -293,7 +293,7 @@ final readonly class ProjectTimesheetService implements ProjectTimesheetServiceI
         $resolved = $this->rates->resolve($project, $userId, $role, $workDate);
 
         if ($resolved === null) {
-            throw ValidationException::withMessages(['user_id' => 'No cost and billing rate is configured for this person on this date: add a rate card or a project resource.']);
+            throw ValidationException::withMessages(['user_id' => __('projects_errors.timesheet.rate_missing')]);
         }
 
         return [Money::of($customCost ?? $resolved['cost_rate']), Money::of($customCharge ?? $resolved['bill_rate'])];

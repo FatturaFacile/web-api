@@ -57,10 +57,10 @@ final readonly class ReportEngine
      */
     public function datasetFor(string $key, User $user): Dataset
     {
-        $dataset = $this->catalog->find($key) ?? throw new NotFoundHttpException('Unknown dataset.');
+        $dataset = $this->catalog->find($key) ?? throw new NotFoundHttpException(__('analytics_errors.report.unknown_dataset'));
 
         if (! $this->catalog->canRead($dataset, $user)) {
-            throw new AuthorizationException("Your role cannot read the {$dataset->module} data this dataset is drawn from.");
+            throw new AuthorizationException(__('analytics_errors.report.role_cannot_read', ['module' => $dataset->module]));
         }
 
         return $dataset;
@@ -223,7 +223,7 @@ final readonly class ReportEngine
         $tenantId = $this->tenantContext->getTenantId();
 
         if ($tenantId === null) {
-            throw new AuthorizationException('No active company.');
+            throw new AuthorizationException(__('analytics_errors.report.no_active_company'));
         }
 
         $query = DB::table($dataset->table)->where("{$dataset->table}.tenant_id", $tenantId);
@@ -538,7 +538,7 @@ final readonly class ReportEngine
             });
         } catch (QueryException $exception) {
             if ($exception->getCode() === '57014' || str_contains($exception->getMessage(), 'statement timeout')) {
-                throw ValidationException::withMessages(['report' => 'The report took longer than '.($timeout / 1000).' seconds and was cancelled: narrow the period, add filters or group by fewer dimensions.']);
+                throw ValidationException::withMessages(['report' => __('analytics_errors.report.timeout', ['seconds' => $timeout / 1000])]);
             }
 
             throw $exception;

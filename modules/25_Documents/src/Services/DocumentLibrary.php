@@ -128,7 +128,7 @@ final readonly class DocumentLibrary
         $stream = Storage::disk($disk)->readStream((string) $attachment->path);
 
         if (! is_resource($stream)) {
-            throw ValidationException::withMessages(['attachment_id' => 'The file of this attachment is missing from storage.']);
+            throw ValidationException::withMessages(['attachment_id' => __('documents_errors.attachment.file_missing')]);
         }
 
         $context = hash_init('sha256');
@@ -202,11 +202,11 @@ final readonly class DocumentLibrary
         $this->assertNotOnHold($document);
 
         if ($document->isCheckedOut()) {
-            throw new ConflictHttpException('This document is checked out: check it in or cancel the check-out first.');
+            throw new ConflictHttpException(__('documents_errors.document.checked_out'));
         }
 
         if ($document->retention_until !== null && $document->retention_until->isFuture()) {
-            throw new ConflictHttpException("This document is under retention until {$document->retention_until->toDateString()}.");
+            throw new ConflictHttpException(__('documents_errors.document.under_retention', ['date' => $document->retention_until->toDateString()]));
         }
 
         $document->delete();
@@ -242,7 +242,7 @@ final readonly class DocumentLibrary
     public function link(DmsDocument $document, string $alias, string $recordId, User $user): DmsDocumentLink
     {
         if ($this->links->resolve($alias, $recordId) === null) {
-            throw ValidationException::withMessages(['linkable_id' => 'This record does not exist.']);
+            throw ValidationException::withMessages(['linkable_id' => __('documents_errors.link.record_not_found')]);
         }
 
         $link = DmsDocumentLink::firstOrCreate(
@@ -303,7 +303,7 @@ final readonly class DocumentLibrary
         $current = DmsDocument::query()->findOrFail($document->id);
 
         if (! $current->isCheckedOut()) {
-            throw new ConflictHttpException('This document is not checked out.');
+            throw new ConflictHttpException(__('documents_errors.document.not_checked_out'));
         }
 
         $this->assertNotCheckedOutByOther($current, $user);
@@ -326,7 +326,7 @@ final readonly class DocumentLibrary
         $current = DmsDocument::query()->findOrFail($document->id);
 
         if (! $current->isCheckedOut()) {
-            throw new ConflictHttpException('This document is not checked out.');
+            throw new ConflictHttpException(__('documents_errors.document.not_checked_out'));
         }
 
         if (! $asManager) {
@@ -364,7 +364,7 @@ final readonly class DocumentLibrary
     private function assertNotCheckedOutByOther(DmsDocument $document, ?User $user): void
     {
         if ($document->isCheckedOut() && ($user === null || (string) $document->checked_out_by !== (string) $user->id)) {
-            throw new ConflictHttpException('This document is checked out by another user.');
+            throw new ConflictHttpException(__('documents_errors.document.checked_out_by_other'));
         }
     }
 
@@ -415,7 +415,7 @@ final readonly class DocumentLibrary
     private function assertNotOnHold(DmsDocument $document): void
     {
         if ($document->legal_hold) {
-            throw new ConflictHttpException('This document is under legal hold and cannot change.');
+            throw new ConflictHttpException(__('documents_errors.document.legal_hold'));
         }
     }
 

@@ -26,15 +26,15 @@ class RejectQuoteAction
             $quote = Quote::lockForUpdate()->findOrFail($quote->id);
 
             if ($quote->contact_id !== $token->contact_id || $quote->tenant_id !== $token->tenant_id) {
-                throw ValidationException::withMessages(['quote' => 'Unauthorized quote access.']);
+                throw ValidationException::withMessages(['quote' => __('portal_errors.quote.unauthorized')]);
             }
 
             if ($quote->status === QuoteStatus::Accepted->value) {
-                throw ValidationException::withMessages(['quote' => 'Accepted quotes cannot be rejected.']);
+                throw ValidationException::withMessages(['quote' => __('portal_errors.quote.accepted_cannot_reject')]);
             }
 
             if (! QuoteStatus::allows($quote->status, QuoteStatus::Rejected)) {
-                throw ValidationException::withMessages(['quote' => 'This quote is no longer available.']);
+                throw ValidationException::withMessages(['quote' => __('portal_errors.quote.not_available')]);
             }
 
             $quote->update([

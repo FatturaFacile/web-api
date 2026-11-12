@@ -4,9 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Models\Contact;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
+/**
+ * @mixin Contact
+ */
 class ContactResource extends JsonResource
 {
     /**
@@ -18,6 +22,7 @@ class ContactResource extends JsonResource
             'id' => $this->id,
             'tenant_id' => $this->tenant_id,
             'type' => $this->type,
+            'legal_type' => $this->legal_type,
             'country' => $this->country,
             'company_name' => $this->company_name,
             'first_name' => $this->first_name,

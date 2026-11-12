@@ -33,7 +33,7 @@ final readonly class CapaService
             if (isset($data['nonconformity_id'])) {
                 $nonconformity = QmsNonconformity::query()->where('tenant_id', $tenantId)->lockForUpdate()->findOrFail($data['nonconformity_id']);
                 if (! $nonconformity->isOpen()) {
-                    throw ValidationException::withMessages(['nonconformity_id' => ["The non-conformity is {$nonconformity->status}: no new action can be raised."]]);
+                    throw ValidationException::withMessages(['nonconformity_id' => [__('quality_errors.capa.nonconformity_closed', ['status' => $nonconformity->status])]]);
                 }
             }
 
@@ -66,7 +66,7 @@ final readonly class CapaService
     public function update(QmsCapaAction $action, array $data): QmsCapaAction
     {
         if (! in_array($action->status, QmsCapaAction::OpenStatuses, true)) {
-            throw ValidationException::withMessages(['status' => ["The action is {$action->status} and cannot be changed."]]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.capa.action_locked', ['status' => $action->status])]]);
         }
 
         $action->update(array_intersect_key($data, array_flip(['title', 'description', 'owner_id', 'due_date', 'effectiveness_check_due_date'])));
@@ -115,7 +115,7 @@ final readonly class CapaService
         return DB::transaction(function () use ($action, $from, $to, $event, $changes): QmsCapaAction {
             $locked = QmsCapaAction::query()->whereKey($action->id)->lockForUpdate()->firstOrFail();
             if (! in_array($locked->status, $from, true)) {
-                throw ValidationException::withMessages(['status' => ["The action is {$locked->status}: expected ".implode(' or ', $from).'.']]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.capa.status_expected', ['status' => $locked->status, 'expected' => implode(' / ', $from)])]]);
             }
 
             $locked->update($changes + ['status' => $to]);

@@ -212,7 +212,7 @@ class SupplierInvoiceController extends Controller
         }
 
         if ($invoice->isPaymentBlocked()) {
-            throw ValidationException::withMessages(['invoice' => "Invoice {$invoice->invoice_number} is not approved for payment."]);
+            throw ValidationException::withMessages(['invoice' => __('purchases_errors.invoice.not_approved_for_payment', ['number' => $invoice->invoice_number])]);
         }
 
         $invoice->update(['payment_status' => 'paid']);

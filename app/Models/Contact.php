@@ -23,6 +23,7 @@ class Contact extends Model
 
     protected $fillable = [
         'type',
+        'legal_type',
         'country',
         'company_name',
         'first_name',

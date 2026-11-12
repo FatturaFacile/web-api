@@ -25,7 +25,7 @@ class UpdateExpenseAction
 
             if ($lockedExpense->isExported()) {
                 throw ValidationException::withMessages([
-                    'expense' => 'This expense has already been exported to the accountant and cannot be modified.',
+                    'expense' => __('expenses_errors.already_exported'),
                 ]);
             }
 

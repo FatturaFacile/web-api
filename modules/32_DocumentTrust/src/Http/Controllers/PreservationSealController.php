@@ -146,7 +146,7 @@ final class PreservationSealController extends Controller
         Gate::authorize('update', $package);
 
         if ($package->document_class !== $class) {
-            throw ValidationException::withMessages(['package_id' => "The package is not a {$class} package."]);
+            throw ValidationException::withMessages(['package_id' => __('document_trust_errors.seal.package_wrong_class', ['class' => $class])]);
         }
 
         return $package;

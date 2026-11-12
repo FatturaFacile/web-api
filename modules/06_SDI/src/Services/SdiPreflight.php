@@ -27,7 +27,7 @@ final class SdiPreflight
     public function assertReady(Invoice $invoice): void
     {
         if ($invoice->sdi_excluded) {
-            throw ValidationException::withMessages(['invoice' => ['This is an internal document and cannot be sent to the SDI.']]);
+            throw ValidationException::withMessages(['invoice' => [__('sdi_errors.preflight.internal_document')]]);
         }
 
         $errors = $this->masterDataErrors($invoice);
