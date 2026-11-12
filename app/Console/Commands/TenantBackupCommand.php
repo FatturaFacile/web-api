@@ -12,6 +12,9 @@ use Illuminate\Console\Command;
 /**
  * Queues the backup of one tenant (`--tenant=<uuid>`) or of every active tenant (`--all`). Each backup is built by
  * `GenerateTenantBackupJob`, which also applies the retention policy (the 7 most recent completed backups are kept).
+ *
+ * On the public demo (`DEMO_RESET_ENABLED=true`) the whole database is rebuilt by `demo:reset`, so `--all` backs up
+ * nothing there: a backup would race the rebuild and its data is thrown away anyway. `--tenant` still works.
  */
 class TenantBackupCommand extends Command
 {
@@ -27,6 +30,12 @@ class TenantBackupCommand extends Command
             $this->error('Specify exactly one of --tenant or --all.');
 
             return self::INVALID;
+        }
+
+        if ($tenantId === null && config('app.demo_reset')) {
+            $this->info('Demo environment (rebuilt by demo:reset): no backup queued.');
+
+            return self::SUCCESS;
         }
 
         $tenants = $tenantId !== null
