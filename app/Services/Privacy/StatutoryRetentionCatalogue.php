@@ -16,9 +16,9 @@ use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
  * The periods are the ones the code already applies: accounting, tax and payroll vouchers ten years (Swiss CO art.
  * 958f, Italian c.c. art. 2220), working time records five years (ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73 cpv. 2,
  * read from DataRetentionPolicy). Contracts follow the ten years of the ordinary prescription (Italian c.c. art. 2946),
- * taken as the cautious choice by PreservationDocumentClass. They are NOT verified against the official texts and must be confirmed by the
- * accountant or counsel. A non-erasable class without a period (evidence and audit trails) is held indefinitely, so an
- * automatic cleanup never removes it. Nothing here is legal advice.
+ * taken as the cautious choice by PreservationDocumentClass. They are NOT verified against the official texts and must
+ * be confirmed by the accountant or counsel. A non-erasable class without a period (evidence and audit trails) is held
+ * indefinitely, so an automatic cleanup never removes it. Nothing here is legal advice.
  */
 final class StatutoryRetentionCatalogue
 {
