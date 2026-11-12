@@ -131,10 +131,16 @@ jobs:
       - name: Run Pest Test Suite (Parallel)
         run: ./vendor/bin/pest --parallel --processes=4 --compact --no-coverage
 
+  # Coverage runs in 4 parallel shards; each uploads its clover report and coverage-merge joins them. A single
+  # `pest --coverage` run serialises the data of all the tests in one string and exhausts PHP's memory.
   coverage:
-    name: Code Coverage (PCOV) & Module Thresholds
+    name: Code Coverage (PCOV) shard ${{ matrix.shard }}/4
     runs-on: ubuntu-24.04
     needs: test-and-lint
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
 
     env:
       DB_CONNECTION: pgsql
@@ -172,8 +178,8 @@ jobs:
           php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath, pcov
           coverage: pcov
-          # The coverage report serialises the data of all the tests in one string: it needs more than the 3G hard cap PHP 8.5 applies by default
-          ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=., pcov.exclude="~vendor~"
+          # pcov collects only app/ and modules/ (the <source> of phpunit.xml): any other path is excluded
+          ini-values: memory_limit=10G, max_memory_limit=10G, pcov.directory=${{ github.workspace }}, pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
           tools: composer:v2
 
       - name: Get Composer Cache Directory
@@ -208,5 +214,42 @@ jobs:
           php artisan key:generate
           php artisan migrate:fresh --force
 
-      - name: Run Pest Coverage with PCOV
-        run: ./vendor/bin/pest --coverage --compact --min=70
+      - name: Run Pest Coverage with PCOV (shard ${{ matrix.shard }}/4)
+        run: ./vendor/bin/pest --shard=${{ matrix.shard }}/4 --compact --coverage-clover=clover-${{ matrix.shard }}.xml
+
+      - name: Upload shard coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: clover-${{ matrix.shard }}
+          path: clover-${{ matrix.shard }}.xml
+          retention-days: 7
+
+  coverage-merge:
+    name: Code Coverage & Module Thresholds
+    runs-on: ubuntu-24.04
+    needs: coverage
+
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Download shard coverage
+        uses: actions/download-artifact@v4
+        with:
+          pattern: clover-*
+          merge-multiple: true
+
+      # A line is covered if at least one shard covers it. Global minimum 70%; add --module-min NAME=N for a module.
+      - name: Merge coverage and check thresholds
+        run: |
+          set -o pipefail
+          python3 scripts/merge-coverage.py --min 70 --output clover.xml clover-*.xml | tee coverage-summary.txt
+
+      - name: Upload merged coverage
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-clover
+          path: |
+            clover.xml
+            coverage-summary.txt
+          retention-days: 30
