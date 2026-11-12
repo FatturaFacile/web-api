@@ -149,7 +149,7 @@ test('the personnel file keeps health documents for HR and shows the employee on
 
 test('the retention purge erases expired documents with their files and leaves the rest alone', function (): void {
     $disk = Storage::disk(config('filesystems.private_disk', config('filesystems.default', 'local')));
-    $expired = EmployeeDocument::factory()->create(['tenant_id' => $this->tenant->id, 'employee_id' => $this->employee->id, 'file_path' => 'hr/expired.pdf', 'retention_until' => '2026-11-01']);
+    $expired = EmployeeDocument::factory()->create(['tenant_id' => $this->tenant->id, 'employee_id' => $this->employee->id, 'document_type' => 'certificate', 'file_path' => 'hr/expired.pdf', 'retention_until' => '2026-11-01']);
     $kept = EmployeeDocument::factory()->create(['tenant_id' => $this->tenant->id, 'employee_id' => $this->employee->id, 'file_path' => 'hr/kept.pdf', 'retention_until' => '2027-01-01']);
     $disk->put('hr/expired.pdf', 'x');
     $disk->put('hr/kept.pdf', 'y');
