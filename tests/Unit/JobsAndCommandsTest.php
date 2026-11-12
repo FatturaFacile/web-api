@@ -134,6 +134,24 @@ test('tenant backup command validates arguments and dispatches jobs', function (
     });
 });
 
+test('tenants:backup --all skips the demo environment but --tenant still works', function (): void {
+    Queue::fake();
+    $tenant = Tenant::create(['name' => 'Demo Backup Tenant', 'legal_name' => 'Demo Backup Tenant SRL', 'country' => 'IT']);
+
+    config(['app.demo_reset' => true]);
+    expect(Artisan::call('tenants:backup', ['--all' => true]))->toBe(0);
+    Queue::assertNothingPushed();
+
+    $mock = Mockery::mock(TenantBackupService::class);
+    $backup = new TenantBackup;
+    $backup->id = (string) Str::uuid();
+    $mock->shouldReceive('create')->once()->andReturn($backup);
+    app()->instance(TenantBackupService::class, $mock);
+
+    expect(Artisan::call('tenants:backup', ['--tenant' => $tenant->id]))->toBe(0);
+    Queue::assertPushed(GenerateTenantBackupJob::class);
+});
+
 test('process subscriptions command iterates tenants and triggers billing and renewals', function (): void {
     $tenant = Tenant::create(['name' => 'Sub Tenant', 'legal_name' => 'Sub Tenant SRL', 'country' => 'IT']);
 
