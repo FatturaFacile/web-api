@@ -76,7 +76,7 @@ function glPostWithPartner(array $world, string $debit, string $credit, string $
 /**
  * @param  array<string, mixed>  $world
  */
-function glApi(array $world): mixed
+function subledgerApi(array $world): mixed
 {
     app(TenantContext::class)->clear();
     Sanctum::actingAs($world['user']);
@@ -96,21 +96,21 @@ test('the customer subledger lists the open items of the tenant by due date, wit
     CustomerLedger::query()->where('customer_id', $alfa)->update(['due_date' => '2026-03-31', 'status' => 'open']);
     CustomerLedger::query()->where('customer_id', $beta)->update(['due_date' => '2026-02-15', 'status' => 'paid']);
 
-    $all = glApi($world)->getJson('/api/v1/general-ledger/subledgers/customers')->assertOk();
+    $all = subledgerApi($world)->getJson('/api/v1/general-ledger/subledgers/customers')->assertOk();
     expect(array_column($all->json('data.data'), 'customer_id'))->toBe([$beta, $alfa]);
 
-    $open = glApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?status=open')->assertOk();
+    $open = subledgerApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?status=open')->assertOk();
     expect(array_column($open->json('data.data'), 'customer_id'))->toBe([$alfa]);
 
-    $byCustomer = glApi($world)->getJson("/api/v1/general-ledger/subledgers/customers?customer_id={$beta}")->assertOk();
+    $byCustomer = subledgerApi($world)->getJson("/api/v1/general-ledger/subledgers/customers?customer_id={$beta}")->assertOk();
     expect(array_column($byCustomer->json('data.data'), 'customer_id'))->toBe([$beta]);
 
-    $paged = glApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?per_page=1')->assertOk();
+    $paged = subledgerApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?per_page=1')->assertOk();
     expect($paged->json('data.data'))->toHaveCount(1)->and($paged->json('data.total'))->toBe(2);
 
     // A page size of zero or beyond the cap is brought back into range instead of failing or loading the whole table.
-    $zero = glApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?per_page=0')->assertOk();
-    $huge = glApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?per_page=100000')->assertOk();
+    $zero = subledgerApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?per_page=0')->assertOk();
+    $huge = subledgerApi($world)->getJson('/api/v1/general-ledger/subledgers/customers?per_page=100000')->assertOk();
     expect($zero->json('data.per_page'))->toBe(1)->and($huge->json('data.per_page'))->toBe(200);
 });
 
@@ -123,10 +123,10 @@ test('the supplier subledger lists the items of the tenant only', function (): v
 
     expect(SupplierLedger::withoutGlobalScopes()->count())->toBe(2);
 
-    $response = glApi($world)->getJson('/api/v1/general-ledger/subledgers/suppliers')->assertOk();
+    $response = subledgerApi($world)->getJson('/api/v1/general-ledger/subledgers/suppliers')->assertOk();
     expect(array_column($response->json('data.data'), 'supplier_id'))->toBe([$supplier]);
 
-    $filtered = glApi($world)->getJson("/api/v1/general-ledger/subledgers/suppliers?supplier_id={$supplier}&status=cleared")->assertOk();
+    $filtered = subledgerApi($world)->getJson("/api/v1/general-ledger/subledgers/suppliers?supplier_id={$supplier}&status=cleared")->assertOk();
     expect($filtered->json('data.data'))->toBe([]);
 });
 
@@ -134,7 +134,7 @@ test('a reconciliation run balances the control account against the open items o
     $world = glApiWorld();
     glPostWithPartner($world, 'receivable', 'revenue', '5000', 'customer', (string) Str::uuid7(), 'AR-REC');
 
-    $response = glApi($world)->postJson('/api/v1/general-ledger/reconciliations', [
+    $response = subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', [
         'reconciliation_type' => 'subledger_ar',
         'fiscal_period_id' => (string) $world['period']->id,
     ])->assertCreated()->assertJsonPath('message', 'Reconciliation completed');
@@ -151,7 +151,7 @@ test('a reconciliation run reports the discrepancy when the open items do not ad
     glPostWithPartner($world, 'receivable', 'revenue', '5000', 'customer', (string) Str::uuid7(), 'AR-DIFF');
     CustomerLedger::query()->update(['open_amount' => 3800, 'status' => 'partially_paid']);
 
-    $response = glApi($world)->postJson('/api/v1/general-ledger/reconciliations', [
+    $response = subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', [
         'reconciliation_type' => 'subledger_ar',
         'fiscal_period_id' => (string) $world['period']->id,
     ])->assertCreated();
@@ -166,8 +166,8 @@ test('the payables run and the goods receipt run use their own accounts', functi
     $world = glApiWorld();
     glPostWithPartner($world, 'cost', 'payable', '700', 'supplier', (string) Str::uuid7(), 'AP-REC');
 
-    $payables = glApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ap', 'fiscal_period_id' => (string) $world['period']->id])->assertCreated();
-    $grIr = glApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'gr_ir', 'fiscal_period_id' => (string) $world['period']->id])->assertCreated();
+    $payables = subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ap', 'fiscal_period_id' => (string) $world['period']->id])->assertCreated();
+    $grIr = subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'gr_ir', 'fiscal_period_id' => (string) $world['period']->id])->assertCreated();
 
     expect($payables->json('data.status'))->toBe('balanced')
         ->and($payables->json('data.gl_balance'))->toEqual(700)
@@ -182,24 +182,24 @@ test('runs are listed and shown for the own tenant only', function (): void {
     glPostWithPartner($world, 'receivable', 'revenue', '100', 'customer', (string) Str::uuid7(), 'AR-A');
     glPostWithPartner($other, 'receivable', 'revenue', '900', 'customer', (string) Str::uuid7(), 'AR-B');
 
-    $own = glApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $world['period']->id])->assertCreated();
-    $foreign = glApi($other)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $other['period']->id])->assertCreated();
+    $own = subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $world['period']->id])->assertCreated();
+    $foreign = subledgerApi($other)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $other['period']->id])->assertCreated();
 
-    $list = glApi($world)->getJson('/api/v1/general-ledger/reconciliations')->assertOk();
+    $list = subledgerApi($world)->getJson('/api/v1/general-ledger/reconciliations')->assertOk();
     $rows = $list->json('data.data') ?? $list->json('data');
     expect(array_column($rows, 'id'))->toBe([$own->json('data.id')]);
 
-    glApi($world)->getJson('/api/v1/general-ledger/reconciliations/'.$own->json('data.id'))->assertOk()->assertJsonPath('data.gl_balance', 100);
-    glApi($world)->getJson('/api/v1/general-ledger/reconciliations/'.$foreign->json('data.id'))->assertNotFound();
+    subledgerApi($world)->getJson('/api/v1/general-ledger/reconciliations/'.$own->json('data.id'))->assertOk()->assertJsonPath('data.gl_balance', 100);
+    subledgerApi($world)->getJson('/api/v1/general-ledger/reconciliations/'.$foreign->json('data.id'))->assertNotFound();
 });
 
 test('a run needs a known type and a fiscal period of the tenant', function (): void {
     $world = glApiWorld();
     $other = glApiWorld();
 
-    glApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'cash', 'fiscal_period_id' => (string) $world['period']->id])->assertUnprocessable()->assertJsonValidationErrors('reconciliation_type');
-    glApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $other['period']->id])->assertUnprocessable()->assertJsonValidationErrors('fiscal_period_id');
-    glApi($world)->postJson('/api/v1/general-ledger/reconciliations', [])->assertUnprocessable();
+    subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'cash', 'fiscal_period_id' => (string) $world['period']->id])->assertUnprocessable()->assertJsonValidationErrors('reconciliation_type');
+    subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $other['period']->id])->assertUnprocessable()->assertJsonValidationErrors('fiscal_period_id');
+    subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', [])->assertUnprocessable();
 
     expect(DB::table('reconciliation_runs')->count())->toBe(0);
 });
@@ -207,5 +207,5 @@ test('a run needs a known type and a fiscal period of the tenant', function (): 
 test('a role that cannot post to the ledger cannot run a reconciliation', function (): void {
     $world = glApiWorld('member');
 
-    glApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $world['period']->id])->assertForbidden();
+    subledgerApi($world)->postJson('/api/v1/general-ledger/reconciliations', ['reconciliation_type' => 'subledger_ar', 'fiscal_period_id' => (string) $world['period']->id])->assertForbidden();
 });
