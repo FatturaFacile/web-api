@@ -15,8 +15,8 @@ use Modules\DocumentTrust\Services\PreservationLock;
 
 /**
  * Runs the retention policies. A legal hold always wins, and so does the statutory period of a document whose type the
- * catalogue classifies (invoices, ledger books, payslips, contracts): it is skipped and the skip is logged. Files that belong to an attachment are referenced, not owned,
- * so they are left in place.
+ * catalogue classifies (invoices, ledger books, payslips, contracts): it is skipped and the skip is logged. Files that
+ * belong to an attachment are referenced, not owned, so they are left in place.
  */
 final readonly class DocumentRetention
 {

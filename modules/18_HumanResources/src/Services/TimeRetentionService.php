@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Services;
 
 use App\Models\Tenant;
-use App\Services\Privacy\PersonalDataRetention;
 use App\Services\Privacy\StatutoryRetentionCatalogue;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +21,7 @@ final class TimeRetentionService
 {
     public function purge(Tenant $tenant, CarbonImmutable $today, int $configuredYears): DataRetentionResult
     {
-        $years = max(StatutoryRetentionCatalogue::minimumYears(PersonalDataRetention::StatutoryEmployment) ?? 0, $configuredYears);
+        $years = max(StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS, $configuredYears);
         $cutoff = DataRetentionPolicy::cutoff($today, $years);
         $cutoffInstant = $cutoff->utc()->format('Y-m-d H:i:s');
 

@@ -88,14 +88,17 @@ not verified against the official texts and must be confirmed by the accountant 
 
 | Class                  | Records                                                  | Kept for           | Legal basis already in code                     |
 |------------------------|----------------------------------------------------------|--------------------|-------------------------------------------------|
-| `fiscal_record`        | invoices, ledger books, payroll vouchers, contracts      | 10 years           | Swiss CO art. 958f, Italian c.c. art. 2220      |
+| `fiscal_record`        | invoices, ledger books, payroll vouchers                 | 10 years           | Swiss CO art. 958f, Italian c.c. art. 2220      |
+| `fiscal_record`        | contracts                                                | 10 years           | Italian c.c. art. 2946 (cautious choice)        |
 | `statutory_employment` | working time records                                     | 5 years minimum    | ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73      |
 | `evidence`             | consent proof, audit trails                              | held, no period    | GDPR art. 7(1), accountability                  |
 
 - `dms:retention` skips documents whose type is `issued_invoice`, `received_invoice`, `ledger_book`, `payslip` or
   `contract` until 10 years after their creation, and logs `document_retention_held_statutory`.
-- `hr:purge-employee-documents` skips `payslip` documents until 10 years after their creation.
-- `time:purge-expired` never goes below the 5 year minimum, whatever the company setting.
+- `hr:purge-employee-documents` skips `payslip` and `contract` documents until 10 years after their creation.
+- `time:purge-expired` never goes below the 5 year minimum, whatever the company setting; it removes whole calendar
+  years only, so records are kept between 5 and 6 years.
+- A record without a creation date is kept.
 - Backups, the outbox archive and the other employee document types are not covered yet (open questions).
 
 ## 5. Storage and backups

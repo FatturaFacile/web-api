@@ -140,7 +140,9 @@ test('the catalogue holds a record until its period elapsed and evidence indefin
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::StatutoryEmployment, now()->subYears(4)))->toBeTrue()
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::StatutoryEmployment, now()->subYears(6)))->toBeFalse()
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::Evidence, now()->subYears(50)))->toBeTrue()
-        ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::Erasable, now()->subYears(50)))->toBeFalse();
+        ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::Erasable, now()->subYears(50)))->toBeFalse()
+        ->and(StatutoryRetentionCatalogue::isUnderRetention($fiscal, null))->toBeTrue()
+        ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::Erasable, null))->toBeFalse();
 });
 
 test('dms:retention keeps statutory documents inside their period and records the skip', function (): void {
@@ -160,9 +162,23 @@ test('dms:retention keeps statutory documents inside their period and records th
         ->and(AuditLedgerEntry::query()->where('action', 'DOCUMENT_RETENTION_HELD_STATUTORY')->count())->toBe(2);
 });
 
-test('hr:purge-employee-documents keeps payslips inside their period even after the retention date', function (): void {
+test('dms:retention does not archive statutory documents inside their period', function (): void {
+    $policy = DmsRetentionPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'retention_months' => 1, 'action' => 'archive']);
+    $ledger = statutoryDocument($this->tenant, 'ledger_book', now()->subYears(2)->toDateTimeString(), $policy);
+    $other = statutoryDocument($this->tenant, null, now()->subYears(2)->toDateTimeString(), $policy);
+
+    app(TenantContext::class)->runWithTenant($this->tenant, fn () => (new ApplyDocumentRetentionJob((string) $this->tenant->id))->handle(app(DocumentRetention::class)));
+
+    $status = fn (DmsDocument $document): ?string => DmsDocument::withoutGlobalScopes()->whereKey($document->id)->value('status');
+    expect($status($ledger))->toBe('active')
+        ->and($status($other))->toBe('archived')
+        ->and(AuditLedgerEntry::query()->where('action', 'DOCUMENT_RETENTION_HELD_STATUTORY')->count())->toBe(1);
+});
+
+test('hr:purge-employee-documents keeps payslips and contracts inside their period even after the retention date', function (): void {
     $employee = Employee::factory()->active()->create(['tenant_id' => $this->tenant->id]);
     $payslip = statutoryEmployeeDocument($this->tenant, $employee, 'payslip', now()->subYears(9)->toDateTimeString());
+    $contract = statutoryEmployeeDocument($this->tenant, $employee, 'contract', now()->subYears(3)->toDateTimeString());
     $oldPayslip = statutoryEmployeeDocument($this->tenant, $employee, 'payslip', now()->subYears(11)->toDateTimeString());
     $warning = statutoryEmployeeDocument($this->tenant, $employee, 'warning', now()->subYears(1)->toDateTimeString());
 
@@ -170,6 +186,7 @@ test('hr:purge-employee-documents keeps payslips inside their period even after 
 
     $find = fn (EmployeeDocument $document): ?EmployeeDocument => EmployeeDocument::withoutGlobalScopes()->withTrashed()->find($document->id);
     expect($find($payslip))->not->toBeNull()
+        ->and($find($contract))->not->toBeNull()
         ->and($find($oldPayslip))->toBeNull()
         ->and($find($warning))->toBeNull();
     Storage::disk('local')->assertExists($payslip->file_path);

@@ -9,12 +9,14 @@ use Modules\DocumentTrust\Enums\PreservationDocumentClass;
 use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
 
 /**
- * The single place that states how long a record of a statutory class must be kept, and the guard every automatic
- * cleanup consults before it deletes or archives such a record.
+ * The single place that states how long a record of a statutory class must be kept, and the guard the document
+ * cleanups (dms:retention, hr:purge-employee-documents) consult before they delete or archive such a record. The time
+ * purge reads its floor from here; the privacy anonymiser refuses every class that is not erasable.
  *
  * The periods are the ones the code already applies: accounting, tax and payroll vouchers ten years (Swiss CO art.
  * 958f, Italian c.c. art. 2220), working time records five years (ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73 cpv. 2,
- * read from DataRetentionPolicy). They are NOT verified against the official texts and must be confirmed by the
+ * read from DataRetentionPolicy). Contracts follow the ten years of the ordinary prescription (Italian c.c. art. 2946),
+ * taken as the cautious choice by PreservationDocumentClass. They are NOT verified against the official texts and must be confirmed by the
  * accountant or counsel. A non-erasable class without a period (evidence and audit trails) is held indefinitely, so an
  * automatic cleanup never removes it. Nothing here is legal advice.
  */
@@ -22,6 +24,9 @@ final class StatutoryRetentionCatalogue
 {
     /** Years accounting, tax and payroll vouchers are kept: Swiss CO art. 958f, Italian c.c. art. 2220. */
     public const FISCAL_RECORD_YEARS = 10;
+
+    /** Minimum years working time records are kept: ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73 cpv. 2. */
+    public const STATUTORY_EMPLOYMENT_YEARS = DataRetentionPolicy::MINIMUM_YEARS;
 
     /**
      * Retention rule of every class that automatic cleanups must not erase. A null period means held indefinitely.
@@ -34,12 +39,12 @@ final class StatutoryRetentionCatalogue
             PersonalDataRetention::FiscalRecord->value => [
                 'retention' => PersonalDataRetention::FiscalRecord,
                 'years' => self::FISCAL_RECORD_YEARS,
-                'legalBasis' => ['Swiss CO art. 958f', 'Italian c.c. art. 2220'],
+                'legalBasis' => ['Swiss CO art. 958f', 'Italian c.c. art. 2220', 'Italian c.c. art. 2946 (contracts, cautious choice)'],
                 'pendingConfirmation' => true,
             ],
             PersonalDataRetention::StatutoryEmployment->value => [
                 'retention' => PersonalDataRetention::StatutoryEmployment,
-                'years' => DataRetentionPolicy::MINIMUM_YEARS,
+                'years' => self::STATUTORY_EMPLOYMENT_YEARS,
                 'legalBasis' => ['ArG art. 46', 'ArGV 1 art. 73', 'OLL 1 art. 73 cpv. 2'],
                 'pendingConfirmation' => true,
             ],
@@ -82,10 +87,11 @@ final class StatutoryRetentionCatalogue
     }
 
     /**
-     * True while a record of the class must still be kept: the period has not elapsed from the record date, or the
-     * class has no period and is held indefinitely. An erasable class is never under statutory retention.
+     * True while a record of the class must still be kept: the period has not elapsed from the record date, the
+     * record has no date to count from, or the class has no period and is held indefinitely. An erasable class is
+     * never under statutory retention.
      */
-    public static function isUnderRetention(PersonalDataRetention $retention, CarbonInterface $recordDate, ?CarbonInterface $now = null): bool
+    public static function isUnderRetention(PersonalDataRetention $retention, ?CarbonInterface $recordDate, ?CarbonInterface $now = null): bool
     {
         if (! self::covers($retention)) {
             return false;
@@ -93,7 +99,7 @@ final class StatutoryRetentionCatalogue
 
         $years = self::minimumYears($retention);
 
-        if ($years === null) {
+        if ($years === null || $recordDate === null) {
             return true;
         }
 
