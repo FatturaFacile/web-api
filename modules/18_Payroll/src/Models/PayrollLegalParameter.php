@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Models;
 
-use App\Models\Concerns\BelongsToTenant;
 use Enterprise\Foundation\Concerns\Auditable;
 use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 
@@ -14,7 +13,7 @@ use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
  */
 final class PayrollLegalParameter extends PayrollRecord
 {
-    use AllowsGlobalRecords, Auditable, BelongsToTenant;
+    use AllowsGlobalRecords, Auditable;
 
     protected $table = 'payroll_legal_parameters';
 

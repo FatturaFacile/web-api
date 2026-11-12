@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Payroll\Models;
 
-use App\Models\Concerns\BelongsToTenant;
 use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 
 /**
@@ -12,7 +11,7 @@ use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
  */
 final class PayrollWithholdingTaxTariff extends PayrollRecord
 {
-    use AllowsGlobalRecords, BelongsToTenant;
+    use AllowsGlobalRecords;
 
     protected $table = 'payroll_withholding_tax_tariffs';
 

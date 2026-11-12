@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Models;
 
-use App\Models\Concerns\BelongsToTenant;
 use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Modules\Associations\Enums\RegistryKind;
 
@@ -13,7 +12,7 @@ use Modules\Associations\Enums\RegistryKind;
  */
 final class RegistryType extends AssociationRecord
 {
-    use AllowsGlobalRecords, BelongsToTenant;
+    use AllowsGlobalRecords;
 
     protected $table = 'assoc_registry_types';
 

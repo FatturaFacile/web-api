@@ -12,6 +12,7 @@ use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use LogicException;
 use Symfony\Component\HttpKernel\Exception\AccessDeniedHttpException;
 
 /**
@@ -101,7 +102,7 @@ trait BelongsToTenant
      */
     public static function makeGlobal(array $attributes = []): static
     {
-        return (new static)->forceFill(array_merge($attributes, ['tenant_id' => null]))->declareGlobal();
+        return static::query()->newModelInstance()->forceFill(array_merge($attributes, ['tenant_id' => null]))->declareGlobal();
     }
 
     /**
@@ -122,6 +123,10 @@ trait BelongsToTenant
      */
     protected static function stampTenantOnCreating(Model $model): void
     {
+        if (! $model instanceof static) {
+            throw new LogicException(sprintf('%s stamps only the models that use it, %s given.', self::class, $model::class));
+        }
+
         $tenantContext = app(TenantContext::class);
 
         if ($tenantContext->isWritingGlobal() || $model->declaredGlobal) {

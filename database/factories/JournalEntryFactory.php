@@ -18,8 +18,9 @@ final class JournalEntryFactory extends Factory
 
     public function definition(): array
     {
-        $tenantId = (string) Str::uuid7();
-        $period = FiscalPeriod::first() ?? FiscalPeriod::factory()->create(['tenant_id' => $tenantId]);
+        // The entry belongs to the tenant of its fiscal period (a real tenant: an orphan tenant_id is refused by the tenant foreign key).
+        $period = FiscalPeriod::first() ?? FiscalPeriod::factory()->create();
+        $tenantId = (string) $period->tenant_id;
 
         return [
             'id' => (string) Str::uuid7(),
