@@ -172,7 +172,8 @@ jobs:
           php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath, pcov
           coverage: pcov
-          ini-values: memory_limit=2G, pcov.directory=., pcov.exclude="~vendor~"
+          # The coverage report serialises the data of all the tests in one string: it needs more than the 3G hard cap PHP 8.5 applies by default
+          ini-values: memory_limit=6G, max_memory_limit=6G, pcov.directory=., pcov.exclude="~vendor~"
           tools: composer:v2
 
       - name: Get Composer Cache Directory
