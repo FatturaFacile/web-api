@@ -172,7 +172,7 @@ jobs:
           php-version: '8.5'
           extensions: dom, curl, libxml, mbstring, zip, pdo_pgsql, xmlreader, redis, bcmath, pcov
           coverage: pcov
-          ini-values: memory_limit=-1, pcov.directory=., pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
+          ini-values: memory_limit=-1, max_memory_limit=-1, pcov.directory=., pcov.exclude="~^(?!${{ github.workspace }}/(app|modules)/).*$~"
           tools: composer:v2
 
       - name: Get Composer Cache Directory
