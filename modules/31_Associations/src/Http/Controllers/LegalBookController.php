@@ -77,7 +77,7 @@ final class LegalBookController extends AssociationController
         return AssociationRecordResource::collection(ProtocolEntry::query()
             ->when($this->year($request) !== null, fn ($query) => $query->where('fiscal_year', $this->year($request)))
             ->orderByDesc('fiscal_year')->orderByDesc('sequential_number')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/protocol', 'registerAssociationProtocolEntry', 'Register incoming, outgoing or internal correspondence with the next number of the year', 'AssociationProtocolEntryRequest', multipart: true, response: 'AssociationRecord')]

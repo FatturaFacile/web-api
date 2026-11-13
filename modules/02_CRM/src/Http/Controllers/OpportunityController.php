@@ -38,6 +38,8 @@ final class OpportunityController extends Controller
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'forecast_category', in: 'query', required: false, description: 'Filter by forecast category', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'stage_code', in: 'query', required: false, description: 'Filter by pipeline stage code', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Text contained in the name or the opportunity number', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
@@ -58,12 +60,25 @@ final class OpportunityController extends Controller
             $query->where('forecast_category', $request->query('forecast_category'));
         }
 
-        $opportunities = $query->orderByDesc('expected_revenue')->paginate(RequestedPerPage::resolve(25));
+        if ($request->filled('stage_code')) {
+            $query->whereHas('stage', fn ($stage) => $stage->where('code', $request->query('stage_code')));
+        }
+
+        if ($request->filled('search')) {
+            $term = (string) $request->query('search');
+            $query->where(function ($search) use ($term): void {
+                $search->whereLike('name', "%{$term}%")->orWhereLike('opportunity_number', "%{$term}%");
+            });
+        }
+
+        $opportunities = $query->orderByDesc('expected_revenue')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => OpportunityResource::collection($opportunities),
             'meta' => [
                 'current_page' => $opportunities->currentPage(),
+                'last_page' => $opportunities->lastPage(),
+                'per_page' => $opportunities->perPage(),
                 'total' => $opportunities->total(),
             ],
         ]);

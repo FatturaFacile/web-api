@@ -16,6 +16,8 @@ use OpenApi\Attributes as OA;
     properties: [
         new OA\Property(property: 'id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'folder_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'folder_name', type: 'string', nullable: true, description: 'Present on the list'),
+        new OA\Property(property: 'latest_version', ref: '#/components/schemas/DmsDocumentVersionResource', nullable: true, description: 'Present on the list'),
         new OA\Property(property: 'title', type: 'string'),
         new OA\Property(property: 'description', type: 'string', nullable: true),
         new OA\Property(property: 'document_type', type: 'string', nullable: true),

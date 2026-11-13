@@ -14,6 +14,7 @@ final class LeaveBalanceResource extends JsonResource
         return [
             'id' => $this->id,
             'employee_id' => $this->employee_id,
+            'employee_name' => $this->whenLoaded('employee', fn () => $this->employee?->full_name),
             'leave_type_id' => $this->leave_type_id,
             'fiscal_year' => (int) $this->fiscal_year,
             'entitlement_hours' => (float) $this->entitlement_hours,

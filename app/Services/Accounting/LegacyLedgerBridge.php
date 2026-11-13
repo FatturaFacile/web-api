@@ -133,7 +133,7 @@ final readonly class LegacyLedgerBridge
             ->whereIn('status', self::LEDGER_STATUSES)
             ->orderByDesc('posting_date')
             ->orderByDesc('journal_number')
-            ->paginate($perPage)
+            ->gridPaginate($perPage)
             ->through(fn (JournalEntry $entry): array => $this->present($entry));
     }
 

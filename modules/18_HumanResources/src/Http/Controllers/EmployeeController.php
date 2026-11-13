@@ -62,7 +62,7 @@ final class EmployeeController extends Controller
             $query->where('department_id', $request->query('department_id'));
         }
 
-        $employees = $query->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $employees = $query->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => EmployeeResource::collection($employees),

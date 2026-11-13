@@ -74,7 +74,7 @@ final class ContractObligationController extends Controller
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
-        $page = $this->obligations->query($filters, $this->clock->today())->paginate((int) ($filters['per_page'] ?? 25));
+        $page = $this->obligations->query($filters, $this->clock->today())->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             ContractObligationResource::collection($page->getCollection()),

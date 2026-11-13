@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -53,7 +54,7 @@ final class PayrollLegalTablesController extends PayrollController
     {
         $this->authorize('viewAny', PayrollAnnualParameter::class);
 
-        return PayrollRecordResource::collection(PayrollAnnualParameter::query()->orderBy('country')->orderByDesc('year')->get());
+        return PayrollRecordResource::collection(PayrollAnnualParameter::query()->orderBy('country')->orderByDesc('year')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -170,7 +171,7 @@ final class PayrollLegalTablesController extends PayrollController
     {
         $this->authorize('viewAny', PayrollFamilyAllowanceRate::class);
 
-        return PayrollFamilyAllowanceRateResource::collection(PayrollFamilyAllowanceRate::query()->orderBy('canton')->orderByDesc('valid_from')->paginate($this->perPage($request, 100, 200)));
+        return PayrollFamilyAllowanceRateResource::collection(PayrollFamilyAllowanceRate::query()->orderBy('canton')->orderByDesc('valid_from')->gridPaginate($this->perPage($request, 100, 200)));
     }
 
     /**

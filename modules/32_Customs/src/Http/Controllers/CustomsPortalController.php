@@ -7,6 +7,7 @@ namespace Modules\Customs\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\PortalAccessToken;
 use App\Services\Portal\PortalTokenService;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Modules\Customs\Enums\ShipmentRequestStatus;
 use Modules\Customs\Http\Requests\PortalShipmentRequest;
@@ -39,12 +40,15 @@ final class CustomsPortalController extends Controller
         $this->tokens->logActivity($access, 'customs_dossiers_viewed');
 
         $dossiers = CustomsDossier::query()
+            ->select(['id', 'dossier_number', 'status', 'service_type', 'direction', 'origin_country', 'destination_country', 'gross_weight_kg', 'volume_m3', 'packages', 'created_at'])
             ->where('customer_contact_id', $access->contact_id)
             ->latest()
-            ->limit(100)
-            ->get(['id', 'dossier_number', 'status', 'service_type', 'direction', 'origin_country', 'destination_country', 'gross_weight_kg', 'volume_m3', 'packages', 'created_at']);
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
-        return response()->json(['data' => $dossiers]);
+        return response()->json([
+            'data' => $dossiers->items(),
+            'meta' => ['current_page' => $dossiers->currentPage(), 'last_page' => $dossiers->lastPage(), 'per_page' => $dossiers->perPage(), 'total' => $dossiers->total()],
+        ]);
     }
 
     /**

@@ -144,7 +144,7 @@ final class DuplicateController extends Controller
     )]
     public function merges(): JsonResponse
     {
-        $merges = ContactMerge::where('tenant_id', $this->tenantContext->getTenantId())->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $merges = ContactMerge::where('tenant_id', $this->tenantContext->getTenantId())->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => $merges->getCollection()->map(fn (ContactMerge $merge): array => $this->presentMerge($merge))->values(),

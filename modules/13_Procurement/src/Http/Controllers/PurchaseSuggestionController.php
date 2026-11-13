@@ -52,7 +52,7 @@ final class PurchaseSuggestionController extends Controller
             $query->where('status', (string) $request->query('status'));
         }
 
-        return PurchaseSuggestionResource::collection($query->paginate($this->perPage($request)));
+        return PurchaseSuggestionResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

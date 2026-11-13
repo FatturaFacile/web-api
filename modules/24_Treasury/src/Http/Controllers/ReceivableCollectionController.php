@@ -52,7 +52,7 @@ final class ReceivableCollectionController extends Controller
             $query->where('customer_id', $request->query('customer_id'));
         }
 
-        $collections = $query->latest('due_date')->paginate((int) $request->query('per_page', 25));
+        $collections = $query->latest('due_date')->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(ReceivableCollectionResource::collection($collections)->response()->getData(true));
     }

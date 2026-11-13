@@ -25,6 +25,8 @@ final class MfgRoutingResource extends JsonResource
             'id' => $this->id,
             'routing_number' => $this->routing_number,
             'mfg_item_id' => $this->mfg_item_id,
+            'item_code' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->item_code),
+            'item_name' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->name),
             'name' => $this->name,
             'revision' => $this->revision,
             'status' => $this->status,
@@ -32,6 +34,7 @@ final class MfgRoutingResource extends JsonResource
             'effective_from' => $this->effective_from?->toDateString(),
             'effective_to' => $this->effective_to?->toDateString(),
             'notes' => $this->notes,
+            'operations_count' => $this->whenCounted('operations'),
             'operations' => $this->whenLoaded('operations', fn () => $this->operations->map(static fn (MfgOperation $operation): array => [
                 'id' => $operation->id,
                 'sequence' => $operation->sequence,

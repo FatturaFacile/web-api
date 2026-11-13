@@ -6,6 +6,7 @@ namespace Modules\Workshop\Models;
 
 use App\Models\Contact;
 use App\Models\Vehicle;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -47,6 +48,25 @@ final class WorkshopFolder extends WorkshopRecord
 
     protected $table = 'workshop_folders';
 
+    /** @var list<string> */
+    protected $appends = ['license_plate', 'vin', 'vehicle_model', 'customer_name'];
+
+    /**
+     * Calculated grid columns (portable SQL, see the GridColumns class of the grid engine). They mirror the appended
+     * attributes below, so filter, sort, group and the value lists run over the whole dataset.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'license_plate' => '(SELECT vehicles.license_plate FROM vehicles WHERE vehicles.id = workshop_folders.vehicle_id)',
+            'vin' => '(SELECT vehicles.vin_chassis FROM vehicles WHERE vehicles.id = workshop_folders.vehicle_id)',
+            'vehicle_model' => "(SELECT TRIM(COALESCE(vehicles.make, '') || ' ' || COALESCE(vehicles.model, '')) FROM vehicles WHERE vehicles.id = workshop_folders.vehicle_id)",
+            'customer_name' => "(SELECT COALESCE(NULLIF(contacts.company_name, ''), NULLIF(TRIM(COALESCE(contacts.first_name, '') || ' ' || COALESCE(contacts.last_name, '')), ''), '-') FROM contacts WHERE contacts.id = workshop_folders.contact_id)",
+        ];
+    }
+
     protected function casts(): array
     {
         return ['received_at' => 'datetime', 'promised_at' => 'datetime', 'mileage_in' => 'integer', 'mileage_out' => 'integer'];
@@ -82,5 +102,47 @@ final class WorkshopFolder extends WorkshopRecord
     public function contact(): BelongsTo
     {
         return $this->belongsTo(Contact::class);
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function licensePlate(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->vehicle?->license_plate);
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function vin(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->vehicle?->vin_chassis);
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function vehicleModel(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->vehicle === null ? null : trim(($this->vehicle->make ?? '').' '.($this->vehicle->model ?? '')));
+    }
+
+    /**
+     * @return Attribute<string|null, never>
+     */
+    protected function customerName(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $contact = $this->contact;
+
+            if ($contact === null) {
+                return null;
+            }
+
+            $person = trim(($contact->first_name ?? '').' '.($contact->last_name ?? ''));
+
+            return filled($contact->company_name) ? $contact->company_name : ($person !== '' ? $person : '-');
+        });
     }
 }

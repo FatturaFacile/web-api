@@ -48,9 +48,15 @@ final class ReportDefinitionController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        $definitions = $this->visible($request)->latest()->limit(200)->get();
+        $definitions = $this->visible($request)
+            ->latest()
+            ->gridPaginate(min(200, max(1, (int) $request->query('per_page', 200))));
 
-        return $this->successResponse(ReportDefinitionResource::collection($definitions), 'Report definitions retrieved');
+        return $this->successResponse(
+            data: ReportDefinitionResource::collection($definitions),
+            message: 'Report definitions retrieved',
+            meta: ['current_page' => $definitions->currentPage(), 'last_page' => $definitions->lastPage(), 'per_page' => $definitions->perPage(), 'total' => $definitions->total()],
+        );
     }
 
     /**

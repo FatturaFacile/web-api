@@ -7,6 +7,7 @@ namespace Modules\Childcare\Http\Controllers;
 use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
 use App\Services\Security\CsvFormulaNeutralizer;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -138,6 +139,8 @@ final class ChildcareBillingController extends Controller
      */
     #[OA\Get(path: '/api/v1/childcare/billing/bills', operationId: 'listChildcareMonthlyBills', description: 'Return the monthly bills of a period.', summary: 'List monthly bills', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'period', in: 'query', required: true, schema: new OA\Schema(type: 'string', example: '2026-11')),
+        new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, maximum: 200)),
     ], responses: [
         new OA\Response(response: 200, description: 'Bills', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -148,7 +151,14 @@ final class ChildcareBillingController extends Controller
     {
         $this->authorize('bill', Child::class);
 
-        return ChildcareResource::collection(MonthlyBill::query()->where('period', (string) $request->validated('period'))->get());
+        $bills = MonthlyBill::query()
+            ->with(['child.billingContact', 'invoice'])
+            ->where('period', (string) $request->validated('period'))
+            ->orderBy('created_at')
+            ->gridPaginate(RequestedPerPage::resolve(25));
+        $bills->getCollection()->each->append(['child_name', 'contact_id', 'contact_name', 'status', 'currency']);
+
+        return ChildcareResource::collection($bills);
     }
 
     /**

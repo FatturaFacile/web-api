@@ -186,7 +186,7 @@ final class SegmentController extends Controller
     public function members(string $id): JsonResponse
     {
         $segment = Segment::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
-        $page = $this->segmentService->query($segment)->orderBy('created_at')->paginate(RequestedPerPage::resolve(50));
+        $page = $this->segmentService->query($segment)->orderBy('created_at')->gridPaginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'entity' => $segment->entity,

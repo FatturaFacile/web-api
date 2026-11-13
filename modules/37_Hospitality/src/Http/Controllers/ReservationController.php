@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Hospitality\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -38,7 +39,11 @@ final class ReservationController extends Controller
     {
         $this->authorize('viewAny', Reservation::class);
 
-        return HospitalityResource::collection($this->reservations->calendar((string) $request->validated('date'), $request->validated('room_id'), $request->validated('status')));
+        return HospitalityResource::collection(
+            $this->reservations
+                ->calendarQuery((string) $request->validated('date'), $request->validated('room_id'), $request->validated('status'))
+                ->gridPaginate(RequestedPerPage::resolve(25))
+        );
     }
 
     /**

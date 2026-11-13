@@ -62,7 +62,7 @@ final class InvoiceController extends Controller
             $query->where('invoice_type', (string) $request->query('invoice_type'));
         }
 
-        $invoices = $query->orderBy('created_at', 'desc')->paginate((int) $request->query('per_page', 25));
+        $invoices = $query->orderBy('created_at', 'desc')->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(SalesInvoiceResource::collection($invoices)->response()->getData(true));
     }

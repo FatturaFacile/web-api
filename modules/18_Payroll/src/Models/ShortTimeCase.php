@@ -36,6 +36,19 @@ final class ShortTimeCase extends PayrollRecord
         return $this->hasMany(ShortTimeClaim::class, 'short_time_case_id');
     }
 
+    /**
+     * `claims_count` is the number of claims of the case (the list loads it with withCount).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            ...parent::gridColumns(),
+            'claims_count' => '(SELECT COUNT(*) FROM payroll_short_time_claims WHERE payroll_short_time_claims.short_time_case_id = payroll_short_time_cases.id)',
+        ];
+    }
+
     protected function casts(): array
     {
         return ['notified_on' => 'date:Y-m-d', 'is_urgent' => 'boolean', 'starts_on' => 'date:Y-m-d', 'ends_on' => 'date:Y-m-d'];

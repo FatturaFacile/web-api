@@ -41,6 +41,7 @@ final class LeadController extends Controller
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, description: 'Filter by status', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'rating', in: 'query', required: false, description: 'Filter by rating', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Text contained in the first name, last name, company name or email', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
@@ -61,12 +62,24 @@ final class LeadController extends Controller
             $query->where('rating', $request->query('rating'));
         }
 
-        $leads = $query->orderByDesc('score')->paginate(RequestedPerPage::resolve(25));
+        if ($request->filled('search')) {
+            $term = (string) $request->query('search');
+            $query->where(function ($search) use ($term): void {
+                $search->whereLike('first_name', "%{$term}%")
+                    ->orWhereLike('last_name', "%{$term}%")
+                    ->orWhereLike('company_name', "%{$term}%")
+                    ->orWhereLike('email', "%{$term}%");
+            });
+        }
+
+        $leads = $query->orderByDesc('score')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => LeadResource::collection($leads),
             'meta' => [
                 'current_page' => $leads->currentPage(),
+                'last_page' => $leads->lastPage(),
+                'per_page' => $leads->perPage(),
                 'total' => $leads->total(),
             ],
         ]);

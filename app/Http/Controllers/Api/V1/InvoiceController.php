@@ -134,7 +134,7 @@ class InvoiceController extends Controller
         }
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $invoices = $query->paginate($perPage);
+        $invoices = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: InvoiceResource::collection($invoices),

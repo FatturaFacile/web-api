@@ -163,10 +163,14 @@ class SettingsController extends Controller
     #[OA\Get(
         path: '/api/v1/settings/branches',
         operationId: 'getBranches',
-        description: 'Get operational warehouses and company branch locations.',
+        description: 'Get operational warehouses and company branch locations. Grid contract: sort_by, sort_dir, filter, filter_like, grid_values.',
         summary: 'List branches',
         security: [['bearerAuth' => []]],
         tags: ['Settings'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1000)),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
@@ -180,11 +184,17 @@ class SettingsController extends Controller
             ),
         ]
     )]
-    public function branches(): JsonResponse
+    public function branches(Request $request): JsonResponse
     {
-        $branches = Warehouse::all();
+        $branches = Warehouse::query()
+            ->orderBy('name')
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
-        return $this->successResponse(data: $branches, message: 'Branches and operational locations');
+        return $this->successResponse(
+            data: $branches->getCollection(),
+            message: 'Branches and operational locations',
+            meta: ['current_page' => $branches->currentPage(), 'last_page' => $branches->lastPage(), 'per_page' => $branches->perPage(), 'total' => $branches->total()],
+        );
     }
 
     /**
@@ -378,7 +388,7 @@ class SettingsController extends Controller
         }
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 25)));
-        $logs = $query->paginate($perPage);
+        $logs = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: $logs,

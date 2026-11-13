@@ -51,12 +51,14 @@ final class ForecastController extends Controller
             $query->where('period', $request->query('period'));
         }
 
-        $forecasts = $query->orderByDesc('period')->paginate(RequestedPerPage::resolve(25));
+        $forecasts = $query->orderByDesc('period')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => ForecastResource::collection($forecasts),
             'meta' => [
                 'current_page' => $forecasts->currentPage(),
+                'last_page' => $forecasts->lastPage(),
+                'per_page' => $forecasts->perPage(),
                 'total' => $forecasts->total(),
             ],
         ]);

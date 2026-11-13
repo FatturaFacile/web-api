@@ -35,7 +35,7 @@ class ConstructionController extends Controller
     )]
     public function sites(): JsonResponse
     {
-        $sites = ConstructionSite::latest()->paginate(RequestedPerPage::resolve(25));
+        $sites = ConstructionSite::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $sites, message: 'Construction sites (Cantieri) retrieved');
     }
@@ -54,7 +54,7 @@ class ConstructionController extends Controller
     )]
     public function sal(Request $request): JsonResponse
     {
-        $sals = ProgressBilling::latest()->paginate(RequestedPerPage::resolve(25));
+        $sals = ProgressBilling::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $sals, message: 'Progress billings (SAL) retrieved');
     }
@@ -132,7 +132,7 @@ class ConstructionController extends Controller
     )]
     public function conformityCertificates(): JsonResponse
     {
-        $certs = ConformityCertificate::latest()->paginate(RequestedPerPage::resolve(25));
+        $certs = ConformityCertificate::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $certs, message: 'Conformity certificates (DICO) retrieved');
     }

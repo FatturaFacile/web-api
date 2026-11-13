@@ -29,7 +29,7 @@ final readonly class ContractRegister
     public function __construct(private TenantContext $tenantContext) {}
 
     /**
-     * @param  array{kind?: ?string, status?: ?string, expiring_within_days?: int|string|null}  $filters
+     * @param  array{kind?: ?string, status?: ?string, expiring_within_days?: int|string|null, search?: ?string}  $filters
      * @return LengthAwarePaginator<int, object>
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
@@ -52,9 +52,10 @@ final readonly class ContractRegister
 
         return DB::query()->fromSub($union, 'contracts')
             ->when($filters['status'] ?? null, static fn (Builder $query, string $status): Builder => $query->where('status', $status))
+            ->when($filters['search'] ?? null, static fn (Builder $query, string $term): Builder => $query->where(static fn (Builder $inner): Builder => $inner->whereLike('contract_number', "%{$term}%")->orWhereLike('title', "%{$term}%")))
             ->when($filters['expiring_within_days'] ?? null, static fn (Builder $query, int|string $days): Builder => $query->whereBetween('end_date', [now()->toDateString(), now()->addDays((int) $days)->toDateString()]))
             ->orderBy('end_date')
-            ->paginate($perPage);
+            ->gridPaginate($perPage);
     }
 
     /**

@@ -32,6 +32,20 @@ final class ProjectMilestone extends BaseEnterpriseModel
 {
     protected $table = 'project_milestones';
 
+    /**
+     * Calculated columns of the grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `state` is the lifecycle of the milestone: `billed`, `completed` or `planned`.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'state' => "CASE WHEN project_milestones.is_billed THEN 'billed' WHEN project_milestones.is_completed THEN 'completed' ELSE 'planned' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

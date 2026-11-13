@@ -33,12 +33,12 @@ final class RoutingController extends Controller
         responses: [new OA\Response(response: 200, description: 'Routings', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgRouting'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = MfgRouting::query()->with('operations')->where('tenant_id', $this->tenantId());
+        $query = MfgRouting::query()->with(['mfgItem', 'operations'])->withCount('operations')->where('tenant_id', $this->tenantId());
         if ($request->filled('mfg_item_id')) {
             $query->where('mfg_item_id', (string) $request->query('mfg_item_id'));
         }
 
-        return MfgRoutingResource::collection($query->orderBy('routing_number')->orderBy('revision')->paginate($this->perPage($request)));
+        return MfgRoutingResource::collection($query->orderBy('routing_number')->orderBy('revision')->gridPaginate($this->perPage($request)));
     }
 
     /**

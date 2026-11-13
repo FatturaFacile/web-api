@@ -48,11 +48,11 @@ final class PortalHelpdeskController extends Controller
     public function index(string $token): JsonResponse
     {
         $access = $this->tokenService->resolveToken($token);
-        $tickets = $this->customerTickets($access)->whereNull('merged_into_ticket_id')->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(20));
+        $tickets = $this->customerTickets($access)->whereNull('merged_into_ticket_id')->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(20));
 
         return response()->json([
             'data' => PortalHelpdeskTicketResource::collection($tickets),
-            'meta' => ['current_page' => $tickets->currentPage(), 'total' => $tickets->total()],
+            'meta' => ['current_page' => $tickets->currentPage(), 'last_page' => $tickets->lastPage(), 'per_page' => $tickets->perPage(), 'total' => $tickets->total()],
         ]);
     }
 

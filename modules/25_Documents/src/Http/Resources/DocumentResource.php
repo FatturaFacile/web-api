@@ -25,6 +25,7 @@ final class DocumentResource extends JsonResource
         return [
             'id' => (string) $this->id,
             'folder_id' => $this->folder_id,
+            'folder_name' => $this->whenLoaded('folder', fn (): ?string => $this->folder?->name),
             'title' => $this->title,
             'description' => $this->description,
             'document_type' => $this->document_type,
@@ -42,6 +43,7 @@ final class DocumentResource extends JsonResource
             'checkout_note' => $this->checkout_note,
             'tags' => $this->whenLoaded('tags', fn (): array => $this->tags->map(static fn (DmsTag $tag): array => ['id' => (string) $tag->id, 'name' => $tag->name])->all()),
             'links' => $this->whenLoaded('links', fn (): array => $this->links->map(static fn (DmsDocumentLink $link): array => ['id' => (string) $link->id, 'linkable_type' => $link->linkable_type, 'linkable_id' => (string) $link->linkable_id])->all()),
+            'latest_version' => $this->whenLoaded('latestVersion', fn (): ?DocumentVersionResource => $this->latestVersion !== null ? new DocumentVersionResource($this->latestVersion) : null),
             'versions' => DocumentVersionResource::collection($this->whenLoaded('versions')),
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),

@@ -264,6 +264,8 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'campaign_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'contact_id', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'lead_id', type: 'string', format: 'uuid', nullable: true),
+        new OA\Property(property: 'name', type: 'string', nullable: true, description: 'Company or person name of the contact (else of the lead)'),
+        new OA\Property(property: 'email', type: 'string', nullable: true),
         new OA\Property(property: 'status', type: 'string', enum: ['planned', 'sent', 'suppressed', 'responded', 'attended', 'converted', 'bounced']),
         new OA\Property(property: 'suppression_reason', type: 'string', nullable: true, enum: ['opted_out', 'no_consent', 'no_email']),
         new OA\Property(property: 'sent_at', type: 'string', format: 'date-time', nullable: true),

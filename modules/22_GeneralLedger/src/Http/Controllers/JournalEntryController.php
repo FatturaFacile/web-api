@@ -60,7 +60,7 @@ final class JournalEntryController extends Controller
             ->when($request->query('status'), fn ($q, $st) => $q->where('status', $st))
             ->when($request->query('fiscal_period_id'), fn ($q, $fp) => $q->where('fiscal_period_id', $fp))
             ->orderBy('posting_date', 'desc')
-            ->paginate((int) $request->query('per_page', 25));
+            ->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json([
             'data' => JournalEntryResource::collection($entries),

@@ -93,7 +93,7 @@ final class TimeTrackingController extends Controller
             ->orderBy('occurred_at')
             ->orderBy('created_at')
             ->orderBy('id')
-            ->paginate((int) $request->validated('per_page', 50));
+            ->gridPaginate((int) $request->validated('per_page', 50));
 
         return TimeClockEventResource::collection($events);
     }
@@ -188,7 +188,7 @@ final class TimeTrackingController extends Controller
             ->when($to, fn ($query) => $query->where('occurred_at', '<', SwissWorkingTimeRules::localDate((string) $to)->addDay()->utc()->format('Y-m-d H:i:s')))
             ->orderByDesc('occurred_at')
             ->orderByDesc('id')
-            ->paginate((int) $request->validated('per_page', 50));
+            ->gridPaginate((int) $request->validated('per_page', 50));
 
         return TimeAuditEntryResource::collection($entries);
     }

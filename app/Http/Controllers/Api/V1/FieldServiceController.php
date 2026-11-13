@@ -32,7 +32,7 @@ class FieldServiceController extends Controller
     )]
     public function tickets(): JsonResponse
     {
-        $tickets = Ticket::latest()->paginate(RequestedPerPage::resolve(25));
+        $tickets = Ticket::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $tickets, message: 'Tickets retrieved');
     }
@@ -50,7 +50,7 @@ class FieldServiceController extends Controller
     )]
     public function workOrders(): JsonResponse
     {
-        $orders = WorkOrder::latest('date')->paginate(RequestedPerPage::resolve(25));
+        $orders = WorkOrder::latest('date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $orders, message: 'Work orders (Rapportini) retrieved');
     }

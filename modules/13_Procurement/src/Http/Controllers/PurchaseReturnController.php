@@ -38,7 +38,7 @@ final class PurchaseReturnController extends Controller
     {
         $returns = PurchaseReturn::with(['purchaseOrder', 'supplier', 'returner', 'lines'])
             ->orderBy('return_date', 'desc')
-            ->paginate((int) $request->query('per_page', 25));
+            ->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(PurchaseReturnResource::collection($returns)->response()->getData(true));
     }

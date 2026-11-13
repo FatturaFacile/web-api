@@ -37,10 +37,10 @@ final class RecurringServiceController extends Controller
         $this->authorize('viewAny', RecurringService::class);
 
         return WorkshopResource::collection(RecurringService::query()
-            ->with('subscription')
+            ->with(['subscription.items', 'vehicle'])
             ->when($request->filled('vehicle_id'), fn ($query) => $query->where('vehicle_id', $request->string('vehicle_id')->toString()))
             ->latest()
-            ->paginate(max(1, min($request->integer('per_page', 25), 100))));
+            ->gridPaginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
     /**

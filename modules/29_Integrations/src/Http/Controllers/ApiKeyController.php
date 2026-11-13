@@ -7,6 +7,7 @@ namespace Modules\Integrations\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Closure;
 use Enterprise\MultiTenant\Services\ModuleAccessGate;
 use Illuminate\Http\JsonResponse;
@@ -22,13 +23,15 @@ final class ApiKeyController extends Controller
 {
     use ApiResponse;
 
-    #[OA\Get(path: '/api/v1/integrations/api-keys', operationId: 'listApiKeys', description: 'API keys of the active tenant. Secrets are never returned.', summary: 'List API keys', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Integrations'], responses: [
+    #[OA\Get(path: '/api/v1/integrations/api-keys', operationId: 'listApiKeys', description: 'API keys of the active tenant. Secrets are never returned.', summary: 'List API keys', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Integrations'], parameters: [new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 200))], responses: [
         new OA\Response(response: 200, description: 'The keys', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
         new OA\Response(response: 403, description: 'Only owners and admins', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
     ])]
     public function index(): JsonResponse
     {
-        return $this->successResponse(ApiKey::query()->latest()->get(), 'API keys retrieved');
+        $keys = ApiKey::query()->latest()->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse($keys->items(), 'API keys retrieved', meta: ['current_page' => $keys->currentPage(), 'last_page' => $keys->lastPage(), 'per_page' => $keys->perPage(), 'total' => $keys->total()]);
     }
 
     #[OA\Post(path: '/api/v1/integrations/api-keys', operationId: 'createApiKey', description: 'Creates a key. The token is returned only by this call: it is stored as a hash.', summary: 'Create API key', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['name', 'scopes'], properties: [

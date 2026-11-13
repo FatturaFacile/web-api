@@ -115,9 +115,12 @@ final class DimensionController extends Controller
         $rows = $query
             ->when($request->query('active') !== null, static fn ($builder) => $builder->where('is_active', filter_var($request->query('active'), FILTER_VALIDATE_BOOLEAN)))
             ->orderBy('code')
-            ->get();
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
-        return $this->successResponse($rows->map(fn (Model $row): array => $this->present($row))->values());
+        return $this->successResponse(
+            data: $rows->getCollection()->map(fn (Model $row): array => $this->present($row))->values(),
+            meta: ['current_page' => $rows->currentPage(), 'last_page' => $rows->lastPage(), 'per_page' => $rows->perPage(), 'total' => $rows->total()],
+        );
     }
 
     private function create(CostCenter|ProfitCenter $model, StoreDimensionRequest $request): JsonResponse

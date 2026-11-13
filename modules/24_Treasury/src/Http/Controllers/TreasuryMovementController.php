@@ -69,7 +69,7 @@ final class TreasuryMovementController extends Controller
             ->when($filters['bank_account_id'] ?? null, fn ($query, string $id) => $query->where(fn ($inner) => $inner->where('bank_account_id', $id)->orWhere('counter_bank_account_id', $id)))
             ->orderByDesc('movement_date')
             ->orderByDesc('created_at')
-            ->paginate((int) ($filters['per_page'] ?? 25));
+            ->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(TreasuryBankMovementResource::collection($page->items()), 'Treasury bank movements', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }

@@ -7,6 +7,7 @@ namespace Modules\Hospitality\Services;
 use App\Exceptions\BusinessRuleException;
 use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\Hospitality\Models\DiningTable;
@@ -144,6 +145,16 @@ final class ReservationService
      */
     public function calendar(string $date, ?string $roomId, ?string $status): Collection
     {
+        return $this->calendarQuery($date, $roomId, $status)->get();
+    }
+
+    /**
+     * The query behind {@see self::calendar()}, for grids that page, sort and filter it on the server.
+     *
+     * @return Builder<Reservation>
+     */
+    public function calendarQuery(string $date, ?string $roomId, ?string $status): Builder
+    {
         [$from, $to] = $this->dayRange($date);
 
         return Reservation::query()
@@ -151,7 +162,7 @@ final class ReservationService
             ->when($status !== null, fn ($query) => $query->where('status', $status))
             ->when($roomId !== null, fn ($query) => $query->whereIn('table_id', DiningTable::query()->where('room_id', $roomId)->select('id')))
             ->with('diningTable')
-            ->orderBy('starts_at')->get();
+            ->orderBy('starts_at');
     }
 
     /**

@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\FleetRental\DamageInspectionRequest;
 use App\Http\Responses\ApiResponse;
+use App\Models\Contact;
 use App\Models\DamageInspection;
 use App\Models\RentalBooking;
 use App\Models\RentalVehicle;
@@ -18,6 +19,15 @@ use Symfony\Component\HttpFoundation\Response;
 class FleetRentalController extends Controller
 {
     use ApiResponse;
+
+    /** Same label as the `name` grid column of the contact. */
+    private static function contactName(Contact $contact): string
+    {
+        $company = trim((string) $contact->company_name);
+        $person = trim(trim((string) $contact->first_name).' '.trim((string) $contact->last_name));
+
+        return $company !== '' ? $company : ($person !== '' ? $person : '-');
+    }
 
     #[OA\Get(
         path: '/api/v1/rent/vehicles',
@@ -33,11 +43,29 @@ class FleetRentalController extends Controller
     )]
     public function vehicles(): JsonResponse
     {
-        $vehicles = RentalVehicle::join('vehicles', 'vehicles.id', '=', 'rental_vehicles.vehicle_id')
-            ->select('rental_vehicles.*', 'vehicles.license_plate', 'vehicles.make', 'vehicles.model')
-            ->get();
+        $page = RentalVehicle::query()
+            ->with(['vehicle', 'bookings' => fn ($query) => $query->where('status', 'active')->with('client')])
+            ->orderByDesc('rental_vehicles.created_at')
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(data: $vehicles, message: 'Rental fleet vehicles retrieved');
+        $rows = $page->getCollection()->map(fn (RentalVehicle $rental): array => [
+            'id' => $rental->id,
+            'plate' => $rental->vehicle?->license_plate,
+            'make' => $rental->vehicle?->make,
+            'model' => $rental->vehicle?->model,
+            'type' => $rental->category,
+            'client' => $rental->bookings->first()?->client ? self::contactName($rental->bookings->first()->client) : null,
+            'returnDate' => $rental->bookings->max('end_date')?->toDateString(),
+            'status' => $rental->is_available ? 'available' : 'rented',
+            'daily_rate' => $rental->daily_rate,
+            'current_mileage' => $rental->current_mileage,
+        ])->values();
+
+        return $this->successResponse(
+            data: $rows,
+            message: 'Rental fleet vehicles retrieved',
+            meta: ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]
+        );
     }
 
     #[OA\Get(
@@ -54,9 +82,31 @@ class FleetRentalController extends Controller
     )]
     public function bookings(): JsonResponse
     {
-        $bookings = RentalBooking::latest('start_date')->paginate(RequestedPerPage::resolve(25));
+        $page = RentalBooking::query()
+            ->with(['rentalVehicle.vehicle', 'client'])
+            ->orderByDesc('rental_bookings.start_date')
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(data: $bookings, message: 'Rental bookings retrieved');
+        $rows = $page->getCollection()->map(fn (RentalBooking $booking): array => [
+            'id' => $booking->id,
+            'vehicle_id' => $booking->rental_vehicle_id,
+            'vehicle_plate' => $booking->rentalVehicle?->vehicle?->license_plate,
+            'vehicle_model' => $booking->rentalVehicle?->vehicle?->model,
+            'client_id' => $booking->client_id,
+            'client_name' => $booking->client ? self::contactName($booking->client) : null,
+            'start_date' => $booking->start_date?->toIso8601String(),
+            'end_date' => $booking->end_date?->toIso8601String(),
+            'status' => $booking->status,
+            'daily_rate' => $booking->rentalVehicle?->daily_rate,
+            'total_amount' => $booking->total_estimated,
+            'deposit_amount' => $booking->deposit_amount,
+        ])->values();
+
+        return $this->successResponse(
+            data: $rows,
+            message: 'Rental bookings retrieved',
+            meta: ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]
+        );
     }
 
     #[OA\Post(

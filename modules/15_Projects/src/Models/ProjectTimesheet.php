@@ -50,6 +50,20 @@ final class ProjectTimesheet extends BaseEnterpriseModel
 
     protected $table = 'project_timesheets';
 
+    /**
+     * Calculated columns of the timesheet grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `billing` is the readable state of the boolean `is_billable` flag, the same on every database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'billing' => "CASE WHEN project_timesheets.is_billable THEN 'billable' ELSE 'non_billable' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

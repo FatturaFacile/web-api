@@ -63,7 +63,7 @@ final class StockLotController extends Controller
             $query->whereNotNull('expiration_date')->whereDate('expiration_date', '<=', CarbonImmutable::today()->addDays((int) $request->query('expiring_within_days')));
         }
 
-        return response()->json(StockLotResource::collection($query->paginate((int) $request->query('per_page', 25)))->response()->getData(true));
+        return response()->json(StockLotResource::collection($query->gridPaginate((int) $request->query('per_page', 25)))->response()->getData(true));
     }
 
     #[OA\Post(

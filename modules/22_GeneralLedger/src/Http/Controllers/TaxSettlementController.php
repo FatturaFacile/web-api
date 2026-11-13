@@ -61,7 +61,7 @@ final class TaxSettlementController extends Controller
             ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
             ->when($request->query('year'), fn ($query, $year) => $query->where('year', (int) $year))
             ->orderByDesc('period_to')
-            ->paginate((int) $request->query('per_page', 50));
+            ->gridPaginate((int) $request->query('per_page', 50));
 
         return response()->json([
             'data' => VatSettlementResource::collection($settlements->getCollection()),

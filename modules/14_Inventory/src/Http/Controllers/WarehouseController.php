@@ -48,7 +48,7 @@ final class WarehouseController extends Controller
             $query->where('is_active', $request->boolean('is_active'));
         }
 
-        $warehouses = $query->paginate((int) $request->query('per_page', 25));
+        $warehouses = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(WarehouseResource::collection($warehouses)->response()->getData(true));
     }

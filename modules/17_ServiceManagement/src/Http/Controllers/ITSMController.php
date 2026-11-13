@@ -51,7 +51,7 @@ final class ITSMController extends Controller
     public function incidents(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $incidents = Incident::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $incidents = Incident::where('tenant_id', $tenant->id)->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => IncidentResource::collection($incidents),
@@ -160,7 +160,7 @@ final class ITSMController extends Controller
     public function problems(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $problems = Problem::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $problems = Problem::where('tenant_id', $tenant->id)->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => $problems,
@@ -188,7 +188,7 @@ final class ITSMController extends Controller
     public function changes(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $changes = ChangeRequest::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $changes = ChangeRequest::where('tenant_id', $tenant->id)->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => ChangeRequestResource::collection($changes),

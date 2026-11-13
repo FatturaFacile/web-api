@@ -413,12 +413,13 @@ use OpenApi\Attributes as OA;
 )]
 #[OA\Schema(
     schema: 'TreasuryRibaBatchListEnvelope',
-    description: 'At most the latest 200 Ri.Ba. batches, not paginated',
+    description: 'A page of the Ri.Ba. batches, newest first (grid contract: sort_by, filter[col][], per_page)',
     type: 'object',
     properties: [
         new OA\Property(property: 'success', type: 'boolean', example: true),
         new OA\Property(property: 'message', type: 'string', example: 'Ri.Ba. batches'),
         new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryRibaBatchSummary')),
+        new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
     ]
 )]
 #[OA\Schema(

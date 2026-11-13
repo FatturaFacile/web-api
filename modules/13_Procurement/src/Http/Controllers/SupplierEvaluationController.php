@@ -45,7 +45,7 @@ final class SupplierEvaluationController extends Controller
             $query->where('supplier_id', $request->input('supplier_id'));
         }
 
-        $evaluations = $query->paginate((int) $request->query('per_page', 25));
+        $evaluations = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json($evaluations);
     }

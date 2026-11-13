@@ -43,7 +43,7 @@ final class SubcontractController extends Controller
             $query->where('production_order_id', (string) $request->query('production_order_id'));
         }
 
-        return MfgSubcontractOrderResource::collection($query->latest()->paginate($this->perPage($request)));
+        return MfgSubcontractOrderResource::collection($query->latest()->gridPaginate($this->perPage($request)));
     }
 
     /**

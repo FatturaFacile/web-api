@@ -52,7 +52,7 @@ final class PortalKnowledgeBaseController extends Controller
 
         $query = ! empty($filters['q']) ? $query->search($filters['q']) : $query->orderByDesc('published_at');
 
-        return response()->json(['data' => PortalKnowledgeArticleResource::collection($query->paginate(RequestedPerPage::resolve(20)))]);
+        return response()->json(['data' => PortalKnowledgeArticleResource::collection($query->gridPaginate(RequestedPerPage::resolve(20)))]);
     }
 
     #[OA\Get(path: '/api/v1/portal/kb/{token}/articles/{id}', operationId: 'showPortalKnowledgeArticle', description: 'Returns a published public article with its content and counts the view.', summary: 'Read portal knowledge article', security: [], tags: ['Customer Portal'], parameters: [new OA\Parameter(ref: '#/components/parameters/HelpdeskPortalToken'), new OA\Parameter(ref: '#/components/parameters/HelpdeskIdPath')], responses: [

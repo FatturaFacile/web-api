@@ -112,8 +112,8 @@ final class SegmentService
         match ($filter['operator']) {
             'eq' => $query->where($field, $value),
             'neq' => $query->where(fn (Builder $inner) => $inner->where($field, '<>', $value)->orWhereNull($field)),
-            'contains' => $query->where($field, 'ilike', '%'.addcslashes((string) $value, '%_\\').'%'),
-            'starts_with' => $query->where($field, 'ilike', addcslashes((string) $value, '%_\\').'%'),
+            'contains' => $query->whereRaw("LOWER({$query->getQuery()->getGrammar()->wrap($field)}) LIKE ? ESCAPE '\\'", ['%'.mb_strtolower(addcslashes((string) $value, '%_\\')).'%']),
+            'starts_with' => $query->whereRaw("LOWER({$query->getQuery()->getGrammar()->wrap($field)}) LIKE ? ESCAPE '\\'", [mb_strtolower(addcslashes((string) $value, '%_\\')).'%']),
             'in' => $query->whereIn($field, is_array($value) ? $value : array_map('trim', explode(',', (string) $value))),
             'gte' => $query->where($field, '>=', $value),
             'lte' => $query->where($field, '<=', $value),

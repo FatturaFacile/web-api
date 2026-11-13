@@ -70,8 +70,8 @@ final readonly class DocumentAccess
 
         return $query
             ->where(function (Builder $visible) use ($role): void {
-                $visible->whereRaw("dms_documents.access_roles = '[]'::jsonb")
-                    ->orWhereRaw('dms_documents.access_roles @> ?::jsonb', [json_encode([$role])]);
+                $visible->whereJsonLength('dms_documents.access_roles', 0)
+                    ->orWhereJsonContains('dms_documents.access_roles', $role);
             })
             ->where(function (Builder $visible) use ($deniedFolderIds): void {
                 $visible->whereNull('dms_documents.folder_id')->orWhereNotIn('dms_documents.folder_id', $deniedFolderIds);

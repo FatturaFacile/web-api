@@ -9,6 +9,7 @@ use App\Http\Responses\ApiResponse;
 use Carbon\Carbon;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Modules\Workflow\Actions\CreateDelegationAction;
 use Modules\Workflow\DTOs\CreateDelegationDTO;
 use Modules\Workflow\Http\Requests\CreateDelegationRequest;
@@ -29,23 +30,35 @@ final class WorkflowDelegationController extends Controller
         summary: 'List active user delegations',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Workflow Delegations'],
+        parameters: [
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Rows per page (1-100)', schema: new OA\Schema(type: 'integer', default: 100)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'List of delegations', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     #[EnterpriseEndpoint(summary: 'List active user delegations', tags: ['Workflow Engine'])]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $userId = auth()->id();
 
-        $delegations = WorkflowDelegation::where('delegator_user_id', $userId)
-            ->orWhere('delegate_user_id', $userId)
+        $delegations = WorkflowDelegation::query()
+            ->where(fn ($query) => $query->where('delegator_user_id', $userId)->orWhere('delegate_user_id', $userId))
             ->with(['delegator', 'delegate'])
             ->orderBy('starts_at', 'desc')
-            ->get();
+            ->gridPaginate(max(1, min(100, (int) $request->query('per_page', 100))));
 
-        return $this->successResponse($delegations, 'Delegations retrieved');
+        return $this->successResponse(
+            $delegations->getCollection()->map(static fn (WorkflowDelegation $delegation): array => [
+                ...$delegation->toArray(),
+                'delegate_user_name' => $delegation->delegate?->name,
+                'delegator_user_name' => $delegation->delegator?->name,
+            ])->all(),
+            'Delegations retrieved',
+            meta: ['current_page' => $delegations->currentPage(), 'last_page' => $delegations->lastPage(), 'per_page' => $delegations->perPage(), 'total' => $delegations->total()]
+        );
     }
 
     /**

@@ -35,7 +35,7 @@ final class PriceListController extends Controller
     {
         $this->authorize('viewAny', PriceList::class);
 
-        return TradesResource::collection(PriceList::query()->orderBy('name')->paginate(max(1, min($request->integer('per_page', 25), 100))));
+        return TradesResource::collection(PriceList::query()->orderBy('name')->gridPaginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
     /**

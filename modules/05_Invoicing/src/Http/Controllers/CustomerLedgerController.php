@@ -44,7 +44,7 @@ final class CustomerLedgerController extends Controller
             ->where('customer_id', $customerId)
             ->orderBy('entry_date', 'asc')
             ->orderBy('created_at', 'asc')
-            ->paginate((int) $request->query('per_page', 50));
+            ->gridPaginate((int) $request->query('per_page', 50));
 
         return response()->json(CustomerLedgerEntryResource::collection($entries)->response()->getData(true));
     }

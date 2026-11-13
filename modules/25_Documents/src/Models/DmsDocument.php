@@ -8,6 +8,7 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Modules\DocumentTrust\Exceptions\PreservationImmutableException;
 use Modules\DocumentTrust\Services\PreservationLock;
@@ -94,6 +95,26 @@ final class DmsDocument extends BaseEnterpriseModel
     public function versions(): HasMany
     {
         return $this->hasMany(DmsDocumentVersion::class, 'document_id')->orderByDesc('version_number');
+    }
+
+    /**
+     * @return HasOne<DmsDocumentVersion, $this>
+     */
+    public function latestVersion(): HasOne
+    {
+        return $this->hasOne(DmsDocumentVersion::class, 'document_id')->ofMany('version_number', 'max');
+    }
+
+    /**
+     * Calculated grid columns as portable SQL: the file name of the newest version.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'latest_file_name' => '(SELECT v.original_name FROM dms_document_versions v WHERE v.document_id = dms_documents.id ORDER BY v.version_number DESC LIMIT 1)',
+        ];
     }
 
     /**

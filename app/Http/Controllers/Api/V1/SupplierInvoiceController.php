@@ -57,11 +57,13 @@ class SupplierInvoiceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $invoices = PassiveInvoice::query()
+            ->with('supplier')
             ->when($request->filled('supplier_id'), fn ($q) => $q->where('supplier_id', $request->query('supplier_id')))
             ->when($request->filled('document_type'), fn ($q) => $q->where('document_type', $request->query('document_type')))
             ->when($request->filled('payment_status'), fn ($q) => $q->where('payment_status', $request->query('payment_status')))
             ->latest('date')
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 15))));
+        $invoices->getCollection()->each(static fn (PassiveInvoice $invoice) => $invoice->append('supplier_name'));
 
         return $this->successResponse(
             data: CatalogResource::collection($invoices),

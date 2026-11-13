@@ -95,7 +95,7 @@ final class EDocumentNetworkController extends Controller
             ->when($filters['status'] ?? null, static fn ($query, string $status) => $query->where('status', $status))
             ->when($filters['document_reference'] ?? null, static fn ($query, string $reference) => $query->where('document_reference', $reference))
             ->latest()
-            ->paginate((int) ($filters['per_page'] ?? 100));
+            ->gridPaginate((int) ($filters['per_page'] ?? 100));
 
         return $this->successResponse(
             TransmissionResource::collection($page->getCollection()),

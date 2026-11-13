@@ -90,7 +90,7 @@ class AppointmentController extends Controller
 
         $perPage = (int) $request->input('per_page', 25);
 
-        return AppointmentResource::collection($query->paginate($perPage));
+        return AppointmentResource::collection($query->gridPaginate($perPage));
     }
 
     /**

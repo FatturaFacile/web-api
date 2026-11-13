@@ -108,7 +108,7 @@ final class CommunicationController extends Controller
             ->when($validated['from'] ?? null, static fn ($query, string $from) => $query->whereDate('created_at', '>=', $from))
             ->when($validated['to'] ?? null, static fn ($query, string $to) => $query->whereDate('created_at', '<=', $to))
             ->latest()
-            ->paginate((int) ($validated['per_page'] ?? 25));
+            ->gridPaginate((int) ($validated['per_page'] ?? 25));
 
         return $this->successResponse($logs->items(), 'Deliveries retrieved', meta: ['total' => $logs->total(), 'current_page' => $logs->currentPage(), 'last_page' => $logs->lastPage()]);
     }

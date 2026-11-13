@@ -39,10 +39,11 @@ final class VehicleStockController extends Controller
         $this->authorize('viewAny', VehicleStockUnit::class);
 
         return WorkshopResource::collection(VehicleStockUnit::query()
+            ->with('sale.buyer')
             ->when($request->filled('condition'), fn ($query) => $query->where('condition', $request->string('condition')->toString()))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
             ->orderBy('stock_number')
-            ->paginate(max(1, min($request->integer('per_page', 25), 100))));
+            ->gridPaginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
     /**

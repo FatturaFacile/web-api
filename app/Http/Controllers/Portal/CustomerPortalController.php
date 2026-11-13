@@ -344,11 +344,12 @@ class CustomerPortalController extends Controller
             ->where('contact_id', $accessToken->contact_id)
             ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->latest('date')
-            ->paginate(RequestedPerPage::resolve(20));
+            ->gridPaginate(RequestedPerPage::resolve(20));
 
         return $this->successResponse(
             data: PortalInvoiceResource::collection($invoices),
-            message: 'Invoices retrieved successfully'
+            message: 'Invoices retrieved successfully',
+            meta: ['current_page' => $invoices->currentPage(), 'last_page' => $invoices->lastPage(), 'per_page' => $invoices->perPage(), 'total' => $invoices->total()]
         );
     }
 
@@ -427,11 +428,12 @@ class CustomerPortalController extends Controller
             ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->portalVisible()
             ->latest('report_date')
-            ->paginate(RequestedPerPage::resolve(20));
+            ->gridPaginate(RequestedPerPage::resolve(20));
 
         return $this->successResponse(
             data: PortalServiceReportResource::collection($reports),
-            message: 'Service reports retrieved successfully'
+            message: 'Service reports retrieved successfully',
+            meta: ['current_page' => $reports->currentPage(), 'last_page' => $reports->lastPage(), 'per_page' => $reports->perPage(), 'total' => $reports->total()]
         );
     }
 

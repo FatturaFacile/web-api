@@ -41,7 +41,7 @@ final class RevenueRecognitionController extends Controller
         $contracts = RevenueContract::query()
             ->when($request->filled('status'), fn ($query) => $query->where('status', (string) $request->query('status')))
             ->orderByDesc('inception_date')
-            ->paginate(RequestedPerPage::resolve(25));
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => RevenueContractResource::collection($contracts->getCollection())->resolve(),

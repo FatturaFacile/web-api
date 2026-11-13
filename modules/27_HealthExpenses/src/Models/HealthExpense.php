@@ -7,6 +7,7 @@ namespace Modules\HealthExpenses\Models;
 use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\HealthExpenseFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,6 +31,33 @@ class HealthExpense extends Model
      * @var list<string>
      */
     protected $hidden = ['patient_fiscal_code'];
+
+    /**
+     * @var list<string>
+     */
+    protected $appends = ['transmission_status'];
+
+    /**
+     * Calculated grid columns (see App\Support\Http\GridColumns), in portable SQL; same rule as transmissionStatus().
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'transmission_status' => "CASE WHEN health_expenses.patient_opposition THEN 'opposed' ELSE 'pending' END",
+        ];
+    }
+
+    /**
+     * Transmission state shown by the list: an expense the patient opposes is never transmitted.
+     *
+     * @return Attribute<string, never>
+     */
+    protected function transmissionStatus(): Attribute
+    {
+        return Attribute::get(fn (): string => $this->patient_opposition ? 'opposed' : 'pending');
+    }
 
     protected function casts(): array
     {

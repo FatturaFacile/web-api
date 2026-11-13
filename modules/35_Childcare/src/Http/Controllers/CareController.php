@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Childcare\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -32,6 +33,8 @@ final class CareController extends Controller
     #[OA\Get(path: '/api/v1/childcare/notes', operationId: 'listChildcareNotes', description: 'Return the notes of all children or of one child, optionally of a day.', summary: 'List notes', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'child_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
         new OA\Parameter(name: 'date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
+        new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, maximum: 200)),
     ], responses: [
         new OA\Response(response: 200, description: 'Notes', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -43,10 +46,15 @@ final class CareController extends Controller
         $childId = $request->validated('child_id');
         $childId === null ? $this->authorize('care', Child::class) : $this->child((string) $childId);
 
-        return ChildcareResource::collection(Note::query()
+        $notes = Note::query()
+            ->with('child')
             ->when($childId !== null, fn ($query) => $query->where('child_id', (string) $childId))
             ->when($request->validated('date') !== null, fn ($query) => $query->whereDate('date', (string) $request->validated('date')))
-            ->latest()->get());
+            ->latest()
+            ->gridPaginate(RequestedPerPage::resolve(25));
+        $notes->getCollection()->each->append('child_name');
+
+        return ChildcareResource::collection($notes);
     }
 
     /**

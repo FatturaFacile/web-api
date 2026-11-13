@@ -54,6 +54,20 @@ class Contact extends Model
     }
 
     /**
+     * Calculated grid columns as portable SQL (same on SQLite and PostgreSQL), so they filter, sort, group and list
+     * their values in the database like real columns. Reachable from related grids as `contact.name`.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'tax_id' => "COALESCE(NULLIF(contacts.vat_number, ''), NULLIF(contacts.fiscal_code, ''), NULLIF(contacts.uid_number, ''))",
+            'name' => "COALESCE(NULLIF(contacts.company_name, ''), NULLIF(TRIM(COALESCE(contacts.first_name, '') || ' ' || COALESCE(contacts.last_name, '')), ''), '-')",
+        ];
+    }
+
+    /**
      * @return Attribute<string, string>
      */
     protected function type(): Attribute

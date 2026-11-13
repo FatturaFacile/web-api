@@ -29,6 +29,18 @@ class BillableActivity extends Model
         'fee_note_id',
     ];
 
+    /**
+     * Calculated columns of the grid: the billing status the grid shows.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'billing_status' => "CASE WHEN billable_activities.is_billed THEN 'billed' ELSE 'unbilled' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

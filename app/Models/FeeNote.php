@@ -31,6 +31,18 @@ class FeeNote extends Model
         'status',
     ];
 
+    /**
+     * Calculated columns of the grid: the gross amount of the fee note (fees plus contribution and VAT).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'gross_amount' => 'fee_notes.taxable_fees + fee_notes.cassa_previdenza_amount + fee_notes.vat_amount',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

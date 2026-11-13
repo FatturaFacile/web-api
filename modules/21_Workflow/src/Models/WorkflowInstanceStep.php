@@ -34,6 +34,20 @@ final class WorkflowInstanceStep extends BaseEnterpriseModel
 {
     protected $table = 'workflow_instance_steps';
 
+    /**
+     * Calculated columns of the grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `state` is what the inbox shows for a pending step: `escalated`, `overdue` (past its time limit) or `pending`.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'state' => "CASE WHEN workflow_instance_steps.escalated_at IS NOT NULL THEN 'escalated' WHEN workflow_instance_steps.due_at IS NOT NULL AND workflow_instance_steps.due_at < CURRENT_TIMESTAMP THEN 'overdue' ELSE 'pending' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

@@ -68,7 +68,7 @@ final class PreservationController extends Controller
             ->when($filters['document_class'] ?? null, fn ($query, string $class) => $query->where('document_class', $class))
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
             ->latest()
-            ->paginate((int) ($filters['per_page'] ?? 25));
+            ->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         $this->logger->record('list', null, array_filter($filters));
 
@@ -299,7 +299,7 @@ final class PreservationController extends Controller
             ->when($filters['sha256'] ?? null, fn ($query, string $value) => $query->where('sha256', strtolower($value)))
             ->orderByDesc('document_date')
             ->orderBy('sequence')
-            ->paginate((int) ($filters['per_page'] ?? 25));
+            ->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         $this->logger->record('search', null, array_filter($filters) + ['results' => $page->total()]);
 
@@ -393,7 +393,7 @@ final class PreservationController extends Controller
             ->when($filters['package_id'] ?? null, fn ($query, string $value) => $query->where('package_id', $value))
             ->when($filters['action'] ?? null, fn ($query, string $value) => $query->where('action', $value))
             ->orderByDesc('created_at')
-            ->paginate((int) ($filters['per_page'] ?? 50));
+            ->gridPaginate((int) ($filters['per_page'] ?? 50));
 
         return $this->successResponse($page->getCollection()->map(fn (PreservationAccessLog $log): array => [
             'id' => (string) $log->id,

@@ -47,7 +47,7 @@ final readonly class LegacySubscriptionBridge
             ->with(['customer', 'plan'])
             ->when($status !== null && $status !== '', fn ($query) => $query->where('status', $status))
             ->latest('start_date')
-            ->paginate($perPage);
+            ->gridPaginate($perPage);
     }
 
     /**

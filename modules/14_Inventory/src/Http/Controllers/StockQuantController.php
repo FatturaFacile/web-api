@@ -63,7 +63,7 @@ final class StockQuantController extends Controller
             $query->whereColumn('quantity_on_hand', '>', 'quantity_reserved');
         }
 
-        $quants = $query->paginate((int) $request->query('per_page', 25));
+        $quants = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(StockQuantResource::collection($quants)->response()->getData(true));
     }

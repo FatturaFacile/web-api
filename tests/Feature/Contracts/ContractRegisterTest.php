@@ -195,3 +195,29 @@ test('tenants never reach the contracts or counterparties of each other', functi
     $this->postJson("/api/v1/contract-register/customer/{$id}/renew")->assertNotFound();
     $this->postJson('/api/v1/contract-register', customerPayload())->assertUnprocessable()->assertJsonValidationErrors('counterparty_id');
 });
+
+test('the register search matches the contract number and title', function (): void {
+    $this->postJson('/api/v1/contract-register', customerPayload(['contract_number' => 'ZZ-100', 'title' => 'Maintenance']))->assertCreated();
+    $this->postJson('/api/v1/contract-register', supplierPayload(['contract_number' => 'AA-200', 'title' => 'Cleaning']))->assertCreated();
+
+    expect($this->getJson('/api/v1/contract-register?search=ZZ-1')->assertOk()->json('data.0.contract_number'))->toBe('ZZ-100')
+        ->and($this->getJson('/api/v1/contract-register?search=clean')->assertOk()->json('data'))->toHaveCount(1);
+});
+
+test('the alert grid exposes the contract number and title as calculated columns', function (): void {
+    $zeta = $this->postJson('/api/v1/contract-register', customerPayload(['contract_number' => 'ZZ-100', 'title' => 'Maintenance']))->assertCreated()->json('data.id');
+    $alpha = $this->postJson('/api/v1/contract-register', supplierPayload(['contract_number' => 'AA-200', 'title' => 'Cleaning']))->assertCreated()->json('data.id');
+    ContractAlert::query()->create(['tenant_id' => $this->tenant->id, 'contract_kind' => 'customer', 'contract_id' => $zeta, 'alert_type' => 'expiry', 'due_on' => '2026-12-31', 'status' => 'open']);
+    ContractAlert::query()->create(['tenant_id' => $this->tenant->id, 'contract_kind' => 'supplier', 'contract_id' => $alpha, 'alert_type' => 'notice_deadline', 'due_on' => '2026-11-01', 'status' => 'open']);
+
+    $sorted = $this->getJson('/api/v1/contract-register/alerts?sort_by=contract_number&sort_dir=asc')->assertOk()->json('data');
+    expect(collect($sorted)->pluck('contract_number')->all())->toBe(['AA-200', 'ZZ-100'])
+        ->and($sorted[0]['contract_title'])->toBe('Cleaning')
+        ->and($sorted[0]['is_acknowledged'])->toBeFalse();
+
+    $filtered = $this->getJson('/api/v1/contract-register/alerts?filter[contract_number][]=ZZ-100')->assertOk()->json('data');
+    expect($filtered)->toHaveCount(1)->and($filtered[0]['contract_title'])->toBe('Maintenance');
+
+    $values = $this->getJson('/api/v1/contract-register/alerts?grid_values=contract_title')->assertOk()->json('data');
+    expect(collect($values)->pluck('value')->all())->toBe(['Cleaning', 'Maintenance']);
+});

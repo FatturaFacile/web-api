@@ -6,6 +6,7 @@ namespace Modules\Childcare\Models;
 
 use App\Models\Contact;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -33,6 +34,9 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 final class Child extends ChildcareRecord
 {
     protected $table = 'cc_children';
+
+    /** The relations loaded for the grid are exposed as `group_name` and `billing_contact_name`, not as nested records. */
+    protected $hidden = ['group', 'billingContact'];
 
     protected function casts(): array
     {
@@ -71,6 +75,42 @@ final class Child extends ChildcareRecord
     public function weeklyPlans(): HasMany
     {
         return $this->hasMany(WeeklyPlan::class, 'child_id')->orderByDesc('valid_from');
+    }
+
+    /**
+     * @return BelongsTo<Group, $this>
+     */
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(Group::class, 'group_id');
+    }
+
+    /**
+     * Full name, computed in PHP because the names are encrypted at rest (a grid cannot sort or filter the ciphertext).
+     *
+     * @return Attribute<string, never>
+     */
+    protected function displayName(): Attribute
+    {
+        return Attribute::get(fn (): string => trim("{$this->first_name} {$this->last_name}"));
+    }
+
+    /**
+     * @return Attribute<?string, never>
+     */
+    protected function groupName(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->group?->name);
+    }
+
+    /**
+     * @return Attribute<?string, never>
+     */
+    protected function billingContactName(): Attribute
+    {
+        return Attribute::get(fn (): ?string => $this->billingContact === null
+            ? null
+            : ($this->billingContact->company_name ?: trim("{$this->billingContact->first_name} {$this->billingContact->last_name}")));
     }
 
     /**

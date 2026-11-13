@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response as HttpResponse;
@@ -53,7 +54,7 @@ final class ShortTimeController extends PayrollController
     {
         $this->authorize('viewAny', PayrollRun::class);
 
-        return PayrollRecordResource::collection(ShortTimeCase::query()->with('claims')->orderByDesc('starts_on')->get());
+        return PayrollRecordResource::collection(ShortTimeCase::query()->with('claims')->withCount('claims')->orderByDesc('starts_on')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

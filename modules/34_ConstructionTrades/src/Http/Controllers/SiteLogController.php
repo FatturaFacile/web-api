@@ -6,6 +6,7 @@ namespace Modules\ConstructionTrades\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConstructionSite;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -26,7 +27,7 @@ final class SiteLogController extends Controller
     /**
      * Return the diary of a site, latest day first.
      */
-    #[OA\Get(path: '/api/v1/construction-trades/sites/{id}/diary', operationId: 'listTradesSiteDiary', description: 'Return the diary of a construction site, latest day first.', summary: 'List site diary', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
+    #[OA\Get(path: '/api/v1/construction-trades/sites/{id}/diary', operationId: 'listTradesSiteDiary', description: 'Return the diary of a construction site, latest day first. Paginated and filterable like every grid list.', summary: 'List site diary', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [new OA\Parameter(ref: '#/components/parameters/TradesId')], responses: [
         new OA\Response(response: 200, description: 'Diary entries', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordCollection')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
         new OA\Response(ref: '#/components/responses/TradesForbidden', response: 403),
@@ -36,7 +37,7 @@ final class SiteLogController extends Controller
     {
         $site = $this->constructionSite($id, 'view');
 
-        return TradesResource::collection(DiaryEntry::query()->where('construction_site_id', $site->id)->orderByDesc('entry_date')->get());
+        return TradesResource::collection(DiaryEntry::query()->where('construction_site_id', $site->id)->orderByDesc('entry_date')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**
@@ -88,7 +89,7 @@ final class SiteLogController extends Controller
     {
         $site = $this->constructionSite($id, 'view');
 
-        return TradesResource::collection(SiteDocument::query()->where('construction_site_id', $site->id)->with('subcontractor')->orderByRaw('expires_on is null')->orderBy('expires_on')->get());
+        return TradesResource::collection(SiteDocument::query()->where('construction_site_id', $site->id)->with('subcontractor')->orderByRaw('expires_on is null')->orderBy('expires_on')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**

@@ -47,7 +47,7 @@ final class PlanController extends Controller
             ->when($request->filled('interval'), fn ($query) => $query->where('billing_interval', (string) $request->query('interval')))
             ->when($request->has('is_active'), fn ($query) => $query->where('is_active', filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN)))
             ->orderBy('name')
-            ->paginate(RequestedPerPage::resolve(25));
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => PlanResource::collection($plans->getCollection())->resolve(),

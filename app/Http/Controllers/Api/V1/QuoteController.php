@@ -67,7 +67,7 @@ class QuoteController extends Controller
         }
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $quotes = $query->paginate($perPage);
+        $quotes = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: QuoteResource::collection($quotes),

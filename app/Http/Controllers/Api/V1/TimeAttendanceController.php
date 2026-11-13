@@ -81,7 +81,7 @@ class TimeAttendanceController extends Controller
             $query->where('clock_in', '<=', Carbon::parse($request->query('to_date'))->endOfDay());
         }
 
-        $entries = $query->paginate(RequestedPerPage::resolve(25));
+        $entries = $query->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(
             data: TimeEntryResource::collection($entries),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Hospitality\Models;
 
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -36,9 +37,22 @@ final class Reservation extends HospitalityRecord
 
     protected $table = 'hosp_reservations';
 
+    /** @var list<string> */
+    protected $appends = ['duration_minutes'];
+
     protected function casts(): array
     {
         return ['party_size' => 'integer', 'starts_at' => 'immutable_datetime', 'ends_at' => 'immutable_datetime'];
+    }
+
+    /**
+     * Length of the booking in minutes. An accessor, so the grid evaluates it in PHP (a day holds few reservations).
+     *
+     * @return Attribute<int, never>
+     */
+    protected function durationMinutes(): Attribute
+    {
+        return Attribute::get(fn (): int => (int) round(($this->ends_at->getTimestamp() - $this->starts_at->getTimestamp()) / 60));
     }
 
     /**

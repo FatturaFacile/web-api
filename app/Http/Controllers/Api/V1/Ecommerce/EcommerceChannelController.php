@@ -15,6 +15,7 @@ use App\Http\Responses\ApiResponse;
 use App\Jobs\PushStockToEcommerceJob;
 use App\Models\EcommerceChannel;
 use App\Services\Ecommerce\EcommerceManager;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -29,9 +30,10 @@ class EcommerceChannelController extends Controller
     #[OA\Get(
         path: '/api/v1/ecommerce/channels',
         summary: 'List ecommerce channels',
-        description: 'Get all configured ecommerce channels',
+        description: 'Get the configured ecommerce channels (paginated; grid sort, filter and grid_values query parameters apply)',
         tags: ['Ecommerce Channels'],
         security: [['sanctum' => []]],
+        parameters: [new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 200))],
         responses: [
             new OA\Response(response: 200, description: 'Channels list retrieved'),
             new OA\Response(response: 401, description: 'Unauthenticated'),
@@ -39,7 +41,9 @@ class EcommerceChannelController extends Controller
     )]
     public function index(): JsonResponse
     {
-        return $this->successResponse(EcommerceChannelResource::collection(EcommerceChannel::query()->orderBy('name')->get()), __('ecommerce.messages.channels'));
+        $channels = EcommerceChannel::query()->orderBy('name')->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse(EcommerceChannelResource::collection($channels), __('ecommerce.messages.channels'), meta: ['current_page' => $channels->currentPage(), 'last_page' => $channels->lastPage(), 'per_page' => $channels->perPage(), 'total' => $channels->total()]);
     }
 
     /**

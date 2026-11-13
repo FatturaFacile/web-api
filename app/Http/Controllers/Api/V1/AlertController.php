@@ -17,7 +17,6 @@ use OpenApi\Attributes as OA;
 class AlertController extends Controller
 {
     use HandlesLookupCrud {
-        index as traitIndex;
         show as traitShow;
         destroy as traitDestroy;
     }
@@ -49,7 +48,21 @@ class AlertController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        return $this->traitIndex($request);
+        $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
+        $search = trim((string) $request->query('search', ''));
+        $severity = (string) $request->query('severity', '');
+
+        $records = Alert::query()
+            ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner->whereLike('title', "%{$search}%")->orWhereLike('message', "%{$search}%")))
+            ->when($severity !== '', fn ($query) => $query->where('severity', $severity))
+            ->latest()
+            ->gridPaginate($perPage);
+
+        return $this->successResponse(
+            data: CatalogResource::collection($records),
+            message: __('api.list_retrieved', ['resource' => $this->label()]),
+            meta: ['current_page' => $records->currentPage(), 'last_page' => $records->lastPage(), 'per_page' => $records->perPage(), 'total' => $records->total()]
+        );
     }
 
     #[OA\Post(

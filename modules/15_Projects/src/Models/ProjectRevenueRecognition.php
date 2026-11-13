@@ -37,6 +37,20 @@ final class ProjectRevenueRecognition extends BaseEnterpriseModel
 {
     protected $table = 'project_revenue_recognition';
 
+    /**
+     * Calculated columns of the grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `posting` is the readable state of the boolean `is_posted_to_gl` flag (`yes` / `no`), the same on every database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'posting' => "CASE WHEN project_revenue_recognition.is_posted_to_gl THEN 'yes' ELSE 'no' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

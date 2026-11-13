@@ -82,6 +82,19 @@ class Invoice extends Model
         'enasarco_amount',
     ];
 
+    /**
+     * Calculated grid columns as portable SQL, so they filter, sort, group and list their values in the database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            // The status the grid shows: proforma and overdue override the stored status.
+            'display_status' => "CASE WHEN invoices.invoice_type = 'proforma' THEN 'proforma' WHEN invoices.payment_status = 'overdue' AND invoices.status <> 'paid' THEN 'overdue' ELSE invoices.status END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

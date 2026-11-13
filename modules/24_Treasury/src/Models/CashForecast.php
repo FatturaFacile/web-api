@@ -27,6 +27,19 @@ final class CashForecast extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * Calculated grid columns as portable SQL, so they filter, sort, group and list their values in the database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            // Booleans are cast to different texts by SQLite and PostgreSQL: a text state is the same on both.
+            'risk_state' => "CASE WHEN cash_forecasts.deficit_detected THEN 'deficit' ELSE 'covered' END",
+        ];
+    }
+
     public function scenario(): BelongsTo
     {
         return $this->belongsTo(ForecastScenario::class, 'forecast_scenario_id');

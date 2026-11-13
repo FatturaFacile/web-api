@@ -69,7 +69,7 @@ final class PayslipController extends PayrollController
             ->orderByDesc('year')
             ->orderByDesc('month')
             ->orderBy('employee_name')
-            ->paginate((int) $request->validated('per_page', 50));
+            ->gridPaginate((int) $request->validated('per_page', 50));
 
         return PayrollPayslipResource::collection($payslips);
     }

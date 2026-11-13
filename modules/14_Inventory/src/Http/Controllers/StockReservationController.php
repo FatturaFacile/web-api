@@ -56,7 +56,7 @@ final class StockReservationController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $reservations = $query->paginate((int) $request->query('per_page', 25));
+        $reservations = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(StockReservationResource::collection($reservations)->response()->getData(true));
     }

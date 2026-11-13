@@ -68,7 +68,7 @@ final class SalaryCertificateController extends PayrollController
             ->when(! $this->access->viewAllEmployees($actor), fn ($query) => $query->whereIn('employee_id', $this->access->ownEmployeeIds($actor)))
             ->when($request->validated('year') !== null, static fn ($query) => $query->where('year', (int) $request->validated('year')))
             ->orderByDesc('year')
-            ->paginate((int) $request->validated('per_page', 50));
+            ->gridPaginate((int) $request->validated('per_page', 50));
 
         return PayrollSalaryCertificateResource::collection($certificates);
     }

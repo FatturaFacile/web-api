@@ -44,6 +44,20 @@ final class ProjectTask extends BaseEnterpriseModel
 
     protected $table = 'project_tasks';
 
+    /**
+     * Calculated columns of the task grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `code` is the identifier the grid shows: the task number, or the WBS code when the number is empty.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'code' => "COALESCE(NULLIF(project_tasks.task_number, ''), NULLIF(project_tasks.wbs_code, ''), '-')",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

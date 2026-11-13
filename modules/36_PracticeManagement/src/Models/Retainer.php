@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\PracticeManagement\Models;
 
 use App\Models\Contact;
+use App\Models\LegalCase;
 use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
@@ -41,6 +42,18 @@ final class Retainer extends Model
 
     protected $guarded = ['id', 'tenant_id', 'created_at', 'updated_at'];
 
+    /**
+     * Calculated columns of the grid: the balance still available.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'balance' => 'practice_retainers.amount - practice_retainers.applied_amount',
+        ];
+    }
+
     protected function casts(): array
     {
         return ['received_on' => 'immutable_date', 'amount' => 'decimal:2', 'applied_amount' => 'decimal:2'];
@@ -52,6 +65,14 @@ final class Retainer extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Contact::class, 'client_id');
+    }
+
+    /**
+     * @return BelongsTo<LegalCase, $this>
+     */
+    public function legalCase(): BelongsTo
+    {
+        return $this->belongsTo(LegalCase::class, 'legal_case_id');
     }
 
     /**

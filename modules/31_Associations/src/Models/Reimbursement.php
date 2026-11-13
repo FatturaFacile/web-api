@@ -47,6 +47,16 @@ final class Reimbursement extends AssociationRecord
         ];
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'member_name' => Member::nameSql('assoc_reimbursements.member_id'),
+        ];
+    }
+
     public function member(): BelongsTo
     {
         return $this->belongsTo(Member::class, 'member_id');

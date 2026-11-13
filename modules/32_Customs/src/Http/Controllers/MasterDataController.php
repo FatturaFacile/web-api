@@ -41,16 +41,16 @@ final class MasterDataController extends CustomsController
 
         $query = $model::query()
             ->when($search !== '', static fn ($query) => $query->where(static fn ($inner) => $inner
-                ->where('code', 'ilike', "{$search}%")
-                ->orWhere('name_de', 'ilike', "%{$search}%")
-                ->orWhere('name_fr', 'ilike', "%{$search}%")
-                ->orWhere('name_it', 'ilike', "%{$search}%")
-                ->orWhere('name_en', 'ilike', "%{$search}%")))
+                ->whereLike('code', "{$search}%")
+                ->orWhereLike('name_de', "%{$search}%")
+                ->orWhereLike('name_fr', "%{$search}%")
+                ->orWhereLike('name_it', "%{$search}%")
+                ->orWhereLike('name_en', "%{$search}%")))
             ->when($request->filled('valid_on'), static fn ($query) => $query->validOn((string) $request->query('valid_on')))
             ->orderBy('code')
             ->orderByRaw('tenant_id is null');
 
-        return CustomsRecordResource::collection($query->paginate($this->perPage($request, 50, 200)));
+        return CustomsRecordResource::collection($query->gridPaginate($this->perPage($request, 50, 200)));
     }
 
     /**

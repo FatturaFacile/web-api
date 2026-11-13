@@ -75,9 +75,13 @@ final readonly class ContractObligationService
             ->whereNull('deleted_at')
             ->where('status', 'open')
             ->whereNull('reminded_at')
-            ->whereRaw('due_date - remind_days_before <= ?', [$today->toDateString()])
             ->orderBy('due_date')
             ->each(function (ContractObligation $item) use ($today, &$reminded): void {
+                // Portable replacement of the SQL date arithmetic: the window opens remind_days_before days before the due date.
+                if ($item->due_date->subDays((int) $item->remind_days_before)->toDateString() > $today->toDateString()) {
+                    return;
+                }
+
                 $item->forceFill(['reminded_at' => now()])->saveQuietly();
 
                 $this->events->publishAndDispatch(new ContractObligationDueEvent(

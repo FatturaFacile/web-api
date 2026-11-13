@@ -6,6 +6,7 @@ namespace Modules\Intrastat\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -28,7 +29,9 @@ final class ProductProfileController extends Controller
     {
         $this->authorize('viewAny', IntrastatProductProfile::class);
 
-        return ProductProfileResource::collection(IntrastatProductProfile::query()->with('product')->orderBy('created_at')->limit(1000)->get());
+        return ProductProfileResource::collection(
+            IntrastatProductProfile::query()->with('product')->orderBy('created_at')->gridPaginate(RequestedPerPage::resolve(25))
+        );
     }
 
     #[OA\Put(path: '/api/v1/intrastat/product-profiles/{productId}', operationId: 'upsertIntrastatProductProfile', description: 'Set the Intrastat data of a product: good or service, combined nomenclature code (8 digits) or CPA service code (6 digits), net mass in kg and supplementary units per unit sold, country and province of origin.', summary: 'Set Intrastat product data', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/IntrastatProductProfileRequest')), tags: ['Intrastat'], parameters: [new OA\Parameter(ref: '#/components/parameters/IntrastatProductId')], responses: [

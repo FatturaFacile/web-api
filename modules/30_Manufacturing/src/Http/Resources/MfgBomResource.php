@@ -25,6 +25,8 @@ final class MfgBomResource extends JsonResource
             'id' => $this->id,
             'bom_number' => $this->bom_number,
             'mfg_item_id' => $this->mfg_item_id,
+            'item_code' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->item_code),
+            'item_name' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->name),
             'name' => $this->name,
             'revision' => $this->revision,
             'version' => $this->version,
@@ -39,6 +41,7 @@ final class MfgBomResource extends JsonResource
             'supersedes_bom_id' => $this->supersedes_bom_id,
             'engineering_change_order_id' => $this->engineering_change_order_id,
             'notes' => $this->notes,
+            'components_count' => $this->whenCounted('components'),
             'components' => $this->whenLoaded('components', fn () => $this->components->map(static fn (MfgBomComponent $component): array => [
                 'id' => $component->id,
                 'component_item_id' => $component->component_item_id,

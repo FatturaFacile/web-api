@@ -36,19 +36,23 @@ final class ProductionOrderController extends Controller
      * Paginated production orders.
      */
     #[OA\Get(path: '/api/v1/manufacturing/production-orders', operationId: 'listManufacturingProductionOrders', description: 'Paginated production orders of the active company, filtered by status and item.', summary: 'List production orders', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing Production Orders'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgStatus'), new OA\Parameter(ref: '#/components/parameters/MfgItemFilter'), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        parameters: [new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(ref: '#/components/parameters/MfgStatus'), new OA\Parameter(ref: '#/components/parameters/MfgItemFilter'), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
         responses: [new OA\Response(response: 200, description: 'Production orders', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgProductionOrder'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = MfgProductionOrder::query()->where('tenant_id', $this->tenantId());
+        $query = MfgProductionOrder::query()->with('mfgItem')->where('tenant_id', $this->tenantId());
         if ($request->filled('status')) {
             $query->where('status', (string) $request->query('status'));
         }
         if ($request->filled('mfg_item_id')) {
             $query->where('mfg_item_id', (string) $request->query('mfg_item_id'));
         }
+        if ($request->filled('search')) {
+            $term = '%'.trim((string) $request->query('search')).'%';
+            $query->where(static fn ($inner) => $inner->whereLike('order_number', $term)->orWhereHas('mfgItem', static fn ($item) => $item->whereLike('item_code', $term)->orWhereLike('name', $term)));
+        }
 
-        return MfgProductionOrderResource::collection($query->latest()->paginate($this->perPage($request)));
+        return MfgProductionOrderResource::collection($query->latest()->gridPaginate($this->perPage($request)));
     }
 
     /**

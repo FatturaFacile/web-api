@@ -46,6 +46,23 @@ final class PayrollRun extends PayrollRecord
         });
     }
 
+    /**
+     * Totals of the payslips of the run, as grid columns (the list loads the same values with withCount/withSum).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        $payslips = 'SELECT %s FROM payroll_payslips WHERE payroll_payslips.payroll_run_id = payroll_runs.id';
+
+        return [
+            ...parent::gridColumns(),
+            'employees_count' => sprintf($payslips, 'COUNT(*)'),
+            'total_gross' => sprintf($payslips, 'SUM(payroll_payslips.gross_salary)'),
+            'total_net' => sprintf($payslips, 'SUM(payroll_payslips.net_salary)'),
+        ];
+    }
+
     public function isFinal(): bool
     {
         return $this->status === self::StatusFinal;

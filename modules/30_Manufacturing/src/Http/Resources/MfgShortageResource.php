@@ -24,6 +24,8 @@ final class MfgShortageResource extends JsonResource
             'id' => $this->id,
             'mrp_run_id' => $this->mrp_run_id,
             'mfg_item_id' => $this->mfg_item_id,
+            'item_code' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->item_code),
+            'item_name' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->name),
             'required_date' => $this->required_date->toDateString(),
             'gross_requirement' => $this->gross_requirement,
             'available_inventory' => $this->available_inventory,

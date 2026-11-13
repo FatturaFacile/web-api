@@ -49,7 +49,7 @@ class PurchasesController extends Controller
     )]
     public function requests(): JsonResponse
     {
-        $requests = PurchaseRequest::with('user')->latest('requested_date')->paginate(RequestedPerPage::resolve(25));
+        $requests = PurchaseRequest::with('user')->latest('requested_date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $requests, message: 'Purchase requests retrieved');
     }
@@ -71,7 +71,7 @@ class PurchasesController extends Controller
     )]
     public function orders(): JsonResponse
     {
-        $orders = PurchaseOrder::with(['supplier', 'items'])->latest('date')->paginate(RequestedPerPage::resolve(25));
+        $orders = PurchaseOrder::with(['supplier', 'items'])->latest('date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $orders, message: 'Purchase orders retrieved');
     }
@@ -93,7 +93,7 @@ class PurchasesController extends Controller
     )]
     public function passiveInvoices(): JsonResponse
     {
-        $invoices = PassiveInvoice::with('supplier')->latest('date')->paginate(RequestedPerPage::resolve(25));
+        $invoices = PassiveInvoice::with('supplier')->latest('date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $invoices, message: 'Passive invoices retrieved');
     }

@@ -6,8 +6,11 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Str;
 use Modules\HumanResources\Contracts\PerformanceManagementServiceInterface;
 use Modules\HumanResources\Contracts\TrainingAndCertificationServiceInterface;
@@ -46,12 +49,11 @@ final class TalentAndTrainingController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function reviews(): JsonResponse
+    public function reviews(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $reviews = PerformanceReview::where('tenant_id', $tenant->id)->orderByDesc('review_date')->get();
 
-        return response()->json(['data' => PerformanceReviewResource::collection($reviews)]);
+        return PerformanceReviewResource::collection(PerformanceReview::where('tenant_id', $tenant->id)->orderByDesc('review_date')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -147,9 +149,7 @@ final class TalentAndTrainingController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
 
-        return response()->json([
-            'data' => TrainingCourse::where('tenant_id', $tenant->id)->orderBy('course_code')->get(),
-        ]);
+        return JsonResource::collection(TrainingCourse::where('tenant_id', $tenant->id)->orderBy('course_code')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -204,12 +204,11 @@ final class TalentAndTrainingController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function trainingRecords(): JsonResponse
+    public function trainingRecords(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $records = TrainingRecord::where('tenant_id', $tenant->id)->orderByDesc('assigned_date')->get();
 
-        return response()->json(['data' => TrainingRecordResource::collection($records)]);
+        return TrainingRecordResource::collection(TrainingRecord::where('tenant_id', $tenant->id)->orderByDesc('assigned_date')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -300,9 +299,7 @@ final class TalentAndTrainingController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
 
-        return response()->json([
-            'data' => Certification::where('tenant_id', $tenant->id)->orderBy('expiry_date')->get(),
-        ]);
+        return JsonResource::collection(Certification::where('tenant_id', $tenant->id)->orderBy('expiry_date')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

@@ -40,7 +40,7 @@ final class QualityController extends Controller
         responses: [new OA\Response(response: 200, description: 'Inspection plans', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgQualityPlan'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function plans(Request $request): AnonymousResourceCollection
     {
-        return MfgQualityPlanResource::collection(MfgQualityPlan::query()->with('characteristics')->where('tenant_id', $this->tenantId())->orderBy('plan_code')->paginate($this->perPage($request)));
+        return MfgQualityPlanResource::collection(MfgQualityPlan::query()->with('characteristics')->where('tenant_id', $this->tenantId())->orderBy('plan_code')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -69,7 +69,7 @@ final class QualityController extends Controller
             }
         }
 
-        return MfgQualityInspectionResource::collection($query->latest('inspected_at')->paginate($this->perPage($request)));
+        return MfgQualityInspectionResource::collection($query->latest('inspected_at')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -115,7 +115,7 @@ final class QualityController extends Controller
             }
         }
 
-        return MfgNonConformanceResource::collection($query->latest()->paginate($this->perPage($request)));
+        return MfgNonConformanceResource::collection($query->latest()->gridPaginate($this->perPage($request)));
     }
 
     /**

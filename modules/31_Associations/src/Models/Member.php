@@ -63,6 +63,26 @@ final class Member extends AssociationRecord
         ];
     }
 
+    /**
+     * Calculated columns for the server-side grids: the display name lives on the linked contact.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'full_name' => self::nameSql('assoc_members.id'),
+        ];
+    }
+
+    /**
+     * Portable SQL (SQLite and PostgreSQL) of the display name of a person, for a column holding a member id.
+     */
+    public static function nameSql(string $memberIdColumn): string
+    {
+        return "SELECT COALESCE(NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), ''), c.company_name) FROM assoc_members m INNER JOIN contacts c ON c.id = m.contact_id WHERE m.id = {$memberIdColumn}";
+    }
+
     public function isMinor(?CarbonImmutable $on = null): bool
     {
         if ($this->birth_date === null) {

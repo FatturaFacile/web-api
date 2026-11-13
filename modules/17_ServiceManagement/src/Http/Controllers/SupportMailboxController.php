@@ -118,7 +118,7 @@ final class SupportMailboxController extends Controller
         $mailbox = $this->find($id);
         $this->authorize('view', $mailbox);
 
-        return response()->json(['data' => SupportMailboxMessageResource::collection(SupportMailboxMessage::query()->where('mailbox_id', $mailbox->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(50)))]);
+        return response()->json(['data' => SupportMailboxMessageResource::collection(SupportMailboxMessage::query()->where('mailbox_id', $mailbox->id)->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(50)))]);
     }
 
     private function find(string $id): SupportMailbox

@@ -64,7 +64,7 @@ final class WorkflowInboxController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $tasks = $this->inbox->tasks($request->user(), $filters)->paginate((int) ($filters['per_page'] ?? 25));
+        $tasks = $this->inbox->tasks($request->user(), $filters)->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             WorkflowTaskResource::collection($tasks->getCollection()),
@@ -152,7 +152,7 @@ final class WorkflowInboxController extends Controller
     public function myRequests(Request $request): JsonResponse
     {
         $filters = $request->validate(['status' => ['nullable', 'in:pending,in_progress,approved,rejected,cancelled,expired'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
-        $instances = $this->inbox->requests($request->user(), $filters['status'] ?? null)->paginate((int) ($filters['per_page'] ?? 25));
+        $instances = $this->inbox->requests($request->user(), $filters['status'] ?? null)->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             WorkflowInstanceResource::collection($instances->getCollection()),

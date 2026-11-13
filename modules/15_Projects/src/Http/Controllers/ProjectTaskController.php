@@ -48,7 +48,7 @@ final class ProjectTaskController extends Controller
             ->with(['assignments', 'predecessors'])
             ->orderBy('sort_order')
             ->orderBy('planned_start_date')
-            ->paginate($this->perPage($request, 50));
+            ->gridPaginate($this->perPage($request, 50));
 
         return $this->paginated($tasks, ProjectTaskResource::class);
     }

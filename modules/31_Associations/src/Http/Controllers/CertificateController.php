@@ -34,7 +34,7 @@ final class CertificateController extends AssociationController
     {
         $this->allow(AssociationCapability::Health);
 
-        return CertificateResource::collection($this->certificates->expired()->paginate($this->perPage($request)));
+        return CertificateResource::collection($this->certificates->expired()->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationGet('/api/v1/associations/certificates/expiring', 'listAssociationExpiringCertificates', 'List the certificates ending within the alert days, or the given days', query: ['days'])]
@@ -43,7 +43,7 @@ final class CertificateController extends AssociationController
         $this->allow(AssociationCapability::Health);
         $days = $request->filled('days') ? $request->integer('days') : null;
 
-        return CertificateResource::collection($this->certificates->expiring($days)->paginate($this->perPage($request)));
+        return CertificateResource::collection($this->certificates->expiring($days)->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationGet('/api/v1/associations/members/{id}/certificates', 'listAssociationMemberCertificates', 'List the certificates of a person')]

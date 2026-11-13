@@ -42,7 +42,7 @@ final class CampaignMemberController extends Controller
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Members', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMCampaignMember')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
+            new OA\Response(response: 200, description: 'Members', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CRMCampaignMember')), new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer'), new OA\Property(property: 'per_page', type: 'integer'), new OA\Property(property: 'total', type: 'integer')])])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 404, description: 'Resource not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
@@ -50,14 +50,14 @@ final class CampaignMemberController extends Controller
     public function index(Request $request, string $id): JsonResponse
     {
         $campaign = $this->campaign($id);
-        $members = CampaignMember::where('campaign_id', $campaign->id)
+        $members = CampaignMember::with(['contact', 'lead'])->where('campaign_id', $campaign->id)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->orderBy('created_at')
-            ->paginate(RequestedPerPage::resolve(50));
+            ->gridPaginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'data' => $members->getCollection()->map(fn (CampaignMember $member): array => $this->present($member))->values(),
-            'meta' => ['current_page' => $members->currentPage(), 'total' => $members->total()],
+            'meta' => ['current_page' => $members->currentPage(), 'last_page' => $members->lastPage(), 'per_page' => $members->perPage(), 'total' => $members->total()],
         ]);
     }
 
@@ -166,6 +166,17 @@ final class CampaignMemberController extends Controller
         return Campaign::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
     }
 
+    private function displayName(CampaignMember $member): ?string
+    {
+        $contact = $member->contact;
+        $lead = $member->lead;
+        $name = $contact !== null
+            ? ($contact->company_name ?: trim("{$contact->first_name} {$contact->last_name}"))
+            : ($lead !== null ? ($lead->company_name ?: trim("{$lead->first_name} {$lead->last_name}")) : '');
+
+        return $name !== '' ? $name : null;
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -176,6 +187,8 @@ final class CampaignMemberController extends Controller
             'campaign_id' => (string) $member->campaign_id,
             'contact_id' => $member->contact_id,
             'lead_id' => $member->lead_id,
+            'name' => $this->displayName($member),
+            'email' => $member->contact?->email ?? $member->lead?->email,
             'status' => $member->status,
             'suppression_reason' => $member->suppression_reason,
             'sent_at' => $member->sent_at?->toIso8601String(),

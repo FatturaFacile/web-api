@@ -49,7 +49,7 @@ final class LandedCostController extends Controller
             $query->where('status', (string) $request->query('status'));
         }
 
-        return LandedCostResource::collection($query->paginate($this->perPage($request)));
+        return LandedCostResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

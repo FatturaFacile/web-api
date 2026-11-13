@@ -22,6 +22,20 @@ class ServiceReport extends Model
 
     protected $table = 'service_reports';
 
+    /**
+     * Calculated columns of the grids (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `signature` is the signing state of the report (`signed` / `not_signed`).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'signature' => "CASE WHEN service_reports.signed_at IS NOT NULL THEN 'signed' ELSE 'not_signed' END",
+        ];
+    }
+
     protected $fillable = [
         'tenant_id',
         'report_number',

@@ -197,7 +197,7 @@ final class WorkspaceConnectionController extends Controller
             // The counterpart is the address of the other party, as the provider wrote it ("Name <address>" included).
             ->when($email, static fn ($query, string $address) => $query->whereRaw('lower(counterpart) like ?', ['%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($address)).'%']))
             ->orderByDesc('starts_at')
-            ->paginate((int) ($filters['per_page'] ?? 200));
+            ->gridPaginate((int) ($filters['per_page'] ?? 200));
 
         return $this->successResponse(
             WorkspaceItemResource::collection($page->getCollection()),

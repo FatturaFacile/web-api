@@ -6,8 +6,10 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
 use Modules\HumanResources\Contracts\OrganizationManagementServiceInterface;
 use Modules\HumanResources\Exceptions\HumanResourcesException;
@@ -44,12 +46,11 @@ final class OrganizationController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function departments(): JsonResponse
+    public function departments(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $departments = Department::where('tenant_id', $tenant->id)->orderBy('code')->get();
 
-        return response()->json(['data' => DepartmentResource::collection($departments)]);
+        return DepartmentResource::collection(Department::where('tenant_id', $tenant->id)->orderBy('code')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -133,12 +134,11 @@ final class OrganizationController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function positions(): JsonResponse
+    public function positions(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $positions = Position::where('tenant_id', $tenant->id)->orderBy('code')->get();
 
-        return response()->json(['data' => PositionResource::collection($positions)]);
+        return PositionResource::collection(Position::where('tenant_id', $tenant->id)->orderBy('code')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

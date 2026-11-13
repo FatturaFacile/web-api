@@ -125,7 +125,7 @@ class BankStatementController extends Controller
             ->orderByDesc('statement_date')
             ->orderByDesc('created_at')
             ->orderByDesc('id')
-            ->paginate((int) ($filters['per_page'] ?? 25));
+            ->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             data: BankStatementResource::collection($statements->getCollection()),

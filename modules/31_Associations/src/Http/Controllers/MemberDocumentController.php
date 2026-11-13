@@ -53,7 +53,7 @@ final class MemberDocumentController extends AssociationController
         $this->authorize('viewAny', Member::class);
         $limit = CarbonImmutable::today()->addDays(max(0, $request->integer('days', 30)))->toDateString();
 
-        return AssociationRecordResource::collection(MemberDocument::query()->whereNotNull('expires_on')->whereDate('expires_on', '<=', $limit)->orderBy('expires_on')->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection(MemberDocument::query()->whereNotNull('expires_on')->whereDate('expires_on', '<=', $limit)->orderBy('expires_on')->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationGet('/api/v1/associations/member-documents/{id}/download', 'downloadAssociationMemberDocument', 'Download a document of a person', file: true)]

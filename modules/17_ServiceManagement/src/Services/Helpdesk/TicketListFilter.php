@@ -64,7 +64,7 @@ final class TicketListFilter
 
         if (! empty($filters['q'])) {
             $term = '%'.addcslashes((string) $filters['q'], '%_\\').'%';
-            $query->where(fn (Builder $text) => $text->where('subject', 'ilike', $term)->orWhere('ticket_number', 'ilike', $term)->orWhere('description', 'ilike', $term));
+            $query->where(fn (Builder $text) => $text->whereLike('subject', $term)->orWhereLike('ticket_number', $term)->orWhereLike('description', $term));
         }
 
         if (! empty($filters['sla_state'])) {

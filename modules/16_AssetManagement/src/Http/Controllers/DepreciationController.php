@@ -55,7 +55,7 @@ final class DepreciationController extends Controller
             $query->where('ledger_type', AssetLedger::normalize((string) $request->query('ledger_type')));
         }
 
-        return DepreciationRunResource::collection($query->orderByDesc('executed_at')->paginate(max(1, min(100, (int) $request->query('per_page', '25')))));
+        return DepreciationRunResource::collection($query->orderByDesc('executed_at')->gridPaginate(max(1, min(100, (int) $request->query('per_page', '25')))));
     }
 
     /**
@@ -138,9 +138,9 @@ final class DepreciationController extends Controller
         summary: 'List asset depreciation schedules',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['EAM Depreciation'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/EamAssetId'), new OA\Parameter(ref: '#/components/parameters/EamLedgerType')],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/EamAssetId'), new OA\Parameter(ref: '#/components/parameters/EamLedgerType'), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 100)), new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1))],
         responses: [
-            new OA\Response(response: 200, description: 'Schedules', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationScheduleResource'))])),
+            new OA\Response(response: 200, description: 'Schedules', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/AssetManagementDepreciationScheduleResource')), new OA\Property(property: 'meta', type: 'object')])),
             new OA\Response(ref: '#/components/responses/EamUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/EamNotFound', response: 404),
         ]
@@ -154,7 +154,7 @@ final class DepreciationController extends Controller
             $query->where('ledger_type', AssetLedger::normalize((string) $request->query('ledger_type')));
         }
 
-        return DepreciationScheduleResource::collection($query->orderBy('ledger_type')->orderBy('period_code')->limit(1200)->get());
+        return DepreciationScheduleResource::collection($query->orderBy('ledger_type')->orderBy('period_code')->gridPaginate(max(1, min(100, (int) $request->query('per_page', 100)))));
     }
 
     /**

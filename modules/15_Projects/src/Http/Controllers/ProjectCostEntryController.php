@@ -49,7 +49,7 @@ final class ProjectCostEntryController extends Controller
             ->when($request->query('task_id'), fn ($query, $taskId) => $query->where('project_task_id', $taskId))
             ->when($request->query('approval_status'), fn ($query, $status) => $query->where('approval_status', $status))
             ->orderByDesc('incurred_date')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return $this->paginated($entries, ProjectCostEntryResource::class);
     }

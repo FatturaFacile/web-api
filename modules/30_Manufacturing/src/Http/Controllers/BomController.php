@@ -31,11 +31,11 @@ final class BomController extends Controller
      * Paginated BOM revisions.
      */
     #[OA\Get(path: '/api/v1/manufacturing/boms', operationId: 'listManufacturingBoms', description: 'Paginated BOM revisions of the active company, filtered by item and status.', summary: 'List BOM revisions', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Manufacturing BOMs'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/MfgItemFilter'), new OA\Parameter(ref: '#/components/parameters/MfgStatus'), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
+        parameters: [new OA\Parameter(name: 'search', in: 'query', required: false, schema: new OA\Schema(type: 'string')), new OA\Parameter(ref: '#/components/parameters/MfgItemFilter'), new OA\Parameter(ref: '#/components/parameters/MfgStatus'), new OA\Parameter(ref: '#/components/parameters/MfgPage'), new OA\Parameter(ref: '#/components/parameters/MfgPerPage')],
         responses: [new OA\Response(response: 200, description: 'BOM revisions', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgBom'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function index(Request $request): AnonymousResourceCollection
     {
-        $query = MfgBom::query()->where('tenant_id', $this->tenantId());
+        $query = MfgBom::query()->with('mfgItem')->withCount('components')->where('tenant_id', $this->tenantId());
         if ($request->filled('mfg_item_id')) {
             $query->where('mfg_item_id', (string) $request->query('mfg_item_id'));
         }
@@ -43,7 +43,12 @@ final class BomController extends Controller
             $query->where('status', (string) $request->query('status'));
         }
 
-        return MfgBomResource::collection($query->orderBy('bom_number')->orderByDesc('version')->paginate($this->perPage($request)));
+        if ($request->filled('search')) {
+            $term = '%'.trim((string) $request->query('search')).'%';
+            $query->where(static fn ($inner) => $inner->whereLike('bom_number', $term)->orWhereLike('name', $term)->orWhereHas('mfgItem', static fn ($item) => $item->whereLike('item_code', $term)->orWhereLike('name', $term)));
+        }
+
+        return MfgBomResource::collection($query->orderBy('bom_number')->orderByDesc('version')->gridPaginate($this->perPage($request)));
     }
 
     /**

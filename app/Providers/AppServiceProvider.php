@@ -42,11 +42,13 @@ use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Database\SafeDropPostgresConnection;
+use App\Support\Http\GridQuery;
 use App\Validation\LocalizedAttributeValidator;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\PostgresConnection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -97,6 +99,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Grid lists: filters, sorting, grouping and distinct values over the whole dataset (see GridQuery), then paginates.
+        foreach ([Builder::class, \Illuminate\Database\Query\Builder::class] as $builderClass) {
+            $builderClass::macro('gridPaginate', function (...$arguments) {
+                /** @var Builder|\Illuminate\Database\Query\Builder $this */
+                return GridQuery::paginate($this, $arguments);
+            });
+        }
+
         // Fields are named in the language of the request in every validation message (lang/<locale>/validation_attributes.php).
         Validator::resolver(static fn (Translator $translator, array $data, array $rules, array $messages, array $attributes): LocalizedAttributeValidator => new LocalizedAttributeValidator($translator, $data, $rules, $messages, $attributes));
 

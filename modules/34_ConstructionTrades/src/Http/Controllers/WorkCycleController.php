@@ -33,7 +33,7 @@ final class WorkCycleController extends Controller
     {
         $this->authorize('viewAny', WorkCycle::class);
 
-        return TradesResource::collection(WorkCycle::query()->with('steps')->orderBy('name')->paginate(max(1, min($request->integer('per_page', 25), 100))));
+        return TradesResource::collection(WorkCycle::query()->with('steps')->orderBy('name')->gridPaginate(max(1, min($request->integer('per_page', 25), 100))));
     }
 
     /**

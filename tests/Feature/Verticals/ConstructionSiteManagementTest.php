@@ -110,3 +110,46 @@ test('read-only roles and other companies stay out of the site management', func
     $this->getJson('/api/v1/construction-trades/subcontractors')->assertOk()->assertJsonCount(0, 'data');
     $this->getJson('/api/v1/construction-trades/site-documents/expiring?within_days=3650')->assertOk()->assertJsonCount(0, 'data');
 });
+
+test('the site grids are paginated and filter, sort and group on the server, also on relation columns', function (): void {
+    $otherSubcontractor = $this->postJson('/api/v1/construction-trades/subcontractors', ['name' => 'Alfa Edile Sagl', 'trade' => 'Muratura'])->assertCreated()->json('data.id');
+    foreach ([[$this->subcontractor, 'Impianto elettrico'], [$otherSubcontractor, 'Muri portanti']] as [$subcontractor, $description]) {
+        $this->postJson("/api/v1/construction-trades/sites/{$this->site}/subcontracts", ['subcontractor_id' => $subcontractor, 'description' => $description, 'contract_amount' => '1000.00'])->assertCreated();
+    }
+
+    $sorted = $this->getJson("/api/v1/construction-trades/sites/{$this->site}/subcontracts?sort_by=subcontractor.name&sort_dir=asc&per_page=1")->assertOk();
+    expect($sorted->json('data.0.description'))->toBe('Muri portanti')
+        ->and($sorted->json('meta.total'))->toBe(2);
+    $values = collect($this->getJson("/api/v1/construction-trades/sites/{$this->site}/subcontracts?grid_values=subcontractor.name")->assertOk()->json('data'))->pluck('value')->all();
+    expect($values)->toBe(['Alfa Edile Sagl', 'Elettro Ticino SA']);
+    $this->getJson("/api/v1/construction-trades/sites/{$this->site}/subcontracts?filter[subcontractor.name][]=Elettro%20Ticino%20SA")->assertOk()->assertJsonCount(1, 'data');
+
+    foreach (['2026-11-09' => 'Soleggiato', '2026-11-10' => 'Pioggia', '2026-11-11' => 'Soleggiato'] as $date => $weather) {
+        $this->postJson("/api/v1/construction-trades/sites/{$this->site}/diary", ['entry_date' => $date, 'weather' => $weather, 'workers_present' => 3, 'work_performed' => 'Lavori'])->assertCreated();
+    }
+    $this->getJson("/api/v1/construction-trades/sites/{$this->site}/diary?per_page=2")->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.total', 3);
+    expect($this->getJson("/api/v1/construction-trades/sites/{$this->site}/diary?grid_values=weather")->assertOk()->json('data'))
+        ->toBe([['value' => 'Pioggia', 'count' => 1], ['value' => 'Soleggiato', 'count' => 2]]);
+    $this->getJson("/api/v1/construction-trades/sites/{$this->site}/diary?filter[weather][]=Pioggia")->assertOk()->assertJsonCount(1, 'data');
+
+    $this->postJson("/api/v1/construction-trades/sites/{$this->site}/documents", ['kind' => 'permit', 'title' => 'Permesso'])->assertCreated();
+    $this->postJson("/api/v1/construction-trades/sites/{$this->site}/documents", ['kind' => 'insurance', 'title' => 'Assicurazione'])->assertCreated();
+    $this->getJson("/api/v1/construction-trades/sites/{$this->site}/documents?filter[kind][]=permit")->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.title', 'Permesso');
+    $this->getJson("/api/v1/construction-trades/sites/{$this->site}/documents?sort_by=title&sort_dir=desc")->assertOk()->assertJsonPath('data.0.title', 'Permesso');
+
+    $siteValues = collect($this->getJson('/api/v1/construction/sites?grid_values=client.name')->assertOk()->json('data'))->pluck('value')->all();
+    expect($siteValues)->toBe(['Cliente SA']);
+    $this->getJson('/api/v1/construction/sites?per_page=1')->assertOk()->assertJsonPath('data.total', 1);
+    $this->getJson('/api/v1/construction/sal?grid_values=status')->assertOk()->assertJsonPath('data', []);
+});
+
+test('the bids are searched by number, title or customer and grouped by customer name', function (): void {
+    $this->postJson('/api/v1/construction-trades/bids', ['contact_id' => $this->customer->id, 'title' => 'Casa Rossi', 'language' => 'it', 'currency' => 'CHF', 'tax_rate' => '8.1'])->assertCreated();
+    $this->postJson('/api/v1/construction-trades/bids', ['contact_id' => $this->customer->id, 'title' => 'Garage', 'language' => 'it', 'currency' => 'CHF', 'tax_rate' => '8.1'])->assertCreated();
+
+    $this->getJson('/api/v1/construction-trades/bids?search=garage')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/construction-trades/bids?search=cliente')->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson('/api/v1/construction-trades/bids?search=nessuno')->assertOk()->assertJsonCount(0, 'data');
+    expect($this->getJson('/api/v1/construction-trades/bids?grid_values=contact.name')->assertOk()->json('data'))->toBe([['value' => 'Cliente SA', 'count' => 2]]);
+    $this->getJson('/api/v1/construction-trades/bids?sort_by=contact.name&grid_group_by=contact.name&filter[status][]=draft')->assertOk()->assertJsonPath('meta.total', 2);
+});

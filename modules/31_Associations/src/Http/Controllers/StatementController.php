@@ -62,7 +62,7 @@ final class StatementController extends AssociationController
         return AssociationRecordResource::collection(StatementMapping::query()
             ->when($request->filled('scheme'), static fn ($query) => $query->where('scheme', $request->string('scheme')->toString()))
             ->orderBy('scheme')->orderBy('line_code')
-            ->paginate($this->perPage($request, 100, 500)));
+            ->gridPaginate($this->perPage($request, 100, 500)));
     }
 
     #[AssociationPost('/api/v1/associations/statements/mappings', 'createAssociationStatementMapping', 'Map an account to a line, optionally for one cost centre', 'AssociationStatementMappingRequest', response: 'AssociationRecord')]
@@ -153,7 +153,7 @@ final class StatementController extends AssociationController
     {
         $this->allow(AssociationCapability::Read);
 
-        return AssociationRecordResource::collection(StatementFiling::query()->orderByDesc('year')->orderByDesc('created_at')->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection(StatementFiling::query()->orderByDesc('year')->orderByDesc('created_at')->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/statements/{year}/filings', 'prepareAssociationStatementFiling', 'Freeze the statements of the year for the filing; blocking checks refuse it', 'AssociationPrepareFilingRequest', response: 'AssociationRecord')]

@@ -45,7 +45,7 @@ final class SalesQuoteController extends Controller
     public function index(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
-        $query = SalesQuote::with('items')->where('tenant_id', $tenantId);
+        $query = SalesQuote::with(['items', 'customer'])->where('tenant_id', $tenantId);
 
         if ($request->has('status')) {
             $query->where('status', (string) $request->query('status'));
@@ -54,7 +54,7 @@ final class SalesQuoteController extends Controller
             $query->where('contact_id', (string) $request->query('contact_id'));
         }
 
-        $quotes = $query->orderBy('created_at', 'desc')->paginate((int) $request->query('per_page', 25));
+        $quotes = $query->orderBy('created_at', 'desc')->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(SalesQuoteResource::collection($quotes)->response()->getData(true));
     }

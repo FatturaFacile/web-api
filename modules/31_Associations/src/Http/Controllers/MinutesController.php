@@ -93,6 +93,6 @@ final class MinutesController extends AssociationController
         $this->allow(AssociationCapability::Read);
         Minutes::query()->findOrFail($id);
 
-        return AssociationRecordResource::collection(AssociationDelivery::query()->where('subject_id', $id)->orderByDesc('attempted_at')->paginate($this->perPage($request, 100, 500)));
+        return AssociationRecordResource::collection(AssociationDelivery::query()->where('subject_id', $id)->orderByDesc('attempted_at')->gridPaginate($this->perPage($request, 100, 500)));
     }
 }

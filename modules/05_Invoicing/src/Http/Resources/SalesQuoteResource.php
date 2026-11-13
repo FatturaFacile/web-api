@@ -36,6 +36,10 @@ final class SalesQuoteResource extends JsonResource
             'shipping_terms' => $this->shipping_terms,
             'revision_number' => $this->revision_number,
             'notes' => $this->notes,
+            'contact' => $this->whenLoaded('customer', fn (): ?array => $this->customer === null ? null : [
+                'id' => $this->customer->id,
+                'name' => $this->customer->company_name ?: trim($this->customer->first_name.' '.$this->customer->last_name),
+            ]),
             'items' => $this->whenLoaded('items'),
             'created_at' => $this->created_at?->toISOString(),
             'updated_at' => $this->updated_at?->toISOString(),

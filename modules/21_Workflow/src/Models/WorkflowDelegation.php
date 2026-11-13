@@ -20,6 +20,20 @@ final class WorkflowDelegation extends BaseEnterpriseModel
 {
     protected $table = 'workflow_delegations';
 
+    /**
+     * Calculated columns of the grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `state` is the readable state of the boolean `is_active` flag (`active` / `expired`), the same on every database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'state' => "CASE WHEN workflow_delegations.is_active THEN 'active' ELSE 'expired' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

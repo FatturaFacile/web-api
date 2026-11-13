@@ -76,7 +76,7 @@ class CrmController extends Controller
         }
 
         return $this->successResponse(
-            data: $query->paginate(RequestedPerPage::resolve(25)),
+            data: $query->gridPaginate(RequestedPerPage::resolve(25)),
             message: 'Contacts retrieved successfully'
         );
     }
@@ -103,7 +103,7 @@ class CrmController extends Controller
         $clients = Contact::with('addresses')
             ->whereIn('type', ['client', 'customer', 'both'])
             ->latest()
-            ->paginate(RequestedPerPage::resolve(25));
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $clients, message: 'Clients retrieved');
     }
@@ -130,7 +130,7 @@ class CrmController extends Controller
         $suppliers = Contact::with('addresses')
             ->whereIn('type', ['supplier', 'both'])
             ->latest()
-            ->paginate(RequestedPerPage::resolve(25));
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $suppliers, message: 'Suppliers retrieved');
     }

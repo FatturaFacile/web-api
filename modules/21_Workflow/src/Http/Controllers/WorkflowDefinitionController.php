@@ -31,6 +31,7 @@ final class WorkflowDefinitionController extends Controller
         parameters: [
             new OA\Parameter(name: 'target_entity_type', in: 'query', required: false, description: 'Filter by target entity type', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'is_active', in: 'query', required: false, description: 'Filter by is active', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Matches the code or the name', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 25)),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
@@ -45,9 +46,13 @@ final class WorkflowDefinitionController extends Controller
         $definitions = WorkflowDefinition::query()
             ->when($request->query('target_entity_type'), fn ($q, $type) => $q->where('target_entity_type', $type))
             ->when($request->query('is_active'), fn ($q, $active) => $q->where('is_active', filter_var($active, FILTER_VALIDATE_BOOLEAN)))
+            ->when($request->filled('search'), function ($q) use ($request): void {
+                $term = '%'.addcslashes((string) $request->query('search'), '%_\\').'%';
+                $q->where(fn ($inner) => $inner->whereLike('code', $term)->orWhereLike('name', $term));
+            })
             ->orderBy('code')
             ->orderBy('version', 'desc')
-            ->paginate((int) $request->query('per_page', 25));
+            ->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(WorkflowDefinitionResource::collection($definitions)->response()->getData(true));
     }

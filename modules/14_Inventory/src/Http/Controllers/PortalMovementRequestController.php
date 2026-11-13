@@ -35,7 +35,7 @@ final class PortalMovementRequestController extends Controller
         return response()->json(PortalMovementRequest::query()
             ->when($request->filled('status'), static fn ($query) => $query->where('status', $request->query('status')))
             ->orderBy('created_at')
-            ->paginate(RequestedPerPage::resolve(25)));
+            ->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     #[OA\Post(

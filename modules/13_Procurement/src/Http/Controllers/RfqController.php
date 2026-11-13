@@ -54,7 +54,7 @@ final class RfqController extends Controller
             $query->where('status', (string) $request->query('status'));
         }
 
-        return RfqResource::collection($query->paginate($this->perPage($request)));
+        return RfqResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

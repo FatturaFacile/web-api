@@ -44,7 +44,7 @@ final class NetworkController extends AssociationController
     {
         $this->allow(AssociationCapability::Network);
 
-        return AssociationRecordResource::collection(NetworkLink::query()->with('parent:id,name')->orderByDesc('requested_at')->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection(NetworkLink::query()->with('parent:id,name')->orderByDesc('requested_at')->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/network/consents/{id}/grant', 'grantAssociationNetworkConsent', 'As an affiliate, consent to share aggregated figures with a parent body')]

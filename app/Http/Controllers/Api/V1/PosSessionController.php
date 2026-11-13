@@ -39,7 +39,7 @@ class PosSessionController extends Controller
     )]
     public function index(): JsonResponse
     {
-        $sessions = PosSession::latest('opened_at')->paginate(RequestedPerPage::resolve(25));
+        $sessions = PosSession::latest('opened_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $sessions, message: 'POS sessions retrieved');
     }

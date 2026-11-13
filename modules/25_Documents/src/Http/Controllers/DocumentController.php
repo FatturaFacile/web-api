@@ -7,6 +7,7 @@ namespace Modules\Documents\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Attachment;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Documents\Exceptions\DuplicateDocumentException;
@@ -70,17 +71,17 @@ final class DocumentController extends Controller
     public function index(Request $request): JsonResponse
     {
         $documents = $this->access->restrict(DmsDocument::query(), $request->user())
-            ->with('tags')
-            ->when($request->filled('q'), fn ($query) => $query->whereRaw("dms_documents.search_vector @@ websearch_to_tsquery('simple', ?)", [(string) $request->query('q')]))
+            ->with(['tags', 'folder', 'latestVersion'])
+            ->when($request->filled('q'), fn ($query) => $this->matchSearchTerms($query, (string) $request->query('q')))
             ->when($request->filled('folder_id'), fn ($query) => $query->where('folder_id', $request->query('folder_id')))
             ->when($request->filled('document_type'), fn ($query) => $query->where('document_type', $request->query('document_type')))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->when($request->filled('tag'), fn ($query) => $query->whereHas('tags', fn ($tags) => $tags->whereRaw('lower(name) = lower(?)', [(string) $request->query('tag')])))
-            ->when($request->filled('metadata_key') && $request->filled('metadata_value'), fn ($query) => $query->whereRaw('dms_documents.metadata ->> ? = ?', [(string) $request->query('metadata_key'), (string) $request->query('metadata_value')]))
+            ->when($request->filled('metadata_key') && $request->filled('metadata_value'), fn ($query) => $query->where('metadata->'.preg_replace('/[^A-Za-z0-9_.-]/', '', (string) $request->query('metadata_key')), (string) $request->query('metadata_value')))
             ->when($request->filled('checked_out'), fn ($query) => $request->boolean('checked_out') ? $query->whereNotNull('checked_out_by') : $query->whereNull('checked_out_by'))
             ->when($request->filled('linkable_id'), fn ($query) => $query->whereHas('links', fn ($links) => $links->where('linkable_id', $request->query('linkable_id'))->where('linkable_type', $request->query('linkable_type'))))
             ->latest()
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 25))));
 
         return $this->successResponse(
             DocumentResource::collection($documents->getCollection()),
@@ -375,6 +376,22 @@ final class DocumentController extends Controller
         $document = $this->library->releaseLegalHold($this->access->findVisible($id, $request->user()));
 
         return $this->successResponse(new DocumentResource($document), 'Legal hold released');
+    }
+
+    /**
+     * Every word of the term must appear in the title, description, type or the indexed text (file names, tags and
+     * metadata), whatever the database engine.
+     *
+     * @param  Builder<DmsDocument>  $query
+     * @return Builder<DmsDocument>
+     */
+    private function matchSearchTerms(Builder $query, string $term): Builder
+    {
+        foreach (preg_split('/\s+/', trim($term), -1, PREG_SPLIT_NO_EMPTY) ?: [] as $word) {
+            $query->whereAny(['dms_documents.title', 'dms_documents.description', 'dms_documents.document_type', 'dms_documents.search_text'], 'like', '%'.addcslashes($word, '%_\\').'%');
+        }
+
+        return $query;
     }
 
     private function duplicate(DuplicateDocumentException $exception): JsonResponse

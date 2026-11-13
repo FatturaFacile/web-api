@@ -28,6 +28,8 @@ final class MfgProductionOrderResource extends JsonResource
             'id' => $this->id,
             'order_number' => $this->order_number,
             'mfg_item_id' => $this->mfg_item_id,
+            'item_code' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->item_code),
+            'item_name' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->name),
             'bom_id' => $this->bom_id,
             'routing_id' => $this->routing_id,
             'project_id' => $this->project_id,

@@ -46,7 +46,7 @@ final class ProcedureController extends Controller
                 ->when($request->boolean('effective'), static fn ($query) => $query->where('status', 'approved'))
                 ->orderBy('code')
                 ->orderByDesc('version')
-                ->paginate($this->perPage())
+                ->gridPaginate($this->perPage())
         );
     }
 

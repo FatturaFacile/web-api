@@ -126,7 +126,7 @@ final class AssistantController extends Controller
             ->when($filters['from'] ?? null, static fn ($query, string $from) => $query->whereDate('created_at', '>=', $from))
             ->when($filters['to'] ?? null, static fn ($query, string $to) => $query->whereDate('created_at', '<=', $to))
             ->latest()
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 25))));
 
         return $this->successResponse(
             AssistantLogResource::collection($logs->getCollection()),

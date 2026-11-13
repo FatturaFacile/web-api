@@ -33,7 +33,7 @@ final class BookingController extends AssociationController
             ->when($request->filled('from'), static fn ($query) => $query->where('ends_at', '>', (string) $request->query('from')))
             ->when($request->filled('to'), static fn ($query) => $query->where('starts_at', '<', (string) $request->query('to')))
             ->orderBy('starts_at')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($bookings);
     }

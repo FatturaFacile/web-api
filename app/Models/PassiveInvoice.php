@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -145,6 +146,23 @@ class PassiveInvoice extends Model implements ReactsToWorkflowOutcome
     public function amountDue(): string
     {
         return Decimal::round2(Decimal::sub((string) ($this->total_amount ?? '0'), (string) ($this->withholding_tax_amount ?? '0')));
+    }
+
+    /**
+     * Name of the supplier contact (company name, or first and last name): only known once the supplier is loaded.
+     *
+     * @return Attribute<string|null, never>
+     */
+    protected function supplierName(): Attribute
+    {
+        return Attribute::get(function (): ?string {
+            $supplier = $this->relationLoaded('supplier') ? $this->supplier : null;
+            if ($supplier === null) {
+                return null;
+            }
+
+            return $supplier->company_name ?: (trim($supplier->first_name.' '.$supplier->last_name) ?: null);
+        });
     }
 
     /**

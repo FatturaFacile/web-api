@@ -17,6 +17,7 @@ final class ThreeWayMatchLogResource extends JsonResource
         return [
             'id' => $this->id,
             'purchase_order_id' => $this->purchase_order_id,
+            'po_number' => $this->whenLoaded('purchaseOrder', fn (): ?string => $this->purchaseOrder?->po_number),
             'purchase_receipt_id' => $this->purchase_receipt_id,
             'passive_invoice_id' => $this->passive_invoice_id,
             'match_status' => $this->match_status,

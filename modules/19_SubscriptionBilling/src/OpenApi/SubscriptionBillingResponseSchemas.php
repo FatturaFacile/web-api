@@ -33,6 +33,8 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'name', type: 'string'),
     new OA\Property(property: 'customer_id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'plan_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'plan_name', type: 'string', nullable: true, description: 'Present when the plan is loaded (contract list)'),
+    new OA\Property(property: 'customer_name', type: 'string', nullable: true, description: 'Present when the customer is loaded (contract list)'),
     new OA\Property(property: 'status', type: 'string', enum: ['trialing', 'active', 'past_due', 'paused', 'suspended', 'pending', 'cancelled', 'expired']),
     new OA\Property(property: 'start_date', type: 'string', format: 'date'),
     new OA\Property(property: 'trial_end_date', type: 'string', format: 'date', nullable: true),

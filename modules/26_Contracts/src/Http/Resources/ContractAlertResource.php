@@ -24,6 +24,9 @@ final class ContractAlertResource extends JsonResource
             'alert_type' => $this->alert_type,
             'due_on' => $this->due_on?->toDateString(),
             'status' => $this->status,
+            'is_acknowledged' => $this->status === 'acknowledged',
+            'contract_number' => $this->contract_number ?? null,
+            'contract_title' => $this->contract_title ?? null,
             'acknowledged_at' => $this->acknowledged_at?->toIso8601String(),
         ];
     }

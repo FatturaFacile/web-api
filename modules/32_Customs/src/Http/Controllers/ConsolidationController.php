@@ -37,7 +37,7 @@ final class ConsolidationController extends CustomsController
     {
         $this->authorize('viewAny', CustomsConsolidation::class);
 
-        return CustomsRecordResource::collection(CustomsConsolidation::query()->with('dossiers')->latest()->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection(CustomsConsolidation::query()->with('dossiers')->latest()->gridPaginate($this->perPage($request)));
     }
 
     /**

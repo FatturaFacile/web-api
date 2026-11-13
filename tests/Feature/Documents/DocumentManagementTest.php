@@ -288,3 +288,25 @@ test('a version is always downloaded as an attachment with sniffing disabled, an
     dmsActAs(dmsMember($this->other, 'admin'), $this->other);
     $this->get("/api/v1/dms/documents/{$id}/versions/{$versionId}/download")->assertNotFound();
 });
+
+test('the document grid embeds folder and latest version and handles its calculated columns', function (): void {
+    $folder = DmsFolder::create(['tenant_id' => $this->tenant->id, 'name' => 'Legal']);
+    $a = dmsUpload('Alpha', 'a1', ['folder_id' => $folder->id]);
+    dmsUpload('Beta', 'b1');
+
+    $rows = $this->getJson('/api/v1/dms/documents?sort_by=title&sort_dir=asc')->assertOk()->json('data');
+    expect($rows[0]['folder_name'])->toBe('Legal')
+        ->and($rows[0]['latest_version']['original_name'])->toBe('contract.txt');
+
+    $values = $this->getJson('/api/v1/dms/documents?grid_values=latest_file_name')->assertOk()->json('data');
+    expect($values)->toBe([['value' => 'contract.txt', 'count' => 2]]);
+
+    $byFolder = $this->getJson('/api/v1/dms/documents?grid_values=folder.name')->assertOk()->json('data');
+    expect(collect($byFolder)->pluck('count', 'value')->all())->toMatchArray(['Legal' => 1]);
+
+    $filtered = $this->getJson('/api/v1/dms/documents?filter[folder.name][]=Legal')->assertOk()->json('data');
+    expect(collect($filtered)->pluck('id')->all())->toBe([$a]);
+
+    $this->getJson('/api/v1/dms/documents?sort_by=latest_file_name&sort_dir=desc')->assertOk();
+    $this->getJson('/api/v1/dms/documents?filter_like[latest_file_name]=contr')->assertOk()->assertJsonCount(2, 'data');
+});

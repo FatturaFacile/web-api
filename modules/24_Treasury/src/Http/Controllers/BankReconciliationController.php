@@ -50,7 +50,7 @@ final class BankReconciliationController extends Controller
         $tenantId = $tenantContext->getTenantId();
         $reconciliations = BankReconciliation::where('tenant_id', $tenantId)
             ->latest('period_end_date')
-            ->paginate((int) $request->query('per_page', 25));
+            ->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(BankReconciliationResource::collection($reconciliations)->response()->getData(true));
     }

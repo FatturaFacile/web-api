@@ -13,6 +13,7 @@ use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
 use App\Support\Http\RequestedPerPage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -29,6 +30,9 @@ class InventoryController extends Controller
         summary: 'List products',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Inventory'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Contains match on SKU, name or barcode', schema: new OA\Schema(type: 'string')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Products retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -36,7 +40,13 @@ class InventoryController extends Controller
     )]
     public function products(Request $request): JsonResponse
     {
-        $products = Product::with(['brand', 'parent'])->latest()->paginate(RequestedPerPage::resolve(25));
+        $products = Product::with(['brand', 'parent'])
+            ->when($request->query('search'), static fn (Builder $query, string $term): Builder => $query->where(static fn (Builder $inner): Builder => $inner
+                ->whereLike('sku', "%{$term}%")
+                ->orWhereLike('name', "%{$term}%")
+                ->orWhereLike('barcode', "%{$term}%")))
+            ->latest()
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $products, message: 'Products retrieved');
     }
@@ -114,7 +124,7 @@ class InventoryController extends Controller
 
     public function movements(Request $request): JsonResponse
     {
-        $movements = StockMovement::latest()->paginate(RequestedPerPage::resolve(25));
+        $movements = StockMovement::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $movements, message: 'Stock movements retrieved');
     }
@@ -133,7 +143,7 @@ class InventoryController extends Controller
     )]
     public function deliveryNotes(Request $request): JsonResponse
     {
-        $ddts = DeliveryNote::latest('date')->paginate(RequestedPerPage::resolve(25));
+        $ddts = DeliveryNote::latest('date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $ddts, message: 'Delivery notes (DDT) retrieved');
     }

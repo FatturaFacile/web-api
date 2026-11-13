@@ -65,7 +65,7 @@ final class MaintenanceController extends Controller
             $query->where('is_active', true);
         }
 
-        return MaintenancePlanResource::collection($query->orderBy('next_due_date')->paginate($this->perPage($request)));
+        return MaintenancePlanResource::collection($query->orderBy('next_due_date')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -223,7 +223,7 @@ final class MaintenanceController extends Controller
             }
         }
 
-        return MaintenanceWorkOrderResource::collection($query->orderByDesc('scheduled_date')->paginate($this->perPage($request)));
+        return MaintenanceWorkOrderResource::collection($query->orderByDesc('scheduled_date')->gridPaginate($this->perPage($request)));
     }
 
     /**

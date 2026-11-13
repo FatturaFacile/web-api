@@ -45,12 +45,14 @@ final class CampaignController extends Controller
         $tenant = $this->tenantContext->getTenant();
         $campaigns = Campaign::where('tenant_id', $tenant->id)
             ->orderByDesc('created_at')
-            ->paginate(RequestedPerPage::resolve(25));
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => CampaignResource::collection($campaigns),
             'meta' => [
                 'current_page' => $campaigns->currentPage(),
+                'last_page' => $campaigns->lastPage(),
+                'per_page' => $campaigns->perPage(),
                 'total' => $campaigns->total(),
             ],
         ]);

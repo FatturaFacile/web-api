@@ -52,6 +52,7 @@ final class SubscriptionController extends Controller
     #[OA\Get(path: '/api/v1/sub/contracts', operationId: 'listSubContracts', summary: 'List subscription contracts', description: 'Paginated contracts of the active company, latest first.', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Subscriptions Contracts'], parameters: [
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
         new OA\Parameter(name: 'customer_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+        new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Matches the contract number, the label, the plan name or the customer name', schema: new OA\Schema(type: 'string')),
         new OA\Parameter(ref: '#/components/parameters/SubscriptionBillingPage'),
     ], responses: [
         new OA\Response(response: 200, description: 'Contracts', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/SubscriptionBillingSubscriptionResource')), new OA\Property(property: 'meta', ref: '#/components/schemas/SubscriptionBillingPaginationMeta')])),
@@ -61,11 +62,22 @@ final class SubscriptionController extends Controller
     public function index(Request $request): JsonResponse
     {
         $subscriptions = Subscription::query()
-            ->with('plan')
+            ->with(['plan', 'customer'])
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $term = '%'.trim((string) $request->query('search')).'%';
+                $query->where(fn ($inner) => $inner
+                    ->whereLike('subscription_number', $term)
+                    ->orWhereLike('name', $term)
+                    ->orWhereHas('plan', fn ($plan) => $plan->whereLike('name', $term))
+                    ->orWhereHas('customer', fn ($customer) => $customer
+                        ->whereLike('company_name', $term)
+                        ->orWhereLike('first_name', $term)
+                        ->orWhereLike('last_name', $term)));
+            })
             ->when($request->filled('status'), fn ($query) => $query->where('status', (string) $request->query('status')))
             ->when($request->filled('customer_id'), fn ($query) => $query->where('customer_id', (string) $request->query('customer_id')))
             ->orderByDesc('created_at')
-            ->paginate(RequestedPerPage::resolve(25));
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => SubscriptionResource::collection($subscriptions->getCollection())->resolve(),

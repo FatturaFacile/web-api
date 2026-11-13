@@ -69,7 +69,7 @@ final class WorkOrderController extends Controller
             $query->where('work_type', $request->query('work_type'));
         }
 
-        $workOrders = $query->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $workOrders = $query->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => WorkOrderResource::collection($workOrders),

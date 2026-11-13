@@ -33,7 +33,7 @@ final class TariffGridController extends CustomsController
     {
         $this->authorize('viewAny', CustomsTariffGrid::class);
 
-        return CustomsRecordResource::collection(CustomsTariffGrid::query()->orderBy('name')->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection(CustomsTariffGrid::query()->orderBy('name')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -157,7 +157,7 @@ final class TariffGridController extends CustomsController
     {
         $this->authorize('viewAny', CustomsServiceDiscount::class);
 
-        return CustomsRecordResource::collection(CustomsServiceDiscount::query()->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection(CustomsServiceDiscount::query()->gridPaginate($this->perPage($request)));
     }
 
     /**

@@ -39,7 +39,7 @@ final class SportWorkController extends AssociationController
             ->when($request->integer('year') > 0, static fn ($query) => $query->whereYear('paid_on', $request->integer('year')))
             ->when($request->filled('collaborator_id'), static fn ($query) => $query->where('collaborator_id', $request->string('collaborator_id')->toString()))
             ->orderByDesc('paid_on')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/sport/compensations', 'recordAssociationSportCompensation', 'Record a compensation with the contribution and withholding figures of the consultant', 'AssociationSportCompensationRequest', response: 'AssociationRecord')]

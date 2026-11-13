@@ -52,7 +52,7 @@ final class ServiceContractController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $contracts = $query->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
+        $contracts = $query->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => ServiceContractResource::collection($contracts),

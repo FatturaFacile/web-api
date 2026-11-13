@@ -78,7 +78,7 @@ final class AssessmentDecisionController extends CustomsController
             ->orderByDesc('document_date')
             ->orderBy('mrn');
 
-        return CustomsRecordResource::collection($query->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -183,7 +183,7 @@ final class AssessmentDecisionController extends CustomsController
     {
         $this->authorize('viewAny', CustomsRetrievalRun::class);
 
-        return CustomsRecordResource::collection(CustomsRetrievalRun::query()->latest('started_at')->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection(CustomsRetrievalRun::query()->latest('started_at')->gridPaginate($this->perPage($request)));
     }
 
     /**

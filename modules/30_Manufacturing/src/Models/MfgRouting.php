@@ -32,6 +32,18 @@ final class MfgRouting extends BaseEnterpriseModel
 {
     protected $table = 'mfg_routings';
 
+    /**
+     * Calculated grid columns (see the GridColumns class of the grid engine).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'operations_count' => '(SELECT COUNT(*) FROM mfg_operations WHERE mfg_operations.routing_id = mfg_routings.id)',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

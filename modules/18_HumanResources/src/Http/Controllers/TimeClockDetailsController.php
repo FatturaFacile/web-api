@@ -7,6 +7,7 @@ namespace Modules\HumanResources\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -55,7 +56,7 @@ final class TimeClockDetailsController extends Controller
     ])]
     public function groups(): AnonymousResourceCollection
     {
-        return HrRecordResource::collection(TimeScheduleGroup::query()->with('rules')->orderBy('name')->get());
+        return HrRecordResource::collection(TimeScheduleGroup::query()->with('rules')->orderBy('name')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -211,7 +212,7 @@ final class TimeClockDetailsController extends Controller
             ->whereDate('meal_date', '>=', (string) $request->validated('from'))
             ->whereDate('meal_date', '<=', (string) $request->validated('to'))
             ->orderBy('meal_date')
-            ->get());
+            ->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**

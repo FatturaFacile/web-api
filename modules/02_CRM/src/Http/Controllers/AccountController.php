@@ -69,12 +69,14 @@ final class AccountController extends Controller
             $query->where('contact_id', $request->query('contact_id'));
         }
 
-        $accounts = $query->orderBy('name')->paginate(RequestedPerPage::resolve(25));
+        $accounts = $query->orderBy('name')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => AccountResource::collection($accounts),
             'meta' => [
                 'current_page' => $accounts->currentPage(),
+                'last_page' => $accounts->lastPage(),
+                'per_page' => $accounts->perPage(),
                 'total' => $accounts->total(),
             ],
         ]);
@@ -252,7 +254,7 @@ final class AccountController extends Controller
         $logs = PartyLinkLog::where('tenant_id', $this->tenantContext->getTenantId())
             ->when($request->filled('outcome'), fn ($query) => $query->where('outcome', $request->query('outcome')))
             ->orderByDesc('updated_at')
-            ->paginate(RequestedPerPage::resolve(50));
+            ->gridPaginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'data' => $logs->getCollection()->map(fn (PartyLinkLog $log): array => [

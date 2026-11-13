@@ -53,7 +53,7 @@ final class PurchaseReceiptController extends Controller
             $query->where('purchase_order_id', $request->input('purchase_order_id'));
         }
 
-        $receipts = $query->paginate((int) $request->query('per_page', 25));
+        $receipts = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(PurchaseReceiptResource::collection($receipts)->response()->getData(true));
     }

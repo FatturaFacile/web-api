@@ -39,7 +39,7 @@ final class EngineeringChangeController extends Controller
             $query->where('status', (string) $request->query('status'));
         }
 
-        return MfgEngineeringChangeOrderResource::collection($query->latest()->paginate($this->perPage($request)));
+        return MfgEngineeringChangeOrderResource::collection($query->latest()->gridPaginate($this->perPage($request)));
     }
 
     /**

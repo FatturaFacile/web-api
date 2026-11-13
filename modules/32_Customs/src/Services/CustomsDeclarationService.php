@@ -184,7 +184,7 @@ final class CustomsDeclarationService
             ->orderByDesc('last_used_at');
 
         if (! empty($filters['search'])) {
-            $query->where('customs_declaration_items.description', 'ilike', '%'.$filters['search'].'%');
+            $query->whereLike('customs_declaration_items.description', '%'.$filters['search'].'%');
         }
 
         if (! empty($filters['commodity_code'])) {
@@ -199,7 +199,7 @@ final class CustomsDeclarationService
             $query->where('d.consignee_contact_id', $filters['consignee_contact_id']);
         }
 
-        return $query->paginate($perPage);
+        return $query->gridPaginate($perPage);
     }
 
     /**

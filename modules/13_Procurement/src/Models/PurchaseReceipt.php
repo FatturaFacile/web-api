@@ -35,6 +35,18 @@ final class PurchaseReceipt extends BaseEnterpriseModel
 {
     protected $table = 'purchase_receipts';
 
+    /**
+     * Calculated grid columns: the number of lines of the receipt.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'lines_count' => 'SELECT COUNT(*) FROM purchase_receipt_lines WHERE purchase_receipt_lines.purchase_receipt_id = purchase_receipts.id AND purchase_receipt_lines.deleted_at IS NULL',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

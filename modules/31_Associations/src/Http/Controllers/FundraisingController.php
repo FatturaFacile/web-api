@@ -46,7 +46,7 @@ final class FundraisingController extends AssociationController
             ->when($request->filled('campaign_id'), static fn ($query) => $query->where('campaign_id', $request->string('campaign_id')->toString()))
             ->when($request->filled('donor_id'), static fn ($query) => $query->where('donor_id', $request->string('donor_id')->toString()))
             ->orderByDesc('received_on')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/donations', 'recordAssociationDonation', 'Record a donation of money or in kind; money is posted to the ledger on the campaign cost centre', 'AssociationDonationRequest', response: 'AssociationRecord')]
@@ -105,7 +105,7 @@ final class FundraisingController extends AssociationController
     {
         $this->allow(AssociationCapability::Read);
 
-        return AssociationRecordResource::collection(FivePerMilleAllocation::query()->orderByDesc('received_on')->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection(FivePerMilleAllocation::query()->orderByDesc('received_on')->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/five-per-mille', 'recordAssociationFivePerMille', 'Record an allocation of the 5x1000 received', 'AssociationFivePerMilleRequest', response: 'AssociationRecord')]

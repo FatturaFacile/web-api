@@ -42,16 +42,26 @@ class TenantBackupController extends Controller
         summary: 'List tenant backups',
         security: [['bearerAuth' => []]],
         tags: ['System', 'Backups'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1000)),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Backups listed successfully', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
+        $backups = TenantBackup::query()
+            ->latest()
+            ->orderByDesc('id')
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
+
         return $this->successResponse(
-            TenantBackupResource::collection(TenantBackup::query()->latest()->orderByDesc('id')->get()),
-            __('backup.messages.listed')
+            TenantBackupResource::collection($backups),
+            __('backup.messages.listed'),
+            meta: ['current_page' => $backups->currentPage(), 'last_page' => $backups->lastPage(), 'per_page' => $backups->perPage(), 'total' => $backups->total()],
         );
     }
 
