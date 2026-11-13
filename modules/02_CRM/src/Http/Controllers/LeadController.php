@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Contracts\LeadServiceInterface;
@@ -60,7 +61,7 @@ final class LeadController extends Controller
             $query->where('rating', $request->query('rating'));
         }
 
-        $leads = $query->orderByDesc('score')->paginate(25);
+        $leads = $query->orderByDesc('score')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => LeadResource::collection($leads),

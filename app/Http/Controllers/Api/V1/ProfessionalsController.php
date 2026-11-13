@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\BillableActivity;
 use App\Models\FeeNote;
 use App\Models\LegalCase;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\GeneralLedger\Services\Tax\Decimal;
@@ -35,7 +36,7 @@ class ProfessionalsController extends Controller
     )]
     public function cases(): JsonResponse
     {
-        $cases = LegalCase::latest()->paginate(25);
+        $cases = LegalCase::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $cases, message: 'Legal cases (Fascicoli) retrieved');
     }
@@ -54,7 +55,7 @@ class ProfessionalsController extends Controller
     )]
     public function timeLogs(Request $request): JsonResponse
     {
-        $logs = BillableActivity::latest('date')->paginate(25);
+        $logs = BillableActivity::latest('date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $logs, message: 'Billable activities retrieved');
     }
@@ -123,7 +124,7 @@ class ProfessionalsController extends Controller
     )]
     public function feeNotes(): JsonResponse
     {
-        $notes = FeeNote::latest('date')->paginate(25);
+        $notes = FeeNote::latest('date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $notes, message: 'Professional fee notes (Parcelle) retrieved');
     }

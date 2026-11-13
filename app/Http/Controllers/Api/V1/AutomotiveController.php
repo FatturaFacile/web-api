@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\TireHotelRecord;
 use App\Models\Vehicle;
 use App\Models\VehicleInspection;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -34,7 +35,7 @@ class AutomotiveController extends Controller
     )]
     public function vehicles(): JsonResponse
     {
-        $vehicles = Vehicle::latest()->paginate(25);
+        $vehicles = Vehicle::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $vehicles, message: 'Vehicles retrieved');
     }

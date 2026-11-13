@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\Http\RequestedPerPage;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -34,7 +35,7 @@ final class PortalMovementRequestController extends Controller
         return response()->json(PortalMovementRequest::query()
             ->when($request->filled('status'), static fn ($query) => $query->where('status', $request->query('status')))
             ->orderBy('created_at')
-            ->paginate(25));
+            ->paginate(RequestedPerPage::resolve(25)));
     }
 
     #[OA\Post(

@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Contracts\CampaignServiceInterface;
@@ -44,7 +45,7 @@ final class CampaignController extends Controller
         $tenant = $this->tenantContext->getTenant();
         $campaigns = Campaign::where('tenant_id', $tenant->id)
             ->orderByDesc('created_at')
-            ->paginate(25);
+            ->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => CampaignResource::collection($campaigns),

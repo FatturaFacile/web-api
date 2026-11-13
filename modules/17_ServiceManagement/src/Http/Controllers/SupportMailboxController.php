@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Modules\ServiceManagement\Http\Requests\SaveSupportMailboxRequest;
 use Modules\ServiceManagement\Http\Resources\SupportMailboxMessageResource;
@@ -117,7 +118,7 @@ final class SupportMailboxController extends Controller
         $mailbox = $this->find($id);
         $this->authorize('view', $mailbox);
 
-        return response()->json(['data' => SupportMailboxMessageResource::collection(SupportMailboxMessage::query()->where('mailbox_id', $mailbox->id)->orderByDesc('created_at')->paginate(50))]);
+        return response()->json(['data' => SupportMailboxMessageResource::collection(SupportMailboxMessage::query()->where('mailbox_id', $mailbox->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(50)))]);
     }
 
     private function find(string $id): SupportMailbox

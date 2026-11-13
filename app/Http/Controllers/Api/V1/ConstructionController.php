@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\ConformityCertificate;
 use App\Models\ConstructionSite;
 use App\Models\ProgressBilling;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\GeneralLedger\Services\Tax\Decimal;
@@ -34,7 +35,7 @@ class ConstructionController extends Controller
     )]
     public function sites(): JsonResponse
     {
-        $sites = ConstructionSite::latest()->paginate(25);
+        $sites = ConstructionSite::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $sites, message: 'Construction sites (Cantieri) retrieved');
     }
@@ -53,7 +54,7 @@ class ConstructionController extends Controller
     )]
     public function sal(Request $request): JsonResponse
     {
-        $sals = ProgressBilling::latest()->paginate(25);
+        $sals = ProgressBilling::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $sals, message: 'Progress billings (SAL) retrieved');
     }
@@ -131,7 +132,7 @@ class ConstructionController extends Controller
     )]
     public function conformityCertificates(): JsonResponse
     {
-        $certs = ConformityCertificate::latest()->paginate(25);
+        $certs = ConformityCertificate::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $certs, message: 'Conformity certificates (DICO) retrieved');
     }

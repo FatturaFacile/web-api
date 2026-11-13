@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\BankTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceQrBillData;
+use App\Support\Http\RequestedPerPage;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -37,7 +38,7 @@ class TreasuryController extends Controller
     )]
     public function transactions(Request $request): JsonResponse
     {
-        $transactions = BankTransaction::latest('booking_date')->paginate(25);
+        $transactions = BankTransaction::latest('booking_date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $transactions, message: 'Transactions retrieved');
     }

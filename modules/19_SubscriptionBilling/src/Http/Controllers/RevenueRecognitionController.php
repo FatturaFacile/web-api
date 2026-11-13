@@ -6,6 +6,7 @@ namespace Modules\SubscriptionBilling\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\SubscriptionBilling\Contracts\RevenueRecognitionServiceInterface;
@@ -40,7 +41,7 @@ final class RevenueRecognitionController extends Controller
         $contracts = RevenueContract::query()
             ->when($request->filled('status'), fn ($query) => $query->where('status', (string) $request->query('status')))
             ->orderByDesc('inception_date')
-            ->paginate(25);
+            ->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => RevenueContractResource::collection($contracts->getCollection())->resolve(),

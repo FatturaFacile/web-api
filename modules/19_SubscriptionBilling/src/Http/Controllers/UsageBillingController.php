@@ -6,6 +6,7 @@ namespace Modules\SubscriptionBilling\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\SubscriptionBilling\Contracts\RecurringBillingServiceInterface;
@@ -79,7 +80,7 @@ final class UsageBillingController extends Controller
             ->when($request->filled('subscription_id'), fn ($query) => $query->where('subscription_id', (string) $request->query('subscription_id')))
             ->when($request->filled('metric_code'), fn ($query) => $query->where('metric_code', (string) $request->query('metric_code')))
             ->orderByDesc('event_timestamp')
-            ->paginate(50);
+            ->paginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'data' => UsageEventResource::collection($events->getCollection())->resolve(),
@@ -123,7 +124,7 @@ final class UsageBillingController extends Controller
     ])]
     public function listBillingRuns(): JsonResponse
     {
-        $runs = BillingRun::query()->orderByDesc('created_at')->paginate(25);
+        $runs = BillingRun::query()->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => BillingRunResource::collection($runs->getCollection())->resolve(),

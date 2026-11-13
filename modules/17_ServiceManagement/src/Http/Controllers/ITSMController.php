@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\ServiceManagement\Contracts\IncidentManagementServiceInterface;
@@ -50,7 +51,7 @@ final class ITSMController extends Controller
     public function incidents(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $incidents = Incident::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(25);
+        $incidents = Incident::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => IncidentResource::collection($incidents),
@@ -159,7 +160,7 @@ final class ITSMController extends Controller
     public function problems(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $problems = Problem::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(25);
+        $problems = Problem::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => $problems,
@@ -187,7 +188,7 @@ final class ITSMController extends Controller
     public function changes(Request $request): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
-        $changes = ChangeRequest::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(25);
+        $changes = ChangeRequest::where('tenant_id', $tenant->id)->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => ChangeRequestResource::collection($changes),

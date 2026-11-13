@@ -13,6 +13,7 @@ use App\Http\Resources\CatalogResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\PosSession;
 use App\Services\Retail\PosSessionReport;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -38,7 +39,7 @@ class PosSessionController extends Controller
     )]
     public function index(): JsonResponse
     {
-        $sessions = PosSession::latest('opened_at')->paginate(25);
+        $sessions = PosSession::latest('opened_at')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $sessions, message: 'POS sessions retrieved');
     }

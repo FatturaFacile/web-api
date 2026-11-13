@@ -14,6 +14,7 @@ use App\Models\TimeEntry;
 use App\Models\User;
 use App\Services\Attendance\AttendanceComplianceService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,7 +81,7 @@ class TimeAttendanceController extends Controller
             $query->where('clock_in', '<=', Carbon::parse($request->query('to_date'))->endOfDay());
         }
 
-        $entries = $query->paginate(25);
+        $entries = $query->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(
             data: TimeEntryResource::collection($entries),

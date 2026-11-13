@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\HumanResources\Contracts\EmployeeLifecycleServiceInterface;
@@ -61,7 +62,7 @@ final class EmployeeController extends Controller
             $query->where('department_id', $request->query('department_id'));
         }
 
-        $employees = $query->orderByDesc('created_at')->paginate(25);
+        $employees = $query->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => EmployeeResource::collection($employees),

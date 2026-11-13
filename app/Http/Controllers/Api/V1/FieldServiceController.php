@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Ticket;
 use App\Models\WorkOrder;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -31,7 +32,7 @@ class FieldServiceController extends Controller
     )]
     public function tickets(): JsonResponse
     {
-        $tickets = Ticket::latest()->paginate(25);
+        $tickets = Ticket::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $tickets, message: 'Tickets retrieved');
     }
@@ -49,7 +50,7 @@ class FieldServiceController extends Controller
     )]
     public function workOrders(): JsonResponse
     {
-        $orders = WorkOrder::latest('date')->paginate(25);
+        $orders = WorkOrder::latest('date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $orders, message: 'Work orders (Rapportini) retrieved');
     }

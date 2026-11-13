@@ -7,6 +7,7 @@ namespace Modules\CRM\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
 use Modules\CRM\Http\Requests\SaveSegmentRequest;
@@ -185,7 +186,7 @@ final class SegmentController extends Controller
     public function members(string $id): JsonResponse
     {
         $segment = Segment::where('tenant_id', $this->tenantContext->getTenantId())->findOrFail($id);
-        $page = $this->segmentService->query($segment)->orderBy('created_at')->paginate(50);
+        $page = $this->segmentService->query($segment)->orderBy('created_at')->paginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'entity' => $segment->entity,

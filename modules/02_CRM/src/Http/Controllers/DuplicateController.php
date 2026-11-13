@@ -7,6 +7,7 @@ namespace Modules\CRM\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -143,7 +144,7 @@ final class DuplicateController extends Controller
     )]
     public function merges(): JsonResponse
     {
-        $merges = ContactMerge::where('tenant_id', $this->tenantContext->getTenantId())->orderByDesc('created_at')->paginate(25);
+        $merges = ContactMerge::where('tenant_id', $this->tenantContext->getTenantId())->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => $merges->getCollection()->map(fn (ContactMerge $merge): array => $this->presentMerge($merge))->values(),

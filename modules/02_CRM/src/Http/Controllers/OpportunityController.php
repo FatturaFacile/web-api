@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Contracts\OpportunityServiceInterface;
@@ -57,7 +58,7 @@ final class OpportunityController extends Controller
             $query->where('forecast_category', $request->query('forecast_category'));
         }
 
-        $opportunities = $query->orderByDesc('expected_revenue')->paginate(25);
+        $opportunities = $query->orderByDesc('expected_revenue')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => OpportunityResource::collection($opportunities),

@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\DamageInspection;
 use App\Models\RentalBooking;
 use App\Models\RentalVehicle;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -53,7 +54,7 @@ class FleetRentalController extends Controller
     )]
     public function bookings(): JsonResponse
     {
-        $bookings = RentalBooking::latest('start_date')->paginate(25);
+        $bookings = RentalBooking::latest('start_date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $bookings, message: 'Rental bookings retrieved');
     }

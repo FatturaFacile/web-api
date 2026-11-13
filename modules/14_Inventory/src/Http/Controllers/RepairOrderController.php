@@ -6,6 +6,7 @@ namespace Modules\Inventory\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -109,7 +110,7 @@ final class RepairOrderController extends Controller
             }
         }
 
-        return response()->json($query->paginate(25));
+        return response()->json($query->paginate(RequestedPerPage::resolve(25)));
     }
 
     #[OA\Post(

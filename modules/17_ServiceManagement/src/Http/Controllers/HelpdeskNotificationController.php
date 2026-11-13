@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\ServiceManagement\Http\Requests\UpdateNotificationPreferencesRequest;
@@ -56,7 +57,7 @@ final class HelpdeskNotificationController extends Controller
     public function notifications(Request $request): JsonResponse
     {
         $own = HelpdeskNotification::query()->where('tenant_id', $this->tenantId())->where('user_id', $request->user()->id);
-        $list = (clone $own)->when($request->boolean('unread'), fn ($query) => $query->whereNull('read_at'))->orderByDesc('created_at')->paginate(50);
+        $list = (clone $own)->when($request->boolean('unread'), fn ($query) => $query->whereNull('read_at'))->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(50));
 
         return response()->json(['data' => HelpdeskNotificationResource::collection($list), 'meta' => ['unread' => (clone $own)->whereNull('read_at')->count()]]);
     }

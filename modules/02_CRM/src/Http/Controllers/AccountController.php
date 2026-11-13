@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Contracts\CustomerHealthServiceInterface;
@@ -68,7 +69,7 @@ final class AccountController extends Controller
             $query->where('contact_id', $request->query('contact_id'));
         }
 
-        $accounts = $query->orderBy('name')->paginate(25);
+        $accounts = $query->orderBy('name')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => AccountResource::collection($accounts),
@@ -251,7 +252,7 @@ final class AccountController extends Controller
         $logs = PartyLinkLog::where('tenant_id', $this->tenantContext->getTenantId())
             ->when($request->filled('outcome'), fn ($query) => $query->where('outcome', $request->query('outcome')))
             ->orderByDesc('updated_at')
-            ->paginate(50);
+            ->paginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'data' => $logs->getCollection()->map(fn (PartyLinkLog $log): array => [

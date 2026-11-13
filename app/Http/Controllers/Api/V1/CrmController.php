@@ -11,6 +11,7 @@ use App\Http\Requests\Crm\UpdateContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -75,7 +76,7 @@ class CrmController extends Controller
         }
 
         return $this->successResponse(
-            data: $query->paginate(25),
+            data: $query->paginate(RequestedPerPage::resolve(25)),
             message: 'Contacts retrieved successfully'
         );
     }
@@ -102,7 +103,7 @@ class CrmController extends Controller
         $clients = Contact::with('addresses')
             ->whereIn('type', ['client', 'customer', 'both'])
             ->latest()
-            ->paginate(25);
+            ->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $clients, message: 'Clients retrieved');
     }
@@ -129,7 +130,7 @@ class CrmController extends Controller
         $suppliers = Contact::with('addresses')
             ->whereIn('type', ['supplier', 'both'])
             ->latest()
-            ->paginate(25);
+            ->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $suppliers, message: 'Suppliers retrieved');
     }

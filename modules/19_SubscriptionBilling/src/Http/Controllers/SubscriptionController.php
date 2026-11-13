@@ -6,6 +6,7 @@ namespace Modules\SubscriptionBilling\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -64,7 +65,7 @@ final class SubscriptionController extends Controller
             ->when($request->filled('status'), fn ($query) => $query->where('status', (string) $request->query('status')))
             ->when($request->filled('customer_id'), fn ($query) => $query->where('customer_id', (string) $request->query('customer_id')))
             ->orderByDesc('created_at')
-            ->paginate(25);
+            ->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => SubscriptionResource::collection($subscriptions->getCollection())->resolve(),

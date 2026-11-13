@@ -7,6 +7,7 @@ namespace Modules\ServiceManagement\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Invoicing\Models\SalesInvoice;
@@ -68,7 +69,7 @@ final class WorkOrderController extends Controller
             $query->where('work_type', $request->query('work_type'));
         }
 
-        $workOrders = $query->orderByDesc('created_at')->paginate(25);
+        $workOrders = $query->orderByDesc('created_at')->paginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => WorkOrderResource::collection($workOrders),

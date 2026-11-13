@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Http\Requests\StoreCampaignMemberRequest;
@@ -52,7 +53,7 @@ final class CampaignMemberController extends Controller
         $members = CampaignMember::where('campaign_id', $campaign->id)
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->query('status')))
             ->orderBy('created_at')
-            ->paginate(50);
+            ->paginate(RequestedPerPage::resolve(50));
 
         return response()->json([
             'data' => $members->getCollection()->map(fn (CampaignMember $member): array => $this->present($member))->values(),

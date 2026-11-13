@@ -6,6 +6,7 @@ namespace Modules\ServiceManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\ServiceManagement\Http\Requests\LinkKnowledgeArticleRequest;
@@ -102,7 +103,7 @@ final class KnowledgeBaseController extends Controller
 
         $query = ! empty($filters['q']) ? $query->search($filters['q']) : $query->orderByDesc('updated_at');
 
-        return response()->json(['data' => KnowledgeArticleResource::collection($query->paginate(25))]);
+        return response()->json(['data' => KnowledgeArticleResource::collection($query->paginate(RequestedPerPage::resolve(25)))]);
     }
 
     #[OA\Post(path: '/api/v1/esm/kb/articles', operationId: 'storeEsmKnowledgeArticle', description: 'Adds an article; version 1 is saved. Publishing a public article needs a service manager.', summary: 'Add knowledge article', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['ESM Knowledge Base'], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/HelpdeskSaveKnowledgeArticleRequest')), responses: [

@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -104,7 +105,7 @@ final class RecruitingController extends Controller
             ->with('stage')
             ->when($request->query('job_posting_id'), static fn ($query, $postingId) => $query->where('job_posting_id', $postingId))
             ->orderByDesc('created_at')
-            ->paginate(50));
+            ->paginate(RequestedPerPage::resolve(50)));
     }
 
     /**

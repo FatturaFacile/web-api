@@ -12,6 +12,7 @@ use App\Models\PurchaseOrder;
 use App\Models\PurchaseRequest;
 use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -48,7 +49,7 @@ class PurchasesController extends Controller
     )]
     public function requests(): JsonResponse
     {
-        $requests = PurchaseRequest::with('user')->latest('requested_date')->paginate(25);
+        $requests = PurchaseRequest::with('user')->latest('requested_date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $requests, message: 'Purchase requests retrieved');
     }
@@ -70,7 +71,7 @@ class PurchasesController extends Controller
     )]
     public function orders(): JsonResponse
     {
-        $orders = PurchaseOrder::with(['supplier', 'items'])->latest('date')->paginate(25);
+        $orders = PurchaseOrder::with(['supplier', 'items'])->latest('date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $orders, message: 'Purchase orders retrieved');
     }
@@ -92,7 +93,7 @@ class PurchasesController extends Controller
     )]
     public function passiveInvoices(): JsonResponse
     {
-        $invoices = PassiveInvoice::with('supplier')->latest('date')->paginate(25);
+        $invoices = PassiveInvoice::with('supplier')->latest('date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $invoices, message: 'Passive invoices retrieved');
     }

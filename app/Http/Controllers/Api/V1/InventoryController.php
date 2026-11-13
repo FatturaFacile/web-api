@@ -12,6 +12,7 @@ use App\Models\DeliveryNote;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -35,7 +36,7 @@ class InventoryController extends Controller
     )]
     public function products(Request $request): JsonResponse
     {
-        $products = Product::with(['brand', 'parent'])->latest()->paginate(25);
+        $products = Product::with(['brand', 'parent'])->latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $products, message: 'Products retrieved');
     }
@@ -113,7 +114,7 @@ class InventoryController extends Controller
 
     public function movements(Request $request): JsonResponse
     {
-        $movements = StockMovement::latest()->paginate(25);
+        $movements = StockMovement::latest()->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $movements, message: 'Stock movements retrieved');
     }
@@ -132,7 +133,7 @@ class InventoryController extends Controller
     )]
     public function deliveryNotes(Request $request): JsonResponse
     {
-        $ddts = DeliveryNote::latest('date')->paginate(25);
+        $ddts = DeliveryNote::latest('date')->paginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $ddts, message: 'Delivery notes (DDT) retrieved');
     }
