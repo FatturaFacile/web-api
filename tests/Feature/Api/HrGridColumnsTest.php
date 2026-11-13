@@ -120,7 +120,7 @@ test('every column of an HR grid is known by the server', function (string $mode
 
 test('the is_generic column separates the shared rows from the ones of the company', function (): void {
     $tenant = Tenant::factory()->create();
-    CollectiveAgreement::withoutGlobalScopes()->create(['tenant_id' => null, 'code' => 'GEN', 'name' => 'Generic', 'weekly_hours' => '40.00', 'installments' => 13, 'fourteenth_month' => 0]);
+    CollectiveAgreement::createGlobal(['code' => 'GEN', 'name' => 'Generic', 'weekly_hours' => '40.00', 'installments' => 13, 'fourteenth_month' => 0]);
     CollectiveAgreement::withoutGlobalScopes()->create(['tenant_id' => $tenant->id, 'code' => 'OWN', 'name' => 'Own', 'weekly_hours' => '40.00', 'installments' => 13, 'fourteenth_month' => 0]);
 
     $values = [];
@@ -142,7 +142,7 @@ test('claims_count and the payroll run totals are calculated server-side: sort, 
     $tenant = Tenant::factory()->create();
 
     $busy = ShortTimeCase::factory()->create(['tenant_id' => $tenant->id, 'authority_reference' => 'BUSY']);
-    ShortTimeClaim::factory()->count(2)->create(['tenant_id' => $tenant->id, 'short_time_case_id' => $busy->id]);
+    ShortTimeClaim::factory()->count(2)->sequence(['month' => 10], ['month' => 11])->create(['tenant_id' => $tenant->id, 'short_time_case_id' => $busy->id]);
     ShortTimeCase::factory()->create(['tenant_id' => $tenant->id, 'authority_reference' => 'IDLE']);
 
     $byClaims = hrGridPage(ShortTimeCase::withoutGlobalScopes(), ['sort_by' => 'claims_count', 'sort_dir' => 'desc']);
