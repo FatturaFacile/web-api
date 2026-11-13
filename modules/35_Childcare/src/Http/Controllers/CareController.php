@@ -27,10 +27,10 @@ final class CareController extends Controller
     public function __construct(private readonly CareService $care) {}
 
     /**
-     * Return the notes about a child, optionally of a day.
+     * Return the notes of all children or of one child, optionally of a day.
      */
-    #[OA\Get(path: '/api/v1/childcare/notes', operationId: 'listChildcareNotes', description: 'Return the notes about a child, optionally of a day.', summary: 'List notes', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
-        new OA\Parameter(name: 'child_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+    #[OA\Get(path: '/api/v1/childcare/notes', operationId: 'listChildcareNotes', description: 'Return the notes of all children or of one child, optionally of a day.', summary: 'List notes', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
+        new OA\Parameter(name: 'child_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
         new OA\Parameter(name: 'date', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date')),
     ], responses: [
         new OA\Response(response: 200, description: 'Notes', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
@@ -40,9 +40,11 @@ final class CareController extends Controller
     ])]
     public function notes(CareRequest $request): AnonymousResourceCollection
     {
-        $child = $this->child((string) $request->validated('child_id'));
+        $childId = $request->validated('child_id');
+        $childId === null ? $this->authorize('care', Child::class) : $this->child((string) $childId);
 
-        return ChildcareResource::collection(Note::query()->where('child_id', $child->id)
+        return ChildcareResource::collection(Note::query()
+            ->when($childId !== null, fn ($query) => $query->where('child_id', (string) $childId))
             ->when($request->validated('date') !== null, fn ($query) => $query->whereDate('date', (string) $request->validated('date')))
             ->latest()->get());
     }

@@ -26,7 +26,8 @@ final class AttendanceService
         $this->assertEnrolled($child, $moment);
 
         return DB::transaction(function () use ($child, $moment, $temperature, $userId): Attendance {
-            $attendance = Attendance::query()->lockForUpdate()->firstOrNew(['child_id' => $child->id, 'date' => $moment->toDateString()]);
+            $attendance = Attendance::query()->lockForUpdate()->where('child_id', $child->id)->whereDate('date', $moment->toDateString())->first()
+                ?? new Attendance(['child_id' => $child->id, 'date' => $moment->toDateString()]);
 
             if ($attendance->check_in_at !== null) {
                 throw new BusinessRuleException('The child is already checked in today.');

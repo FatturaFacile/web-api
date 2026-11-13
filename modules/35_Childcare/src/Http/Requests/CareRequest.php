@@ -48,7 +48,7 @@ final class CareRequest extends FormRequest
                 'temperature' => ['sometimes', 'nullable', 'decimal:0,1', 'between:34,43'],
             ],
             'attendances.register', 'staff-hours' => ['month' => $month, 'group_id' => ['nullable', 'uuid', $this->tenantOwns('cc_groups')]],
-            'notes.index' => ['child_id' => $child, 'date' => ['nullable', 'date']],
+            'notes.index' => ['child_id' => ['nullable', 'uuid', $this->tenantOwns('cc_children')], 'date' => ['nullable', 'date']],
             'notes.store' => [
                 'child_id' => $child,
                 'date' => ['required', 'date'],

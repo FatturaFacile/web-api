@@ -70,6 +70,7 @@ class DatabaseSeeder extends Seeder
             GoodsReceiptItemSeeder::class,
 
             ProcurementLookupSeeder::class,
+            ExpenseLookupSeeder::class,
             ProcurementDemoDataSeeder::class,
 
             PaymentSeeder::class,
