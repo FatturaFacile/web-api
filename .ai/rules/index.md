@@ -4,4 +4,5 @@ Before planning or editing, find the row whose globs match the file's path and r
 
 | Applies to | Rule file |
 | --- | --- |
+| ** (everything) | .ai/rules/project.md |
 | tests/**, modules/*/tests/**, packages/*/tests/** | .ai/rules/test-passwords.md |

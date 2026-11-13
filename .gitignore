@@ -45,3 +45,12 @@ deploy/local/certs/*.key
 deploy/local/certs/*.pem
 
 database/database.sqlite
+
+# AI tools: keep the shared config, ignore scratch files and local state
+.claude/*
+!.claude/settings.json
+!.claude/run-pest.sh
+!.claude/agents/
+!.claude/skills/
+!.claude/commands/
+*.tmp

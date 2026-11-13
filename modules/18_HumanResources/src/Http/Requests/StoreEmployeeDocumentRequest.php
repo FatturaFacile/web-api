@@ -30,7 +30,7 @@ final class StoreEmployeeDocumentRequest extends FormRequest
             'document_type' => ['required', Rule::in(['contract', 'amendment', 'id_card', 'work_permit', 'medical_fitness', 'certificate', 'training', 'nda', 'warning', 'payslip', 'other'])],
             'title' => ['required', 'string', 'max:200'],
             'issue_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
-            'expiry_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
+            'expiry_date' => ['sometimes', 'nullable', 'date_format:Y-m-d', Rule::when($this->filled('issue_date'), 'after_or_equal:issue_date')],
             'retention_until' => ['sometimes', 'nullable', 'date_format:Y-m-d', 'after:today'],
             'contains_health_data' => ['sometimes', 'boolean'],
             'is_confidential' => ['sometimes', 'boolean'],

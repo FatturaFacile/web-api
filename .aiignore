@@ -1,12 +1,45 @@
-# An .aiignore file follows the same syntax as a .gitignore file.
-# .gitignore documentation: https://git-scm.com/docs/gitignore
+# Ignore list shared by every AI tool of this repository (gitignore syntax).
+# Copy of: .aiignore .claudeignore .agyignore .copilotignore. Keep the four files identical.
 
-# you can ignore files
-.DS_Store
+# Dependencies and build output
+vendor/
+node_modules/
+public/build/
+public/storage/
+storage/logs/
+storage/framework/
+bootstrap/cache/
+.phpunit.cache/
+composer.lock
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Secrets and local data (never read)
+.env
+.env.*
+auth.json
+certs/
+*.pem
+*.key
+*.pfx
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
 *.log
-*.tmp
+logs/
+coverage/
+.idea/
+.vs/
 
-# or folders
-dist/
-build/
-out/
+# Generated and minified files (token sinks)
+*.min.js
+*.min.css
+*.map
+*.css.map
+*.pdf
+*.zip
+*.png
+*.jpg
+*.jpeg
+*.svg

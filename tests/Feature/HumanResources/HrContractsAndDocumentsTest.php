@@ -189,3 +189,24 @@ test('departments and positions are validated within the company and cannot loop
     hrAs($this->worker, $this->tenant)->putJson("/api/v1/hr/positions/{$position}", ['title' => 'x'])->assertForbidden();
     hrAs(hrPerson($this->other), $this->other)->putJson("/api/v1/hr/departments/{$child}", ['name' => 'x'])->assertNotFound();
 });
+
+test('a contract never ends or leaves probation before it starts', function (): void {
+    $api = hrAs($this->hr, $this->tenant);
+
+    $api->putJson("/api/v1/hr/contracts/{$this->first->id}", ['end_date' => '2023-12-31'])
+        ->assertUnprocessable()->assertJsonValidationErrors('end_date');
+    $api->putJson("/api/v1/hr/contracts/{$this->first->id}", ['probation_end_date' => '2023-12-31'])
+        ->assertUnprocessable()->assertJsonValidationErrors('probation_end_date');
+    $api->putJson("/api/v1/hr/contracts/{$this->first->id}", ['probation_end_date' => '2024-03-31', 'end_date' => '2027-12-31'])
+        ->assertOk();
+});
+
+test('a document does not expire before it was issued', function (): void {
+    $api = hrAs($this->hr, $this->tenant);
+    $payload = fn (array $dates): array => ['file' => UploadedFile::fake()->create('permesso.pdf', 20, 'application/pdf'), 'document_type' => 'work_permit', 'title' => 'Permesso', ...$dates];
+
+    $api->post("/api/v1/hr/employees/{$this->employee->id}/documents", $payload(['issue_date' => '2026-05-01', 'expiry_date' => '2026-04-30']))
+        ->assertUnprocessable()->assertJsonValidationErrors('expiry_date');
+    $api->post("/api/v1/hr/employees/{$this->employee->id}/documents", $payload(['issue_date' => '2026-05-01', 'expiry_date' => '2027-05-01']))
+        ->assertCreated();
+});

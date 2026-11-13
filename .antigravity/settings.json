@@ -3,14 +3,15 @@
   "maxBashOutputChars": 15000,
   "permissions": {
     "deny": [
-      "Read(./**/bin/**)",
-      "Read(./**/obj/**)",
       "Read(./**/vendor/**)",
       "Read(./**/node_modules/**)",
-      "Read(./**/*.Designer.cs)",
+      "Read(./**/storage/logs/**)",
+      "Read(./**/storage/framework/**)",
+      "Read(./**/public/build/**)",
       "Read(./**/*.lock)",
       "Read(./**/*-lock.*)",
-      "Read(./**/.env*)"
+      "Read(./**/.env*)",
+      "Read(./**/auth.json)"
     ]
   }
 }

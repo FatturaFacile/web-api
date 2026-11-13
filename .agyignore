@@ -1,83 +1,45 @@
-# ==========================================
-# .agyignore - Antigravity Agent Ignore Rules
-# ==========================================
+# Ignore list shared by every AI tool of this repository (gitignore syntax).
+# Copy of: .aiignore .claudeignore .agyignore .copilotignore. Keep the four files identical.
 
-# --- .NET & Visual Studio / Rider ---
-bin/
-obj/
-[Dd]ebug/
-[Rr]elease/
-*.user
-*.suo
-*.userosscache
-*.sln.docstates
-.vs/
-.idea/
-*.DotSettings.user
-TestResults/
-coverage/
-*.trx
-
-# --- Package Managers & Lockfiles voluminosi ---
-node_modules/
+# Dependencies and build output
 vendor/
-packages/
-*.lock
-package-lock.json
+node_modules/
+public/build/
+public/storage/
+storage/logs/
+storage/framework/
+bootstrap/cache/
+.phpunit.cache/
 composer.lock
-yarn.lock
+package-lock.json
 pnpm-lock.yaml
+yarn.lock
 
-# --- Web & Frontend Build Artifacts ---
-dist/
-build/
-.next/
-.nuxt/
-.output/
-.angular/cache/
-wwwroot/lib/
+# Secrets and local data (never read)
+.env
+.env.*
+auth.json
+certs/
+*.pem
+*.key
+*.pfx
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+*.log
+logs/
+coverage/
+.idea/
+.vs/
 
-# --- Mobile (Flutter / MAUI / Android / iOS) ---
-.dart_tool/
-.flutter-plugins
-.flutter-plugins-dependencies
-android/.gradle/
-ios/Pods/
-ios/.symlinks/
-
-# --- Documenti, Media e Assets pesanti ---
+# Generated and minified files (token sinks)
+*.min.js
+*.min.css
+*.map
+*.css.map
+*.pdf
+*.zip
 *.png
 *.jpg
 *.jpeg
-*.gif
 *.svg
-*.ico
-*.webp
-*.pdf
-*.zip
-*.tar.gz
-*.7z
-*.mp4
-*.mp3
-*.wasm
-
-# --- Database & Cache locali ---
-*.sqlite
-*.sqlite3
-*.db
-*.log
-storage/logs/
-storage/framework/cache/
-storage/framework/sessions/
-storage/framework/views/
-
-# --- File di sistema & Secrets ---
-.git/
-.svn/
-.DS_Store
-Thumbs.db
-.env
-.env.*
-*.pem
-*.pfx
-*.cert
