@@ -87,7 +87,7 @@ dataset('hr grid columns', [
     'time clock events' => [TimeClockEvent::class, ['user_id', 'event_type', 'occurred_at', 'source', 'note']],
     'time audit' => [TimeAuditEntry::class, ['occurred_at', 'actor_name', 'action', 'entity_type', 'reason']],
     'employees' => [Employee::class, ['employee_number', 'full_name', 'work_email', 'employment_type', 'employment_status', 'base_annual_salary', 'hire_date']],
-    'leave requests' => [LeaveRequest::class, ['request_number', 'employee.full_name', 'leaveType.name', 'start_date', 'end_date', 'total_hours', 'reason', 'status']],
+    'leave requests' => [LeaveRequest::class, ['request_number', 'employee.full_name', 'leaveType.name', 'start_date', 'end_date', 'total_hours', 'status']],
     'timesheets' => [Timesheet::class, ['timesheet_number', 'employee.full_name', 'work_date', 'regular_hours', 'overtime_hours', 'total_hours', 'billable_hours', 'status']],
     'leave balances' => [LeaveBalance::class, ['employee.full_name', 'fiscal_year', 'entitlement_hours', 'carryover_hours', 'accrued_hours', 'used_hours', 'pending_hours', 'available_hours']],
     'time closings' => [TimePeriodClosing::class, ['year', 'month', 'status', 'closed_at', 'reopen_count', 'reopen_reason']],
