@@ -3,13 +3,22 @@
 # Exit immediately if a command exits with a non-zero status
 set -e
 
-echo "----------------------------------------------------"
-echo "1/4. Starting supporting Docker containers..."
-echo "----------------------------------------------------"
-docker compose -f docker-compose.local.yml up -d --wait
+# Local development uses SQLite (DB_CONNECTION=sqlite, DB_DATABASE=database/database.sqlite): no Docker needed.
+# PostgreSQL is used only in production.
+if [ ! -f database/database.sqlite ]; then
+    echo "----------------------------------------------------"
+    echo "1/3. Creating SQLite database and running migrations..."
+    echo "----------------------------------------------------"
+    touch database/database.sqlite
+    php artisan migrate --seed --no-interaction
+else
+    echo "----------------------------------------------------"
+    echo "1/3. SQLite database found: database/database.sqlite"
+    echo "----------------------------------------------------"
+fi
 
 echo "----------------------------------------------------"
-echo "2/4. Launching services in separate terminals..."
+echo "2/3. Launching services in separate terminals..."
 echo "----------------------------------------------------"
 
 # Execution commands (with Xdebug configured for PhpStorm)
@@ -31,6 +40,7 @@ else
 fi
 
 echo "----------------------------------------------------"
-echo "All processes started successfully!"
+echo "3/3. All processes started successfully!"
+echo "API: https://localhost:8080/api/documentation"
 echo "Ensure 'Start Listening for PHP Debug Connections' (green phone icon) is active in PhpStorm."
 echo "----------------------------------------------------"
