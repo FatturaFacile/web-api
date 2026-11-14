@@ -36,6 +36,7 @@ final class JournalLine extends BaseEnterpriseModel
             'functional_credit' => 'decimal:4',
             'vat_base_amount' => 'decimal:4',
             'vat_tax_amount' => 'decimal:4',
+            'vat_rate_percent' => 'decimal:2',
             'is_cleared' => 'boolean',
         ];
     }

@@ -21,6 +21,7 @@ Architecture, tenant and API invariants, and build/test commands: `.github/copil
 - Fix every error you meet (failing test, 422 payload, type error, broken translation), also when it is outside the request. Never leave a known error behind: if it cannot be fixed now, say so explicitly.
 - Read only what you need: signatures and the relevant methods, not whole files. Emit focused diffs, not whole files. No filler phrases and no unsolicited explanations.
 - Follow the sibling files of the area you change (structure, naming, annotations). Reuse existing components before writing new ones.
+- The product runs on any database (PostgreSQL, SQLite, MySQL/MariaDB): no engine-specific SQL, functions, triggers or constraints that carry business rules. Use the query builder, `App\Support\Database\SqlDialect` for the few expressions it lacks, `TransactionLock` instead of advisory locks, and `ProtectsRecords` model guards instead of immutability triggers.
 - Never add or change dependencies without approval, except the libraries a task needs when the owner pre-approved them (xlsx, SAML).
 - Never write passwords, secrets or tokens as fixed strings in code or tests (`.ai/rules/test-passwords.md`). Never read or print `.env*`, `auth.json` or keys in `certs/`.
 

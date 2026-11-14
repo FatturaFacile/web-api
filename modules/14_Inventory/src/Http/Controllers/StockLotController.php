@@ -45,7 +45,7 @@ final class StockLotController extends Controller
     #[EnterpriseEndpoint(summary: 'List lots', tags: ['Inventory'])]
     public function index(Request $request): JsonResponse
     {
-        $query = StockLot::query()->orderByRaw('expiration_date ASC NULLS LAST')->orderBy('id');
+        $query = StockLot::query()->orderByRaw('expiration_date IS NULL')->orderBy('expiration_date')->orderBy('id');
 
         if ($request->filled('stock_item_id')) {
             $query->where('stock_item_id', $request->query('stock_item_id'));

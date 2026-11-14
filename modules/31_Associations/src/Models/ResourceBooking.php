@@ -7,7 +7,7 @@ namespace Modules\Associations\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
- * A period of a resource. The database refuses two confirmed bookings of a resource that overlap.
+ * A period of a resource. Two confirmed bookings of a resource never overlap (checked by BookingService).
  */
 final class ResourceBooking extends AssociationRecord
 {

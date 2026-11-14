@@ -70,7 +70,7 @@ final class ProcurementAnalyticsService
             ->whereIn('po.status', [PurchaseOrderStatus::Approved->value, PurchaseOrderStatus::Sent->value, PurchaseOrderStatus::PartiallyReceived->value])
             ->where('l.is_closed', false)
             ->groupBy('po.id', 'po.po_number', 'po.order_number', 'po.supplier_id', 'po.status', 'po.expected_delivery_date', 'po.currency')
-            ->selectRaw('po.id, COALESCE(po.po_number, po.order_number) as po_number, po.supplier_id, po.status, po.expected_delivery_date, po.currency, SUM(GREATEST(l.quantity_ordered - l.quantity_cancelled - l.quantity_received, 0) * l.unit_price) as open_value')
+            ->selectRaw('po.id, COALESCE(po.po_number, po.order_number) as po_number, po.supplier_id, po.status, po.expected_delivery_date, po.currency, SUM((CASE WHEN l.quantity_ordered - l.quantity_cancelled - l.quantity_received > 0 THEN l.quantity_ordered - l.quantity_cancelled - l.quantity_received ELSE 0 END) * l.unit_price) as open_value')
             ->orderBy('po.expected_delivery_date')
             ->get();
 

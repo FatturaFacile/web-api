@@ -217,8 +217,8 @@ final readonly class StandardDatasets
             ],
             measures: [
                 new Measure('employee_count', 'Employees (all records)', Measure::UnitCount, 'COUNT(*)'),
-                new Measure('active_headcount', 'Active headcount', Measure::UnitCount, "COUNT(*) FILTER (WHERE {$active})"),
-                new Measure('active_fte', 'Active FTE', Measure::UnitQuantity, "COALESCE(SUM(hr_employees.fte_ratio) FILTER (WHERE {$active}), 0)"),
+                new Measure('active_headcount', 'Active headcount', Measure::UnitCount, "COUNT(CASE WHEN {$active} THEN 1 END)"),
+                new Measure('active_fte', 'Active FTE', Measure::UnitQuantity, "COALESCE(SUM(CASE WHEN {$active} THEN hr_employees.fte_ratio END), 0)"),
             ],
         );
     }

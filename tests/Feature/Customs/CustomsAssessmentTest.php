@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Services\Backup\TenantBackupService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -70,16 +69,14 @@ test('a decision is stored once on the private disk with its hashes', function (
         ->and(customsArchive($this->tenant, customsVatDecisionXml(version: 2))->id)->not->toBe($decision->id);
 });
 
-test('the database refuses any change to a decision', function (string $statement): void {
-    customsArchive($this->tenant, customsVatDecisionXml());
+test('a decision refuses any change through the model', function (Closure $change): void {
+    $decision = customsArchive($this->tenant, customsVatDecisionXml());
 
-    expect(fn () => DB::statement($statement))->toThrow(QueryException::class, 'immutable');
+    expect(fn () => $change($decision))->toThrow(LogicException::class);
 })->with([
-    'update' => 'UPDATE customs_assessment_decisions SET vat_amount = 0',
-    'delete' => 'DELETE FROM customs_assessment_decisions',
-    'truncate' => 'TRUNCATE customs_assessment_decisions CASCADE',
+    'forced save' => [fn (CustomsAssessmentDecision $decision) => $decision->forceFill(['vat_amount' => '0'])->save()],
+    'force delete' => [fn (CustomsAssessmentDecision $decision) => $decision->forceDelete()],
 ]);
-
 test('a decision cannot be changed or deleted through the model', function (): void {
     $decision = customsArchive($this->tenant, customsVatDecisionXml());
 

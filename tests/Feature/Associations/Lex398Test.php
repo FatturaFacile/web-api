@@ -7,6 +7,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Associations\Models\LegalParameter;
+use Modules\Associations\Models\Lex398Entry;
 use Modules\Associations\Services\LegalParameterService;
 
 require_once __DIR__.'/Support.php';
@@ -90,5 +91,8 @@ test('register entries are append-only, and another company sees none of them', 
     actAs($this, 'admin', tenant: $this->otherTenant);
     $this->getJson("/api/v1/associations/lex398/{$this->year}/register")->assertOk()->assertJsonCount(0, 'data.entries');
 
-    expect(fn () => DB::table('assoc_lex398_entries')->update(['taxable_amount' => '1.00']))->toThrow(Exception::class);
+    $entry = Lex398Entry::query()->withoutGlobalScopes()->firstOrFail();
+
+    expect(fn () => $entry->update(['taxable_amount' => '1.00']))->toThrow(LogicException::class)
+        ->and(fn () => $entry->delete())->toThrow(LogicException::class);
 });

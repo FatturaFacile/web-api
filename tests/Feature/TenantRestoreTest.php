@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\GeneralLedger\Actions\OpenFiscalYearAction;
+use Modules\GeneralLedger\Models\JournalEntry;
 
 uses(RefreshDatabase::class);
 
@@ -514,5 +515,5 @@ test('a restore replaces issued invoices and posted entries, and they stay prote
         ->and(Invoice::withoutGlobalScopes()->findOrFail($kept)->status)->toBe('posted')
         ->and(DB::table('journal_entries')->where('tenant_id', $this->tenant->id)->where('source_document_type', 'sales_invoice')->count())->toBe(1)
         ->and(DB::table('journal_lines')->where('journal_entry_id', $entryId)->count())->toBeGreaterThan(1)
-        ->and(fn () => DB::transaction(fn () => DB::table('journal_entries')->where('id', $entryId)->delete()))->toThrow(QueryException::class);
+        ->and(fn () => JournalEntry::withoutGlobalScopes()->findOrFail($entryId)->delete())->toThrow(LogicException::class);
 });

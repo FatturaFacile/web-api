@@ -36,7 +36,9 @@ final class VatSettlement extends BaseEnterpriseModel
                 return;
             }
 
-            if ($original === self::STATUS_PAID || array_diff(array_keys($settlement->getDirty()), self::PAYMENT_COLUMNS) !== []) {
+            $reopens = $settlement->isDirty('status') && $settlement->status !== self::STATUS_PAID;
+
+            if ($original === self::STATUS_PAID || $reopens || array_diff(array_keys($settlement->getDirty()), self::PAYMENT_COLUMNS) !== []) {
                 throw VatSettlementException::conflict('A posted VAT settlement is immutable.');
             }
         });

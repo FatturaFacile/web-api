@@ -28,21 +28,29 @@ final class ContactMatcher
             return collect();
         }
 
+        // The database narrows the candidates (separators stripped, key contained); the exact normalization is the
+        // one of PartyKeyNormalizer, applied here so that every database agrees.
+        $withoutSeparators = static fn (string $column): string => "REPLACE(REPLACE(REPLACE(REPLACE(UPPER(COALESCE({$column}, '')), ' ', ''), '-', ''), '.', ''), '/', '')";
+
         return Contact::query()
             ->where('tenant_id', $tenantId)
-            ->where(function (Builder $query) use ($vat, $fiscal, $mail): void {
+            ->where(function (Builder $query) use ($vat, $fiscal, $mail, $withoutSeparators): void {
                 if ($vat !== null) {
-                    $query->orWhereRaw("regexp_replace(regexp_replace(upper(coalesce(vat_number, '')), '[^A-Z0-9]', '', 'g'), '^[A-Z]{2}([0-9]{8,})$', '\\1') = ?", [$vat]);
+                    $query->orWhereRaw($withoutSeparators('vat_number').' LIKE ?', ['%'.$vat.'%']);
                 }
                 if ($fiscal !== null) {
-                    $query->orWhereRaw("regexp_replace(upper(coalesce(fiscal_code, '')), '[^A-Z0-9]', '', 'g') = ?", [$fiscal]);
+                    $query->orWhereRaw($withoutSeparators('fiscal_code').' LIKE ?', ['%'.$fiscal.'%']);
                 }
                 if ($mail !== null) {
                     $query->orWhereRaw('lower(trim(email)) = ?', [$mail]);
                 }
             })
             ->orderBy('created_at')
-            ->get();
+            ->get()
+            ->filter(static fn (Contact $contact): bool => ($vat !== null && PartyKeyNormalizer::vat($contact->vat_number) === $vat)
+                || ($fiscal !== null && PartyKeyNormalizer::fiscalCode($contact->fiscal_code) === $fiscal)
+                || ($mail !== null && PartyKeyNormalizer::email($contact->email) === $mail))
+            ->values();
     }
 
     /**

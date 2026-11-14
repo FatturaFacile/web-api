@@ -46,7 +46,7 @@ final class WorkflowAuditLedgerService
 
             $last = WorkflowAuditEntry::withoutGlobalScopes()
                 ->where('workflow_instance_id', $instance->id)
-                ->orderByRaw('sequence DESC NULLS LAST')
+                ->orderByRaw('sequence IS NULL')->orderByDesc('sequence')
                 ->orderByDesc('created_at')
                 ->orderByDesc('id')
                 ->first();
@@ -94,7 +94,7 @@ final class WorkflowAuditLedgerService
     {
         $entries = WorkflowAuditEntry::withoutGlobalScopes()
             ->where('workflow_instance_id', $instance->id)
-            ->orderByRaw('sequence ASC NULLS FIRST')
+            ->orderByRaw('sequence IS NOT NULL')->orderBy('sequence')
             ->orderBy('created_at')
             ->orderBy('id')
             ->get();

@@ -8,7 +8,6 @@ use App\Models\InvoiceSdiMetadata;
 use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -173,21 +172,27 @@ test('the models of a closed package refuse every update and delete', function (
         ->and(fn () => $item->delete())->toThrow(PreservationImmutableException::class);
 });
 
-test('raw queries on a closed package are stopped by the database too', function (): void {
-    ['package' => $package] = closedInvoicePackage($this->tenant);
-    expect(fn () => DB::table('preservation_items')->where('package_id', $package)->update(['sha256' => str_repeat('b', 64)]))->toThrow(QueryException::class)
-        ->and(fn () => DB::table('preservation_items')->where('package_id', $package)->delete())->toThrow(QueryException::class)
-        ->and(fn () => DB::table('preservation_packages')->where('id', $package)->update(['package_hash' => str_repeat('c', 64)]))->toThrow(QueryException::class)
-        ->and(fn () => DB::table('preservation_packages')->where('id', $package)->delete())->toThrow(QueryException::class);
-})->skip(fn () => DB::getDriverName() !== 'pgsql', 'The triggers exist on PostgreSQL only');
+test('the hash of a closed package and of its files cannot be rewritten through the models', function (): void {
+    ['package' => $packageId, 'item' => $item] = closedInvoicePackage($this->tenant);
+    $package = PreservationPackage::findOrFail($packageId);
 
-test('raw queries cannot rewrite the verification history or the access log', function (): void {
+    expect(fn () => $package->forceFill(['package_hash' => str_repeat('c', 64)])->save())->toThrow(PreservationImmutableException::class)
+        ->and(fn () => $item->forceFill(['sha256' => str_repeat('b', 64)])->save())->toThrow(PreservationImmutableException::class)
+        ->and(fn () => $package->forceDelete())->toThrow(PreservationImmutableException::class)
+        ->and(fn () => $item->forceDelete())->toThrow(PreservationImmutableException::class);
+});
+
+test('the verification history and the access log cannot be rewritten through the models', function (): void {
     ['package' => $package] = closedInvoicePackage($this->tenant);
     $this->postJson(PRESERVATION_BASE."/preservation-packages/{$package}/verify")->assertOk();
 
-    expect(fn () => DB::table('preservation_verifications')->update(['result' => 'passed']))->toThrow(QueryException::class)
-        ->and(fn () => DB::table('preservation_access_logs')->delete())->toThrow(QueryException::class);
-})->skip(fn () => DB::getDriverName() !== 'pgsql', 'The triggers exist on PostgreSQL only');
+    $verification = PreservationVerification::firstOrFail();
+    $log = PreservationAccessLog::firstOrFail();
+
+    expect(fn () => $verification->forceFill(['result' => 'failed'])->save())->toThrow(PreservationImmutableException::class)
+        ->and(fn () => $verification->delete())->toThrow(PreservationImmutableException::class)
+        ->and(fn () => $log->delete())->toThrow(PreservationImmutableException::class);
+});
 
 test('deleting a tenant still cascades to its closed packages', function (): void {
     closedInvoicePackage($this->tenant);
@@ -244,15 +249,15 @@ test('a deleted file, an altered item record, an altered manifest and a smuggled
     $missing = $this->postJson(PRESERVATION_BASE."/preservation-packages/{$package}/verify")->json('data.failures');
     Storage::disk('local')->put($item->storage_path, '<xml>FT-1</xml>');
 
-    preservationDisableGuard('preservation_items', 'trg_preservation_items_guard', function () use ($item): void {
+    (function () use ($item): void {
         DB::table('preservation_items')->where('id', $item->id)->update(['sha256' => str_repeat('d', 64)]);
-    });
+    })();
     $altered = $this->postJson(PRESERVATION_BASE."/preservation-packages/{$package}/verify")->json('data.failures');
 
-    preservationDisableGuard('preservation_items', 'trg_preservation_items_guard', function () use ($item): void {
+    (function () use ($item): void {
         DB::table('preservation_items')->where('id', $item->id)->update(['sha256' => hash('sha256', '<xml>FT-1</xml>')]);
         DB::table('preservation_items')->insert([...(array) DB::table('preservation_items')->where('id', $item->id)->first(), 'id' => (string) Str::uuid(), 'sequence' => 2, 'source_id' => (string) Str::uuid()]);
-    });
+    })();
     $smuggled = $this->postJson(PRESERVATION_BASE."/preservation-packages/{$package}/verify")->json('data.failures');
 
     (function () use ($package): void {

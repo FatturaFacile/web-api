@@ -259,12 +259,17 @@ final readonly class ReportEngine
             $query->whereRaw('('.$dataset->dimensions[$dataset->periodDimension]->sql.') BETWEEN ? AND ?', [$period['from'], $period['to']]);
         }
 
+        $grammar = $query->getGrammar();
+        $expressions = [];
+
         foreach ($spec->dimensions as $selected) {
-            $query->selectRaw($this->dimensionSql($dataset->dimensions[$selected['key']], $selected['granularity']).' AS "'.$selected['key'].'"');
+            $expressions[$selected['key']] = $this->dimensionSql($dataset->dimensions[$selected['key']], $selected['granularity']);
+            $query->selectRaw($expressions[$selected['key']].' AS '.$grammar->wrap($selected['key']));
         }
 
         foreach ($spec->measures as $key) {
-            $query->selectRaw($dataset->measures[$key]->sql.' AS "'.$key.'"');
+            $expressions[$key] = $dataset->measures[$key]->sql;
+            $query->selectRaw($expressions[$key].' AS '.$grammar->wrap($key));
         }
 
         if ($spec->dimensions !== []) {
@@ -272,7 +277,9 @@ final readonly class ReportEngine
         }
 
         foreach ($this->ordering($spec) as $order) {
-            $query->orderByRaw('"'.$order['field'].'" '.($order['direction'] === 'desc' ? 'DESC' : 'ASC').' NULLS LAST');
+            // NULLs last on every database: an alias cannot sit inside an expression of ORDER BY, so the expression is repeated.
+            $expression = $expressions[$order['field']];
+            $query->orderByRaw('(CASE WHEN '.$expression.' IS NULL THEN 1 ELSE 0 END)')->orderByRaw($expression.($order['direction'] === 'desc' ? ' DESC' : ' ASC'));
         }
 
         return $query;
@@ -306,7 +313,7 @@ final readonly class ReportEngine
 
         match ($operator) {
             'eq' => $query->whereRaw("{$column} = ?", [$value]),
-            'neq' => $query->whereRaw("{$column} IS DISTINCT FROM ?", [$value]),
+            'neq' => $query->whereRaw("({$column} IS NULL OR {$column} <> ?)", [$value]),
             'gt' => $query->whereRaw("{$column} > ?", [$value]),
             'gte' => $query->whereRaw("{$column} >= ?", [$value]),
             'lt' => $query->whereRaw("{$column} < ?", [$value]),

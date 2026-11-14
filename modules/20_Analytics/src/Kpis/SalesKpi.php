@@ -73,10 +73,10 @@ final readonly class SalesKpi implements KpiCalculator
         $rate = $this->sql->rate('invoices');
         $totals = $this->posted($period)
             ->toBase()
-            ->selectRaw("COUNT(*) FILTER (WHERE {$this->sql->convertible('invoices')}) AS documents")
-            ->selectRaw("COUNT(*) FILTER (WHERE NOT {$this->sql->convertible('invoices')}) AS excluded")
-            ->selectRaw("COALESCE(SUM({$sign('total_net')} * {$rate}) FILTER (WHERE {$this->sql->convertible('invoices')}), 0) AS net")
-            ->selectRaw("COALESCE(SUM({$sign('total_tax')} * {$rate}) FILTER (WHERE {$this->sql->convertible('invoices')}), 0) AS tax")
+            ->selectRaw("COUNT(CASE WHEN {$this->sql->convertible('invoices')} THEN 1 END) AS documents")
+            ->selectRaw("COUNT(CASE WHEN NOT {$this->sql->convertible('invoices')} THEN 1 END) AS excluded")
+            ->selectRaw("COALESCE(SUM(CASE WHEN {$this->sql->convertible('invoices')} THEN {$sign('total_net')} * {$rate} END), 0) AS net")
+            ->selectRaw("COALESCE(SUM(CASE WHEN {$this->sql->convertible('invoices')} THEN {$sign('total_tax')} * {$rate} END), 0) AS tax")
             ->first();
 
         $documents = (int) $totals->documents;

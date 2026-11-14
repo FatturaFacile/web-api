@@ -191,7 +191,7 @@ final class StockAllocationPlanner
         $strategy = $this->strategyFor($item, $warehouse);
 
         if ($strategy === PickingStrategy::Fefo) {
-            $query->orderByRaw('l.expiration_date ASC NULLS LAST');
+            $query->orderByRaw('l.expiration_date IS NULL')->orderBy('l.expiration_date');
         }
 
         $direction = $strategy === PickingStrategy::Lifo ? 'DESC' : 'ASC';

@@ -4,9 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Services;
 
+use App\Support\Database\TransactionLock;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\DeadlockException;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Modules\Associations\Exceptions\AssociationException;
 use Modules\Associations\Models\BookableResource;
@@ -14,23 +13,11 @@ use Modules\Associations\Models\Course;
 use Modules\Associations\Models\ResourceBooking;
 
 /**
- * Bookings of courts, rooms and other resources. Nothing here checks for overlaps: the exclusion constraint of the table
- * is the only judge, and it decides between concurrent requests too.
+ * Bookings of courts, rooms and other resources. Two confirmed bookings of a resource never overlap: the check runs under
+ * a transaction lock of the resource, so it decides between concurrent requests too, on every database.
  */
 final class BookingService
 {
-    /** PostgreSQL exclusion_violation. */
-    private const string ExclusionViolation = '23P01';
-
-    /**
-     * PostgreSQL deadlock_detected. Concurrent overlapping inserts each wait for the other under an exclusion constraint,
-     * and the database aborts one of them: the outcome is the same as a refused overlap.
-     */
-    private const string DeadlockDetected = '40P01';
-
-    /** A session aborted by a deadlock retries, to get the real verdict of the constraint. */
-    private const int Attempts = 3;
-
     public function __construct(private readonly CourseCalendar $calendar) {}
 
     /**
@@ -42,8 +29,21 @@ final class BookingService
             throw AssociationException::conflict(__('associations.resource_inactive'));
         }
 
-        try {
-            return DB::transaction(static fn (): ResourceBooking => ResourceBooking::create([
+        return DB::transaction(static function () use ($resource, $startsAt, $endsAt, $data): ResourceBooking {
+            TransactionLock::acquire("association_resource_booking:{$resource->id}");
+
+            $overlaps = ResourceBooking::query()
+                ->where('resource_id', $resource->id)
+                ->where('status', ResourceBooking::Confirmed)
+                ->where('starts_at', '<', $endsAt)
+                ->where('ends_at', '>', $startsAt)
+                ->exists();
+
+            if ($overlaps) {
+                throw AssociationException::conflict(__('associations.resource_already_booked'));
+            }
+
+            return ResourceBooking::create([
                 'resource_id' => $resource->id,
                 'member_id' => $data['member_id'] ?? null,
                 'course_id' => $data['course_id'] ?? null,
@@ -51,16 +51,8 @@ final class BookingService
                 'starts_at' => $startsAt,
                 'ends_at' => $endsAt,
                 'status' => ResourceBooking::Confirmed,
-            ]), self::Attempts);
-        } catch (DeadlockException) {
-            throw AssociationException::conflict(__('associations.resource_already_booked'));
-        } catch (QueryException $exception) {
-            if (in_array($exception->getCode(), [self::ExclusionViolation, self::DeadlockDetected], true)) {
-                throw AssociationException::conflict(__('associations.resource_already_booked'));
-            }
-
-            throw $exception;
-        }
+            ]);
+        });
     }
 
     public function cancel(ResourceBooking $booking): ResourceBooking

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Storage;
 use Modules\Associations\Models\AssociationSetting;
 use Modules\Associations\Models\Campaign;
 use Modules\Associations\Models\Donation;
+use Modules\Associations\Models\DonationReceipt;
 use Modules\Associations\Models\ExpenseCategory;
 use Modules\GeneralLedger\Models\ChartOfAccount;
 use Modules\GeneralLedger\Models\CostCenter;
@@ -58,12 +59,15 @@ test('a donation of money is posted to the ledger on the cost centre of its camp
     $this->postJson("/api/v1/associations/donations/{$donation['id']}/receipt")->assertCreated()->assertJsonPath('data.number', sprintf('DON-%d-0002', now()->year));
 });
 
-test('a receipt cannot be rewritten or deleted in the database', function (): void {
+test('a receipt cannot be rewritten or deleted through the model', function (): void {
     actAs($this, 'admin');
     $donation = $this->postJson('/api/v1/associations/donations', ['donor_id' => fundraisingDonor($this), 'kind' => 'money', 'amount' => '10.00', 'received_on' => now()->toDateString(), 'payment_method' => 'cash', 'revenue_account_id' => $this->revenue->id])->json('data.id');
     $receipt = $this->postJson("/api/v1/associations/donations/{$donation}/receipt")->json('data.id');
 
-    expect(fn () => DB::table('assoc_donation_receipts')->where('id', $receipt)->update(['amount' => '1000.00']))->toThrow(Exception::class);
+    $model = DonationReceipt::query()->withoutGlobalScopes()->findOrFail($receipt);
+
+    expect(fn () => $model->update(['amount' => '1000.00']))->toThrow(Exception::class)
+        ->and(fn () => $model->delete())->toThrow(Exception::class);
 });
 
 test('a donation without a revenue account anywhere is refused and leaves nothing behind', function (): void {

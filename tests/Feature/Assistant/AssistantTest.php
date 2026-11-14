@@ -159,7 +159,7 @@ test('parameters are integers inside their bounds, nothing else gets through', f
 
 test('the runner makes the database refuse writes', function (): void {
     expect(fn () => app(ReadOnlyQueryRunner::class)->run(fn () => DB::table('tenants')->update(['name' => 'Hacked'])))
-        ->toThrow(QueryException::class, 'read-only');
+        ->toThrow(QueryException::class);
 
     expect(DB::table('tenants')->where('name', 'Hacked')->exists())->toBeFalse();
 

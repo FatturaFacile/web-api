@@ -2,7 +2,6 @@
 
 declare(strict_types=1);
 
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
 /**
@@ -20,11 +19,7 @@ test('every parent foreign key and tenant index of the audit migration exists', 
     foreach ($migration::indexDefinitions() as [$table, $columns]) {
         expect(Schema::hasTable($table))->toBeTrue("table {$table} does not exist");
 
-        $exists = DB::table('pg_indexes')
-            ->where('schemaname', 'public')
-            ->where('tablename', $table)
-            ->where('indexname', $migration::indexName($table, $columns))
-            ->exists();
+        $exists = in_array($migration::indexName($table, $columns), array_column(Schema::getIndexes($table), 'name'), true);
 
         if (! $exists) {
             $missing[] = $table.'('.implode(',', $columns).')';
@@ -47,25 +42,20 @@ test('hot line tables have an index leading with their parent key', function ():
     ];
 
     foreach ($parents as $table => $column) {
-        $leading = DB::selectOne(
-            'select count(*) as c from pg_index i join pg_class t on t.oid = i.indrelid '
-            .'join pg_attribute a on a.attrelid = t.oid and a.attnum = (i.indkey::int2[])[0] '
-            .'where t.relname = ? and a.attname = ?',
-            [$table, $column],
-        );
+        $leading = collect(Schema::getIndexes($table))->filter(static fn (array $index): bool => ($index['columns'][0] ?? null) === $column);
 
-        expect((int) $leading->c)->toBeGreaterThan(0, "{$table}.{$column} has no leading index");
+        expect($leading->count())->toBeGreaterThan(0, "{$table}.{$column} has no leading index");
     }
 });
 
 test('the audit index migration is idempotent', function (): void {
     $migration = auditIndexMigration();
-    $before = DB::selectOne("select count(*) as c from pg_indexes where schemaname = 'public'")->c;
+    $before = collect(Schema::getTables())->sum(static fn (array $table): int => count(Schema::getIndexes($table['name'])));
 
     $migration->up();
     $migration->up();
 
-    $after = DB::selectOne("select count(*) as c from pg_indexes where schemaname = 'public'")->c;
+    $after = collect(Schema::getTables())->sum(static fn (array $table): int => count(Schema::getIndexes($table['name'])));
 
     expect((int) $after)->toBe((int) $before);
 });

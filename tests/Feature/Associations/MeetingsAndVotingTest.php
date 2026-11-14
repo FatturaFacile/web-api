@@ -205,13 +205,16 @@ test('a secret ballot keeps no link between the voter and the choice', function 
     expect($results['counts'])->toBe(['alice' => 2, 'bob' => 1])->and($results)->not->toHaveKey('by_person');
 });
 
-test('votes are append-only in the database', function (): void {
+test('votes are append-only through the model', function (): void {
     $meeting = governanceHeldMeeting($this);
     $ballotId = $this->postJson("/api/v1/associations/meetings/{$meeting->id}/ballots", ['question' => 'Q'])->json('data.id');
     $this->postJson("/api/v1/associations/ballots/{$ballotId}/open")->assertOk();
     $this->postJson("/api/v1/associations/ballots/{$ballotId}/votes", ['participant_id' => governanceParticipant($meeting, $this->members[0])->id, 'choice' => 'yes'])->assertCreated();
 
-    expect(fn () => DB::table('assoc_ballot_votes')->where('ballot_id', $ballotId)->update(['choice' => 'no']))->toThrow(Exception::class);
+    $vote = BallotVote::query()->withoutGlobalScopes()->where('ballot_id', $ballotId)->firstOrFail();
+
+    expect(fn () => $vote->update(['choice' => 'no']))->toThrow(LogicException::class)
+        ->and(fn () => $vote->delete())->toThrow(LogicException::class);
 });
 
 test('an accountant reads meetings but cannot convene or change them', function (): void {
