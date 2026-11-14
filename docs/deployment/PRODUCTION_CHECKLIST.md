@@ -93,12 +93,20 @@ not verified against the official texts and must be confirmed by the accountant 
 | `statutory_employment` | working time records                                     | 5 years minimum    | ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73      |
 | `evidence`             | consent proof, audit trails                              | held, no period    | GDPR art. 7(1), accountability                  |
 
-- `dms:retention` skips documents whose type is `issued_invoice`, `received_invoice`, `ledger_book`, `payslip` or
-  `contract` until 10 years after their creation, and logs `document_retention_held_statutory`.
-- `hr:purge-employee-documents` skips `payslip` and `contract` documents until 10 years after their creation.
+- Periods count from the end of the financial year of the record date, taken as the calendar year until the accountant
+  confirms otherwise: a payslip of March 2026 is kept until 31 December 2036.
+- Document types match case-insensitively and by their Italian and English names (`Payslip`, `busta paga`, `cedolino`,
+  `fattura`, `contratto`, ...).
+- `dms:retention` skips documents of those types until the end of the period counted from their creation, moves their
+  retention date to that day and logs `document_retention_held_statutory` once.
+- `hr:purge-employee-documents` does the same for `payslip` and `contract` documents, counting from their issue date or,
+  without one, from their creation.
+- A delete policy shorter than 120 months on a statutory document type, or attached to a document of such a type, is
+  refused, and so is a retention date before the end of the period on a payslip or a contract of the personnel file.
 - `time:purge-expired` never goes below the 5 year minimum, whatever the company setting; it removes whole calendar
   years only, so records are kept between 5 and 6 years.
 - A record without a creation date is kept.
+- `demo:reset` refuses to run with `APP_ENV=production`, even when `DEMO_RESET_ENABLED=true`.
 - Backups, the outbox archive and the other employee document types are not covered yet (open questions).
 
 ## 5. Storage and backups
