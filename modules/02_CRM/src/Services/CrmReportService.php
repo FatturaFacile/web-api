@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Services;
 
+use Illuminate\Support\Facades\DB;
 use Modules\CRM\Models\Activity;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadSource;
@@ -87,7 +88,10 @@ final class CrmReportService
         $total = array_sum($byStatus);
         $converted = $byStatus['converted'] ?? 0;
         $qualified = ($byStatus['qualified'] ?? 0) + $converted;
-        $avgDays = $leads()->whereNotNull('converted_at')->selectRaw('AVG(EXTRACT(EPOCH FROM (converted_at - created_at)) / 86400) AS days')->value('days');
+        $daysExpression = DB::connection()->getDriverName() === 'pgsql'
+            ? 'AVG(EXTRACT(EPOCH FROM (converted_at - created_at)) / 86400) AS days'
+            : 'AVG(julianday(converted_at) - julianday(created_at)) AS days';
+        $avgDays = $leads()->whereNotNull('converted_at')->selectRaw($daysExpression)->value('days');
 
         $sources = LeadSource::where('tenant_id', $tenantId)->pluck('code', 'id');
         $bySource = $leads()

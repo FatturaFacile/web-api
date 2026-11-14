@@ -145,7 +145,7 @@ final class TalentAndTrainingController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function courses(): JsonResponse
+    public function courses(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
 
@@ -295,7 +295,7 @@ final class TalentAndTrainingController extends Controller
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function certifications(): JsonResponse
+    public function certifications(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
 
