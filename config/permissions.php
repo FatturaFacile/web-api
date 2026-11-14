@@ -152,6 +152,16 @@ return [
         // Facility management: every member books rooms and desks and raises service requests; the policy reserves
         // buildings, spaces, inspections and meters to facility managers and operators. Read-only roles never write.
         'facility' => ['read' => $anyMember, 'write' => $anyMember],
+        // Fleet management (company vehicles): every member reads; owners, administrators, accountants and operational
+        // staff keep vehicles, fuel, services, deadlines and fines. Read-only roles never write.
+        'fleet' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'production', 'technician', 'procurement_manager', 'member'],
+        ],
+        // Returns and warranty (RMA): sales and warehouse staff handle the returns; authorising a return, overriding the
+        // return window and deciding a warranty claim are reserved by the policy to owners, administrators and members
+        // granted returns.approve.
+        'returns' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'warehouse', 'purchasing', 'service_manager', 'technician', 'member']],
     ],
 
     /*

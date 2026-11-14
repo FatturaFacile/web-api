@@ -95,6 +95,8 @@
             "Modules\\Facility\\": "modules/43_Facility/src/",
             "Modules\\LeaseAccounting\\": "modules/45_LeaseAccounting/src/",
             "Modules\\Sustainability\\": "modules/47_Sustainability/src/",
+            "Modules\\Fleet\\": "modules/48_Fleet/src/",
+            "Modules\\Returns\\":"modules/49_Returns/src/",
             "Modules\\": "modules/"
         }
     },
