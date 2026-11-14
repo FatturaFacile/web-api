@@ -13,6 +13,7 @@ use OpenApi\Attributes as OA;
 #[OA\Parameter(parameter: 'TreasuryBankAccountId', name: 'id', description: 'Bank account identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Parameter(parameter: 'TreasuryCashRegisterId', name: 'id', description: 'Cash register identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Parameter(parameter: 'TreasuryProposalId', name: 'id', description: 'Payment proposal identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
+#[OA\Parameter(parameter: 'TreasuryPagoPaNoticeId', name: 'id', description: 'pagoPA notice identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Parameter(parameter: 'TreasuryRecurringItemId', name: 'id', description: 'Recurring cash item identifier', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))]
 #[OA\Parameter(parameter: 'TreasuryPerPage', name: 'per_page', description: 'Items per page (max 100)', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, maximum: 100, minimum: 1))]
 #[OA\Parameter(parameter: 'TreasuryFromDate', name: 'from_date', description: 'First day (YYYY-MM-DD)', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'date'))]

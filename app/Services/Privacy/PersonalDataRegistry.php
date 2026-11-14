@@ -55,8 +55,11 @@ use Modules\ServiceManagement\Models\CSATSurvey;
 use Modules\ServiceManagement\Models\ServiceTechnician;
 use Modules\ServiceManagement\Models\SupportMailboxMessage;
 use Modules\ServiceManagement\Models\TicketMessage;
+use Modules\SupplierPortal\Models\BankChangeRequest;
+use Modules\SupplierPortal\Models\SupplierOnboarding;
 use Modules\Treasury\Models\OpenBankingConsent;
 use Modules\Treasury\Models\OpenBankingPayment;
+use Modules\Treasury\Models\PagoPaPaymentNotice;
 use Modules\Treasury\Models\PaymentApproval;
 use Modules\Treasury\Models\PaymentLine;
 use Modules\Treasury\Models\RibaReceipt;
@@ -236,6 +239,9 @@ final class PersonalDataRegistry
             new PersonalDataEntry('purchase_orders', [PurchaseOrder::class, \Modules\Procurement\Models\PurchaseOrder::class], 'Purchase orders', 'contact', ['shipping_address'], $fiscal, $commercialNote),
             new PersonalDataEntry('service_reports', [ServiceReport::class], 'Service reports', 'contact', ['site_address'], $fiscal, $commercialNote, ['contact' => 'contact_id']),
             new PersonalDataEntry('service_report_signatures', [ServiceReportSignature::class], 'Signatures of service reports', 'identity', ['signer_email', 'ip_address'], $evidence, $evidenceNote),
+            new PersonalDataEntry('sp_onboardings', [SupplierOnboarding::class], 'Supplier onboarding', 'identity', ['invitation_email'], $fiscal, $commercialNote),
+            new PersonalDataEntry('sp_bank_change_requests', [BankChangeRequest::class], 'Supplier bank detail change requests', 'financial', ['account_holder', 'iban', 'previous_iban'], $fiscal, $commercialNote),
+            new PersonalDataEntry('pagopa_payment_notices', [PagoPaPaymentNotice::class], 'pagoPA payment notices', 'financial', ['debtor_name', 'debtor_fiscal_code', 'creditor_fiscal_code'], $fiscal, $commercialNote),
             new PersonalDataEntry('bank_statement_lines', [BankStatementLine::class, \Modules\Treasury\Models\BankStatementLine::class], 'Bank statement lines', 'financial', ['counterpart_iban', 'counterparty_iban'], $fiscal, $commercialNote),
             new PersonalDataEntry('bank_reconciliation_rules', [BankReconciliationRule::class], 'Bank reconciliation rules', 'financial', ['counterparty_iban'], $erasable, $operationalNote),
             new PersonalDataEntry('open_banking_consents', [OpenBankingConsent::class], 'Open banking consents', 'financial', ['iban'], $evidence, $evidenceNote),

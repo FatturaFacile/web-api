@@ -83,12 +83,20 @@ function committed(): Connection
 }
 
 beforeEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        test()->markTestSkipped('Needs PostgreSQL: the workers are separate processes that commit to a shared database, which an in-memory SQLite cannot give them.');
+    }
+
     $this->fixtureFile = tempnam(sys_get_temp_dir(), 'assoc');
     file_put_contents($this->fixtureFile, workerCommand('setup', (string) ASSOCIATION_CONCURRENT_WORKERS));
     $this->fixture = json_decode((string) file_get_contents($this->fixtureFile), true);
 });
 
 afterEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        return;
+    }
+
     workerCommand('cleanup', $this->fixtureFile);
     unlink($this->fixtureFile);
     DB::purge('association_committed');

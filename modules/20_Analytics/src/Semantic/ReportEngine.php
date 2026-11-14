@@ -338,13 +338,13 @@ final readonly class ReportEngine
         $number = static fn (mixed $bound): int|float => $bound + 0;
 
         match ($operator) {
-            'eq' => $query->havingRaw("{$column} = ?", [$number($value)]),
-            'neq' => $query->havingRaw("({$column} IS NULL OR {$column} <> ?)", [$number($value)]),
-            'gt' => $query->havingRaw("{$column} > ?", [$number($value)]),
-            'gte' => $query->havingRaw("{$column} >= ?", [$number($value)]),
-            'lt' => $query->havingRaw("{$column} < ?", [$number($value)]),
-            'lte' => $query->havingRaw("{$column} <= ?", [$number($value)]),
-            'between' => $query->havingRaw("{$column} BETWEEN ? AND ?", array_map($number, array_values($value))),
+            'eq' => $query->havingRaw("{$column} = CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'neq' => $query->havingRaw("({$column} IS NULL OR {$column} <> CAST(? AS DECIMAL(24, 6)))", [$number($value)]),
+            'gt' => $query->havingRaw("{$column} > CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'gte' => $query->havingRaw("{$column} >= CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'lt' => $query->havingRaw("{$column} < CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'lte' => $query->havingRaw("{$column} <= CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'between' => $query->havingRaw("{$column} BETWEEN CAST(? AS DECIMAL(24, 6)) AND CAST(? AS DECIMAL(24, 6))", array_map($number, array_values($value))),
             'is_null' => $query->havingRaw("{$column} IS NULL"),
             'not_null' => $query->havingRaw("{$column} IS NOT NULL"),
             default => throw new \LogicException("Unvalidated operator [{$operator}]."),

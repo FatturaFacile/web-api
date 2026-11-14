@@ -79,12 +79,20 @@ function helpdeskCommitted(): Connection
 }
 
 beforeEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        test()->markTestSkipped('Needs PostgreSQL: the workers are separate processes that commit to a shared database, which an in-memory SQLite cannot give them.');
+    }
+
     $this->fixtureFile = tempnam(sys_get_temp_dir(), 'helpdesk');
     file_put_contents($this->fixtureFile, helpdeskWorkerCommand('setup', (string) HELPDESK_CONCURRENT_WORKERS));
     $this->fixture = json_decode((string) file_get_contents($this->fixtureFile), true);
 });
 
 afterEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        return;
+    }
+
     helpdeskWorkerCommand('cleanup', $this->fixtureFile);
     unlink($this->fixtureFile);
     DB::purge('helpdesk_committed');

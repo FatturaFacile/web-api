@@ -201,6 +201,11 @@ test('a run that gets past the check while another run of the period is stored i
 });
 
 test('the migration keeps the first of duplicated runs and guards the period with a unique index', function (): void {
+    // The migration repairs legacy PostgreSQL installations only (partial unique index, window functions on jsonb).
+    if (DB::getDriverName() !== 'pgsql') {
+        $this->markTestSkipped('The duplicate repair migration only runs on PostgreSQL.');
+    }
+
     DB::statement('ALTER TABLE eam_depreciation_runs DROP CONSTRAINT eam_depr_runs_period_unique');
     $run = fn (string $id, string $executedAt): bool => DB::table('eam_depreciation_runs')->insert([
         'id' => $id, 'tenant_id' => $this->tenant->id, 'run_number' => "RUN-{$id}", 'period_code' => '2026-10', 'period_type' => 'monthly',

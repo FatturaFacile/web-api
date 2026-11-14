@@ -16,6 +16,7 @@ use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
 use Modules\Childcare\Providers\ChildcareServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
+use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
@@ -24,8 +25,10 @@ use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
+use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
+use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
 use Modules\Hospitality\Providers\HospitalityServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
@@ -33,6 +36,7 @@ use Modules\Integrations\Providers\IntegrationsServiceProvider;
 use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
+use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
@@ -42,6 +46,9 @@ use Modules\Quality\Providers\QualityServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
+use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
+use Modules\Sustainability\Providers\SustainabilityServiceProvider;
+use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
@@ -96,4 +103,11 @@ return [
     VisitorsServiceProvider::class,
     IntrastatServiceProvider::class,
     QualityServiceProvider::class,
+    GovernanceServiceProvider::class,
+    TravelExpenseServiceProvider::class,
+    ConfiguratorServiceProvider::class,
+    SupplierPortalServiceProvider::class,
+    FacilityServiceProvider::class,
+    LeaseAccountingServiceProvider::class,
+    SustainabilityServiceProvider::class,
 ];

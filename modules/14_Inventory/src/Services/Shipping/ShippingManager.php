@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Inventory\Services\Shipping;
 
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Inventory\Contracts\ShippingCarrierDriver;
@@ -107,7 +108,7 @@ final class ShippingManager
             $locked = Shipment::query()->whereKey($shipment->id)->lockForUpdate()->firstOr(static fn (): Shipment => $shipment);
 
             $stored = ShipmentTrackingEvent::query()->firstOrCreate(
-                ['shipment_id' => $shipment->id, 'status' => $event->status, 'occurred_at' => $event->occurredAt],
+                ['shipment_id' => $shipment->id, 'status' => $event->status, 'occurred_at' => Carbon::parse($event->occurredAt)],
                 ['tenant_id' => $shipment->tenant_id, 'description' => $event->description, 'location' => $event->location, 'source' => $source]
             );
 

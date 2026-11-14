@@ -1,0 +1,70 @@
+<?php
+
+declare(strict_types=1);
+
+return [
+    'building' => [
+        'has_spaces' => 'L\'edificio ha ancora degli spazi: rimuovili o spostali prima.',
+    ],
+    'space' => [
+        'kind_has_children' => 'Uno spazio che contiene altri spazi non può diventare piano, scrivania, posto auto o sala riunioni.',
+        'has_children' => 'Lo spazio contiene altri spazi: rimuovili prima.',
+        'has_future_bookings' => 'Lo spazio ha prenotazioni future: annullale prima.',
+        'floor_has_no_parent' => 'Un piano sta direttamente sotto l\'edificio e non ha uno spazio padre.',
+        'parent_not_found' => 'Lo spazio padre non esiste.',
+        'parent_other_building' => 'Lo spazio padre appartiene a un altro edificio.',
+        'parent_is_leaf' => 'Uno spazio di tipo :kind non può contenere altri spazi.',
+        'cycle' => 'Uno spazio non può essere collocato dentro se stesso o dentro uno dei suoi figli.',
+        'kind_not_bookable' => 'Uno spazio di tipo :kind non può essere prenotato.',
+        'capacity_required' => 'Uno spazio prenotabile richiede una capienza di almeno 1.',
+    ],
+    'booking' => [
+        'not_bookable' => 'Lo spazio non è prenotabile.',
+        'in_past' => 'La prenotazione non può iniziare nel passato.',
+        'too_long' => 'Una prenotazione di questo tipo di spazio dura al massimo :minutes minuti.',
+        'too_far' => 'Questo tipo di spazio non si può prenotare con più di :days giorni di anticipo.',
+        'over_capacity' => 'Lo spazio ospita al massimo :capacity persone.',
+        'daily_limit' => 'Puoi avere al massimo :limit prenotazione/i di questo tipo di spazio al giorno.',
+        'conflict' => 'Lo spazio è già prenotato in questo intervallo.',
+        'cancel_only_booked' => 'La prenotazione è :status: si può annullare solo una prenotazione non ancora usata.',
+        'checkin_only_booked' => 'La prenotazione è :status: si può fare il check-in solo di una prenotazione ancora aperta.',
+        'checkin_window' => 'Il check-in è possibile da pochi minuti prima dell\'inizio fino alla fine della prenotazione.',
+        'own_only' => 'Puoi prenotare solo per te stesso.',
+    ],
+    'series' => [
+        'no_occurrences' => 'La ricorrenza non produce nessuna prenotazione nel periodo scelto.',
+        'too_many' => 'Una prenotazione ricorrente può generare al massimo :max prenotazioni.',
+        'nothing_bookable' => 'Nessuna occorrenza della serie può essere prenotata.',
+        'already_cancelled' => 'La serie è già annullata.',
+        'span' => 'Una prenotazione ricorrente può coprire al massimo :days giorni.',
+        'end_before_start' => 'L\'ora di fine deve essere successiva a quella di inizio.',
+    ],
+    'request' => [
+        'locked' => 'La richiesta è :status e non può essere modificata.',
+        'transition' => 'Una richiesta :from non può passare a :to.',
+        'work_order_not_found' => 'L\'ordine di manutenzione non esiste in questa azienda.',
+        'work_order_exists' => 'La richiesta ha già un ordine di manutenzione.',
+        'asset_required' => 'Scegli il cespite a cui si riferisce l\'ordine di manutenzione.',
+        'asset_not_found' => 'Il cespite non esiste in questa azienda.',
+        'space_not_found' => 'Lo spazio non esiste.',
+        'building_mismatch' => 'Lo spazio non è nell\'edificio scelto.',
+    ],
+    'inspection' => [
+        'start_only_scheduled' => 'L\'ispezione è :status: si può avviare solo un\'ispezione pianificata.',
+        'locked' => 'L\'ispezione è :status e non può essere modificata.',
+        'unknown_item' => 'La checklist non ha la voce :keys.',
+        'not_numeric' => 'La risposta a ":item" deve essere un numero.',
+        'required_missing' => 'Rispondi a tutte le voci obbligatorie: :items.',
+    ],
+    'meter' => [
+        'unit_locked' => 'Tipo e unità non possono cambiare quando il contatore ha delle letture.',
+        'inactive' => 'Il contatore non è attivo.',
+        'not_chronological' => 'La lettura deve essere datata dopo l\'ultima (:date).',
+        'only_latest' => 'Si può rimuovere solo l\'ultima lettura del contatore.',
+        'below_previous' => 'Il valore è inferiore alla lettura precedente (:previous). Dichiara un giro di quadrante o una sostituzione del contatore.',
+        'no_rollover_value' => 'Imposta il valore di fondo scala del contatore prima di registrare un giro di quadrante.',
+        'rollover_not_below' => 'Una lettura con giro di quadrante deve essere inferiore alla precedente (:previous).',
+        'above_rollover' => 'La lettura precedente supera il fondo scala (:rollover) del contatore.',
+        'unit_for_kind' => 'L\'unità :unit non è adatta a un contatore :kind.',
+    ],
+];

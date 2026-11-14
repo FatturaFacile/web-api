@@ -480,7 +480,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
         /** @var Collection<int, ReceivableCollection> $candidates */
         $candidates = ReceivableCollection::where('tenant_id', $tenantId)
             ->whereIn('status', self::OPEN_COLLECTION_STATUSES)
-            ->whereRaw('(expected_amount - collected_amount) = ?', [round($amount, 2)])
+            ->whereRaw('ROUND(expected_amount - collected_amount, 2) = CAST(? AS DECIMAL(15, 2))', [number_format($amount, 2, '.', '')])
             ->orderBy('due_date')
             ->get();
 

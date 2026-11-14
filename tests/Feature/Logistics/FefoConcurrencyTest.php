@@ -19,6 +19,10 @@ require_once __DIR__.'/fixtures.php';
 uses(RefreshDatabase::class, CommitsToDatabase::class);
 
 afterEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        return;
+    }
+
     $tenantId = $this->tenant->id;
 
     foreach (['stock_reservation_allocations', 'stock_reservations', 'stock_quants', 'stock_lots', 'stock_items', 'stock_item_categories', 'warehouse_bins', 'warehouse_racks', 'warehouse_aisles', 'warehouse_zones', 'warehouses'] as $table) {
@@ -29,6 +33,10 @@ afterEach(function (): void {
 });
 
 test('parallel processes never oversell a lot and keep the fefo order', function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        $this->markTestSkipped('Needs PostgreSQL: the workers are separate processes that commit to a shared database.');
+    }
+
     $this->tenant = logisticsTenant('Concorrenza FEFO');
     $warehouse = logisticsWarehouse();
     $item = logisticsItem(['picking_strategy' => 'fefo']);

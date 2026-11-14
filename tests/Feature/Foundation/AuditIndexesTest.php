@@ -2,7 +2,10 @@
 
 declare(strict_types=1);
 
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Schema;
+
+uses(RefreshDatabase::class);
 
 /**
  * @return object The anonymous migration class instance of the audit-index migration.

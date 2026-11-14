@@ -22,6 +22,8 @@ use Modules\CRM\Jobs\SendCrmActivityRemindersJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\DocumentTrust\Jobs\VerifyPreservationPackagesJob;
+use Modules\Facility\Jobs\GenerateFacilityInspectionsJob;
+use Modules\Facility\Jobs\ReleaseNoShowBookingsJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
@@ -63,6 +65,7 @@ Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutO
 Schedule::command('analytics:run-scheduled-exports')->dailyAt('06:00')->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
 Schedule::command('sales:expire-quotes')->dailyAt('00:30')->withoutOverlapping()->onOneServer();
+Schedule::command('supplier-portal:alert-expiring-documents')->dailyAt('05:50')->withoutOverlapping()->onOneServer();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
 // Expired Bearer tokens stop working at once; this only removes their rows.
 Schedule::command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('04:05')->withoutOverlapping()->onOneServer();
@@ -125,6 +128,8 @@ $forEachTenant('document-trust:verify-preservation', static fn (Tenant $tenant):
 $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
 $forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new PurgeExpiredVisitorsJob($tenant->id))->dailyAt('03:50');
+$forEachTenant('facility:release-no-shows', static fn (Tenant $tenant): object => new ReleaseNoShowBookingsJob($tenant->id))->everyFiveMinutes();
+$forEachTenant('facility:generate-inspections', static fn (Tenant $tenant): object => new GenerateFacilityInspectionsJob($tenant->id))->dailyAt('05:45');
 $forEachTenant('fiscal-retail:retry-transmissions', static fn (Tenant $tenant): object => new RetryCorrispettiviTransmissionsJob($tenant->id))->everyFiveMinutes();
 
 /*

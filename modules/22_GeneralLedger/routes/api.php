@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\GeneralLedger\Http\Controllers\AccrualController;
 use Modules\GeneralLedger\Http\Controllers\ChartOfAccountController;
+use Modules\GeneralLedger\Http\Controllers\ChartTemplateController;
 use Modules\GeneralLedger\Http\Controllers\DimensionController;
 use Modules\GeneralLedger\Http\Controllers\EnasarcoController;
 use Modules\GeneralLedger\Http\Controllers\FinancialAnalysisController;
@@ -33,6 +34,8 @@ Route::prefix('api/v1/general-ledger')
     ->group(function (): void {
         // Chart of Accounts
         Route::get('accounts-tree', [ChartOfAccountController::class, 'hierarchy']);
+        Route::get('account-templates', [ChartTemplateController::class, 'index']);
+        Route::post('account-templates/{template}/import', [ChartTemplateController::class, 'import']);
         Route::apiResource('accounts', ChartOfAccountController::class);
 
         // Fiscal Calendar

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 
 uses(RefreshDatabase::class);
 
@@ -41,6 +42,10 @@ function deliveryNoteNumberingOutput(array $worker): array
 }
 
 beforeEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        test()->markTestSkipped('Needs PostgreSQL: the workers are separate processes that commit to a shared database, which an in-memory SQLite cannot give them.');
+    }
+
     [$output, $error] = deliveryNoteNumberingOutput(deliveryNoteNumberingWorker('setup', (string) DELIVERY_NOTE_NUMBERING_WORKERS));
 
     expect($error)->toBe('');
@@ -50,6 +55,10 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        return;
+    }
+
     deliveryNoteNumberingOutput(deliveryNoteNumberingWorker('cleanup', $this->fixtureFile));
     unlink($this->fixtureFile);
 });

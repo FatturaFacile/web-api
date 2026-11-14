@@ -115,7 +115,13 @@ final class PayrollLegalTablesController extends PayrollController
             ->orderBy('canton')
             ->orderByDesc('valid_from')
             ->toBase()
-            ->get();
+            ->get()
+            ->map(static function (object $row): object {
+                // The engines return the comparison as boolean or as 0/1: the contract is a boolean.
+                $row->is_generic = (bool) $row->is_generic;
+
+                return $row;
+            });
 
         return response()->json(['data' => $summary]);
     }

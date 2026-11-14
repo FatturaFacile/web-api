@@ -41,7 +41,7 @@ test('runs, payslips and their events keep the documented fields and the capital
     expect($calculated->json('data.status'))->toBeIn(['Draft', 'Calculated', 'Approved', 'Final']);
 
     $list = $api()->getJson('/api/v1/payroll/runs')->assertOk()->assertJsonStructure(['data', 'links' => ['first', 'last', 'prev', 'next'], 'meta' => ['current_page', 'from', 'last_page', 'links', 'path', 'per_page', 'to', 'total']]);
-    payrollExpectKeys($list->json('data.0'), $runKeys);
+    payrollExpectKeys($list->json('data.0'), [...$runKeys, 'employees_count', 'total_gross', 'total_net']);
 
     $show = $api()->getJson("/api/v1/payroll/runs/{$id}")->assertOk();
     payrollExpectKeys($show->json('data'), [...$runKeys, 'payslips', 'events']);

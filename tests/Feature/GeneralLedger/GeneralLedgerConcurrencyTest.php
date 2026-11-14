@@ -128,6 +128,10 @@ test('pessimistic lock on period close prevents race conditions', function () {
 });
 
 test('postings read their fiscal period FOR SHARE, so they wait for a closing in progress and then see it closed', function () {
+    if (DB::getDriverName() !== 'pgsql') {
+        test()->markTestSkipped('Needs PostgreSQL: SQLite has no row locks, so the FOR SHARE clause is not emitted and cannot be asserted.');
+    }
+
     $periodReads = [];
     DB::listen(function (QueryExecuted $query) use (&$periodReads): void {
         // The journal number sequence reads the period too, FOR SHARE like the posting checks, so it is counted.

@@ -184,8 +184,12 @@ test('two sales of the last unit both go through: the second leaves a shortfall 
     $first = ledgerSale(1);
     $second = ledgerSale(1);
 
-    expect($lockedQuants)->toBeGreaterThan(0)
-        ->and(ledgerOnHand($this->product->id))->toBe(0.0)
+    // SQLite has no row locks: its grammar drops FOR UPDATE, so the lock is only visible on the other engines.
+    if (DB::getDriverName() !== 'sqlite') {
+        expect($lockedQuants)->toBeGreaterThan(0);
+    }
+
+    expect(ledgerOnHand($this->product->id))->toBe(0.0)
         ->and(ledgerLevel($this->product->id))->toMatchArray(['quantity' => -1, 'on_hand' => 0, 'shortfall' => 1]);
 
     $shortfall = StockShortfall::query()->sole();

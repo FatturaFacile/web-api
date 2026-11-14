@@ -115,6 +115,43 @@ return [
             'read' => $anyMember,
             'write' => ['owner', 'admin', 'production', 'technician', 'service_manager', 'procurement_manager', 'member'],
         ],
+        // Governance, risk and compliance: every member reads the register and works on the remediation actions they own;
+        // the policy reserves the register, the controls library, the audit plan and the calendar to owners, administrators,
+        // accountants and members granted governance.manage, and the management decisions (accepting a risk, approving a
+        // plan, verifying an action) to owners, administrators and members granted governance.approve.
+        'governance' => ['read' => $anyMember, 'write' => $anyMember],
+        // Business trips and travel expenses: every member requests and follows their own trips. The policy lets owners,
+        // administrators, HR and accountants see every trip, approve (also travel.approve) and maintain the rate tables
+        // (also travel.rates); owners, administrators and accountants (also travel.reconcile) record advances and reconcile.
+        'travel' => ['read' => $anyMember, 'write' => $anyMember],
+        // Configure-price-quote: every member reads the configurable models and configurations; sales staff configure
+        // and quote. Models, options and rules are reserved by the policy to owners, administrators, sales managers and
+        // members granted configurator.manage; approving a configuration below the minimum margin to owners,
+        // administrators, sales managers and members granted configurator.approve.
+        'configurator' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager'],
+        ],
+        // Supplier onboarding, qualification and bank detail changes: purchasing and finance staff only. Approving a
+        // bank detail change is reserved by the policy to owners, administrators, accountants and members granted
+        // supplier_portal.bank_approve; the requester never approves their own request.
+        'supplier_portal' => [
+            'read' => [...$financeReaders, 'purchasing', 'procurement_manager'],
+            'write' => [...$finance, 'purchasing', 'procurement_manager'],
+        ],
+        // Lease accounting (IFRS 16, OIC, Swiss GAAP FER): right-of-use assets and lease liabilities are ledger data,
+        // so the module is for finance only; the read-only accountant reads it and never writes.
+        'leases' => ['read' => $financeReaders, 'write' => $finance],
+        // ESG and carbon accounting: every member reads; owners, administrators, accountants and operational staff keep
+        // the activity data. Reopening a closed period and approving a materiality assessment are reserved by the policy
+        // to owners, administrators and members granted sustainability.approve.
+        'sustainability' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'production', 'technician', 'procurement_manager', 'member'],
+        ],
+        // Facility management: every member books rooms and desks and raises service requests; the policy reserves
+        // buildings, spaces, inspections and meters to facility managers and operators. Read-only roles never write.
+        'facility' => ['read' => $anyMember, 'write' => $anyMember],
     ],
 
     /*

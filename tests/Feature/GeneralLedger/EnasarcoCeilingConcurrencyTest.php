@@ -32,6 +32,10 @@ function enasarcoWorker(string ...$arguments): array
 }
 
 beforeEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        test()->markTestSkipped('Needs PostgreSQL: the workers are separate processes that commit to a shared database, which an in-memory SQLite cannot give them.');
+    }
+
     [$output, $error] = enasarcoWorker('setup', (string) ENASARCO_CEILING_WORKERS);
 
     expect($error)->toBe('');
@@ -42,6 +46,10 @@ beforeEach(function (): void {
 });
 
 afterEach(function (): void {
+    if (DB::getDriverName() !== 'pgsql') {
+        return;
+    }
+
     enasarcoWorker('cleanup', $this->fixtureFile);
     unlink($this->fixtureFile);
 });

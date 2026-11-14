@@ -15598,6 +15598,122 @@
                 }
             }
         },
+        "/v1/general-ledger/account-templates": {
+            "get": {
+                "operationId": "chartTemplate.index",
+                "summary": "Lists the standard charts of accounts that can be loaded into the active tenant",
+                "tags": [
+                    "ChartTemplate"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "key": {
+                                                        "anyOf": [
+                                                            {
+                                                                "type": "string"
+                                                            },
+                                                            {}
+                                                        ]
+                                                    }
+                                                },
+                                                "required": [
+                                                    "key"
+                                                ],
+                                                "additionalProperties": {}
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/general-ledger/account-templates/{template}/import": {
+            "post": {
+                "operationId": "chartTemplate.import",
+                "summary": "Loads a standard chart of accounts into the active tenant; accounts whose code already exists are skipped",
+                "tags": [
+                    "ChartTemplate"
+                ],
+                "parameters": [
+                    {
+                        "name": "template",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "template": {
+                                                    "type": "string"
+                                                },
+                                                "created": {
+                                                    "type": "integer"
+                                                },
+                                                "skipped": {
+                                                    "type": "integer"
+                                                }
+                                            },
+                                            "required": [
+                                                "template",
+                                                "created",
+                                                "skipped"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "data"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/AuthorizationException"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/childcare/groups": {
             "get": {
                 "operationId": "v1.childcare.groups.index",
@@ -77775,6 +77891,388 @@
                 }
             }
         },
+        "/v1/treasury/pagopa-notices": {
+            "get": {
+                "operationId": "treasury.pagopa-notices.index",
+                "summary": "The notices of the tenant, newest first",
+                "tags": [
+                    "PagoPaNotice"
+                ],
+                "parameters": [
+                    {
+                        "name": "status",
+                        "in": "query",
+                        "schema": {
+                            "type": [
+                                "string",
+                                "null"
+                            ],
+                            "enum": [
+                                "pending",
+                                "paid",
+                                "expired",
+                                "cancelled",
+                                null
+                            ]
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "pagoPA notices"
+                                        },
+                                        "data": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/PagoPaNoticeResource"
+                                            }
+                                        },
+                                        "meta": {
+                                            "type": "object",
+                                            "properties": {
+                                                "total": {
+                                                    "type": "string"
+                                                },
+                                                "current_page": {
+                                                    "type": "string"
+                                                },
+                                                "last_page": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "total",
+                                                "current_page",
+                                                "last_page"
+                                            ]
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            },
+            "post": {
+                "operationId": "treasury.pagopa-notices.store",
+                "summary": "Issues a notice",
+                "tags": [
+                    "PagoPaNotice"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/StorePagoPaNoticeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "pagoPA notice issued"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PagoPaNoticeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    },
+                    "422": {
+                        "$ref": "#/components/responses/ValidationException"
+                    }
+                }
+            }
+        },
+        "/v1/treasury/pagopa-notices/{id}": {
+            "get": {
+                "operationId": "treasury.pagopa-notices.show",
+                "summary": "One notice",
+                "tags": [
+                    "PagoPaNotice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "pagoPA notice"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PagoPaNoticeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/treasury/pagopa-notices/{id}/cancel": {
+            "post": {
+                "operationId": "treasury.pagopa-notices.cancel",
+                "summary": "Cancels a pending notice",
+                "tags": [
+                    "PagoPaNotice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "pagoPA notice cancelled"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PagoPaNoticeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/treasury/pagopa-notices/{id}/mark-paid": {
+            "post": {
+                "operationId": "treasury.pagopa-notices.mark-paid",
+                "summary": "Records the payment of a pending notice",
+                "tags": [
+                    "PagoPaNotice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "pagoPA notice marked as paid"
+                                        },
+                                        "data": {
+                                            "$ref": "#/components/schemas/PagoPaNoticeResource"
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/treasury/pagopa-notices/{id}/qr-payload": {
+            "get": {
+                "operationId": "treasury.pagopa-notices.qr-payload",
+                "summary": "The QR code payload of a notice",
+                "tags": [
+                    "PagoPaNotice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean"
+                                        },
+                                        "message": {
+                                            "type": "string",
+                                            "const": "pagoPA QR payload"
+                                        },
+                                        "data": {
+                                            "type": "object",
+                                            "properties": {
+                                                "payload": {
+                                                    "type": "string"
+                                                }
+                                            },
+                                            "required": [
+                                                "payload"
+                                            ]
+                                        },
+                                        "meta": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "success",
+                                        "message",
+                                        "data",
+                                        "meta"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
         "/v1/auth/password": {
             "put": {
                 "operationId": "auth.password.update",
@@ -86083,6 +86581,87 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/ModelNotFoundException"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/AuthenticationException"
+                    }
+                }
+            }
+        },
+        "/v1/edocument-networks/peppol/invoices/{id}/ubl": {
+            "get": {
+                "operationId": "edocument-networks.peppol.ubl",
+                "summary": "Download the Peppol UBL of an invoice",
+                "tags": [
+                    "PeppolInvoice"
+                ],
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "",
+                        "content": {
+                            "application/xml; charset=UTF-8": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "Content-Disposition": {
+                                "schema": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "type": {
+                                            "type": "null"
+                                        },
+                                        "title": {
+                                            "type": "string",
+                                            "const": "Peppol document not buildable"
+                                        },
+                                        "status": {
+                                            "type": "integer",
+                                            "const": 422
+                                        },
+                                        "detail": {
+                                            "type": "string"
+                                        },
+                                        "instance": {
+                                            "type": "null"
+                                        },
+                                        "invalid_params": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "type",
+                                        "title",
+                                        "status",
+                                        "detail",
+                                        "instance",
+                                        "invalid_params"
+                                    ]
+                                }
+                            }
+                        }
                     },
                     "401": {
                         "$ref": "#/components/responses/AuthenticationException"
@@ -188067,6 +188646,89 @@
                 },
                 "title": "PackPickListRequest"
             },
+            "PagoPaNoticeResource": {
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "invoice_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "reference_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "reference_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "debtor_name": {
+                        "type": "string"
+                    },
+                    "debtor_fiscal_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "amount": {
+                        "type": "string"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
+                    "due_date": {
+                        "type": "string"
+                    },
+                    "causale": {
+                        "type": "string"
+                    },
+                    "iuv": {
+                        "type": "string"
+                    },
+                    "notice_code": {
+                        "type": "string"
+                    },
+                    "creditor_fiscal_code": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "paid_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    }
+                },
+                "required": [
+                    "id",
+                    "invoice_id",
+                    "reference_type",
+                    "reference_id",
+                    "debtor_name",
+                    "debtor_fiscal_code",
+                    "amount",
+                    "currency",
+                    "due_date",
+                    "causale",
+                    "iuv",
+                    "notice_code",
+                    "creditor_fiscal_code",
+                    "status",
+                    "paid_at"
+                ],
+                "title": "PagoPaNoticeResource"
+            },
             "PassiveInvoice": {
                 "type": "object",
                 "properties": {
@@ -217333,6 +217995,78 @@
                 ],
                 "title": "StoreOpportunityRequest"
             },
+            "StorePagoPaNoticeRequest": {
+                "type": "object",
+                "description": "A pagoPA payment notice for a receivable.",
+                "properties": {
+                    "invoice_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "reference_type": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "maxLength": 100
+                    },
+                    "reference_id": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "uuid"
+                    },
+                    "debtor_name": {
+                        "type": "string",
+                        "maxLength": 150
+                    },
+                    "debtor_fiscal_code": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "minLength": 11,
+                        "maxLength": 16
+                    },
+                    "amount": {
+                        "type": "number"
+                    },
+                    "currency": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "EUR",
+                            null
+                        ]
+                    },
+                    "due_date": {
+                        "type": "string",
+                        "format": "date"
+                    },
+                    "causale": {
+                        "type": "string",
+                        "maxLength": 140
+                    },
+                    "creditor_fiscal_code": {
+                        "type": "string",
+                        "pattern": "^[0-9]{11}$"
+                    }
+                },
+                "required": [
+                    "debtor_name",
+                    "amount",
+                    "due_date",
+                    "causale",
+                    "creditor_fiscal_code"
+                ],
+                "title": "StorePagoPaNoticeRequest"
+            },
             "StorePaymentBatchRequest": {
                 "type": "object",
                 "properties": {
@@ -233641,6 +234375,10 @@
             "description": "Operations of the ChartOfAccount module."
         },
         {
+            "name": "ChartTemplate",
+            "description": "Operations of the ChartTemplate module."
+        },
+        {
             "name": "Child",
             "description": "Operations of the Child module."
         },
@@ -234249,6 +234987,10 @@
             "description": "Operations of the Outbound module."
         },
         {
+            "name": "PagoPaNotice",
+            "description": "Operations of the PagoPaNotice module."
+        },
+        {
             "name": "PasswordChange",
             "description": "Operations of the PasswordChange module."
         },
@@ -234323,6 +235065,10 @@
         {
             "name": "Payslip",
             "description": "Operations of the Payslip module."
+        },
+        {
+            "name": "PeppolInvoice",
+            "description": "Operations of the PeppolInvoice module."
         },
         {
             "name": "PeriodClose",

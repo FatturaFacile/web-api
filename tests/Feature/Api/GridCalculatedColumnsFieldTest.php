@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\Appointment;
 use App\Models\Contact;
 use App\Models\LookupItem;
+use App\Models\ServiceReport;
 use Database\Seeders\AppointmentLookupSeeder;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -47,7 +48,7 @@ test('the lifecycle status of an appointment is a calculated grid column: values
     $make(['title' => 'Scheduled']);
     $make(['title' => 'Confirmed', 'confirmed_at' => now()]);
     $make(['title' => 'Cancelled', 'cancelled_at' => now(), 'confirmed_at' => now()]);
-    $make(['title' => 'Done', 'service_report_id' => (string) Str::uuid()]);
+    $make(['title' => 'Done', 'service_report_id' => ServiceReport::factory()->create(['tenant_id' => $this->tenant->id, 'status_id' => $references['status_id'], 'contact_id' => $references['contact_id'], 'technician_id' => $this->member->id])->id]);
 
     $values = $this->getJson('/api/v1/appointments?grid_values=lifecycle_status')->assertOk()->json('data');
     expect(collect($values)->pluck('count', 'value')->all())->toBe(['cancelled' => 1, 'completed' => 1, 'confirmed' => 1, 'scheduled' => 1]);
