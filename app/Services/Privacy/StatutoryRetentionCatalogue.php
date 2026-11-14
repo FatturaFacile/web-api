@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Privacy;
 
+use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Modules\DocumentTrust\Enums\PreservationDocumentClass;
 use Modules\HumanResources\Services\TimeTracking\DataRetentionPolicy;
@@ -74,22 +75,71 @@ final class StatutoryRetentionCatalogue
     }
 
     /**
-     * Retention class of a document of the library, by its document type. Only the types that the code itself files
-     * under a preservation class map; any other type is not classified here.
+     * Document types, normalised, that name a preservation class in Italian or English. The exact enum values match as
+     * well, so `Payslip`, ` busta paga ` and `payslip` are the same type.
+     *
+     * @var array<string, PreservationDocumentClass>
      */
-    public static function retentionForDocumentType(?string $documentType): ?PersonalDataRetention
+    private const DOCUMENT_TYPE_ALIASES = [
+        'invoice' => PreservationDocumentClass::IssuedInvoice,
+        'fattura' => PreservationDocumentClass::IssuedInvoice,
+        'fattura emessa' => PreservationDocumentClass::IssuedInvoice,
+        'fattura attiva' => PreservationDocumentClass::IssuedInvoice,
+        'fattura ricevuta' => PreservationDocumentClass::ReceivedInvoice,
+        'fattura passiva' => PreservationDocumentClass::ReceivedInvoice,
+        'ledger' => PreservationDocumentClass::LedgerBook,
+        'libro giornale' => PreservationDocumentClass::LedgerBook,
+        'libro contabile' => PreservationDocumentClass::LedgerBook,
+        'pay slip' => PreservationDocumentClass::Payslip,
+        'cedolino' => PreservationDocumentClass::Payslip,
+        'busta paga' => PreservationDocumentClass::Payslip,
+        'contratto' => PreservationDocumentClass::Contract,
+    ];
+
+    /**
+     * Preservation class a free-text document type names, compared case-insensitively with spaces, underscores and
+     * dashes treated alike. Null for any other type.
+     */
+    public static function preservationClassForDocumentType(?string $documentType): ?PreservationDocumentClass
     {
-        if ($documentType === null || PreservationDocumentClass::tryFrom($documentType) === null) {
+        if ($documentType === null) {
             return null;
         }
 
-        return PersonalDataRetention::FiscalRecord;
+        $normalised = trim((string) preg_replace('/[\s_-]+/u', ' ', mb_strtolower($documentType)));
+
+        return PreservationDocumentClass::tryFrom(str_replace(' ', '_', $normalised)) ?? self::DOCUMENT_TYPE_ALIASES[$normalised] ?? null;
     }
 
     /**
-     * True while a record of the class must still be kept: the period has not elapsed from the record date, the
-     * record has no date to count from, or the class has no period and is held indefinitely. An erasable class is
-     * never under statutory retention.
+     * Retention class of a document of the library or of the personnel file, by its document type. Only the types that
+     * name a preservation class map; any other type is not classified here.
+     */
+    public static function retentionForDocumentType(?string $documentType): ?PersonalDataRetention
+    {
+        return self::preservationClassForDocumentType($documentType) === null ? null : PersonalDataRetention::FiscalRecord;
+    }
+
+    /**
+     * Last day a record of the class must be kept: the period counts from the end of the financial year of the record
+     * date, taken as the calendar year until the accountant confirms otherwise. Null when the class has no period, the
+     * record has no date, or the class is erasable.
+     */
+    public static function retentionEndsAt(PersonalDataRetention $retention, ?CarbonInterface $recordDate): ?CarbonImmutable
+    {
+        $years = self::minimumYears($retention);
+
+        if ($years === null || $recordDate === null) {
+            return null;
+        }
+
+        return CarbonImmutable::parse($recordDate)->endOfYear()->addYearsNoOverflow($years)->startOfDay();
+    }
+
+    /**
+     * True while a record of the class must still be kept: its retention end has not passed, the record has no date to
+     * count from, or the class has no period and is held indefinitely. An erasable class is never under statutory
+     * retention.
      */
     public static function isUnderRetention(PersonalDataRetention $retention, ?CarbonInterface $recordDate, ?CarbonInterface $now = null): bool
     {
@@ -97,12 +147,8 @@ final class StatutoryRetentionCatalogue
             return false;
         }
 
-        $years = self::minimumYears($retention);
+        $endsAt = self::retentionEndsAt($retention, $recordDate);
 
-        if ($years === null || $recordDate === null) {
-            return true;
-        }
-
-        return $recordDate->copy()->addYears($years)->isAfter($now ?? now());
+        return $endsAt === null || ! $endsAt->isBefore(($now ?? now())->copy()->startOfDay());
     }
 }
