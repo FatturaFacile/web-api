@@ -45,11 +45,11 @@ const SCHEDULE_CLEANUPS = [
     'webhooks:prune' => 'webhook delivery log, technical data',
     'time:purge-expired' => 'guarded: working time records, 5 years',
     'privacy:apply-retention' => 'guarded: erasable tables only',
-    'demo:reset' => 'guarded: demo flag',
+    'demo:reset' => 'guarded: demo flag, never in production',
     'workflow:prune-tokens' => 'approval tokens, not approval decisions',
     'hr:purge-applications' => 'applicant data, erasable',
     'dms:retention' => 'guarded: statutory document types',
-    'hr:purge-employee-documents' => 'guarded: payslips',
+    'hr:purge-employee-documents' => 'guarded: payslips and contracts',
     'visitors:purge' => 'visitor data, erasable',
     'associations:expire-memberships' => 'import previews, memberships stay',
     'sales:expire-quotes' => 'status change only',
@@ -132,11 +132,32 @@ test('every registry entry that is not erasable has a catalogue rule, and every 
         ->and(StatutoryRetentionCatalogue::retentionForDocumentType(null))->toBeNull();
 });
 
+test('the catalogue matches document types case-insensitively and by their Italian and English names', function (string $documentType, PreservationDocumentClass $class): void {
+    expect(StatutoryRetentionCatalogue::preservationClassForDocumentType($documentType))->toBe($class)
+        ->and(StatutoryRetentionCatalogue::retentionForDocumentType($documentType))->toBe(PersonalDataRetention::FiscalRecord);
+})->with([
+    ['Payslip', PreservationDocumentClass::Payslip],
+    [' busta  paga ', PreservationDocumentClass::Payslip],
+    ['Cedolino', PreservationDocumentClass::Payslip],
+    ['pay-slip', PreservationDocumentClass::Payslip],
+    ['Issued Invoice', PreservationDocumentClass::IssuedInvoice],
+    ['fattura', PreservationDocumentClass::IssuedInvoice],
+    ['INVOICE', PreservationDocumentClass::IssuedInvoice],
+    ['fattura_ricevuta', PreservationDocumentClass::ReceivedInvoice],
+    ['Libro giornale', PreservationDocumentClass::LedgerBook],
+    ['Contratto', PreservationDocumentClass::Contract],
+    ['contract ', PreservationDocumentClass::Contract],
+]);
+
 test('the catalogue holds a record until its period elapsed and evidence indefinitely', function (): void {
     $fiscal = PersonalDataRetention::FiscalRecord;
 
     expect(StatutoryRetentionCatalogue::isUnderRetention($fiscal, now()->subYears(9)))->toBeTrue()
-        ->and(StatutoryRetentionCatalogue::isUnderRetention($fiscal, now()->subYears(10)->subDay()))->toBeFalse()
+        ->and(StatutoryRetentionCatalogue::isUnderRetention($fiscal, now()->subYears(10)->subDay()))->toBeTrue()
+        ->and(StatutoryRetentionCatalogue::isUnderRetention($fiscal, now()->parse('2016-01-01')))->toBeTrue()
+        ->and(StatutoryRetentionCatalogue::isUnderRetention($fiscal, now()->parse('2015-12-31')))->toBeFalse()
+        ->and(StatutoryRetentionCatalogue::retentionEndsAt($fiscal, now()->parse('2016-03-15'))?->toDateString())->toBe('2026-12-31')
+        ->and(StatutoryRetentionCatalogue::retentionEndsAt(PersonalDataRetention::Evidence, now()))->toBeNull()
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::StatutoryEmployment, now()->subYears(4)))->toBeTrue()
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::StatutoryEmployment, now()->subYears(6)))->toBeFalse()
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::Evidence, now()->subYears(50)))->toBeTrue()
@@ -145,9 +166,9 @@ test('the catalogue holds a record until its period elapsed and evidence indefin
         ->and(StatutoryRetentionCatalogue::isUnderRetention(PersonalDataRetention::Erasable, null))->toBeFalse();
 });
 
-test('dms:retention keeps statutory documents inside their period and records the skip', function (): void {
+test('dms:retention keeps statutory documents inside their period and moves their retention date to its end', function (): void {
     $policy = DmsRetentionPolicy::factory()->create(['tenant_id' => $this->tenant->id, 'retention_months' => 1, 'action' => 'delete']);
-    $payslip = statutoryDocument($this->tenant, 'payslip', now()->subYears(2)->toDateTimeString(), $policy);
+    $payslip = statutoryDocument($this->tenant, 'Busta paga', now()->subYears(2)->toDateTimeString(), $policy);
     $ledger = statutoryDocument($this->tenant, 'ledger_book', now()->subYears(9)->toDateTimeString(), $policy);
     $elapsed = statutoryDocument($this->tenant, 'payslip', now()->subYears(11)->toDateTimeString(), $policy);
     $other = statutoryDocument($this->tenant, null, now()->subYears(2)->toDateTimeString(), $policy);
@@ -159,7 +180,15 @@ test('dms:retention keeps statutory documents inside their period and records th
         ->and($exists($ledger))->toBeTrue()
         ->and($exists($elapsed))->toBeFalse()
         ->and($exists($other))->toBeFalse()
-        ->and(AuditLedgerEntry::query()->where('action', 'DOCUMENT_RETENTION_HELD_STATUTORY')->count())->toBe(2);
+        ->and(AuditLedgerEntry::query()->where('action', 'DOCUMENT_RETENTION_HELD_STATUTORY')->count())->toBe(2)
+        ->and(DmsDocument::withoutGlobalScopes()->findOrFail($payslip->id)->retention_until?->toDateString())->toBe('2034-12-31')
+        ->and(DmsDocument::withoutGlobalScopes()->findOrFail($ledger->id)->retention_until?->toDateString())->toBe('2027-12-31');
+
+    $this->travelTo('2026-11-07 10:00:00');
+    app(TenantContext::class)->runWithTenant($this->tenant, fn () => (new ApplyDocumentRetentionJob((string) $this->tenant->id))->handle(app(DocumentRetention::class)));
+
+    expect(AuditLedgerEntry::query()->where('action', 'DOCUMENT_RETENTION_HELD_STATUTORY')->count())->toBe(2)
+        ->and($exists($payslip))->toBeTrue();
 });
 
 test('dms:retention does not archive statutory documents inside their period', function (): void {
@@ -188,8 +217,23 @@ test('hr:purge-employee-documents keeps payslips and contracts inside their peri
     expect($find($payslip))->not->toBeNull()
         ->and($find($contract))->not->toBeNull()
         ->and($find($oldPayslip))->toBeNull()
-        ->and($find($warning))->toBeNull();
+        ->and($find($warning))->toBeNull()
+        ->and($find($payslip)?->retention_until?->toDateString())->toBe('2027-12-31')
+        ->and($find($contract)?->retention_until?->toDateString())->toBe('2033-12-31');
     Storage::disk('local')->assertExists($payslip->file_path);
+});
+
+test('hr:purge-employee-documents counts the statutory period from the issue date when there is one', function (): void {
+    $employee = Employee::factory()->active()->create(['tenant_id' => $this->tenant->id]);
+    $issuedLongAgo = statutoryEmployeeDocument($this->tenant, $employee, 'payslip', now()->subYear()->toDateTimeString());
+    $issuedLongAgo->update(['issue_date' => '2015-06-30']);
+    $issuedRecently = statutoryEmployeeDocument($this->tenant, $employee, 'payslip', now()->subYear()->toDateTimeString());
+    $issuedRecently->update(['issue_date' => '2018-06-30']);
+
+    (new PurgeExpiredEmployeeDocumentsJob((string) $this->tenant->id))->handle(app(EmployeeDocumentService::class));
+
+    expect(EmployeeDocument::withoutGlobalScopes()->withTrashed()->find($issuedLongAgo->id))->toBeNull()
+        ->and(EmployeeDocument::withoutGlobalScopes()->withTrashed()->find($issuedRecently->id)?->retention_until?->toDateString())->toBe('2028-12-31');
 });
 
 test('time:purge-expired keeps working time records inside five whole years, whatever the company setting', function (): void {
@@ -225,6 +269,17 @@ test('demo:reset refuses to run unless the demo flag is set and changes nothing'
 
     expect(Invoice::withoutGlobalScopes()->whereKey($invoice->id)->exists())->toBeTrue()
         ->and(Tenant::query()->whereKey($this->tenant->id)->exists())->toBeTrue();
+});
+
+test('demo:reset refuses to run in production even with the demo flag set', function (): void {
+    config(['app.demo_reset' => true]);
+    app()->detectEnvironment(fn (): string => 'production');
+    $invoice = PrivacyFixtures::invoice($this->tenant, PrivacyFixtures::contact($this->tenant));
+
+    $this->artisan('demo:reset')->assertFailed();
+
+    expect(Invoice::withoutGlobalScopes()->whereKey($invoice->id)->exists())->toBeTrue()
+        ->and(app()->isDownForMaintenance())->toBeFalse();
 });
 
 test('every scheduled entry is classified and none runs a preservation disposal', function (): void {

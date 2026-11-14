@@ -147,6 +147,16 @@ test('the personnel file keeps health documents for HR and shows the employee on
     expect(EmployeeDocument::withoutGlobalScopes()->withTrashed()->findOrFail($health)->trashed())->toBeTrue();
 });
 
+test('a payslip or a contract cannot get a retention date before the end of its statutory period', function (): void {
+    $api = hrAs($this->hr, $this->tenant);
+    $upload = fn (array $values) => $api->post("/api/v1/hr/employees/{$this->employee->id}/documents", ['file' => UploadedFile::fake()->create('doc.pdf', 20, 'application/pdf'), 'title' => 'Doc', ...$values]);
+
+    $upload(['document_type' => 'payslip', 'retention_until' => '2030-12-31'])->assertUnprocessable()->assertJsonValidationErrors('retention_until');
+    $upload(['document_type' => 'contract', 'issue_date' => '2020-03-01', 'retention_until' => '2030-12-30'])->assertUnprocessable()->assertJsonValidationErrors('retention_until');
+    $upload(['document_type' => 'contract', 'issue_date' => '2020-03-01', 'retention_until' => '2030-12-31'])->assertCreated();
+    $upload(['document_type' => 'certificate', 'retention_until' => '2027-01-31'])->assertCreated();
+});
+
 test('the retention purge erases expired documents with their files and leaves the rest alone', function (): void {
     $disk = Storage::disk(config('filesystems.private_disk', config('filesystems.default', 'local')));
     $expired = EmployeeDocument::factory()->create(['tenant_id' => $this->tenant->id, 'employee_id' => $this->employee->id, 'document_type' => 'certificate', 'file_path' => 'hr/expired.pdf', 'retention_until' => '2026-11-01']);
