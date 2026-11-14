@@ -80,6 +80,35 @@ Scheduled tasks (`php artisan schedule:list`):
 | `invoices:send-reminders` | daily 08:00                                                        |
 | `ecommerce:sync-orders`   | every 15 minutes                                                   |
 
+### Statutory retention of automatic cleanups
+
+The cleanups that delete or archive records skip the records of a statutory class while their period runs. The
+periods live in `App\Services\Privacy\StatutoryRetentionCatalogue`. They are the ones the code already applies, are
+not verified against the official texts and must be confirmed by the accountant or counsel.
+
+| Class                  | Records                                                  | Kept for           | Legal basis already in code                     |
+|------------------------|----------------------------------------------------------|--------------------|-------------------------------------------------|
+| `fiscal_record`        | invoices, ledger books, payroll vouchers                 | 10 years           | Swiss CO art. 958f, Italian c.c. art. 2220      |
+| `fiscal_record`        | contracts                                                | 10 years           | Italian c.c. art. 2946 (cautious choice)        |
+| `statutory_employment` | working time records                                     | 5 years minimum    | ArG art. 46, ArGV 1 art. 73, OLL 1 art. 73      |
+| `evidence`             | consent proof, audit trails                              | held, no period    | GDPR art. 7(1), accountability                  |
+
+- Periods count from the end of the financial year of the record date, taken as the calendar year until the accountant
+  confirms otherwise: a payslip of March 2026 is kept until 31 December 2036.
+- Document types match case-insensitively and by their Italian and English names (`Payslip`, `busta paga`, `cedolino`,
+  `fattura`, `contratto`, ...).
+- `dms:retention` skips documents of those types until the end of the period counted from their creation, moves their
+  retention date to that day and logs `document_retention_held_statutory` once.
+- `hr:purge-employee-documents` does the same for `payslip` and `contract` documents, counting from their issue date or,
+  without one, from their creation.
+- A delete policy shorter than 120 months on a statutory document type, or attached to a document of such a type, is
+  refused, and so is a retention date before the end of the period on a payslip or a contract of the personnel file.
+- `time:purge-expired` never goes below the 5 year minimum, whatever the company setting; it removes whole calendar
+  years only, so records are kept between 5 and 6 years.
+- A record without a creation date is kept.
+- `demo:reset` refuses to run with `APP_ENV=production`, even when `DEMO_RESET_ENABLED=true`.
+- Backups, the outbox archive and the other employee document types are not covered yet (open questions).
+
 ## 5. Storage and backups
 
 - [ ] `storage/` and `bootstrap/cache/` writable by the web and worker user ✔

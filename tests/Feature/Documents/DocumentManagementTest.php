@@ -241,6 +241,25 @@ test('only administrators manage retention, which blocks deletion until it expir
     $this->postJson('/api/v1/dms/retention-policies', ['name' => 'X', 'retention_months' => 1, 'action' => 'delete'])->assertForbidden();
 });
 
+test('a delete policy shorter than the statutory period is refused on a statutory document type', function (): void {
+    $this->postJson('/api/v1/dms/retention-policies', ['name' => 'Payslips', 'document_type' => 'Busta paga', 'retention_months' => 12, 'action' => 'delete'])
+        ->assertUnprocessable()->assertJsonValidationErrors('retention_months');
+    $this->postJson('/api/v1/dms/retention-policies', ['name' => 'Payslips', 'document_type' => 'payslip', 'retention_months' => 120, 'action' => 'delete'])->assertCreated();
+    $this->postJson('/api/v1/dms/retention-policies', ['name' => 'Payslips', 'document_type' => 'payslip', 'retention_months' => 12, 'action' => 'archive'])->assertCreated();
+    $this->postJson('/api/v1/dms/retention-policies', ['name' => 'Brochures', 'document_type' => 'brochure', 'retention_months' => 12, 'action' => 'delete'])->assertCreated();
+});
+
+test('a short delete policy cannot be attached to a statutory document, by policy or by type', function (): void {
+    $short = DmsRetentionPolicy::create(['tenant_id' => $this->tenant->id, 'name' => 'Short', 'retention_months' => 6, 'action' => 'delete']);
+
+    $this->post('/api/v1/dms/documents', ['title' => 'Fattura', 'document_type' => 'fattura', 'retention_policy_id' => $short->id, 'file' => UploadedFile::fake()->createWithContent('f.txt', 'f1')], ['Accept' => 'application/json'])
+        ->assertUnprocessable()->assertJsonValidationErrors('retention_policy_id');
+
+    $id = dmsUpload('Brochure', 'b1', ['document_type' => 'brochure', 'retention_policy_id' => $short->id]);
+    $this->putJson("/api/v1/dms/documents/{$id}", ['document_type' => 'Contratto'])->assertUnprocessable()->assertJsonValidationErrors('retention_policy_id');
+    $this->putJson("/api/v1/dms/documents/{$id}", ['document_type' => 'Contratto', 'retention_policy_id' => null])->assertOk();
+});
+
 test('the retention job archives or purges due documents and respects a legal hold', function (): void {
     $archive = DmsRetentionPolicy::create(['tenant_id' => $this->tenant->id, 'name' => 'Archive', 'retention_months' => 1, 'action' => 'archive']);
     $purge = DmsRetentionPolicy::create(['tenant_id' => $this->tenant->id, 'name' => 'Purge', 'retention_months' => 1, 'action' => 'delete']);

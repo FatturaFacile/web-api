@@ -16,7 +16,8 @@ use Illuminate\Support\Facades\Storage;
  * and the queue worker pauses instead of polling a `jobs` table that does not exist for a few seconds. Maintenance
  * mode is lifted at the end, even when a step fails, unless it was already active before the reset.
  *
- * It destroys all data, so it only runs where `DEMO_RESET_ENABLED=true` (config `app.demo_reset`).
+ * It destroys all data, so it only runs where `DEMO_RESET_ENABLED=true` (config `app.demo_reset`), and never where
+ * `APP_ENV=production`, even when the flag is set by mistake.
  */
 class DemoResetCommand extends Command
 {
@@ -31,6 +32,12 @@ class DemoResetCommand extends Command
     {
         if (! config('app.demo_reset')) {
             $this->error('Demo reset is disabled: set DEMO_RESET_ENABLED=true only on the demo environment.');
+
+            return self::FAILURE;
+        }
+
+        if ($this->laravel->environment('production')) {
+            $this->error('Demo reset refuses to run with APP_ENV=production: it would destroy every record of the database.');
 
             return self::FAILURE;
         }
