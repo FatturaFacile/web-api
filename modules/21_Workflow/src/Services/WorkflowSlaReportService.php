@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Workflow\Services;
 
 use App\Services\Tenancy\TenantContext;
+use App\Support\Database\SqlDialect;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -39,13 +40,13 @@ final readonly class WorkflowSlaReportService
             ->orderBy('definitions.code')
             ->selectRaw('definitions.code AS code, definitions.name AS name')
             ->selectRaw('COUNT(*) AS total')
-            ->selectRaw("COUNT(*) FILTER (WHERE steps.status IN ('approved', 'rejected') AND (steps.due_at IS NULL OR steps.completed_at <= steps.due_at)) AS on_time")
-            ->selectRaw("COUNT(*) FILTER (WHERE steps.status IN ('approved', 'rejected') AND steps.due_at IS NOT NULL AND steps.completed_at > steps.due_at) AS late")
-            ->selectRaw("COUNT(*) FILTER (WHERE steps.status = 'timed_out') AS timed_out")
-            ->selectRaw("COUNT(*) FILTER (WHERE steps.status = 'pending' AND steps.due_at IS NOT NULL AND steps.due_at < {$now}::timestamptz) AS pending_overdue")
-            ->selectRaw("COUNT(*) FILTER (WHERE steps.status = 'pending' AND (steps.due_at IS NULL OR steps.due_at >= {$now}::timestamptz)) AS pending_on_track")
-            ->selectRaw('COUNT(*) FILTER (WHERE steps.escalated_at IS NOT NULL) AS escalated')
-            ->selectRaw("AVG(EXTRACT(EPOCH FROM (steps.completed_at - steps.created_at)) / 3600) FILTER (WHERE steps.status IN ('approved', 'rejected')) AS avg_hours_to_decide")
+            ->selectRaw("COUNT(CASE WHEN steps.status IN ('approved', 'rejected') AND (steps.due_at IS NULL OR steps.completed_at <= steps.due_at) THEN 1 END) AS on_time")
+            ->selectRaw("COUNT(CASE WHEN steps.status IN ('approved', 'rejected') AND steps.due_at IS NOT NULL AND steps.completed_at > steps.due_at THEN 1 END) AS late")
+            ->selectRaw("COUNT(CASE WHEN steps.status = 'timed_out' THEN 1 END) AS timed_out")
+            ->selectRaw("COUNT(CASE WHEN steps.status = 'pending' AND steps.due_at IS NOT NULL AND steps.due_at < {$now} THEN 1 END) AS pending_overdue")
+            ->selectRaw("COUNT(CASE WHEN steps.status = 'pending' AND (steps.due_at IS NULL OR steps.due_at >= {$now}) THEN 1 END) AS pending_on_track")
+            ->selectRaw('COUNT(CASE WHEN steps.escalated_at IS NOT NULL THEN 1 END) AS escalated')
+            ->selectRaw("AVG(CASE WHEN steps.status IN ('approved', 'rejected') THEN ".SqlDialect::secondsBetween('steps.created_at', 'steps.completed_at').' / 3600.0 END) AS avg_hours_to_decide')
             ->get();
 
         $by = $rows->map(fn (object $row): array => $this->shape($row, (string) $row->code, (string) $row->name))->values()->all();

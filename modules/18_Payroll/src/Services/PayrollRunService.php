@@ -247,15 +247,7 @@ final class PayrollRunService
      */
     private function withReopenGuardLifted(callable $reopen): void
     {
-        if (DB::getDriverName() !== 'pgsql') {
-            $reopen();
-
-            return;
-        }
-
-        DB::statement("SET LOCAL app.payroll_reopen = 'on'");
         $reopen();
-        DB::statement("SET LOCAL app.payroll_reopen = 'off'");
     }
 
     /**

@@ -70,13 +70,6 @@ function preservationSwitchTo(Tenant $tenant, string $role = 'admin'): void
     actingAsMember($tenant, $role);
 }
 
-function preservationDisableGuard(string $table, string $trigger, Closure $callback): void
-{
-    DB::unprepared("ALTER TABLE {$table} DISABLE TRIGGER {$trigger}");
-    $callback();
-    DB::unprepared("ALTER TABLE {$table} ENABLE TRIGGER {$trigger}");
-}
-
 function preservationUploadDocument(string $title, string $content): string
 {
     return test()->post('/api/v1/dms/documents', ['title' => $title, 'file' => UploadedFile::fake()->createWithContent('book.csv', $content)], ['Accept' => 'application/json'])->assertCreated()->json('data.id');
@@ -203,7 +196,7 @@ test('deleting a tenant still cascades to its closed packages', function (): voi
     DB::table('tenants')->where('id', $this->tenant->id)->delete();
 
     expect(DB::table('preservation_packages')->count())->toBe(0)->and($other->exists)->toBeTrue();
-})->skip(fn () => DB::getDriverName() !== 'pgsql', 'The triggers exist on PostgreSQL only');
+});
 
 test('a library document in a closed package cannot be changed, versioned, deleted or purged by retention', function (): void {
     $policy = DmsRetentionPolicy::create(['name' => 'Subito', 'document_type' => 'contract', 'retention_months' => 1, 'action' => 'delete', 'is_active' => true]);
@@ -262,9 +255,9 @@ test('a deleted file, an altered item record, an altered manifest and a smuggled
     });
     $smuggled = $this->postJson(PRESERVATION_BASE."/preservation-packages/{$package}/verify")->json('data.failures');
 
-    preservationDisableGuard('preservation_packages', 'trg_preservation_packages_guard', function () use ($package): void {
+    (function () use ($package): void {
         DB::table('preservation_packages')->where('id', $package)->update(['manifest_json' => DB::raw("replace(manifest_json, 'FT-1', 'FT-2')")]);
-    });
+    })();
     $manifest = $this->postJson(PRESERVATION_BASE."/preservation-packages/{$package}/verify")->json('data');
 
     expect($missing)->toBe([['item_id' => $item->id, 'reason' => 'file_missing']])
@@ -272,7 +265,7 @@ test('a deleted file, an altered item record, an altered manifest and a smuggled
         ->and(collect($smuggled)->pluck('reason')->all())->toBe(['item_not_in_manifest'])
         ->and($manifest['manifest_ok'])->toBeFalse()
         ->and(collect($manifest['failures'])->pluck('reason')->all())->toContain('manifest_hash_mismatch');
-})->skip(fn () => DB::getDriverName() !== 'pgsql', 'The triggers exist on PostgreSQL only');
+});
 
 test('the periodic job re-verifies every closed package, records the result and leaves open packages alone', function (): void {
     ['package' => $good] = closedInvoicePackage($this->tenant, 'FT-1');

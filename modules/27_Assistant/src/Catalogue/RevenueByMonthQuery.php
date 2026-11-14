@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Assistant\Catalogue;
 
 use App\Models\Invoice;
+use App\Support\Database\SqlDialect;
 use Modules\Assistant\Contracts\CatalogueQuery;
 
 /**
@@ -61,8 +62,8 @@ final class RevenueByMonthQuery implements CatalogueQuery
             ->where('tenant_id', $tenantId)
             ->whereNotIn('invoice_type', ['proforma', 'credit_note'])
             ->whereYear('date', $parameters['year'])
-            ->selectRaw('EXTRACT(MONTH FROM date)::int as month, currency, SUM(total_net) as revenue')
-            ->groupByRaw('EXTRACT(MONTH FROM date), currency')
+            ->selectRaw(SqlDialect::monthNumber('date').' as month, currency, SUM(total_net) as revenue')
+            ->groupByRaw(SqlDialect::monthNumber('date').', currency')
             ->orderBy('month')
             ->toBase()
             ->get()

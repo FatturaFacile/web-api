@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -125,12 +124,6 @@ test('the disposal record cannot be changed or deleted, and the immutability of 
         ->and(fn () => $disposal->delete())->toThrow(PreservationImmutableException::class)
         ->and(fn () => PreservationPackage::findOrFail($package)->update(['name' => 'altro']))->toThrow(PreservationImmutableException::class);
 
-    if (DB::getDriverName() === 'pgsql') {
-        expect(fn () => DB::table('preservation_disposals')->update(['manifest_sha256' => str_repeat('a', 64)]))->toThrow(QueryException::class)
-            ->and(fn () => DB::table('preservation_disposals')->delete())->toThrow(QueryException::class)
-            ->and(fn () => DB::table('preservation_packages')->where('id', $package)->update(['name' => 'altro']))->toThrow(QueryException::class)
-            ->and(fn () => DB::table('preservation_items')->where('package_id', $package)->delete())->toThrow(QueryException::class);
-    }
 });
 
 test('a legal hold blocks the proposal and the execution, until it is released', function (): void {
@@ -173,18 +166,14 @@ test('a legal hold on a library document of the package blocks the disposal, and
 });
 
 test('a package whose manifest was tampered with is never disposed of', function (): void {
-    if (DB::getDriverName() !== 'pgsql') {
-        $this->markTestSkipped('The triggers exist on PostgreSQL only');
-    }
-
     ['package' => $package, 'item' => $item] = peExpiredPackage($this->tenant);
     $proposal = $this->postJson(PE_BASE.'/preservation-disposal-proposals', ['package_id' => $package])->assertCreated()->json('data.id');
     peActAs($this->tenant, 'admin');
     $this->postJson(PE_BASE."/preservation-disposal-proposals/{$proposal}/approve")->assertOk();
 
-    peWithoutTrigger('preservation_packages', 'trg_preservation_packages_guard', function () use ($package): void {
+    (function () use ($package): void {
         DB::table('preservation_packages')->where('id', $package)->update(['manifest_json' => DB::raw("replace(manifest_json, 'FT-1', 'FT-2')")]);
-    });
+    })();
 
     $this->postJson(PE_BASE."/preservation-disposal-proposals/{$proposal}/execute")->assertUnprocessable();
     expect(Storage::disk('local')->exists($item->storage_path))->toBeTrue()->and(PreservationDisposal::count())->toBe(0);

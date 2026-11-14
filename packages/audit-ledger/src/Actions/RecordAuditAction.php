@@ -6,6 +6,7 @@ namespace Enterprise\AuditLedger\Actions;
 
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Database\TransactionLock;
 use Enterprise\AuditLedger\Events\AuditRecordedEvent;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Database\Eloquent\Model;
@@ -117,9 +118,7 @@ final class RecordAuditAction
             $ipAddress,
             $userAgent
         ): AuditLedgerEntry {
-            if (DB::getDriverName() === 'pgsql') {
-                DB::statement('SELECT pg_advisory_xact_lock(hashtext(?))', ["audit_tenant_{$tenantId}"]);
-            }
+            TransactionLock::acquire("audit_tenant_{$tenantId}");
 
             $lastEntry = AuditLedgerEntry::where('tenant_id', $tenantId)
                 ->orderBy('event_timestamp', 'desc')

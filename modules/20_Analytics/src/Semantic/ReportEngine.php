@@ -7,6 +7,7 @@ namespace Modules\Analytics\Semantic;
 use App\Models\User;
 use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Database\SqlDialect;
 use Carbon\CarbonImmutable;
 use Closure;
 use Generator;
@@ -296,11 +297,7 @@ final readonly class ReportEngine
             return $dimension->sql;
         }
 
-        if ($granularity === 'day') {
-            return "to_char(({$dimension->sql})::date, 'YYYY-MM-DD')";
-        }
-
-        return "to_char(date_trunc('{$granularity}', ({$dimension->sql})::timestamp), 'YYYY-MM-DD')";
+        return SqlDialect::periodStart("({$dimension->sql})", $granularity);
     }
 
     private function filter(Builder $query, Dimension $dimension, string $operator, mixed $value): void

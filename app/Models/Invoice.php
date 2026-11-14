@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasFiscalAmounts;
+use App\Models\Concerns\ProtectsIssuedInvoice;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Modules\Invoicing\Models\DeclarationOfIntent;
 
 class Invoice extends Model
 {
-    use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, ProtectsIssuedInvoice, SoftDeletes;
 
     protected $fillable = [
         'contact_id',

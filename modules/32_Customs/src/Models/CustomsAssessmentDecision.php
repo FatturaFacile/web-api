@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Customs\Models;
 
+use App\Support\Database\Concerns\ProtectsRecords;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Modules\Customs\Enums\AssessmentDocumentType;
 use Modules\Customs\Enums\SignatureStatus;
@@ -13,9 +14,16 @@ use Modules\Customs\Enums\SignatureStatus;
  */
 final class CustomsAssessmentDecision extends CustomsRecord
 {
+    use ProtectsRecords;
+
     public const null UPDATED_AT = null;
 
     protected $hidden = ['xml_path', 'pdf_path', 'envelope_path'];
+
+    protected function recordProtectionViolation(string $operation): ?string
+    {
+        return $operation === 'create' ? null : 'Customs assessment decisions are strictly immutable and cannot be updated or deleted.';
+    }
 
     protected function casts(): array
     {

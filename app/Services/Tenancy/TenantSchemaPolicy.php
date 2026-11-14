@@ -34,6 +34,7 @@ final class TenantSchemaPolicy
         'personal_access_tokens' => 'framework API tokens, owned by a central user account',
         'sessions' => 'framework sessions',
         'tenants' => 'the tenants themselves',
+        'transaction_locks' => 'named locks of App\Support\Database\TransactionLock, shared by every tenant',
         'users' => 'central accounts, linked to tenants through tenant_user (a user belongs to many tenants); owner to confirm',
     ];
 

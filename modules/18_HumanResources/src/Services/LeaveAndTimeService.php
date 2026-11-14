@@ -108,9 +108,7 @@ final readonly class LeaveAndTimeService implements LeaveAndTimeServiceInterface
         $periodStart = CarbonImmutable::create($fiscalYear, $month, 1)->startOfDay();
 
         return DB::transaction(function () use ($tenantId, $fiscalYear, $month, $periodStart): int {
-            $balances = DB::connection()->getDriverName() === 'pgsql'
-                ? LeaveBalance::fromQuery('SELECT * FROM hr_leave_balances WHERE tenant_id = ? AND fiscal_year = ? AND deleted_at IS NULL FOR UPDATE SKIP LOCKED', [$tenantId, $fiscalYear])
-                : LeaveBalance::query()->where('tenant_id', $tenantId)->where('fiscal_year', $fiscalYear)->lockForUpdate()->get();
+            $balances = LeaveBalance::query()->where('tenant_id', $tenantId)->where('fiscal_year', $fiscalYear)->lock('FOR UPDATE SKIP LOCKED')->get();
 
             $processed = 0;
 

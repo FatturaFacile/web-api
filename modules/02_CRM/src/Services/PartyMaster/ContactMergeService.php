@@ -152,24 +152,6 @@ final readonly class ContactMergeService
      */
     public function referencingColumns(): array
     {
-        if (DB::getDriverName() === 'pgsql') {
-            $rows = DB::select(<<<'SQL'
-                SELECT cl.relname AS table_name, att.attname AS column_name
-                FROM pg_constraint con
-                JOIN pg_class cl ON cl.oid = con.conrelid
-                JOIN pg_namespace ns ON ns.oid = cl.relnamespace
-                JOIN pg_class ref ON ref.oid = con.confrelid
-                JOIN pg_attribute att ON att.attrelid = con.conrelid AND att.attnum = ANY (con.conkey)
-                WHERE con.contype = 'f' AND ref.relname = 'contacts' AND ns.nspname = current_schema()
-                ORDER BY cl.relname, att.attname
-                SQL);
-
-            return array_values(array_filter(
-                array_map(fn (object $row): array => [(string) $row->table_name, (string) $row->column_name], $rows),
-                fn (array $reference): bool => $reference[0] !== 'contacts',
-            ));
-        }
-
         $references = [];
         foreach (Schema::getTableListing(schemaQualified: false) as $table) {
             if ($table === 'contacts') {

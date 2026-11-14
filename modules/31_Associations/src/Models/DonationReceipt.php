@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Associations\Models;
 
-use LogicException;
+use App\Support\Database\Concerns\ProtectsRecords;
 
 /**
  * The numbered receipt of a donation, with a snapshot of the donor at issue. A database trigger allows only its
@@ -18,11 +18,22 @@ use LogicException;
  */
 final class DonationReceipt extends AssociationEntry
 {
+    use ProtectsRecords;
+
     protected $table = 'assoc_donation_receipts';
 
-    protected static function booted(): void
+    /**
+     * @var list<string>
+     */
+    private const array FROZEN_COLUMNS = ['number', 'amount', 'issued_on', 'holder', 'donation_id'];
+
+    protected function recordProtectionViolation(string $operation): ?string
     {
-        self::deleting(static fn () => throw new LogicException('Donation receipts cannot be deleted.'));
+        return match ($operation) {
+            'create' => null,
+            'delete' => 'Donation receipts cannot be deleted.',
+            default => $this->getOriginal('cancelled_at') !== null || $this->isDirty(self::FROZEN_COLUMNS) ? 'A donation receipt can only be cancelled.' : null,
+        };
     }
 
     protected function casts(): array

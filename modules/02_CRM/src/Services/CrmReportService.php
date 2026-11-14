@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Services;
 
-use Illuminate\Support\Facades\DB;
+use App\Support\Database\SqlDialect;
 use Modules\CRM\Models\Activity;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadSource;
@@ -88,9 +88,7 @@ final class CrmReportService
         $total = array_sum($byStatus);
         $converted = $byStatus['converted'] ?? 0;
         $qualified = ($byStatus['qualified'] ?? 0) + $converted;
-        $daysExpression = DB::connection()->getDriverName() === 'pgsql'
-            ? 'AVG(EXTRACT(EPOCH FROM (converted_at - created_at)) / 86400) AS days'
-            : 'AVG(julianday(converted_at) - julianday(created_at)) AS days';
+        $daysExpression = 'AVG('.SqlDialect::secondsBetween('created_at', 'converted_at').' / 86400.0) AS days';
         $avgDays = $leads()->whereNotNull('converted_at')->selectRaw($daysExpression)->value('days');
 
         $sources = LeadSource::where('tenant_id', $tenantId)->pluck('code', 'id');
@@ -107,8 +105,8 @@ final class CrmReportService
 
         $closed = Opportunity::where('tenant_id', $tenantId)
             ->whereIn('status', ['won', 'lost'])
-            ->when($filters['from'] ?? null, fn ($query, $from) => $query->whereRaw('COALESCE(actual_close_date, updated_at::date) >= ?', [$from]))
-            ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereRaw('COALESCE(actual_close_date, updated_at::date) <= ?', [$to]))
+            ->when($filters['from'] ?? null, fn ($query, $from) => $query->whereRaw('COALESCE(actual_close_date, '.SqlDialect::dateOf('updated_at').') >= ?', [$from]))
+            ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereRaw('COALESCE(actual_close_date, '.SqlDialect::dateOf('updated_at').') <= ?', [$to]))
             ->selectRaw('status, COUNT(*) AS total, COALESCE(SUM(amount), 0) AS amount')->toBase()
             ->groupBy('status')
             ->get()

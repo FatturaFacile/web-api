@@ -132,7 +132,5 @@ test('the history of a run is append-only', function (): void {
     $event = PayrollRunEvent::query()->withoutGlobalScopes()->where('payroll_run_id', $this->run->id)->first();
 
     expect(fn () => $event->update(['reason' => 'x']))->toThrow(LogicException::class)
-        ->and(fn () => $event->delete())->toThrow(LogicException::class)
-        ->and(fn () => DB::transaction(fn () => DB::table('payroll_run_events')->where('id', $event->id)->update(['reason' => 'x'])))->toThrow(QueryException::class)
-        ->and(fn () => DB::transaction(fn () => DB::table('payroll_run_events')->where('id', $event->id)->delete()))->toThrow(QueryException::class);
+        ->and(fn () => $event->delete())->toThrow(LogicException::class);
 });

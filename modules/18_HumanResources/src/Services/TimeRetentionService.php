@@ -63,25 +63,13 @@ final class TimeRetentionService
     }
 
     /**
-     * The PostgreSQL trigger lets a deletion through only with this setting, local to the transaction.
+     * The only legitimate deletion of the history: the cutoff is the end of the legal retention (five whole calendar years).
      */
     private function purgeAuditEntries(string $tenantId, string $cutoffInstant): int
     {
-        $usesTrigger = DB::getDriverName() === 'pgsql';
-
-        if ($usesTrigger) {
-            DB::select("SELECT set_config('app.time_audit_purge', 'on', true)");
-        }
-
-        $deleted = DB::table('time_audit_entries')
+        return DB::table('time_audit_entries')
             ->where('tenant_id', $tenantId)
             ->where('occurred_at', '<', $cutoffInstant)
             ->delete();
-
-        if ($usesTrigger) {
-            DB::select("SELECT set_config('app.time_audit_purge', 'off', true)");
-        }
-
-        return $deleted;
     }
 }

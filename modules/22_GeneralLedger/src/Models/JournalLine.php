@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\GeneralLedger\Models;
 
+use App\Models\Concerns\ProtectsPostedJournalLine;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -18,6 +19,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class JournalLine extends BaseEnterpriseModel
 {
+    use ProtectsPostedJournalLine;
+
     protected $table = 'journal_lines';
 
     protected function casts(): array

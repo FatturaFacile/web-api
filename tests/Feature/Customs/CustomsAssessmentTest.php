@@ -80,11 +80,11 @@ test('the database refuses any change to a decision', function (string $statemen
     'truncate' => 'TRUNCATE customs_assessment_decisions CASCADE',
 ]);
 
-test('the model cannot get around the trigger', function (): void {
+test('a decision cannot be changed or deleted through the model', function (): void {
     $decision = customsArchive($this->tenant, customsVatDecisionXml());
 
-    expect(fn () => $decision->update(['vat_amount' => '0']))->toThrow(QueryException::class)
-        ->and(fn () => $decision->delete())->toThrow(QueryException::class);
+    expect(fn () => $decision->update(['vat_amount' => '0']))->toThrow(LogicException::class)
+        ->and(fn () => $decision->delete())->toThrow(LogicException::class);
 });
 
 test('a restore keeps the table as append-only', function (): void {
@@ -295,9 +295,7 @@ test('a run on demand answers with its outcome', function (): void {
 test('archived content is never overwritten', function (): void {
     $decision = customsArchive($this->tenant, customsVatDecisionXml());
     Storage::disk('private')->put($decision->xml_path, 'other');
-    DB::unprepared('ALTER TABLE customs_assessment_decisions DISABLE TRIGGER trg_prevent_customs_assessment_mutation');
     DB::table('customs_assessment_decisions')->delete();
-    DB::unprepared('ALTER TABLE customs_assessment_decisions ENABLE TRIGGER trg_prevent_customs_assessment_mutation');
 
     expect(fn () => customsArchive($this->tenant, customsVatDecisionXml()))->toThrow(CustomsException::class, 'different content');
 });
