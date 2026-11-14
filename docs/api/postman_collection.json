@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "918b0a82-725b-4d41-aa5f-256d2651869b",
+        "_postman_id": "49aba136-45df-4d36-8611-38ee281534b8",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl and frontendUrl variables, then run Auth > login: the collection fetches the CSRF cookie itself and sends Origin, Referer and X-XSRF-TOKEN; the session cookie is kept by Postman and the active tenant in tenantId. authToken is used only in the optional token mode (login with token_mode true).",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -3208,7 +3208,14 @@
                                 "sales",
                                 "delivery-notes"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "billable",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "",
@@ -12829,7 +12836,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -12944,7 +12951,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
+                            "raw": "{\n    \"name\": \"string\",\n    \"description\": \"string\",\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"is_shared\": false,\n    \"shared_with\": [\n        \"00000000-0000-0000-0000-000000000000\"\n    ]\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -14276,7 +14283,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -14336,7 +14343,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"dataset\": \"string\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
+                            "raw": "{\n    \"dataset\": \"sales\",\n    \"spec\": [\n        \"string\"\n    ],\n    \"page\": 1,\n    \"per_page\": 1,\n    \"format\": \"csv\"\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -32004,7 +32011,7 @@
                     }
                 },
                 {
-                    "name": "Return the notes about a child, optionally of a day",
+                    "name": "Return the notes of all children or of one child, optionally of a day",
                     "request": {
                         "method": "GET",
                         "header": [
@@ -32039,7 +32046,7 @@
                             "query": [],
                             "variable": []
                         },
-                        "description": "Return the notes about a child, optionally of a day",
+                        "description": "Return the notes of all children or of one child, optionally of a day",
                         "auth": {
                             "type": "noauth"
                         }
@@ -38982,6 +38989,10 @@
                             {
                                 "key": "X-Tenant-Id",
                                 "value": "{{tenantId}}"
+                            },
+                            {
+                                "key": "Content-Type",
+                                "value": "application/json"
                             }
                         ],
                         "url": {
@@ -39014,6 +39025,15 @@
                         "description": "Give notice",
                         "auth": {
                             "type": "noauth"
+                        },
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n    \"notice_given_at\": \"2026-01-31T12:00:00+00:00\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
                         }
                     }
                 }
@@ -40702,7 +40722,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"type\": \"client\",\n    \"country\": \"string\",\n    \"company_name\": \"string\",\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"user@example.com\",\n    \"phone\": \"string\",\n    \"vat_number\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"uid_number\": \"string\",\n    \"sdi_code\": \"string\",\n    \"pec\": \"user@example.com\",\n    \"document_language\": \"it\",\n    \"iban\": \"string\",\n    \"qr_iban\": \"string\",\n    \"payment_terms_days\": 1,\n    \"address\": {\n        \"street\": \"string\",\n        \"house_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"city\": \"string\",\n        \"state_canton\": \"string\",\n        \"country\": \"string\"\n    }\n}",
+                            "raw": "{\n    \"type\": \"client\",\n    \"country\": \"string\",\n    \"legal_type\": \"company\",\n    \"company_name\": \"string\",\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"user@example.com\",\n    \"phone\": \"string\",\n    \"vat_number\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"uid_number\": \"string\",\n    \"sdi_code\": \"string\",\n    \"pec\": \"user@example.com\",\n    \"document_language\": \"it\",\n    \"iban\": \"string\",\n    \"qr_iban\": \"string\",\n    \"payment_terms_days\": 1,\n    \"address\": {\n        \"street\": \"string\",\n        \"house_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"city\": \"string\",\n        \"state_canton\": \"string\",\n        \"country\": \"string\"\n    }\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -40817,7 +40837,7 @@
                         },
                         "body": {
                             "mode": "raw",
-                            "raw": "{\n    \"type\": \"client\",\n    \"country\": \"string\",\n    \"company_name\": \"string\",\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"user@example.com\",\n    \"phone\": \"string\",\n    \"vat_number\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"uid_number\": \"string\",\n    \"sdi_code\": \"string\",\n    \"pec\": \"user@example.com\",\n    \"document_language\": \"it\",\n    \"iban\": \"string\",\n    \"qr_iban\": \"string\",\n    \"payment_terms_days\": 1,\n    \"address\": {\n        \"street\": \"string\",\n        \"house_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"city\": \"string\",\n        \"state_canton\": \"string\",\n        \"country\": \"string\"\n    }\n}",
+                            "raw": "{\n    \"type\": \"client\",\n    \"country\": \"string\",\n    \"legal_type\": \"company\",\n    \"company_name\": \"string\",\n    \"first_name\": \"string\",\n    \"last_name\": \"string\",\n    \"email\": \"user@example.com\",\n    \"phone\": \"string\",\n    \"vat_number\": \"string\",\n    \"fiscal_code\": \"string\",\n    \"uid_number\": \"string\",\n    \"sdi_code\": \"string\",\n    \"pec\": \"user@example.com\",\n    \"document_language\": \"it\",\n    \"iban\": \"string\",\n    \"qr_iban\": \"string\",\n    \"payment_terms_days\": 1,\n    \"address\": {\n        \"street\": \"string\",\n        \"house_number\": \"string\",\n        \"postal_code\": \"string\",\n        \"city\": \"string\",\n        \"state_canton\": \"string\",\n        \"country\": \"string\"\n    }\n}",
                             "options": {
                                 "raw": {
                                     "language": "json"
@@ -42462,6 +42482,12 @@
                                 },
                                 {
                                     "key": "forecast_category",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                },
+                                {
+                                    "key": "stage_code",
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
@@ -62549,6 +62575,12 @@
                                     "value": "",
                                     "disabled": true,
                                     "description": ""
+                                },
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
                                 }
                             ],
                             "variable": []
@@ -81669,7 +81701,14 @@
                                 "inventory",
                                 "products"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "search",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "",
@@ -107579,7 +107618,14 @@
                                 "professionals",
                                 "time-logs"
                             ],
-                            "query": [],
+                            "query": [
+                                {
+                                    "key": "is_billed",
+                                    "value": "",
+                                    "disabled": true,
+                                    "description": ""
+                                }
+                            ],
                             "variable": []
                         },
                         "description": "",
