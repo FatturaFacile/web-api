@@ -71,7 +71,7 @@ final class ActivityController extends Controller
         }
 
         if ($request->boolean('overdue')) {
-            $query->whereIn('status', ['pending', 'in_progress'])->where('due_date', '<', now());
+            $query->whereIn('status', ['pending', 'in_progress'])->whereDate('due_date', '<', now());
         }
 
         $activities = $query->orderBy('due_date')->gridPaginate(RequestedPerPage::resolve(25));

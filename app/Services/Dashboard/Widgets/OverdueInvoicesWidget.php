@@ -41,7 +41,7 @@ class OverdueInvoicesWidget extends AbstractDashboardWidget
             ->select(['id', 'contact_id', 'invoice_number', 'due_date', 'total_gross'])
             ->whereNotIn('invoice_type', ['credit_note', 'proforma'])
             ->where('payment_status', '!=', 'paid')
-            ->where('due_date', '<', $today->toDateString())
+            ->whereDate('due_date', '<', $today->toDateString())
             ->withSum('payments', 'amount')
             ->with('contact:id,company_name,first_name,last_name')
             ->get()

@@ -132,7 +132,7 @@ final class PeriodCloseChecklistService
 
         $drafts = $entries()->where('fiscal_period_id', $period->id)->where('status', 'draft')->count();
         $pending = $entries()->where('fiscal_period_id', $period->id)->where('status', 'pending_approval')->count();
-        $reversalsDue = $entries()->where('status', 'posted')->whereNotNull('auto_reverse_on')->whereBetween('auto_reverse_on', [$start, $end])->count();
+        $reversalsDue = $entries()->where('status', 'posted')->whereNotNull('auto_reverse_on')->whereDate('auto_reverse_on', '>=', $start)->whereDate('auto_reverse_on', '<=', $end)->count();
         $recurringDue = RecurringJournal::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereNull('deleted_at')->where('status', 'active')->whereDate('next_run_date', '<=', $end)->count();
 
         $unbalanced = DB::query()->fromSub(DB::table('journal_lines')
@@ -143,7 +143,7 @@ final class PeriodCloseChecklistService
             ->whereNull('journal_entries.deleted_at')
             ->whereNull('journal_lines.deleted_at')
             ->groupBy('journal_entries.id')
-            ->havingRaw('SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) <> SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount))')
+            ->havingRaw('ABS(SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)) - SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount))) >= 0.00005')
             ->select('journal_entries.id'), 'unbalanced_entries')
             ->count();
 
@@ -179,7 +179,7 @@ final class PeriodCloseChecklistService
                 ->where('journal_entries.journal_type', '!=', 'opening')
                 ->whereNull('journal_entries.deleted_at')
                 ->whereNull('journal_lines.deleted_at')
-                ->where('journal_entries.posting_date', '<=', $end)
+                ->whereDate('journal_entries.posting_date', '<=', $end)
                 ->where('chart_of_accounts.reconciliation_type', $type)
                 ->where(fn ($query) => $query->whereNull('journal_entries.source_document_type')->orWhere('journal_entries.source_document_type', '!=', 'gl_fx_revaluation'))
                 ->selectRaw('COALESCE(SUM('.FunctionalAmount::balance().'), 0) as balance')
@@ -188,7 +188,7 @@ final class PeriodCloseChecklistService
             $open = (string) (DB::table($table)
                 ->where('tenant_id', $tenantId)
                 ->whereNull('deleted_at')
-                ->where('posting_date', '<=', $end)
+                ->whereDate('posting_date', '<=', $end)
                 ->selectRaw('COALESCE(SUM('.FunctionalAmount::openItem($table, $partnerColumn, $accounting).'), 0) as open_total')
                 ->value('open_total') ?? '0');
 

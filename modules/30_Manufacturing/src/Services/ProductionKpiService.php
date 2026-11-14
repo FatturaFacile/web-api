@@ -60,7 +60,7 @@ final readonly class ProductionKpiService
     private function orders(string $tenantId, CarbonImmutable $start, CarbonImmutable $end): array
     {
         $orders = MfgProductionOrder::query()->where('tenant_id', $tenantId)->whereIn('status', ['completed', 'closed'])
-            ->whereBetween('actual_end_date', [$start, $end])->get();
+            ->whereDate('actual_end_date', '>=', $start)->whereDate('actual_end_date', '<=', $end)->get();
 
         $leadDays = '0';
         $withStart = 0;
@@ -188,7 +188,7 @@ final readonly class ProductionKpiService
     {
         return MfgOperationConfirmation::query()
             ->where('mfg_operation_confirmations.tenant_id', $tenantId)
-            ->whereBetween('posting_date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('posting_date', '>=', $start->toDateString())->whereDate('posting_date', '<=', $end->toDateString())
             ->when($workCenterId !== null, static fn ($query) => $query->whereIn('production_order_operation_id', MfgProductionOrderOperation::query()->select('id')->where('work_center_id', $workCenterId)))
             ->get();
     }

@@ -110,6 +110,7 @@ class Invoice extends Model
             'sdi_excluded' => 'boolean',
             'reverse_charge' => 'boolean',
             'total_paid' => 'decimal:2',
+            'receivable_amount' => 'decimal:2',
             'is_deposit' => 'boolean',
             'exchange_rate_date' => 'date',
             'withholding_tax_enabled' => 'boolean',

@@ -34,7 +34,7 @@ test('an issued annual invoice becomes obligations spread monthly, the setup fee
         ->and((string) $obligations['straight_line_over_time']->allocated_transaction_price)->toBe('1200.00')
         ->and((string) $obligations['point_in_time']->allocated_transaction_price)->toBe('300.00')
         ->and(RevenueSchedule::query()->where('performance_obligation_id', $obligations['straight_line_over_time']->id)->count())->toBe(12)
-        ->and((string) RevenueSchedule::query()->where('performance_obligation_id', $obligations['straight_line_over_time']->id)->sum('scheduled_amount'))->toBe('1200.00');
+        ->and(number_format((float) RevenueSchedule::query()->where('performance_obligation_id', $obligations['straight_line_over_time']->id)->sum('scheduled_amount'), 2, '.', ''))->toBe('1200.00');
 });
 
 test('recognition posts the due slices once, records entries and lowers the deferred balance', function (): void {
@@ -46,7 +46,7 @@ test('recognition posts the due slices once, records entries and lowers the defe
     // Setup fee (March) + March + April of the annual fee, split by days.
     expect($result['months'])->toBe(['2026-03-31', '2026-04-30'])
         ->and($result['journal_entry_ids'])->toHaveCount(2)
-        ->and(bcadd($result['total_amount'], '0', 2))->toBe(bcadd('300', bcadd(RevenueSchedule::query()->whereDate('period_date', '<=', '2026-04-30')->whereHas('performanceObligation', fn ($q) => $q->where('recognition_method', 'straight_line_over_time'))->sum('scheduled_amount'), '0', 2), 2))
+        ->and(bcadd($result['total_amount'], '0', 2))->toBe(bcadd('300', bcadd(RevenueSchedule::query()->whereDate('period_date', '<=', '2026-04-30')->whereHas('performanceObligation', fn ($q) => $q->where('recognition_method', 'straight_line_over_time'))->sum('scheduled_amount').'', '0', 2), 2))
         ->and(RevenueRecognitionEntry::query()->count())->toBe(3)
         ->and($this->revenue->recognizeRevenue($dto)['entries_count'])->toBe(0);
 

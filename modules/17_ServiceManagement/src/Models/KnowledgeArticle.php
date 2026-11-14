@@ -54,10 +54,21 @@ final class KnowledgeArticle extends BaseEnterpriseModel
      */
     public function scopeSearch(Builder $query, string $terms): Builder
     {
-        $document = "to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(content, ''))";
+        if ($query->getConnection()->getDriverName() === 'pgsql') {
+            $document = "to_tsvector('simple', coalesce(title, '') || ' ' || coalesce(summary, '') || ' ' || coalesce(content, ''))";
 
-        return $query->whereRaw("{$document} @@ websearch_to_tsquery('simple', ?)", [$terms])
-            ->orderByRaw("ts_rank({$document}, websearch_to_tsquery('simple', ?)) desc", [$terms]);
+            return $query->whereRaw("{$document} @@ websearch_to_tsquery('simple', ?)", [$terms])
+                ->orderByRaw("ts_rank({$document}, websearch_to_tsquery('simple', ?)) desc", [$terms]);
+        }
+
+        // Other engines: every word must appear in the title, summary or content; title matches come first.
+        $words = array_values(array_filter(preg_split('/\s+/', trim($terms)) ?: [], static fn (string $word): bool => $word !== ''));
+
+        foreach ($words as $word) {
+            $query->where(static fn (Builder $any) => $any->whereLike('title', "%{$word}%")->orWhereLike('summary', "%{$word}%")->orWhereLike('content', "%{$word}%"));
+        }
+
+        return $words === [] ? $query->whereRaw('1 = 0') : $query->orderByRaw('CASE WHEN title LIKE ? THEN 0 ELSE 1 END', ["%{$words[0]}%"]);
     }
 
     public function category(): BelongsTo

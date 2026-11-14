@@ -146,7 +146,7 @@ final class AttendanceService
             ->whereDate('enrolled_on', '<=', $end)
             ->where(fn ($query) => $query->whereNull('left_on')->orWhereDate('left_on', '>=', $start))
             ->get();
-        $attendances = Attendance::query()->whereIn('child_id', $children->pluck('id'))->whereBetween('date', [$start->toDateString(), $end->toDateString()])->get()->groupBy('child_id');
+        $attendances = Attendance::query()->whereIn('child_id', $children->pluck('id'))->whereDate('date', '>=', $start->toDateString())->whereDate('date', '<=', $end->toDateString())->get()->groupBy('child_id');
 
         $rows = $children->map(static function (Child $child) use ($attendances): array {
             $days = [];

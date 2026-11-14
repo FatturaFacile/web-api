@@ -63,7 +63,7 @@ test('every tenant table has a validated key to tenants on tenant_id', function 
 
     expect($missing)->toBe([], 'Tables with a tenant_id and no foreign key to tenants: '.implode(', ', $missing))
         ->and($notValidated)->toBe([], 'Foreign keys left NOT VALID (orphan rows): '.implode(', ', $notValidated));
-});
+})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The tenant foreign keys are a PostgreSQL-only layer of defence in depth; the other engines rely on the tenant scope of the models');
 
 test('the delete action follows the class of the table', function (): void {
     $actions = collect(DB::select(<<<'SQL'
@@ -90,7 +90,7 @@ test('the delete action follows the class of the table', function (): void {
         ->and($actions['customer_ledger'])->toBe('r')
         ->and($actions['project_audit_entries'])->toBe('r')
         ->and($actions['cost_centers'])->toBe('c');
-});
+})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The tenant foreign keys are a PostgreSQL-only layer of defence in depth; the other engines rely on the tenant scope of the models');
 
 test('a row of a tenant that does not exist is refused, and a tenant with evidence cannot be deleted', function (): void {
     $tenant = TenantRecordSeeder::tenant('Alfa');
@@ -103,7 +103,7 @@ test('a row of a tenant that does not exist is refused, and a tenant with eviden
 
     expect(fn () => DB::transaction(static fn () => DB::table('tenants')->where('id', $tenant->id)->delete()))->toThrow(QueryException::class, 'gl_ledger_settings')
         ->and(DB::table('gl_ledger_settings')->where('id', $key)->exists())->toBeTrue();
-});
+})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The tenant foreign keys are a PostgreSQL-only layer of defence in depth; the other engines rely on the tenant scope of the models');
 
 test('the constraint name fits PostgreSQL and is stable', function (): void {
     $migration = tenantForeignKeyMigration();
@@ -134,7 +134,7 @@ test('running the migration again changes nothing, and a table with orphan rows 
     Log::shouldHaveReceived('warning')->once();
 
     expect(fn () => DB::table('tmp_orphan_check')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => (string) Str::uuid7()]))->toThrow(QueryException::class);
-});
+})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The tenant foreign keys are a PostgreSQL-only layer of defence in depth; the other engines rely on the tenant scope of the models');
 
 test('the migration can be rolled back to the keys it added only', function (): void {
     $migration = tenantForeignKeyMigration();
@@ -148,4 +148,4 @@ test('the migration can be rolled back to the keys it added only', function (): 
     expect($afterDown)->toBeLessThan($existing)
         ->and($afterDown)->toBeGreaterThan(400)
         ->and($afterUp)->toBe($existing);
-});
+})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The tenant foreign keys are a PostgreSQL-only layer of defence in depth; the other engines rely on the tenant scope of the models');

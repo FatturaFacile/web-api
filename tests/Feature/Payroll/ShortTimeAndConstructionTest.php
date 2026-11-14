@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\Payroll\Exceptions\PayrollException;
@@ -189,7 +190,7 @@ test('a draft claim does not reach the payroll, an applied claim is not recalcul
 
     ShortTimeClaim::query()->whereKey($claim)->update(['status' => ShortTimeClaim::StatusDraft]);
     stClaim($case, [stHours($this->employee->id, 100)])->assertUnprocessable();
-});
+})->skip(fn (): bool => DB::getDriverName() === 'sqlite', 'SQLite has no row locks, so the lock statements this test records are never issued');
 
 test('a claim follows its states to the reimbursement and stops changing once sent', function (): void {
     $case = stCase();

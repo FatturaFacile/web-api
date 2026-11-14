@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\SubscriptionBilling\Models;
 
+use App\Casts\DateOnly;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -48,9 +49,9 @@ final class InvoiceSchedule extends Model
     protected function casts(): array
     {
         return [
-            'scheduled_billing_date' => 'date',
-            'service_period_start' => 'date',
-            'service_period_end' => 'date',
+            'scheduled_billing_date' => DateOnly::class,
+            'service_period_start' => DateOnly::class,
+            'service_period_end' => DateOnly::class,
             'estimated_amount' => 'decimal:2',
             'net_amount' => 'decimal:2',
         ];

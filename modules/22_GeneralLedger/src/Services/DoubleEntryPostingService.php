@@ -339,8 +339,8 @@ final class DoubleEntryPostingService implements DoubleEntryPostingServiceInterf
 
             // Find target period for reversal date
             $targetPeriod = FiscalPeriod::where('tenant_id', $original->tenant_id)
-                ->where('start_date', '<=', $reversalDate)
-                ->where('end_date', '>=', $reversalDate)
+                ->whereDate('start_date', '<=', $reversalDate)
+                ->whereDate('end_date', '>=', $reversalDate)
                 ->sharedLock()
                 ->first();
 

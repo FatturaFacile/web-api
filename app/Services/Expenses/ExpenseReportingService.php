@@ -31,12 +31,12 @@ class ExpenseReportingService
 
         $baseQuery = Expense::query();
         if ($dateFrom) {
-            $baseQuery->where('date', '>=', $dateFrom);
+            $baseQuery->whereDate('date', '>=', $dateFrom);
         } else {
             $baseQuery->whereYear('date', $year);
         }
         if ($dateTo) {
-            $baseQuery->where('date', '<=', $dateTo);
+            $baseQuery->whereDate('date', '<=', $dateTo);
         }
 
         $expenses = $baseQuery->with(['category.translations', 'contact'])->get();

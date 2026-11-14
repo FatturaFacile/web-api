@@ -40,7 +40,7 @@ final class PayrollReportService
         $timesheets = Timesheet::query()
             ->whereIn('employee_id', $payslips->pluck('employee_id'))
             ->whereIn('status', self::CountedTimesheetStatuses)
-            ->whereBetween('work_date', [$first, $last])
+            ->whereDate('work_date', '>=', $first)->whereDate('work_date', '<=', $last)
             ->get(['employee_id', 'project_id', 'cost_center_id', 'total_hours'])
             ->groupBy('employee_id');
 

@@ -37,8 +37,8 @@ final readonly class ContractObligationService
             ->when($filters['type'] ?? null, static fn (Builder $query, string $type) => $query->where('type', $type))
             ->when($filters['status'] ?? null, static fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($filters['owner_user_id'] ?? null, static fn (Builder $query, string $owner) => $query->where('owner_user_id', $owner))
-            ->when($filters['due_within_days'] ?? null, static fn (Builder $query, int|string $days) => $query->where('status', 'open')->whereBetween('due_date', [$today->toDateString(), $today->addDays((int) $days)->toDateString()]))
-            ->when($filters['overdue'] ?? false, static fn (Builder $query) => $query->where('status', 'open')->where('due_date', '<', $today->toDateString()))
+            ->when($filters['due_within_days'] ?? null, static fn (Builder $query, int|string $days) => $query->where('status', 'open')->whereDate('due_date', '>=', $today->toDateString())->whereDate('due_date', '<=', $today->addDays((int) $days)->toDateString()))
+            ->when($filters['overdue'] ?? false, static fn (Builder $query) => $query->where('status', 'open')->whereDate('due_date', '<', $today->toDateString()))
             ->orderBy('due_date')
             ->orderBy('created_at');
     }

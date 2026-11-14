@@ -110,7 +110,7 @@ final readonly class AccountantArchiveBuilder
     private function issued(CarbonImmutable $from, CarbonImmutable $to): Generator
     {
         $query = Invoice::query()->with('contact')
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString())
             ->where('invoice_type', '!=', 'proforma');
 
         foreach ($this->pages($query) as $invoices) {
@@ -138,7 +138,7 @@ final readonly class AccountantArchiveBuilder
      */
     private function received(CarbonImmutable $from, CarbonImmutable $to): Generator
     {
-        $query = PassiveInvoice::query()->with('supplier')->whereBetween('date', [$from->toDateString(), $to->toDateString()]);
+        $query = PassiveInvoice::query()->with('supplier')->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString());
 
         foreach ($this->pages($query) as $invoices) {
             $page = [];

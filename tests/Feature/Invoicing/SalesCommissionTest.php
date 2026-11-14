@@ -242,7 +242,7 @@ test('a second approval or posting that read the statement before the first comm
     $stalePending = SalesCommissionStatement::query()->findOrFail($statement['id'])->forceFill(['ledger_status' => SalesCommissionStatement::LedgerPending]);
     expect($service->retryPosting($stalePending)->ledger_status)->toBe(SalesCommissionStatement::LedgerPosted)
         ->and(JournalEntry::withoutGlobalScopes()->where('source_document_id', $statement['id'])->count())->toBe(1);
-});
+})->skip(fn (): bool => DB::getDriverName() === 'sqlite', 'SQLite has no row locks, so the lock statements this test records are never issued');
 
 test('the ledger accepts one posted entry per commission statement', function (): void {
     commissionInvoice($this->tenant, $this->rep->id, '1000.00');

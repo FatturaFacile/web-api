@@ -62,7 +62,7 @@ final class PortalSubscriptionController extends Controller
                 ->map(fn (SalesInvoice $invoice): array => [
                     'invoice_number' => $invoice->invoice_number,
                     'date' => CarbonImmutable::parse((string) $invoice->getRawOriginal('date'))->toDateString(),
-                    'total_gross' => (string) $invoice->getRawOriginal('total_gross'),
+                    'total_gross' => (string) $invoice->total_gross,
                     'payment_status' => $invoice->payment_status,
                 ])->values()->all(),
         ])->values()->all();

@@ -75,7 +75,7 @@ test('a fee note adds the fund and VAT and withholds on the fees, to the cent', 
     expect($data)->toMatchArray(['cassa_previdenza' => 40.0, 'vat' => 228.82, 'ritenuta_acconto' => 200.02, 'net_payable' => 1068.9]);
 
     $stored = DB::table('fee_notes')->where('id', $data['id'])->first();
-    expect((string) $stored->net_payable)->toBe('1068.90');
+    expect(number_format((float) $stored->net_payable, 2, '.', ''))->toBe('1068.90');
 });
 
 test('billable time divides only once, so the fee keeps its cents', function (): void {

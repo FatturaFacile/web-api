@@ -27,8 +27,8 @@ final class CrmReportService
     {
         $base = fn () => Opportunity::where('crm_opportunities.tenant_id', $tenantId)
             ->where('crm_opportunities.status', 'open')
-            ->when($filters['from'] ?? null, fn ($query, $from) => $query->where('expected_close_date', '>=', $from))
-            ->when($filters['to'] ?? null, fn ($query, $to) => $query->where('expected_close_date', '<=', $to))
+            ->when($filters['from'] ?? null, fn ($query, $from) => $query->whereDate('expected_close_date', '>=', $from))
+            ->when($filters['to'] ?? null, fn ($query, $to) => $query->whereDate('expected_close_date', '<=', $to))
             ->when($filters['owner_user_id'] ?? null, fn ($query, $owner) => $query->where('owner_user_id', $owner));
 
         $byStage = $base()

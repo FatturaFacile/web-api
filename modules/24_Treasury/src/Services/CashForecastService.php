@@ -235,7 +235,7 @@ final readonly class CashForecastService implements CashForecastServiceInterface
     {
         $openReceivables = ReceivableCollection::where('tenant_id', $forecast->tenant_id)
             ->whereIn(DB::raw('LOWER(status)'), ['pending', 'partial'])
-            ->whereBetween('due_date', [$startDate, $endDate])
+            ->whereDate('due_date', '>=', $startDate)->whereDate('due_date', '<=', $endDate)
             ->get();
 
         foreach ($openReceivables as $rc) {
@@ -257,7 +257,7 @@ final readonly class CashForecastService implements CashForecastServiceInterface
 
         $openBatches = PaymentBatch::where('tenant_id', $forecast->tenant_id)
             ->whereIn(DB::raw('LOWER(status)'), ['approved', 'draft'])
-            ->whereBetween('execution_date', [$startDate, $endDate])
+            ->whereDate('execution_date', '>=', $startDate)->whereDate('execution_date', '<=', $endDate)
             ->where('payment_method', '!=', 'riba')
             ->get();
 

@@ -110,7 +110,7 @@ final class ChildcareBillingService
         }
 
         $plan = $fee->feePlan;
-        $presentDays = Attendance::query()->where('child_id', $child->id)->where('status', 'present')->whereBetween('date', [$start->toDateString(), $end->toDateString()])->pluck('date');
+        $presentDays = Attendance::query()->where('child_id', $child->id)->where('status', 'present')->whereDate('date', '>=', $start->toDateString())->whereDate('date', '<=', $end->toDateString())->pluck('date');
         $weeklyPlans = WeeklyPlan::query()->where('child_id', $child->id)->get();
         $meals = $presentDays->sum(fn (CarbonImmutable $day): int => count($this->care->planOn($child, $day, $weeklyPlans)?->dayOf($day)['meals'] ?? []));
         $reference = "{$child->reference_code} {$period}";

@@ -173,8 +173,8 @@ final class ThirdSectorFilingService
                 'memberships_in_year' => Membership::query()->where('status', MembershipStatus::Active)->whereDate('valid_from', '<=', $to)->whereDate('valid_to', '>=', $from)->count(),
             ],
             12 => [
-                'money' => Donation::query()->where('kind', Donation::Money)->whereBetween('received_on', [$from, $to])->pluck('amount')->reduce(static fn (string $total, mixed $amount): string => Money::add($total, Money::normalize((string) $amount)), '0.00'),
-                'in_kind' => Donation::query()->where('kind', Donation::InKind)->whereBetween('received_on', [$from, $to])->pluck('amount')->reduce(static fn (string $total, mixed $amount): string => Money::add($total, Money::normalize((string) $amount)), '0.00'),
+                'money' => Donation::query()->where('kind', Donation::Money)->whereDate('received_on', '>=', $from)->whereDate('received_on', '<=', $to)->pluck('amount')->reduce(static fn (string $total, mixed $amount): string => Money::add($total, Money::normalize((string) $amount)), '0.00'),
+                'in_kind' => Donation::query()->where('kind', Donation::InKind)->whereDate('received_on', '>=', $from)->whereDate('received_on', '<=', $to)->pluck('amount')->reduce(static fn (string $total, mixed $amount): string => Money::add($total, Money::normalize((string) $amount)), '0.00'),
             ],
             13 => ['regular_volunteers' => Volunteer::query()->where('is_occasional', false)->activeInYear($year)->distinct()->count('member_id')],
             24 => ['occasional_campaigns' => Campaign::query()->where('kind', Campaign::Occasional)

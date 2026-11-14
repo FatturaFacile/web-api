@@ -40,7 +40,7 @@ final class LedgerBalanceReader
     {
         return $this->byAccount(
             $this->postedLines($tenantId)
-                ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()])
+                ->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
                 ->whereNotIn('journal_entries.journal_type', ['opening', 'closing'])
                 ->where(static fn (Builder $query): Builder => $query
                     ->whereNull('journal_entries.source_document_type')
@@ -59,7 +59,7 @@ final class LedgerBalanceReader
     {
         return $this->byAccount(
             $this->postedLines($tenantId)
-                ->where('journal_entries.posting_date', '<=', $to->toDateString())
+                ->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
                 ->where('journal_entries.journal_type', '!=', 'opening')
                 ->where(static fn (Builder $query): Builder => $query
                     ->whereNull('journal_entries.source_document_type')
@@ -70,7 +70,7 @@ final class LedgerBalanceReader
                         ->where(static fn (Builder $src): Builder => $src
                             ->whereNull('journal_entries.source_document_type')
                             ->orWhere('journal_entries.source_document_type', '!=', 'year_end_closing')))
-                    ->orWhere('journal_entries.posting_date', '<', $yearStart->toDateString()))
+                    ->orWhereDate('journal_entries.posting_date', '<', $yearStart->toDateString()))
                 ->whereIn('chart_of_accounts.account_type', self::BalanceSheetTypes)
         );
     }
@@ -84,7 +84,7 @@ final class LedgerBalanceReader
     {
         return $this->byAccount(
             $this->postedLines($tenantId)
-                ->where('journal_entries.posting_date', '<=', $to->toDateString())
+                ->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
                 ->where('journal_entries.journal_type', '!=', 'opening')
                 ->where(static fn (Builder $query): Builder => $query
                     ->whereNull('journal_entries.source_document_type')

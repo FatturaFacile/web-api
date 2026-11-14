@@ -109,7 +109,7 @@ final class CertificateService
                 ->from('assoc_medical_certificates as newer')
                 ->whereColumn('newer.member_id', 'assoc_medical_certificates.member_id')
                 ->whereColumn('newer.kind', 'assoc_medical_certificates.kind')
-                ->whereRaw('newer.discipline_id IS NOT DISTINCT FROM assoc_medical_certificates.discipline_id')
+                ->whereRaw('(newer.discipline_id = assoc_medical_certificates.discipline_id OR (newer.discipline_id IS NULL AND assoc_medical_certificates.discipline_id IS NULL))')
                 ->whereColumn('newer.expires_on', '>', 'assoc_medical_certificates.expires_on')
                 ->whereNull('newer.revoked_at')
                 ->whereNull('newer.deleted_at'))

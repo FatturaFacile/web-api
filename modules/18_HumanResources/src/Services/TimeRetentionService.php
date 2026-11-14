@@ -31,7 +31,7 @@ final class TimeRetentionService
 
             $dailyRecords = DB::table('time_daily_records')
                 ->where('tenant_id', $tenant->id)
-                ->where('work_date', '<', $cutoff->format('Y-m-d'))
+                ->whereDate('work_date', '<', $cutoff->format('Y-m-d'))
                 ->delete();
 
             $auditEntries = $this->purgeAuditEntries((string) $tenant->id, $cutoffInstant);

@@ -33,7 +33,7 @@ final readonly class SupplierPerformanceService
     {
         $receiptLines = PurchaseReceiptLine::query()
             ->with(['orderLine.purchaseOrder', 'receipt'])
-            ->whereHas('receipt', static fn ($receipt) => $receipt->whereBetween('received_date', [$from, $to])
+            ->whereHas('receipt', static fn ($receipt) => $receipt->whereDate('received_date', '>=', $from)->whereDate('received_date', '<=', $to)
                 ->whereHas('purchaseOrder', static fn ($order) => $order->where('supplier_id', $supplier->id)))
             ->get();
 
@@ -55,7 +55,7 @@ final readonly class SupplierPerformanceService
 
         $orderLines = PurchaseOrderLine::query()
             ->whereNotNull('list_unit_price')
-            ->whereHas('purchaseOrder', static fn ($order) => $order->where('supplier_id', $supplier->id)->whereBetween('date', [$from, $to])->whereNotIn('status', ['draft', 'cancelled', 'rejected']))
+            ->whereHas('purchaseOrder', static fn ($order) => $order->where('supplier_id', $supplier->id)->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->whereNotIn('status', ['draft', 'cancelled', 'rejected']))
             ->get();
 
         $atList = '0';

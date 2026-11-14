@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\SerializesDecimalAttributes;
 use App\Models\DeliveryNote;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,13 +14,15 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class DeliveryNoteResource extends JsonResource
 {
+    use SerializesDecimalAttributes;
+
     /**
      * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
         return array_merge(
-            collect($this->resource->getAttributes())->except(['deleted_at', 'signature_data'])->all(),
+            collect($this->attributesWithDecimals())->except(['deleted_at', 'signature_data'])->all(),
             [
                 'contact_id' => $this->contact_id,
                 'contact' => $this->whenLoaded('contact', fn () => ['id' => $this->contact->id, 'name' => $this->contact->company_name ?: trim($this->contact->first_name.' '.$this->contact->last_name)]),

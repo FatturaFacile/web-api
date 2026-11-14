@@ -43,7 +43,7 @@ final readonly class ManufacturingForecastingService implements ManufacturingFor
         $standards = [];
 
         $orders = MfgProductionOrder::query()->where('tenant_id', $tenantId)->whereIn('status', ['planned', 'released', 'in_progress'])
-            ->whereBetween('planned_end_date', [$first, $last])->get();
+            ->whereDate('planned_end_date', '>=', $first)->whereDate('planned_end_date', '<=', $last)->get();
         foreach ($orders as $order) {
             $month = $order->planned_end_date->format('Y-m');
             $open = Money::max('0', Money::sub($order->target_quantity, $order->completed_quantity));
@@ -53,7 +53,7 @@ final readonly class ManufacturingForecastingService implements ManufacturingFor
             $buckets[$month]['inflow'] = Money::add($buckets[$month]['inflow'], $value);
         }
 
-        $planned = MfgMrpPlannedOrder::query()->where('tenant_id', $tenantId)->where('status', 'planned')->whereBetween('due_date', [$first, $last])->get();
+        $planned = MfgMrpPlannedOrder::query()->where('tenant_id', $tenantId)->where('status', 'planned')->whereDate('due_date', '>=', $first)->whereDate('due_date', '<=', $last)->get();
         foreach ($planned as $plannedOrder) {
             $month = $plannedOrder->due_date->format('Y-m');
             $value = Money::mul($plannedOrder->quantity, $this->standard($tenantId, (string) $plannedOrder->mfg_item_id, $standards));

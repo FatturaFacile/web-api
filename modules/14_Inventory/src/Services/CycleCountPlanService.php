@@ -86,7 +86,7 @@ final readonly class CycleCountPlanService
         $today = $this->clock->today()->toDateString();
         $opened = 0;
 
-        foreach (CycleCountPlan::query()->where('is_active', true)->where(static fn ($due) => $due->whereNull('next_run_on')->orWhere('next_run_on', '<=', $today))->orderBy('id')->get() as $plan) {
+        foreach (CycleCountPlan::query()->where('is_active', true)->where(static fn ($due) => $due->whereNull('next_run_on')->orWhereDate('next_run_on', '<=', $today))->orderBy('id')->get() as $plan) {
             try {
                 $this->run($plan, $userId);
                 $opened++;

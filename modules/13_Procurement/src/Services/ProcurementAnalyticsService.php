@@ -30,7 +30,7 @@ final class ProcurementAnalyticsService
             ->where('po.tenant_id', $tenantId)
             ->whereNull('po.deleted_at')
             ->whereIn('po.status', PurchaseOrderStatus::committedValues())
-            ->whereBetween('po.date', [$from, $to]);
+            ->whereDate('po.date', '>=', $from)->whereDate('po.date', '<=', $to);
 
         [$key, $label] = match ($dimension) {
             'category' => ['sc.id', 'sc.name'],
@@ -103,7 +103,7 @@ final class ProcurementAnalyticsService
             ->whereNull('l.deleted_at')
             ->whereNotNull('l.list_unit_price')
             ->whereIn('po.status', PurchaseOrderStatus::committedValues())
-            ->whereBetween('po.date', [$from, $to])
+            ->whereDate('po.date', '>=', $from)->whereDate('po.date', '<=', $to)
             ->groupBy('c.id', 'c.supplier_id', 'c.name')
             ->selectRaw('c.id, c.supplier_id, c.name, SUM(l.quantity_ordered) as quantity, SUM(l.quantity_ordered * l.unit_price) as ordered_value, SUM(l.quantity_ordered * l.list_unit_price) as list_value')
             ->get();

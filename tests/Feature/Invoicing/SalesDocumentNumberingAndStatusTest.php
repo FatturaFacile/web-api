@@ -191,7 +191,7 @@ test('a credit note application is read and summed through Eloquent and cannot b
     ]);
 
     expect(InvoiceCreditApplication::query()->whereKey($application->id)->exists())->toBeTrue()
-        ->and((string) $creditNote->creditApplications()->sum('applied_amount'))->toBe('120.50')
+        ->and(number_format((float) $creditNote->creditApplications()->sum('applied_amount'), 2, '.', ''))->toBe('120.50')
         ->and($invoice->appliedCredits()->count())->toBe(1)
         ->and($application->fresh()->getCasts())->not->toHaveKey('deleted_at')
         ->and(fn () => $application->delete())->toThrow(LogicException::class);

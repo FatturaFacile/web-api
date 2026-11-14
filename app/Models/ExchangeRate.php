@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Casts\DateOnly;
 use App\Models\Concerns\BelongsToTenant;
 use Enterprise\MultiTenant\Concerns\AllowsGlobalRecords;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
@@ -27,7 +28,7 @@ class ExchangeRate extends Model
     {
         return [
             'rate' => 'decimal:6',
-            'effective_date' => 'date',
+            'effective_date' => DateOnly::class,
         ];
     }
 }

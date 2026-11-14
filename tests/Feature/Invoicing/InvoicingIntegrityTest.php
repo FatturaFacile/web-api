@@ -220,7 +220,7 @@ test('the credit notes of an invoice cannot exceed its total, and a refused one 
     $last = integrityCreditNote($invoice, 400);
 
     expect($last->invoice_number)->toBe('CN-2027-0002')
-        ->and((string) SalesInvoice::where('related_invoice_id', $invoice->id)->sum('total_gross'))->toBe('1220.00');
+        ->and(number_format((float) SalesInvoice::where('related_invoice_id', $invoice->id)->sum('total_gross'), 2, '.', ''))->toBe('1220.00');
 });
 
 // ------------------------------------------------------------ 4. Customer ledger
@@ -421,6 +421,6 @@ test('no actor id is invented when the action has no user', function (): void {
 // ------------------------------------------------------------ Indexes
 
 test('the invoice foreign keys of the ledger and of the credit applications are indexed', function (): void {
-    expect(Schema::hasIndex('customer_ledger_entries', 'invoice_id'))->toBeTrue()
-        ->and(Schema::hasIndex('invoice_credit_applications', 'original_invoice_id'))->toBeTrue();
+    expect(Schema::hasIndex('customer_ledger_entries', ['invoice_id']))->toBeTrue()
+        ->and(Schema::hasIndex('invoice_credit_applications', ['original_invoice_id']))->toBeTrue();
 });

@@ -309,7 +309,7 @@ final readonly class ReportEngine
 
     private function filter(Builder $query, Dimension $dimension, string $operator, mixed $value): void
     {
-        $column = "({$dimension->sql})";
+        $column = $dimension->type === Dimension::TypeDate ? SqlDialect::dateOf("({$dimension->sql})") : "({$dimension->sql})";
 
         match ($operator) {
             'eq' => $query->whereRaw("{$column} = ?", [$value]),
@@ -335,15 +335,16 @@ final readonly class ReportEngine
     private function having(Builder $query, Measure $measure, string $operator, mixed $value): void
     {
         $column = "({$measure->sql})";
+        $number = static fn (mixed $bound): int|float => $bound + 0;
 
         match ($operator) {
-            'eq' => $query->havingRaw("{$column} = CAST(? AS numeric)", [$value]),
-            'neq' => $query->havingRaw("{$column} IS DISTINCT FROM CAST(? AS numeric)", [$value]),
-            'gt' => $query->havingRaw("{$column} > CAST(? AS numeric)", [$value]),
-            'gte' => $query->havingRaw("{$column} >= CAST(? AS numeric)", [$value]),
-            'lt' => $query->havingRaw("{$column} < CAST(? AS numeric)", [$value]),
-            'lte' => $query->havingRaw("{$column} <= CAST(? AS numeric)", [$value]),
-            'between' => $query->havingRaw("{$column} BETWEEN CAST(? AS numeric) AND CAST(? AS numeric)", $value),
+            'eq' => $query->havingRaw("{$column} = ?", [$number($value)]),
+            'neq' => $query->havingRaw("({$column} IS NULL OR {$column} <> ?)", [$number($value)]),
+            'gt' => $query->havingRaw("{$column} > ?", [$number($value)]),
+            'gte' => $query->havingRaw("{$column} >= ?", [$number($value)]),
+            'lt' => $query->havingRaw("{$column} < ?", [$number($value)]),
+            'lte' => $query->havingRaw("{$column} <= ?", [$number($value)]),
+            'between' => $query->havingRaw("{$column} BETWEEN ? AND ?", array_map($number, array_values($value))),
             'is_null' => $query->havingRaw("{$column} IS NULL"),
             'not_null' => $query->havingRaw("{$column} IS NOT NULL"),
             default => throw new \LogicException("Unvalidated operator [{$operator}]."),

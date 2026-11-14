@@ -235,7 +235,7 @@ class GeneralLedgerExportService
             ->where('tenant_id', $tenantId)
             ->whereIn('status', ['posted', 'reversed'])
             ->where('ledger_type', 'statutory')
-            ->whereBetween('posting_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('posting_date', '>=', $from->toDateString())->whereDate('posting_date', '<=', $to->toDateString())
             ->when($source !== self::SOURCE_ALL, fn ($query) => $query->whereIn('source_document_type', self::SOURCE_TYPES[$source] ?? []))
             ->orderBy('posting_date')
             ->orderBy('journal_number')

@@ -114,7 +114,7 @@ final readonly class PurchasesKpi implements KpiCalculator
     {
         return PassiveInvoice::query()
             ->whereNotNull('passive_invoices.gl_journal_entry_id')
-            ->whereBetween('passive_invoices.date', [$period->from->toDateString(), $period->to->toDateString()]);
+            ->whereDate('passive_invoices.date', '>=', $period->from->toDateString())->whereDate('passive_invoices.date', '<=', $period->to->toDateString());
     }
 
     private function net(): string

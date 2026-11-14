@@ -53,7 +53,7 @@ final readonly class ContractRegister
         return DB::query()->fromSub($union, 'contracts')
             ->when($filters['status'] ?? null, static fn (Builder $query, string $status): Builder => $query->where('status', $status))
             ->when($filters['search'] ?? null, static fn (Builder $query, string $term): Builder => $query->where(static fn (Builder $inner): Builder => $inner->whereLike('contract_number', "%{$term}%")->orWhereLike('title', "%{$term}%")))
-            ->when($filters['expiring_within_days'] ?? null, static fn (Builder $query, int|string $days): Builder => $query->whereBetween('end_date', [now()->toDateString(), now()->addDays((int) $days)->toDateString()]))
+            ->when($filters['expiring_within_days'] ?? null, static fn (Builder $query, int|string $days): Builder => $query->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<=', now()->addDays((int) $days)->toDateString()))
             ->orderBy('end_date')
             ->gridPaginate($perPage);
     }

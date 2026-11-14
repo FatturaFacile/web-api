@@ -64,7 +64,7 @@ final class ExpiringContractsQuery implements CatalogueQuery
         $customers = ServiceContract::query()
             ->where('tenant_id', $tenantId)
             ->where('status', 'active')
-            ->whereBetween('end_date', [$from, $until])
+            ->whereDate('end_date', '>=', $from)->whereDate('end_date', '<=', $until)
             ->toBase()
             ->selectRaw("'customer' as kind, contract_number, title, end_date");
 

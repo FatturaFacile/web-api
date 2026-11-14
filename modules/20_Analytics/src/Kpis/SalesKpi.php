@@ -121,7 +121,7 @@ final readonly class SalesKpi implements KpiCalculator
     {
         return Invoice::query()
             ->whereNotNull('invoices.posted_at')
-            ->whereBetween('invoices.date', [$period->from->toDateString(), $period->to->toDateString()])
+            ->whereDate('invoices.date', '>=', $period->from->toDateString())->whereDate('invoices.date', '<=', $period->to->toDateString())
             ->where('invoices.invoice_type', '!=', 'proforma')
             ->whereNotIn('invoices.status', self::VoidStatuses);
     }

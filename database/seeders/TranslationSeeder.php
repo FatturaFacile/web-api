@@ -327,6 +327,9 @@ class TranslationSeeder extends GlobalDataSeeder
             'ERRORS.VALIDATION_TITLE' => 'Errore di Validazione (422)',
             'ERRORS.TOO_MANY_REQUESTS_TITLE' => 'Limite Richieste Superato (429)',
             'ERRORS.TOO_MANY_REQUESTS_DESC' => 'Troppe richieste inviate al server. Si prega di attendere qualche istante prima di riprovare.',
+            'PWA.UPDATE_AVAILABLE' => 'È disponibile una nuova versione dell\'applicazione.',
+            'PWA.UPDATE_RELOAD' => 'Aggiorna ora',
+            'PWA.UPDATE_ERROR' => 'Impossibile caricare la nuova versione. Ricarica la pagina.',
 
             // WELCOME
             'WELCOME.DESC' => 'Gestisci i tuoi ordini e monitora il fatturato in tempo reale.',
@@ -1333,6 +1336,9 @@ class TranslationSeeder extends GlobalDataSeeder
             'ERRORS.VALIDATION_TITLE' => 'Validation Error (422)',
             'ERRORS.TOO_MANY_REQUESTS_TITLE' => 'Rate Limit Exceeded (429)',
             'ERRORS.TOO_MANY_REQUESTS_DESC' => 'Too many requests sent to the server. Please wait a few moments before trying again.',
+            'PWA.UPDATE_AVAILABLE' => 'A new version of the application is available.',
+            'PWA.UPDATE_RELOAD' => 'Update now',
+            'PWA.UPDATE_ERROR' => 'Unable to load the new version. Please reload the page.',
 
             // WELCOME
             'WELCOME.DESC' => 'Manage your orders and track revenue in real time.',
@@ -2339,6 +2345,9 @@ class TranslationSeeder extends GlobalDataSeeder
             'ERRORS.VALIDATION_TITLE' => 'Validierungsfehler (422)',
             'ERRORS.TOO_MANY_REQUESTS_TITLE' => 'Anfragelimit überschritten (429)',
             'ERRORS.TOO_MANY_REQUESTS_DESC' => 'Zu viele Anfragen an den Server gesendet. Bitte warten Sie einen Moment, bevor Sie es erneut versuchen.',
+            'PWA.UPDATE_AVAILABLE' => 'Eine neue Version der Anwendung ist verfügbar.',
+            'PWA.UPDATE_RELOAD' => 'Jetzt aktualisieren',
+            'PWA.UPDATE_ERROR' => 'Die neue Version konnte nicht geladen werden. Bitte laden Sie die Seite neu.',
 
             // WELCOME
             'WELCOME.DESC' => 'Verwalten Sie Ihre Aufträge und überwachen Sie den Umsatz in Echtzeit.',
@@ -3345,6 +3354,9 @@ class TranslationSeeder extends GlobalDataSeeder
             'ERRORS.VALIDATION_TITLE' => 'Erreur de validation (422)',
             'ERRORS.TOO_MANY_REQUESTS_TITLE' => 'Limite de requêtes dépassée (429)',
             'ERRORS.TOO_MANY_REQUESTS_DESC' => 'Trop de requêtes envoyées au serveur. Veuillez patienter un instant avant de réessayer.',
+            'PWA.UPDATE_AVAILABLE' => 'Une nouvelle version de l\'application est disponible.',
+            'PWA.UPDATE_RELOAD' => 'Mettre à jour',
+            'PWA.UPDATE_ERROR' => 'Impossible de charger la nouvelle version. Veuillez recharger la page.',
 
             // WELCOME
             'WELCOME.DESC' => 'Gérez vos commandes et suivez votre chiffre d’affaires en temps réel.',

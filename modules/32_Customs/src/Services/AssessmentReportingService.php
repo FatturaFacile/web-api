@@ -86,7 +86,7 @@ final class AssessmentReportingService
     public function statistics(string $from, string $to): array
     {
         return CustomsAssessmentDecision::query()
-            ->whereBetween('document_date', [$from, $to])
+            ->whereDate('document_date', '>=', $from)->whereDate('document_date', '<=', $to)
             ->selectRaw(SqlDialect::monthBucket('document_date').' as month, direction, document_type, count(*) as decisions, sum(duty_amount) as duty_total, sum(vat_amount) as vat_total')
             ->groupByRaw(SqlDialect::monthBucket('document_date').', direction, document_type')
             ->orderBy('month')

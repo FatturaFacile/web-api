@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\SerializesDecimalAttributes;
 use App\Models\SalesOrder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Request;
@@ -15,6 +16,8 @@ use Modules\Invoicing\Models\SalesOrderHold;
  */
 class SalesOrderResource extends JsonResource
 {
+    use SerializesDecimalAttributes;
+
     /**
      * Every column of the order as stored (decimals as strings, dates as `Y-m-d`, timestamps as `Y-m-d H:i:s`) plus the
      * contact summary, the active credit holds and, when loaded, the lines.
@@ -28,7 +31,7 @@ class SalesOrderResource extends JsonResource
         $activeHolds = $this->activeHolds();
 
         return array_merge(
-            collect($this->resource->getAttributes())->except(['deleted_at', 'signature_data'])->all(),
+            collect($this->attributesWithDecimals())->except(['deleted_at', 'signature_data'])->all(),
             [
                 'contact_id' => $this->contact_id,
                 'contact' => $this->whenLoaded('contact', fn () => ['id' => $this->contact->id, 'name' => $this->contact->company_name ?: trim($this->contact->first_name.' '.$this->contact->last_name)]),

@@ -160,7 +160,7 @@ final readonly class ReceivableCollectionService implements ReceivableCollection
         $today = now()->toDateString();
         $overdue = ReceivableCollection::where('tenant_id', $tenantId)
             ->whereIn(DB::raw('LOWER(status)'), ['pending', 'partial', 'overdue'])
-            ->where('due_date', '<', $today)
+            ->whereDate('due_date', '<', $today)
             ->get();
 
         $dunningCandidates = [];

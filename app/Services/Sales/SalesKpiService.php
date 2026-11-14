@@ -52,8 +52,8 @@ final class SalesKpiService
             'fill_rate' => $this->fillRate($from, $to),
             'quote_conversion' => $this->quoteConversion($from, $to),
             'returns' => [
-                'opened' => SalesReturn::query()->whereBetween('date', [$from, $to])->count(),
-                'credited' => SalesReturn::query()->whereBetween('date', [$from, $to])->where('status', SalesReturnStatus::Credited->value)->count(),
+                'opened' => SalesReturn::query()->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->count(),
+                'credited' => SalesReturn::query()->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->where('status', SalesReturnStatus::Credited->value)->count(),
             ],
         ];
     }
@@ -90,7 +90,7 @@ final class SalesKpiService
     private function fillRate(string $from, string $to): array
     {
         $orderIds = SalesOrder::query()
-            ->whereBetween('date', [$from, $to])
+            ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
             ->whereNotIn('status', [SalesOrderStatus::Draft->value, SalesOrderStatus::Cancelled->value, SalesOrderStatus::Rejected->value])
             ->pluck('id');
 
@@ -128,7 +128,7 @@ final class SalesKpiService
     private function quoteConversion(string $from, string $to): array
     {
         $quotes = Quote::query()
-            ->whereBetween('date', [$from, $to])
+            ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
             ->where('status', '!=', QuoteStatus::Superseded->value)
             ->get(['id', 'status', 'total_net']);
 

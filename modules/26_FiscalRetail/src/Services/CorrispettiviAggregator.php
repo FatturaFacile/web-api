@@ -20,7 +20,7 @@ final class CorrispettiviAggregator
     {
         $lines = CommercialDocumentLine::query()
             ->join('commercial_documents as document', 'document.id', '=', 'commercial_document_lines.commercial_document_id')
-            ->whereBetween('document.issue_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('document.issue_date', '>=', $from->toDateString())->whereDate('document.issue_date', '<=', $to->toDateString())
             ->orderBy('document.issue_date')
             ->orderBy('commercial_document_lines.tax_rate')
             ->get([

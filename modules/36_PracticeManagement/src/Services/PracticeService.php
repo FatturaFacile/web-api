@@ -35,7 +35,7 @@ final class PracticeService
     public function activityControl(string $from, string $to, ?string $userId, int $staleDays): array
     {
         $activities = BillableActivity::query()
-            ->whereBetween('date', [$from, $to])
+            ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
             ->when($userId !== null, fn ($query) => $query->where('user_id', $userId))
             ->get();
         $cases = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->get()->keyBy('id');
@@ -127,10 +127,10 @@ final class PracticeService
      */
     public function closingOverview(string $from, string $to): array
     {
-        $activities = BillableActivity::query()->whereBetween('date', [$from, $to])->where('is_billed', false)->get();
+        $activities = BillableActivity::query()->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->where('is_billed', false)->get();
         $caseClients = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->pluck('client_id', 'id');
         $unbilled = $activities->groupBy(static fn (BillableActivity $activity): string => (string) $caseClients[$activity->legal_case_id]);
-        $drafts = FeeNote::query()->whereBetween('date', [$from, $to])->where('status', 'draft')->get()->groupBy('client_id');
+        $drafts = FeeNote::query()->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->where('status', 'draft')->get()->groupBy('client_id');
         $closings = PeriodClosing::query()->whereDate('period_start', $from)->whereDate('period_end', $to)->get()->keyBy('client_id');
         $clientIds = $unbilled->keys()->merge($drafts->keys())->merge($closings->keys())->unique()->values();
         $openInvoices = Invoice::query()->whereIn('contact_id', $clientIds)->whereDate('date', '<=', $to)->where('payment_status', '!=', 'paid')->where('invoice_type', '!=', 'proforma')->get()->groupBy('contact_id');
@@ -223,7 +223,7 @@ final class PracticeService
 
             $caseIds = LegalCase::query()->where('client_id', $locked->client_id)->pluck('id');
             $unbilled = BillableActivity::query()->whereIn('legal_case_id', $caseIds)->where('is_billed', false)
-                ->whereBetween('date', [$locked->period_start->toDateString(), $locked->period_end->toDateString()])->count();
+                ->whereDate('date', '>=', $locked->period_start->toDateString())->whereDate('date', '<=', $locked->period_end->toDateString())->count();
 
             if ($unbilled > 0 && ! $allowUnbilled) {
                 throw new BusinessRuleException("{$unbilled} activities of the period are not billed.");

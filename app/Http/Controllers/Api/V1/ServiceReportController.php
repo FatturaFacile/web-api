@@ -92,11 +92,11 @@ class ServiceReportController extends Controller
         }
 
         if ($request->filled('from_date')) {
-            $query->where('report_date', '>=', $request->query('from_date'));
+            $query->whereDate('report_date', '>=', $request->query('from_date'));
         }
 
         if ($request->filled('to_date')) {
-            $query->where('report_date', '<=', $request->query('to_date'));
+            $query->whereDate('report_date', '<=', $request->query('to_date'));
         }
 
         if ($request->boolean('uninvoiced')) {

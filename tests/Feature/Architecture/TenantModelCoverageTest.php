@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Services\Tenancy\TenantSchemaPolicy;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\Support\TenantModelRegistry;
 use Tests\Support\TenantSchemaBaseline;
@@ -82,13 +81,17 @@ test('the registry finds the models of the modules and of the packages', functio
 });
 
 test('every table has a nullable tenant_id, except the framework and central tables of the policy', function (): void {
-    $schema = Schema::getConnection()->getConfig('search_path') ?: 'public';
-    $columns = DB::table('information_schema.columns')
-        ->where('table_schema', $schema)
-        ->where('column_name', 'tenant_id')
-        ->pluck('is_nullable', 'table_name')
-        ->all();
     $tables = array_column(Schema::getTables(), 'name');
+    $columns = [];
+
+    foreach ($tables as $table) {
+        foreach (Schema::getColumns($table) as $column) {
+            if ($column['name'] === 'tenant_id') {
+                $columns[$table] = $column['nullable'] ? 'YES' : 'NO';
+            }
+        }
+    }
+
     $excluded = TenantSchemaPolicy::EXCLUDED_TABLES;
 
     $missing = [];
