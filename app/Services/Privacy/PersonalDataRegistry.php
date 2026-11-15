@@ -35,9 +35,12 @@ use Modules\Contracts\Models\ContractParty;
 use Modules\CRM\Models\Consent;
 use Modules\CRM\Models\Lead;
 use Modules\DocumentTrust\Models\PreservationAccessLog;
+use Modules\Fleet\Models\FleetVehicle;
+use Modules\Fleet\Models\FleetVehicleAssignment;
 use Modules\HealthExpenses\Models\HealthExpense;
 use Modules\Hospitality\Models\Reservation;
 use Modules\HumanResources\Models\Employee;
+use Modules\HumanResources\Models\ExitInterview;
 use Modules\HumanResources\Models\InterviewNote;
 use Modules\HumanResources\Models\JobApplication;
 use Modules\Inventory\Models\InventoryAuditEntry;
@@ -160,6 +163,8 @@ final class PersonalDataRegistry
             'visitor_visits' => $link('visitor', 'visitor_id', $operational, 'Visit log: holds no personal data once the visitor is anonymised; purged by the visitors purge job.'),
             'hr_application_stage_events' => $link('applicant', 'job_application_id', $operational, 'Stage history of the application: no personal data of the applicant beyond the link.'),
             'sales_returns' => $link('contact', 'contact_id', $fiscal, $commercial),
+            'returns_rmas' => $link('contact', 'contact_id', $fiscal, $commercial),
+            'returns_warranties' => $link('contact', 'contact_id', $operational, 'Warranty of a sold unit: erased with the contact when no statutory record needs it.'),
             'subscriptions' => $link('contact', 'contact_id', $fiscal, $commercial),
             'pos_sales' => $link('contact', 'contact_id', $fiscal, $commercial),
             'projects' => $link('contact', 'contact_id', $fiscal, $commercial),
@@ -175,6 +180,8 @@ final class PersonalDataRegistry
             'hr_training_records' => $link('employee', 'employee_id', $employment, $hr),
             'hr_performance_reviews' => $link('employee', 'employee_id', $employment, $hr),
             'hr_employee_documents' => $link('employee', 'employee_id', $employment, $hr),
+            'fleet_fuel_entries' => $link('employee', 'employee_id', $operational, 'Fuel and charging entry of a company vehicle: no personal data beyond the link to the driver.'),
+            'fleet_incidents' => $link('employee', 'employee_id', $employment, 'Fine, accident or damage attributed to the driver: kept while the employer may need it for the recovery of the amount, to be confirmed.'),
             'hr_attendance_records' => $link('employee', 'employee_id', $employment, 'Working time record: 5 years (ArG art. 46, ArGV 1 art. 73), to be confirmed.'),
             'payroll_salary_certificates' => $link('employee', 'employee_id', $fiscal, 'Salary certificate: payroll voucher, 10 years (CO art. 958f), to be confirmed.'),
             'payroll_inputs' => $link('employee', 'employee_id', $fiscal, 'Payroll input: payroll voucher.'),
@@ -254,6 +261,8 @@ final class PersonalDataRegistry
             new PersonalDataEntry('work_orders', [WorkOrder::class], 'Work orders', 'location', ['intervention_address'], $erasable, $operationalNote),
             new PersonalDataEntry('vehicles', [Vehicle::class], 'Vehicles', 'identity', ['license_plate'], $erasable, $operationalNote),
             new PersonalDataEntry('workshop_vehicle_stock', [VehicleStockUnit::class], 'Workshop vehicle stock', 'identity', ['license_plate'], $erasable, $operationalNote),
+            new PersonalDataEntry('fleet_vehicles', [FleetVehicle::class], 'Fleet vehicles', 'identity', ['license_plate'], $erasable, $operationalNote),
+            new PersonalDataEntry('fleet_vehicle_assignments', [FleetVehicleAssignment::class], 'Fleet driver assignments', 'identity', ['driver_label'], $erasable, 'Operational data: the name of an external driver is erased on request or by retention policy; the link to the employee stays with the employment record.', ['employee' => 'employee_id'], 'created_at'),
             new PersonalDataEntry('weighbridge_vehicles', [WeighbridgeVehicle::class], 'Weighbridge vehicles', 'identity', ['license_plate'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('portal_activity_logs', [PortalActivityLog::class], 'Customer portal activity', 'technical', ['ip_address'], $erasable, 'Access log of the portal: erased with the contact and by retention policy.', ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('audit_logs', [AuditLog::class], 'Audit log', 'technical', ['ip_address'], $evidence, $evidenceNote),
@@ -274,6 +283,7 @@ final class PersonalDataRegistry
             new PersonalDataEntry('hr_employees', [Employee::class], 'Employees', 'hr', ['first_name', 'last_name', 'full_name', 'work_email', 'personal_email', 'phone', 'birth_date', 'gender', 'nationality', 'tax_code', 'social_security_number', 'emergency_contact'], $employment, 'Contact data erased on request; identity kept while payroll vouchers (10 years) or working time records (5 years) are within the statutory period, to be confirmed.', ['employee' => 'id', 'user' => 'user_id']),
             new PersonalDataEntry('employee_profiles', [EmployeeProfile::class], 'Employee profiles', 'hr', ['social_security_number'], $employment, 'Employment record.', ['user' => 'user_id']),
             new PersonalDataEntry('hr_job_applications', [JobApplication::class], 'Job applications', 'hr', ['first_name', 'last_name', 'email', 'phone', 'cover_note'], $erasable, 'Erased at the end of the consent period by the recruiting purge job, and by retention policy.', ['applicant' => 'id'], 'created_at'),
+            new PersonalDataEntry('hr_exit_interviews', [ExitInterview::class], 'Exit interviews', 'hr', ['feedback'], $employment, 'Employment record: the free-text feedback of the leaving employee, encrypted at rest and kept with the personnel file.', ['employee' => 'employee_id']),
             new PersonalDataEntry('hr_interview_notes', [InterviewNote::class], 'Interview notes on applicants', 'hr', ['note'], $erasable, $operationalNote, ['applicant' => 'job_application_id'], 'created_at'),
             new PersonalDataEntry('payroll_employee_profiles', [PayrollEmployeeProfile::class], 'Payroll profiles', 'hr', ['social_security_number', 'iban', 'street', 'house_number', 'postal_code', 'city', 'gender', 'birth_place', 'italian_tax_code', 'swiss_permit_number', 'withholding_tax_code'], $employment, 'Payroll basis: kept with the payslips (10 years, CO art. 958f), to be confirmed.', ['employee' => 'employee_id']),
             new PersonalDataEntry('payroll_employee_children', [PayrollEmployeeChild::class], 'Children of employees (allowances)', 'hr', ['first_name', 'last_name', 'date_of_birth'], $employment, 'Basis of family allowances: kept with the payslips.', ['employee' => 'employee_id']),

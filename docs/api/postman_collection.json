@@ -1,6 +1,6 @@
 {
     "info": {
-        "_postman_id": "bcdce31f-c2ce-40aa-8e90-9d728dc8d336",
+        "_postman_id": "91501158-67b1-49cf-a917-5051887f8cd9",
         "name": "FatturaFacile ERP API",
         "description": "Postman collection of the FatturaFacile ERP API. Set the baseUrl and frontendUrl variables, then run Auth > login: the collection fetches the CSRF cookie itself and sends Origin, Referer and X-XSRF-TOKEN; the session cookie is kept by Postman and the active tenant in tenantId. authToken is used only in the optional token mode (login with token_mode true).",
         "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"

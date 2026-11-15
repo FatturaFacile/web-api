@@ -3,6 +3,9 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\HumanResources\Http\Controllers\GoalsController;
+use Modules\HumanResources\Http\Controllers\HrAnalyticsController;
+use Modules\HumanResources\Http\Controllers\OffboardingController;
 use Modules\HumanResources\Http\Controllers\RecruitingController;
 use Modules\HumanResources\Http\Controllers\ShiftPlanningController;
 use Modules\HumanResources\Http\Controllers\TimeClockDetailsController;
@@ -56,6 +59,47 @@ Route::prefix('api/v1/hr')
         Route::post('/onboarding-templates', [RecruitingController::class, 'storeTemplate'])->name('onboarding-templates.store');
         Route::get('/onboarding-checklists', [RecruitingController::class, 'checklists'])->name('onboarding-checklists.index');
         Route::post('/onboarding-tasks/{id}/complete', [RecruitingController::class, 'completeTask'])->name('onboarding-tasks.complete');
+
+        // Offboarding
+        Route::get('/offboarding-templates', [OffboardingController::class, 'templates'])->name('offboarding-templates.index');
+        Route::post('/offboarding-templates', [OffboardingController::class, 'storeTemplate'])->name('offboarding-templates.store');
+        Route::put('/offboarding-templates/{id}', [OffboardingController::class, 'updateTemplate'])->name('offboarding-templates.update');
+        Route::delete('/offboarding-templates/{id}', [OffboardingController::class, 'destroyTemplate'])->name('offboarding-templates.destroy');
+        Route::get('/offboarding-checklists', [OffboardingController::class, 'checklists'])->name('offboarding-checklists.index');
+        Route::post('/offboarding-checklists', [OffboardingController::class, 'startChecklist'])->name('offboarding-checklists.store');
+        Route::get('/offboarding-checklists/{id}', [OffboardingController::class, 'showChecklist'])->name('offboarding-checklists.show');
+        Route::post('/offboarding-tasks/{id}/complete', [OffboardingController::class, 'completeTask'])->name('offboarding-tasks.complete');
+        Route::get('/exit-reason-codes', [OffboardingController::class, 'reasonCodes'])->name('exit-reason-codes.index');
+        Route::middleware('privacy.sensitive.log:hr_exit_interviews')->group(function (): void {
+            Route::get('/exit-interviews', [OffboardingController::class, 'interviews'])->name('exit-interviews.index');
+            Route::post('/exit-interviews', [OffboardingController::class, 'storeInterview'])->name('exit-interviews.store');
+        });
+
+        // Goals and OKR
+        Route::get('/goal-cycles', [GoalsController::class, 'cycles'])->name('goal-cycles.index');
+        Route::post('/goal-cycles', [GoalsController::class, 'storeCycle'])->name('goal-cycles.store');
+        Route::put('/goal-cycles/{id}', [GoalsController::class, 'updateCycle'])->name('goal-cycles.update');
+        Route::post('/goal-cycles/{id}/close', [GoalsController::class, 'closeCycle'])->name('goal-cycles.close');
+        Route::get('/teams', [GoalsController::class, 'teams'])->name('teams.index');
+        Route::get('/goals', [GoalsController::class, 'goals'])->name('goals.index');
+        Route::post('/goals', [GoalsController::class, 'storeGoal'])->name('goals.store');
+        Route::get('/goals/{id}', [GoalsController::class, 'showGoal'])->name('goals.show');
+        Route::put('/goals/{id}', [GoalsController::class, 'updateGoal'])->name('goals.update');
+        Route::delete('/goals/{id}', [GoalsController::class, 'destroyGoal'])->name('goals.destroy');
+        Route::post('/goals/{id}/key-results', [GoalsController::class, 'storeKeyResult'])->name('goals.key-results.store');
+        Route::get('/goals/{id}/check-ins', [GoalsController::class, 'checkIns'])->name('goals.check-ins.index');
+        Route::post('/goals/{id}/check-ins', [GoalsController::class, 'storeCheckIn'])->name('goals.check-ins.store');
+        Route::put('/goal-key-results/{id}', [GoalsController::class, 'updateKeyResult'])->name('goal-key-results.update');
+        Route::delete('/goal-key-results/{id}', [GoalsController::class, 'destroyKeyResult'])->name('goal-key-results.destroy');
+        Route::get('/employees/{id}/goal-progress', [GoalsController::class, 'employeeProgress'])->name('employees.goal-progress');
+
+        // Workforce analytics
+        Route::get('/analytics/headcount', [HrAnalyticsController::class, 'headcount'])->name('analytics.headcount');
+        Route::get('/analytics/turnover', [HrAnalyticsController::class, 'turnover'])->name('analytics.turnover');
+        Route::get('/analytics/tenure', [HrAnalyticsController::class, 'tenure'])->name('analytics.tenure');
+        Route::get('/analytics/absenteeism', [HrAnalyticsController::class, 'absenteeism'])->name('analytics.absenteeism');
+        Route::get('/analytics/positions', [HrAnalyticsController::class, 'positions'])->name('analytics.positions');
+        Route::get('/analytics/upcoming-expiries', [HrAnalyticsController::class, 'upcomingExpiries'])->name('analytics.upcoming-expiries');
     });
 
 // Employee self-service: no module role, each answer is limited to the authenticated user.

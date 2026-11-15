@@ -72,6 +72,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'termination_date', type: 'string', format: 'date'),
         new OA\Property(property: 'reason', type: 'string', maxLength: 1000),
         new OA\Property(property: 'start_offboarding', type: 'boolean', nullable: true),
+        new OA\Property(property: 'offboarding_template_id', type: 'string', format: 'uuid', nullable: true),
     ]
 )]
 #[OA\Schema(

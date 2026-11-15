@@ -6,6 +6,7 @@ namespace Modules\Fleet\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 /**
@@ -78,5 +79,15 @@ final class FleetVehicle extends BaseEnterpriseModel
     public function assignments(): HasMany
     {
         return $this->hasMany(FleetVehicleAssignment::class, 'vehicle_id');
+    }
+
+    /**
+     * The assignment that has not ended yet (the current driver).
+     *
+     * @return HasOne<FleetVehicleAssignment, $this>
+     */
+    public function openAssignment(): HasOne
+    {
+        return $this->hasOne(FleetVehicleAssignment::class, 'vehicle_id')->whereNull('ends_on')->orderByDesc('starts_on');
     }
 }

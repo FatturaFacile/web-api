@@ -31,4 +31,14 @@ final class OnboardingTemplateFactory extends Factory
             ],
         ];
     }
+
+    public function offboarding(): self
+    {
+        return $this->state(['kind' => OnboardingTemplate::KindOffboarding, 'tasks' => [
+            ['title' => 'Return the laptop', 'due_after_days' => 0, 'code' => 'asset_return'],
+            ['title' => 'Revoke system access', 'due_after_days' => 0, 'code' => 'access_revocation'],
+            ['title' => 'Exit interview', 'due_after_days' => -3, 'code' => 'exit_interview'],
+            ['title' => 'Final settlement', 'due_after_days' => 5, 'code' => 'final_settlement'],
+        ]]);
+    }
 }

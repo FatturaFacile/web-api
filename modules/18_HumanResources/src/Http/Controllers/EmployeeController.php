@@ -355,7 +355,8 @@ final class EmployeeController extends Controller
             employeeId: (string) $employee->id,
             terminationDate: (string) $request->input('termination_date'),
             reason: (string) $request->input('reason'),
-            startOffboarding: (bool) $request->input('start_offboarding', true)
+            startOffboarding: (bool) $request->input('start_offboarding', true),
+            offboardingTemplateId: $request->input('offboarding_template_id')
         ), $actorId);
 
         return response()->json(['data' => new EmployeeResource($updated)]);

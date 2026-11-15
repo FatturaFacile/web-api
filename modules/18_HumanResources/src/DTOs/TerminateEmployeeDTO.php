@@ -10,6 +10,7 @@ final readonly class TerminateEmployeeDTO
         public string $employeeId,
         public string $terminationDate,
         public string $reason,
-        public bool $startOffboarding = true
+        public bool $startOffboarding = true,
+        public ?string $offboardingTemplateId = null
     ) {}
 }

@@ -7,6 +7,7 @@ namespace Modules\Fleet\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Modules\HumanResources\Models\Employee;
 
 /**
  * A vehicle handed to a driver (an employee, or an external driver by label) for a period, with the odometer at handover
@@ -43,5 +44,13 @@ final class FleetVehicleAssignment extends BaseEnterpriseModel
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(FleetVehicle::class, 'vehicle_id');
+    }
+
+    /**
+     * @return BelongsTo<Employee, $this>
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 }

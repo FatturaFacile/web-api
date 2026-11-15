@@ -279,6 +279,7 @@ final class RecruitingController extends Controller
     public function checklists(Request $request): AnonymousResourceCollection
     {
         return HrRecordResource::collection(OnboardingChecklist::query()
+            ->where('kind', OnboardingChecklist::KindOnboarding)
             ->with('tasks')
             ->when($request->query('employee_id'), static fn ($query, $employeeId) => $query->where('employee_id', $employeeId))
             ->orderByDesc('created_at')

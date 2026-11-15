@@ -7,6 +7,7 @@ namespace Modules\Fleet\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
+use Modules\HumanResources\Models\Employee;
 
 /**
  * A traffic fine, accident or damage of a vehicle, attributed to the driver and tracked until paid.
@@ -61,5 +62,13 @@ final class FleetIncident extends BaseEnterpriseModel
     public function vehicle(): BelongsTo
     {
         return $this->belongsTo(FleetVehicle::class, 'vehicle_id');
+    }
+
+    /**
+     * @return BelongsTo<Employee, $this>
+     */
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(Employee::class, 'employee_id');
     }
 }
