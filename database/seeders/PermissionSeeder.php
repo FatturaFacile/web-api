@@ -39,6 +39,8 @@ class PermissionSeeder extends Seeder
             ['code' => 'service.tickets.dispatch', 'label_it' => 'Assegnazione Ticket Assistenza', 'label_en' => 'Dispatch Service Tickets'],
             ['code' => 'assets.depreciation.run', 'label_it' => 'Esecuzione Ammortamenti Cespiti', 'label_en' => 'Run Asset Depreciation'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
+            ['code' => 'hr.payroll.view', 'label_it' => 'Consultazione Paghe Svizzere', 'label_en' => 'View Swiss Payroll'],
+            ['code' => 'hr.payroll.manage', 'label_it' => 'Gestione Paghe Svizzere', 'label_en' => 'Manage Swiss Payroll'],
         ];
 
         foreach ($permissions as $idx => $perm) {

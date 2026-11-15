@@ -71,6 +71,15 @@ class RoleSeeder extends Seeder
                     'fr' => ['label' => 'Responsable Service Client', 'short_label' => 'RespServ', 'description' => 'Support, SLA, interventions sur site et satisfaction client'],
                 ],
             ],
+            [
+                'code' => 'payroll_manager',
+                'translations' => [
+                    'it' => ['label' => 'Responsabile Paghe', 'short_label' => 'PayMgr', 'description' => 'Elaborazione paghe svizzere, imposta alla fonte e dichiarazioni salariali (permessi hr.payroll.view, hr.payroll.manage)'],
+                    'en' => ['label' => 'Payroll Manager', 'short_label' => 'PayMgr', 'description' => 'Swiss payroll runs, withholding tax and salary declarations (permissions hr.payroll.view, hr.payroll.manage)'],
+                    'de' => ['label' => 'Lohnbuchhalter', 'short_label' => 'LohnB', 'description' => 'Schweizer Lohnläufe, Quellensteuer und Lohnmeldungen (Berechtigungen hr.payroll.view, hr.payroll.manage)'],
+                    'fr' => ['label' => 'Responsable Salaires', 'short_label' => 'RespSal', 'description' => 'Salaires suisses, impôt à la source et déclarations de salaires (permissions hr.payroll.view, hr.payroll.manage)'],
+                ],
+            ],
         ];
 
         foreach ($roles as $idx => $role) {
