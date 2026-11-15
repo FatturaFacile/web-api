@@ -11,6 +11,8 @@ use Modules\HumanResources\Models\Payroll\WithholdingTariff;
  */
 final readonly class WithholdingTariffData
 {
+    private const BRACKET_STEP_RAPPEN = 5;
+
     /**
      * @param  list<array{income_from_rappen: int, income_to_rappen: int|null, rate_ppm: int, fixed_amount_rappen: int}>  $brackets
      */
@@ -45,7 +47,8 @@ final readonly class WithholdingTariffData
     }
 
     /**
-     * Bracket whose inclusive income range contains the taxable income.
+     * Bracket whose inclusive income range contains the taxable income (an income in the sub-0.05 CHF gap
+     * between two brackets falls into the lower one).
      *
      * @return array{income_from_rappen: int, income_to_rappen: int|null, rate_ppm: int, fixed_amount_rappen: int}|null
      */
@@ -56,6 +59,18 @@ final readonly class WithholdingTariffData
 
             if ($taxableIncomeRappen >= $bracket['income_from_rappen']
                 && ($upperBound === null || $taxableIncomeRappen <= $upperBound)) {
+                return $bracket;
+            }
+        }
+
+        // Tariffs list brackets in 0.05 CHF steps (e.g. 7'000.00 then 7'000.05) while payroll amounts are in
+        // single Rappen: an income inside that gap belongs to the lower bracket.
+        foreach ($this->brackets as $bracket) {
+            $upperBound = $bracket['income_to_rappen'];
+
+            if ($upperBound !== null
+                && $taxableIncomeRappen > $upperBound
+                && $taxableIncomeRappen < $upperBound + self::BRACKET_STEP_RAPPEN) {
                 return $bracket;
             }
         }
