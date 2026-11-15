@@ -167,6 +167,46 @@
 | `GET`  | `/api/v1/hr/frontalieri`       | Cross-border commuters subject to the 2024 IT-CH agreement. |
 | `GET`  | `/api/v1/hr/withholding-taxes` | Cantonal withholding rates and Italian INPS parameters.     |
 
+#### Swiss payroll (`/api/v1/hr/payroll`)
+
+Swissdec-style payroll (ELM 5.0 naming; not Swissdec certified). Requires the tenant permission `hr.payroll.view`
+(reads) or `hr.payroll.manage` (writes); tenant owners and admins hold both. Money is returned as decimal CHF strings,
+deductions are rounded to 0.05 CHF. Rates, thresholds and tariffs are year-versioned data, never code.
+
+| Method | Endpoint                                               | Description                                                                 |
+|--------|--------------------------------------------------------|-----------------------------------------------------------------------------|
+| `GET`  | `/api/v1/hr/payroll/wage-types`                        | Wage types (system defaults and tenant wage types) with insurance flags.    |
+| `POST` | `/api/v1/hr/payroll/wage-types`                        | Create a tenant wage type.                                                  |
+| `PUT`  | `/api/v1/hr/payroll/wage-types/{id}`                   | Update a tenant wage type (system defaults are read-only).                  |
+| `GET`  | `/api/v1/hr/payroll/rate-sets`                         | Year-versioned social insurance rate sets (AHV, ALV, BVG, UVG, KTG, FAK).   |
+| `POST` | `/api/v1/hr/payroll/rate-sets`                         | Create a tenant rate set overriding the system default for its validity.    |
+| `GET`  | `/api/v1/hr/payroll/withholding-tariffs`               | Quellensteuer tariffs (filters: `canton`, `tariff_code`, `valid_on`).       |
+| `POST` | `/api/v1/hr/payroll/withholding-tariffs`               | Create or replace a tenant tariff with its monthly brackets.                |
+| `POST` | `/api/v1/hr/payroll/withholding-tariffs/import`        | Import tariffs from CSV (`multipart/form-data`, field `file`).              |
+| `GET`  | `/api/v1/hr/payroll/employees/{id}/profile`            | Swiss payroll profile of an employee (AHV number masked).                   |
+| `PUT`  | `/api/v1/hr/payroll/employees/{id}/profile`            | Create or replace the payroll profile (AHV checksum validated).             |
+| `GET`  | `/api/v1/hr/payroll/runs`                              | Payroll runs (filters: `year`, `status`).                                   |
+| `POST` | `/api/v1/hr/payroll/runs`                              | Create a draft run for a month with optional variable inputs.               |
+| `GET`  | `/api/v1/hr/payroll/runs/{id}`                         | Run details and totals.                                                     |
+| `PUT`  | `/api/v1/hr/payroll/runs/{id}`                         | Edit a draft or calculated run (back to draft); `409` once approved/closed. |
+| `POST` | `/api/v1/hr/payroll/runs/{id}/calculate`               | Calculate payslips; `422` when no rate set or tariff applies, `409` if closed. |
+| `POST` | `/api/v1/hr/payroll/runs/{id}/approve`                 | Approve a calculated run (emits `hr.payroll.run.approved`).                 |
+| `POST` | `/api/v1/hr/payroll/runs/{id}/close`                   | Close an approved run; closed runs are immutable (emits `hr.payroll.run.closed`). |
+| `GET`  | `/api/v1/hr/payroll/runs/{id}/payslips`                | Payslips of a run with their lines.                                         |
+| `GET`  | `/api/v1/hr/payroll/payslips/{id}`                     | Single payslip with employee and employer lines.                            |
+| `POST` | `/api/v1/hr/payroll/declarations`                      | Generate an ELM-style salary declaration XML for the approved/closed runs of a year. |
+| `GET`  | `/api/v1/hr/payroll/declarations/{id}`                 | Declaration metadata, totals and SHA-256 hash.                              |
+| `GET`  | `/api/v1/hr/payroll/declarations/{id}/download`        | Download the declaration XML.                                               |
+
+Withholding tariff CSV format (comma or semicolon separated, monthly CHF amounts, inclusive `income_to`, empty for
+the open top bracket); the same import is available as `php artisan hr:payroll:import-tariffs {file} [--tenant=]`:
+
+```csv
+canton,tariff_code,valid_from,valid_to,income_from,income_to,rate_percent,fixed_amount
+TI,A0N,2026-01-01,2026-12-31,0.00,2500.00,0.00,0.00
+TI,A0N,2026-01-01,2026-12-31,2500.05,,2.10,0.00
+```
+
 ### 2.17 Fiscal & Statutory Accounting (`/api/v1/accounting`)
 
 | Method | Endpoint                               | Description                                                |
@@ -201,4 +241,6 @@ Errors return HTTP status codes with `Content-Type: application/problem+json` ac
 | `403 Forbidden`     | Forbidden Tenant Access              | Authenticated user is not a member of the requested tenant.      |
 | `404 Not Found`     | Resource Not Found                   | Record does not exist or has been soft-deleted.                  |
 | `409 Conflict`      | Already Clocked In                   | Worker attempted to clock in while an active shift was open.     |
+| `409 Conflict`      | Payroll Run State Conflict           | Recalculating, editing, approving or closing a payroll run in the wrong status. |
+| `422 Unprocessable` | No rate set for period / Missing Withholding Tax Tariff | Swiss payroll data missing for the period; `invalid_params` names the field. |
 | `422 Unprocessable` | Unbalanced Ledger Entry / Validation | FormRequest validation failed or double-entry credits != debits. |
