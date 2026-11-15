@@ -41,6 +41,7 @@ use App\Services\Security\DnsHostResolver;
 use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Auditing\AuditStamper;
 use App\Support\Database\SafeDropPostgresConnection;
 use App\Support\Http\GridQuery;
 use App\Validation\LocalizedAttributeValidator;
@@ -121,6 +122,8 @@ class AppServiceProvider extends ServiceProvider
         };
         Invoice::creating($assertInvoiceQuota);
         SalesInvoice::creating($assertInvoiceQuota);
+
+        AuditStamper::register();
 
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(Quote::class, QuotePolicy::class);
