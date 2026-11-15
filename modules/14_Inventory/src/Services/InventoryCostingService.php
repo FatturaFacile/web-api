@@ -155,7 +155,7 @@ final class InventoryCostingService implements InventoryCostingServiceInterface
                 break;
             }
 
-            $take = Decimal::min($remaining, (string) $layer->remaining_quantity);
+            $take = Decimal::quantity(Decimal::min($remaining, (string) $layer->remaining_quantity));
             if (! Decimal::isPositive($take)) {
                 continue;
             }

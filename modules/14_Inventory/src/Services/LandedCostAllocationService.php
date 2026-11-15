@@ -41,7 +41,9 @@ final class LandedCostAllocationService implements LandedCostAllocationServiceIn
             ->where('source_type', 'receipt')
             ->orderBy('received_at')
             ->orderBy('layer_sequence')
-            ->get();
+            ->get()
+            ->filter(static fn (InventoryCostLayer $layer): bool => $layer->item !== null)
+            ->values();
 
         $missingReceipts = array_values(array_diff($receiptIds, $layers->pluck('receipt_id')->map(static fn ($id): string => (string) $id)->all()));
         if ($missingReceipts !== []) {

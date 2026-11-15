@@ -14,7 +14,10 @@ use Modules\Inventory\DTOs\OutboundCostingDTO;
 use Modules\Inventory\Events\PurchasePriceVarianceRecordedEvent;
 use Modules\Inventory\Models\InventoryCostLayer;
 use Modules\Inventory\Models\InventoryCostLayerConsumption;
+use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockQuant;
+use Modules\Procurement\Events\GoodsReceivedEvent;
+use Modules\Procurement\Models\PurchaseOrderLine;
 use Tests\Support\InventoryValuationFixtures as Fx;
 
 uses(RefreshDatabase::class);
@@ -197,4 +200,37 @@ test('valuation snapshot endpoint captures the effective method', function (): v
     $response->assertStatus(201)
         ->assertJsonPath('valuation_method', 'fifo');
     expect((float) $response->json('total_valuation'))->toBe(10.0);
+});
+
+test('goods receipt listener books a receipt movement linked to the receipt at the PO line price', function (): void {
+    $item = Fx::item($this->tenantId, 'fifo');
+    $receipt = Fx::purchaseReceipt($this->tenantId);
+    $poLine = PurchaseOrderLine::factory()->create([
+        'tenant_id' => $this->tenantId,
+        'purchase_order_id' => $receipt->purchase_order_id,
+        'unit_price' => 12.5,
+    ]);
+
+    event(new GoodsReceivedEvent(
+        receiptId: (string) $receipt->id,
+        receiptNumber: (string) $receipt->receipt_number,
+        purchaseOrderId: (string) $receipt->purchase_order_id,
+        supplierDeliveryNoteRef: 'DDT-144',
+        receivedLines: [
+            ['purchase_order_line_id' => (string) $poLine->id, 'quantity_received' => 8.0, 'quantity_accepted' => 6.0, 'stock_item_id' => (string) $item->id],
+            ['purchase_order_line_id' => (string) $poLine->id, 'quantity_received' => 3.0, 'quantity_accepted' => 3.0], // no stock item: skipped
+        ],
+        tenantId: $this->tenantId,
+        companyId: $this->tenantId,
+    ));
+
+    $movement = StockMovement::query()->where('origin_document_id', $receipt->id)->firstOrFail();
+    expect($movement->origin_document_type)->toBe('purchase_receipt')
+        ->and((string) $movement->quantity)->toBe('6.0000')
+        ->and((string) $movement->unit_cost)->toBe('12.5000');
+
+    $layer = InventoryCostLayer::query()->where('receipt_id', $receipt->id)->firstOrFail();
+    expect((string) $layer->stock_item_id)->toBe((string) $item->id)
+        ->and((string) $layer->unit_cost)->toBe('12.5000')
+        ->and(StockMovement::query()->where('origin_document_id', $receipt->id)->count())->toBe(1);
 });
