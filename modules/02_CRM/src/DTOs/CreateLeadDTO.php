@@ -6,6 +6,10 @@ namespace Modules\CRM\DTOs;
 
 final readonly class CreateLeadDTO
 {
+    /**
+     * @param  array<int|string, mixed>  $tags
+     * @param  array<string, mixed>  $customFields
+     */
     public function __construct(
         public string $tenantId,
         public ?string $companyId,
@@ -22,6 +26,41 @@ final readonly class CreateLeadDTO
         public ?string $assignedUserId = null,
         public ?float $estimatedBudget = null,
         public array $tags = [],
-        public array $customFields = []
+        public array $customFields = [],
+        public ?string $vatNumber = null,
+        public ?string $industry = null,
+        public ?int $employeeCount = null,
+        public ?float $annualRevenueEstimate = null,
+        public ?string $stateRegion = null,
+        public ?string $productLine = null,
+        public ?string $externalId = null,
+        public ?string $leadSourceId = null,
     ) {}
+
+    /**
+     * Validation view of the DTO, used by the intake pipeline.
+     *
+     * @return array<string, mixed>
+     */
+    public function toArray(): array
+    {
+        return [
+            'first_name' => $this->firstName,
+            'last_name' => $this->lastName,
+            'company_name' => $this->companyName,
+            'email' => $this->email,
+            'phone' => $this->phone,
+            'title' => $this->title,
+            'website' => $this->website,
+            'country' => $this->country,
+            'estimated_budget' => $this->estimatedBudget,
+            'vat_number' => $this->vatNumber,
+            'industry' => $this->industry,
+            'employee_count' => $this->employeeCount,
+            'annual_revenue_estimate' => $this->annualRevenueEstimate,
+            'state_region' => $this->stateRegion,
+            'product_line' => $this->productLine,
+            'external_id' => $this->externalId,
+        ];
+    }
 }
