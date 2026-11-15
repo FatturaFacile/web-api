@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace App\Services\ItalianSdi;
 
 use App\Models\Invoice;
+use App\Services\Invoicing\Tax\TenantFiscalSettings;
+use App\Support\Money;
 use DOMDocument;
+use DOMElement;
 use InvalidArgumentException;
 
 class FatturaPaBuilderService
@@ -160,7 +163,7 @@ class FatturaPaBuilderService
         $anagraficaCedente = $dom->createElement('Anagrafica');
         $anagraficaCedente->appendChild($dom->createElement('Denominazione', htmlspecialchars($tenant->legal_name ?: $tenant->name)));
         $datiAnagraficiCedente->appendChild($anagraficaCedente);
-        $datiAnagraficiCedente->appendChild($dom->createElement('RegimeFiscale', $tenant->settings['regime_fiscale'] ?? 'RF01'));
+        $datiAnagraficiCedente->appendChild($dom->createElement('RegimeFiscale', TenantFiscalSettings::fromTenant($tenant)->regimeFiscale));
         $cedente->appendChild($datiAnagraficiCedente);
 
         $sedeCedente = $dom->createElement('Sede');
@@ -229,57 +232,66 @@ class FatturaPaBuilderService
         $datiGeneraliDoc->appendChild($dom->createElement('Divisa', $invoice->currency ?: 'EUR'));
         $datiGeneraliDoc->appendChild($dom->createElement('Data', $invoice->date->format('Y-m-d')));
         $datiGeneraliDoc->appendChild($dom->createElement('Numero', $invoice->invoice_number));
-        $datiGeneraliDoc->appendChild($dom->createElement('ImportoTotaleDocumento', number_format((float) $invoice->total_gross, 2, '.', '')));
+        $this->appendFiscalGeneralData($dom, $datiGeneraliDoc, $invoice);
+        $datiGeneraliDoc->appendChild($dom->createElement('ImportoTotaleDocumento', $this->amount($invoice->total_gross)));
+
+        foreach ($this->causaleChunks($invoice) as $causale) {
+            $datiGeneraliDoc->appendChild($dom->createElement('Causale', htmlspecialchars($causale)));
+        }
+
         $datiGenerali->appendChild($datiGeneraliDoc);
         $body->appendChild($datiGenerali);
 
         // 2.2 DatiBeniServizi
         $datiBeniServizi = $dom->createElement('DatiBeniServizi');
         $lineNumber = 1;
-        $vatAggregates = [];
+        $hasWithholding = (bool) $invoice->withholding_tax_enabled || $invoice->enasarco_amount !== null;
+        $reverseChargeNatura = (string) config('italian_tax.reverse_charge.natura', 'N6.9');
 
         foreach ($invoice->items as $item) {
+            $natura = $item->natura ?? ($invoice->reverse_charge ? $reverseChargeNatura : null);
+
             $dettaglioLinee = $dom->createElement('DettaglioLinee');
             $dettaglioLinee->appendChild($dom->createElement('NumeroLinea', (string) $lineNumber++));
             $dettaglioLinee->appendChild($dom->createElement('Descrizione', htmlspecialchars(substr($item->description, 0, 1000))));
-            $dettaglioLinee->appendChild($dom->createElement('Quantita', number_format((float) $item->quantity, 2, '.', '')));
-            $dettaglioLinee->appendChild($dom->createElement('PrezzoUnitario', number_format((float) $item->unit_price, 4, '.', '')));
-            $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', number_format((float) $item->line_total, 2, '.', '')));
-            $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', number_format((float) $item->tax_rate, 2, '.', '')));
+            $dettaglioLinee->appendChild($dom->createElement('Quantita', Money::fromScaled(Money::toScaled((string) $item->quantity, 2), 2)));
+            $dettaglioLinee->appendChild($dom->createElement('PrezzoUnitario', Money::fromScaled(Money::toScaled((string) $item->unit_price, 4), 4)));
+            $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', $this->amount($item->line_total)));
+            $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', $natura !== null ? '0.00' : $this->amount($item->tax_rate)));
 
-            if ($invoice->reverse_charge) {
-                $dettaglioLinee->appendChild($dom->createElement('Natura', 'N6.9')); // Inversione contabile - altri casi
+            if ($hasWithholding && $item->withholding_applies !== false) {
+                $dettaglioLinee->appendChild($dom->createElement('Ritenuta', 'SI'));
+            }
+
+            if ($natura !== null) {
+                $dettaglioLinee->appendChild($dom->createElement('Natura', $natura));
             }
 
             $datiBeniServizi->appendChild($dettaglioLinee);
-
-            // Group VAT for DatiRiepilogo
-            $rateKey = number_format((float) $item->tax_rate, 2, '.', '');
-            if (! isset($vatAggregates[$rateKey])) {
-                $vatAggregates[$rateKey] = [
-                    'rate' => (float) $item->tax_rate,
-                    'taxable' => 0.0,
-                    'tax' => 0.0,
-                ];
-            }
-            $vatAggregates[$rateKey]['taxable'] += (float) $item->line_total;
-            $vatAggregates[$rateKey]['tax'] += ((float) $item->line_total * ((float) $item->tax_rate / 100.0));
         }
 
-        // Summary records (DatiRiepilogo)
-        foreach ($vatAggregates as $agg) {
-            $datiRiepilogo = $dom->createElement('DatiRiepilogo');
-            $datiRiepilogo->appendChild($dom->createElement('AliquotaIVA', number_format($agg['rate'], 2, '.', '')));
-            $datiRiepilogo->appendChild($dom->createElement('ImponibileImporto', number_format($agg['taxable'], 2, '.', '')));
-            $datiRiepilogo->appendChild($dom->createElement('Imposta', number_format($agg['tax'], 2, '.', '')));
+        // Summary records (DatiRiepilogo), one per VAT rate / natura, from the stored calculator result.
+        $regime = TenantFiscalSettings::fromTenant($tenant);
 
-            // Split Payment check (EsigibilitaIVA = 'S')
-            if ($invoice->split_payment) {
-                $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'S'));
-            } elseif ($invoice->reverse_charge) {
-                $datiRiepilogo->appendChild($dom->createElement('Natura', 'N6.9'));
+        foreach ($this->vatSummary($invoice) as $row) {
+            $datiRiepilogo = $dom->createElement('DatiRiepilogo');
+            $datiRiepilogo->appendChild($dom->createElement('AliquotaIVA', $row['rate']));
+
+            if ($row['natura'] !== null) {
+                $datiRiepilogo->appendChild($dom->createElement('Natura', $row['natura']));
+            }
+
+            $datiRiepilogo->appendChild($dom->createElement('ImponibileImporto', $row['taxable']));
+            $datiRiepilogo->appendChild($dom->createElement('Imposta', $row['tax']));
+
+            if ($row['natura'] === null) {
+                $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', $row['payability'] ?? 'I'));
             } else {
-                $datiRiepilogo->appendChild($dom->createElement('EsigibilitaIVA', 'I')); // Immediata
+                $reference = $this->riferimentoNormativo($row['natura'], $regime);
+
+                if ($reference !== null) {
+                    $datiRiepilogo->appendChild($dom->createElement('RiferimentoNormativo', htmlspecialchars($reference)));
+                }
             }
 
             $datiBeniServizi->appendChild($datiRiepilogo);
@@ -295,7 +307,7 @@ class FatturaPaBuilderService
         if ($invoice->due_date) {
             $dettaglioPagamento->appendChild($dom->createElement('DataScadenzaPagamento', $invoice->due_date->format('Y-m-d')));
         }
-        $dettaglioPagamento->appendChild($dom->createElement('ImportoPagamento', number_format((float) $invoice->total_gross, 2, '.', '')));
+        $dettaglioPagamento->appendChild($dom->createElement('ImportoPagamento', $this->paymentAmount($invoice)));
 
         if (! empty($tenant->iban)) {
             $dettaglioPagamento->appendChild($dom->createElement('IBAN', preg_replace('/\s+/', '', $tenant->iban)));
@@ -304,5 +316,177 @@ class FatturaPaBuilderService
         $body->appendChild($datiPagamento);
 
         return (string) $dom->saveXML();
+    }
+
+    /**
+     * DatiRitenuta (ritenuta and ENASARCO as RT04), DatiBollo and DatiCassaPrevidenziale, in XSD order.
+     */
+    private function appendFiscalGeneralData(DOMDocument $dom, DOMElement $datiGeneraliDoc, Invoice $invoice): void
+    {
+        if ($invoice->withholding_tax_enabled && $invoice->withholding_tax_amount !== null) {
+            $datiGeneraliDoc->appendChild($this->ritenutaElement(
+                $dom,
+                (string) ($invoice->withholding_tax_type ?? config('italian_tax.withholding.default_type', 'RT01')),
+                $invoice->withholding_tax_amount,
+                $invoice->withholding_tax_percent,
+                (string) ($invoice->withholding_tax_reason ?? config('italian_tax.withholding.default_reason', 'A')),
+            ));
+        }
+
+        if ($invoice->enasarco_amount !== null) {
+            $datiGeneraliDoc->appendChild($this->ritenutaElement(
+                $dom,
+                (string) config('italian_tax.enasarco.withholding_type', 'RT04'),
+                $invoice->enasarco_amount,
+                $invoice->enasarco_percent,
+                (string) config('italian_tax.enasarco.default_reason', 'R'),
+            ));
+        }
+
+        if ($invoice->stamp_duty_applied) {
+            $datiBollo = $dom->createElement('DatiBollo');
+            $datiBollo->appendChild($dom->createElement('BolloVirtuale', 'SI'));
+            $datiBollo->appendChild($dom->createElement('ImportoBollo', $this->amount($invoice->stamp_duty_amount ?? config('italian_tax.stamp_duty.amount', '2.00'))));
+            $datiGeneraliDoc->appendChild($datiBollo);
+        }
+
+        if ($invoice->fund_enabled && $invoice->fund_amount !== null) {
+            $fundBase = 0;
+
+            foreach ($invoice->items as $item) {
+                if ($item->fund_applies !== false) {
+                    $fundBase += Money::toCents((string) $item->line_total);
+                }
+            }
+
+            $cassa = $dom->createElement('DatiCassaPrevidenziale');
+            $cassa->appendChild($dom->createElement('TipoCassa', (string) $invoice->fund_type));
+            $cassa->appendChild($dom->createElement('AlCassa', $this->amount($invoice->fund_percent)));
+            $cassa->appendChild($dom->createElement('ImportoContributoCassa', $this->amount($invoice->fund_amount)));
+            $cassa->appendChild($dom->createElement('ImponibileCassa', Money::fromCents($fundBase)));
+            $cassa->appendChild($dom->createElement('AliquotaIVA', $invoice->fund_natura !== null ? '0.00' : $this->amount($invoice->fund_vat_rate)));
+
+            if ($invoice->withholding_tax_enabled && $invoice->withholding_tax_includes_fund) {
+                $cassa->appendChild($dom->createElement('Ritenuta', 'SI'));
+            }
+
+            if ($invoice->fund_natura !== null) {
+                $cassa->appendChild($dom->createElement('Natura', (string) $invoice->fund_natura));
+            }
+
+            $datiGeneraliDoc->appendChild($cassa);
+        }
+    }
+
+    private function ritenutaElement(DOMDocument $dom, string $type, mixed $amount, mixed $rate, string $reason): DOMElement
+    {
+        $element = $dom->createElement('DatiRitenuta');
+        $element->appendChild($dom->createElement('TipoRitenuta', $type));
+        $element->appendChild($dom->createElement('ImportoRitenuta', $this->amount($amount)));
+        $element->appendChild($dom->createElement('AliquotaRitenuta', $this->amount($rate)));
+        $element->appendChild($dom->createElement('CausalePagamento', $reason));
+
+        return $element;
+    }
+
+    /**
+     * Legal notices split in Causale blocks of at most 200 characters (split on word boundaries).
+     *
+     * @return list<string>
+     */
+    private function causaleChunks(Invoice $invoice): array
+    {
+        $maxLength = (int) config('italian_tax.causale_max_length', 200);
+        $chunks = [];
+
+        foreach ((array) ($invoice->legal_notices ?? []) as $notice) {
+            $notice = trim((string) $notice);
+
+            while (mb_strlen($notice) > $maxLength) {
+                $slice = mb_substr($notice, 0, $maxLength);
+                $cut = mb_strrpos($slice, ' ');
+                $cut = $cut === false || $cut === 0 ? $maxLength : $cut;
+                $chunks[] = rtrim(mb_substr($notice, 0, $cut));
+                $notice = ltrim(mb_substr($notice, $cut));
+            }
+
+            if ($notice !== '') {
+                $chunks[] = $notice;
+            }
+        }
+
+        return $chunks;
+    }
+
+    /**
+     * VAT summary rows: the stored calculator result, or (legacy invoices without it) an aggregate of the stored
+     * lines with the tax rounded once per rate / natura.
+     *
+     * @return list<array{rate: string, natura: string|null, taxable: string, tax: string, payability: string|null}>
+     */
+    private function vatSummary(Invoice $invoice): array
+    {
+        if (is_array($invoice->vat_summary) && $invoice->vat_summary !== []) {
+            return array_values(array_map(fn (array $row): array => [
+                'rate' => $this->amount($row['rate'] ?? '0'),
+                'natura' => isset($row['natura']) && $row['natura'] !== '' ? (string) $row['natura'] : null,
+                'taxable' => $this->amount($row['taxable'] ?? '0'),
+                'tax' => $this->amount($row['tax'] ?? '0'),
+                'payability' => isset($row['payability']) ? (string) $row['payability'] : null,
+            ], $invoice->vat_summary));
+        }
+
+        $reverseChargeNatura = (string) config('italian_tax.reverse_charge.natura', 'N6.9');
+        $payability = $invoice->split_payment ? 'S' : (in_array($invoice->vat_payability, ['I', 'D'], true) ? (string) $invoice->vat_payability : 'I');
+        $rows = [];
+
+        foreach ($invoice->items as $item) {
+            $natura = $item->natura ?? ($invoice->reverse_charge ? $reverseChargeNatura : null);
+            $rate = $natura !== null ? 0 : Money::toScaled((string) $item->tax_rate, 2);
+            $key = $rate.'|'.($natura ?? '');
+            $rows[$key] ??= ['rate' => $rate, 'natura' => $natura, 'taxable' => 0];
+            $rows[$key]['taxable'] += Money::toCents((string) $item->line_total);
+        }
+
+        return array_values(array_map(fn (array $row): array => [
+            'rate' => Money::fromScaled($row['rate'], 2),
+            'natura' => $row['natura'],
+            'taxable' => Money::fromCents($row['taxable']),
+            'tax' => Money::fromCents(Money::percentOfBasisPoints($row['taxable'], $row['rate'])),
+            'payability' => $row['natura'] === null ? $payability : null,
+        ], $rows));
+    }
+
+    private function riferimentoNormativo(string $natura, TenantFiscalSettings $settings): ?string
+    {
+        $reference = $settings->isForfettario() && $natura === config('italian_tax.forfettario.natura', 'N2.2')
+            ? config('italian_tax.forfettario.riferimento_normativo')
+            : config("italian_tax.riferimento_normativo.{$natura}");
+
+        return is_string($reference) && $reference !== '' ? mb_substr($reference, 0, 100) : null;
+    }
+
+    /**
+     * ImportoPagamento: the stored amount due, or for legacy invoices the total minus split-payment VAT and withholding.
+     */
+    private function paymentAmount(Invoice $invoice): string
+    {
+        if ($invoice->total_due !== null) {
+            return $this->amount($invoice->total_due);
+        }
+
+        $due = Money::toCents((string) $invoice->total_gross)
+            - ($invoice->split_payment ? Money::toCents((string) $invoice->total_tax) : 0)
+            - ($invoice->withholding_tax_enabled ? Money::toCents((string) $invoice->withholding_tax_amount) : 0);
+
+        return Money::fromCents($due);
+    }
+
+    /**
+     * A stored decimal formatted with two decimals, without float arithmetic.
+     */
+    private function amount(mixed $value): string
+    {
+        return Money::fromCents(Money::toCents(is_int($value) || is_float($value) ? $value : (string) $value));
     }
 }
