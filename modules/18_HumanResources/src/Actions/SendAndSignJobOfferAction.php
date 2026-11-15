@@ -167,6 +167,11 @@ final readonly class SendAndSignJobOfferAction
                 return $offer;
             }
 
+            $application = CandidateApplication::query()->find($offer->application_id);
+            if ($application !== null && $application->stage === ApplicationStage::Rejected) {
+                throw RecruitingRuleViolationException::invalidStageTransition(ApplicationStage::Rejected->value, ApplicationStage::Hired->value);
+            }
+
             if (! in_array($offer->status, [OfferStatus::Draft, OfferStatus::Sent], true)) {
                 throw ValidationException::withMessages([
                     'offer' => ["An offer in status '{$offer->status->value}' cannot be signed."],

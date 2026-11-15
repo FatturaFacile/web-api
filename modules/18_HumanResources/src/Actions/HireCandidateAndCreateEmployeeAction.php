@@ -59,6 +59,10 @@ final readonly class HireCandidateAndCreateEmployeeAction
                 throw RecruitingRuleViolationException::alreadyHired();
             }
 
+            if ($application->stage === ApplicationStage::Rejected) {
+                throw RecruitingRuleViolationException::invalidStageTransition(ApplicationStage::Rejected->value, ApplicationStage::Hired->value);
+            }
+
             /** @var JobOffer|null $offer */
             $offer = $application->offers()
                 ->where('status', OfferStatus::Signed->value)
