@@ -9,6 +9,7 @@ return [
         'split_payment_incompatible' => 'Split payment cannot be combined with reverse charge.',
         'split_payment_requires_vat' => 'Split payment requires at least one line with VAT.',
         'invalid_natura' => 'The natura code :natura is not valid.',
+        'amount_out_of_range' => 'An amount is too large to be calculated.',
         'invalid_quarter' => 'The quarter must be between 1 and 4.',
     ],
 

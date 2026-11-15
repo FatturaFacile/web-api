@@ -254,8 +254,17 @@ class FatturaPaBuilderService
             $dettaglioLinee = $dom->createElement('DettaglioLinee');
             $dettaglioLinee->appendChild($dom->createElement('NumeroLinea', (string) $lineNumber++));
             $dettaglioLinee->appendChild($dom->createElement('Descrizione', htmlspecialchars(substr($item->description, 0, 1000))));
-            $dettaglioLinee->appendChild($dom->createElement('Quantita', Money::fromScaled(Money::toScaled((string) $item->quantity, 2), 2)));
+            $dettaglioLinee->appendChild($dom->createElement('Quantita', $this->quantity($item->quantity)));
             $dettaglioLinee->appendChild($dom->createElement('PrezzoUnitario', Money::fromScaled(Money::toScaled((string) $item->unit_price, 4), 4)));
+
+            // Without the discount the line total would not match quantity x unit price (SDI check 00423).
+            if (Money::toScaled((string) ($item->discount_percentage ?? 0), 2) > 0) {
+                $sconto = $dom->createElement('ScontoMaggiorazione');
+                $sconto->appendChild($dom->createElement('Tipo', 'SC'));
+                $sconto->appendChild($dom->createElement('Percentuale', $this->amount($item->discount_percentage)));
+                $dettaglioLinee->appendChild($sconto);
+            }
+
             $dettaglioLinee->appendChild($dom->createElement('PrezzoTotale', $this->amount($item->line_total)));
             $dettaglioLinee->appendChild($dom->createElement('AliquotaIVA', $natura !== null ? '0.00' : $this->amount($item->tax_rate)));
 
@@ -480,6 +489,16 @@ class FatturaPaBuilderService
             - ($invoice->withholding_tax_enabled ? Money::toCents((string) $invoice->withholding_tax_amount) : 0);
 
         return Money::fromCents($due);
+    }
+
+    /**
+     * Quantity with at least two and at most four decimals (the precision it is stored and calculated with).
+     */
+    private function quantity(mixed $value): string
+    {
+        $formatted = Money::fromScaled(Money::toScaled((string) $value, 4), 4);
+
+        return preg_replace('/(\.\d\d)0+$/', '$1', $formatted) ?? $formatted;
     }
 
     /**

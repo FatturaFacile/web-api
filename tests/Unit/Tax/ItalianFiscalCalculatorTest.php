@@ -335,3 +335,9 @@ test('the input resolver ignores empty option objects and maps payability S to s
         ->and($input->regimeFiscale)->toBe('RF01')
         ->and($input->stampDutyChargedToCustomer)->toBeTrue();
 });
+
+// ------------------------------------------------------------ Range guard
+
+test('amounts beyond the integer-cent range are a fiscal rule error, not an overflow', function (): void {
+    expectFiscalRule(fn () => $this->calculator->calculate(calcInput([calcLine('99999999999999.00', '22', null, '99999999999')])), 'amount_out_of_range', 'items');
+});

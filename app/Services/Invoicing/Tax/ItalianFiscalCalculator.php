@@ -6,6 +6,7 @@ namespace App\Services\Invoicing\Tax;
 
 use App\Exceptions\FiscalRuleException;
 use App\Support\Money;
+use OverflowException;
 
 /**
  * Pure, integer-cent calculation of every fiscal figure of an Italian invoice.
@@ -20,6 +21,16 @@ class ItalianFiscalCalculator
      * @throws FiscalRuleException when the requested options cannot be combined
      */
     public function calculate(FiscalInput $input): FiscalResult
+    {
+        try {
+            return $this->compute($input);
+        } catch (OverflowException) {
+            // Amounts beyond the integer-cent range must be a 422, never a 500.
+            throw new FiscalRuleException('amount_out_of_range', 'items');
+        }
+    }
+
+    private function compute(FiscalInput $input): FiscalResult
     {
         $forfettario = $input->regimeFiscale === (string) config('italian_tax.forfettario.regime', 'RF19');
 
