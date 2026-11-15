@@ -7,6 +7,11 @@ namespace Modules\PracticeManagement\Providers;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\PracticeManagement\Models\PeriodClosing;
+use Modules\PracticeManagement\Models\PracticeCaseParty;
+use Modules\PracticeManagement\Models\PracticeConflictCheck;
+use Modules\PracticeManagement\Models\PracticeExpense;
+use Modules\PracticeManagement\Models\PracticeFeeProposal;
+use Modules\PracticeManagement\Models\PracticeTrustTransaction;
 use Modules\PracticeManagement\Models\Retainer;
 use Modules\PracticeManagement\Policies\PracticePolicy;
 
@@ -26,5 +31,9 @@ final class PracticeManagementServiceProvider extends ServiceProvider
 
         Gate::policy(PeriodClosing::class, PracticePolicy::class);
         Gate::policy(Retainer::class, PracticePolicy::class);
+
+        foreach ([PracticeExpense::class, PracticeTrustTransaction::class, PracticeCaseParty::class, PracticeConflictCheck::class, PracticeFeeProposal::class] as $model) {
+            Gate::policy($model, PracticePolicy::class);
+        }
     }
 }

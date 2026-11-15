@@ -16,4 +16,19 @@ return [
         'checked_out_by_other' => 'This document is checked out by another user.',
         'legal_hold' => 'This document is under legal hold and cannot change.',
     ],
+    'approval' => [
+        'template_inactive' => 'The approval template is inactive.',
+        'template_without_steps' => 'The approval template has no steps.',
+        'already_pending' => 'This document already has a pending approval request.',
+        'not_pending' => 'This approval request is no longer pending.',
+        'not_approver' => 'You are not the approver of the current step.',
+        'cannot_cancel' => 'Only the requester or an administrator can cancel this request.',
+        'template_in_use' => 'The approval route cannot change while a request is pending on it.',
+    ],
+    'preservation' => [
+        'no_hash' => 'A preservation package has no hash to chain.',
+    ],
+    'ocr' => [
+        'unsupported' => 'No OCR engine supports this format.',
+    ],
 ];

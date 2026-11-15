@@ -17,6 +17,7 @@ use Modules\Associations\Jobs\SendCertificateAlertsJob;
 use Modules\Associations\Jobs\SendFeeRemindersJob;
 use Modules\Associations\Jobs\SendRenewalRemindersJob;
 use Modules\Associations\Jobs\SendVolunteerAlertsJob;
+use Modules\Communication\Jobs\ProcessDueCampaignsJob;
 use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
 use Modules\CRM\Jobs\SendCrmActivityRemindersJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
@@ -63,6 +64,10 @@ Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOver
 // Analytics: daily KPI snapshots (the day that just ended) first, then the scheduled report exports.
 Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutOverlapping()->onOneServer();
 Schedule::command('analytics:run-scheduled-exports')->dailyAt('06:00')->withoutOverlapping()->onOneServer();
+// Business intelligence: the scheduled snapshots of saved queries, after the KPI snapshots of the day that just ended.
+Schedule::command('business-intelligence:run-snapshots')->dailyAt('01:40')->withoutOverlapping()->onOneServer();
+// Marketplace: health of the enabled connector installations.
+Schedule::command('marketplace:check-health')->everySixHours()->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
 Schedule::command('sales:expire-quotes')->dailyAt('00:30')->withoutOverlapping()->onOneServer();
 Schedule::command('supplier-portal:alert-expiring-documents')->dailyAt('05:50')->withoutOverlapping()->onOneServer();
@@ -91,6 +96,7 @@ Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->onO
 // recognition run on the subscription engine (real invoices, idempotent per period): see config/subscription_billing.php.
 Schedule::job(new RelayOutboxEventsJob)->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::job(new MaintainOutboxLifecycleJob)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
+Schedule::command('crm:process-automation')->hourly()->withoutOverlapping()->onOneServer();
 
 $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedule::call(
     static fn (): int => app(TenantJobDispatcher::class)->dispatchForEachTenant($job)
@@ -131,6 +137,7 @@ $forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new Purge
 $forEachTenant('facility:release-no-shows', static fn (Tenant $tenant): object => new ReleaseNoShowBookingsJob($tenant->id))->everyFiveMinutes();
 $forEachTenant('facility:generate-inspections', static fn (Tenant $tenant): object => new GenerateFacilityInspectionsJob($tenant->id))->dailyAt('05:45');
 $forEachTenant('fiscal-retail:retry-transmissions', static fn (Tenant $tenant): object => new RetryCorrispettiviTransmissionsJob($tenant->id))->everyFiveMinutes();
+$forEachTenant('communication:due-campaigns', static fn (Tenant $tenant): object => new ProcessDueCampaignsJob($tenant->id))->everyMinute();
 
 /*
 |--------------------------------------------------------------------------

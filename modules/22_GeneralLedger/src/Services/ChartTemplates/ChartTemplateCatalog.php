@@ -15,6 +15,10 @@ final class ChartTemplateCatalog
 
     public const string ITALIAN_GENERAL = 'it_general_ledger';
 
+    public const string FRENCH_PCG = 'fr_pcg';
+
+    public const string SPANISH_PGC = 'es_pgc';
+
     /**
      * @return array<string, array{standard: string, name: string, country: string, currency: string, accounts: list<array{0: string, 1: string, 2: string, 3: string, 4: ?string, 5: ?string, 6: ?string}>}>
      */
@@ -34,6 +38,20 @@ final class ChartTemplateCatalog
                 'country' => 'IT',
                 'currency' => 'EUR',
                 'accounts' => self::italian(),
+            ],
+            self::FRENCH_PCG => [
+                'standard' => 'fr_pcg',
+                'name' => 'French chart of accounts (plan comptable general)',
+                'country' => 'FR',
+                'currency' => 'EUR',
+                'accounts' => FrenchPcgData::accounts(),
+            ],
+            self::SPANISH_PGC => [
+                'standard' => 'es_pgc',
+                'name' => 'Spanish chart of accounts (Plan General de Contabilidad)',
+                'country' => 'ES',
+                'currency' => 'EUR',
+                'accounts' => SpanishPgcData::accounts(),
             ],
         ];
     }

@@ -36,4 +36,17 @@ return [
         'no_topics' => 'La valutazione richiede almeno un tema prima dell\'approvazione.',
         'status_expected' => 'La valutazione è :status: atteso :expected.',
     ],
+    'esrs' => [
+        'datapoint_unknown' => 'Il datapoint non esiste nel catalogo dell\'azienda.',
+        'approval_reserved' => 'L\'approvazione di un valore e\' riservata a titolari, amministratori e approvatori.',
+        'omission_reason_required' => 'Un datapoint non applicabile richiede il motivo dell\'omissione.',
+        'value_required' => 'Il datapoint :code richiede un valore prima di essere rivisto o approvato.',
+    ],
+    'supplier_request' => [
+        'supplier_unknown' => 'Il fornitore non esiste nell\'azienda attiva.',
+        'submission_invalid' => 'L\'invio non e\' un documento valido di questo fornitore per il requisito della dichiarazione di emissioni.',
+        'not_scope3' => 'Il tipo di attivita :type non appartiene allo Scope 3.',
+        'category_mismatch' => 'Il tipo di attivita :type non appartiene alla categoria Scope 3 :category.',
+        'status_expected' => 'La richiesta e\' :status: atteso :expected.',
+    ],
 ];

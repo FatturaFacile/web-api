@@ -36,4 +36,17 @@ return [
         'no_topics' => 'Die Analyse benötigt vor der Genehmigung mindestens ein Thema.',
         'status_expected' => 'Die Analyse ist :status: erwartet :expected.',
     ],
+    'esrs' => [
+        'datapoint_unknown' => 'Der Datenpunkt existiert nicht im Katalog des Unternehmens.',
+        'approval_reserved' => 'Die Freigabe eines Wertes ist Inhabern, Administratoren und Freigebenden vorbehalten.',
+        'omission_reason_required' => 'Ein nicht anwendbarer Datenpunkt braucht die Begruendung der Auslassung.',
+        'value_required' => 'Der Datenpunkt :code braucht einen Wert, bevor er geprueft oder freigegeben werden kann.',
+    ],
+    'supplier_request' => [
+        'supplier_unknown' => 'Der Lieferant existiert im aktiven Unternehmen nicht.',
+        'submission_invalid' => 'Die Einreichung ist kein gueltiges Dokument dieses Lieferanten fuer die Anforderung der Emissionserklaerung.',
+        'not_scope3' => 'Die Aktivitaetsart :type gehoert nicht zu Scope 3.',
+        'category_mismatch' => 'Die Aktivitaetsart :type gehoert nicht zur Scope-3-Kategorie :category.',
+        'status_expected' => 'Die Anfrage ist :status: erwartet :expected.',
+    ],
 ];

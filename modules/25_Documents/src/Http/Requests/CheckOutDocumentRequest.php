@@ -24,6 +24,9 @@ final class CheckOutDocumentRequest extends FormRequest
      */
     public function rules(): array
     {
-        return ['note' => ['nullable', 'string', 'max:500']];
+        return [
+            'note' => ['nullable', 'string', 'max:500'],
+            'expires_in_minutes' => ['nullable', 'integer', 'min:5', 'max:10080'],
+        ];
     }
 }

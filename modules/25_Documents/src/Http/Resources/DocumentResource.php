@@ -40,6 +40,7 @@ final class DocumentResource extends JsonResource
             'is_checked_out' => $this->isCheckedOut(),
             'checked_out_by' => $this->checked_out_by,
             'checked_out_at' => $this->checked_out_at?->toIso8601String(),
+            'lock_expires_at' => $this->lock_expires_at?->toIso8601String(),
             'checkout_note' => $this->checkout_note,
             'tags' => $this->whenLoaded('tags', fn (): array => $this->tags->map(static fn (DmsTag $tag): array => ['id' => (string) $tag->id, 'name' => $tag->name])->all()),
             'links' => $this->whenLoaded('links', fn (): array => $this->links->map(static fn (DmsDocumentLink $link): array => ['id' => (string) $link->id, 'linkable_type' => $link->linkable_type, 'linkable_id' => (string) $link->linkable_id])->all()),

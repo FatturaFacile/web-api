@@ -21,6 +21,15 @@ return [
     'earn_note' => 'Punti per lo scontrino :number',
     'redeem_note' => 'Pagamento dello scontrino :number',
 
+    'drawer_cash_insufficient' => 'Nel cassetto non c’e abbastanza contante per questo movimento.',
+    'ticket_payment_excess' => 'I pagamenti non in contanti superano l’importo dovuto, oppure e stato dato contante per un importo gia coperto.',
+    'ticket_payment_short' => 'I pagamenti non coprono il totale dello scontrino.',
+    'return_sale_not_returnable' => 'Solo una vendita completata puo avere resi.',
+    'return_item_unknown' => 'La riga non appartiene a questa vendita o e una riga di sconto.',
+    'return_quantity_exceeds' => 'La quantita e zero o supera quella ancora restituibile.',
+    'x_report_open_only' => 'Il rapporto X si legge su una sessione aperta: per una chiusa leggi il rapporto Z.',
+    'z_report_closed_only' => 'Il rapporto Z viene emesso alla chiusura della sessione: per una aperta leggi il rapporto X.',
+
     'messages' => [
         'terminal_created' => 'Terminale POS creato con successo',
         'session_opened' => 'Sessione POS aperta',

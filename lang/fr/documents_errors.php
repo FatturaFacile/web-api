@@ -16,4 +16,19 @@ return [
         'checked_out_by_other' => 'Ce document est extrait par un autre utilisateur.',
         'legal_hold' => 'Ce document fait l\'objet d\'une conservation légale et ne peut pas être modifié.',
     ],
+    'approval' => [
+        'template_inactive' => 'Le modèle d\'approbation n\'est pas actif.',
+        'template_without_steps' => 'Le modèle d\'approbation n\'a aucune étape.',
+        'already_pending' => 'Ce document a déjà une demande d\'approbation en cours.',
+        'not_pending' => 'Cette demande d\'approbation n\'est plus en cours.',
+        'not_approver' => 'Vous n\'êtes pas l\'approbateur de l\'étape en cours.',
+        'cannot_cancel' => 'Seul le demandeur ou un administrateur peut annuler cette demande.',
+        'template_in_use' => 'Le circuit d\'approbation ne peut pas changer tant qu\'une demande est en cours.',
+    ],
+    'preservation' => [
+        'no_hash' => 'Un paquet de conservation n\'a pas de hash à chaîner.',
+    ],
+    'ocr' => [
+        'unsupported' => 'Aucun moteur OCR ne prend en charge ce format.',
+    ],
 ];

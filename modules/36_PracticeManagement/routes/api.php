@@ -3,8 +3,12 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\PracticeManagement\Http\Controllers\ConflictController;
+use Modules\PracticeManagement\Http\Controllers\ExpenseController;
+use Modules\PracticeManagement\Http\Controllers\FeeProposalController;
 use Modules\PracticeManagement\Http\Controllers\PracticeController;
 use Modules\PracticeManagement\Http\Controllers\RetainerController;
+use Modules\PracticeManagement\Http\Controllers\TrustLedgerController;
 
 Route::prefix('api/v1/practice')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:practice'])
@@ -26,4 +30,28 @@ Route::prefix('api/v1/practice')
         Route::post('/retainers/{id}/apply', [RetainerController::class, 'apply'])->name('retainers.apply');
         Route::post('/retainers/{id}/void', [RetainerController::class, 'void'])->name('retainers.void');
         Route::get('/fee-notes/{id}/retainers', [RetainerController::class, 'feeNote'])->name('fee-notes.retainers');
+
+        Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
+        Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
+        Route::put('/expenses/{id}', [ExpenseController::class, 'update'])->name('expenses.update');
+        Route::delete('/expenses/{id}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+
+        Route::get('/trust-ledger', [TrustLedgerController::class, 'index'])->name('trust.index');
+        Route::get('/trust-ledger/balances', [TrustLedgerController::class, 'balances'])->name('trust.balances');
+        Route::post('/trust-ledger', [TrustLedgerController::class, 'store'])->name('trust.store');
+        Route::post('/trust-ledger/{id}/reverse', [TrustLedgerController::class, 'reverse'])->name('trust.reverse');
+
+        Route::get('/conflict-checks', [ConflictController::class, 'index'])->name('conflicts.index');
+        Route::post('/conflict-checks', [ConflictController::class, 'check'])->name('conflicts.check');
+        Route::get('/case-parties', [ConflictController::class, 'parties'])->name('conflict-parties.index');
+        Route::post('/case-parties', [ConflictController::class, 'storeParty'])->name('conflict-parties.store');
+        Route::delete('/case-parties/{id}', [ConflictController::class, 'destroyParty'])->name('conflict-parties.destroy');
+
+        Route::get('/fee-proposals', [FeeProposalController::class, 'index'])->name('proposals.index');
+        Route::post('/fee-proposals', [FeeProposalController::class, 'store'])->name('proposals.store');
+        Route::get('/fee-proposals/{id}', [FeeProposalController::class, 'show'])->name('proposals.show');
+        Route::put('/fee-proposals/{id}', [FeeProposalController::class, 'update'])->name('proposals.update');
+        Route::post('/fee-proposals/{id}/send', [FeeProposalController::class, 'send'])->name('proposals.send');
+        Route::post('/fee-proposals/{id}/accept', [FeeProposalController::class, 'accept'])->name('proposals.accept');
+        Route::post('/fee-proposals/{id}/decline', [FeeProposalController::class, 'decline'])->name('proposals.decline');
     });

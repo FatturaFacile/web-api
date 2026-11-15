@@ -272,20 +272,25 @@ final readonly class DocumentLibrary
      *
      * @throws ConflictHttpException when somebody else holds it or a legal hold freezes it
      */
-    public function checkOut(DmsDocument $document, User $user, ?string $note): DmsDocument
+    public function checkOut(DmsDocument $document, User $user, ?string $note, ?int $expiresInMinutes = null): DmsDocument
     {
-        return DB::transaction(function () use ($document, $user, $note): DmsDocument {
+        return DB::transaction(function () use ($document, $user, $note, $expiresInMinutes): DmsDocument {
             $locked = DmsDocument::query()->lockForUpdate()->findOrFail($document->id);
             $this->assertNotOnHold($locked);
 
             if ($locked->isCheckedOut()) {
                 $this->assertNotCheckedOutByOther($locked, $user);
 
+                if ($expiresInMinutes !== null) {
+                    $locked->update(['lock_expires_at' => now()->addMinutes($expiresInMinutes)]);
+                    $this->audit('DOCUMENT_CHECK_OUT_EXTENDED', $locked, ['expires_in_minutes' => $expiresInMinutes]);
+                }
+
                 return $locked;
             }
 
-            $locked->update(['checked_out_by' => $user->id, 'checked_out_at' => now(), 'checkout_note' => $note]);
-            $this->audit('DOCUMENT_CHECKED_OUT', $locked, ['note' => $note]);
+            $locked->update(['checked_out_by' => $user->id, 'checked_out_at' => now(), 'checkout_note' => $note, 'lock_expires_at' => $expiresInMinutes !== null ? now()->addMinutes($expiresInMinutes) : null]);
+            $this->audit('DOCUMENT_CHECKED_OUT', $locked, ['note' => $note, 'expires_in_minutes' => $expiresInMinutes]);
 
             return $locked;
         });
@@ -351,7 +356,7 @@ final readonly class DocumentLibrary
     {
         return DB::transaction(function () use ($document, $action, $payload): DmsDocument {
             $locked = DmsDocument::query()->lockForUpdate()->findOrFail($document->id);
-            $locked->update(['checked_out_by' => null, 'checked_out_at' => null, 'checkout_note' => null]);
+            $locked->update(['checked_out_by' => null, 'checked_out_at' => null, 'checkout_note' => null, 'lock_expires_at' => null]);
             $this->audit($action, $locked, $payload);
 
             return $locked;

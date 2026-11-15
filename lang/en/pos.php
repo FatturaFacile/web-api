@@ -21,6 +21,15 @@ return [
     'earn_note' => 'Points for receipt :number',
     'redeem_note' => 'Payment of receipt :number',
 
+    'drawer_cash_insufficient' => 'The drawer does not hold enough cash for this movement.',
+    'ticket_payment_excess' => 'The non-cash payments exceed the amount due, or cash was given for an amount already covered.',
+    'ticket_payment_short' => 'The payments do not cover the ticket total.',
+    'return_sale_not_returnable' => 'Only a completed sale can have goods returned.',
+    'return_item_unknown' => 'The line does not belong to this sale or is a discount line.',
+    'return_quantity_exceeds' => 'The quantity is zero or above what is left to return.',
+    'x_report_open_only' => 'The X report is read on an open session: read the Z report of a closed one.',
+    'z_report_closed_only' => 'The Z report is issued when the session is closed: read the X report of an open one.',
+
     'messages' => [
         'terminal_created' => 'POS terminal created successfully',
         'session_opened' => 'POS session opened',

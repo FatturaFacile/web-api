@@ -8,11 +8,14 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\Sustainability\Models\EsgActivityRecord;
 use Modules\Sustainability\Models\EsgEmissionFactor;
+use Modules\Sustainability\Models\EsgEsrsDatapoint;
+use Modules\Sustainability\Models\EsgEsrsDatapointValue;
 use Modules\Sustainability\Models\EsgKpiDefinition;
 use Modules\Sustainability\Models\EsgKpiValue;
 use Modules\Sustainability\Models\EsgMaterialityAssessment;
 use Modules\Sustainability\Models\EsgReductionTarget;
 use Modules\Sustainability\Models\EsgReportingPeriod;
+use Modules\Sustainability\Models\EsgSupplierDataRequest;
 use Modules\Sustainability\Policies\SustainabilityPolicy;
 
 /**
@@ -37,6 +40,9 @@ final class SustainabilityServiceProvider extends ServiceProvider
             EsgKpiDefinition::class,
             EsgKpiValue::class,
             EsgMaterialityAssessment::class,
+            EsgEsrsDatapoint::class,
+            EsgEsrsDatapointValue::class,
+            EsgSupplierDataRequest::class,
         ] as $model) {
             Gate::policy($model, SustainabilityPolicy::class);
         }

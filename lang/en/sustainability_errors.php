@@ -36,4 +36,17 @@ return [
         'no_topics' => 'The assessment needs at least one topic before approval.',
         'status_expected' => 'The assessment is :status: expected :expected.',
     ],
+    'esrs' => [
+        'datapoint_unknown' => 'The data point does not exist in the catalog of the company.',
+        'approval_reserved' => 'Approving a value is reserved to owners, administrators and approvers.',
+        'omission_reason_required' => 'A not applicable data point needs the reason of the omission.',
+        'value_required' => 'The data point :code needs a value before it can be reviewed or approved.',
+    ],
+    'supplier_request' => [
+        'supplier_unknown' => 'The supplier does not exist in the active company.',
+        'submission_invalid' => 'The submission is not a valid document of this supplier for the emission statement requirement.',
+        'not_scope3' => 'The activity type :type is not a Scope 3 activity.',
+        'category_mismatch' => 'The activity type :type does not belong to Scope 3 category :category.',
+        'status_expected' => 'The request is :status: expected :expected.',
+    ],
 ];

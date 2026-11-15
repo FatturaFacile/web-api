@@ -249,6 +249,21 @@ final readonly class EmissionFactorService
             ['EX-GOODS-CHF', 'Purchased goods and services, spend-based (CHF)', 'purchased_goods', 'CHF', '0.42000000', 'CH', 2023],
             ['EX-WASTE-EU', 'Mixed waste treatment', 'waste', 'kg', '0.45000000', 'EU', 2023],
             ['EX-WATER-EU', 'Water supply and treatment', 'water', 'm3', '0.34400000', 'EU', 2023],
+            ['EX-CAPEX-EUR', 'Capital goods, spend-based (EUR)', 'capital_goods', 'EUR', '0.35000000', 'EU', 2023],
+            ['EX-WTT-EU', 'Upstream fuel and energy related activities, per kWh purchased', 'fuel_energy_related', 'kWh', '0.04000000', 'EU', 2023],
+            ['EX-FREIGHT-ROAD-EU', 'Freight by road', 'freight_road', 'tkm', '0.09600000', 'EU', 2023],
+            ['EX-FREIGHT-SEA-EU', 'Freight by sea', 'freight_sea', 'tkm', '0.01600000', 'EU', 2023],
+            ['EX-FREIGHT-AIR-EU', 'Freight by air', 'freight_air', 'tkm', '0.60000000', 'EU', 2023],
+            ['EX-COMMUTE-CAR-EU', 'Employee commuting by car', 'employee_commuting_car', 'km', '0.17000000', 'EU', 2023],
+            ['EX-COMMUTE-TRANSIT-EU', 'Employee commuting by public transport', 'employee_commuting_transit', 'km', '0.06000000', 'EU', 2023],
+            ['EX-LEASED-UP-EU', 'Upstream leased assets, energy use', 'upstream_leased_assets', 'kWh', '0.23000000', 'EU', 2023],
+            ['EX-FREIGHT-DOWN-EU', 'Downstream transport and distribution', 'downstream_freight', 'tkm', '0.09600000', 'EU', 2023],
+            ['EX-PROCESSING-EU', 'Processing of sold products', 'processing_sold_products', 'kg', '0.30000000', 'EU', 2023],
+            ['EX-USE-SOLD-EU', 'Use of sold products, electricity consumed', 'use_of_sold_products', 'kWh', '0.23000000', 'EU', 2023],
+            ['EX-EOL-EU', 'End-of-life treatment of sold products', 'end_of_life_sold_products', 'kg', '0.45000000', 'EU', 2023],
+            ['EX-LEASED-DOWN-EU', 'Downstream leased assets, energy use', 'downstream_leased_assets', 'kWh', '0.23000000', 'EU', 2023],
+            ['EX-FRANCHISE-EU', 'Franchises, energy use', 'franchises', 'kWh', '0.23000000', 'EU', 2023],
+            ['EX-INVEST-EUR', 'Investments, spend-based (EUR)', 'investments', 'EUR', '0.20000000', 'EU', 2023],
         ];
     }
 }

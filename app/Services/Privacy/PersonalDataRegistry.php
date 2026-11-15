@@ -38,6 +38,8 @@ use Modules\DocumentTrust\Models\PreservationAccessLog;
 use Modules\Fleet\Models\FleetVehicle;
 use Modules\Fleet\Models\FleetVehicleAssignment;
 use Modules\HealthExpenses\Models\HealthExpense;
+use Modules\TalentLearning\Models\EngagementAnswer;
+use Modules\TalentLearning\Models\EngagementResponse;
 use Modules\Hospitality\Models\Reservation;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\ExitInterview;
@@ -263,6 +265,8 @@ final class PersonalDataRegistry
             new PersonalDataEntry('workshop_vehicle_stock', [VehicleStockUnit::class], 'Workshop vehicle stock', 'identity', ['license_plate'], $erasable, $operationalNote),
             new PersonalDataEntry('fleet_vehicles', [FleetVehicle::class], 'Fleet vehicles', 'identity', ['license_plate'], $erasable, $operationalNote),
             new PersonalDataEntry('fleet_vehicle_assignments', [FleetVehicleAssignment::class], 'Fleet driver assignments', 'identity', ['driver_label'], $erasable, 'Operational data: the name of an external driver is erased on request or by retention policy; the link to the employee stays with the employment record.', ['employee' => 'employee_id'], 'created_at'),
+            new PersonalDataEntry('tl_survey_responses', [EngagementResponse::class], 'Engagement survey responses', 'identity', ['respondent_employee_id'], $erasable, 'The respondent is stored only for a survey that is not anonymous; an anonymous response holds no personal link and is kept as aggregate input.', ['employee' => 'respondent_employee_id'], 'submitted_on'),
+            new PersonalDataEntry('tl_survey_answers', [EngagementAnswer::class], 'Engagement survey answers', 'identity', ['text_value'], $erasable, 'Free text answers can contain personal data: erased by retention policy.', [], 'submitted_on'),
             new PersonalDataEntry('weighbridge_vehicles', [WeighbridgeVehicle::class], 'Weighbridge vehicles', 'identity', ['license_plate'], $erasable, $operationalNote, ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('portal_activity_logs', [PortalActivityLog::class], 'Customer portal activity', 'technical', ['ip_address'], $erasable, 'Access log of the portal: erased with the contact and by retention policy.', ['contact' => 'contact_id'], 'created_at'),
             new PersonalDataEntry('audit_logs', [AuditLog::class], 'Audit log', 'technical', ['ip_address'], $evidence, $evidenceNote),

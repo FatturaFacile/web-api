@@ -78,7 +78,83 @@ final class PracticeRequest extends FormRequest
                 'amount' => ['required', 'decimal:0,2', 'gt:0'],
             ],
             'closings.close' => ['allow_unbilled' => ['sometimes', 'boolean'], 'reason' => ['required_if_accepted:allow_unbilled', 'nullable', 'string', 'max:500']],
+            'expenses.index' => ['legal_case_id' => ['sometimes', 'uuid', $this->tenantOwns('legal_cases')], 'is_billed' => ['sometimes', 'boolean']],
+            'expenses.store' => [
+                'legal_case_id' => ['required', 'uuid', $this->tenantOwns('legal_cases')],
+                ...$this->expenseRules(),
+            ],
+            'expenses.update' => $this->expenseRules(),
+            'trust.index' => ['client_id' => ['sometimes', 'uuid', $this->tenantOwns('contacts')], 'legal_case_id' => ['sometimes', 'uuid', $this->tenantOwns('legal_cases')]],
+            'trust.store' => [
+                'type' => ['required', 'string', 'in:deposit,withdrawal,fee_transfer'],
+                'client_id' => ['required', 'uuid', $this->tenantOwns('contacts')],
+                'legal_case_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('legal_cases')],
+                'occurred_on' => ['required', 'date'],
+                'amount' => ['required', 'decimal:0,2', 'gt:0'],
+                'reference' => ['sometimes', 'nullable', 'string', 'max:100'],
+                'description' => ['sometimes', 'nullable', 'string', 'max:255'],
+            ],
+            'trust.reverse' => ['description' => ['sometimes', 'nullable', 'string', 'max:255']],
+            'conflicts.check' => [
+                'name' => ['required', 'string', 'min:2', 'max:190'],
+                'role' => ['required', 'string', 'in:client,opposing_party,related_party'],
+                'contact_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('contacts')],
+            ],
+            'conflict-parties.index' => ['legal_case_id' => ['sometimes', 'uuid', $this->tenantOwns('legal_cases')]],
+            'conflict-parties.store' => [
+                'legal_case_id' => ['required', 'uuid', $this->tenantOwns('legal_cases')],
+                'contact_id' => ['sometimes', 'nullable', 'uuid', $this->tenantOwns('contacts')],
+                'name' => ['required', 'string', 'max:190'],
+                'role' => ['required', 'string', 'in:client,opposing_party,related_party,witness'],
+                'notes' => ['sometimes', 'nullable', 'string', 'max:500'],
+            ],
+            'proposals.index' => ['status' => ['sometimes', 'string', 'in:draft,sent,accepted,declined'], 'client_id' => ['sometimes', 'uuid', $this->tenantOwns('contacts')]],
+            'proposals.store' => [
+                'client_id' => ['required', 'uuid', $this->tenantOwns('contacts')],
+                ...$this->proposalRules(true),
+            ],
+            'proposals.update' => $this->proposalRules(false),
+            'proposals.accept' => [
+                'conflict_check_id' => ['required', 'uuid', $this->tenantOwns('practice_conflict_checks')],
+                'override_reason' => ['sometimes', 'nullable', 'string', 'max:500'],
+            ],
+            'proposals.decline' => ['notes' => ['sometimes', 'nullable', 'string', 'max:500']],
             default => [],
         };
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function expenseRules(): array
+    {
+        return [
+            'expense_date' => ['required', 'date'],
+            'category' => ['required', 'string', 'in:court_fee,travel,filing,expert,courier,other'],
+            'description' => ['required', 'string', 'max:255'],
+            'amount' => ['required', 'decimal:0,2', 'gt:0'],
+            'is_billable' => ['sometimes', 'boolean'],
+        ];
+    }
+
+    /**
+     * The fee basis decides which amounts are required: an hourly proposal needs rate and hours, a fixed one the fee.
+     *
+     * @return array<string, mixed>
+     */
+    private function proposalRules(bool $creating): array
+    {
+        $presence = $creating ? 'required' : 'sometimes';
+        $feeType = (string) $this->input('fee_type', '');
+
+        return [
+            'title' => [$presence, 'string', 'max:190'],
+            'scope' => ['sometimes', 'nullable', 'string', 'max:5000'],
+            'fee_type' => [$presence, 'string', 'in:hourly,fixed'],
+            'hourly_rate' => [$feeType === 'hourly' ? 'required' : 'sometimes', 'nullable', 'decimal:0,2', 'gt:0'],
+            'estimated_hours' => [$feeType === 'hourly' ? 'required' : 'sometimes', 'nullable', 'decimal:0,2', 'gt:0'],
+            'fixed_fee' => [$feeType === 'fixed' ? 'required' : 'sometimes', 'nullable', 'decimal:0,2', 'gt:0'],
+            'valid_until' => ['sometimes', 'nullable', 'date'],
+        ];
     }
 }

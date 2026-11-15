@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Invoicing\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Contact;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -39,6 +40,7 @@ final class CustomerLedgerController extends Controller
     public function statement(string $customerId, Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
+        $this->ensureCustomerOfTenant($customerId, $tenantId);
 
         $entries = CustomerLedgerEntry::where('tenant_id', $tenantId)
             ->where('customer_id', $customerId)
@@ -71,6 +73,7 @@ final class CustomerLedgerController extends Controller
     public function aging(string $customerId, CustomerLedgerServiceInterface $service, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
+        $this->ensureCustomerOfTenant($customerId, $tenantId);
         $aging = $service->calculateAging($customerId, $tenantId);
 
         return response()->json([
@@ -78,5 +81,13 @@ final class CustomerLedgerController extends Controller
             'tenant_id' => $tenantId,
             'aging_buckets' => $aging,
         ]);
+    }
+
+    /**
+     * A customer of another company answers 404, like every other record of another company.
+     */
+    private function ensureCustomerOfTenant(string $customerId, mixed $tenantId): void
+    {
+        abort_unless(Contact::withoutGlobalScopes()->where('id', $customerId)->where('tenant_id', $tenantId)->exists(), 404);
     }
 }

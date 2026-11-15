@@ -21,6 +21,15 @@ return [
     'earn_note' => 'Punkte für den Kassenbon :number',
     'redeem_note' => 'Bezahlung des Kassenbons :number',
 
+    'drawer_cash_insufficient' => 'Die Kasse enthaelt nicht genug Bargeld fuer diese Buchung.',
+    'ticket_payment_excess' => 'Die unbaren Zahlungen uebersteigen den Betrag, oder es wurde Bargeld fuer einen bereits gedeckten Betrag gegeben.',
+    'ticket_payment_short' => 'Die Zahlungen decken den Bonbetrag nicht.',
+    'return_sale_not_returnable' => 'Nur ein abgeschlossener Verkauf kann Retouren haben.',
+    'return_item_unknown' => 'Die Zeile gehoert nicht zu diesem Verkauf oder ist eine Rabattzeile.',
+    'return_quantity_exceeds' => 'Die Menge ist null oder groesser als die noch retournierbare Menge.',
+    'x_report_open_only' => 'Der X-Bericht wird bei einer offenen Sitzung gelesen: lesen Sie bei einer geschlossenen den Z-Bericht.',
+    'z_report_closed_only' => 'Der Z-Bericht wird beim Schliessen der Sitzung erstellt: lesen Sie bei einer offenen den X-Bericht.',
+
     'messages' => [
         'terminal_created' => 'POS-Terminal erfolgreich erstellt',
         'session_opened' => 'POS-Sitzung geöffnet',

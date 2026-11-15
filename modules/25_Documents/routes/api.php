@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 use Modules\Documents\Http\Controllers\AiSettingController;
+use Modules\Documents\Http\Controllers\ApprovalRequestController;
+use Modules\Documents\Http\Controllers\ApprovalTemplateController;
 use Modules\Documents\Http\Controllers\DocumentController;
 use Modules\Documents\Http\Controllers\DocumentExtractionController;
 use Modules\Documents\Http\Controllers\DocumentFolderController;
 use Modules\Documents\Http\Controllers\DocumentLifecycleController;
+use Modules\Documents\Http\Controllers\DocumentOcrController;
 use Modules\Documents\Http\Controllers\DocumentTagController;
 use Modules\Documents\Http\Controllers\DocumentVersionController;
+use Modules\Documents\Http\Controllers\PreservationChainController;
 use Modules\Documents\Http\Controllers\RetentionPolicyController;
 
 Route::prefix('api/v1/dms')
@@ -59,4 +63,25 @@ Route::prefix('api/v1/dms')
         Route::get('documents/{id}/extractions', [DocumentExtractionController::class, 'index'])->whereUuid('id')->name('dms.extractions.index');
         Route::post('extractions/{id}/confirm', [DocumentExtractionController::class, 'confirm'])->whereUuid('id')->name('dms.extractions.confirm');
         Route::post('extractions/{id}/reject', [DocumentExtractionController::class, 'reject'])->whereUuid('id')->name('dms.extractions.reject');
+
+        Route::get('approval-templates', [ApprovalTemplateController::class, 'index'])->name('dms.approval-templates.index');
+        Route::post('approval-templates', [ApprovalTemplateController::class, 'store'])->name('dms.approval-templates.store');
+        Route::put('approval-templates/{id}', [ApprovalTemplateController::class, 'update'])->whereUuid('id')->name('dms.approval-templates.update');
+        Route::delete('approval-templates/{id}', [ApprovalTemplateController::class, 'destroy'])->whereUuid('id')->name('dms.approval-templates.destroy');
+        Route::post('documents/{id}/approval-requests', [ApprovalRequestController::class, 'store'])->whereUuid('id')->name('dms.approval-requests.store');
+        Route::get('approval-requests', [ApprovalRequestController::class, 'index'])->name('dms.approval-requests.index');
+        Route::get('approval-requests/{id}', [ApprovalRequestController::class, 'show'])->whereUuid('id')->name('dms.approval-requests.show');
+        Route::post('approval-requests/{id}/approve', [ApprovalRequestController::class, 'approve'])->whereUuid('id')->name('dms.approval-requests.approve');
+        Route::post('approval-requests/{id}/reject', [ApprovalRequestController::class, 'reject'])->whereUuid('id')->name('dms.approval-requests.reject');
+        Route::post('approval-requests/{id}/cancel', [ApprovalRequestController::class, 'cancel'])->whereUuid('id')->name('dms.approval-requests.cancel');
+
+        Route::post('documents/{id}/ocr', [DocumentOcrController::class, 'store'])->whereUuid('id')->name('dms.ocr.store');
+        Route::get('documents/{id}/ocr', [DocumentOcrController::class, 'index'])->whereUuid('id')->name('dms.ocr.index');
+        Route::get('ocr-jobs/{id}', [DocumentOcrController::class, 'show'])->whereUuid('id')->name('dms.ocr.show');
+        Route::post('ocr-jobs/{id}/retry', [DocumentOcrController::class, 'retry'])->whereUuid('id')->name('dms.ocr.retry');
+
+        Route::get('preservation-chain', [PreservationChainController::class, 'index'])->name('dms.preservation-chain.index');
+        Route::get('preservation-chain/status', [PreservationChainController::class, 'status'])->name('dms.preservation-chain.status');
+        Route::get('preservation-chain/verify', [PreservationChainController::class, 'verify'])->name('dms.preservation-chain.verify');
+        Route::post('preservation-chain/anchor', [PreservationChainController::class, 'anchor'])->name('dms.preservation-chain.anchor');
     });

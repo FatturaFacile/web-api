@@ -19,6 +19,7 @@ use Modules\DocumentTrust\Services\PreservationLock;
  * @property ?Carbon $retention_until
  * @property ?string $checked_out_by
  * @property ?Carbon $checked_out_at
+ * @property ?Carbon $lock_expires_at
  * @property ?string $checkout_note
  * @property array<string, mixed>|null $metadata
  */
@@ -61,6 +62,7 @@ final class DmsDocument extends BaseEnterpriseModel
             'legal_hold' => 'boolean',
             'legal_hold_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'lock_expires_at' => 'datetime',
             'current_version' => 'integer',
         ];
     }
@@ -70,7 +72,7 @@ final class DmsDocument extends BaseEnterpriseModel
      */
     public function isCheckedOut(): bool
     {
-        return $this->checked_out_by !== null;
+        return $this->checked_out_by !== null && ($this->lock_expires_at === null || $this->lock_expires_at->isFuture());
     }
 
     /**

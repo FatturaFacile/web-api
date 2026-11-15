@@ -96,6 +96,14 @@
             "Modules\\LeaseAccounting\\": "modules/45_LeaseAccounting/src/",
             "Modules\\Sustainability\\": "modules/47_Sustainability/src/",
             "Modules\\Fleet\\": "modules/48_Fleet/src/",
+            "Modules\\CreditManagement\\": "modules/54_CreditManagement/src/",
+            "Modules\\TalentLearning\\": "modules/55_TalentLearning/src/",
+            "Modules\\Wms\\": "modules/50_Wms/src/",
+            "Modules\\Transportation\\": "modules/51_Transportation/src/",
+            "Modules\\Planning\\": "modules/52_Planning/src/",
+            "Modules\\Budgeting\\": "modules/53_Budgeting/src/",
+            "Modules\\BusinessIntelligence\\": "modules/56_BusinessIntelligence/src/",
+            "Modules\\Marketplace\\": "modules/57_Marketplace/src/",
             "Modules\\Returns\\":"modules/49_Returns/src/",
             "Modules\\": "modules/"
         }

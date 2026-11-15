@@ -147,7 +147,7 @@ it('validates units, activity types and the factor of an activity record', funct
 });
 
 it('installs the example factors and indicators once, marked as examples', function (): void {
-    $this->postJson('/api/v1/sustainability/factors/install-examples')->assertOk()->assertJsonPath('created', 13);
+    $this->postJson('/api/v1/sustainability/factors/install-examples')->assertOk()->assertJsonPath('created', 28);
     $this->postJson('/api/v1/sustainability/factors/install-examples')->assertOk()->assertJsonPath('created', 0);
     $this->postJson('/api/v1/sustainability/kpis/install-defaults')->assertOk()->assertJsonPath('created', 14);
     $this->postJson('/api/v1/sustainability/kpis/install-defaults')->assertOk()->assertJsonPath('created', 0);

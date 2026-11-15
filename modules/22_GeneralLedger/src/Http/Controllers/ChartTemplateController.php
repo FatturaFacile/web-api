@@ -26,7 +26,7 @@ final class ChartTemplateController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/account-templates',
         operationId: 'listGeneralLedgerAccountTemplates',
-        description: 'Lists the standard charts of accounts (Swiss SME chart, Italian chart) with their standard, country, currency and number of accounts.',
+        description: 'Lists the standard charts of accounts (Swiss SME chart, Italian chart, French PCG, Spanish PGC) with their standard, country, currency and number of accounts.',
         summary: 'List chart of accounts templates',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
@@ -66,7 +66,7 @@ final class ChartTemplateController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
         parameters: [
-            new OA\Parameter(name: 'template', in: 'path', required: true, description: 'Template key: ch_kmu_pme or it_general_ledger', schema: new OA\Schema(type: 'string', enum: ['ch_kmu_pme', 'it_general_ledger'])),
+            new OA\Parameter(name: 'template', in: 'path', required: true, description: 'Template key: ch_kmu_pme, it_general_ledger, fr_pcg or es_pgc', schema: new OA\Schema(type: 'string', enum: ['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc'])),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Import result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [

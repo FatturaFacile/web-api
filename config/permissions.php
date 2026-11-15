@@ -152,12 +152,62 @@ return [
         // Facility management: every member books rooms and desks and raises service requests; the policy reserves
         // buildings, spaces, inspections and meters to facility managers and operators. Read-only roles never write.
         'facility' => ['read' => $anyMember, 'write' => $anyMember],
+        // Planning and budgeting (controlling): every member reads; owners, administrators, accountants and department
+        // staff keep versions, lines and drivers. Approving, rejecting and locking a version are reserved by the policy
+        // to owners, administrators and members granted budgeting.approve.
+        'budgeting' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'production', 'procurement_manager', 'sales_manager', 'member'],
+        ],
+        // Sales and operations planning (S&OP): every member reads; planners, production, purchasing and finance staff keep
+        // the scenarios, plan lines and capacity data. Approving, rejecting, locking and publishing a plan are reserved by
+        // the policy to owners, administrators and members granted planning.approve.
+        'planning' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'production', 'procurement_manager', 'sales_manager', 'member'],
+        ],
         // Fleet management (company vehicles): every member reads; owners, administrators, accountants and operational
         // staff keep vehicles, fuel, services, deadlines and fines. Read-only roles never write.
         'fleet' => [
             'read' => $anyMember,
             'write' => ['owner', 'admin', 'accountant', 'production', 'technician', 'procurement_manager', 'member'],
         ],
+        // Business intelligence (dashboards, pivots, calculated measures, snapshots): every member reads what is shared with
+        // them; the datasets themselves stay limited by the module of their data. Managers and finance design and share.
+        'business_intelligence' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'sales_manager', 'procurement_manager', 'service_manager', 'project_manager', 'member'],
+        ],
+        // Marketplace (connectors holding credentials of external systems): only owners and administrators manage them.
+        'marketplace' => ['read' => $managers, 'write' => $managers],
+        // Credit risk and collections: finance and sales roles read; owners, administrators, accountants and sales
+        // managers score customers, work the cases and request limits. Deciding a credit limit request and writing a
+        // case off are reserved by the policy to owners, administrators and members granted credit-management.approve.
+        'credit-management' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager'],
+            'write' => [...$finance, 'sales_manager'],
+        ],
+        // Advanced warehouse management (RF tasks, slotting, cross-docking, docks, waves): every member reads; owners,
+        // administrators, accountants and warehouse, production and procurement staff run the floor. Read-only roles never write.
+        'wms' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'production', 'warehouse', 'technician', 'procurement_manager', 'purchasing', 'member'],
+        ],
+        // Transportation management (carriers, tariffs, transport orders, trips, quotes, freight audit): every member
+        // reads; owners, administrators, accountants and logistics, sales and procurement staff keep the records.
+        'transportation' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'warehouse', 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'production', 'member'],
+        ],
+        // Talent and learning, learning side: every member reads the catalogue and answers the open surveys; owners,
+        // administrators and HR keep courses, paths, enrolments and surveys. The policy reserves the lists that show other
+        // employees (enrolments, certificates, compliance, survey results) to those roles and to members granted
+        // talent_learning.manage.
+        'talent_learning' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'hr']],
+        // Talent and learning, planning side: succession plans and merit proposals hold pay data, so owners, administrators,
+        // HR and payroll only. Approving a merit proposal is reserved by the policy to owners, administrators and members
+        // granted talent_planning.approve.
+        'talent_planning' => ['read' => ['owner', 'admin', 'hr', 'payroll'], 'write' => ['owner', 'admin', 'hr', 'payroll']],
         // Returns and warranty (RMA): sales and warehouse staff handle the returns; authorising a return, overriding the
         // return window and deciding a warranty claim are reserved by the policy to owners, administrators and members
         // granted returns.approve.

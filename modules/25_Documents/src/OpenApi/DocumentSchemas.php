@@ -33,6 +33,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'checked_out_by', type: 'string', format: 'uuid', nullable: true),
         new OA\Property(property: 'checked_out_at', type: 'string', format: 'date-time', nullable: true),
         new OA\Property(property: 'checkout_note', type: 'string', nullable: true),
+        new OA\Property(property: 'lock_expires_at', type: 'string', format: 'date-time', nullable: true, description: 'When set the check-out lapses at this time and anybody can check the document out again'),
         new OA\Property(property: 'tags', type: 'array', items: new OA\Items(type: 'object')),
         new OA\Property(property: 'links', type: 'array', items: new OA\Items(type: 'object')),
         new OA\Property(property: 'versions', type: 'array', items: new OA\Items(ref: '#/components/schemas/DmsDocumentVersionResource')),
@@ -171,7 +172,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'linkable_id', type: 'string', format: 'uuid'),
     ]
 )]
-#[OA\Schema(schema: 'DmsCheckOutRequest', type: 'object', properties: [new OA\Property(property: 'note', type: 'string', maxLength: 500, nullable: true, example: 'Updating the supplier terms')])]
+#[OA\Schema(schema: 'DmsCheckOutRequest', type: 'object', properties: [new OA\Property(property: 'note', type: 'string', maxLength: 500, nullable: true, example: 'Updating the supplier terms'), new OA\Property(property: 'expires_in_minutes', description: 'The lock lapses after this time; asking again as the holder extends it', type: 'integer', minimum: 5, maximum: 10080, nullable: true)])]
 #[OA\Schema(
     schema: 'DmsResolvedLink',
     type: 'object',

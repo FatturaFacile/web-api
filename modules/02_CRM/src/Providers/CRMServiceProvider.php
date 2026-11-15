@@ -9,14 +9,17 @@ use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Modules\CRM\Console\LinkAccountsToContactsCommand;
+use Modules\CRM\Console\ProcessCrmAutomationCommand;
 use Modules\CRM\Contracts\ActivityServiceInterface;
 use Modules\CRM\Contracts\CampaignServiceInterface;
 use Modules\CRM\Contracts\CustomerHealthServiceInterface;
 use Modules\CRM\Contracts\ForecastServiceInterface;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\Contracts\OpportunityServiceInterface;
+use Modules\CRM\Contracts\ProductConfigurationLookup;
 use Modules\CRM\Events\ActivityCompletedEvent;
 use Modules\CRM\Events\ActivityLoggedEvent;
+use Modules\CRM\Events\ContactCreatedEvent;
 use Modules\CRM\Events\CustomerHealthChangedEvent;
 use Modules\CRM\Events\LeadConvertedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
@@ -31,24 +34,41 @@ use Modules\CRM\Events\ProjectLeadQualifiedEvent;
 use Modules\CRM\Events\ProjectOpportunityCreatedEvent;
 use Modules\CRM\Events\QuoteRequestedEvent;
 use Modules\CRM\Listeners\DispatchOutboxOnCRMEventListener;
+use Modules\CRM\Listeners\EnrollAutomationOnCrmEventListener;
 use Modules\CRM\Listeners\RecalculateLeadScoreListener;
 use Modules\CRM\Listeners\SalesEventListener;
 use Modules\CRM\Listeners\WorkflowApprovalCRMListener;
 use Modules\CRM\Models\Account;
+use Modules\CRM\Models\AccountTerritory;
 use Modules\CRM\Models\Activity;
+use Modules\CRM\Models\AutomationEnrollment;
+use Modules\CRM\Models\AutomationSequence;
+use Modules\CRM\Models\AutomationStepLog;
 use Modules\CRM\Models\Campaign;
+use Modules\CRM\Models\DealRegistration;
+use Modules\CRM\Models\DiscountThreshold;
 use Modules\CRM\Models\Forecast;
 use Modules\CRM\Models\Lead;
+use Modules\CRM\Models\MdfClaim;
+use Modules\CRM\Models\MdfFund;
 use Modules\CRM\Models\Opportunity;
+use Modules\CRM\Models\Partner;
+use Modules\CRM\Models\PartnerTier;
+use Modules\CRM\Models\PricingRule;
+use Modules\CRM\Models\QuoteConfiguration;
+use Modules\CRM\Models\SalesQuota;
+use Modules\CRM\Models\SalesTerritory;
 use Modules\CRM\Observers\ContactCreatedObserver;
 use Modules\CRM\Policies\AccountPolicy;
 use Modules\CRM\Policies\ActivityPolicy;
 use Modules\CRM\Policies\CampaignPolicy;
+use Modules\CRM\Policies\CrmExtensionPolicy;
 use Modules\CRM\Policies\ForecastPolicy;
 use Modules\CRM\Policies\LeadPolicy;
 use Modules\CRM\Policies\OpportunityPolicy;
 use Modules\CRM\Services\ActivityService;
 use Modules\CRM\Services\CampaignService;
+use Modules\CRM\Services\ConfiguratorProductConfigurationLookup;
 use Modules\CRM\Services\CustomerHealthService;
 use Modules\CRM\Services\ForecastService;
 use Modules\CRM\Services\LeadService;
@@ -69,6 +89,7 @@ final class CRMServiceProvider extends ServiceProvider
         $this->app->singleton(CustomerHealthServiceInterface::class, CustomerHealthService::class);
         $this->app->singleton(ForecastServiceInterface::class, ForecastService::class);
         $this->app->singleton(CampaignServiceInterface::class, CampaignService::class);
+        $this->app->singleton(ProductConfigurationLookup::class, ConfiguratorProductConfigurationLookup::class);
     }
 
     public function boot(): void
@@ -77,9 +98,10 @@ final class CRMServiceProvider extends ServiceProvider
         $this->registerEventListeners();
         Contact::observe(ContactCreatedObserver::class);
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/extension.php');
 
         if ($this->app->runningInConsole()) {
-            $this->commands([LinkAccountsToContactsCommand::class]);
+            $this->commands([LinkAccountsToContactsCommand::class, ProcessCrmAutomationCommand::class]);
         }
     }
 
@@ -91,6 +113,14 @@ final class CRMServiceProvider extends ServiceProvider
         Gate::policy(Activity::class, ActivityPolicy::class);
         Gate::policy(Forecast::class, ForecastPolicy::class);
         Gate::policy(Campaign::class, CampaignPolicy::class);
+
+        foreach ([
+            SalesTerritory::class, AccountTerritory::class, SalesQuota::class, PartnerTier::class, Partner::class,
+            DealRegistration::class, MdfFund::class, MdfClaim::class, PricingRule::class, DiscountThreshold::class,
+            QuoteConfiguration::class, AutomationSequence::class, AutomationEnrollment::class, AutomationStepLog::class,
+        ] as $model) {
+            Gate::policy($model, CrmExtensionPolicy::class);
+        }
     }
 
     private function registerEventListeners(): void
@@ -110,6 +140,11 @@ final class CRMServiceProvider extends ServiceProvider
         Event::listen(QuoteRequestedEvent::class, DispatchOutboxOnCRMEventListener::class);
         Event::listen(ProjectOpportunityCreatedEvent::class, DispatchOutboxOnCRMEventListener::class);
         Event::listen(ProjectLeadQualifiedEvent::class, DispatchOutboxOnCRMEventListener::class);
+
+        // Marketing automation: triggers that enrol subjects in sequences.
+        Event::listen(LeadCreatedEvent::class, [EnrollAutomationOnCrmEventListener::class, 'handleLeadCreated']);
+        Event::listen(LeadQualifiedEvent::class, [EnrollAutomationOnCrmEventListener::class, 'handleLeadQualified']);
+        Event::listen(ContactCreatedEvent::class, [EnrollAutomationOnCrmEventListener::class, 'handleContactCreated']);
 
         // Engagement-based lead scoring follows logged and completed activities.
         Event::listen(ActivityLoggedEvent::class, RecalculateLeadScoreListener::class);

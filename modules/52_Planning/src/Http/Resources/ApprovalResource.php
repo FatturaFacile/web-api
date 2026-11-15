@@ -1,0 +1,34 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Planning\Http\Resources;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Modules\Planning\Models\PlanningApproval;
+
+/**
+ * A step of the S&OP cycle of a scenario.
+ *
+ * @mixin PlanningApproval
+ */
+final class ApprovalResource extends JsonResource
+{
+    /**
+     * @return array<string, mixed>
+     */
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'scenario_id' => $this->scenario_id,
+            'action' => $this->action,
+            'from_status' => $this->from_status,
+            'to_status' => $this->to_status,
+            'user_id' => $this->user_id,
+            'comment' => $this->comment,
+            'created_at' => $this->created_at?->toIso8601String(),
+        ];
+    }
+}

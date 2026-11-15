@@ -27,7 +27,12 @@ use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
+use Modules\BusinessIntelligence\Providers\BusinessIntelligenceServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
+use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
+use Modules\Budgeting\Providers\BudgetingServiceProvider;
+use Modules\Planning\Providers\PlanningServiceProvider;
+use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
@@ -45,6 +50,9 @@ use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
+use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
+use Modules\Transportation\Providers\TransportationServiceProvider;
+use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
@@ -113,5 +121,13 @@ return [
     LeaseAccountingServiceProvider::class,
     SustainabilityServiceProvider::class,
     FleetServiceProvider::class,
+    CreditManagementServiceProvider::class,
+    TalentLearningServiceProvider::class,
+    PlanningServiceProvider::class,
+    BudgetingServiceProvider::class,
+    BusinessIntelligenceServiceProvider::class,
+    MarketplaceServiceProvider::class,
     ReturnsServiceProvider::class,
+    WmsServiceProvider::class,
+    TransportationServiceProvider::class,
 ];

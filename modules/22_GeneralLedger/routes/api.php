@@ -17,6 +17,7 @@ use Modules\GeneralLedger\Http\Controllers\JournalEntryController;
 use Modules\GeneralLedger\Http\Controllers\LedgerBudgetController;
 use Modules\GeneralLedger\Http\Controllers\LedgerReportController;
 use Modules\GeneralLedger\Http\Controllers\LedgerSettingsController;
+use Modules\GeneralLedger\Http\Controllers\LocalizationPackController;
 use Modules\GeneralLedger\Http\Controllers\OpenItemFxRevaluationController;
 use Modules\GeneralLedger\Http\Controllers\PayrollLedgerController;
 use Modules\GeneralLedger\Http\Controllers\PeriodCloseController;
@@ -25,6 +26,8 @@ use Modules\GeneralLedger\Http\Controllers\RecurringJournalController;
 use Modules\GeneralLedger\Http\Controllers\StatementSchemeController;
 use Modules\GeneralLedger\Http\Controllers\SubledgerController;
 use Modules\GeneralLedger\Http\Controllers\TaxSettlementController;
+use Modules\GeneralLedger\Http\Controllers\Us1099Controller;
+use Modules\GeneralLedger\Http\Controllers\UsTaxController;
 use Modules\GeneralLedger\Http\Controllers\VatRegisterController;
 use Modules\GeneralLedger\Http\Controllers\VatTaxSettingController;
 use Modules\GeneralLedger\Http\Controllers\WithholdingSettlementController;
@@ -159,5 +162,21 @@ Route::prefix('api/v1/general-ledger')
         Route::post('payroll-postings/{runId}/post', [PayrollLedgerController::class, 'post'])->whereUuid('runId');
         Route::get('tax-settings', [VatTaxSettingController::class, 'show']);
         Route::put('tax-settings', [VatTaxSettingController::class, 'update']);
+
+        // Localization packs: France (FEC, VAT codes), Spain (SII VAT books, VAT codes), USA (sales tax, 1099)
+        Route::get('vat-code-packs', [LocalizationPackController::class, 'vatCodePacks']);
+        Route::post('vat-code-packs/{country}/import', [LocalizationPackController::class, 'importVatCodePack'])->whereIn('country', ['FR', 'ES', 'fr', 'es']);
+        Route::get('fec/export', [LocalizationPackController::class, 'fec']);
+        Route::get('sii/{type}/export', [LocalizationPackController::class, 'sii'])->whereIn('type', ['sales', 'purchases']);
+        Route::get('us-tax/jurisdictions', [UsTaxController::class, 'jurisdictions']);
+        Route::post('us-tax/jurisdictions', [UsTaxController::class, 'storeJurisdiction']);
+        Route::post('us-tax/jurisdictions/{id}/rates', [UsTaxController::class, 'storeRate'])->whereUuid('id');
+        Route::get('us-tax/nexus', [UsTaxController::class, 'nexus']);
+        Route::post('us-tax/nexus', [UsTaxController::class, 'storeNexus']);
+        Route::post('us-tax/calculate', [UsTaxController::class, 'calculate']);
+        Route::get('us-1099/recipients', [Us1099Controller::class, 'recipients']);
+        Route::post('us-1099/recipients', [Us1099Controller::class, 'storeRecipient']);
+        Route::post('us-1099/payments', [Us1099Controller::class, 'storePayment']);
+        Route::get('us-1099/summary', [Us1099Controller::class, 'summary']);
         Route::get('vat-registers/{type}', [VatRegisterController::class, 'show'])->whereIn('type', ['sales', 'purchases']);
     });
