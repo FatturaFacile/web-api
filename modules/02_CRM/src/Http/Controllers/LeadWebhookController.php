@@ -55,6 +55,12 @@ final class LeadWebhookController extends Controller
             return $this->notFound();
         }
 
+        // Behavioural events change scores and reveal whether a lead exists: they require the signed delivery, never
+        // the public browser API key (which is embedded in web pages and whose Origin check is spoofable).
+        if ($request->headers->has('X-Api-Key') || $request->input('_api_key') !== null) {
+            return $this->unauthorized();
+        }
+
         $tenant = Tenant::query()->find($source->tenant_id);
         if (! $source->is_active || ! $tenant instanceof Tenant || ! $this->intake->verify($request, $source)) {
             return $this->unauthorized();

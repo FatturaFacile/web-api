@@ -212,6 +212,10 @@ final readonly class LeadService implements LeadServiceInterface
                 throw LeadAlreadyConvertedException::forLead((string) $lead->id);
             }
 
+            if ($lockedLead->merged_into_lead_id !== null) {
+                throw LeadAlreadyConvertedException::mergedInto((string) $lockedLead->id, (string) $lockedLead->merged_into_lead_id);
+            }
+
             $tenantId = (string) $lockedLead->tenant_id;
             $ownerId = $dto->ownerUserId ?? $lockedLead->assigned_user_id ?? $actorUserId;
 

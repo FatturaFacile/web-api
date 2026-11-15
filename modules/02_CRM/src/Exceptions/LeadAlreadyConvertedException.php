@@ -15,4 +15,9 @@ final class LeadAlreadyConvertedException extends InvalidArgumentException
     {
         return new self("Lead [{$leadId}] has already been converted.");
     }
+
+    public static function mergedInto(string $leadId, string $survivorId): self
+    {
+        return new self("Lead [{$leadId}] was merged into lead [{$survivorId}] and cannot be converted.");
+    }
 }
