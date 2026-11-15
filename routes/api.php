@@ -62,6 +62,10 @@ use App\Http\Controllers\Api\V1\SubscriptionController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
+use App\Http\Controllers\Api\V1\Tax\EnasarcoStatusController;
+use App\Http\Controllers\Api\V1\Tax\FiscalPreviewController;
+use App\Http\Controllers\Api\V1\Tax\StampDutyReportController;
+use App\Http\Controllers\Api\V1\Tax\WithholdingReportController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
@@ -411,6 +415,14 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/vendor-aging', VendorAgingController::class)->name('vendor-aging');
             Route::get('/general-ledger', [GeneralLedgerController::class, 'index'])->name('general-ledger');
             Route::get('/general-ledger/export', [GeneralLedgerController::class, 'export'])->name('general-ledger.export');
+        });
+
+        // 17b. Italian tax regimes (issue #286): fiscal preview, stamp duty, withholdings, ENASARCO
+        Route::prefix('tax')->name('tax.')->group(function (): void {
+            Route::post('/preview', FiscalPreviewController::class)->name('preview');
+            Route::get('/stamp-duty/quarterly', StampDutyReportController::class)->name('stamp-duty.quarterly');
+            Route::get('/withholdings/report', WithholdingReportController::class)->name('withholdings.report');
+            Route::get('/enasarco/status', EnasarcoStatusController::class)->name('enasarco.status');
         });
 
         // 18. Settings & Multi-Tenant Management

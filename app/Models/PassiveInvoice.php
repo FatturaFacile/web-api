@@ -70,4 +70,12 @@ class PassiveInvoice extends Model
     {
         return $this->hasMany(SupplierPayment::class);
     }
+
+    /**
+     * @return HasMany<PassiveInvoiceWithholding, $this>
+     */
+    public function withholdings(): HasMany
+    {
+        return $this->hasMany(PassiveInvoiceWithholding::class);
+    }
 }

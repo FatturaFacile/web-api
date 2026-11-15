@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\ItalianSdi;
 
+use App\Support\Money;
 use InvalidArgumentException;
 use SimpleXMLElement;
 
@@ -14,7 +15,7 @@ use SimpleXMLElement;
 class FatturaPaParser
 {
     /**
-     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string}>}
+     * @return array{supplier: array{country: string, vat: ?string, fiscal_code: ?string, name: string}, recipient_vat: ?string, recipient_fiscal_code: ?string, documents: array<int, array{document_type: string, currency: string, date: string, number: string, total: float, net: float, tax: float, due_date: ?string, withholdings: list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>}>}
      */
     public function parse(string $xml): array
     {
@@ -58,6 +59,7 @@ class FatturaPaParser
                 'net' => round($net, 2),
                 'tax' => round($tax, 2),
                 'due_date' => $this->value($body, 'DatiPagamento/DettaglioPagamento/DataScadenzaPagamento'),
+                'withholdings' => $this->withholdings($body),
             ];
         }
 
@@ -82,6 +84,46 @@ class FatturaPaParser
         $recipient = $this->load($xml)->xpath('//FatturaElettronicaHeader/CessionarioCommittente/DatiAnagrafici')[0] ?? null;
 
         return $recipient !== null ? $this->value($recipient, 'IdFiscaleIVA/IdCodice') : null;
+    }
+
+    /**
+     * DatiRitenuta blocks of one document. The taxable amount is the base implied by amount and rate; without a rate
+     * it falls back to the lines (and cassa) flagged with Ritenuta SI.
+     *
+     * @return list<array{type: string, amount: string, rate: string, reason: ?string, taxable: string}>
+     */
+    private function withholdings(SimpleXMLElement $body): array
+    {
+        $flaggedBase = 0;
+
+        foreach ($body->xpath('DatiBeniServizi/DettaglioLinee') ?: [] as $line) {
+            if (strtoupper((string) $this->value($line, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($line, 'PrezzoTotale') ?? '0');
+            }
+        }
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiCassaPrevidenziale') ?: [] as $fund) {
+            if (strtoupper((string) $this->value($fund, 'Ritenuta')) === 'SI') {
+                $flaggedBase += Money::toCents($this->value($fund, 'ImportoContributoCassa') ?? '0');
+            }
+        }
+
+        $withholdings = [];
+
+        foreach ($body->xpath('DatiGenerali/DatiGeneraliDocumento/DatiRitenuta') ?: [] as $node) {
+            $amount = Money::toCents($this->value($node, 'ImportoRitenuta') ?? '0');
+            $rate = Money::toScaled($this->value($node, 'AliquotaRitenuta') ?? '0', 2);
+
+            $withholdings[] = [
+                'type' => strtoupper($this->value($node, 'TipoRitenuta') ?? 'RT01'),
+                'amount' => Money::fromCents($amount),
+                'rate' => Money::fromScaled($rate, 2),
+                'reason' => $this->value($node, 'CausalePagamento'),
+                'taxable' => Money::fromCents($rate > 0 ? Money::divideRounded($amount * 10000, $rate) : $flaggedBase),
+            ];
+        }
+
+        return $withholdings;
     }
 
     private function load(string $xml): SimpleXMLElement

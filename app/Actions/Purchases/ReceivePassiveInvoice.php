@@ -72,6 +72,19 @@ class ReceivePassiveInvoice
                     'xml_payload' => $xml,
                 ]);
 
+                foreach ($document['withholdings'] as $withholding) {
+                    $invoice->withholdings()->create([
+                        'tenant_id' => $tenant->id,
+                        'supplier_id' => $supplier->id,
+                        'type' => $withholding['type'],
+                        'reason' => $withholding['reason'] !== null ? substr($withholding['reason'], 0, 2) : null,
+                        'rate' => $withholding['rate'],
+                        'taxable_amount' => $withholding['taxable'],
+                        'amount' => $withholding['amount'],
+                        'withheld_year' => (int) substr($document['date'], 0, 4),
+                    ]);
+                }
+
                 $this->events->record($invoice, 'received', ['file_name' => $fileName, 'document_type' => $document['document_type']]);
                 $results[] = ['invoice' => $invoice, 'duplicate' => false];
             }
