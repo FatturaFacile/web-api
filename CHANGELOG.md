@@ -6,6 +6,11 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Dashboard KPI summary** (#71): `total_unpaid` now includes the outstanding balance (gross minus paid) of partially
+  paid invoices, and `total_revenue` includes the amount already collected on them.
+
 ## [1.0.0] - 2026-10-23
 
 First production release: a complete multi-tenant ERP API for Italian and Swiss businesses. Database migrations are
