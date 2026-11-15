@@ -7,13 +7,12 @@ namespace Modules\Inventory\Services;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
-use Throwable;
 
 /**
  * Resolves fine-grained inventory permissions (`inventory.valuation.manage`, `inventory.book.export`)
  * through the existing tenant membership mechanism: `tenant_user.role` (owner/admin are tenant
- * admins) and `tenant_user.permissions` (JSON list supporting `*` and `prefix.*` wildcards),
- * falling back to Spatie permissions when the permission is registered there.
+ * admins) and `tenant_user.permissions` (JSON list supporting `*` and `prefix.*` wildcards).
+ * Spatie permission tables are not migrated in this project, so they are not consulted.
  */
 final class InventoryPermissionChecker
 {
@@ -54,11 +53,7 @@ final class InventoryPermissionChecker
             }
         }
 
-        try {
-            return $user->hasPermissionTo($permission);
-        } catch (Throwable) {
-            return false;
-        }
+        return false;
     }
 
     private function membership(User $user): ?object
