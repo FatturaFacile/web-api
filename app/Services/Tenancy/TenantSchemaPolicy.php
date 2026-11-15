@@ -30,6 +30,7 @@ final class TenantSchemaPolicy
         'jobs' => 'framework queue (the tenant travels in the job payload)',
         'migrations' => 'framework migration log',
         'notifications' => 'framework notifications, addressed to a user (users are central accounts); owner to confirm',
+        'notification_preferences' => 'per-user notification channel preferences, addressed to a user (users are central accounts)',
         'password_reset_tokens' => 'framework password reset, keyed by e-mail of a central account',
         'personal_access_tokens' => 'framework API tokens, owned by a central user account',
         'sessions' => 'framework sessions',

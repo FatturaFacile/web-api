@@ -32,6 +32,10 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'status', type: 'string'),
         new OA\Property(property: 'external_id', type: 'string', nullable: true),
         new OA\Property(property: 'driver', type: 'string'),
+        new OA\Property(property: 'error_message', type: 'string', nullable: true),
+        new OA\Property(property: 'attempts', type: 'integer'),
+        new OA\Property(property: 'last_attempt_at', type: 'string', format: 'date-time', nullable: true),
+        new OA\Property(property: 'can_retry', type: 'boolean'),
     ]
 )]
 #[OA\Schema(

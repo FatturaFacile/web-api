@@ -25,6 +25,8 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Routing\Middleware\ThrottleRequestsWithRedis;
 use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
+use Modules\Platform\Http\Middleware\EnforceIdempotency;
+use Modules\Platform\Http\Middleware\HandleConditionalRequests;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -67,6 +69,8 @@ return Application::configure(basePath: dirname(__DIR__))
             IdentifyTenant::class,
             EnforceSessionPolicy::class,
             EnsureTwoFactorEnrolled::class,
+            EnforceIdempotency::class,
+            HandleConditionalRequests::class,
         ]);
 
         $middleware->alias([

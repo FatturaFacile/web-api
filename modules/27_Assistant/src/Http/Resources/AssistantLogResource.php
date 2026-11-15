@@ -27,6 +27,9 @@ final class AssistantLogResource extends JsonResource
             'parameters' => (object) ($this->parameters ?? []),
             'outcome' => $this->outcome,
             'row_count' => (int) $this->row_count,
+            'thread_id' => $this->thread_id,
+            'feedback' => $this->feedback,
+            'feedback_comment' => $this->feedback_comment,
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

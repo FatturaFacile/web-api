@@ -150,7 +150,7 @@ final readonly class VarianceService
      * @param  array<string, array{code: string, name: string, kind: string}>  $accounts
      * @return array<string, array{label: string, code: string|null}>
      */
-    private function labels(string $tenantId, string $groupBy, array $groups, array $accounts): array
+    public function labels(string $tenantId, string $groupBy, array $groups, array $accounts): array
     {
         $labels = [];
 

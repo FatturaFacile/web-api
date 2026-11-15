@@ -40,7 +40,8 @@ afterEach(fn () => app(TenantContext::class)->clear());
 test('by default every network refuses and nothing is recorded as sent', function (string $network): void {
     $this->postJson("/api/v1/edocument-networks/{$network}/transmissions", networkPayload())->assertServiceUnavailable();
 
-    expect(EDocumentTransmission::query()->count())->toBe(0);
+    expect(EDocumentTransmission::query()->where('status', '!=', 'failed')->count())->toBe(0)
+        ->and(EDocumentTransmission::query()->where('status', 'failed')->count())->toBe(1);
 })->with(['ebill', 'peppol', 'nso']);
 
 test('the list says that no network is available', function (): void {
@@ -116,4 +117,33 @@ test('transmissions are listed with filters and pagination and shown one by one 
 
     networkActAs($this->tenant, 'member');
     $this->getJson("/api/v1/edocument-networks/transmissions/{$first['id']}")->assertForbidden();
+});
+
+test('a refused hand-over stays in the history as failed and the retry delivers it once the network is available', function (): void {
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertServiceUnavailable();
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertServiceUnavailable();
+
+    $failed = collect($this->getJson('/api/v1/edocument-networks/transmissions?status=failed')->assertOk()->assertJsonCount(1, 'data')->json('data'))->first();
+    expect($failed['attempts'])->toBe(2)->and($failed['can_retry'])->toBeTrue()->and($failed['error_message'])->not->toBeEmpty()->and($failed)->not->toHaveKey('payload');
+
+    $this->postJson("/api/v1/edocument-networks/transmissions/{$failed['id']}/retry")->assertServiceUnavailable();
+
+    config(['edocument_networks.drivers.peppol' => 'local']);
+    $this->postJson("/api/v1/edocument-networks/transmissions/{$failed['id']}/retry")->assertOk()
+        ->assertJsonPath('data.status', 'simulated')
+        ->assertJsonPath('data.attempts', 4)
+        ->assertJsonPath('data.can_retry', false)
+        ->assertJsonPath('data.error_message', null);
+
+    expect(EDocumentTransmission::query()->findOrFail($failed['id'])->getRawOriginal('payload'))->toBeNull();
+    $this->postJson("/api/v1/edocument-networks/transmissions/{$failed['id']}/retry")->assertStatus(409);
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertStatus(409);
+});
+
+test('a failed transmission of another company cannot be retried', function (): void {
+    $this->postJson('/api/v1/edocument-networks/peppol/transmissions', networkPayload())->assertServiceUnavailable();
+    $id = EDocumentTransmission::query()->firstOrFail()->id;
+
+    networkActAs(Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta SA']), 'admin');
+    $this->postJson("/api/v1/edocument-networks/transmissions/{$id}/retry")->assertNotFound();
 });

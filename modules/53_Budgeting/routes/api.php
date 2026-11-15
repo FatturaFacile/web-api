@@ -51,4 +51,5 @@ Route::prefix('api/v1/budgeting')
         Route::post('/drivers/{id}/generate', [DriverController::class, 'generate'])->name('drivers.generate');
 
         Route::get('/versions/{id}/variance', [VarianceController::class, 'show'])->name('versions.variance');
+        Route::get('/versions/{id}/compare', [VarianceController::class, 'compare'])->name('versions.compare');
     });

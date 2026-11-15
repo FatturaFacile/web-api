@@ -29,7 +29,7 @@ return [
 
     'allowed_headers' => ['*'],
 
-    'exposed_headers' => [],
+    'exposed_headers' => ['ETag', 'Idempotent-Replayed'],
 
     'max_age' => 0,
 

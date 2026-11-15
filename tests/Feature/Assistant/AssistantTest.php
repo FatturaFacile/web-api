@@ -267,3 +267,46 @@ test('without consent the question never reaches an external driver', function (
     expect($called)->toBeFalse()
         ->and(AssistantQuestionLog::query()->firstOrFail()->resolver)->toBe('keywords');
 });
+
+test('questions are grouped in own threads that can be continued, read and deleted', function (): void {
+    $first = $this->postJson('/api/v1/assistant/ask', ['question' => 'crediti aperti'])->assertOk()->json('data');
+    $this->postJson('/api/v1/assistant/ask', ['question' => 'Che tempo fa domani?', 'thread_id' => $first['thread_id']])->assertOk()
+        ->assertJsonPath('data.thread_id', $first['thread_id']);
+    $other = $this->postJson('/api/v1/assistant/ask', ['question' => 'liquidità'])->assertOk()->json('data');
+
+    expect($other['thread_id'])->not->toBe($first['thread_id']);
+    $this->getJson('/api/v1/assistant/threads')->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.0.title', 'liquidità');
+
+    $detail = $this->getJson("/api/v1/assistant/threads/{$first['thread_id']}")->assertOk()->assertJsonCount(2, 'data.messages')->json('data.messages');
+    expect(array_column($detail, 'question'))->toBe(['crediti aperti', 'Che tempo fa domani?']);
+
+    $this->deleteJson("/api/v1/assistant/threads/{$first['thread_id']}")->assertOk();
+    $this->getJson('/api/v1/assistant/threads')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson("/api/v1/assistant/threads/{$first['thread_id']}")->assertNotFound();
+});
+
+test('a thread of another user or of another company cannot be used', function (): void {
+    $thread = $this->postJson('/api/v1/assistant/ask', ['question' => 'crediti aperti'])->assertOk()->json('data.thread_id');
+
+    assistantActAs(assistantMember($this->tenant, 'owner'), $this->tenant);
+    $this->postJson('/api/v1/assistant/ask', ['question' => 'crediti aperti', 'thread_id' => $thread])->assertUnprocessable()->assertJsonValidationErrors('thread_id');
+    $this->getJson("/api/v1/assistant/threads/{$thread}")->assertNotFound();
+    $this->deleteJson("/api/v1/assistant/threads/{$thread}")->assertNotFound();
+    $this->getJson('/api/v1/assistant/threads')->assertOk()->assertJsonCount(0, 'data');
+
+    assistantActAs(assistantMember($this->other, 'owner'), $this->other);
+    $this->postJson('/api/v1/assistant/ask', ['question' => 'crediti aperti', 'thread_id' => $thread])->assertUnprocessable();
+});
+
+test('the user rates an own answer and the administrators read the rating in the log', function (): void {
+    $answer = $this->postJson('/api/v1/assistant/ask', ['question' => 'Che tempo fa domani?'])->assertOk()->json('data');
+
+    $this->postJson("/api/v1/assistant/logs/{$answer['log_id']}/feedback", ['rating' => 'amazing'])->assertUnprocessable()->assertJsonValidationErrors('rating');
+    $this->postJson("/api/v1/assistant/logs/{$answer['log_id']}/feedback", ['rating' => 'not_helpful', 'comment' => 'It did not understand'])->assertOk()
+        ->assertJsonPath('data.feedback', 'not_helpful');
+    $this->postJson("/api/v1/assistant/logs/{$answer['log_id']}/feedback", ['rating' => 'helpful'])->assertOk()->assertJsonPath('data.feedback', 'helpful')->assertJsonPath('data.feedback_comment', null);
+
+    assistantActAs(assistantMember($this->tenant, 'owner'), $this->tenant);
+    $this->postJson("/api/v1/assistant/logs/{$answer['log_id']}/feedback", ['rating' => 'helpful'])->assertNotFound();
+    $this->getJson('/api/v1/assistant/logs')->assertOk()->assertJsonPath('data.0.feedback', 'helpful');
+});

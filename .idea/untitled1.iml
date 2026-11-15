@@ -74,6 +74,11 @@
       <sourceFolder url="file://$MODULE_DIR$/modules/55_TalentLearning/src" isTestSource="false" packagePrefix="Modules\TalentLearning\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/56_BusinessIntelligence/src" isTestSource="false" packagePrefix="Modules\BusinessIntelligence\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/57_Marketplace/src" isTestSource="false" packagePrefix="Modules\Marketplace\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/58_Platform/src" isTestSource="false" packagePrefix="Modules\Platform\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/59_Collaboration/src" isTestSource="false" packagePrefix="Modules\Collaboration\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/60_Rebates/src" isTestSource="false" packagePrefix="Modules\Rebates\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/61_Events/src" isTestSource="false" packagePrefix="Modules\Events\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/62_Plm/src" isTestSource="false" packagePrefix="Modules\Plm\" />
       <excludeFolder url="file://$MODULE_DIR$/bootstrap/cache" />
       <excludeFolder url="file://$MODULE_DIR$/storage/app" />
       <excludeFolder url="file://$MODULE_DIR$/storage/framework" />

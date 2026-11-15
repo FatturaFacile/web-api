@@ -5,9 +5,9 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -40,7 +40,7 @@ class HealthController extends Controller
     public function ready(): JsonResponse
     {
         $checks = [
-            'database' => $this->passes(static fn (): bool => DB::connection()->getPdo() !== null),
+            'database' => $this->passes(static fn (): bool => Tenant::query()->getConnection()->getPdo() !== null),
             'cache' => $this->passes(static function (): bool {
                 $key = 'health:ready:'.bin2hex(random_bytes(4));
                 Cache::put($key, 'ok', 10);

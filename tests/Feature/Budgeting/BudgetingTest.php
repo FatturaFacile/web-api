@@ -426,3 +426,33 @@ test('budgeting data never crosses company boundaries', function (): void {
     $this->getJson('/api/v1/budgeting/dashboard?version_id='.$version['id'])->assertUnprocessable()->assertJsonValidationErrors('version_id');
     expect(BudgetVersion::query()->withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count())->toBe(1);
 });
+
+test('two scenarios are compared side by side', function (): void {
+    $base = bdgVersion()['id'];
+    $scenario = bdgVersion(['version_type' => 'forecast'])['id'];
+
+    foreach ([1, 2] as $period) {
+        bdgLine($base, $this->expense->id, $period, '1000')->assertCreated();
+        bdgLine($scenario, $this->expense->id, $period, '1200')->assertCreated();
+    }
+
+    bdgLine($scenario, $this->revenue->id, 1, '500')->assertCreated();
+
+    $data = $this->getJson("/api/v1/budgeting/versions/{$base}/compare?with={$scenario}&through_period=1")->assertOk()->json('data');
+    $expense = collect($data['rows'])->firstWhere('key', $this->expense->id);
+    $revenue = collect($data['rows'])->firstWhere('key', $this->revenue->id);
+
+    expect($expense['base'])->toBe('1000.00')->and($expense['scenario'])->toBe('1200.00')->and($expense['delta'])->toBe('200.00')->and($expense['delta_percent'])->toBe('20.0')
+        ->and($revenue['base'])->toBe('0.00')->and($revenue['delta'])->toBe('500.00')->and($revenue['delta_percent'])->toBeNull()
+        ->and($data['totals']['delta'])->toBe('700.00');
+
+    $byPeriod = $this->getJson("/api/v1/budgeting/versions/{$base}/compare?with={$scenario}&group_by=period")->assertOk()->json('data.rows');
+    expect(array_column($byPeriod, 'key'))->toBe(['1', '2']);
+
+    $this->getJson("/api/v1/budgeting/versions/{$base}/compare")->assertUnprocessable()->assertJsonValidationErrors('with');
+    $this->getJson("/api/v1/budgeting/versions/{$base}/compare?with={$base}")->assertUnprocessable();
+
+    $other = bdgTenant('Altra');
+    bdgAct(bdgMember($other, 'owner'), $other);
+    $this->getJson("/api/v1/budgeting/versions/{$base}/compare?with={$scenario}")->assertNotFound();
+});

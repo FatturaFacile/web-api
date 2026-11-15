@@ -14,25 +14,25 @@ use Modules\Analytics\Providers\AnalyticsServiceProvider;
 use Modules\AssetManagement\Providers\AssetManagementServiceProvider;
 use Modules\Assistant\Providers\AssistantServiceProvider;
 use Modules\Associations\Providers\AssociationsServiceProvider;
+use Modules\Budgeting\Providers\BudgetingServiceProvider;
+use Modules\BusinessIntelligence\Providers\BusinessIntelligenceServiceProvider;
 use Modules\Childcare\Providers\ChildcareServiceProvider;
+use Modules\Collaboration\Providers\CollaborationServiceProvider;
 use Modules\Communication\Providers\CommunicationServiceProvider;
 use Modules\Configurator\Providers\ConfiguratorServiceProvider;
 use Modules\ConstructionTrades\Providers\ConstructionTradesServiceProvider;
 use Modules\Contracts\Providers\ContractsServiceProvider;
+use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
 use Modules\CRM\Providers\CRMServiceProvider;
 use Modules\Customs\Providers\CustomsServiceProvider;
 use Modules\DataExport\Providers\DataExportServiceProvider;
 use Modules\Documents\Providers\DocumentsServiceProvider;
 use Modules\DocumentTrust\Providers\DocumentTrustServiceProvider;
 use Modules\EDocumentNetworks\Providers\EDocumentNetworksServiceProvider;
+use Modules\Events\Providers\EventsServiceProvider;
 use Modules\Facility\Providers\FacilityServiceProvider;
 use Modules\FiscalRetail\Providers\FiscalRetailServiceProvider;
-use Modules\BusinessIntelligence\Providers\BusinessIntelligenceServiceProvider;
 use Modules\Fleet\Providers\FleetServiceProvider;
-use Modules\CreditManagement\Providers\CreditManagementServiceProvider;
-use Modules\Budgeting\Providers\BudgetingServiceProvider;
-use Modules\Planning\Providers\PlanningServiceProvider;
-use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\Governance\Providers\GovernanceServiceProvider;
 use Modules\HealthExpenses\Providers\HealthExpensesServiceProvider;
@@ -44,23 +44,28 @@ use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
+use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
+use Modules\Planning\Providers\PlanningServiceProvider;
+use Modules\Platform\Providers\PlatformServiceProvider;
+use Modules\Plm\Providers\PlmServiceProvider;
 use Modules\PracticeManagement\Providers\PracticeManagementServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
 use Modules\Quality\Providers\QualityServiceProvider;
+use Modules\Rebates\Providers\RebatesServiceProvider;
 use Modules\Returns\Providers\ReturnsServiceProvider;
-use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
-use Modules\Transportation\Providers\TransportationServiceProvider;
-use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\SDI\Providers\SdiServiceProvider;
 use Modules\ServiceManagement\Providers\ServiceManagementServiceProvider;
 use Modules\SubscriptionBilling\Providers\SubscriptionBillingServiceProvider;
 use Modules\SupplierPortal\Providers\SupplierPortalServiceProvider;
 use Modules\Sustainability\Providers\SustainabilityServiceProvider;
+use Modules\TalentLearning\Providers\TalentLearningServiceProvider;
+use Modules\Transportation\Providers\TransportationServiceProvider;
 use Modules\TravelExpense\Providers\TravelExpenseServiceProvider;
 use Modules\Treasury\Providers\TreasuryServiceProvider;
 use Modules\Visitors\Providers\VisitorsServiceProvider;
+use Modules\Wms\Providers\WmsServiceProvider;
 use Modules\Workflow\Providers\WorkflowServiceProvider;
 use Modules\Workshop\Providers\WorkshopServiceProvider;
 use Modules\WorkspaceSync\Providers\WorkspaceSyncServiceProvider;
@@ -127,6 +132,11 @@ return [
     BudgetingServiceProvider::class,
     BusinessIntelligenceServiceProvider::class,
     MarketplaceServiceProvider::class,
+    RebatesServiceProvider::class,
+    EventsServiceProvider::class,
+    PlmServiceProvider::class,
+    PlatformServiceProvider::class,
+    CollaborationServiceProvider::class,
     ReturnsServiceProvider::class,
     WmsServiceProvider::class,
     TransportationServiceProvider::class,

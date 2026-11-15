@@ -68,6 +68,7 @@ Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOver
 // Analytics: daily KPI snapshots (the day that just ended) first, then the scheduled report exports.
 Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutOverlapping()->onOneServer();
 Schedule::command('analytics:run-scheduled-exports')->dailyAt('06:00')->withoutOverlapping()->onOneServer();
+Schedule::command('exports:run-scheduled')->dailyAt('05:30')->withoutOverlapping()->onOneServer();
 // Business intelligence: the scheduled snapshots of saved queries, after the KPI snapshots of the day that just ended.
 Schedule::command('business-intelligence:run-snapshots')->dailyAt('01:40')->withoutOverlapping()->onOneServer();
 // Marketplace: health of the enabled connector installations.

@@ -179,8 +179,28 @@ return [
             'read' => $anyMember,
             'write' => ['owner', 'admin', 'accountant', 'sales_manager', 'procurement_manager', 'service_manager', 'project_manager', 'member'],
         ],
+        // Platform: the recycle bin (restore or destroy deleted records) is for owners and administrators; the notification centre is personal and has no module rule.
+        'platform' => ['read' => $managers, 'write' => $managers],
         // Marketplace (connectors holding credentials of external systems): only owners and administrators manage them.
         'marketplace' => ['read' => $managers, 'write' => $managers],
+        // Event management (events, sessions, tickets, registrations, check-in): every member reads; owners,
+        // administrators, accountants, sales and service staff keep them.
+        'events' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'service_manager', 'member'],
+        ],
+        // Product lifecycle management (change orders, item revisions): every member reads; owners, administrators,
+        // production, technical and purchasing staff keep them. Deciding a change order is reserved to its approvers.
+        'plm' => [
+            'read' => $anyMember,
+            'write' => ['owner', 'admin', 'production', 'technician', 'procurement_manager', 'member'],
+        ],
+        // Volume rebates and trade promotions: finance and sales roles read; owners, administrators, accountants, sales
+        // managers and purchasing managers keep agreements (customers and suppliers), accruals, settlements and promotions.
+        'rebates' => [
+            'read' => [...$financeReaders, 'sales', 'sales_manager', 'procurement_manager'],
+            'write' => [...$finance, 'sales_manager', 'procurement_manager'],
+        ],
         // Credit risk and collections: finance and sales roles read; owners, administrators, accountants and sales
         // managers score customers, work the cases and request limits. Deciding a credit limit request and writing a
         // case off are reserved by the policy to owners, administrators and members granted credit-management.approve.
@@ -213,6 +233,9 @@ return [
         // return window and deciding a warranty claim are reserved by the policy to owners, administrators and members
         // granted returns.approve.
         'returns' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'warehouse', 'purchasing', 'service_manager', 'technician', 'member']],
+        // Collaboration (global search, comments with mentions, shared tags, record timeline): every member reads and writes.
+        // Each record type also needs read access to its own module, checked per request by the collaboration registry.
+        'collaboration' => ['read' => $anyMember, 'write' => $anyMember],
     ],
 
     /*
