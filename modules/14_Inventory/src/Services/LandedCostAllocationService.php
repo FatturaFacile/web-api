@@ -13,7 +13,6 @@ use Modules\Inventory\Enums\LandedCostAllocationKey;
 use Modules\Inventory\Enums\ValuationMethod;
 use Modules\Inventory\Models\InventoryCostLayer;
 use Modules\Inventory\Models\StockItem;
-use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\StockQuant;
 use Modules\Inventory\Support\Decimal;
 
@@ -156,18 +155,10 @@ final class LandedCostAllocationService implements LandedCostAllocationServiceIn
             if (! Decimal::isPositive($onHand)) {
                 return ['0.00', $allocated, '0.00'];
             }
-
-            // Units of the receipt considered sold = issues since the receipt, capped at the received quantity.
-            $issuedSince = Decimal::of((string) StockMovement::query()
-                ->where('stock_item_id', $item->id)
-                ->whereNotNull('source_location_id')
-                ->whereNull('destination_location_id')
-                ->where('executed_at', '>=', $layer->received_at)
-                ->sum('quantity'));
-            $sold = Decimal::min($issuedSince, $original);
-        } else {
-            $sold = Decimal::sub($original, (string) $layer->remaining_quantity);
         }
+
+        // Layers are depleted FIFO for every method, so consumed quantity is the exact sold share of this receipt.
+        $sold = Decimal::min(Decimal::max('0', Decimal::sub($original, (string) $layer->remaining_quantity)), $original);
 
         $toCogs = Decimal::money(Decimal::div(Decimal::mul($allocated, $sold), $original));
         $remainder = Decimal::money(Decimal::sub($allocated, $toCogs));
