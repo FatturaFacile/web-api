@@ -297,6 +297,13 @@ test('accepts browser forms with API key, allowed origin and empty honeypot', fu
         ->assertUnauthorized();
 
     expect(Lead::withoutGlobalScopes()->where('email', 'bot@example.com')->exists())->toBeFalse();
+
+    // Plain HTML forms cannot set headers: the key may travel as the _api_key field and is never stored.
+    $plain = $this->withHeaders(['Origin' => 'https://www.example-shop.it', 'Accept' => 'application/json'])
+        ->post("/api/v1/webhooks/crm/leads/{$this->source->id}", ['email' => 'plain@example.com', '_api_key' => $this->apiKey, '_hp' => ''])
+        ->assertCreated();
+
+    expect(Lead::findOrFail($plain->json('data.lead_id'))->custom_fields)->not->toHaveKey('_api_key');
 });
 
 test('leaves the lead unassigned and notifies admins when no routing rule matches', function (): void {

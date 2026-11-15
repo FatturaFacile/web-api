@@ -19,6 +19,12 @@ abstract class AbstractLeadPayloadAdapter implements LeadPayloadAdapter
     public const string HONEYPOT_FIELD = '_hp';
 
     /**
+     * Body fallback for X-Api-Key: plain HTML forms cannot set headers, and a custom header would force a
+     * CORS preflight from the customer's site.
+     */
+    public const string API_KEY_FIELD = '_api_key';
+
+    /**
      * Canonical lead attribute => accepted (normalized) incoming field names.
      *
      * @var array<string, list<string>>
@@ -157,11 +163,16 @@ abstract class AbstractLeadPayloadAdapter implements LeadPayloadAdapter
     }
 
     /**
-     * Simple browser forms: X-Api-Key + Origin listed in allowed_origins + empty honeypot field.
+     * Simple browser forms: X-Api-Key (or the _api_key field) + Origin listed in allowed_origins + empty honeypot.
      */
     protected function verifyBrowserApiKey(Request $request, LeadSource $source): bool
     {
         $apiKey = (string) $request->header('X-Api-Key', '');
+        if ($apiKey === '') {
+            $field = $request->input(self::API_KEY_FIELD);
+            $apiKey = is_string($field) ? $field : '';
+        }
+
         if ($apiKey === '' || ! $source->verifyApiKey($apiKey)) {
             return false;
         }
@@ -238,7 +249,7 @@ abstract class AbstractLeadPayloadAdapter implements LeadPayloadAdapter
     {
         $normalized = [];
         foreach ($raw as $key => $value) {
-            if ($key === self::HONEYPOT_FIELD) {
+            if ($key === self::HONEYPOT_FIELD || $key === self::API_KEY_FIELD) {
                 continue;
             }
             $normalized[$this->normalizeKey((string) $key)] = $value;

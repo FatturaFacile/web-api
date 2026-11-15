@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadScoringRule;
+use Modules\CRM\Models\LeadSource;
 
 uses(RefreshDatabase::class);
 
@@ -211,4 +212,26 @@ test('isolates scoring rules and leads between tenants', function (): void {
 
     // Asking explicitly for the other tenant is refused by the tenant middleware.
     $this->withHeader('X-Tenant-Id', (string) $otherTenant->id)->getJson('/api/v1/crm/scoring-rules')->assertForbidden();
+});
+
+test('filters and sorts the lead list by rating, assignee, source and score', function (): void {
+    app(TenantContext::class)->setTenant($this->tenant);
+    $source = LeadSource::create(['tenant_id' => (string) $this->tenant->id, 'code' => 'fair', 'name' => 'Trade fair', 'type' => 'manual', 'is_active' => true]);
+    $hot = Lead::create(['tenant_id' => (string) $this->tenant->id, 'email' => 'hot@lead.it', 'status' => 'new', 'score' => 90, 'rating' => 'hot', 'assigned_user_id' => (string) $this->admin->id, 'lead_source_id' => $source->id]);
+    $warm = Lead::create(['tenant_id' => (string) $this->tenant->id, 'email' => 'warm@lead.it', 'status' => 'new', 'score' => 50, 'rating' => 'warm']);
+    $cold = Lead::create(['tenant_id' => (string) $this->tenant->id, 'email' => 'cold@lead.it', 'status' => 'new', 'score' => 10, 'rating' => 'cold', 'lead_source_id' => $source->id]);
+
+    $ids = fn (string $query): array => collect($this->getJson('/api/v1/crm/leads?'.$query)->assertOk()->json('data'))->pluck('id')->all();
+
+    expect($ids('rating=hot'))->toBe([(string) $hot->id])
+        ->and($ids('assigned_user_id='.$this->admin->id))->toBe([(string) $hot->id])
+        ->and($ids('source=fair'))->toBe([(string) $hot->id, (string) $cold->id])
+        ->and($ids('source='.$source->id))->toBe([(string) $hot->id, (string) $cold->id])
+        ->and($ids('min_score=40'))->toBe([(string) $hot->id, (string) $warm->id])
+        ->and($ids('sort=score'))->toBe([(string) $cold->id, (string) $warm->id, (string) $hot->id])
+        ->and($ids('sort=-score'))->toBe([(string) $hot->id, (string) $warm->id, (string) $cold->id]);
+
+    $this->getJson('/api/v1/crm/leads/'.$hot->id)
+        ->assertOk()
+        ->assertJsonStructure(['score_breakdown', 'rating', 'vat_number', 'phone_e164', 'industry', 'employee_count', 'state_region', 'product_line', 'last_activity_at', 'merged_into_lead_id']);
 });

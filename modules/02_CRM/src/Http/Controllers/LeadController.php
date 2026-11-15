@@ -51,10 +51,12 @@ final class LeadController extends Controller
         if ($request->filled('source')) {
             $source = (string) $request->query('source');
             $query->whereHas('leadSource', function ($sourceQuery) use ($source): void {
-                $sourceQuery->where('code', $source);
-                if (Str::isUuid($source)) {
-                    $sourceQuery->orWhere('id', $source);
-                }
+                $sourceQuery->where(function ($match) use ($source): void {
+                    $match->where('code', $source);
+                    if (Str::isUuid($source)) {
+                        $match->orWhere('id', $source);
+                    }
+                });
             });
         }
 
