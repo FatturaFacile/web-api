@@ -31,14 +31,14 @@ function platformAdminUser(): User
     return $user;
 }
 
-function actAs(User $user, Tenant $tenant): void
+function actAsMember(User $user, Tenant $tenant): void
 {
     Sanctum::actingAs($user);
     test()->withHeader('X-Tenant-Id', $tenant->id);
 }
 
 test('an owner adds a registered user with a role and module levels', function (): void {
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
     $newcomer = User::create(['name' => 'Newcomer', 'email' => 'new@example.com', 'password' => Str::password(20)]);
 
     $this->postJson('/api/v1/settings/users', ['email' => 'new@example.com', 'role' => 'sales', 'modules' => ['treasury' => 'blocked', 'crm' => 'read']])
@@ -51,7 +51,7 @@ test('an owner adds a registered user with a role and module levels', function (
 });
 
 test('adding an unknown email or an existing member is refused', function (): void {
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
     $member = membershipUser($this->tenant, 'member');
 
     $this->postJson('/api/v1/settings/users', ['email' => 'nobody@example.com'])->assertUnprocessable();
@@ -60,22 +60,22 @@ test('adding an unknown email or an existing member is refused', function (): vo
 
 test('a blocked module is closed to the member whatever the role says', function (): void {
     $member = membershipUser($this->tenant, 'member');
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$member->id}", ['modules' => ['crm' => 'blocked']])->assertOk();
 
-    actAs($member, $this->tenant);
+    actAsMember($member, $this->tenant);
     $this->getJson('/api/v1/crm/clients')->assertForbidden();
     expect($this->getJson('/api/v1/invoicing/invoices')->status())->not->toBe(403);
 });
 
 test('a read level keeps the member from writing and a write level opens writing', function (): void {
     $member = membershipUser($this->tenant, 'member');
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$member->id}", ['modules' => ['invoicing' => 'read', 'crm' => 'write']])->assertOk();
 
-    actAs($member, $this->tenant);
+    actAsMember($member, $this->tenant);
     expect($this->getJson('/api/v1/invoicing/invoices')->status())->not->toBe(403);
     $this->postJson('/api/v1/invoicing/invoices', [])->assertForbidden();
     expect($this->postJson('/api/v1/crm/contacts', [])->status())->not->toBe(403);
@@ -83,7 +83,7 @@ test('a read level keeps the member from writing and a write level opens writing
 
 test('the default level clears a module and the other permissions stay', function (): void {
     $member = membershipUser($this->tenant, 'member', ['gl.journals.post', 'deny:crm']);
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$member->id}", ['modules' => ['crm' => 'default']])
         ->assertOk()
@@ -92,14 +92,14 @@ test('the default level clears a module and the other permissions stay', functio
 });
 
 test('the profile lists the permissions of the active membership', function (): void {
-    actAs(membershipUser($this->tenant, 'member', ['deny:crm']), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'member', ['deny:crm']), $this->tenant);
 
     $this->getJson('/api/v1/auth/profile')->assertOk()->assertJsonPath('data.permissions', ['deny:crm']);
 });
 
 test('members without the system module cannot manage users', function (): void {
     $member = membershipUser($this->tenant, 'member');
-    actAs(membershipUser($this->tenant, 'accountant'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'accountant'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$member->id}", ['role' => 'admin'])->assertForbidden();
     $this->postJson('/api/v1/settings/users', ['email' => 'x@example.com'])->assertForbidden();
@@ -109,7 +109,7 @@ test('members without the system module cannot manage users', function (): void 
 
 test('nobody changes their own membership', function (): void {
     $admin = membershipUser($this->tenant, 'admin');
-    actAs($admin, $this->tenant);
+    actAsMember($admin, $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$admin->id}", ['role' => 'member'])->assertConflict();
     $this->deleteJson("/api/v1/settings/users/{$admin->id}")->assertConflict();
@@ -118,7 +118,7 @@ test('nobody changes their own membership', function (): void {
 test('only an owner grants the owner role or touches an owner', function (): void {
     $owner = membershipUser($this->tenant, 'owner');
     $member = membershipUser($this->tenant, 'member');
-    actAs(membershipUser($this->tenant, 'admin'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'admin'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$member->id}", ['role' => 'owner'])->assertForbidden();
     $this->putJson("/api/v1/settings/users/{$owner->id}", ['role' => 'member'])->assertForbidden();
@@ -129,21 +129,21 @@ test('the last owner cannot be demoted or removed', function (): void {
     $lastOwner = membershipUser($this->tenant, 'owner');
     $root = platformAdminUser();
     $this->tenant->users()->attach($root->id, ['id' => (string) Str::uuid(), 'role' => 'admin', 'permissions' => json_encode([])]);
-    actAs($root, $this->tenant);
+    actAsMember($root, $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$lastOwner->id}", ['role' => 'member'])->assertConflict();
     $this->deleteJson("/api/v1/settings/users/{$lastOwner->id}")->assertConflict();
 });
 
 test('an owner is not locked out by a deny permission', function (): void {
-    actAs(membershipUser($this->tenant, 'owner', ['deny:system']), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner', ['deny:system']), $this->tenant);
 
     $this->getJson('/api/v1/settings/access-options')->assertOk();
 });
 
 test('an unknown role, module or level is rejected', function (): void {
     $member = membershipUser($this->tenant, 'member');
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$member->id}", ['role' => 'wizard'])->assertUnprocessable();
     $this->putJson("/api/v1/settings/users/{$member->id}", ['modules' => ['nope' => 'read']])->assertUnprocessable();
@@ -153,7 +153,7 @@ test('an unknown role, module or level is rejected', function (): void {
 test('a member of another tenant cannot be managed', function (): void {
     $other = Tenant::create(['name' => 'Beta', 'legal_name' => 'Beta SA']);
     $stranger = membershipUser($other, 'member');
-    actAs(membershipUser($this->tenant, 'owner'), $this->tenant);
+    actAsMember(membershipUser($this->tenant, 'owner'), $this->tenant);
 
     $this->putJson("/api/v1/settings/users/{$stranger->id}", ['role' => 'admin'])->assertNotFound();
     $this->deleteJson("/api/v1/settings/users/{$stranger->id}")->assertNotFound();
@@ -179,7 +179,7 @@ test('a platform administrator grants, changes and removes the access to a tenan
 
 test('the platform administration of tenant access is closed to tenant users', function (): void {
     $user = membershipUser($this->tenant, 'owner');
-    actAs($user, $this->tenant);
+    actAsMember($user, $this->tenant);
 
     $this->getJson('/api/v1/admin/users')->assertForbidden();
     $this->putJson("/api/v1/admin/users/{$user->id}/tenants/{$this->tenant->id}", [])->assertForbidden();

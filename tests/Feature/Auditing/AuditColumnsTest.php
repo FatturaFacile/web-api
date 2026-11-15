@@ -5,7 +5,9 @@ declare(strict_types=1);
 use App\Models\Tenant;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 uses(RefreshDatabase::class);
 
@@ -40,4 +42,29 @@ test('the stamper fills the audit users from the authenticated user and leaves t
 
     $tenant->update(['name' => 'Renamed']);
     expect($tenant->fresh()->updated_by)->toBe($user->id);
+});
+
+test('attaching and updating a tenant membership stamps the pivot audit users and leaves them null in the CLI', function (): void {
+    $tenant = Tenant::factory()->create();
+    $member = User::factory()->create();
+    $cliMember = User::factory()->create();
+
+    $tenant->users()->attach($cliMember->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
+    expect(DB::table('tenant_user')->where('user_id', $cliMember->id)->value('created_by'))->toBeNull();
+
+    $actor = User::factory()->create();
+    $this->actingAs($actor);
+
+    $tenant->users()->attach($member->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
+    $row = DB::table('tenant_user')->where('user_id', $member->id)->first();
+    expect($row->created_by)->toBe($actor->id)->and($row->updated_by)->toBe($actor->id);
+
+    $other = User::factory()->create();
+    $this->actingAs($other);
+    $tenant->users()->updateExistingPivot($member->id, ['role' => 'admin']);
+    $row = DB::table('tenant_user')->where('user_id', $member->id)->first();
+    expect($row->role)->toBe('admin')->and($row->created_by)->toBe($actor->id)->and($row->updated_by)->toBe($other->id);
+
+    $tenant->users()->detach($member->id);
+    expect(DB::table('tenant_user')->where('user_id', $member->id)->exists())->toBeFalse();
 });

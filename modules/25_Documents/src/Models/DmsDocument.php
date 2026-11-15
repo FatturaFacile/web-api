@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Documents\Models;
 
+use App\Models\Pivots\AuditedPivot;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -132,6 +133,8 @@ final class DmsDocument extends BaseEnterpriseModel
      */
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(DmsTag::class, 'dms_document_tag', 'document_id', 'tag_id')->withPivot('tenant_id');
+        return $this->belongsToMany(DmsTag::class, 'dms_document_tag', 'document_id', 'tag_id')
+            ->using(AuditedPivot::class)
+            ->withPivot('tenant_id');
     }
 }

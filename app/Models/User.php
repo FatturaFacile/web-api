@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Pivots\AuditedPivot;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Database\Factories\UserFactory;
@@ -99,6 +100,7 @@ class User extends Authenticatable
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user')
+            ->using(AuditedPivot::class)
             ->withPivot(['id', 'role', 'permissions'])
             ->wherePivotNull('suspended_at')
             ->withTimestamps();
