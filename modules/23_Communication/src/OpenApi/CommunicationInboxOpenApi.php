@@ -52,6 +52,13 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'body', type: 'string', maxLength: 20000),
     new OA\Property(property: 'received_at', type: 'string', format: 'date-time', nullable: true),
 ])]
+#[OA\Schema(schema: 'CommunicationInboundEmailWebhookRequest', type: 'object', required: ['from', 'text'], properties: [
+    new OA\Property(property: 'from', type: 'string', format: 'email', maxLength: 190),
+    new OA\Property(property: 'from_name', type: 'string', nullable: true, maxLength: 160),
+    new OA\Property(property: 'subject', type: 'string', nullable: true, maxLength: 255),
+    new OA\Property(property: 'text', type: 'string', maxLength: 20000),
+    new OA\Property(property: 'received_at', type: 'string', format: 'date-time', nullable: true),
+])]
 #[OA\Schema(schema: 'CommunicationReplyRequest', type: 'object', required: ['body'], properties: [new OA\Property(property: 'body', type: 'string', maxLength: 20000)])]
 #[OA\Schema(schema: 'CommunicationAssignRequest', type: 'object', required: ['user_id'], properties: [new OA\Property(property: 'user_id', description: 'Member of the company; null unassigns', type: 'string', format: 'uuid', nullable: true)])]
 #[OA\Schema(schema: 'CommunicationConversationStatusRequest', type: 'object', required: ['status'], properties: [new OA\Property(property: 'status', type: 'string', enum: ['open', 'pending', 'resolved', 'closed'])])]

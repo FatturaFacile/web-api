@@ -35,11 +35,16 @@ Route::prefix('api/v1/practice')
         Route::post('/expenses', [ExpenseController::class, 'store'])->name('expenses.store');
         Route::put('/expenses/{id}', [ExpenseController::class, 'update'])->name('expenses.update');
         Route::delete('/expenses/{id}', [ExpenseController::class, 'destroy'])->name('expenses.destroy');
+        Route::post('/expenses/{id}/receipt', [ExpenseController::class, 'storeReceipt'])->name('expenses.receipt.store');
+        Route::get('/expenses/{id}/receipt', [ExpenseController::class, 'showReceipt'])->name('expenses.receipt.show');
+        Route::delete('/expenses/{id}/receipt', [ExpenseController::class, 'destroyReceipt'])->name('expenses.receipt.destroy');
 
         Route::get('/trust-ledger', [TrustLedgerController::class, 'index'])->name('trust.index');
         Route::get('/trust-ledger/balances', [TrustLedgerController::class, 'balances'])->name('trust.balances');
         Route::post('/trust-ledger', [TrustLedgerController::class, 'store'])->name('trust.store');
         Route::post('/trust-ledger/{id}/reverse', [TrustLedgerController::class, 'reverse'])->name('trust.reverse');
+        Route::post('/trust-ledger/{id}/post', [TrustLedgerController::class, 'post'])->name('trust.post');
+        Route::post('/trust-ledger/{id}/reconcile', [TrustLedgerController::class, 'reconcile'])->name('trust.reconcile');
 
         Route::get('/conflict-checks', [ConflictController::class, 'index'])->name('conflicts.index');
         Route::post('/conflict-checks', [ConflictController::class, 'check'])->name('conflicts.check');
@@ -51,6 +56,8 @@ Route::prefix('api/v1/practice')
         Route::post('/fee-proposals', [FeeProposalController::class, 'store'])->name('proposals.store');
         Route::get('/fee-proposals/{id}', [FeeProposalController::class, 'show'])->name('proposals.show');
         Route::put('/fee-proposals/{id}', [FeeProposalController::class, 'update'])->name('proposals.update');
+        Route::get('/fee-proposals/{id}/pdf', [FeeProposalController::class, 'pdf'])->name('proposals.pdf');
+        Route::post('/fee-proposals/expire', [FeeProposalController::class, 'expire'])->name('proposals.expire');
         Route::post('/fee-proposals/{id}/send', [FeeProposalController::class, 'send'])->name('proposals.send');
         Route::post('/fee-proposals/{id}/accept', [FeeProposalController::class, 'accept'])->name('proposals.accept');
         Route::post('/fee-proposals/{id}/decline', [FeeProposalController::class, 'decline'])->name('proposals.decline');

@@ -46,4 +46,11 @@ return [
         'fetched' => 'Letti :count record di :resource.',
         'delivered' => 'L\'evento è stato consegnato.',
     ],
+    'mapping' => [
+        'missing_field' => 'Il campo ":field" manca.',
+        'invalid_amount' => 'L\'importo ":field" non è un numero.',
+        'invalid_currency' => 'La valuta non è un codice ISO valido.',
+        'invalid_date' => 'La data non è valida.',
+        'invalid_lines' => 'Le righe dell\'ordine non sono valide.',
+    ],
 ];

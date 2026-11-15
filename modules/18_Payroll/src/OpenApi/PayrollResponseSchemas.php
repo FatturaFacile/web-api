@@ -90,6 +90,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'month', type: 'integer'),
         new OA\Property(property: 'employee_name', type: 'string'),
         new OA\Property(property: 'paid_days', type: 'string', description: 'Decimal string.'),
+        new OA\Property(property: 'currency', type: 'string', nullable: true, description: 'ISO 4217 code, copied from the payroll run.'),
         new OA\Property(property: 'gross_salary', type: 'string', description: 'Decimal string.'),
         new OA\Property(property: 'ahv_basis', type: 'string', description: 'Decimal string.'),
         new OA\Property(property: 'alv_basis', type: 'string', description: 'Decimal string.'),

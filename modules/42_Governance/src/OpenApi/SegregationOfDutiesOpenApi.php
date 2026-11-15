@@ -66,4 +66,14 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'role', type: 'string', maxLength: 50),
     new OA\Property(property: 'permissions', type: 'array', items: new OA\Items(type: 'string', maxLength: 120)),
 ])]
+#[OA\Schema(schema: 'GovSodDocumentRuleRequest', required: ['severity', 'is_active'], type: 'object', properties: [
+    new OA\Property(property: 'severity', description: 'block refuses the approval or release by anyone who prepared the document, warn lets it through and writes it on the audit ledger', type: 'string', enum: ['warn', 'block']),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+])]
+#[OA\Schema(schema: 'GovSodDocumentRule', type: 'object', properties: [
+    new OA\Property(property: 'document_type', type: 'string', enum: ['payment', 'purchase_order', 'journal', 'payroll_run']),
+    new OA\Property(property: 'severity', type: 'string', enum: ['warn', 'block']),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'configured', description: 'False while the company has not set the rule', type: 'boolean'),
+])]
 final class SegregationOfDutiesOpenApi {}

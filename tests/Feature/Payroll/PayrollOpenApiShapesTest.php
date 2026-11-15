@@ -46,7 +46,7 @@ test('runs, payslips and their events keep the documented fields and the capital
     $show = $api()->getJson("/api/v1/payroll/runs/{$id}")->assertOk();
     payrollExpectKeys($show->json('data'), [...$runKeys, 'payslips', 'events']);
 
-    $payslipKeys = ['id', 'tenant_id', 'payroll_run_id', 'employee_id', 'year', 'month', 'employee_name', 'paid_days', 'gross_salary', 'ahv_basis', 'alv_basis', 'uvg_basis', 'ktg_basis', 'bvg_insured_salary', 'withholding_tax_basis', 'withholding_tax_rate_percent', 'withholding_tax_code', 'withholding_tax_canton', 'employee_deductions', 'net_salary', 'payout_amount', 'employer_contributions', 'warnings', 'created_at', 'updated_at', 'is_generic'];
+    $payslipKeys = ['id', 'tenant_id', 'payroll_run_id', 'employee_id', 'year', 'month', 'employee_name', 'paid_days', 'currency', 'gross_salary', 'ahv_basis', 'alv_basis', 'uvg_basis', 'ktg_basis', 'bvg_insured_salary', 'withholding_tax_basis', 'withholding_tax_rate_percent', 'withholding_tax_code', 'withholding_tax_canton', 'employee_deductions', 'net_salary', 'payout_amount', 'employer_contributions', 'warnings', 'created_at', 'updated_at', 'is_generic'];
     payrollExpectKeys($show->json('data.payslips.0'), $payslipKeys);
     payrollExpectKeys($show->json('data.events.0'), ['id', 'tenant_id', 'payroll_run_id', 'action', 'reason', 'totals', 'actor_id', 'actor_name', 'occurred_at', 'created_at', 'is_generic']);
     expect($show->json('data.payslips.0.gross_salary'))->toBeString();

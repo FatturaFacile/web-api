@@ -55,7 +55,7 @@ final class VatRegisterService
                 ->where('register_type', $type)
                 ->select('id'))
             ->pluck('protocol_number', 'journal_entry_id');
-        $partners = $this->partnerNames($tenantId, $lines);
+        $partners = $this->partnerDetails($tenantId, $lines);
 
         $rows = [];
         $taxable = '0';
@@ -68,7 +68,9 @@ final class VatRegisterService
                 'document_date' => $line->documentDate,
                 'document_number' => $line->documentNumber ?? $line->entryNumber,
                 'document_type' => $line->sourceDocumentType,
-                'partner_name' => $line->partnerId !== null ? ($partners[$line->partnerId] ?? null) : null,
+                'partner_name' => $line->partnerId !== null ? ($partners[$line->partnerId]['name'] ?? null) : null,
+                'partner_tax_id' => $line->partnerId !== null ? ($partners[$line->partnerId]['tax_id'] ?? null) : null,
+                'partner_country' => $line->partnerId !== null ? ($partners[$line->partnerId]['country'] ?? null) : null,
                 'taxable_amount' => $line->taxable,
                 'vat_rate' => $line->rate,
                 'vat_amount' => $line->tax,
@@ -153,9 +155,9 @@ final class VatRegisterService
 
     /**
      * @param  list<VatRegisterLine>  $lines
-     * @return array<string, string>
+     * @return array<string, array{name: string, tax_id: string|null, country: string|null}>
      */
-    private function partnerNames(string $tenantId, array $lines): array
+    private function partnerDetails(string $tenantId, array $lines): array
     {
         $partnerIds = array_values(array_unique(array_filter(array_map(static fn (VatRegisterLine $line): ?string => $line->partnerId, $lines))));
 
@@ -166,9 +168,13 @@ final class VatRegisterService
         return DB::table('contacts')
             ->where('tenant_id', $tenantId)
             ->whereIn('id', $partnerIds)
-            ->get(['id', 'company_name', 'first_name', 'last_name'])
+            ->get(['id', 'company_name', 'first_name', 'last_name', 'vat_number', 'fiscal_code', 'country'])
             ->mapWithKeys(static fn (object $contact): array => [
-                (string) $contact->id => $contact->company_name ?: trim($contact->first_name.' '.$contact->last_name),
+                (string) $contact->id => [
+                    'name' => $contact->company_name ?: trim($contact->first_name.' '.$contact->last_name),
+                    'tax_id' => $contact->vat_number ?: $contact->fiscal_code,
+                    'country' => $contact->country,
+                ],
             ])
             ->all();
     }

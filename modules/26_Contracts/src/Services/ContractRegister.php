@@ -128,21 +128,21 @@ final readonly class ContractRegister
             $status = ContractStatus::fromStored((string) $locked->getAttribute('status'));
 
             if (in_array($status, [ContractStatus::Draft, ContractStatus::Review, ContractStatus::Terminated], true)) {
-                throw new ConflictHttpException("A contract in status {$status->value} cannot be renewed.");
+                throw new ConflictHttpException(__('contracts.register.renew_status', ['status' => $status->value]));
             }
 
             if ($currentEnd === null) {
-                throw new ConflictHttpException('This contract has no end date to extend.');
+                throw new ConflictHttpException(__('contracts.register.renew_no_end'));
             }
 
             if ($newEndDate === null && empty($locked->renewal_term_months)) {
-                throw new ConflictHttpException('This contract has no renewal term: state the new end date.');
+                throw new ConflictHttpException(__('contracts.register.renew_no_term'));
             }
 
             $newEnd = $newEndDate ?? CarbonImmutable::parse($currentEnd)->addMonthsNoOverflow((int) $locked->renewal_term_months)->toDateString();
 
             if (CarbonImmutable::parse($newEnd)->lte(CarbonImmutable::parse($currentEnd))) {
-                throw new ConflictHttpException('The new end date must be after the current end date.');
+                throw new ConflictHttpException(__('contracts.register.renew_end_after'));
             }
 
             ContractRenewal::create([

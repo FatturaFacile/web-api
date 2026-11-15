@@ -49,7 +49,7 @@ final class TransportationDashboardService
         $total = (clone $delivered)->count();
         $onTime = (clone $delivered)->whereColumn('delivered_at', '<=', 'delivery_to')->count();
 
-        return ['delivered' => $total, 'on_time' => $onTime, 'percent' => $total === 0 ? null : bcdiv(bcmul((string) $onTime, '100', 6), (string) $total, 2)];
+        return ['delivered' => $total, 'on_time' => $onTime, 'percent' => $total === 0 ? null : bcround(bcdiv(bcmul((string) $onTime, '100', 8), (string) $total, 8), 2, \RoundingMode::HalfAwayFromZero)];
     }
 
     /**

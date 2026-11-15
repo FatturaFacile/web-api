@@ -118,6 +118,7 @@ return [
     'commercial_document_refund_blocked' => 'La vendita non può essere rimborsata perché il suo documento commerciale :number non può essere annullato: :reason',
     'corrispettivi_day_closed' => 'Questa giornata è già chiusa.',
     'corrispettivi_day_empty' => 'Questa giornata non ha documenti da chiudere.',
+    'corrispettivi_open_sessions' => 'Prima di chiudere la giornata chiudi la sessione di cassa ancora aperta.|Prima di chiudere la giornata chiudi le :count sessioni di cassa ancora aperte.',
     'corrispettivi_future_day' => 'Non si può chiudere una giornata futura.',
     'tessera_sanitaria_disabled' => 'Il flusso Sistema Tessera Sanitaria non è attivo per questa azienda.',
     'tessera_sanitaria_already_flagged' => 'Questo documento è già indicato come spesa sanitaria.',

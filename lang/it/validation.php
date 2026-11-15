@@ -163,4 +163,15 @@ return [
 
     // The names of the fields live in validation_attributes.php (generated, one entry per field of the API).
     'attributes' => require __DIR__.'/validation_attributes.php',
+
+    'tenant_country_locked' => 'Il paese non può essere modificato dopo la registrazione di fatture o scritture contabili.',
+    'lettering_lines_invalid' => 'Seleziona almeno due righe contabili esistenti.',
+    'lettering_lines_not_posted' => 'Si possono letterare solo righe di scritture registrate.',
+    'lettering_lines_mixed' => 'Le righe devono appartenere allo stesso conto e allo stesso partner.',
+    'lettering_lines_already_lettered' => 'Una o più righe sono già state letterate.',
+    'lettering_not_balanced' => 'Dare e avere delle righe selezionate non si compensano.',
+    'datev_non_numeric_accounts' => 'Il formato DATEV richiede conti numerici: conti non numerici trovati (:accounts).',
+    'us_zip_unknown' => 'Il CAP non appartiene agli stati precaricati: indica lo stato.',
+    'us_jurisdiction_state_mismatch' => 'La giurisdizione non appartiene allo stato del certificato.',
+    'us_1099_supplier_payment_invalid' => 'Si possono collegare solo pagamenti fornitore in USD di tipo pagamento.',
 ];

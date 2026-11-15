@@ -19,4 +19,8 @@ return [
         'not_found' => 'No active template for this code and channel.',
         'missing_variables' => 'Missing variables: :variables.',
     ],
+    'webhook' => [
+        'unknown_channel' => 'No inbound email channel found.',
+        'invalid_signature' => 'Invalid or expired signature.',
+    ],
 ];

@@ -27,6 +27,8 @@ return [
     'return_sale_not_returnable' => 'Nur ein abgeschlossener Verkauf kann Retouren haben.',
     'return_item_unknown' => 'Die Zeile gehoert nicht zu diesem Verkauf oder ist eine Rabattzeile.',
     'return_quantity_exceeds' => 'Die Menge ist null oder groesser als die noch retournierbare Menge.',
+    'sale_fully_returned' => 'Die gesamte Ware dieses Verkaufs wurde bereits zurückgegeben.',
+    'refund_has_returns' => 'Dieser Verkauf hat bereits Retouren: erstatten Sie den Rest mit der Gesamterstattung der Fiskalkasse.',
     'x_report_open_only' => 'Der X-Bericht wird bei einer offenen Sitzung gelesen: lesen Sie bei einer geschlossenen den Z-Bericht.',
     'z_report_closed_only' => 'Der Z-Bericht wird beim Schliessen der Sitzung erstellt: lesen Sie bei einer offenen den X-Bericht.',
 

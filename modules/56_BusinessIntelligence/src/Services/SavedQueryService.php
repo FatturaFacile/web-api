@@ -9,7 +9,6 @@ use App\Services\Tenancy\TenantClock;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 use Modules\Analytics\Semantic\ReportEngine;
-use Modules\BusinessIntelligence\Models\BiCalculatedMeasure;
 use Modules\BusinessIntelligence\Models\BiSavedQuery;
 
 /**

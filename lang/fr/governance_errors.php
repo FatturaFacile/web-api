@@ -56,4 +56,13 @@ return [
         'locked' => 'L\'obligation est :status et ne peut pas être modifiée.',
         'not_open' => 'L\'obligation est :status : seule une obligation à faire ou en cours est terminée.',
     ],
+    'sod_document' => [
+        'conflict' => 'Séparation des tâches : la personne qui a préparé :document ne peut pas aussi l\'approuver ou le libérer.',
+        'documents' => [
+            'payment' => 'un paiement',
+            'purchase_order' => 'une commande d\'achat',
+            'journal' => 'une écriture comptable',
+            'payroll_run' => 'un traitement de paie',
+        ],
+    ],
 ];

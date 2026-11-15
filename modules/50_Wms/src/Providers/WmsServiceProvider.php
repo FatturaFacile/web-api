@@ -6,6 +6,7 @@ namespace Modules\Wms\Providers;
 
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
+use Modules\Wms\Contracts\WmsStockGateway;
 use Modules\Wms\Models\WmsCrossDockLine;
 use Modules\Wms\Models\WmsCrossDockOrder;
 use Modules\Wms\Models\WmsDockAppointment;
@@ -16,12 +17,21 @@ use Modules\Wms\Models\WmsTask;
 use Modules\Wms\Models\WmsWave;
 use Modules\Wms\Models\WmsWaveRule;
 use Modules\Wms\Policies\WmsPolicy;
+use Modules\Wms\Services\InventoryWmsStockGateway;
 
 /**
  * Registers the routes and the policy of the Warehouse management (WMS) module.
  */
 final class WmsServiceProvider extends ServiceProvider
 {
+    /**
+     * Binds the stock gateway to the inventory module.
+     */
+    public function register(): void
+    {
+        $this->app->bind(WmsStockGateway::class, InventoryWmsStockGateway::class);
+    }
+
     /**
      * Bootstrap the module.
      */

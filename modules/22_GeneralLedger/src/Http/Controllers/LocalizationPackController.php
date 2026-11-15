@@ -20,8 +20,8 @@ use Modules\GeneralLedger\Services\VatRegisterService;
 use OpenApi\Attributes as OA;
 
 /**
- * Localization packs of France and Spain: the VAT code packs, the FEC export (France) and the SII VAT books (Spain).
- * The charts of accounts (fr_pcg, es_pgc) are loaded with the account templates.
+ * Localization packs of France, Spain and Germany: the VAT code packs, the FEC export (France) and the SII VAT books (Spain).
+ * The charts of accounts (fr_pcg, es_pgc, de_skr03, de_skr04) are loaded with the account templates.
  */
 final class LocalizationPackController extends Controller
 {
@@ -33,7 +33,7 @@ final class LocalizationPackController extends Controller
     #[OA\Get(
         path: '/api/v1/general-ledger/vat-code-packs',
         operationId: 'listGeneralLedgerVatCodePacks',
-        description: 'Lists the VAT code packs (France, Spain) that can be loaded.',
+        description: 'Lists the VAT code packs (France, Spain, Germany) that can be loaded.',
         summary: 'List VAT code packs',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Tax Settlements'],
@@ -61,7 +61,7 @@ final class LocalizationPackController extends Controller
         summary: 'Import a VAT code pack',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Tax Settlements'],
-        parameters: [new OA\Parameter(name: 'country', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['FR', 'ES']))],
+        parameters: [new OA\Parameter(name: 'country', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['FR', 'ES', 'DE']))],
         responses: [
             new OA\Response(response: 200, description: 'Import result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [
                 new OA\Property(property: 'country', type: 'string'),

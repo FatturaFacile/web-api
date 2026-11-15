@@ -201,10 +201,10 @@ final readonly class CampaignService
                 continue;
             }
 
-            $name = (string) ($record->name ?? $record->company_name ?? '');
+            $variables = $this->variablesOf($campaign, $record);
             $log = $this->dispatcher->dispatch(
                 $campaign->channel,
-                new DeliveryMessage($campaign->channel, (string) $recipient->address, $this->fill((string) ($campaign->subject ?? $campaign->name), $name), $this->fill($campaign->body, $name)),
+                new DeliveryMessage($campaign->channel, (string) $recipient->address, $this->fill((string) ($campaign->subject ?? $campaign->name), $variables), $this->fill($campaign->body, $variables)),
                 ['message_type' => 'campaign', 'tenant_id' => $campaign->tenant_id],
                 $settings,
             );
@@ -262,9 +262,44 @@ final readonly class CampaignService
             : Lead::query()->find($recipient->lead_id);
     }
 
-    private function fill(string $text, string $name): string
+    /**
+     * Placeholders a campaign text may use: name, first_name, last_name, company_name, email, phone, campaign_name, date.
+     *
+     * @return array<string, string>
+     */
+    private function variablesOf(CommunicationCampaign $campaign, Contact|Lead $record): array
     {
-        return preg_replace('/\{\{\s*name\s*\}\}/', $name, $text) ?? $text;
+        $firstName = (string) ($record->first_name ?? '');
+        $lastName = (string) ($record->last_name ?? '');
+        $company = (string) ($record->company_name ?? '');
+        $name = (string) ($record->name ?? '');
+
+        if ($name === '') {
+            $name = $company !== '' ? $company : trim($firstName.' '.$lastName);
+        }
+
+        return [
+            'name' => $name,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'company_name' => $company,
+            'email' => (string) ($record->email ?? ''),
+            'phone' => (string) ($record->phone ?? ''),
+            'campaign_name' => (string) $campaign->name,
+            'date' => now()->toDateString(),
+        ];
+    }
+
+    /**
+     * @param  array<string, string>  $variables
+     */
+    private function fill(string $text, array $variables): string
+    {
+        return preg_replace_callback(
+            TemplateRenderer::Placeholder,
+            static fn (array $match): string => $variables[$match[1]] ?? $match[0],
+            $text
+        ) ?? $text;
     }
 
     private function segmentOf(CommunicationCampaign $campaign): Segment

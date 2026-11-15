@@ -134,6 +134,7 @@ test('carriers are unique per company, filtered and kept while they have open wo
     $this->getJson('/api/v1/transportation/carriers?mode=road')->assertOk()->assertJsonCount(0, 'data');
 
     $this->putJson('/api/v1/transportation/carriers/'.$carrier['id'], ['is_active' => true])->assertOk();
+    $this->putJson('/api/v1/transportation/carriers/'.$carrier['id'], ['is_active' => true])->assertOk();
     tmsPlannedOrder($carrier['id'], [], '10.00');
     $this->deleteJson('/api/v1/transportation/carriers/'.$carrier['id'])->assertUnprocessable()->assertJsonValidationErrors(['id']);
     $free = tmsCarrier('free');

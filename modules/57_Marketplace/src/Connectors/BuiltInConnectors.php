@@ -71,6 +71,7 @@ final class BuiltInConnectors
                         'products' => ['path' => '/products.json?limit=50', 'collection' => 'products'],
                         'customers' => ['path' => '/customers.json?limit=50', 'collection' => 'customers'],
                     ],
+                    cursorParameters: ['orders' => 'since_id', 'products' => 'since_id', 'customers' => 'since_id'],
                 ),
             ],
             [
@@ -97,10 +98,11 @@ final class BuiltInConnectors
                     auth: ['type' => 'basic', 'user' => 'consumer_key', 'password' => 'consumer_secret'],
                     healthPath: '/',
                     resourcePaths: [
-                        'orders' => ['path' => '/orders?per_page=50', 'collection' => null],
+                        'orders' => ['path' => '/orders?per_page=50&orderby=date&order=asc', 'collection' => null],
                         'products' => ['path' => '/products?per_page=50', 'collection' => null],
                         'customers' => ['path' => '/customers?per_page=50', 'collection' => null],
                     ],
+                    cursorParameters: ['orders' => 'after'],
                 ),
             ],
             [
@@ -184,6 +186,7 @@ final class BuiltInConnectors
                         'payouts' => ['path' => '/payouts?limit=50', 'collection' => 'data'],
                         'customers' => ['path' => '/customers?limit=50', 'collection' => 'data'],
                     ],
+                    cursorParameters: ['charges' => 'created[gt]', 'payouts' => 'created[gt]', 'customers' => 'created[gt]'],
                 ),
             ],
             [

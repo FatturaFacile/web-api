@@ -40,8 +40,10 @@ final class PracticeRequest extends FormRequest
             'closing-overview' => $period,
             'fee-notes.from-activities' => [
                 'client_id' => ['required', 'uuid', $this->tenantOwns('contacts')],
-                'activity_ids' => ['required', 'array', 'min:1', 'max:500'],
+                'activity_ids' => ['required_without:expense_ids', 'array', 'max:500'],
                 'activity_ids.*' => ['uuid', 'distinct'],
+                'expense_ids' => ['required_without:activity_ids', 'array', 'max:500'],
+                'expense_ids.*' => ['uuid', 'distinct', $this->tenantOwns('practice_expenses')],
                 'note_number' => ['nullable', 'string', 'max:50', Rule::unique('fee_notes', 'note_number')->where('tenant_id', $tenantId)],
                 'date' => ['required', 'date'],
                 'cpa_rate' => ['required', 'decimal:0,2', 'min:0', 'max:100'],
@@ -94,6 +96,13 @@ final class PracticeRequest extends FormRequest
                 'reference' => ['sometimes', 'nullable', 'string', 'max:100'],
                 'description' => ['sometimes', 'nullable', 'string', 'max:255'],
             ],
+            'trust.post' => [
+                'bank_account_id' => ['nullable', 'uuid', $this->tenantOwns('chart_of_accounts')],
+                'client_funds_account_id' => ['required', 'uuid', $this->tenantOwns('chart_of_accounts')],
+                'fee_revenue_account_id' => ['nullable', 'uuid', $this->tenantOwns('chart_of_accounts')],
+            ],
+            'trust.reconcile' => ['bank_statement_line_id' => ['required', 'uuid', $this->tenantOwns('bank_statement_lines')]],
+            'expenses.receipt.store' => ['receipt' => ['required', 'file', 'mimes:pdf,jpg,jpeg,png,webp', 'max:10240']],
             'trust.reverse' => ['description' => ['sometimes', 'nullable', 'string', 'max:255']],
             'conflicts.check' => [
                 'name' => ['required', 'string', 'min:2', 'max:190'],
@@ -108,7 +117,7 @@ final class PracticeRequest extends FormRequest
                 'role' => ['required', 'string', 'in:client,opposing_party,related_party,witness'],
                 'notes' => ['sometimes', 'nullable', 'string', 'max:500'],
             ],
-            'proposals.index' => ['status' => ['sometimes', 'string', 'in:draft,sent,accepted,declined'], 'client_id' => ['sometimes', 'uuid', $this->tenantOwns('contacts')]],
+            'proposals.index' => ['status' => ['sometimes', 'string', 'in:draft,sent,accepted,declined,expired'], 'client_id' => ['sometimes', 'uuid', $this->tenantOwns('contacts')]],
             'proposals.store' => [
                 'client_id' => ['required', 'uuid', $this->tenantOwns('contacts')],
                 ...$this->proposalRules(true),

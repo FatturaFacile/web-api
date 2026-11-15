@@ -66,7 +66,7 @@ final class ChartTemplateController extends Controller
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['General Ledger Accounts'],
         parameters: [
-            new OA\Parameter(name: 'template', in: 'path', required: true, description: 'Template key: ch_kmu_pme, it_general_ledger, fr_pcg or es_pgc', schema: new OA\Schema(type: 'string', enum: ['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc'])),
+            new OA\Parameter(name: 'template', in: 'path', required: true, description: 'Template key: ch_kmu_pme, it_general_ledger, fr_pcg, es_pgc, de_skr03 or de_skr04', schema: new OA\Schema(type: 'string', enum: ['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc', 'de_skr03', 'de_skr04'])),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Import result', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'object', properties: [

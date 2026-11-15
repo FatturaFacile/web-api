@@ -7,6 +7,7 @@ namespace Modules\BusinessIntelligence\Models;
 use Database\Factories\BiSnapshotFactory;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Support\Carbon;
 
 /**
  * The frozen result of a saved query or of the widgets of a dashboard on a given day, so the figures of that day can be
@@ -17,7 +18,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
  * @property string $source_type
  * @property string $source_id
  * @property string|null $taken_by
- * @property \Illuminate\Support\Carbon $taken_on
+ * @property Carbon $taken_on
  * @property string $trigger
  * @property string $status
  * @property string|null $error

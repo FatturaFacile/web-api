@@ -12,6 +12,7 @@ use Modules\Governance\Http\Controllers\FindingController;
 use Modules\Governance\Http\Controllers\ObligationController;
 use Modules\Governance\Http\Controllers\RiskController;
 use Modules\Governance\Http\Controllers\SegregationOfDutiesController;
+use Modules\Governance\Http\Controllers\SodDocumentRuleController;
 
 $uuid = '[0-9a-fA-F-]{36}';
 
@@ -76,6 +77,8 @@ Route::prefix('api/v1/governance')
         Route::post('/sod/check', [SegregationOfDutiesController::class, 'check'])->name('sod.check');
         Route::get('/sod/violations', [SegregationOfDutiesController::class, 'violations'])->name('sod.violations.index');
         Route::post('/sod/scan', [SegregationOfDutiesController::class, 'scan'])->middleware('throttle:10,1')->name('sod.scan');
+        Route::get('/sod/document-rules', [SodDocumentRuleController::class, 'index'])->name('sod.document-rules.index');
+        Route::put('/sod/document-rules/{documentType}', [SodDocumentRuleController::class, 'update'])->name('sod.document-rules.update');
         Route::get('/sod/exceptions', [SegregationOfDutiesController::class, 'exceptions'])->name('sod.exceptions.index');
         Route::post('/sod/exceptions', [SegregationOfDutiesController::class, 'storeException'])->name('sod.exceptions.store');
         Route::post('/sod/exceptions/{id}/revoke', [SegregationOfDutiesController::class, 'revokeException'])->name('sod.exceptions.revoke');

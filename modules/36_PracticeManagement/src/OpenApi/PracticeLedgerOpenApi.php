@@ -26,6 +26,17 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'reference', type: 'string', nullable: true),
     new OA\Property(property: 'description', type: 'string', nullable: true),
 ])]
+#[OA\Schema(schema: 'PracticeTrustPostRequest', type: 'object', required: ['client_funds_account_id'], properties: [
+    new OA\Property(property: 'client_funds_account_id', description: 'Liability account of the funds held for clients', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'bank_account_id', description: 'Required for a deposit or a withdrawal', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'fee_revenue_account_id', description: 'Required for a transfer to fees', type: 'string', format: 'uuid', nullable: true),
+])]
+#[OA\Schema(schema: 'PracticeTrustReconcileRequest', type: 'object', required: ['bank_statement_line_id'], properties: [
+    new OA\Property(property: 'bank_statement_line_id', type: 'string', format: 'uuid'),
+])]
+#[OA\Schema(schema: 'PracticeExpenseReceiptRequest', type: 'object', required: ['receipt'], properties: [
+    new OA\Property(property: 'receipt', description: 'PDF or image, up to 10 MB', type: 'string', format: 'binary'),
+])]
 #[OA\Schema(schema: 'PracticeConflictCheckRequest', type: 'object', required: ['name', 'role'], properties: [
     new OA\Property(property: 'name', type: 'string'),
     new OA\Property(property: 'role', type: 'string', enum: ['client', 'opposing_party', 'related_party']),

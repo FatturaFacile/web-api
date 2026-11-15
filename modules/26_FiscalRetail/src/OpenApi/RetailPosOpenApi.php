@@ -165,6 +165,11 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'payments', type: 'array', items: new OA\Items(ref: '#/components/schemas/RetailPayment')),
     ]),
 ])]
+#[OA\Schema(schema: 'RetailSaleRefundRequest', required: ['pos_session_id', 'refund_method'], properties: [
+    new OA\Property(property: 'pos_session_id', type: 'string', format: 'uuid', description: 'Open session that settles the refund'),
+    new OA\Property(property: 'refund_method', type: 'string', enum: ['cash', 'card', 'other']),
+    new OA\Property(property: 'reason', type: 'string', nullable: true),
+])]
 #[OA\Schema(schema: 'RetailSessionTotals', properties: [
     new OA\Property(property: 'session_id', type: 'string', format: 'uuid'),
     new OA\Property(property: 'kind', type: 'string', enum: ['x', 'z']),

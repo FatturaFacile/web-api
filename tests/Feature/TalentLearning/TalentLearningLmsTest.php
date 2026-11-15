@@ -166,6 +166,9 @@ test('a learning path is ordered, published only with published courses and enro
     $this->postJson("/api/v1/talent-learning/learning-paths/{$path['id']}/enrol", ['employee_ids' => [$employee->id], 'due_on' => '2027-09-01'])->assertCreated()->assertJsonCount(1, 'data')->assertJsonPath('data.0.course_id', $second['id'])->assertJsonPath('data.0.learning_path_id', $path['id']);
 
     $this->putJson("/api/v1/talent-learning/learning-paths/{$path['id']}", ['course_ids' => [$first['id']]])->assertOk()->assertJsonCount(1, 'data.courses');
+    $this->getJson('/api/v1/talent-learning/learning-paths?status=published')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.id', $path['id']);
+    $this->getJson('/api/v1/talent-learning/learning-paths?status=archived')->assertOk()->assertJsonCount(0, 'data');
+    $this->getJson('/api/v1/talent-learning/learning-paths?status=bogus')->assertUnprocessable()->assertJsonValidationErrors('status');
     $this->deleteJson("/api/v1/talent-learning/learning-paths/{$path['id']}")->assertUnprocessable();
     $this->deleteJson("/api/v1/talent-learning/courses/{$first['id']}")->assertUnprocessable();
     $this->deleteJson("/api/v1/talent-learning/learning-paths/{$withDraft['id']}")->assertNoContent();

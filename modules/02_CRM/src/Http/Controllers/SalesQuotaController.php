@@ -21,17 +21,17 @@ final class SalesQuotaController extends CrmExtensionController
 {
     public function __construct(private readonly SalesQuotaService $quotas) {}
 
-    #[OA\Get(path: '/api/v1/crm/sales-quotas', operationId: 'listCrmSalesQuotas', description: 'Sales quotas with their attainment (won opportunities of the period). Filters: user_id, territory_id.', summary: 'List sales quotas', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['CRM Territories & Quotas'], responses: [
+    #[OA\Get(path: '/api/v1/crm/sales-quotas', operationId: 'listCrmSalesQuotas', description: 'Sales quotas with their attainment (won opportunities of the period). Filters: assignee_id (the sales rep), territory_id.', summary: 'List sales quotas', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['CRM Territories & Quotas'], responses: [
         new OA\Response(response: 200, description: 'Records', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CrmSalesQuota'))])),
         new OA\Response(ref: '#/components/responses/CrmExtUnauthenticated', response: 401),
         new OA\Response(ref: '#/components/responses/CrmExtForbidden', response: 403),
     ])]
     public function index(Request $request): AnonymousResourceCollection
     {
-        $filters = $request->validate(['user_id' => ['nullable', 'uuid'], 'territory_id' => ['nullable', 'uuid']]);
+        $filters = $request->validate(['assignee_id' => ['nullable', 'uuid'], 'territory_id' => ['nullable', 'uuid']]);
         $this->authorize('viewAny', SalesQuota::class);
         $page = $this->scoped(SalesQuota::class)
-            ->when(isset($filters['user_id']), static fn ($query) => $query->where('user_id', $filters['user_id']))
+            ->when(isset($filters['assignee_id']), static fn ($query) => $query->where('user_id', $filters['assignee_id']))
             ->when(isset($filters['territory_id']), static fn ($query) => $query->where('territory_id', $filters['territory_id']))
             ->orderByDesc('period_start')
             ->paginate($this->perPage());

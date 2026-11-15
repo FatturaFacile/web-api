@@ -41,6 +41,7 @@ Route::prefix('api/v1/fiscal-retail')
             Route::get('z-reports', [SessionReportController::class, 'index'])->name('fiscal-retail.pos.z-reports.index');
 
             Route::post('sales/{id}/returns', [ReturnController::class, 'store'])->name('fiscal-retail.pos.returns.store');
+            Route::post('sales/{id}/refund', [ReturnController::class, 'refundSale'])->name('fiscal-retail.pos.sales.refund');
             Route::get('returns', [ReturnController::class, 'index'])->name('fiscal-retail.pos.returns.index');
             Route::get('returns/{id}', [ReturnController::class, 'show'])->name('fiscal-retail.pos.returns.show');
         });

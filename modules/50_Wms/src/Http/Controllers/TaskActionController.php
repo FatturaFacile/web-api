@@ -89,7 +89,7 @@ final class TaskActionController extends Controller
             'quantity' => ['nullable', 'numeric', 'gt:0'],
         ]);
 
-        return new TaskResource($this->tasks->confirm($record, isset($data['quantity']) ? (string) $data['quantity'] : null));
+        return new TaskResource($this->tasks->confirm($record, isset($data['quantity']) ? (string) $data['quantity'] : null, (string) $request->user()?->id));
     }
 
     #[OA\Post(path: '/api/v1/wms/tasks/{id}/short', operationId: 'shortWmsTask', description: 'Close a task in progress with less than planned (zero allowed) and a reason; the rest is reported as remaining_quantity.', summary: 'Short-complete a task', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['quantity', 'reason'], properties: [new OA\Property(property: 'quantity', type: 'string', example: '4'), new OA\Property(property: 'reason', type: 'string', maxLength: 255)])), responses: [
@@ -108,7 +108,7 @@ final class TaskActionController extends Controller
             'reason' => ['required', 'string', 'max:255'],
         ]);
 
-        return new TaskResource($this->tasks->short($record, (string) $data['quantity'], (string) $data['reason']));
+        return new TaskResource($this->tasks->short($record, (string) $data['quantity'], (string) $data['reason'], (string) $request->user()?->id));
     }
 
     #[OA\Post(path: '/api/v1/wms/tasks/{id}/skip', operationId: 'skipWmsTask', description: 'The operator cannot do the task now: it goes back to the queue with a lower priority and without an assignee. After three skips it is parked as skipped for a supervisor.', summary: 'Skip a task', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['WMS'], parameters: [new OA\Parameter(ref: '#/components/parameters/WmsId')], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['reason'], properties: [new OA\Property(property: 'reason', type: 'string', maxLength: 255)])), responses: [

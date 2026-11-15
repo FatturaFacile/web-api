@@ -536,6 +536,29 @@ test('fair-value adjustments are released over their useful life with the deferr
         ->and($full['CONS-DTL'])->toBe('600.0000');
 });
 
+test('relations and intragroup transactions carry the group currency and refuse another one', function (): void {
+    extPost($this->parent, '2026-03-01', $this->p['bank'], $this->p['sales'], '12000');
+    extPost($this->sub, '2026-03-01', $this->s['inventory'], $this->s['bank'], '12000');
+    extActAs($this->accountant, $this->parent);
+
+    $group = extGroup(['group_currency' => 'CHF']);
+    extMember($group, $this->sub, 100)->assertCreated();
+    $relations = "/api/v1/general-ledger/consolidation/groups/{$group}/relations";
+
+    test()->postJson($relations, ['entity_a_tenant_id' => $this->parent->id, 'entity_b_tenant_id' => $this->sub->id, 'currency' => 'eur'])->assertStatus(422);
+    test()->postJson($relations, ['entity_a_tenant_id' => $this->parent->id, 'entity_b_tenant_id' => $this->sub->id, 'currency' => 'chf'])
+        ->assertCreated()
+        ->assertJsonPath('data.currency', 'CHF');
+
+    $url = "/api/v1/general-ledger/consolidation/groups/{$group}/intragroup-transactions";
+    $transaction = ['seller_tenant_id' => $this->parent->id, 'buyer_tenant_id' => $this->sub->id, 'asset_type' => 'inventory', 'transaction_date' => '2026-03-01', 'margin_amount' => 3000, 'asset_account_id' => $this->s['inventory']->id, 'profit_account_id' => $this->p['sales']->id];
+
+    test()->postJson($url, [...$transaction, 'currency' => 'EUR'])->assertStatus(422);
+    test()->postJson($url, [...$transaction, 'currency' => 'CH'])->assertStatus(422)->assertJsonValidationErrors('currency');
+    test()->postJson($url, $transaction)->assertCreated()->assertJsonPath('data.currency', 'CHF');
+    test()->postJson($url, [...$transaction, 'currency' => 'chf'])->assertCreated()->assertJsonPath('data.currency', 'CHF');
+});
+
 test('deferred tax on unrealised profit, the minority bearing an upstream sale and a transaction before the acquisition', function (): void {
     extPost($this->parent, '2026-01-02', $this->p['bank'], $this->p['capital'], '200000');
     extPost($this->parent, '2026-03-01', $this->p['inventory'], $this->p['bank'], '12000');

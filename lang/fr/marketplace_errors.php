@@ -46,4 +46,11 @@ return [
         'fetched' => ':count enregistrements de :resource récupérés.',
         'delivered' => 'L\'événement a été livré.',
     ],
+    'mapping' => [
+        'missing_field' => 'Le champ ":field" est manquant.',
+        'invalid_amount' => 'Le montant ":field" n\'est pas un nombre.',
+        'invalid_currency' => 'La devise n\'est pas un code ISO valide.',
+        'invalid_date' => 'La date n\'est pas valide.',
+        'invalid_lines' => 'Les lignes de la commande ne sont pas valides.',
+    ],
 ];

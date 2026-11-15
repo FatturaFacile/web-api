@@ -23,7 +23,7 @@ return [
     'range_max' => 'valeur maximale',
     'range_step' => 'pas',
     'default_value' => 'valeur par défaut',
-    'unit_price_delta' => 'prix par unite',
+    'unit_price_delta' => 'prix par unité',
     'price_delta' => 'variation de prix',
     'price_multiplier' => 'multiplicateur de prix',
     'price_from_product' => 'prix du produit',

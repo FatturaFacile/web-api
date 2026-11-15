@@ -16,6 +16,7 @@ return [
         'short_below_planned' => 'Eine Teilmenge muss unter den geplanten :planned liegen: bestaetigen Sie die Aufgabe stattdessen.',
         'assigned_to_other' => 'Die Aufgabe ist einem anderen Mitarbeiter zugewiesen.',
         'wave_not_released' => 'Die Welle der Aufgabe wurde noch nicht freigegeben.',
+        'stock_rejected' => 'Die Lagerbewegung wurde abgelehnt: :reason',
         'not_a_member' => 'Der Benutzer ist kein Mitglied dieses Unternehmens.',
     ],
     'wave_rule' => [

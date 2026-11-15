@@ -17,6 +17,7 @@ final readonly class HttpProfile
 {
     /**
      * @param  array<string, string>  $environments
+     * @param  array<string, string>  $cursorParameters  the query parameter that resumes the pull of a resource after a cursor
      * @param  array<string, string>  $auth
      * @param  array<string, array{path: string, collection: string|null}>  $resourcePaths
      */
@@ -26,5 +27,6 @@ final readonly class HttpProfile
         public string $healthPath,
         public array $resourcePaths,
         public array $environments = [],
+        public array $cursorParameters = [],
     ) {}
 }

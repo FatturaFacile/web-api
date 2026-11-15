@@ -94,6 +94,8 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'skip_reason', type: 'string', maxLength: 255, nullable: true),
     new OA\Property(property: 'skip_count', type: 'integer'),
     new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'stock_movement_id', description: 'The inventory movement posted when the task was confirmed; null when the task moved no stock', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'stock_posted_at', type: 'string', format: 'date-time', nullable: true),
     new OA\Property(property: 'remaining_quantity', type: 'string', example: '0.0000'),
     new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
     new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),

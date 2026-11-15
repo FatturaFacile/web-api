@@ -56,4 +56,13 @@ return [
         'locked' => 'L\'adempimento è :status e non può essere modificato.',
         'not_open' => 'L\'adempimento è :status: si completa solo un adempimento da fare o in corso.',
     ],
+    'sod_document' => [
+        'conflict' => 'Segregazione dei compiti: chi ha preparato :document non può anche approvarlo o rilasciarlo.',
+        'documents' => [
+            'payment' => 'un pagamento',
+            'purchase_order' => 'un ordine di acquisto',
+            'journal' => 'una scrittura contabile',
+            'payroll_run' => 'un\'elaborazione paghe',
+        ],
+    ],
 ];

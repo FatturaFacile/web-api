@@ -42,6 +42,20 @@ final class VatCodePackCatalog
                     ['code' => 'ES_IVA_NOSUJETO', 'description' => 'Operacion no sujeta a IVA', 'rate' => '0.00', 'reverse_charge' => false, 'nature' => 'NS'],
                 ],
             ],
+            'DE' => [
+                'country' => 'DE',
+                'name' => 'Germany: Umsatzsteuer',
+                'codes' => [
+                    ['code' => 'DE_UST_19', 'description' => 'Umsatzsteuer Regelsteuersatz 19%', 'rate' => '19.00', 'reverse_charge' => false, 'nature' => null],
+                    ['code' => 'DE_UST_7', 'description' => 'Umsatzsteuer ermaessigter Steuersatz 7%', 'rate' => '7.00', 'reverse_charge' => false, 'nature' => null],
+                    ['code' => 'DE_UST_0', 'description' => 'Umsatzsteuer 0% (Nullsteuersatz, Paragraph 12 Abs. 3 UStG)', 'rate' => '0.00', 'reverse_charge' => false, 'nature' => 'NULL'],
+                    ['code' => 'DE_UST_FREI', 'description' => 'Steuerfreie Umsaetze (Paragraph 4 UStG)', 'rate' => '0.00', 'reverse_charge' => false, 'nature' => 'FREI'],
+                    ['code' => 'DE_UST_13B', 'description' => 'Reverse Charge nach Paragraph 13b UStG (Leistungsempfaenger schuldet die Steuer)', 'rate' => '0.00', 'reverse_charge' => true, 'nature' => '13B'],
+                    ['code' => 'DE_UST_IGL', 'description' => 'Steuerfreie innergemeinschaftliche Lieferung (Paragraph 4 Nr. 1b UStG)', 'rate' => '0.00', 'reverse_charge' => false, 'nature' => 'IGL'],
+                    ['code' => 'DE_UST_IGE', 'description' => 'Innergemeinschaftlicher Erwerb (Paragraph 1a UStG)', 'rate' => '0.00', 'reverse_charge' => true, 'nature' => 'IGE'],
+                    ['code' => 'DE_UST_EXPORT', 'description' => 'Ausfuhrlieferung in Drittlaender (Paragraph 4 Nr. 1a UStG)', 'rate' => '0.00', 'reverse_charge' => false, 'nature' => 'EXP'],
+                ],
+            ],
         ];
     }
 }

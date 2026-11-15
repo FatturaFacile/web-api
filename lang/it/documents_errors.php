@@ -24,6 +24,7 @@ return [
         'not_approver' => 'Non sei l\'approvatore del passaggio corrente.',
         'cannot_cancel' => 'Solo chi ha fatto la richiesta o un amministratore può annullarla.',
         'template_in_use' => 'Il percorso di approvazione non può cambiare finché c\'è una richiesta in corso.',
+        'role_cannot_decide' => 'Questo ruolo non può decidere un passaggio: non ha accesso in scrittura ai documenti.',
     ],
     'preservation' => [
         'no_hash' => 'Un pacchetto di conservazione non ha un hash da concatenare.',

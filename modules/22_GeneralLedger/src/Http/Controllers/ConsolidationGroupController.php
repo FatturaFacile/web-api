@@ -241,6 +241,7 @@ final class ConsolidationGroupController extends Controller
             $request->validated('entity_b_tenant_id'),
             (string) ($request->validated('tolerance_amount') ?? '0.0100'),
             $request->validated('description'),
+            $request->validated('currency'),
         );
 
         return $this->successResponse(new IntercompanyRelationResource($relation->load('mappings')), 'Intercompany relation created', Response::HTTP_CREATED);

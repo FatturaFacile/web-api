@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Marketplace\Connectors;
 
+use App\Services\Security\OutboundUrlGuard;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 use Modules\Integrations\Webhooks\Exceptions\UnsafeWebhookUrl;
@@ -27,7 +28,7 @@ final class WebhookConnector implements Connector
 {
     public const string Key = 'generic-webhook';
 
-    public function __construct(private readonly WebhookUrlGuard $urls, private readonly WebhookSigner $signer, private readonly \App\Services\Security\OutboundUrlGuard $outbound) {}
+    public function __construct(private readonly WebhookUrlGuard $urls, private readonly WebhookSigner $signer, private readonly OutboundUrlGuard $outbound) {}
 
     public function definition(): ConnectorDefinition
     {

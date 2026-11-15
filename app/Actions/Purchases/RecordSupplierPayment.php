@@ -45,6 +45,7 @@ class RecordSupplierPayment
             $payment = $invoice->payments()->create([
                 'tenant_id' => $invoice->tenant_id,
                 'amount' => $amount,
+                'currency' => $invoice->currency ?: 'EUR',
                 'paid_at' => $data['paid_at'],
                 'type' => $data['type'] ?? 'payment',
                 'reference' => $data['reference'] ?? null,

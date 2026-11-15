@@ -46,4 +46,11 @@ return [
         'fetched' => ':count Datensätze von :resource abgerufen.',
         'delivered' => 'Das Ereignis wurde zugestellt.',
     ],
+    'mapping' => [
+        'missing_field' => 'Das Feld ":field" fehlt.',
+        'invalid_amount' => 'Der Betrag ":field" ist keine Zahl.',
+        'invalid_currency' => 'Die Währung ist kein gültiger ISO-Code.',
+        'invalid_date' => 'Das Datum ist ungültig.',
+        'invalid_lines' => 'Die Bestellpositionen sind ungültig.',
+    ],
 ];

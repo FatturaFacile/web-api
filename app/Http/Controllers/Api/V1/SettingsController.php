@@ -5,9 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\ExchangeRateProviderInterface;
+use App\Enums\SupportedCountry;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\ExchangeRate;
+use App\Models\Invoice;
+use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
@@ -20,7 +23,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
+use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\SDI\Enums\RegimeFiscale;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -89,6 +94,7 @@ class SettingsController extends Controller
                     new OA\Property(property: 'fiscal_code', type: 'string', maxLength: 16, nullable: true, example: 'RSSMRA85M01H501Q'),
                     new OA\Property(property: 'vat_number', type: 'string', maxLength: 30, nullable: true, example: 'CHE-123.456.789'),
                     new OA\Property(property: 'uid_number', type: 'string', maxLength: 20, nullable: true, example: 'CHE123456789'),
+                    new OA\Property(property: 'country', description: 'Company country (SupportedCountry). Cannot change once invoices or journal entries exist.', type: 'string', enum: ['IT', 'CH', 'FR', 'ES', 'DE', 'US'], example: 'FR'),
                     new OA\Property(property: 'default_currency', type: 'string', maxLength: 3, nullable: true, example: 'CHF'),
                     new OA\Property(property: 'iban', type: 'string', maxLength: 34, nullable: true, example: 'CH9300000000000000000'),
                     new OA\Property(property: 'qr_iban', type: 'string', maxLength: 34, nullable: true, example: 'CH4430000000000000000'),
@@ -139,6 +145,7 @@ class SettingsController extends Controller
                 },
             ],
             'uid_number' => ['nullable', 'string', 'max:20'],
+            'country' => ['sometimes', 'required', 'string', Rule::enum(SupportedCountry::class)],
             'default_currency' => ['nullable', 'string', 'size:3'],
             'iban' => ['nullable', 'string', 'max:34'],
             'qr_iban' => ['nullable', 'string', 'max:34'],
@@ -148,6 +155,10 @@ class SettingsController extends Controller
             'settings.regime_fiscale' => ['nullable', Rule::enum(RegimeFiscale::class)],
             'settings.enasarco_agent_type' => ['nullable', Rule::in(EnasarcoParameter::AGENT_TYPES)],
         ]);
+
+        if (isset($validated['country']) && $validated['country'] !== $tenant->country && $this->hasPostedAccountingData()) {
+            throw ValidationException::withMessages(['country' => [__('validation.tenant_country_locked')]]);
+        }
 
         // The settings are merged, never replaced: the preferences and the security policy have their own endpoints, and
         // a body that sent them here would wipe them (two-factor requirement included).
@@ -159,6 +170,17 @@ class SettingsController extends Controller
         $tenant->update($validated);
 
         return $this->successResponse(data: $tenant, message: 'Tenant settings updated successfully');
+    }
+
+    /**
+     * The country drives the chart of accounts, VAT codes and payroll rules: once documents or journal entries exist it
+     * can no longer change without corrupting them.
+     */
+    private function hasPostedAccountingData(): bool
+    {
+        return Invoice::query()->exists()
+            || PassiveInvoice::query()->exists()
+            || JournalEntry::query()->exists();
     }
 
     #[OA\Get(

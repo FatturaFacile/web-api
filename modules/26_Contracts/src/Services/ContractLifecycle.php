@@ -31,23 +31,23 @@ final readonly class ContractLifecycle
             $locked = $kind->modelClass()::withoutGlobalScopes()->lockForUpdate()->findOrFail($contract->getKey());
 
             if ($locked->getAttribute('is_locked')) {
-                throw new ConflictHttpException('This contract is locked by an approval workflow: its status changes when the workflow ends.');
+                throw new ConflictHttpException(__('contracts.lifecycle.locked_by_workflow'));
             }
 
             $from = ContractStatus::fromStored((string) $locked->getAttribute('status'));
 
             if ($from === null) {
-                throw new ConflictHttpException("The status [{$locked->getAttribute('status')}] is outside the contract lifecycle and cannot be changed from here.");
+                throw new ConflictHttpException(__('contracts.lifecycle.status_outside', ['status' => $locked->getAttribute('status')]));
             }
 
             if (! in_array($to, $from->next(), true)) {
-                throw new ConflictHttpException("A contract cannot go from {$from->value} to {$to->value}.");
+                throw new ConflictHttpException(__('contracts.lifecycle.transition_invalid', ['from' => $from->value, 'to' => $to->value]));
             }
 
             $end = $locked->getAttribute($kind->endColumn());
 
             if ($to === ContractStatus::Active && $end !== null && CarbonImmutable::parse($end)->lt($today ?? CarbonImmutable::today())) {
-                throw new ConflictHttpException('The end date of this contract has passed: renew it with a new end date instead of activating it.');
+                throw new ConflictHttpException(__('contracts.lifecycle.end_date_passed'));
             }
 
             $locked->update(['status' => $to->value]);

@@ -122,6 +122,8 @@ test('purchase orders of another company are neither visible nor actionable', fu
 test('customer ledger answers for the customers of the company only', function (): void {
     $customer = Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $this->tenant->id, 'type' => 'client', 'company_name' => 'Ledger Client Srl', 'country' => 'IT']);
     $foreignCustomer = Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => (string) $this->otherTenant->id, 'type' => 'client', 'company_name' => 'Foreign Client Srl', 'country' => 'IT']);
+    // The active tenant context always wins on creation, so the owner is moved with a plain query.
+    Contact::withoutGlobalScopes()->whereKey($foreignCustomer->id)->update(['tenant_id' => (string) $this->otherTenant->id]);
 
     $this->getJson("/api/v1/invoicing/customer-ledger/{$customer->id}/aging")->assertOk()->assertJsonPath('customer_id', (string) $customer->id)->assertJsonStructure(['aging_buckets' => ['current', 'total_outstanding']]);
     $this->getJson("/api/v1/invoicing/customer-ledger/{$customer->id}/statement")->assertOk()->assertJsonCount(0, 'data');

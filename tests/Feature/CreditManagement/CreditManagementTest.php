@@ -379,7 +379,7 @@ test('the dashboard reports DSO, overdue by bucket and the open workload', funct
 
     expect($data)->toMatchArray(['receivables_total' => '4000.00', 'overdue_total' => '3000.00', 'overdue_percentage' => '75.00', 'invoiced_last_90_days' => '4500.00', 'dso_days' => '80.00', 'customers_over_limit' => 0]);
     expect($data['cases'])->toMatchArray(['open_count' => 1, 'outstanding_amount' => '3000.00'])->and($data['cases']['by_status']['open'])->toBe(1);
-    expect(collect($data['overdue_by_bucket'])->pluck('amount', 'key')->all())->toMatchArray(['d1_30' => '3000.00', 'd31_60' => '0.00', 'current' => '1000.00'])->and($data['rating_distribution'])->toBe([['rating' => 'D', 'count' => 1]]);
+    expect(collect($data['overdue_by_bucket'])->pluck('amount', 'key')->all())->toMatchArray(['d1_30' => '3000.00', 'd31_60' => '0.00', 'current' => '1000.00'])->and($data['rating_distribution'])->toBe([['rating' => 'C', 'count' => 1]]);
     expect($data['top_overdue_customers'][0]['overdue_amount'])->toBe('3000.00');
 });
 

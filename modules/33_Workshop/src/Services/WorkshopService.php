@@ -40,6 +40,7 @@ final class WorkshopService
         private readonly InvoiceService $invoices,
         private readonly DeliveryFulfillmentServiceInterface $fulfillment,
         private readonly SubscriptionLifecycleServiceInterface $subscriptionLifecycle,
+        private readonly PartConsumptionService $parts,
     ) {}
 
     /**
@@ -138,6 +139,10 @@ final class WorkshopService
 
             $locked->update(array_filter(['status' => $target, 'mileage_out' => $mileageOut], static fn (mixed $value): bool => $value !== null));
 
+            if ($target === 'cancelled') {
+                $this->parts->releaseAllFor($locked);
+            }
+
             return $locked;
         });
     }
@@ -200,7 +205,7 @@ final class WorkshopService
                     'quantity' => $item['quantity'],
                     'unit_price' => $item['unit_price'],
                     'tax_rate' => $item['tax_rate'],
-                ], $this->documentItems($locked))
+                ], $this->deliveryItems($locked))
             );
             $this->fulfillment->dispatchDelivery($draft, $userId !== null ? (string) $userId : 'system');
             $locked->update(['delivery_note_id' => $draft->id]);
@@ -405,6 +410,44 @@ final class WorkshopService
             'tax_rate' => (string) $line->tax_rate,
             'discount_percentage' => (string) $line->discount_percentage,
         ])->values()->all();
+    }
+
+    /**
+     * The delivery note lines: parts already issued from stock through the folder keep their line on the note but lose
+     * the product link, so dispatching the note does not move the same stock twice.
+     *
+     * @return list<array{product_id: ?string, description: string, quantity: string, unit_price: string, tax_rate: string, discount_percentage: string}>
+     */
+    private function deliveryItems(WorkshopFolder $folder): array
+    {
+        $issued = $this->parts->issuedQuantities($folder);
+        $items = [];
+
+        foreach ($this->documentItems($folder) as $item) {
+            $productId = $item['product_id'];
+            $covered = $productId !== null && isset($issued[$productId]) ? $this->smaller($issued[$productId], $item['quantity']) : '0';
+
+            if (Decimal::isZero($covered)) {
+                $items[] = $item;
+
+                continue;
+            }
+
+            $issued[$productId] = Decimal::sub($issued[$productId], $covered);
+            $items[] = [...$item, 'product_id' => null, 'quantity' => $covered];
+            $rest = Decimal::sub($item['quantity'], $covered);
+
+            if (! Decimal::isZero($rest)) {
+                $items[] = [...$item, 'quantity' => $rest];
+            }
+        }
+
+        return $items;
+    }
+
+    private function smaller(string $left, string $right): string
+    {
+        return Decimal::compare($left, $right) <= 0 ? $left : $right;
     }
 
     private function reference(WorkshopFolder $folder): string

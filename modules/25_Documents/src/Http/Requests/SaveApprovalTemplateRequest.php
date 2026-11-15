@@ -44,7 +44,25 @@ final class SaveApprovalTemplateRequest extends FormRequest
                 'uuid',
                 Rule::exists('tenant_user', 'user_id')->where('tenant_id', $tenantId)->whereNull('suspended_at'),
             ],
-            'steps.*.approver_role' => ['nullable', 'required_if:steps.*.approver_type,role', 'string', 'max:60'],
+            'steps.*.approver_role' => ['nullable', 'required_if:steps.*.approver_type,role', 'string', 'max:60', Rule::in(self::deciderRoles())],
         ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return ['steps.*.approver_role.in' => __('documents_errors.approval.role_cannot_decide')];
+    }
+
+    /**
+     * Roles that can write in the module, and so can decide a step: a role without write access could never approve.
+     *
+     * @return list<string>
+     */
+    public static function deciderRoles(): array
+    {
+        return array_values(array_unique(array_filter((array) config('permissions.modules.documents.write'), static fn (mixed $role): bool => is_string($role) && $role !== '*')));
     }
 }

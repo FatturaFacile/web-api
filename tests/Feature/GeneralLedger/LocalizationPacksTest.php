@@ -26,7 +26,7 @@ beforeEach(function (): void {
 
 afterEach(fn () => app(TenantContext::class)->clear());
 
-test('the French and Spanish charts import with their VAT accounts, and importing again creates nothing', function (string $template, string $code): void {
+test('the French, Spanish and German charts import with their VAT accounts, and importing again creates nothing', function (string $template, string $code): void {
     $first = $this->postJson("/api/v1/general-ledger/account-templates/{$template}/import")->assertOk()->json('data');
     $again = $this->postJson("/api/v1/general-ledger/account-templates/{$template}/import")->assertOk()->json('data');
 
@@ -34,11 +34,11 @@ test('the French and Spanish charts import with their VAT accounts, and importin
         ->and($again)->toBe(['template' => $template, 'created' => 0, 'skipped' => $first['created']])
         ->and(ChartOfAccount::where('account_code', $code)->count())->toBe(1)
         ->and(ChartOfAccount::where('account_code', $code)->value('standard'))->toBe($template);
-})->with([['fr_pcg', '44571'], ['es_pgc', '477']]);
+})->with([['fr_pcg', '44571'], ['es_pgc', '477'], ['de_skr03', '1776'], ['de_skr04', '3806']]);
 
 test('a VAT code pack is listed and imported idempotently as shared codes', function (): void {
     $packs = $this->getJson('/api/v1/general-ledger/vat-code-packs')->assertOk()->json('data');
-    expect(collect($packs)->pluck('country')->all())->toBe(['FR', 'ES']);
+    expect(collect($packs)->pluck('country')->all())->toBe(['FR', 'ES', 'DE']);
 
     $first = $this->postJson('/api/v1/general-ledger/vat-code-packs/FR/import')->assertOk()->json('data');
     $again = $this->postJson('/api/v1/general-ledger/vat-code-packs/FR/import')->assertOk()->json('data');
@@ -51,7 +51,16 @@ test('a VAT code pack is listed and imported idempotently as shared codes', func
 
     $this->postJson('/api/v1/general-ledger/vat-code-packs/ES/import')->assertOk();
     expect((float) DB::table('vat_codes')->where('code', 'ES_IVA_21')->value('rate'))->toBe(21.0);
-    $this->postJson('/api/v1/general-ledger/vat-code-packs/DE/import')->assertNotFound();
+    $german = $this->postJson('/api/v1/general-ledger/vat-code-packs/DE/import')->assertOk()->json('data');
+    $germanAgain = $this->postJson('/api/v1/general-ledger/vat-code-packs/de/import')->assertOk()->json('data');
+    expect($german)->toBe(['country' => 'DE', 'created' => 8, 'updated' => 0])
+        ->and($germanAgain)->toBe(['country' => 'DE', 'created' => 0, 'updated' => 8])
+        ->and((float) DB::table('vat_codes')->where('code', 'DE_UST_19')->value('rate'))->toBe(19.0)
+        ->and((float) DB::table('vat_codes')->where('code', 'DE_UST_7')->value('rate'))->toBe(7.0)
+        ->and((bool) DB::table('vat_codes')->where('code', 'DE_UST_13B')->value('is_reverse_charge'))->toBeTrue()
+        ->and((bool) DB::table('vat_codes')->where('code', 'DE_UST_IGE')->value('is_reverse_charge'))->toBeTrue()
+        ->and(DB::table('vat_codes')->where('code', 'DE_UST_IGL')->value('nature'))->toBe('IGL');
+    $this->postJson('/api/v1/general-ledger/vat-code-packs/XX/import')->assertNotFound();
 });
 
 test('the FEC has the 18 columns, YYYYMMDD dates, decimal commas and only the posted lines of the tenant', function (): void {

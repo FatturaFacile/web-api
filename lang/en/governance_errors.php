@@ -56,4 +56,13 @@ return [
         'locked' => 'The obligation is :status and cannot be changed.',
         'not_open' => 'The obligation is :status: only a pending or in progress obligation is completed.',
     ],
+    'sod_document' => [
+        'conflict' => 'Segregation of duties: the person who prepared a :document cannot also approve or release it.',
+        'documents' => [
+            'payment' => 'payment',
+            'purchase_order' => 'purchase order',
+            'journal' => 'journal',
+            'payroll_run' => 'payroll run',
+        ],
+    ],
 ];

@@ -6,14 +6,17 @@ namespace Modules\PracticeManagement\Http\Controllers;
 
 use App\Exceptions\BusinessRuleException;
 use App\Http\Controllers\Controller;
+use App\Http\Responses\StoredFileHeaders;
 use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Modules\PracticeManagement\Http\Requests\PracticeRequest;
 use Modules\PracticeManagement\Http\Resources\PracticeResource;
 use Modules\PracticeManagement\Models\PracticeExpense;
 use OpenApi\Attributes as OA;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
  * Expenses of a matter (court fees, travel, filings, experts) that are recovered from the client when billable.
@@ -87,6 +90,70 @@ final class ExpenseController extends Controller
         $this->authorize('update', $expense);
         $this->assertNotBilled($expense);
         $expense->delete();
+
+        return response()->noContent();
+    }
+
+    #[OA\Post(path: '/api/v1/practice/expenses/{id}/receipt', operationId: 'storePracticeExpenseReceipt', description: 'Attach the receipt of an expense (PDF or image, up to 10 MB). A new receipt replaces the previous one.', summary: 'Attach expense receipt', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\MediaType(mediaType: 'multipart/form-data', schema: new OA\Schema(ref: '#/components/schemas/PracticeExpenseReceiptRequest'))), tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
+        new OA\Response(response: 200, description: 'Receipt attached', content: new OA\JsonContent(ref: '#/components/schemas/PracticeRecordResponse')),
+        new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/PracticeForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/PracticeNotFound', response: 404),
+        new OA\Response(ref: '#/components/responses/PracticeUnprocessable', response: 422),
+    ])]
+    public function storeReceipt(PracticeRequest $request, string $id): PracticeResource
+    {
+        $expense = PracticeExpense::query()->findOrFail($id);
+        $this->authorize('update', $expense);
+        $file = $request->file('receipt');
+        $disk = (string) config('filesystems.private_disk', config('filesystems.default', 'local'));
+        $path = $file->store("practice-expense-receipts/{$expense->tenant_id}/{$expense->id}", $disk);
+        $previous = [$expense->receipt_disk, $expense->receipt_path];
+        $expense->forceFill([
+            'receipt_disk' => $disk,
+            'receipt_path' => $path,
+            'receipt_name' => $file->getClientOriginalName(),
+            'receipt_mime' => $file->getMimeType(),
+            'receipt_size' => $file->getSize(),
+        ])->save();
+
+        if ($previous[1] !== null) {
+            Storage::disk((string) $previous[0])->delete((string) $previous[1]);
+        }
+
+        return new PracticeResource($expense);
+    }
+
+    #[OA\Get(path: '/api/v1/practice/expenses/{id}/receipt', operationId: 'showPracticeExpenseReceipt', description: 'Download the receipt attached to an expense.', summary: 'Download expense receipt', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
+        new OA\Response(response: 200, description: 'Receipt file'),
+        new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/PracticeForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/PracticeNotFound', response: 404),
+    ])]
+    public function showReceipt(string $id): StreamedResponse
+    {
+        $expense = PracticeExpense::query()->findOrFail($id);
+        $this->authorize('view', $expense);
+        abort_if($expense->receipt_path === null || ! Storage::disk((string) $expense->receipt_disk)->exists($expense->receipt_path), 404);
+
+        return Storage::disk((string) $expense->receipt_disk)->download($expense->receipt_path, (string) $expense->receipt_name, StoredFileHeaders::for($expense->receipt_mime, (string) $expense->receipt_name, false));
+    }
+
+    #[OA\Delete(path: '/api/v1/practice/expenses/{id}/receipt', operationId: 'deletePracticeExpenseReceipt', description: 'Remove the receipt attached to an expense.', summary: 'Delete expense receipt', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
+        new OA\Response(response: 204, description: 'Receipt removed'),
+        new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/PracticeForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/PracticeNotFound', response: 404),
+    ])]
+    public function destroyReceipt(string $id): Response
+    {
+        $expense = PracticeExpense::query()->findOrFail($id);
+        $this->authorize('update', $expense);
+
+        if ($expense->receipt_path !== null) {
+            Storage::disk((string) $expense->receipt_disk)->delete($expense->receipt_path);
+            $expense->forceFill(['receipt_disk' => null, 'receipt_path' => null, 'receipt_name' => null, 'receipt_mime' => null, 'receipt_size' => null])->save();
+        }
 
         return response()->noContent();
     }

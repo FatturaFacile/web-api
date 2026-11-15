@@ -17,6 +17,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\PracticeManagement\Models\PeriodClosing;
+use Modules\PracticeManagement\Models\PracticeExpense;
 
 /**
  * Activity control, fee notes from the logged activities, and the closing of a period across many clients. It builds on
@@ -71,7 +72,8 @@ final class PracticeService
     }
 
     /**
-     * A fee note from unbilled activities of one client. The contribution, withholding and VAT rates come from the
+     * A fee note from unbilled activities and billable expenses of one client. Expenses advanced for the client are added
+     * to the amount payable outside the taxable base. The contribution, withholding and VAT rates come from the
      * request: the module applies no default rate.
      *
      * @param  array<string, mixed>  $data
@@ -79,11 +81,26 @@ final class PracticeService
     public function feeNoteFromActivities(array $data): FeeNote
     {
         return DB::transaction(function () use ($data): FeeNote {
-            $activities = BillableActivity::query()->whereIn('id', $data['activity_ids'])->lockForUpdate()->get();
-            $caseClients = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->pluck('client_id', 'id');
+            $activityIds = $data['activity_ids'] ?? [];
+            $expenseIds = $data['expense_ids'] ?? [];
+            $activities = BillableActivity::query()->whereIn('id', $activityIds)->lockForUpdate()->get();
+            $expenses = PracticeExpense::query()->whereIn('id', $expenseIds)->lockForUpdate()->get();
+            $caseClients = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id')->merge($expenses->pluck('legal_case_id')))->pluck('client_id', 'id');
 
-            if ($activities->count() !== count(array_unique($data['activity_ids']))) {
+            if ($activities->count() !== count(array_unique($activityIds))) {
                 throw new BusinessRuleException('Some activities do not exist.');
+            }
+
+            if ($expenses->count() !== count(array_unique($expenseIds))) {
+                throw new BusinessRuleException('Some expenses do not exist.');
+            }
+
+            if ($expenses->contains(static fn (PracticeExpense $expense): bool => $expense->is_billed || ! $expense->is_billable)) {
+                throw new BusinessRuleException('Some expenses are already billed or not billable.');
+            }
+
+            if ($expenses->contains(static fn (PracticeExpense $expense): bool => (string) $caseClients[$expense->legal_case_id] !== (string) $data['client_id'])) {
+                throw new BusinessRuleException('Every expense must belong to a case of the client.');
             }
 
             if ($activities->contains('is_billed', true)) {
@@ -99,7 +116,8 @@ final class PracticeService
             $vatBase = Decimal::add($taxable, $contribution);
             $vat = Decimal::round2(Decimal::div(Decimal::mul($vatBase, (string) $data['vat_rate']), '100'));
             $withholding = Decimal::round2(Decimal::div(Decimal::mul($taxable, (string) $data['ritenuta_rate']), '100'));
-            $cases = $activities->pluck('legal_case_id')->unique();
+            $reimbursed = Decimal::round2((string) $expenses->sum('amount'));
+            $cases = $activities->pluck('legal_case_id')->merge($expenses->pluck('legal_case_id'))->unique();
 
             $note = FeeNote::create([
                 'legal_case_id' => $cases->count() === 1 ? $cases->first() : null,
@@ -110,11 +128,13 @@ final class PracticeService
                 'cassa_previdenza_amount' => $contribution,
                 'ritenuta_acconto_amount' => $withholding,
                 'vat_amount' => $vat,
-                'net_payable' => Decimal::round2(Decimal::sub(Decimal::add($vatBase, $vat), $withholding)),
+                'expenses_amount' => $reimbursed,
+                'net_payable' => Decimal::round2(Decimal::add(Decimal::sub(Decimal::add($vatBase, $vat), $withholding), $reimbursed)),
                 'status' => 'draft',
             ]);
 
             BillableActivity::query()->whereIn('id', $activities->pluck('id'))->update(['is_billed' => true, 'fee_note_id' => $note->id]);
+            PracticeExpense::query()->whereIn('id', $expenses->pluck('id'))->update(['is_billed' => true, 'fee_note_id' => $note->id]);
 
             return $note;
         });

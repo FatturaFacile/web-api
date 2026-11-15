@@ -14,7 +14,7 @@ return [
         ],
         'expired' => [
             'subject' => 'Documento scaduto: :supplier',
-            'body' => 'Il documento ":document" del fornitore :supplier e scaduto il :date.',
+            'body' => 'Il documento ":document" del fornitore :supplier è scaduto il :date.',
         ],
     ],
     'validation' => [

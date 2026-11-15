@@ -24,7 +24,7 @@ final class FeeProposalController extends Controller
 
     #[OA\Get(path: '/api/v1/practice/fee-proposals', operationId: 'listPracticeFeeProposals', description: 'Return the fee proposals, latest first, optionally of one client or one status.', summary: 'List fee proposals', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [
         new OA\Parameter(name: 'client_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'sent', 'accepted', 'declined'])),
+        new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'sent', 'accepted', 'declined', 'expired'])),
     ], responses: [
         new OA\Response(response: 200, description: 'Proposals', content: new OA\JsonContent(ref: '#/components/schemas/PracticeDataResponse')),
         new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
@@ -81,6 +81,32 @@ final class FeeProposalController extends Controller
         $this->authorize('update', $proposal);
 
         return new PracticeResource($this->proposals->update($proposal, $request->validated()));
+    }
+
+    #[OA\Get(path: '/api/v1/practice/fee-proposals/{id}/pdf', operationId: 'pdfPracticeFeeProposal', description: 'The fee proposal as a PDF document: client, scope, fee basis, estimated total and validity.', summary: 'Fee proposal PDF', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [
+        new OA\Response(response: 200, description: 'PDF document', content: new OA\MediaType(mediaType: 'application/pdf')),
+        new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/PracticeForbidden', response: 403),
+        new OA\Response(ref: '#/components/responses/PracticeNotFound', response: 404),
+    ])]
+    public function pdf(string $id): Response
+    {
+        $proposal = PracticeFeeProposal::query()->findOrFail($id);
+        $this->authorize('view', $proposal);
+
+        return response($this->proposals->pdf($proposal), Response::HTTP_OK, ['Content-Type' => 'application/pdf', 'Content-Disposition' => 'attachment; filename="'.$proposal->number.'.pdf"']);
+    }
+
+    #[OA\Post(path: '/api/v1/practice/fee-proposals/expire', operationId: 'expirePracticeFeeProposals', description: 'Mark as expired every sent proposal whose validity date has passed. The same runs every day on its own.', summary: 'Expire overdue fee proposals', security: [['bearerAuth' => []]], tags: ['Practice Management'], responses: [
+        new OA\Response(response: 200, description: 'Number of proposals expired', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', properties: [new OA\Property(property: 'expired', type: 'integer')], type: 'object')])),
+        new OA\Response(ref: '#/components/responses/PracticeUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/PracticeForbidden', response: 403),
+    ])]
+    public function expire(): JsonResponse
+    {
+        $this->authorize('create', PracticeFeeProposal::class);
+
+        return response()->json(['data' => ['expired' => $this->proposals->expireOverdue()]]);
     }
 
     #[OA\Post(path: '/api/v1/practice/fee-proposals/{id}/send', operationId: 'sendPracticeFeeProposal', description: 'Mark a draft proposal as sent to the client.', summary: 'Send fee proposal', security: [['bearerAuth' => []]], tags: ['Practice Management'], parameters: [new OA\Parameter(ref: '#/components/parameters/PracticeId')], responses: [

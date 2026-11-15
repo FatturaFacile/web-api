@@ -119,7 +119,7 @@ final class WmsDashboardService
         $short = (int) ($counts[WmsTask::ShortCompleted] ?? 0);
         $closed = $short + (int) ($counts[WmsTask::Completed] ?? 0);
 
-        return $closed === 0 ? null : bcdiv(bcmul((string) $short, '100', 6), (string) $closed, 2);
+        return $closed === 0 ? null : bcround(bcdiv(bcmul((string) $short, '100', 8), (string) $closed, 8), 2, \RoundingMode::HalfAwayFromZero);
     }
 
     /**
@@ -168,7 +168,7 @@ final class WmsDashboardService
             return '0.00';
         }
 
-        $percent = bcdiv(bcmul((string) $booked, '100', 6), (string) $available, 2);
+        $percent = bcround(bcdiv(bcmul((string) $booked, '100', 8), (string) $available, 8), 2, \RoundingMode::HalfAwayFromZero);
 
         return bccomp($percent, '100', 2) > 0 ? '100.00' : $percent;
     }

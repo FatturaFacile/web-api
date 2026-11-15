@@ -107,6 +107,33 @@ final class ReturnService
     }
 
     /**
+     * Gives back everything of the sale that earlier returns left: one return with the remaining quantity of each
+     * line, so stock, the return document, the drawer and the payments by method stay consistent with the partial
+     * returns already made. The sale itself stays completed: its takings and its returns net out in the reports.
+     *
+     * @param  array{refund_method: string, reason?: string|null}  $data
+     */
+    public function refundWhole(PosSale $sale, PosSession $session, array $data, ?string $userId): RetailReturn
+    {
+        $returned = $this->returnedQuantities($sale);
+        $lines = PosSaleItem::query()->where('pos_sale_id', $sale->id)->get()
+            ->filter(static fn (PosSaleItem $item): bool => bccomp((string) $item->unit_price, '0', 4) > 0)
+            ->map(static fn (PosSaleItem $item): array => [
+                'pos_sale_item_id' => (string) $item->id,
+                'quantity' => bcsub((string) $item->quantity, $returned[$item->id] ?? '0', 4),
+            ])
+            ->filter(static fn (array $line): bool => bccomp($line['quantity'], '0', 4) > 0)
+            ->values()
+            ->all();
+
+        if ($lines === []) {
+            throw ValidationException::withMessages(['pos_sale_id' => __('pos.sale_fully_returned')]);
+        }
+
+        return $this->process($sale, $session, ['lines' => $lines] + $data, $userId);
+    }
+
+    /**
      * Quantity of each sale line already given back.
      *
      * @return array<string, string>

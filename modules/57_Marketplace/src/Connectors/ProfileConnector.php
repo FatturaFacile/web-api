@@ -11,6 +11,7 @@ use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Modules\Marketplace\Contracts\Connector;
+use Modules\Marketplace\Contracts\PullsRecords;
 use Modules\Marketplace\Exceptions\ConnectorException;
 use Modules\Marketplace\Support\ConnectorContext;
 use Modules\Marketplace\Support\ConnectorDefinition;
@@ -27,7 +28,7 @@ use Throwable;
  * job of the adapter of each system: it replaces the profile connector by a class implementing {@see Connector} under the
  * same key and a higher version.
  */
-final class ProfileConnector implements Connector
+final class ProfileConnector implements Connector, PullsRecords
 {
     public function __construct(
         private readonly ConnectorDefinition $definition,
@@ -67,10 +68,23 @@ final class ProfileConnector implements Connector
 
     public function sync(ConnectorContext $context, string $resource): SyncResult
     {
+        $count = count($this->pull($context, $resource, null));
+
+        return new SyncResult($count, 0, __('marketplace_errors.sync.fetched', ['count' => $count, 'resource' => $resource]));
+    }
+
+    public function pull(ConnectorContext $context, string $resource, ?string $cursor): array
+    {
         $target = $this->profile->resourcePaths[$resource] ?? throw new ConnectorException(__('marketplace_errors.sync.unknown_resource', ['resource' => $resource]));
+        $path = $target['path'];
+        $parameter = $this->profile->cursorParameters[$resource] ?? null;
+
+        if ($cursor !== null && $cursor !== '' && $parameter !== null) {
+            $path .= (str_contains($path, '?') ? '&' : '?').$parameter.'='.rawurlencode($cursor);
+        }
 
         try {
-            $response = $this->client($context)->get($this->url($context, $target['path']));
+            $response = $this->client($context)->get($this->url($context, $path));
         } catch (ConnectionException) {
             throw new ConnectorException(__('marketplace_errors.health.unreachable'));
         } catch (UnsafeOutboundUrlException) {
@@ -80,9 +94,8 @@ final class ProfileConnector implements Connector
         $this->assertSuccessful($response);
         $json = $response->json();
         $records = $target['collection'] !== null ? data_get($json, $target['collection']) : $json;
-        $count = is_array($records) ? count($records) : 0;
 
-        return new SyncResult($count, 0, __('marketplace_errors.sync.fetched', ['count' => $count, 'resource' => $resource]));
+        return is_array($records) ? array_values(array_filter($records, is_array(...))) : [];
     }
 
     /**

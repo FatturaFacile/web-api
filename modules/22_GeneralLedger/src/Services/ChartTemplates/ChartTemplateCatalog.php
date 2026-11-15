@@ -19,6 +19,10 @@ final class ChartTemplateCatalog
 
     public const string SPANISH_PGC = 'es_pgc';
 
+    public const string GERMAN_SKR03 = 'de_skr03';
+
+    public const string GERMAN_SKR04 = 'de_skr04';
+
     /**
      * @return array<string, array{standard: string, name: string, country: string, currency: string, accounts: list<array{0: string, 1: string, 2: string, 3: string, 4: ?string, 5: ?string, 6: ?string}>}>
      */
@@ -52,6 +56,20 @@ final class ChartTemplateCatalog
                 'country' => 'ES',
                 'currency' => 'EUR',
                 'accounts' => SpanishPgcData::accounts(),
+            ],
+            self::GERMAN_SKR03 => [
+                'standard' => 'de_skr03',
+                'name' => 'German chart of accounts (DATEV SKR03)',
+                'country' => 'DE',
+                'currency' => 'EUR',
+                'accounts' => Skr03Data::accounts(),
+            ],
+            self::GERMAN_SKR04 => [
+                'standard' => 'de_skr04',
+                'name' => 'German chart of accounts (DATEV SKR04)',
+                'country' => 'DE',
+                'currency' => 'EUR',
+                'accounts' => Skr04Data::accounts(),
             ],
         ];
     }

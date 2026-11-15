@@ -9,11 +9,16 @@ use App\Support\Database\TransactionLock;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Validation\ValidationException;
+use Modules\Marketplace\Contracts\Connector;
+use Modules\Marketplace\Contracts\PullsRecords;
 use Modules\Marketplace\Exceptions\ConnectorException;
 use Modules\Marketplace\Exceptions\ConnectorRateLimitedException;
 use Modules\Marketplace\Models\MarketplaceInstallation;
 use Modules\Marketplace\Models\MarketplaceSyncRun;
+use Modules\Marketplace\Support\ConnectorContext;
 use Modules\Marketplace\Support\ConnectorRegistry;
+use Modules\Marketplace\Support\RecordMapperRegistry;
+use Modules\Marketplace\Support\SyncResult;
 use Throwable;
 
 /**
@@ -36,6 +41,8 @@ final readonly class SyncService
         private ConnectorRegistry $registry,
         private ConnectorContextFactory $contexts,
         private InstallationService $installations,
+        private RecordMapperRegistry $mappers,
+        private RecordImporter $importer,
     ) {}
 
     /**
@@ -70,7 +77,7 @@ final readonly class SyncService
         $context = $this->contexts->for($installation);
 
         try {
-            $result = $connector->sync($context, $resource);
+            $result = $this->execute($connector, $installation, $run, $context, $resource);
             $run->update([
                 'status' => MarketplaceSyncRun::Succeeded,
                 'finished_at' => now(),
@@ -87,6 +94,30 @@ final readonly class SyncService
         }
 
         return $run->refresh();
+    }
+
+    /**
+     * Synchronises one resource. A connector that hands over its records ({@see PullsRecords}) and has a mapper for the
+     * resource is pulled from the stored cursor (the only external call, outside any transaction), its records are mapped
+     * into the staging table one by one and the cursor advances; any other connector runs its own sync.
+     */
+    private function execute(Connector $connector, MarketplaceInstallation $installation, MarketplaceSyncRun $run, ConnectorContext $context, string $resource): SyncResult
+    {
+        $mapper = $connector instanceof PullsRecords ? $this->mappers->find($installation->connector_key, $resource) : null;
+
+        if (! $connector instanceof PullsRecords || $mapper === null) {
+            return $connector->sync($context, $resource);
+        }
+
+        $cursors = $installation->sync_cursors ?? [];
+        $records = $connector->pull($context, $resource, $cursors[$resource] ?? null);
+        $outcome = $this->importer->import($installation, $run, $resource, $mapper, $records, $context);
+
+        if ($outcome->cursor !== null) {
+            $installation->update(['sync_cursors' => [...$cursors, $resource => $outcome->cursor]]);
+        }
+
+        return new SyncResult($outcome->processed, $outcome->failed, __('marketplace_errors.sync.fetched', ['count' => $outcome->processed, 'resource' => $resource]));
     }
 
     /**

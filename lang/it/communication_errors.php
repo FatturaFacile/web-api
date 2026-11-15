@@ -19,4 +19,8 @@ return [
         'not_found' => 'Nessun modello attivo per questo codice e canale.',
         'missing_variables' => 'Variabili mancanti: :variables.',
     ],
+    'webhook' => [
+        'unknown_channel' => 'Nessun canale email in ingresso trovato.',
+        'invalid_signature' => 'Firma non valida o scaduta.',
+    ],
 ];

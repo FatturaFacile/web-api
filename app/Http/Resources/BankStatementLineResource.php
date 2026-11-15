@@ -26,6 +26,7 @@ class BankStatementLineResource extends JsonResource
             'direction' => $this->direction,
             'amount' => (float) $this->amount,
             'fee_amount' => (float) $this->fee_amount,
+            'currency' => $this->currency,
             'gross_amount' => round((float) $this->amount + (float) $this->fee_amount, 2),
             'abi_code' => $this->abi_code,
             'reference' => $this->reference,

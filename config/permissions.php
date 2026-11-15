@@ -47,7 +47,8 @@ return [
         'procurement' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'purchasing', 'procurement_manager', 'member']],
         'inventory' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'warehouse', 'purchasing', 'technician', 'member']],
         'customs' => ['read' => ['owner', 'admin', 'accountant', 'customs', 'warehouse', 'sales'], 'write' => ['owner', 'admin', 'accountant', 'customs']],
-        'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'purchasing', 'hr', 'member']],
+        // Managers write too: they are named as approvers of document approval steps and must be able to decide them.
+        'documents' => ['read' => $anyMember, 'write' => ['owner', 'admin', 'accountant', 'sales', 'sales_manager', 'purchasing', 'procurement_manager', 'service_manager', 'hr', 'member']],
         'contracts' => ['read' => $contractManagers, 'write' => $contractManagers],
         'assistant' => ['read' => $anyMember, 'write' => $anyMember],
         'edocument_networks' => ['read' => $finance, 'write' => $finance],

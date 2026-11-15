@@ -7,6 +7,7 @@ use Modules\Communication\Http\Controllers\CampaignController;
 use Modules\Communication\Http\Controllers\CommunicationController;
 use Modules\Communication\Http\Controllers\ContactPreferenceController;
 use Modules\Communication\Http\Controllers\ConversationController;
+use Modules\Communication\Http\Controllers\InboundEmailWebhookController;
 use Modules\Communication\Http\Controllers\MessageController;
 use Modules\Communication\Http\Controllers\TemplateController;
 
@@ -30,6 +31,7 @@ Route::prefix('api/v1/communication')
         Route::post('conversations/inbound', [ConversationController::class, 'receive'])->name('communication.conversations.inbound');
         Route::get('conversations/{id}', [ConversationController::class, 'show'])->whereUuid('id')->name('communication.conversations.show');
         Route::post('conversations/{id}/reply', [ConversationController::class, 'reply'])->whereUuid('id')->name('communication.conversations.reply');
+        Route::get('assignees', [ConversationController::class, 'assignees'])->name('communication.assignees');
         Route::post('conversations/{id}/assign', [ConversationController::class, 'assign'])->whereUuid('id')->name('communication.conversations.assign');
         Route::post('conversations/{id}/status', [ConversationController::class, 'changeStatus'])->whereUuid('id')->name('communication.conversations.status');
         Route::post('conversations/{id}/read', [ConversationController::class, 'read'])->whereUuid('id')->name('communication.conversations.read');
@@ -58,4 +60,11 @@ Route::prefix('api/v1/communication/channels')
         Route::get('/', [CommunicationController::class, 'channels'])->name('communication.channels.index');
         Route::put('{channel}', [CommunicationController::class, 'updateChannel'])->whereIn('channel', ['email', 'whatsapp', 'telegram', 'sms'])->name('communication.channels.update');
         Route::post('{channel}/test', [MessageController::class, 'testChannel'])->whereIn('channel', ['email', 'whatsapp', 'telegram', 'sms'])->name('communication.channels.test');
+    });
+
+// Inbound email provider webhook: public, authenticated by the HMAC signature made with the inbound secret of the channel.
+Route::prefix('api/v1/webhooks/communication')
+    ->middleware(['api', 'throttle:120,1'])
+    ->group(function (): void {
+        Route::post('email/{channel}', InboundEmailWebhookController::class)->whereUuid('channel')->name('webhooks.communication.email');
     });

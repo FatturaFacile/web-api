@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Settings;
 
+use App\Exceptions\SodConflictException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\SaveTenantMemberRequest;
 use App\Http\Responses\ApiResponse;
@@ -185,6 +186,13 @@ class TenantMemberController extends Controller
 
         try {
             $this->memberships->save($tenant, $user, $role, $request->modules());
+        } catch (SodConflictException $exception) {
+            return $this->problemDetailsResponse(
+                title: 'Segregation of Duties Conflict',
+                detail: $exception->getMessage(),
+                status: Response::HTTP_CONFLICT,
+                invalidParams: array_map(static fn (array $conflict): array => ['name' => $conflict['rule_code'], 'reason' => $conflict['duty_a'].' / '.$conflict['duty_b']], $exception->conflicts),
+            );
         } catch (DomainException $exception) {
             return $this->problemDetailsResponse(title: 'Last Owner', detail: $exception->getMessage(), status: Response::HTTP_CONFLICT);
         }

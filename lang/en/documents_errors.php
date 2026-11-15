@@ -24,6 +24,7 @@ return [
         'not_approver' => 'You are not the approver of the current step.',
         'cannot_cancel' => 'Only the requester or an administrator can cancel this request.',
         'template_in_use' => 'The approval route cannot change while a request is pending on it.',
+        'role_cannot_decide' => 'This role cannot decide a step: it has no write access to documents.',
     ],
     'preservation' => [
         'no_hash' => 'A preservation package has no hash to chain.',

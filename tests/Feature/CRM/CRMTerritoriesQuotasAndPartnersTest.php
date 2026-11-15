@@ -117,7 +117,9 @@ test('quota attainment counts the opportunities won by the user in the period an
 
     $this->postJson('/api/v1/crm/sales-quotas', ['user_id' => $rep->id, 'period_start' => '2027-03-31', 'period_end' => '2027-01-01', 'target_amount' => '1'])
         ->assertUnprocessable()->assertJsonValidationErrors('period_end');
-    $this->getJson('/api/v1/crm/sales-quotas?user_id='.$rep->id)->assertOk()->assertJsonCount(2, 'data');
+    $list = $this->getJson('/api/v1/crm/sales-quotas?assignee_id='.$rep->id);
+    expect($list->status())->toBe(200, $list->getContent());
+    $list->assertJsonCount(2, 'data');
 });
 
 test('read-only roles cannot write territories and partners', function (): void {

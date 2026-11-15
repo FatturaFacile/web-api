@@ -443,3 +443,47 @@ test('the returns of another company are not visible', function (): void {
     $this->getJson("/api/v1/fiscal-retail/pos/sessions/{$session}/cash-movements")->assertNotFound();
     $this->getJson('/api/v1/fiscal-retail/pos/returns')->assertOk()->assertJsonCount(0, 'data');
 });
+
+test('the whole sale refund gives back what earlier returns left and cannot be repeated', function (): void {
+    $session = posOpenSession('100.00');
+    $ticket = posTicket($session, [['description' => 'Shirt', 'quantity' => 3, 'unit_price' => 10, 'tax_rate' => 22]], [['method' => 'cash', 'amount' => 40]]);
+    $item = $ticket['items'][0]['id'];
+
+    $this->postJson("/api/v1/fiscal-retail/pos/sales/{$ticket['id']}/returns", [
+        'pos_session_id' => $session, 'lines' => [['pos_sale_item_id' => $item, 'quantity' => 1]], 'refund_method' => 'cash',
+    ])->assertCreated();
+
+    $refund = $this->postJson("/api/v1/fiscal-retail/pos/sales/{$ticket['id']}/refund", ['pos_session_id' => $session, 'refund_method' => 'cash', 'reason' => 'Customer left'])
+        ->assertCreated()->json('data');
+
+    expect($refund['total_gross'])->toBe('24.40')->and($refund['cash_refunded'])->toBe('24.40');
+
+    $this->getJson("/api/v1/fiscal-retail/pos/tickets/{$ticket['id']}")->assertJsonPath('data.items.0.returnable_quantity', '0.0000');
+    $this->postJson("/api/v1/fiscal-retail/pos/sales/{$ticket['id']}/refund", ['pos_session_id' => $session, 'refund_method' => 'cash'])
+        ->assertUnprocessable()->assertJsonValidationErrors('pos_sale_id');
+
+    $summary = $this->getJson("/api/v1/fiscal-retail/pos/sessions/{$session}/cash-movements")->json('summary');
+    expect($summary['cash_refunds'])->toBe('36.60');
+});
+
+test('the legacy whole sale refund is refused when the sale already has returns', function (): void {
+    $session = posOpenSession('100.00');
+    $ticket = posTicket($session, [['description' => 'Shirt', 'quantity' => 2, 'unit_price' => 10, 'tax_rate' => 22]], [['method' => 'cash', 'amount' => 30]]);
+
+    $this->postJson("/api/v1/fiscal-retail/pos/sales/{$ticket['id']}/returns", [
+        'pos_session_id' => $session, 'lines' => [['pos_sale_item_id' => $ticket['items'][0]['id'], 'quantity' => 1]], 'refund_method' => 'cash',
+    ])->assertCreated();
+
+    $this->postJson("/api/v1/retail/pos/sales/{$ticket['id']}/refund")->assertUnprocessable()->assertJsonValidationErrors('sale');
+});
+
+test('a corrispettivi day cannot be closed while a cash session is open', function (): void {
+    $session = posOpenSession('0.00');
+    $ticket = posTicket($session, [['description' => 'Bread', 'quantity' => 1, 'unit_price' => 10, 'tax_rate' => 22]], [['method' => 'card', 'amount' => 12.2]]);
+    $this->postJson('/api/v1/fiscal-retail/commercial-documents', ['pos_sale_id' => $ticket['id']])->assertCreated();
+
+    $this->postJson('/api/v1/fiscal-retail/corrispettivi/daily/2027-06-15/close')->assertUnprocessable()->assertJsonValidationErrors('date');
+
+    $this->postJson("/api/v1/retail/pos/sessions/{$session}/close", ['closing_cash' => 0])->assertOk();
+    $this->postJson('/api/v1/fiscal-retail/corrispettivi/daily/2027-06-15/close')->assertCreated();
+});

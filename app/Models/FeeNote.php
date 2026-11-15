@@ -27,6 +27,7 @@ class FeeNote extends Model
         'cassa_previdenza_amount',
         'ritenuta_acconto_amount',
         'vat_amount',
+        'expenses_amount',
         'net_payable',
         'status',
     ];
@@ -51,6 +52,7 @@ class FeeNote extends Model
             'cassa_previdenza_amount' => 'decimal:2',
             'ritenuta_acconto_amount' => 'decimal:2',
             'vat_amount' => 'decimal:2',
+            'expenses_amount' => 'decimal:2',
             'net_payable' => 'decimal:2',
         ];
     }

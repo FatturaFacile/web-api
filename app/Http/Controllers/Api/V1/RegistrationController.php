@@ -39,8 +39,8 @@ class RegistrationController extends Controller
                     new OA\Property(property: 'password', type: 'string', format: 'password'),
                     new OA\Property(property: 'password_confirmation', type: 'string', format: 'password'),
                     new OA\Property(property: 'company_name', type: 'string', maxLength: 255),
-                    new OA\Property(property: 'country', type: 'string', enum: ['IT', 'CH']),
-                    new OA\Property(property: 'tax_id', description: 'Italian VAT number or Swiss UID', type: 'string'),
+                    new OA\Property(property: 'country', type: 'string', enum: ['IT', 'CH', 'FR', 'ES', 'DE', 'US']),
+                    new OA\Property(property: 'tax_id', description: 'Tax identifier of the company country: Italian VAT number, Swiss UID, French or Spanish or German VAT number, US EIN', type: 'string'),
                     new OA\Property(property: 'terms_accepted', type: 'boolean'),
                     new OA\Property(property: 'privacy_accepted', type: 'boolean'),
                 ]

@@ -11,6 +11,7 @@ use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * One row of the append-only client funds (trust) ledger. Deposits add to the balance of the client (optionally of one
@@ -50,6 +51,14 @@ final class PracticeTrustTransaction extends Model
     protected function recordProtectionViolation(string $operation): ?string
     {
         return $operation === 'create' ? null : 'The client funds ledger is append-only: post a reversal.';
+    }
+
+    /**
+     * @return HasOne<PracticeTrustPosting, $this>
+     */
+    public function posting(): HasOne
+    {
+        return $this->hasOne(PracticeTrustPosting::class, 'trust_transaction_id');
     }
 
     /**

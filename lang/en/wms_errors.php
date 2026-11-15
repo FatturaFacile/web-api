@@ -16,6 +16,7 @@ return [
         'short_below_planned' => 'A short task must be below the planned :planned: confirm it instead.',
         'assigned_to_other' => 'The task is assigned to another operator.',
         'wave_not_released' => 'The wave of the task has not been released yet.',
+        'stock_rejected' => 'The stock movement was rejected: :reason',
         'not_a_member' => 'The user is not a member of this company.',
     ],
     'wave_rule' => [

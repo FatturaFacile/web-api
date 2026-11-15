@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Governance\Providers;
 
+use App\Contracts\Governance\DocumentSegregationGuard;
 use App\Services\Tenancy\SodAssignmentGuard;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +21,7 @@ use Modules\Governance\Models\GovSodException;
 use Modules\Governance\Models\GovSodRule;
 use Modules\Governance\Models\GovSodViolation;
 use Modules\Governance\Policies\GovernancePolicy;
+use Modules\Governance\Services\DocumentSodService;
 use Modules\Governance\Services\GovernanceMembers;
 use Modules\Governance\Services\SodService;
 
@@ -32,6 +34,7 @@ final class GovernanceServiceProvider extends ServiceProvider
     {
         $this->app->scoped(GovernanceMembers::class);
         $this->app->bind(SodAssignmentGuard::class, SodService::class);
+        $this->app->bind(DocumentSegregationGuard::class, DocumentSodService::class);
     }
 
     public function boot(): void

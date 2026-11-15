@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\FiscalRetail\Http\Requests\RetailReturnRequest;
+use Modules\FiscalRetail\Http\Requests\RetailSaleRefundRequest;
 use Modules\FiscalRetail\Http\Resources\RetailReturnResource;
 use Modules\FiscalRetail\Models\RetailReturn;
 use Modules\FiscalRetail\Services\ReturnService;
@@ -67,6 +68,23 @@ final class ReturnController extends Controller
         $session = PosSession::query()->findOrFail($validated['pos_session_id']);
 
         $return = $returns->process($sale, $session, $validated, $request->user() !== null ? (string) $request->user()->getKey() : null);
+
+        return (new RetailReturnResource($return))->response()->setStatusCode(201);
+    }
+
+    #[OA\Post(path: '/api/v1/fiscal-retail/pos/sales/{id}/refund', operationId: 'refundRetailSale', description: 'Gives back everything of the sale that earlier returns left, in an open session: one return with the remaining quantity of each line (stock, return document and drawer follow the same rules as a partial return). 422 when nothing is left to return.', summary: 'Refund a whole POS sale', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/RetailSaleRefundRequest')), tags: ['Fiscal Retail'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
+        new OA\Response(response: 201, description: 'Return recorded', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/RetailReturn')])),
+        new OA\Response(response: 404, description: 'Sale not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        new OA\Response(response: 422, description: 'Nothing left to return, refunded sale or closed session', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+    ])]
+    public function refundSale(RetailSaleRefundRequest $request, string $id, ReturnService $returns): JsonResponse
+    {
+        $sale = PosSale::query()->findOrFail($id);
+        $this->authorize('create', RetailReturn::class);
+        $validated = $request->validated();
+        $session = PosSession::query()->findOrFail($validated['pos_session_id']);
+
+        $return = $returns->refundWhole($sale, $session, $validated, $request->user() !== null ? (string) $request->user()->getKey() : null);
 
         return (new RetailReturnResource($return))->response()->setStatusCode(201);
     }

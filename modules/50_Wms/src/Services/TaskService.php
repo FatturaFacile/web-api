@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Wms\Services;
 
+use App\Exceptions\BusinessRuleException;
 use App\Support\Database\TransactionLock;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use Modules\Wms\Contracts\WmsStockGateway;
 use Modules\Wms\Models\WmsTask;
 use Modules\Wms\Models\WmsWave;
 use Modules\Wms\Support\WarehouseBins;
@@ -36,6 +38,8 @@ final class TaskService extends WmsCrudService
 
     /** @var list<string> */
     private const array With = ['warehouse:id,code,name', 'stockItem:id,sku,name', 'sourceBin:id,code', 'destinationBin:id,code'];
+
+    public function __construct(private readonly WmsStockGateway $stock) {}
 
     protected function modelClass(): string
     {
@@ -126,9 +130,9 @@ final class TaskService extends WmsCrudService
         });
     }
 
-    public function confirm(WmsTask $task, ?string $quantity): WmsTask
+    public function confirm(WmsTask $task, ?string $quantity, ?string $userId = null): WmsTask
     {
-        return DB::transaction(function () use ($task, $quantity): WmsTask {
+        return DB::transaction(function () use ($task, $quantity, $userId): WmsTask {
             $locked = $this->lock($task);
             $this->assertStatus($locked, [WmsTask::InProgress]);
             $planned = (string) $locked->planned_quantity;
@@ -142,15 +146,16 @@ final class TaskService extends WmsCrudService
                 throw ValidationException::withMessages(['quantity' => [__('wms_errors.task.use_short', ['planned' => $planned])]]);
             }
 
+            $this->postStock($locked, $quantity, $userId);
             $locked->update(['status' => WmsTask::Completed, 'confirmed_quantity' => $quantity, 'completed_at' => now()]);
 
             return $this->present($locked);
         });
     }
 
-    public function short(WmsTask $task, string $quantity, string $reason): WmsTask
+    public function short(WmsTask $task, string $quantity, string $reason, ?string $userId = null): WmsTask
     {
-        return DB::transaction(function () use ($task, $quantity, $reason): WmsTask {
+        return DB::transaction(function () use ($task, $quantity, $reason, $userId): WmsTask {
             $locked = $this->lock($task);
             $this->assertStatus($locked, [WmsTask::InProgress]);
 
@@ -158,6 +163,7 @@ final class TaskService extends WmsCrudService
                 throw ValidationException::withMessages(['quantity' => [__('wms_errors.task.short_below_planned', ['planned' => (string) $locked->planned_quantity])]]);
             }
 
+            $this->postStock($locked, $quantity, $userId);
             $locked->update(['status' => WmsTask::ShortCompleted, 'confirmed_quantity' => $quantity, 'short_reason' => $reason, 'completed_at' => now()]);
 
             return $this->present($locked);
@@ -234,6 +240,39 @@ final class TaskService extends WmsCrudService
 
             return $this->present($next);
         });
+    }
+
+    /**
+     * Posts the stock movement of a confirmed task into the inventory, once: a task that already holds its movement
+     * reference is left alone, so a retry never posts twice. A putaway without a source bin moves the goods out of the
+     * receiving bin of the warehouse. Picks without a destination issue nothing here (the outbound document issues the
+     * stock) and counts never move stock (the count adjusts it). Runs inside the confirming transaction: a rejected
+     * movement leaves the task in progress.
+     */
+    private function postStock(WmsTask $task, string $quantity, ?string $userId): void
+    {
+        if ($task->stock_movement_id !== null || bccomp($quantity, '0', 4) <= 0 || $task->stock_item_id === null) {
+            return;
+        }
+
+        $destinationBinId = $task->destination_bin_id;
+        $sourceBinId = $task->source_bin_id;
+
+        if ($task->task_type === 'putaway' && $sourceBinId === null && $destinationBinId !== null) {
+            $sourceBinId = $this->stock->receivingBinId((string) $task->warehouse_id);
+        }
+
+        if ($sourceBinId === null || $destinationBinId === null || $sourceBinId === $destinationBinId || ! in_array($task->task_type, ['putaway', 'pick', 'replenish', 'move'], true)) {
+            return;
+        }
+
+        try {
+            $movementId = $this->stock->transfer((string) $task->id, (string) $task->stock_item_id, (string) $sourceBinId, (string) $destinationBinId, $quantity, $userId);
+        } catch (BusinessRuleException $rejection) {
+            throw ValidationException::withMessages(['quantity' => [__('wms_errors.task.stock_rejected', ['reason' => $rejection->getMessage()])]]);
+        }
+
+        $task->update(['stock_posting_key' => 'wms_task:'.$task->id, 'stock_movement_id' => $movementId, 'stock_posted_at' => now()]);
     }
 
     private function lock(WmsTask $task): WmsTask

@@ -27,6 +27,8 @@ return [
     'return_sale_not_returnable' => 'Only a completed sale can have goods returned.',
     'return_item_unknown' => 'The line does not belong to this sale or is a discount line.',
     'return_quantity_exceeds' => 'The quantity is zero or above what is left to return.',
+    'sale_fully_returned' => 'All the goods of this sale have already been returned.',
+    'refund_has_returns' => 'This sale already has returns: refund the rest with the whole-sale refund of the fiscal till.',
     'x_report_open_only' => 'The X report is read on an open session: read the Z report of a closed one.',
     'z_report_closed_only' => 'The Z report is issued when the session is closed: read the X report of an open one.',
 

@@ -15,14 +15,16 @@ beforeEach(function (): void {
     actingAsMember($this->tenant, 'accountant');
 });
 
-test('the catalog lists the Swiss SME, Italian, French and Spanish charts', function (): void {
+test('the catalog lists the Swiss SME, Italian, French, Spanish and German charts', function (): void {
     $data = $this->getJson('/api/v1/general-ledger/account-templates')->assertOk()->json('data');
 
-    expect(collect($data)->pluck('key')->all())->toBe(['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc'])
+    expect(collect($data)->pluck('key')->all())->toBe(['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc', 'de_skr03', 'de_skr04'])
         ->and(collect($data)->firstWhere('key', 'ch_kmu_pme'))->toMatchArray(['country' => 'CH', 'currency' => 'CHF'])
         ->and(collect($data)->firstWhere('key', 'it_general_ledger'))->toMatchArray(['country' => 'IT', 'currency' => 'EUR'])
         ->and(collect($data)->firstWhere('key', 'fr_pcg'))->toMatchArray(['country' => 'FR', 'currency' => 'EUR'])
-        ->and(collect($data)->firstWhere('key', 'es_pgc'))->toMatchArray(['country' => 'ES', 'currency' => 'EUR']);
+        ->and(collect($data)->firstWhere('key', 'es_pgc'))->toMatchArray(['country' => 'ES', 'currency' => 'EUR'])
+        ->and(collect($data)->firstWhere('key', 'de_skr03'))->toMatchArray(['country' => 'DE', 'currency' => 'EUR'])
+        ->and(collect($data)->firstWhere('key', 'de_skr04'))->toMatchArray(['country' => 'DE', 'currency' => 'EUR']);
 });
 
 test('every template has unique codes, existing parents and parents of the same side', function (string $key): void {
@@ -40,7 +42,7 @@ test('every template has unique codes, existing parents and parents of the same 
         expect($byCode)->toHaveKey($parent)
             ->and(array_search($parent, $codes, true))->toBeLessThan(array_search($code, $codes, true));
     }
-})->with(['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc']);
+})->with(['ch_kmu_pme', 'it_general_ledger', 'fr_pcg', 'es_pgc', 'de_skr03', 'de_skr04']);
 
 test('a template is imported with its hierarchy and standard, and importing again creates nothing', function (): void {
     $first = $this->postJson('/api/v1/general-ledger/account-templates/ch_kmu_pme/import')->assertOk()->json('data');

@@ -20,13 +20,14 @@ final readonly class SiiVatBookExporter
     /** @var list<string> */
     private const array SalesColumns = [
         'Ejercicio', 'Periodo', 'TipoFactura', 'FechaExpedicionFacturaEmisor', 'NumSerieFacturaEmisor', 'ClaveRegimenEspecialOTrascendencia',
-        'TipoNoExenta', 'TipoImpositivo', 'BaseImponible', 'CuotaRepercutida', 'ContraparteNombre',
+        'TipoNoExenta', 'TipoImpositivo', 'BaseImponible', 'CuotaRepercutida', 'ContraparteNombre', 'ContraparteNIF', 'ContraparteCodigoPais', 'ContraparteIDOtro',
     ];
 
     /** @var list<string> */
     private const array PurchasesColumns = [
         'Ejercicio', 'Periodo', 'TipoFactura', 'FechaExpedicionFacturaEmisor', 'NumSerieFacturaEmisor', 'FechaRegContable',
         'ClaveRegimenEspecialOTrascendencia', 'TipoImpositivo', 'BaseImponible', 'CuotaSoportada', 'CuotaDeducible', 'ContraparteNombre',
+        'ContraparteNIF', 'ContraparteCodigoPais', 'ContraparteIDOtro',
     ];
 
     public function __construct(private ExcelCsvWriter $writer) {}
@@ -51,6 +52,7 @@ final readonly class SiiVatBookExporter
             $taxable = (string) $line['taxable_amount'];
             $tax = (string) $line['vat_amount'];
             $reverseCharge = str_contains(strtolower((string) ($line['vat_treatment'] ?? '')), 'reverse');
+            $counterparty = $this->counterparty($line);
             $common = [
                 $posting->format('Y'),
                 $posting->format('m'),
@@ -60,11 +62,34 @@ final readonly class SiiVatBookExporter
             ];
 
             $rows[] = $isSales
-                ? [...$common, '01', $reverseCharge ? 'S2' : 'S1', $this->rate((string) $line['vat_rate']), Decimal::round2($taxable), Decimal::round2($tax), (string) ($line['partner_name'] ?? '')]
-                : [...$common, $posting->format('d-m-Y'), '01', $this->rate((string) $line['vat_rate']), Decimal::round2($taxable), Decimal::round2($tax), Decimal::round2($tax), (string) ($line['partner_name'] ?? '')];
+                ? [...$common, '01', $reverseCharge ? 'S2' : 'S1', $this->rate((string) $line['vat_rate']), Decimal::round2($taxable), Decimal::round2($tax), (string) ($line['partner_name'] ?? ''), ...$counterparty]
+                : [...$common, $posting->format('d-m-Y'), '01', $this->rate((string) $line['vat_rate']), Decimal::round2($taxable), Decimal::round2($tax), Decimal::round2($tax), (string) ($line['partner_name'] ?? ''), ...$counterparty];
         }
 
         return $this->writer->write($isSales ? self::SalesColumns : self::PurchasesColumns, $rows);
+    }
+
+    /**
+     * The counterparty identification of the SII: the NIF of a Spanish counterparty, or the country code and tax number
+     * (IDOtro) of a foreign one. A counterparty without tax identifier leaves the three columns empty.
+     *
+     * @param  array<string, mixed>  $line
+     * @return array{0: string, 1: string, 2: string}
+     */
+    private function counterparty(array $line): array
+    {
+        $taxId = strtoupper((string) preg_replace('/[\s.\-]/', '', (string) ($line['partner_tax_id'] ?? '')));
+        $country = strtoupper((string) ($line['partner_country'] ?? ''));
+
+        if ($taxId === '') {
+            return ['', '', ''];
+        }
+
+        if ($country === '' || $country === 'ES') {
+            return [str_starts_with($taxId, 'ES') ? substr($taxId, 2) : $taxId, '', ''];
+        }
+
+        return ['', $country, str_starts_with($taxId, $country) ? substr($taxId, 2) : $taxId];
     }
 
     private function rate(string $rate): string

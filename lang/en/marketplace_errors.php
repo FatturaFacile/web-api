@@ -46,4 +46,11 @@ return [
         'fetched' => 'Fetched :count records of :resource.',
         'delivered' => 'The event was delivered.',
     ],
+    'mapping' => [
+        'missing_field' => 'The field ":field" is missing.',
+        'invalid_amount' => 'The amount ":field" is not a number.',
+        'invalid_currency' => 'The currency is not a valid ISO code.',
+        'invalid_date' => 'The date is not valid.',
+        'invalid_lines' => 'The order lines are not valid.',
+    ],
 ];

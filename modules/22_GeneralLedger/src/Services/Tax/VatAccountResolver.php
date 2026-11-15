@@ -19,7 +19,20 @@ final class VatAccountResolver
     private const string DEFAULT_OUTPUT_CODE = '2200';
 
     /** Listeners post purchase VAT to 1400; 1170 is the input tax account of the Swiss chart used by the desktop. */
-    private const array DEFAULT_INPUT_CODES = ['IT' => ['1400'], 'CH' => ['1400', '1170']];
+    private const array DEFAULT_INPUT_CODES = [
+        'IT' => ['1400'],
+        'CH' => ['1400', '1170'],
+        'FR' => ['44562', '44566'],
+        'ES' => ['472', '4721'],
+        'DE' => ['1571', '1576', '1401', '1406'],
+    ];
+
+    /** Output VAT accounts of the charts of the localization packs; the other countries use DEFAULT_OUTPUT_CODE. */
+    private const array DEFAULT_OUTPUT_CODES = [
+        'FR' => ['44571'],
+        'ES' => ['477'],
+        'DE' => ['1771', '1776', '3801', '3806'],
+    ];
 
     private const string DEFAULT_SETTLEMENT_CODE = '2210';
 
@@ -44,7 +57,7 @@ final class VatAccountResolver
         );
 
         if ($outputIds === []) {
-            $outputIds = $this->accountIdsOf($tenantId, [self::DEFAULT_OUTPUT_CODE]);
+            $outputIds = $this->accountIdsOf($tenantId, self::DEFAULT_OUTPUT_CODES[$country] ?? [self::DEFAULT_OUTPUT_CODE]);
         }
 
         if ($inputIds === []) {

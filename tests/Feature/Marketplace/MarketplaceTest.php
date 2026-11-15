@@ -374,16 +374,31 @@ test('uninstalling wipes the credentials, keeps the history and waits for a run 
 });
 
 test('a newer version of a connector needs its new scopes and a complete configuration', function (): void {
-    $registry = new ConnectorRegistry;
-    $registry->register(mkpAcme('1.0.0', ['reporting.read'], [new ConfigField('api_token', 'API token', 'secret')]));
-    app()->instance(ConnectorRegistry::class, $registry);
+    $current = new ArrayObject(['connector' => mkpAcme('1.0.0', ['reporting.read'], [new ConfigField('api_token', 'API token', 'secret')])]);
+    app(ConnectorRegistry::class)->register(new class($current) implements Connector
+    {
+        public function __construct(private ArrayObject $current) {}
+
+        public function definition(): ConnectorDefinition
+        {
+            return $this->current['connector']->definition();
+        }
+
+        public function checkHealth(ConnectorContext $context): HealthCheckResult
+        {
+            return $this->current['connector']->checkHealth($context);
+        }
+
+        public function sync(ConnectorContext $context, string $resource): SyncResult
+        {
+            return $this->current['connector']->sync($context, $resource);
+        }
+    });
 
     $id = mkpInstall(['connector_key' => 'acme-erp', 'name' => 'Acme', 'granted_scopes' => ['reporting.read']])->assertCreated()->json('data.id');
     mkpConfigure($id, ['api_token' => $this->secret])->assertOk();
     $this->postJson("/api/v1/marketplace/installations/{$id}/enable")->assertOk();
-    $newer = new ConnectorRegistry;
-    $newer->register(mkpAcme('1.1.0', ['reporting.read', 'invoicing.write'], [new ConfigField('api_token', 'API token', 'secret'), new ConfigField('region', 'Region', 'select', options: ['eu', 'us'])]));
-    app()->instance(ConnectorRegistry::class, $newer);
+    $current['connector'] = mkpAcme('1.1.0', ['reporting.read', 'invoicing.write'], [new ConfigField('api_token', 'API token', 'secret'), new ConfigField('region', 'Region', 'select', options: ['eu', 'us'])]);
 
     $this->getJson("/api/v1/marketplace/installations/{$id}")->assertOk()->assertJsonPath('data.update_available', true)->assertJsonPath('data.latest_version', '1.1.0');
     $this->getJson('/api/v1/marketplace/overview')->assertOk()->assertJsonCount(1, 'data.updates_available');

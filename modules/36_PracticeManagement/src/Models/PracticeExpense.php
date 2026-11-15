@@ -7,6 +7,7 @@ namespace Modules\PracticeManagement\Models;
 use App\Models\LegalCase;
 use Enterprise\Foundation\Concerns\HasUuidV7;
 use Enterprise\MultiTenant\Concerns\BelongsToTenant;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -30,6 +31,22 @@ final class PracticeExpense extends Model
     protected $table = 'practice_expenses';
 
     protected $guarded = ['id', 'tenant_id', 'created_at', 'updated_at'];
+
+    /** @var list<string> */
+    protected $hidden = ['receipt_disk', 'receipt_path'];
+
+    /** @var list<string> */
+    protected $appends = ['has_receipt'];
+
+    /**
+     * Whether a receipt file is attached to the expense.
+     *
+     * @return Attribute<bool, never>
+     */
+    protected function hasReceipt(): Attribute
+    {
+        return Attribute::get(fn (): bool => $this->receipt_path !== null);
+    }
 
     /**
      * @return array<string, string>

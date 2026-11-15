@@ -25,6 +25,8 @@ final class FecExporter
         'PieceRef', 'PieceDate', 'EcritureLib', 'Debit', 'Credit', 'EcritureLet', 'DateLet', 'ValidDate', 'Montantdevise', 'Idevise',
     ];
 
+    public function __construct(private JournalLetteringService $letterings) {}
+
     public function fileName(string $tenantId, FiscalYear $fiscalYear): string
     {
         return $this->siren($tenantId).'FEC'.Carbon::parse($fiscalYear->end_date)->format('Ymd').'.txt';
@@ -46,12 +48,13 @@ final class FecExporter
             ->get();
 
         $partners = $this->partners($tenantId, $entries);
+        $letterings = $this->letterings->forLines($tenantId, $entries->flatMap(static fn (JournalEntry $entry) => $entry->lines->pluck('id'))->map(strval(...))->all());
         $lines = [implode("\t", self::Columns)];
         $count = 0;
 
         foreach ($entries as $entry) {
             foreach ($entry->lines as $line) {
-                $lines[] = implode("\t", $this->row($entry, $line, $partners));
+                $lines[] = implode("\t", $this->row($entry, $line, $partners, $letterings[(string) $line->id] ?? null));
                 $count++;
             }
         }
@@ -61,9 +64,10 @@ final class FecExporter
 
     /**
      * @param  array<string, array{number: string, name: string}>  $partners
+     * @param  array{code: string, date: string}|null  $lettering
      * @return list<string>
      */
-    private function row(JournalEntry $entry, JournalLine $line, array $partners): array
+    private function row(JournalEntry $entry, JournalLine $line, array $partners, ?array $lettering): array
     {
         $partner = $line->partner_id !== null ? ($partners[(string) $line->partner_id] ?? null) : null;
         $debit = (string) ($line->functional_debit ?? $line->debit_amount);
@@ -85,8 +89,8 @@ final class FecExporter
             $this->text((string) ($line->description ?: $entry->description)),
             $this->amount($debit),
             $this->amount($credit),
-            '',
-            '',
+            $lettering['code'] ?? '',
+            $lettering['date'] ?? '',
             $this->date($entry->posted_at ?? $entry->posting_date),
             $foreign ? $this->amount($foreignAmount) : '',
             $foreign ? (string) $line->currency : '',

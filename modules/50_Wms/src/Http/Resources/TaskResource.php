@@ -41,6 +41,8 @@ final class TaskResource extends JsonResource
             'skip_reason' => $this->skip_reason,
             'skip_count' => $this->skip_count,
             'notes' => $this->notes,
+            'stock_movement_id' => $this->stock_movement_id,
+            'stock_posted_at' => $this->stock_posted_at?->toIso8601String(),
             'remaining_quantity' => $this->remainingQuantity(),
             'warehouse' => $this->whenLoaded('warehouse', fn (): ?array => $this->warehouse !== null ? ['id' => $this->warehouse->id, 'code' => $this->warehouse->code, 'name' => $this->warehouse->name] : null),
             'stock_item' => $this->whenLoaded('stockItem', fn (): ?array => $this->stockItem !== null ? ['id' => $this->stockItem->id, 'sku' => $this->stockItem->sku, 'name' => $this->stockItem->name] : null),

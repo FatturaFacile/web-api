@@ -25,6 +25,7 @@ final class IntercompanyRelationResource extends JsonResource
             'entity_a_tenant_id' => (string) $this->entity_a_tenant_id,
             'entity_b_tenant_id' => (string) $this->entity_b_tenant_id,
             'tolerance_amount' => (string) $this->tolerance_amount,
+            'currency' => $this->currency,
             'description' => $this->description,
             'mappings' => $this->whenLoaded('mappings', fn (): array => $this->mappings->map(static fn (IntercompanyAccountMapping $mapping): array => [
                 'id' => (string) $mapping->id,

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace Modules\BusinessIntelligence\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Tenant;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -43,6 +45,24 @@ final class ShareController extends Controller
         $this->authorize('share', $resource);
 
         return ShareResource::collection(BiShare::query()->with('user:id,name')->where('resource_type', $filters['resource_type'])->where('resource_id', $resource->id)->orderBy('created_at')->get());
+    }
+
+    #[OA\Get(path: '/api/v1/business-intelligence/members', operationId: 'listBiShareMembers', description: 'The active members of the company (identifier and name only) a resource can be shared with.', summary: 'List the members to share with', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Business Intelligence'], responses: [
+        new OA\Response(response: 200, description: 'Members', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'id', type: 'string'), new OA\Property(property: 'name', type: 'string')], type: 'object'))])),
+        new OA\Response(ref: '#/components/responses/BiUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/BiForbidden', response: 403),
+    ])]
+    public function members(): JsonResponse
+    {
+        $members = Tenant::query()->findOrFail($this->tenantId())->users()
+            ->wherePivotNull('suspended_at')
+            ->orderBy('users.name')
+            ->get(['users.id', 'users.name'])
+            ->map(static fn (User $user): array => ['id' => (string) $user->id, 'name' => (string) $user->name])
+            ->values()
+            ->all();
+
+        return response()->json(['data' => $members]);
     }
 
     #[OA\Post(path: '/api/v1/business-intelligence/shares', operationId: 'storeBiShare', description: 'Share a dashboard or a saved query with a member of the company for viewing or editing, or change an existing share. The recipient must be a member of the company and cannot be the owner. A private resource becomes shared.', summary: 'Share a resource', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/BiShareRequest')), tags: ['Business Intelligence'], responses: [

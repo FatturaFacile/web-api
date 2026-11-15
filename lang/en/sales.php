@@ -118,6 +118,7 @@ return [
     'commercial_document_refund_blocked' => 'The sale cannot be refunded because its commercial document :number cannot be voided: :reason',
     'corrispettivi_day_closed' => 'This day is already closed.',
     'corrispettivi_day_empty' => 'This day has no documents to close.',
+    'corrispettivi_open_sessions' => 'Close the cash session that is still open before closing the day.|Close the :count cash sessions that are still open before closing the day.',
     'corrispettivi_future_day' => 'A future day cannot be closed.',
     'tessera_sanitaria_disabled' => 'The Sistema Tessera Sanitaria flow is not enabled for this company.',
     'tessera_sanitaria_already_flagged' => 'This document is already flagged as a health expense.',

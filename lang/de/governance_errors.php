@@ -56,4 +56,13 @@ return [
         'locked' => 'Die Pflicht ist :status und kann nicht geändert werden.',
         'not_open' => 'Die Pflicht ist :status: nur eine ausstehende oder laufende Pflicht wird abgeschlossen.',
     ],
+    'sod_document' => [
+        'conflict' => 'Aufgabentrennung: Wer :document vorbereitet hat, kann ihn nicht auch genehmigen oder freigeben.',
+        'documents' => [
+            'payment' => 'eine Zahlung',
+            'purchase_order' => 'eine Bestellung',
+            'journal' => 'eine Buchung',
+            'payroll_run' => 'einen Lohnlauf',
+        ],
+    ],
 ];

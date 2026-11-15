@@ -13,6 +13,16 @@ use Modules\Transportation\Models\TmsCarrier;
 final class CarrierRequest extends TransportationFormRequest
 {
     /**
+     * The code is compared and stored in upper case.
+     */
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('code'))) {
+            $this->merge(['code' => strtoupper(trim($this->input('code')))]);
+        }
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function rules(): array

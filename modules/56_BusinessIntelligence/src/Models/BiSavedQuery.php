@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 /**
  * A saved self-service query: a dataset, the validated specification of the semantic layer (dimensions, measures,
@@ -28,7 +29,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property array{rows: list<string>, columns: list<string>, values: list<string>}|null $pivot
  * @property string $visibility
  * @property string|null $snapshot_frequency
- * @property \Illuminate\Support\Carbon|null $next_snapshot_on
+ * @property Carbon|null $next_snapshot_on
  */
 #[UseFactory(BiSavedQueryFactory::class)]
 final class BiSavedQuery extends BaseEnterpriseModel

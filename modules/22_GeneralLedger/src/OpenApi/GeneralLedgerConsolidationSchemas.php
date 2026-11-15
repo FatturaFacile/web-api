@@ -131,6 +131,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'entity_a_tenant_id', description: 'A member of the group; for investment mappings the investor', type: 'string', format: 'uuid'),
         new OA\Property(property: 'entity_b_tenant_id', description: 'Another member of the group; for investment mappings the investee', type: 'string', format: 'uuid'),
         new OA\Property(property: 'tolerance_amount', description: 'Difference in group currency accepted as a match (default 0.01)', type: 'number', minimum: 0, nullable: true, example: 0.01),
+        new OA\Property(property: 'currency', description: 'ISO 4217 code of the tolerance; optional, must be the group currency and defaults to it', type: 'string', minLength: 3, maxLength: 3, nullable: true, example: 'EUR'),
         new OA\Property(property: 'description', type: 'string', nullable: true),
     ]
 )]
@@ -153,6 +154,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'entity_a_tenant_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'entity_b_tenant_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'tolerance_amount', type: 'string', example: '0.0100'),
+        new OA\Property(property: 'currency', description: 'Group currency of the tolerance', type: 'string', nullable: true, example: 'EUR'),
         new OA\Property(property: 'description', type: 'string', nullable: true),
         new OA\Property(property: 'mappings', type: 'array', items: new OA\Items(properties: [
             new OA\Property(property: 'id', type: 'string', format: 'uuid'),
@@ -282,6 +284,7 @@ use OpenApi\Attributes as OA;
         new OA\Property(property: 'asset_type', type: 'string', enum: ['inventory', 'fixed_asset']),
         new OA\Property(property: 'description', type: 'string', nullable: true),
         new OA\Property(property: 'transaction_date', type: 'string', format: 'date'),
+        new OA\Property(property: 'currency', description: 'ISO 4217 code; optional, must be the group currency (all amounts are in it) and defaults to it', type: 'string', minLength: 3, maxLength: 3, nullable: true, example: 'EUR'),
         new OA\Property(property: 'sale_price', type: 'number', nullable: true),
         new OA\Property(property: 'seller_cost', description: 'Book cost of the seller; margin = sale_price - seller_cost', type: 'number', nullable: true),
         new OA\Property(property: 'margin_amount', description: 'The margin directly (wins over price and cost)', type: 'number', nullable: true),

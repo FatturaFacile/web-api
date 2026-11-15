@@ -44,9 +44,9 @@ return [
     ],
     'supplier_request' => [
         'supplier_unknown' => 'Il fornitore non esiste nell\'azienda attiva.',
-        'submission_invalid' => 'L\'invio non e\' un documento valido di questo fornitore per il requisito della dichiarazione di emissioni.',
-        'not_scope3' => 'Il tipo di attivita :type non appartiene allo Scope 3.',
-        'category_mismatch' => 'Il tipo di attivita :type non appartiene alla categoria Scope 3 :category.',
+        'submission_invalid' => 'L\'invio non è\' un documento valido di questo fornitore per il requisito della dichiarazione di emissioni.',
+        'not_scope3' => 'Il tipo di attività :type non appartiene allo Scope 3.',
+        'category_mismatch' => 'Il tipo di attività :type non appartiene alla categoria Scope 3 :category.',
         'status_expected' => 'La richiesta e\' :status: atteso :expected.',
     ],
 ];

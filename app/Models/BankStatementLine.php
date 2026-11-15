@@ -63,6 +63,7 @@ class BankStatementLine extends Model
         'value_date',
         'amount',
         'fee_amount',
+        'currency',
         'direction',
         'abi_code',
         'reference',
@@ -79,6 +80,18 @@ class BankStatementLine extends Model
         'journal_entry_id',
         'reconciliation_rule_id',
     ];
+
+    /**
+     * A line is in the currency of its statement: the column is filled from it when the creator does not set it.
+     */
+    protected static function booted(): void
+    {
+        static::creating(static function (self $line): void {
+            if ($line->currency === null && $line->bank_statement_id !== null) {
+                $line->currency = BankStatement::withoutGlobalScopes()->whereKey($line->bank_statement_id)->value('currency');
+            }
+        });
+    }
 
     protected function casts(): array
     {

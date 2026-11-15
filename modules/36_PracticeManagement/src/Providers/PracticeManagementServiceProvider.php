@@ -29,6 +29,8 @@ final class PracticeManagementServiceProvider extends ServiceProvider
             $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
         });
 
+        $this->loadViewsFrom(__DIR__.'/../../resources/views', 'practice');
+
         Gate::policy(PeriodClosing::class, PracticePolicy::class);
         Gate::policy(Retainer::class, PracticePolicy::class);
 

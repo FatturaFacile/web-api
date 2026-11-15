@@ -12,7 +12,6 @@ use Illuminate\Validation\ValidationException;
 use Modules\Marketplace\Contracts\Connector;
 use Modules\Marketplace\Models\MarketplaceInstallation;
 use Modules\Marketplace\Models\MarketplaceSyncRun;
-use Modules\Marketplace\Support\ConnectorContext;
 use Modules\Marketplace\Support\ConnectorDefinition;
 use Modules\Marketplace\Support\ConnectorRegistry;
 

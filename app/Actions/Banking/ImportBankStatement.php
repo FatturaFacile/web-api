@@ -86,6 +86,7 @@ class ImportBankStatement
                     'value_date' => $line->valueDate->toDateString(),
                     'amount' => $line->amount,
                     'fee_amount' => $line->feeAmount,
+                    'currency' => $statement->currency,
                     'direction' => $line->direction,
                     'abi_code' => $line->abiCode,
                     'reference' => $line->reference,

@@ -35,6 +35,9 @@ use Modules\Inventory\Models\WarehouseBin;
  * @property string|null $skip_reason
  * @property int $skip_count
  * @property string|null $notes
+ * @property string|null $stock_posting_key
+ * @property string|null $stock_movement_id
+ * @property Carbon|null $stock_posted_at
  */
 final class WmsTask extends BaseEnterpriseModel
 {
@@ -69,6 +72,7 @@ final class WmsTask extends BaseEnterpriseModel
             'due_at' => 'datetime',
             'started_at' => 'datetime',
             'completed_at' => 'datetime',
+            'stock_posted_at' => 'datetime',
             'skip_count' => 'integer',
         ];
     }

@@ -429,6 +429,27 @@ test('a swiss company becomes a tenant in CHF with its UID', function (): void {
         ->and($tenant->uid_number)->toBe('CHE-123.456.789');
 });
 
+test('a company of every supported country becomes a tenant with its country and currency', function (string $country, string $taxId, string $currency): void {
+    $user = registerAndVerify(['country' => $country, 'tax_id' => $taxId, 'email' => 'owner-'.strtolower($country).'@example.com']);
+    Sanctum::actingAs(platformAdmin());
+
+    $this->postJson("/api/v1/admin/tenant-access-requests/{$user->tenantAccessRequest->id}/approve")->assertOk();
+
+    $tenant = $user->refresh()->tenants()->sole();
+    expect($tenant->country)->toBe($country)
+        ->and($tenant->default_currency)->toBe($currency);
+})->with([
+    'germany' => ['DE', 'DE123456789', 'EUR'],
+    'france' => ['FR', 'FR12345678901', 'EUR'],
+    'spain' => ['ES', 'ESB12345678', 'EUR'],
+    'united states' => ['US', '12-3456789', 'USD'],
+]);
+
+test('registration rejects a country that is not supported and a tax identifier that does not fit the country', function (): void {
+    $this->postJson('/api/v1/auth/register', registrationPayload(['country' => 'BR']))->assertUnprocessable()->assertJsonValidationErrors('country');
+    $this->postJson('/api/v1/auth/register', registrationPayload(['country' => 'DE', 'tax_id' => 'DE12']))->assertUnprocessable()->assertJsonValidationErrors('tax_id');
+});
+
 test('approving a matched company adds the user as a member without creating a tenant', function (): void {
     $tenant = Tenant::create(['name' => 'Known', 'legal_name' => 'Known', 'country' => 'IT', 'default_currency' => 'EUR', 'vat_number' => 'IT12345678901']);
     $user = registerAndVerify();

@@ -387,6 +387,8 @@ test('every format is imported through the endpoint and stored with its lines', 
     $camt054 = bsImport(bsCamt054Fixture())->assertCreated();
     expect($camt054->json('data.statement.source_format'))->toBe('camt054')
         ->and($camt054->json('data.statement.currency'))->toBe('CHF')
+        ->and($camt054->json('data.statement.lines.0.currency'))->toBe('CHF')
+        ->and(BankStatementLine::where('bank_statement_id', $camt054->json('data.statement.id'))->value('currency'))->toBe('CHF')
         ->and($camt054->json('data.statement.opening_balance'))->toBeNull()
         ->and($camt054->json('data.statement.lines.0.qr_reference'))->toBe('210000000003139471430009017');
 

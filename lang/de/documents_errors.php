@@ -24,6 +24,7 @@ return [
         'not_approver' => 'Sie sind nicht der Freigebende des aktuellen Schritts.',
         'cannot_cancel' => 'Nur der Antragsteller oder ein Administrator kann diese Anfrage abbrechen.',
         'template_in_use' => 'Der Freigabeweg kann sich nicht ändern, solange eine Anfrage läuft.',
+        'role_cannot_decide' => 'Diese Rolle kann einen Schritt nicht entscheiden: Sie hat keinen Schreibzugriff auf Dokumente.',
     ],
     'preservation' => [
         'no_hash' => 'Ein Aufbewahrungspaket hat keinen Hash zum Verketten.',

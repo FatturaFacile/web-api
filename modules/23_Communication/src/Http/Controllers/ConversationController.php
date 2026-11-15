@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace Modules\Communication\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Modules\Communication\Http\Controllers\Concerns\InteractsWithCommunication;
 use Modules\Communication\Http\Requests\AssignConversationRequest;
@@ -99,6 +101,22 @@ final class ConversationController extends Controller
         $this->authorize('update', $conversation);
 
         return (new ConversationMessageResource($this->inbox->reply($conversation, $request->validated('body'), $request->user()?->id)))->response()->setStatusCode(Response::HTTP_CREATED);
+    }
+
+    #[OA\Get(path: '/api/v1/communication/assignees', operationId: 'listCommunicationAssignees', description: 'Members of the active company a conversation can be assigned to.', summary: 'List conversation assignees', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Communication Inbox'], responses: [
+        new OA\Response(response: 200, description: 'Members', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'name', type: 'string')], type: 'object'))])),
+        new OA\Response(ref: '#/components/responses/CommunicationInboxUnauthenticated', response: 401),
+        new OA\Response(ref: '#/components/responses/CommunicationInboxForbidden', response: 403),
+    ])]
+    public function assignees(): JsonResponse
+    {
+        $this->authorize('viewAny', CommunicationConversation::class);
+        $members = User::query()
+            ->whereIn('id', DB::table('tenant_user')->where('tenant_id', $this->tenantId())->select('user_id'))
+            ->orderBy('name')
+            ->get(['id', 'name']);
+
+        return response()->json(['data' => $members->map(static fn (User $user): array => ['id' => (string) $user->id, 'name' => (string) $user->name])->values()]);
     }
 
     #[OA\Post(path: '/api/v1/communication/conversations/{id}/assign', operationId: 'assignCommunicationConversation', description: 'Assigns the conversation to a member of the company; a null user_id unassigns it.', summary: 'Assign a conversation', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CommunicationAssignRequest')), tags: ['Communication Inbox'], parameters: [new OA\Parameter(ref: '#/components/parameters/CommunicationInboxId')], responses: [

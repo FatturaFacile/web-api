@@ -5,9 +5,12 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Quality\Http\Controllers\AuditController;
 use Modules\Quality\Http\Controllers\CapaController;
+use Modules\Quality\Http\Controllers\ComplaintController;
+use Modules\Quality\Http\Controllers\InstrumentController;
 use Modules\Quality\Http\Controllers\KpiController;
 use Modules\Quality\Http\Controllers\NonconformityController;
 use Modules\Quality\Http\Controllers\ProcedureController;
+use Modules\Quality\Http\Controllers\SpcController;
 
 $uuid = '[0-9a-fA-F-]{36}';
 
@@ -22,6 +25,37 @@ Route::prefix('api/v1/quality')
     ->where(['id' => $uuid, 'itemId' => $uuid])
     ->group(function (): void {
         Route::get('/kpis', [KpiController::class, 'show'])->name('kpis');
+
+        Route::get('/spc/characteristics', [SpcController::class, 'index'])->name('spc.characteristics.index');
+        Route::post('/spc/characteristics', [SpcController::class, 'store'])->name('spc.characteristics.store');
+        Route::get('/spc/characteristics/{id}', [SpcController::class, 'show'])->name('spc.characteristics.show');
+        Route::put('/spc/characteristics/{id}', [SpcController::class, 'update'])->name('spc.characteristics.update');
+        Route::delete('/spc/characteristics/{id}', [SpcController::class, 'destroy'])->name('spc.characteristics.destroy');
+        Route::get('/spc/characteristics/{id}/chart', [SpcController::class, 'chart'])->name('spc.characteristics.chart');
+        Route::get('/spc/characteristics/{id}/samples', [SpcController::class, 'samples'])->name('spc.samples.index');
+        Route::post('/spc/characteristics/{id}/samples', [SpcController::class, 'storeSample'])->name('spc.samples.store');
+        Route::delete('/spc/samples/{id}', [SpcController::class, 'destroySample'])->name('spc.samples.destroy');
+
+        Route::get('/instruments', [InstrumentController::class, 'index'])->name('instruments.index');
+        Route::post('/instruments', [InstrumentController::class, 'store'])->name('instruments.store');
+        Route::get('/instruments/{id}', [InstrumentController::class, 'show'])->name('instruments.show');
+        Route::put('/instruments/{id}', [InstrumentController::class, 'update'])->name('instruments.update');
+        Route::post('/instruments/{id}/retire', [InstrumentController::class, 'retire'])->name('instruments.retire');
+        Route::get('/instruments/{id}/calibrations', [InstrumentController::class, 'calibrations'])->name('instruments.calibrations.index');
+        Route::post('/instruments/{id}/calibrations', [InstrumentController::class, 'storeCalibration'])->name('instruments.calibrations.store');
+        Route::get('/calibrations/{id}/impact', [InstrumentController::class, 'impact'])->name('calibrations.impact');
+
+        Route::get('/complaints', [ComplaintController::class, 'index'])->name('complaints.index');
+        Route::post('/complaints', [ComplaintController::class, 'store'])->name('complaints.store');
+        Route::get('/complaints/{id}', [ComplaintController::class, 'show'])->name('complaints.show');
+        Route::put('/complaints/{id}', [ComplaintController::class, 'update'])->name('complaints.update');
+        Route::post('/complaints/{id}/investigate', [ComplaintController::class, 'investigate'])->name('complaints.investigate');
+        Route::post('/complaints/{id}/root-cause', [ComplaintController::class, 'rootCause'])->name('complaints.root-cause');
+        Route::post('/complaints/{id}/raise-nonconformity', [ComplaintController::class, 'raiseNonconformity'])->name('complaints.raise-nonconformity');
+        Route::post('/complaints/{id}/link', [ComplaintController::class, 'link'])->name('complaints.link');
+        Route::post('/complaints/{id}/reply', [ComplaintController::class, 'reply'])->name('complaints.reply');
+        Route::post('/complaints/{id}/reject', [ComplaintController::class, 'reject'])->name('complaints.reject');
+        Route::post('/complaints/{id}/close', [ComplaintController::class, 'close'])->name('complaints.close');
 
         Route::get('/nonconformities', [NonconformityController::class, 'index'])->name('nonconformities.index');
         Route::post('/nonconformities', [NonconformityController::class, 'store'])->name('nonconformities.store');

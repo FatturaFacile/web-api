@@ -54,7 +54,7 @@ final readonly class ContractObligationService
             $locked = ContractObligation::query()->lockForUpdate()->findOrFail($obligation->id);
 
             if ($locked->status !== 'open') {
-                throw new ConflictHttpException("This item is already {$locked->status}.");
+                throw new ConflictHttpException(__('contracts.obligation.already_status', ['status' => $locked->status]));
             }
 
             $locked->update(['status' => $outcome, 'completed_at' => now(), 'completed_by' => $userId, 'completion_note' => $note]);

@@ -31,7 +31,23 @@ final class TaxIdentifier
             return preg_match('/^CHE\d{9}$/', $uid) === 1 ? $uid : null;
         }
 
-        return null;
+        return self::normalizeForeign($compact, $country);
+    }
+
+    /**
+     * VAT numbers of France, Spain and Germany (country prefix removed) and the US employer identification number (9 digits).
+     */
+    private static function normalizeForeign(string $compact, string $country): ?string
+    {
+        $unprefixed = str_starts_with($compact, $country) ? substr($compact, 2) : $compact;
+
+        return match ($country) {
+            'DE' => preg_match('/^\d{9}$/', $unprefixed) === 1 ? $unprefixed : null,
+            'FR' => preg_match('/^[0-9A-Z]{2}\d{9}$/', $unprefixed) === 1 ? $unprefixed : null,
+            'ES' => preg_match('/^[0-9A-Z]\d{7}[0-9A-Z]$/', $unprefixed) === 1 ? $unprefixed : null,
+            'US' => preg_match('/^\d{9}$/', $compact) === 1 ? $compact : null,
+            default => null,
+        };
     }
 
     public static function formatUid(string $canonical): string

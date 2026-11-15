@@ -9,6 +9,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Modules\TalentLearning\Http\Controllers\Concerns\InteractsWithTalent;
 use Modules\TalentLearning\Http\Requests\LearningPathRequest;
 use Modules\TalentLearning\Http\Requests\PathEnrolmentRequest;
@@ -30,7 +31,7 @@ final class LearningPathController extends Controller
 
     public function __construct(private readonly LearningService $learning, private readonly EmployeeAnnotator $annotator) {}
 
-    #[OA\Get(path: '/api/v1/talent-learning/learning-paths', operationId: 'listTalentLearningPaths', description: 'Learning paths by name, with their courses. Members who do not manage learning see the published paths only.', summary: 'List learning paths', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Talent and learning'], responses: [
+    #[OA\Get(path: '/api/v1/talent-learning/learning-paths', operationId: 'listTalentLearningPaths', description: 'Learning paths by name, with their courses. Members who do not manage learning see the published paths only. Filter: status.', summary: 'List learning paths', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Talent and learning'], responses: [
         new OA\Response(response: 200, description: 'Paths', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TalentLearningPath'))])),
         new OA\Response(ref: '#/components/responses/TalentUnauthenticated', response: 401),
         new OA\Response(ref: '#/components/responses/TalentForbidden', response: 403),
@@ -38,11 +39,13 @@ final class LearningPathController extends Controller
     public function index(Request $request): AnonymousResourceCollection
     {
         $this->authorize('viewAny', LmsLearningPath::class);
+        $filters = $request->validate(['status' => ['nullable', Rule::in([LmsCourse::Draft, LmsCourse::Published, LmsCourse::Archived])]]);
         $manages = $request->user()?->can('manage', LmsLearningPath::class) ?? false;
 
         return LearningPathResource::collection(
             LmsLearningPath::query()->with('steps.course')->where('tenant_id', $this->tenantId())
                 ->when(! $manages, static fn ($query) => $query->where('status', LmsCourse::Published))
+                ->when(isset($filters['status']), static fn ($query) => $query->where('status', $filters['status']))
                 ->orderBy('name')->paginate($this->perPage()),
         );
     }

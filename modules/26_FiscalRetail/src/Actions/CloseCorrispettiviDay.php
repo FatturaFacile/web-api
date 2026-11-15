@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\FiscalRetail\Actions;
 
+use App\Models\PosSession;
 use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
@@ -50,6 +51,8 @@ final readonly class CloseCorrispettiviDay
                 throw ValidationException::withMessages(['date' => __('sales.corrispettivi_day_closed')]);
             }
 
+            $this->assertNoOpenSessions($day);
+
             $rows = $this->aggregator->between($day, $day);
 
             if ($rows === []) {
@@ -79,5 +82,20 @@ final readonly class CloseCorrispettiviDay
         DB::afterCommit(fn () => $this->transmitter->transmitDay($closed));
 
         return $closed;
+    }
+
+    /**
+     * The takings of a session reach the commercial documents of its day: a day cannot be frozen while a till that
+     * started on or before it is still open.
+     */
+    private function assertNoOpenSessions(CarbonImmutable $day): void
+    {
+        $open = PosSession::query()->where('status', 'open')->pluck('opened_at')
+            ->filter(fn (mixed $openedAt): bool => $this->clock->businessDate($openedAt) <= $day->toDateString())
+            ->count();
+
+        if ($open > 0) {
+            throw ValidationException::withMessages(['date' => trans_choice('sales.corrispettivi_open_sessions', $open, ['count' => $open])]);
+        }
     }
 }

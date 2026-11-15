@@ -19,4 +19,8 @@ return [
         'not_found' => 'Keine aktive Vorlage für diesen Code und Kanal.',
         'missing_variables' => 'Fehlende Variablen: :variables.',
     ],
+    'webhook' => [
+        'unknown_channel' => 'Kein eingehender E-Mail-Kanal gefunden.',
+        'invalid_signature' => 'Ungültige oder abgelaufene Signatur.',
+    ],
 ];

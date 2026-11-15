@@ -24,6 +24,7 @@ return [
         'not_approver' => 'Vous n\'êtes pas l\'approbateur de l\'étape en cours.',
         'cannot_cancel' => 'Seul le demandeur ou un administrateur peut annuler cette demande.',
         'template_in_use' => 'Le circuit d\'approbation ne peut pas changer tant qu\'une demande est en cours.',
+        'role_cannot_decide' => 'Ce rôle ne peut pas décider d\'une étape : il n\'a pas d\'accès en écriture aux documents.',
     ],
     'preservation' => [
         'no_hash' => 'Un paquet de conservation n\'a pas de hash à chaîner.',

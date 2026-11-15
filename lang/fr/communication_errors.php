@@ -19,4 +19,8 @@ return [
         'not_found' => 'Aucun modèle actif pour ce code et ce canal.',
         'missing_variables' => 'Variables manquantes : :variables.',
     ],
+    'webhook' => [
+        'unknown_channel' => 'Aucun canal e-mail entrant trouvé.',
+        'invalid_signature' => 'Signature invalide ou expirée.',
+    ],
 ];

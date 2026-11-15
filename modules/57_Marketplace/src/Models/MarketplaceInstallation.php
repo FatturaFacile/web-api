@@ -35,6 +35,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $last_health_checked_at
  * @property string|null $last_health_message
  * @property Carbon|null $last_sync_at
+ * @property array<string, string>|null $sync_cursors
  * @property string|null $installed_by
  */
 #[UseFactory(MarketplaceInstallationFactory::class)]
@@ -71,6 +72,7 @@ final class MarketplaceInstallation extends BaseEnterpriseModel
             'disabled_at' => 'datetime',
             'last_health_checked_at' => 'datetime',
             'last_sync_at' => 'datetime',
+            'sync_cursors' => 'array',
         ];
     }
 

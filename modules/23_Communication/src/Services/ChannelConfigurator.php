@@ -22,7 +22,7 @@ final readonly class ChannelConfigurator
      *
      * @var list<string>
      */
-    public const array Secrets = ['password', 'auth_token', 'bot_token'];
+    public const array Secrets = ['password', 'auth_token', 'bot_token', 'inbound_secret'];
 
     /**
      * Credential keys each driver understands; any other key is refused.
@@ -30,11 +30,11 @@ final readonly class ChannelConfigurator
      * @var array<string, list<string>>
      */
     public const array Keys = [
-        'smtp' => ['host', 'port', 'encryption', 'username', 'password', 'from_address', 'from_name'],
+        'smtp' => ['host', 'port', 'encryption', 'username', 'password', 'from_address', 'from_name', 'inbound_secret'],
         'twilio' => ['account_sid', 'auth_token', 'from'],
         'telegram' => ['bot_token'],
-        'mail' => [],
-        'local' => [],
+        'mail' => ['inbound_secret'],
+        'local' => ['inbound_secret'],
     ];
 
     /**

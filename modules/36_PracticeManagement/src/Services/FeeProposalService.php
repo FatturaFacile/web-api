@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Modules\PracticeManagement\Services;
 
+use App\Contracts\PdfGenerator;
 use App\Exceptions\BusinessRuleException;
 use App\Models\LegalCase;
+use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
 use App\Support\Database\TransactionLock;
 use Illuminate\Support\Facades\DB;
@@ -15,7 +17,7 @@ use Modules\PracticeManagement\Models\PracticeConflictCheck;
 use Modules\PracticeManagement\Models\PracticeFeeProposal;
 
 /**
- * Fee proposals: draft, sent, then accepted (which opens the matter) or declined. Accepting needs a conflicts check of
+ * Fee proposals: draft, sent, then accepted (which opens the matter), declined or expired once the validity date passes. Accepting needs a conflicts check of
  * the client: a "conflict" result blocks the acceptance unless a reason for proceeding is given.
  */
 final class FeeProposalService
@@ -59,6 +61,32 @@ final class FeeProposalService
         $proposal->forceFill(['status' => 'sent', 'sent_at' => now()])->save();
 
         return $proposal;
+    }
+
+    /**
+     * Marks as expired every sent proposal whose validity date is before today. Returns how many were expired.
+     */
+    public function expireOverdue(): int
+    {
+        $today = app(TenantClock::class)->today()->toDateString();
+
+        return PracticeFeeProposal::query()->where('status', 'sent')->whereNotNull('valid_until')->whereDate('valid_until', '<', $today)
+            ->update(['status' => 'expired', 'expired_at' => now()]);
+    }
+
+    /**
+     * The proposal as a PDF document.
+     */
+    public function pdf(PracticeFeeProposal $proposal): string
+    {
+        $proposal->loadMissing('client');
+        $client = $proposal->client;
+
+        return app(PdfGenerator::class)->render('practice::pdf.fee_proposal', [
+            'tenant' => app(TenantContext::class)->getTenant(),
+            'proposal' => $proposal,
+            'clientName' => $client === null ? '' : (string) ($client->company_name ?: trim($client->first_name.' '.$client->last_name)),
+        ]);
     }
 
     public function decline(PracticeFeeProposal $proposal, ?string $notes): PracticeFeeProposal

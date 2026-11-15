@@ -124,6 +124,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                     'value_date' => $l['value_date'] ?? $statement->statement_date,
                     'amount' => $amt,
                     'fee_amount' => (float) ($l['fee_amount'] ?? 0.0),
+                    'currency' => $statement->currency,
                     'direction' => $amt >= 0 ? 'credit' : 'debit',
                     'bank_reference' => $l['bank_reference'] ?? null,
                     'customer_reference' => $l['customer_reference'] ?? null,

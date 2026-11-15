@@ -165,6 +165,8 @@ final readonly class ConsolidationInputService
             }
         }
 
+        $data['currency'] = $this->groupCurrency($group, $data['currency'] ?? null);
+
         return IntragroupTransaction::create([...$data, 'tenant_id' => $group->tenant_id, 'group_id' => $group->id]);
     }
 
@@ -222,5 +224,20 @@ final readonly class ConsolidationInputService
         }
 
         return $account;
+    }
+
+    /**
+     * Every figure of the consolidation inputs is in group currency, so the currency of a declared amount is the group
+     * currency: a different one is refused instead of being stored next to amounts that are not in it.
+     *
+     * @throws ConsolidationException
+     */
+    private function groupCurrency(ConsolidationGroup $group, mixed $declared): string
+    {
+        if (is_string($declared) && $declared !== '' && strtoupper($declared) !== $group->group_currency) {
+            throw new ConsolidationException("Amounts are in the group currency {$group->group_currency}.");
+        }
+
+        return (string) $group->group_currency;
     }
 }

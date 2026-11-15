@@ -312,11 +312,11 @@ final class TripService extends TransportationCrudService
         $ratios = [];
 
         if ($trip->capacity_weight_kg !== null && bccomp((string) $trip->capacity_weight_kg, '0', 3) > 0) {
-            $ratios[] = bcdiv(bcmul($weight, '100', 6), (string) $trip->capacity_weight_kg, 2);
+            $ratios[] = bcround(bcdiv(bcmul($weight, '100', 8), (string) $trip->capacity_weight_kg, 8), 2, \RoundingMode::HalfAwayFromZero);
         }
 
         if ($trip->capacity_volume_cbm !== null && bccomp((string) $trip->capacity_volume_cbm, '0', 3) > 0) {
-            $ratios[] = bcdiv(bcmul($volume, '100', 6), (string) $trip->capacity_volume_cbm, 2);
+            $ratios[] = bcround(bcdiv(bcmul($volume, '100', 8), (string) $trip->capacity_volume_cbm, 8), 2, \RoundingMode::HalfAwayFromZero);
         }
 
         $utilization = null;

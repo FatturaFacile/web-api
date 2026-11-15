@@ -27,6 +27,32 @@ use Modules\GeneralLedger\Services\Tax\Decimal;
  */
 final readonly class CreditScoringService
 {
+    /**
+     * The default scorecard: code, name, source and weight of every factor (the weights add up to 100).
+     *
+     * @var list<array{0: string, 1: string, 2: string, 3: string}>
+     */
+    public const array DefaultFactors = [
+        ['overdue_ratio', 'Share of the exposure overdue', CreditScorecardFactor::OverdueRatio, '30'],
+        ['max_days_overdue', 'Days overdue of the oldest invoice', CreditScorecardFactor::MaxDaysOverdue, '30'],
+        ['limit_utilisation', 'Use of the credit limit', CreditScorecardFactor::LimitUtilisation, '20'],
+        ['relationship_months', 'Months of relationship', CreditScorecardFactor::RelationshipMonths, '10'],
+        ['analyst_opinion', 'Analyst opinion', CreditScorecardFactor::Manual, '10'],
+    ];
+
+    /**
+     * The default rating bands: code, name, minimum and maximum score, risk level, limit multiplier and ceiling.
+     *
+     * @var list<array{0: string, 1: string, 2: string, 3: string, 4: string, 5: string, 6: string}>
+     */
+    public const array DefaultBands = [
+        ['A', 'Excellent', '85.00', '100.00', 'low', '1.50', '250000.00'],
+        ['B', 'Good', '70.00', '84.99', 'low', '1.00', '100000.00'],
+        ['C', 'Fair', '50.00', '69.99', 'medium', '0.60', '30000.00'],
+        ['D', 'Weak', '30.00', '49.99', 'high', '0.25', '5000.00'],
+        ['E', 'Critical', '0.00', '29.99', 'critical', '0.00', '0.00'],
+    ];
+
     public function __construct(private ReceivablesLookupInterface $receivables, private ExposureService $exposures) {}
 
     /**
@@ -41,25 +67,13 @@ final readonly class CreditScoringService
         }
 
         return DB::transaction(function () use ($tenantId): array {
-            $factors = [
-                ['overdue_ratio', 'Share of the exposure overdue', CreditScorecardFactor::OverdueRatio, '30'],
-                ['max_days_overdue', 'Days overdue of the oldest invoice', CreditScorecardFactor::MaxDaysOverdue, '30'],
-                ['limit_utilisation', 'Use of the credit limit', CreditScorecardFactor::LimitUtilisation, '20'],
-                ['relationship_months', 'Months of relationship', CreditScorecardFactor::RelationshipMonths, '10'],
-                ['analyst_opinion', 'Analyst opinion', CreditScorecardFactor::Manual, '10'],
-            ];
+            $factors = self::DefaultFactors;
 
             foreach ($factors as $index => [$code, $name, $source, $weight]) {
                 CreditScorecardFactor::create(['tenant_id' => $tenantId, 'code' => $code, 'name' => $name, 'source' => $source, 'weight' => $weight, 'is_active' => true, 'sort_order' => $index]);
             }
 
-            $bands = [
-                ['A', 'Excellent', '85.00', '100.00', 'low', '1.50', '250000.00'],
-                ['B', 'Good', '70.00', '84.99', 'low', '1.00', '100000.00'],
-                ['C', 'Fair', '50.00', '69.99', 'medium', '0.60', '30000.00'],
-                ['D', 'Weak', '30.00', '49.99', 'high', '0.25', '5000.00'],
-                ['E', 'Critical', '0.00', '29.99', 'critical', '0.00', '0.00'],
-            ];
+            $bands = self::DefaultBands;
 
             foreach ($bands as [$code, $name, $min, $max, $risk, $multiplier, $ceiling]) {
                 CreditRatingBand::create(['tenant_id' => $tenantId, 'code' => $code, 'name' => $name, 'min_score' => $min, 'max_score' => $max, 'risk_level' => $risk, 'limit_multiplier' => $multiplier, 'limit_ceiling' => $ceiling]);

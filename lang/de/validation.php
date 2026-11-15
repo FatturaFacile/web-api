@@ -163,4 +163,15 @@ return [
 
     // The names of the fields live in validation_attributes.php (generated, one entry per field of the API).
     'attributes' => require __DIR__.'/validation_attributes.php',
+
+    'tenant_country_locked' => 'Das Land kann nicht mehr geändert werden, sobald Rechnungen oder Buchungen existieren.',
+    'lettering_lines_invalid' => 'Wähle mindestens zwei vorhandene Buchungszeilen aus.',
+    'lettering_lines_not_posted' => 'Nur Zeilen gebuchter Buchungen können ausgeziffert werden.',
+    'lettering_lines_mixed' => 'Die Zeilen müssen zum selben Konto und zum selben Partner gehören.',
+    'lettering_lines_already_lettered' => 'Eine oder mehrere Zeilen sind bereits ausgeziffert.',
+    'lettering_not_balanced' => 'Soll und Haben der gewählten Zeilen gleichen sich nicht aus.',
+    'datev_non_numeric_accounts' => 'Das DATEV-Format benötigt numerische Konten: nicht numerische Konten gefunden (:accounts).',
+    'us_zip_unknown' => 'Die Postleitzahl gehört nicht zu den vorgeladenen Bundesstaaten: gib den Bundesstaat an.',
+    'us_jurisdiction_state_mismatch' => 'Die Steuerzone gehört nicht zum Bundesstaat der Bescheinigung.',
+    'us_1099_supplier_payment_invalid' => 'Nur Lieferantenzahlungen in USD vom Typ Zahlung können verknüpft werden.',
 ];

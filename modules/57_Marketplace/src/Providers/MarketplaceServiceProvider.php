@@ -12,15 +12,18 @@ use Modules\Integrations\Webhooks\WebhookUrlGuard;
 use Modules\Marketplace\Connectors\BuiltInConnectors;
 use Modules\Marketplace\Connectors\WebhookConnector;
 use Modules\Marketplace\Console\CheckHealthCommand;
+use Modules\Marketplace\Mappers\EcommerceRecordMapper;
+use Modules\Marketplace\Mappers\PaymentRecordMapper;
 use Modules\Marketplace\Models\MarketplaceHealthCheck;
 use Modules\Marketplace\Models\MarketplaceInstallation;
 use Modules\Marketplace\Models\MarketplaceSyncRun;
 use Modules\Marketplace\Policies\MarketplacePolicy;
 use Modules\Marketplace\Support\ConnectorRegistry;
+use Modules\Marketplace\Support\RecordMapperRegistry;
 
 /**
  * Registers the connector catalog (the built-in connectors; other modules add theirs by resolving the registry and
- * calling register()), the routes, the policy and the health check command of the Marketplace module.
+ * calling register()), the record mappers of the pulled records, the routes, the policy and the health check command of the Marketplace module.
  */
 final class MarketplaceServiceProvider extends ServiceProvider
 {
@@ -37,6 +40,14 @@ final class MarketplaceServiceProvider extends ServiceProvider
             }
 
             $registry->register(new WebhookConnector($app->make(WebhookUrlGuard::class), $app->make(WebhookSigner::class), $app->make(OutboundUrlGuard::class)));
+
+            return $registry;
+        });
+
+        $this->app->singleton(RecordMapperRegistry::class, function (): RecordMapperRegistry {
+            $registry = new RecordMapperRegistry;
+            $registry->register(new EcommerceRecordMapper);
+            $registry->register(new PaymentRecordMapper);
 
             return $registry;
         });
