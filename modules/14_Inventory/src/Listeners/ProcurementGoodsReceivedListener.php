@@ -14,6 +14,14 @@ use Modules\Inventory\Models\Warehouse;
 use Modules\Inventory\Models\WarehouseBin;
 use Modules\Procurement\Events\GoodsReceivedEvent;
 
+/**
+ * Books goods receipts into stock. Each receipt movement carries `origin_document_type =
+ * purchase_receipt` / `origin_document_id = receipt id` and the PO line unit price, so that the
+ * valuation engine creates a cost layer linked to the receipt (landed cost allocation target).
+ *
+ * Purchase order lines carry no stock item reference: the item is resolved from the received line
+ * (`stock_item_id`/`product_id`, when supplied) or the PO line `product_id`; unresolved lines are skipped.
+ */
 final readonly class ProcurementGoodsReceivedListener implements ShouldQueue
 {
     public function __construct(
@@ -22,21 +30,21 @@ final readonly class ProcurementGoodsReceivedListener implements ShouldQueue
 
     public function handle(GoodsReceivedEvent $event): void
     {
-        // Find default or receiving warehouse for company
-        $warehouse = Warehouse::where('company_id', $event->companyId)
-            ->where('is_active', true)
-            ->first() ?? Warehouse::first();
+        $warehouse = Warehouse::query()->where('company_id', $event->companyId)->where('is_active', true)->first()
+            ?? Warehouse::query()->where('is_active', true)->first()
+            ?? Warehouse::query()->first();
 
-        if (! $warehouse) {
+        if ($warehouse === null) {
             return;
         }
 
-        // Receiving / Inbound bin
-        $receivingBin = WarehouseBin::where('warehouse_id', $warehouse->id)
-            ->where('bin_type', 'inbound')
-            ->first() ?? WarehouseBin::where('warehouse_id', $warehouse->id)->first();
+        $receivingBin = WarehouseBin::query()
+            ->whereHas('rack.aisle.zone', fn ($query) => $query->where('warehouse_id', $warehouse->id))
+            ->where('is_locked', false)
+            ->orderBy('code')
+            ->first();
 
-        if (! $receivingBin) {
+        if ($receivingBin === null) {
             return;
         }
 
@@ -46,26 +54,19 @@ final readonly class ProcurementGoodsReceivedListener implements ShouldQueue
                 continue;
             }
 
-            // Look up purchase order line to get product/sku
-            $poLine = DB::table('purchase_order_lines')
-                ->where('id', $line['purchase_order_line_id'])
-                ->first();
+            $poLine = isset($line['purchase_order_line_id'])
+                ? DB::table('purchase_order_lines')->where('id', $line['purchase_order_line_id'])->first()
+                : null;
 
-            $item = null;
-            if ($poLine && isset($poLine->product_id)) {
-                $item = StockItem::find($poLine->product_id);
-            }
-            if (! $item) {
-                $item = StockItem::first();
-            }
-
-            if (! $item) {
+            $itemId = $line['stock_item_id'] ?? $line['product_id'] ?? ($poLine->product_id ?? null);
+            $item = $itemId !== null ? StockItem::query()->find($itemId) : null;
+            if ($item === null) {
                 continue;
             }
 
             $lotId = null;
             if (! empty($line['lot_number'])) {
-                $lot = StockLot::firstOrCreate(
+                $lot = StockLot::query()->firstOrCreate(
                     [
                         'stock_item_id' => $item->id,
                         'lot_number' => $line['lot_number'],
@@ -73,30 +74,26 @@ final readonly class ProcurementGoodsReceivedListener implements ShouldQueue
                     [
                         'tenant_id' => $event->tenantId,
                         'company_id' => $event->companyId,
-                        'received_at' => now(),
-                        'initial_quantity' => $acceptedQty,
-                        'current_quantity' => $acceptedQty,
-                        'status' => 'active',
                     ]
                 );
                 $lotId = (string) $lot->id;
             }
 
-            $unitCost = (float) ($poLine->unit_price ?? $item->standard_cost ?? 0.0);
+            $unitCost = $poLine !== null && isset($poLine->unit_price)
+                ? (float) $poLine->unit_price
+                : (float) $item->standard_cost;
 
             $this->movementService->executeTransfer(new StockTransferDTO(
                 stockItemId: (string) $item->id,
-                warehouseId: (string) $warehouse->id,
+                sourceBinId: null,
+                destinationBinId: (string) $receivingBin->id,
                 quantity: $acceptedQty,
                 movementType: 'PURCHASE_RECEIPT',
-                sourceBinId: null, // external inbound
-                destinationBinId: (string) $receivingBin->id,
-                stockLotId: $lotId,
-                unitCost: $unitCost,
-                referenceType: 'purchase_receipts',
-                referenceId: $event->receiptId,
-                userId: 'system',
-                companyId: $event->companyId
+                lotId: $lotId,
+                originDocumentType: 'purchase_receipt',
+                originDocumentId: $event->receiptId,
+                customUnitCost: $unitCost,
+                notes: "Goods receipt {$event->receiptNumber}",
             ));
         }
     }
