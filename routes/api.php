@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\Admin\TenantAccessRequestController;
+use App\Http\Controllers\Api\V1\Admin\UserTenantAccessController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
@@ -68,6 +69,7 @@ use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\Settings\TenantMemberController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
@@ -108,6 +110,12 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/tenant-access-requests/{id}/move', [TenantAccessRequestController::class, 'move'])->name('tenant-access-requests.move');
         Route::put('/tenants/{id}/document-quota', [DocumentQuotaController::class, 'update'])->name('tenants.document-quota');
         Route::post('/tenant-access-requests/{id}/reject', [TenantAccessRequestController::class, 'reject'])->name('tenant-access-requests.reject');
+        Route::get('/access-options', [UserTenantAccessController::class, 'options'])->name('access-options');
+        Route::get('/users', [UserTenantAccessController::class, 'users'])->name('users.index');
+        Route::get('/tenants', [UserTenantAccessController::class, 'tenants'])->name('tenants.index');
+        Route::get('/users/{userId}/tenants', [UserTenantAccessController::class, 'userTenants'])->whereUuid('userId')->name('users.tenants.index');
+        Route::put('/users/{userId}/tenants/{tenantId}', [UserTenantAccessController::class, 'saveUserTenant'])->whereUuid(['userId', 'tenantId'])->name('users.tenants.update');
+        Route::delete('/users/{userId}/tenants/{tenantId}', [UserTenantAccessController::class, 'removeUserTenant'])->whereUuid(['userId', 'tenantId'])->name('users.tenants.destroy');
     });
 
     Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
@@ -533,6 +541,10 @@ Route::prefix('v1')->group(function (): void {
                 // Exchange rates are central data shared by every tenant: only a platform administrator may write them.
                 Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->middleware('platform.admin')->name('exchange-rates.sync');
                 Route::get('/users', [SettingsController::class, 'users'])->name('users');
+                Route::post('/users', [TenantMemberController::class, 'store'])->name('users.store');
+                Route::put('/users/{userId}', [TenantMemberController::class, 'update'])->whereUuid('userId')->name('users.update');
+                Route::delete('/users/{userId}', [TenantMemberController::class, 'destroy'])->whereUuid('userId')->name('users.destroy');
+                Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
                 Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');

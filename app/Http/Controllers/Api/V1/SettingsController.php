@@ -13,6 +13,7 @@ use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Auth\TaxIdentifier;
 use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantMembershipService;
 use Closure;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Http\JsonResponse;
@@ -265,18 +266,9 @@ class SettingsController extends Controller
             ),
         ]
     )]
-    public function users(): JsonResponse
+    public function users(TenantMembershipService $memberships): JsonResponse
     {
-        $tenant = $this->tenantContext->getTenant();
-        $users = $tenant->users()->get()->map(fn ($u) => [
-            'id' => $u->id,
-            'name' => $u->name,
-            'email' => $u->email,
-            'role' => $u->pivot?->role,
-            'is_active' => $u->is_active,
-        ]);
-
-        return $this->successResponse(data: $users, message: 'Tenant users retrieved');
+        return $this->successResponse(data: $memberships->members($this->tenantContext->getTenant()), message: 'Tenant users retrieved');
     }
 
     #[OA\Get(

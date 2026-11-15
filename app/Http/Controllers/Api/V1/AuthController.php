@@ -20,6 +20,7 @@ use App\Services\Auth\Sso\SsoLogout;
 use App\Services\Auth\TokenMode;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantMembershipService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Http\JsonResponse;
@@ -404,6 +405,10 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'locale' => $user->locale,
                 'is_active' => $user->is_active,
+                'is_platform_admin' => (bool) $user->is_platform_admin,
+                'permissions' => $activeTenant ? app(TenantMembershipService::class)->permissionsOf(
+                    $user->tenants->firstWhere('id', $activeTenant->id)?->pivot?->permissions
+                ) : [],
                 'active_tenant' => $activeTenant ? [
                     'id' => $activeTenant->id,
                     'name' => $activeTenant->name,
@@ -414,6 +419,7 @@ class AuthController extends Controller
                     'id' => $t->id,
                     'name' => $t->name,
                     'role' => $t->pivot?->role,
+                    'permissions' => app(TenantMembershipService::class)->permissionsOf($t->pivot?->permissions),
                 ]),
             ],
             message: 'Profile retrieved successfully'

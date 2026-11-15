@@ -9,6 +9,8 @@ use InvalidArgumentException;
 
 /**
  * The rule of config/permissions.php: the role of the user in the tenant, or a granular grant on the membership.
+ * A `deny:<module>` (or `deny:<module>.<access>`) permission on the membership closes the module to that member, whatever
+ * the role says; the owner is never locked out.
  */
 final class ModuleAccessGate
 {
@@ -31,9 +33,24 @@ final class ModuleAccessGate
             return false;
         }
 
+        if ($this->isDenied((string) $membership->role, $membership->permissions, $module, $access)) {
+            return false;
+        }
+
         $acceptedPermissions = ["{$module}.{$access}", '*', ...config("permissions.modules.{$module}.grants.{$access}", [])];
 
         return $this->isAllowed((string) $membership->role, $membership->permissions, $allowedRoles, $acceptedPermissions);
+    }
+
+    private function isDenied(string $role, mixed $permissions, string $module, string $access): bool
+    {
+        if ($role === 'owner') {
+            return false;
+        }
+
+        $granted = is_string($permissions) ? json_decode($permissions, true) : $permissions;
+
+        return is_array($granted) && array_intersect(["deny:{$module}", "deny:{$module}.{$access}"], $granted) !== [];
     }
 
     /**

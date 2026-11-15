@@ -63,6 +63,8 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/admin/tenant-access-requests/{id}/move' => 'platform.admin',
         'POST api/v1/admin/tenant-access-requests/{id}/reject' => 'platform.admin',
         'PUT api/v1/admin/tenants/{id}/document-quota' => 'platform.admin',
+        'PUT api/v1/admin/users/{userId}/tenants/{tenantId}' => 'platform.admin',
+        'DELETE api/v1/admin/users/{userId}/tenants/{tenantId}' => 'platform.admin',
     ];
 }
 
