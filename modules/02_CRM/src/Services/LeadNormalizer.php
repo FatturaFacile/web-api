@@ -138,6 +138,11 @@ final class LeadNormalizer implements LeadNormalizerInterface
             $variants[] = $matches[1];
         } elseif (preg_match('/^\d{11}$/', $normalized) === 1) {
             $variants[] = 'IT'.$normalized;
+        } elseif (preg_match('/^CHE\d{9}$/', $normalized) === 1) {
+            // Stored Swiss numbers often keep the VAT register suffix.
+            foreach (['MWST', 'TVA', 'IVA'] as $suffix) {
+                $variants[] = $normalized.$suffix;
+            }
         }
 
         return $variants;
