@@ -23,8 +23,13 @@ final readonly class VendorClaimService
     {
         $changes = array_intersect_key($attributes, array_flip(['supplier_rma_reference', 'notes', 'claimed_amount']));
 
-        if (array_key_exists('claimed_amount', $changes) && $changes['claimed_amount'] !== null) {
-            $changes['claimed_amount'] = number_format((float) $changes['claimed_amount'], 2, '.', '');
+        if (array_key_exists('claimed_amount', $changes)) {
+            // claimed_amount is NOT NULL (default 0.00): an explicit null leaves the current value untouched.
+            if ($changes['claimed_amount'] === null) {
+                unset($changes['claimed_amount']);
+            } else {
+                $changes['claimed_amount'] = number_format((float) $changes['claimed_amount'], 2, '.', '');
+            }
         }
 
         $claim->fill($changes);
