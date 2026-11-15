@@ -168,6 +168,11 @@ class InvoiceController extends Controller
                     new OA\Property(property: 'split_payment', type: 'boolean', nullable: true, example: false),
                     new OA\Property(property: 'reverse_charge', type: 'boolean', nullable: true, example: false),
                     new OA\Property(property: 'notes', type: 'string', maxLength: 2000, nullable: true, example: 'Payment within 30 days.'),
+                    new OA\Property(property: 'vat_payability', type: 'string', enum: ['I', 'D', 'S'], nullable: true),
+                    new OA\Property(property: 'fund', type: 'object', nullable: true, description: 'Cassa previdenziale; omitted = tenant default, null = none', example: ['type' => 'TC22', 'percent' => 4, 'vat_rate' => 22, 'natura' => null, 'withholding_applies' => false]),
+                    new OA\Property(property: 'withholding', type: 'object', nullable: true, description: 'Ritenuta d\'acconto; omitted = tenant default, null = none', example: ['type' => 'RT01', 'reason' => 'A', 'rate' => 20, 'taxable_percent' => 100, 'includes_fund' => false]),
+                    new OA\Property(property: 'enasarco', type: 'object', nullable: true, description: 'ENASARCO; omitted = tenant default, null = none', example: ['enabled' => true]),
+                    new OA\Property(property: 'stamp_duty_charged_to_customer', type: 'boolean', nullable: true),
                     new OA\Property(
                         property: 'items',
                         type: 'array',
@@ -180,6 +185,9 @@ class InvoiceController extends Controller
                                 new OA\Property(property: 'unit_price', type: 'number', format: 'float', example: 120.00),
                                 new OA\Property(property: 'tax_rate', type: 'number', format: 'float', example: 8.1),
                                 new OA\Property(property: 'discount_percentage', type: 'number', format: 'float', nullable: true, example: 0),
+                                new OA\Property(property: 'natura', type: 'string', nullable: true, example: 'N4'),
+                                new OA\Property(property: 'withholding_applies', type: 'boolean', nullable: true),
+                                new OA\Property(property: 'fund_applies', type: 'boolean', nullable: true),
                             ]
                         )
                     ),

@@ -28,6 +28,7 @@ final class CreateInvoiceRequest extends FormRequest
             'exchange_rate' => ['nullable', 'numeric', 'min:0.000001'],
             'jurisdiction' => ['nullable', 'string', 'in:IT,CH'],
             'split_payment' => ['nullable', 'boolean'],
+            'withholding_tax_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'reverse_charge' => ['nullable', 'boolean'],
             'payment_method' => ['nullable', 'string', 'max:4'],
             'payment_terms' => ['nullable', 'string', 'max:4'],

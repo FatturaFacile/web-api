@@ -58,6 +58,22 @@ class Invoice extends Model
         'fund_type',
         'fund_percent',
         'fund_amount',
+        'total_due',
+        'withholding_tax_type',
+        'withholding_tax_reason',
+        'withholding_tax_taxable_percent',
+        'withholding_tax_base',
+        'withholding_tax_includes_fund',
+        'fund_vat_rate',
+        'fund_natura',
+        'fund_withholding_applies',
+        'enasarco_percent',
+        'enasarco_commissions',
+        'enasarco_taxable',
+        'enasarco_amount',
+        'stamp_duty_charged_to_customer',
+        'legal_notices',
+        'vat_summary',
     ];
 
     protected function casts(): array
@@ -82,6 +98,19 @@ class Invoice extends Model
             'fund_enabled' => 'boolean',
             'fund_percent' => 'decimal:2',
             'fund_amount' => 'decimal:2',
+            'total_due' => 'decimal:2',
+            'withholding_tax_taxable_percent' => 'decimal:2',
+            'withholding_tax_base' => 'decimal:2',
+            'withholding_tax_includes_fund' => 'boolean',
+            'fund_vat_rate' => 'decimal:2',
+            'fund_withholding_applies' => 'boolean',
+            'enasarco_percent' => 'decimal:2',
+            'enasarco_commissions' => 'decimal:2',
+            'enasarco_taxable' => 'decimal:2',
+            'enasarco_amount' => 'decimal:2',
+            'stamp_duty_charged_to_customer' => 'boolean',
+            'legal_notices' => 'array',
+            'vat_summary' => 'array',
         ];
     }
 

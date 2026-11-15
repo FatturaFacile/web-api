@@ -81,13 +81,26 @@ final class VatCodeSeeder extends Seeder
                 'rc' => false,
                 'sp' => false,
             ],
+            // Italian operations without VAT, by SDI natura code (issue #286).
+            ['code' => 'IT_N1', 'description' => 'Excluded art. 15 (Escluse ex art. 15 DPR 633/72)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N1'],
+            ['code' => 'IT_N2_1', 'description' => 'Out of scope arts. 7-7septies (Non soggette artt. 7-7 septies)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N2.1'],
+            ['code' => 'IT_N2_2', 'description' => 'Out of scope, other cases / flat-rate regime (Non soggette - altri casi / regime forfettario)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N2.2'],
+            ['code' => 'IT_N3_1', 'description' => 'Non-taxable exports (Non imponibili - esportazioni)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N3.1'],
+            ['code' => 'IT_N3_2', 'description' => 'Non-taxable intra-EU supplies (Non imponibili - cessioni intracomunitarie)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N3.2'],
+            ['code' => 'IT_N3_3', 'description' => 'Non-taxable supplies to San Marino (Non imponibili - cessioni verso San Marino)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N3.3'],
+            ['code' => 'IT_N3_4', 'description' => 'Non-taxable, treated as exports (Non imponibili - operazioni assimilate)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N3.4'],
+            ['code' => 'IT_N3_5', 'description' => 'Non-taxable, declaration of intent (Non imponibili - dichiarazioni d\'intento)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N3.5'],
+            ['code' => 'IT_N3_6', 'description' => 'Non-taxable, other (Non imponibili - altre operazioni)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N3.6'],
+            ['code' => 'IT_N4', 'description' => 'Exempt art. 10 (Esenti art. 10 DPR 633/72)', 'rate' => 0.00, 'country' => 'IT', 'rc' => false, 'sp' => false, 'nature' => 'N4'],
         ];
+
+        $hasNature = Schema::hasColumn('vat_codes', 'nature');
 
         foreach ($codes as $c) {
             $existing = DB::table('vat_codes')->where('code', $c['code'])->first();
 
             if (! $existing) {
-                DB::table('vat_codes')->insert([
+                DB::table('vat_codes')->insert(array_merge([
                     'id' => (string) Str::uuid7(),
                     'tenant_id' => $tenantId,
                     'company_id' => $tenantId,
@@ -102,9 +115,9 @@ final class VatCodeSeeder extends Seeder
                     'is_active' => true,
                     'created_at' => now(),
                     'updated_at' => now(),
-                ]);
+                ], $hasNature && isset($c['nature']) ? ['nature' => $c['nature']] : []));
             } else {
-                DB::table('vat_codes')->where('id', $existing->id)->update([
+                DB::table('vat_codes')->where('id', $existing->id)->update(array_merge([
                     'tenant_id' => $tenantId,
                     'company_id' => $tenantId,
                     'country_iso' => substr($c['country'], 0, 2),
@@ -115,7 +128,7 @@ final class VatCodeSeeder extends Seeder
                     'is_reverse_charge' => $c['rc'],
                     'is_split_payment' => $c['sp'],
                     'updated_at' => now(),
-                ]);
+                ], $hasNature && isset($c['nature']) ? ['nature' => $c['nature']] : []));
             }
         }
     }

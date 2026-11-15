@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\Invoice;
+use App\Support\Money;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -51,6 +52,37 @@ class InvoiceResource extends JsonResource
             'jurisdiction' => $this->jurisdiction,
             'split_payment' => (bool) $this->split_payment,
             'reverse_charge' => (bool) $this->reverse_charge,
+            'vat_payability' => $this->vat_payability,
+            // Italian fiscal figures (issue #286): cent-exact decimal strings.
+            'total_due' => $this->decimal($this->total_due),
+            'fund' => $this->fund_enabled ? [
+                'type' => $this->fund_type,
+                'percent' => $this->decimal($this->fund_percent),
+                'amount' => $this->decimal($this->fund_amount),
+                'vat_rate' => $this->decimal($this->fund_vat_rate),
+                'natura' => $this->fund_natura,
+                'withholding_applies' => (bool) $this->fund_withholding_applies,
+            ] : null,
+            'withholding' => $this->withholding_tax_enabled ? [
+                'type' => $this->withholding_tax_type,
+                'reason' => $this->withholding_tax_reason,
+                'rate' => $this->decimal($this->withholding_tax_percent),
+                'taxable_percent' => $this->decimal($this->withholding_tax_taxable_percent),
+                'includes_fund' => (bool) $this->withholding_tax_includes_fund,
+                'base' => $this->decimal($this->withholding_tax_base),
+                'amount' => $this->decimal($this->withholding_tax_amount),
+            ] : null,
+            'enasarco' => $this->enasarco_amount !== null ? [
+                'rate' => $this->decimal($this->enasarco_percent),
+                'commissions' => $this->decimal($this->enasarco_commissions),
+                'contributory_base' => $this->decimal($this->enasarco_taxable),
+                'amount' => $this->decimal($this->enasarco_amount),
+            ] : null,
+            'stamp_duty_applied' => (bool) $this->stamp_duty_applied,
+            'stamp_duty_amount' => $this->decimal($this->stamp_duty_amount),
+            'stamp_duty_charged_to_customer' => (bool) $this->stamp_duty_charged_to_customer,
+            'vat_summary' => $this->vat_summary,
+            'legal_notices' => $this->legal_notices ?? [],
             'notes' => $this->notes,
             'items' => InvoiceItemResource::collection($this->whenLoaded('items')),
             'sdi_metadata' => $this->whenLoaded('sdiMetadata', fn () => [
@@ -70,5 +102,10 @@ class InvoiceResource extends JsonResource
             'created_at' => $this->created_at?->toIso8601String(),
             'updated_at' => $this->updated_at?->toIso8601String(),
         ];
+    }
+
+    private function decimal(mixed $value): ?string
+    {
+        return $value === null ? null : Money::fromCents(Money::toCents((string) $value));
     }
 }

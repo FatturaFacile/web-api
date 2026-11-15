@@ -8,6 +8,14 @@
     @include('documents.partials.lines', ['showDiscount' => true])
     @include('documents.partials.totals')
 
+    @if (! empty($legal_notices))
+        <div>
+            @foreach ($legal_notices as $legalNotice)
+                {{ $legalNotice }}<br>
+            @endforeach
+        </div>
+    @endif
+
     @if ($notes)
         <h2>{{ __('pdf.notes') }}</h2>
         <div>{{ $notes }}</div>

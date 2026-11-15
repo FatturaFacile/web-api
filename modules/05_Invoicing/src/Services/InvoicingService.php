@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Services\Invoicing\Tax\ItalianFiscalCalculator;
+use App\Support\Money;
 use Enterprise\EventBus\Contracts\DomainEventInterface;
 use Enterprise\EventBus\Contracts\EventDispatcherInterface;
 use Illuminate\Support\Str;
@@ -40,6 +42,17 @@ final class InvoicingService implements InvoicingServiceInterface
 
         $totals = $this->pricingService->calculateOrderTotals($items);
 
+        // Amount the customer actually pays: split-payment VAT and withholding tax are not collected (issue #286).
+        $splitPayment = (bool) ($data['split_payment'] ?? false);
+        $withholdingPercent = $data['withholding_tax_percent'] ?? null;
+        $withholdingCents = is_numeric($withholdingPercent) ? Money::percentOf(Money::toCents($totals['net_total']), (string) $withholdingPercent) : 0;
+        $receivableCents = ItalianFiscalCalculator::receivableCents(
+            Money::toCents($totals['gross_total']),
+            Money::toCents($totals['tax_total']),
+            $splitPayment,
+            $withholdingCents,
+        );
+
         $invoiceNumber = $data['invoice_number'] ?? 'INV-'.date('Y').'-'.strtoupper(Str::random(6));
 
         $invoice = SalesInvoice::create([
@@ -58,11 +71,14 @@ final class InvoicingService implements InvoicingServiceInterface
             'total_net' => $totals['net_total'],
             'total_tax' => $totals['tax_total'],
             'total_gross' => $totals['gross_total'],
-            'receivable_amount' => $totals['gross_total'],
+            'receivable_amount' => Money::fromCents($receivableCents),
+            'withholding_tax_enabled' => is_numeric($withholdingPercent),
+            'withholding_tax_percent' => is_numeric($withholdingPercent) ? (string) $withholdingPercent : null,
+            'withholding_tax_amount' => is_numeric($withholdingPercent) ? Money::fromCents($withholdingCents) : null,
             'total_paid' => 0.0,
             'payment_status' => 'unpaid',
             'jurisdiction' => $data['jurisdiction'] ?? 'IT',
-            'split_payment' => (bool) ($data['split_payment'] ?? false),
+            'split_payment' => $splitPayment,
             'reverse_charge' => (bool) ($data['reverse_charge'] ?? false),
             'payment_method' => $data['payment_method'] ?? 'MP05',
             'payment_terms' => $data['payment_terms'] ?? 'TP02',
