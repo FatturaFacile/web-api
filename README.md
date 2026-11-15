@@ -1,77 +1,78 @@
 # FatturaFacile Enterprise ERP — Community Edition 1.0
 
-[![PHP Version](https://img.shields.io/badge/PHP-8.2%20%7C%208.3%20%7C%208.5-777BB4?logo=php)](https://php.net)
-[![Laravel Framework](https://img.shields.io/badge/Laravel-11.x%20%7C%2012.x-FF2D20?logo=laravel)](https://laravel.com)
+[![PHP Version](https://img.shields.io/badge/PHP-8.5-777BB4?logo=php)](https://php.net)
+[![Laravel Framework](https://img.shields.io/badge/Laravel-13.x-FF2D20?logo=laravel)](https://laravel.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16%2B-336791?logo=postgresql)](https://postgresql.org)
 [![Architecture](https://img.shields.io/badge/Architecture-Modular%20DDD%20%2F%20Multi--Tenant-blue)]()
-[![License](https://img.shields.io/badge/License-Apache%202.0-green.svg)](LICENSE)
+[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 [![Release](https://img.shields.io/badge/Release-Community%20Edition%201.0-brightgreen)]()
 
-**FatturaFacile Enterprise ERP** is a modern, modular, open-source enterprise resource planning backend engine built on
-Laravel and PostgreSQL. It delivers end-to-end operational capabilities for high-performance organizations, featuring
-native multi-tenancy, immutable cryptographic audit logging, a visual workflow approval engine, and deep European
-compliance (Italian SDI electronic invoicing and Swiss QR-Bill banking).
+**FatturaFacile Enterprise ERP** is a modern, modular, open-source enterprise resource planning backend engine built on **Laravel 13** and **PHP 8.5**. It delivers robust, multi-tenant business operations for growing organizations, featuring native multi-tenancy, immutable cryptographic audit logging, a visual workflow approval state machine, and deep European fiscal compliance (Italian SDI electronic invoicing and Swiss QR-Bill banking).
 
 ---
 
-## 🏛️ Platform Overview & Mission
+## 1. Overview
 
-Enterprise software has historically been divided into rigid, monolithic vendor silos or fragile collections of
-fragmented SaaS micro-tools. FatturaFacile bridges this divide by providing:
+FatturaFacile provides an enterprise-grade RESTful API (`/api/v1`) designed for web single-page applications, mobile clients, and B2B system integrators.
 
-1. **Clean Domain-Driven Modular Architecture**: Zero spaghetti code; each business domain is isolated with dedicated
-   Contracts, DTOs, Services, Models, and Events.
-2. **True Tenant Data Isolation**: Enforced at the ORM and database connection boundaries via global tenancy scopes and
-   partition-ready schemas.
-3. **Audit Immutability & Forensic Integrity**: Append-only audit trails anchored with cryptographic SHA-256 hash
-   chains.
-4. **European Fiscal & Cross-Border Compliance**: Out-of-the-box support for Italian SDI (FatturaPA v1.2.2) and Swiss
-   QR-Bill (SIX Payment Standards v2.2 with recursive Modulo 10 SCOR validation).
+### Core Capabilities
+
+- **Fiscal & Cross-Border Compliance**:
+  - **Italy (IT)**: Native Agenzia delle Entrate XML schema `FatturaElettronica` v1.2.2 for SDI transmission, recipient code/PEC routing, ordinary/forfettario regimes, split payment, and reverse charge.
+  - **Switzerland (CH)**: SIX Group Swiss QR-Bill v2.2 compliance with recursive Modulo 10 SCOR reference calculation, 0.05 CHF rounding convention, and ISO 20022 banking formats (`pain.001`, `camt.053`/`camt.054`).
+- **Commercial Operations**: End-to-end Order-to-Cash (Leads, Opportunities, Quotes, Sales Orders, Deliveries, Invoices) and Procure-to-Pay (Purchase Orders, Goods Receipts, Supplier Bills, 3-Way Matching).
+- **Supply Chain & Logistics**: Multi-warehouse stock management, lot/serial tracking, stock movements, variant generation, and barcode/label printing.
+- **Financial & Accounting**: Double-entry general ledger, automated bank reconciliation rules, VAT settlements, vendor aging, payment schedules, and deferred revenue recognition.
+- **Operations & Field Service**: Work orders, service intervention reports (*rapportini*), technician scheduling, digital signatures, and asset management (EAM) with depreciation runs.
+- **Enterprise Governance**: GDPR / Swiss nLPD compliance tooling, data subject requests (DSR), tamper-evident audit logging, and configurable role-based access control.
 
 ---
 
-## 📐 Enterprise Architecture
+## 2. Architecture & Design
+
+The application follows **Clean Architecture** and **Domain-Driven Design (DDD)** principles to separate business invariants from framework infrastructure.
 
 ```mermaid
 graph TD
     subgraph ClientLayer ["Client & Ingestion Layer"]
         SPA["Web Single Page App"]
-        Mobile["Mobile & Field Service App"]
-        API["External Integrators / B2B EDI"]
+        Mobile["Field Service & Mobile Clients"]
+        Integrators["B2B EDI & External Integrators"]
     end
 
     subgraph ApiGateway ["API Gateway & Tenancy Boundary"]
         Router["HTTP Router /api/v1"]
-        TenancyMiddleware["Tenancy Middleware (X-Tenant-Id)"]
-        SanctumAuth["Sanctum Bearer Token Auth"]
-        RBAC["Granular Role & Permission Matrix"]
+        TenancyMiddleware["IdentifyTenant Middleware (X-Tenant-Id)"]
+        SanctumAuth["Sanctum Token Auth & 2FA"]
+        RBAC["Spatie Role & Permission Matrix"]
     end
 
-    subgraph CorePlatform ["Enterprise Foundation & Core Engine"]
-        Workflow["Workflow Engine V2 (Finite State Machine)"]
-        EventBus["Transactional Event Bus & Outbox"]
-        AuditLedger["Immutable Audit Ledger (SHA-256 Hash Chain)"]
-        RefData["Global Multilingual Catalog (IT, EN, DE, FR)"]
+    subgraph CorePlatform ["Enterprise Foundation Packages"]
+        Workflow["Workflow Engine (Finite State Machine)"]
+        EventBus["Transactional Event Bus & Outbox Pattern"]
+        AuditLedger["Immutable Audit Ledger (SHA-256 Chains)"]
+        RefData["Multilingual Reference Catalogs (IT, EN, DE, FR)"]
     end
 
-    subgraph BusinessDomains ["Enterprise Domain Modules"]
+    subgraph BusinessDomains ["Domain Modules (Bounded Contexts)"]
         M02["02 CRM & Pipeline"]
-        M05["05 Sales & Invoicing"]
+        M05["05 Invoicing & Sales"]
+        M06["06 SDI Electronic Invoicing"]
         M13["13 Procurement & AP"]
         M14["14 Inventory & Warehouse"]
-        M15["15 Projects & Job Costing"]
-        M16["16 Enterprise Asset Management"]
-        M17["17 Field Service Management"]
-        M18["18 Human Resources & Talent"]
-        M19["19 Subscription Billing & ASC 606"]
-        M22["22 General Ledger & Accounting"]
-        M24["24 Treasury & Cash Banking"]
+        M16["16 Asset Management"]
+        M17["17 Service Management"]
+        M18["18 Human Resources & Payroll"]
+        M19["19 Subscription Billing"]
+        M21["21 Workflow Engine"]
+        M22["22 General Ledger"]
+        M24["24 Treasury & Banking"]
         M30["30 Manufacturing & MRP"]
     end
 
     subgraph DataLayer ["Data & Persistence Layer"]
-        PG[(PostgreSQL 16+ Primary)]
-        Cache[(Redis Cache & Queues)]
+        PG["PostgreSQL 16+ / SQLite Database"]
+        CacheQueue["Redis Cache, Locks & Queues"]
     end
 
     ClientLayer --> Router
@@ -83,415 +84,384 @@ graph TD
     BusinessDomains --> DataLayer
 ```
 
+### Key Architectural Patterns
+
+- **Clean Architecture & Layering**:
+  - **Presentation (`app/Http`)**: Controllers act as thin orchestrators. Form Requests define strict mutation contracts and validation rules. Responses are standardized via `JsonResource` and RFC 7807 Problem Details.
+  - **Application (`app/Services`, `app/Actions`, `app/DTOs`)**: Encapsulates workflow execution, calculation services, and data transfer objects across module boundaries.
+  - **Domain (`modules/*/src/Domain`, `app/Models`, `app/Events`)**: Enforces fiscal rules, state transitions, entity guards, and domain events.
+  - **Infrastructure (`app/Support`, `packages/*`)**: Database dialect abstractions (`SqlDialect`), storage management, XML/SEPA serializers, and external gateways.
+- **Modular Bounded Contexts (`modules/`)**: Over 60 specialized business domains located in `modules/` (e.g., `02_CRM`, `05_Invoicing`, `06_SDI`, `13_Procurement`, `14_Inventory`, `22_GeneralLedger`, `24_Treasury`), mapped under the `Modules\` namespace.
+- **Shared Enterprise Packages (`packages/`)**: Reusable platform building blocks under `Enterprise\` (`ai-gateway`, `audit-ledger`, `enterprise-foundation`, `event-bus`, `feature-flags`, `multi-tenant`, `openapi`).
+- **Multi-Tenancy**:
+  - Request-scoped tenant context resolved via `IdentifyTenant` middleware through the `X-Tenant-Id` header (or authenticated user tenant binding).
+  - Models implement `BelongsToTenant` and apply global `TenantScope`. Operational queries automatically filter by `tenant_id`.
+  - Global reference data records (`tenant_id IS NULL`) are shared across all tenants in read-only mode.
+- **Authentication & Security**:
+  - Token-based API authentication via **Laravel Sanctum** with support for stateful SPA cookies.
+  - Multi-Factor Authentication (TOTP 2FA) with recovery codes.
+  - Enterprise SSO (OpenID Connect / SAML via `onelogin/php-saml`) and SCIM 2.0 provisioning.
+  - Granular RBAC powered by `spatie/laravel-permission`.
+  - Security hardening: Mandatory HTTPS (`EnforceHttps`), strict security headers, and rate-limiting tiers.
+- **Audit Ledger & Immutability**:
+  - Append-only forensic audit trail where every auditable modification is cryptographically hashed with SHA-256 and chained to the previous entry's hash (`previous_hash`).
+- **Event Bus & Outbox Pattern**:
+  - Reliable event dispatching using the Outbox pattern (`RelayOutboxEventsJob`) inside database transactions to ensure consistency.
+- **Localization Strategy**:
+  - First-class support for 4 business locales: Italian (`it`), English (`en`), German (`de`), and French (`fr`).
+  - Request locale negotiated via `SetLocale` middleware (`Accept-Language` header or user preference).
+  - System translations reside in `lang/` and database lookup tables seeded with localized reference terms.
+
 ---
 
-## 💻 Technology Stack
+## 3. Tech Stack & Prerequisites
 
-| Component             | Technology                | Description                                                               |
-|-----------------------|---------------------------|---------------------------------------------------------------------------|
-| **Runtime**           | PHP 8.2 / 8.3 / 8.5       | High-performance execution, strict types, constructor property promotion  |
-| **Framework**         | Laravel 11.x / 12.x       | Enterprise application container, Eloquent ORM, Artisan CLI               |
-| **Database**          | PostgreSQL 16+ / SQLite   | Multi-tenant relational storage, JSONB indexing, partitioned audit trails |
-| **Authentication**    | Laravel Sanctum           | State-less API tokens with multi-tenant scopes                            |
-| **Testing Engine**    | Pest PHP 3.x / PHPUnit 11 | BDD-style test suites, 100% automated regression coverage                 |
-| **Code Quality**      | Laravel Pint              | Strict automated PSR-12 and Laravel Boost styling compliance              |
-| **API Documentation** | OpenAPI 3.1 & Scramble    | Dynamic runtime schema generation with interactive Swagger/Redoc UI       |
-| **Caching & Queues**  | Redis 7+                  | High-speed cache, rate limiter, asynchronous job dispatching              |
+### System Requirements
+
+- **PHP**: `^8.5` (Strict typing `declare(strict_types=1)`, Constructor Property Promotion).
+  - **Required Extensions**: `dom`, `pdo`, `pdo_pgsql`, `pdo_mysql`, `mbstring`, `zip`, `exif`, `pcntl`, `bcmath`, `gd`, `intl`, `openssl`, `xmlwriter`, `curl`, and `redis` (`phpredis`).
+- **Composer**: `^2.6`
+- **Node.js**: `^22.0` (with Corepack) for frontend asset building with Vite.
+- **Docker & Docker Compose**: (Optional, recommended for PostgreSQL, Redis, and Mailpit).
+
+### Technology Matrix
+
+| Layer | Component | Version / Specification |
+|---|---|---|
+| **Framework** | Laravel | `^13.17` (Laravel 13) |
+| **Databases** | PostgreSQL | `16+` (Production / CI / Full Test Suite) |
+| | SQLite | Supported for rapid local development |
+| | MySQL / MariaDB | Dialect supported via `SqlDialect` abstraction |
+| **Authentication** | Laravel Sanctum | `^4.0` |
+| **Permissions** | Spatie Laravel Permission | `^8.3` |
+| **Caching & Locks** | Redis / Database | Redis 7+ via `phpredis` or Database store |
+| **Queues** | Redis / Database / Sync | Configurable via `QUEUE_CONNECTION` |
+| **Mailers** | SMTP / Log / Postmark / Resend | Mailpit (`127.0.0.1:1025`) for local dev |
+| **API Documentation** | L5-Swagger & Scramble | OpenAPI 3.1 (`darkaonline/l5-swagger`, `dedoc/scramble`) |
+| **Code Quality** | Laravel Pint & Larastan | Pint `^1.27`, PHPStan / Larastan `^3.14` (Level 5) |
+| **Testing** | Pest PHP & PHPUnit | Pest `^4.7`, PHPUnit `^12.5` |
 
 ---
 
-## ⚡ Quick Start & Installation
+## 4. Project Structure
 
-### Prerequisites
-
-- **To try it**: only Docker with the Compose plugin (see "Try it now")
-- **To develop**: PHP `^8.5` (Extensions: `pdo`, `pdo_pgsql`, `bcmath`, `mbstring`, `openssl`, `xml`, `curl`)
-  and Composer `^2.6`, or Docker alone with Laravel Sail
-- **Docker**: for PostgreSQL and Mailpit
-- **Node.js**: `^22.0` with Corepack, for [web-frontend](https://github.com/FatturaFacile/web-frontend)
-
-### Try it now (Docker, no PHP or Composer needed)
-
-Runs the published image [`docker.io/fatturafacile/api:0.1.2`](https://hub.docker.com/r/fatturafacile/api) with
-PostgreSQL 16 and a minimal nginx. Nothing is built and the `vendor/` folder is not needed. Only Docker with the Compose
-plugin is required. Everything listens on `127.0.0.1`. This is for a quick trial, not for production.
-
-```bash
-git clone https://github.com/FatturaFacile/web-api.git && cd web-api
-cp deploy/local/env.example deploy/local/.env
-docker compose -f deploy/local/compose.yaml up -d --wait
-docker compose -f deploy/local/compose.yaml exec app php artisan migrate --force
-docker compose -f deploy/local/compose.yaml exec app php artisan erp:bootstrap
+```text
+├── app/                        # Core application layer
+│   ├── Actions/                # Reusable single-action domain operations
+│   ├── Console/Commands/       # Artisan commands (erp:bootstrap, docs:export, etc.)
+│   ├── DTOs/                   # Data Transfer Objects
+│   ├── Enums/                  # Native PHP 8.5 typed enums
+│   ├── Events/ & Listeners/    # Application events and event handlers
+│   ├── Http/                   # Controllers, FormRequests, Middleware, Resources
+│   ├── Jobs/                   # Asynchronous background jobs
+│   ├── Models/                 # Eloquent entities & BelongsToTenant traits
+│   ├── Policies/               # Spatie and domain authorization policies
+│   ├── Rules/                  # Custom validation rules (Codice Fiscale, P.IVA, etc.)
+│   ├── Services/               # Core business services (SDI, QR-Bill, Tenancy, Auth)
+│   └── Support/                # Database dialect helpers and utilities
+├── modules/                    # Bounded context modules (PSR-4 Modules\)
+│   ├── 02_CRM/                 # Contacts, leads, opportunities, pipeline
+│   ├── 05_Invoicing/           # Sales quotes, orders, invoices, payment terms
+│   ├── 06_SDI/                 # Italian electronic invoice generation & transmission
+│   ├── 13_Procurement/         # Purchase orders, supplier bills, goods receipts
+│   ├── 14_Inventory/           # Stock management, warehouses, variants, lots
+│   ├── 16_AssetManagement/     # Fixed assets, capitalization, depreciation
+│   ├── 17_ServiceManagement/   # Tickets, work orders, service reports
+│   ├── 18_HumanResources/      # Employee master data, leave tracking, cross-border HR
+│   ├── 19_SubscriptionBilling/ # Recurring contracts, metered usage, ASC 606 revenue
+│   ├── 21_Workflow/            # State machine approval engine & transitions
+│   ├── 22_GeneralLedger/       # Double-entry accounting, journals, charts of accounts
+│   ├── 24_Treasury/            # Bank accounts, CAMT/CBI imports, reconciliation
+│   └── ...                     # Additional industry and operational modules
+├── packages/                   # Enterprise platform infrastructure packages
+│   ├── ai-gateway/             # Unified AI integration client
+│   ├── audit-ledger/           # Cryptographic immutable audit trail
+│   ├── enterprise-foundation/  # Shared contracts, value objects, exceptions
+│   ├── event-bus/              # Outbox pattern and transactional event dispatching
+│   ├── feature-flags/          # Feature toggle engine
+│   ├── multi-tenant/           # Tenant context, scoping, and middleware
+│   └── openapi/                # OpenAPI schema decorators and specs
+├── routes/                     # HTTP and console route definitions
+│   ├── api.php                 # Primary /api/v1 RESTful API endpoints
+│   ├── console.php             # Scheduled task definitions and artisan cron
+│   ├── enterprise_auth.php     # SSO, OIDC, and SCIM 2.0 routes
+│   ├── privacy_operations.php  # GDPR / Swiss nLPD compliance endpoints
+│   └── web.php                 # Health probes (/up) and documentation routes
+├── database/                   # Database migrations, seeders, and factories
+│   ├── factories/              # Model factories for testing
+│   ├── migrations/             # 330+ relational database schema migrations
+│   └── seeders/                # System catalogs, translations, and demo seeders
+├── config/                     # Application configuration files
+├── lang/                       # Localization dictionaries (de, en, fr, it)
+└── tests/                      # Feature, Unit, and Architecture test suites
 ```
 
-Check it: `curl https://localhost:8080/up` answers 200, the Swagger UI is on https://localhost:8080/api/documentation
-and
-the OpenAPI file on https://localhost:8080/docs/api-docs.json. Demo login (via `POST /api/v1/auth/login`):
-`admin@demo-group.com` / `Password123!`.
+---
 
-- The tag is pinned in `deploy/local/compose.yaml`; change it there to try another release (tags on Docker Hub).
-- `APP_KEY` is generated at the first start and kept in the storage volume. Credentials and the port (`API_PORT`) are in
-  `deploy/local/.env`, which is not committed.
-- The image has no PHP Redis extension, so this stack has no Redis: cache, sessions and queue use the database and
-  emails go to the log.
-- Port 8000 busy (for example by `php artisan serve`)? Set `API_PORT` in `deploy/local/.env` before `up`.
-- The stack is called `fatturafacile-demo` whatever the folder: a second clone run with the same command reuses the same
-  containers and database. To keep two apart, add `-p <name>` to every `docker compose` command.
-- Verified from a clean state (fresh volumes): `up --wait` takes a few seconds, then `/up`, the Swagger UI,
-  `api-docs.json`
-  and the demo login all answer.
-- Stop and keep the data: `docker compose -f deploy/local/compose.yaml stop`. Remove everything, data included:
-  `docker compose -f deploy/local/compose.yaml down -v`.
+## 5. Local Setup & Installation
 
-> `docker compose up` without `-f` starts `compose.yaml` (the Laravel Sail development stack), and
-> `docker-compose.yml` is the production stack (nginx on 80/443, certbot, a mandatory `.env` that must define
-> `DB_PASSWORD`
-> and `REDIS_PASSWORD`: without them it refuses to start): neither is for a first trial.
+You can set up the backend using local PHP or Docker.
 
-### Develop (you change the code)
+### Option A: Local PHP with SQLite (Fastest Start)
 
-`vendor/` is not in the repository: run `composer install` first (PHP `^8.5`; without PHP locally you can run
-`docker run --rm -u "$(id -u):$(id -g)" -v "$PWD":/app -w /app composer:2 install --ignore-platform-reqs`).
-Then choose one of the two ways.
+1. **Clone the repository and install dependencies**:
+   ```bash
+   git clone https://github.com/FatturaFacile/web-api.git
+   cd web-api
+   composer install
+   ```
 
-#### With Laravel Sail (everything in Docker)
+2. **Configure environment**:
+   ```bash
+   cp .env.example .env
+   php artisan key:generate
+   ```
+   *(SQLite is the default connection in `.env.example`: `DB_CONNECTION=sqlite`).*
 
-`compose.yaml` runs PHP 8.5, PostgreSQL 16, Redis and Mailpit (the schema is PostgreSQL-only: MySQL does not work).
+3. **Initialize SQLite database**:
+   ```bash
+   touch database/database.sqlite
+   ```
+
+4. **Run database migrations and seed system catalogs**:
+   ```bash
+   php artisan migrate
+   php artisan erp:bootstrap
+   ```
+   *Tip: Use `php artisan erp:bootstrap --without-demo` if you want a clean installation without sample transactional records.*
+
+---
+
+### Option B: Local PHP with PostgreSQL & Mailpit (Recommended)
+
+1. **Install dependencies and copy environment**:
+   ```bash
+   composer install
+   cp .env.example .env
+   php artisan key:generate
+   ```
+
+2. **Update `.env` database and mail configuration**:
+   ```dotenv
+   DB_CONNECTION=pgsql
+   DB_HOST=127.0.0.1
+   DB_PORT=5432
+   DB_DATABASE=fatturafacile
+   DB_USERNAME=postgres
+   DB_PASSWORD=postgres
+
+   QUEUE_CONNECTION=database
+   CACHE_STORE=database
+
+   MAIL_MAILER=smtp
+   MAIL_HOST=127.0.0.1
+   MAIL_PORT=1025
+   ```
+
+3. **Start local supporting containers (PostgreSQL 16 & Mailpit)**:
+   ```bash
+   docker compose -f docker-compose.local.yml up -d --wait
+   ```
+
+4. **Run migrations and bootstrap the platform**:
+   ```bash
+   php artisan migrate
+   php artisan erp:bootstrap
+   ```
+
+---
+
+### Option C: Laravel Sail (Full Docker Stack)
+
+If you prefer to run PHP inside Docker without installing it locally:
 
 ```bash
-composer install
+composer install # or via Docker composer image
 cp .env.example .env
-```
-
-```dotenv
-# Set these values in .env
-DB_CONNECTION=pgsql
-DB_HOST=pgsql
-DB_PORT=5432
-DB_DATABASE=fatturafacile
-DB_USERNAME=sail
-DB_PASSWORD=password
-REDIS_HOST=redis
-```
-
-```bash
-export WWWUSER=$(id -u) WWWGROUP=$(id -g)   # if port 80 is busy: also APP_PORT=8081
 ./vendor/bin/sail up -d laravel.test pgsql redis mailpit
 ./vendor/bin/sail artisan key:generate
 ./vendor/bin/sail artisan migrate
 ./vendor/bin/sail artisan erp:bootstrap
-./vendor/bin/sail artisan l5-swagger:generate   # regenerate the OpenAPI file
 ```
 
-The API answers on `https://localhost` (or `APP_PORT`): `/up`, `/api/documentation`. Stop with `./vendor/bin/sail down`
-(`-v` also removes the database).
+---
 
-#### With PHP on your machine
+## 6. Running the Application
 
-##### First run
+### 1. HTTP Server
+
+Run the local development server:
 
 ```bash
-# 1. Install the dependencies and create the environment file
-composer install
-cp .env.example .env
+php artisan serve
 ```
 
-```dotenv
-# 2. Set these values in .env
-DB_CONNECTION=pgsql
-DB_HOST=127.0.0.1
-DB_PORT=5432
-DB_DATABASE=fatturafacile
-DB_USERNAME=postgres
-DB_PASSWORD=postgres
-
-QUEUE_CONNECTION=database
-# QUEUE_CONNECTION=sync # For immediate testing
-
-MAIL_MAILER=smtp
-MAIL_HOST=127.0.0.1
-MAIL_PORT=1025
-```
+Or run via Composer script (with automatic worker management):
 
 ```bash
-# 3. Start PostgreSQL and Mailpit
+composer dev
+```
+
+For custom port/host (e.g., paired with a TLS proxy like Caddy):
+
+```bash
+php artisan serve --host=127.0.0.1 --port=8001
+```
+
+### 2. Queue Workers
+
+Asynchronous operations (e-invoice transmission, PDF generation, email dispatches, webhook relays) run via queue workers:
+
+```bash
+# Development (reads database or redis queue):
+php artisan queue:work
+
+# Production (configured for Redis queue):
+php artisan queue:work redis --sleep=3 --tries=3 --timeout=900 --max-time=3600
+```
+
+### 3. Task Scheduler
+
+Scheduled maintenance, SLA breach monitors, and automated subscription billing require the Laravel scheduler:
+
+```bash
+# Local development worker:
+php artisan schedule:work
+
+# Production crontab entry:
+* * * * * cd /var/www/html && php artisan schedule:run >> /dev/null 2>&1
+```
+
+### 4. Container Management
+
+```bash
+# Start local support services (PostgreSQL + Mailpit):
 docker compose -f docker-compose.local.yml up -d --wait
 
-# 4. Prepare the application and the database
-php artisan key:generate
-php artisan migrate
-php artisan erp:bootstrap
+# Stop local services:
+docker compose -f docker-compose.local.yml stop
+
+# Stop and wipe local database volumes:
+docker compose -f docker-compose.local.yml down -v
 ```
 
-#### Every day
+---
+
+## 7. Testing & Static Analysis
+
+The project enforces strict code style, static analysis, and comprehensive BDD-style regression test suites.
+
+### Testing Commands
 
 ```bash
-docker compose -f docker-compose.local.yml up -d --wait
+# Run all application tests:
+php artisan test --compact
 
-php artisan serve --host=127.0.0.1 --port=8001             # terminal 1: PHP worker on internal HTTP port 8001
-caddy run --config Caddyfile.local --adapter caddyfile     # terminal 2: TLS reverse proxy on https://localhost:8080
-php artisan queue:work                                     # terminal 3: without it, queued emails are not sent
+# Run tests via Composer script:
+composer test
+
+# Run tests directly with Pest:
+./vendor/bin/pest
+
+# Run a specific test file or filter by test name:
+php artisan test --compact tests/Feature/ERPFullLifecycleTest.php
+php artisan test --compact --filter="order_to_cash_lifecycle"
+
+# Run architectural boundary tests:
+./vendor/bin/pest tests/Architecture --no-coverage
+
+# Run tests on an ephemeral PostgreSQL in-memory container:
+composer test:pg
+
+# Run tests within Laravel Sail:
+composer test:sail
 ```
 
-Then start the frontend in `web-frontend` with `corepack pnpm install` (first time only) and
-`corepack pnpm run start:local`. The frontend runs on `https://localhost:4200` with TLS (`mkcert`)
-and proxies `/api` and `/sanctum` to `https://localhost:8080` forwarding `X-Forwarded-Proto: https`
-(trusted because `127.0.0.1` is in `TRUSTED_PROXIES`).
-
-> **Local HTTPS certificates & Caddy**: `Caddyfile.local` serves `https://localhost:8080` using `certs/localhost.crt`
-> and `certs/localhost.key` (see [`certs/README.md`](certs/README.md) to generate them with `mkcert`).
-> Alternatively, you can run a one-liner without a config file:
-> `caddy reverse-proxy --from https://localhost:8080 --to 127.0.0.1:8001`.
-> For Node.js dev-server proxying (`ng serve`), ensure `NODE_EXTRA_CA_CERTS="$(mkcert -CAROOT)/rootCA.pem"` is set so
-> Node trusts the local `mkcert` root CA.
-
-| Service       | Address                                                          |
-|---------------|------------------------------------------------------------------|
-| Application   | https://localhost:4200 (`admin@demo-group.com` / `Password123!`) |
-| API           | https://localhost:8080                                           |
-| Mailpit inbox | https://localhost:8025                                           |
-
-#### Managing the local services
+### Static Analysis & Code Formatting
 
 ```bash
-docker compose -f docker-compose.local.yml stop      # stop them, keeping the data
-docker compose -f docker-compose.local.yml down      # remove the containers, keeping the data
-docker compose -f docker-compose.local.yml down -v   # remove the containers and the database
+# Format code using Laravel Pint (modified files only):
+vendor/bin/pint --dirty --format agent
 
-php artisan migrate:fresh && php artisan erp:bootstrap   # rebuild the database from scratch
+# Check code formatting in CI:
+vendor/bin/pint --test
+
+# Run Larastan / PHPStan (Level 5 static analysis):
+vendor/bin/phpstan analyse
 ```
 
-#### Approving a registration
+### API Documentation & Artifacts
 
-A new account needs a confirmed email address and the approval of a platform administrator, through the API:
+```bash
+# Generate OpenAPI Swagger documentation:
+php artisan l5-swagger:generate
+
+# Export OpenAPI JSON/YAML and Postman collections:
+php artisan docs:export
+```
+
+Once running, interactive documentation is available at:
+- **Swagger UI**: `https://localhost:8080/api/documentation`
+- **Scramble UI**: `https://localhost:8080/docs/api`
+- **OpenAPI JSON Spec**: `https://localhost:8080/docs/api-docs.json`
+
+---
+
+## 8. Demo Environment & Pre-Seeded Personas
+
+Running `php artisan erp:bootstrap` automatically provisions the demo tenant (*Demo Manufacturing & Services Group S.p.A.*) with realistic business data and pre-configured role personas:
+
+| Persona | Role Key | Email | Password | Primary Workspace |
+|---|---|---|---|---|
+| **Super Admin** | `admin` | `admin@fatturafacile.local` | `Password123!` | System Configuration & Multi-Tenant Control |
+| **CEO** | `ceo` | `ceo@demo-group.com` | `Password123!` | Executive KPIs & Revenue Health Dashboard |
+| **CFO** | `cfo` | `cfo@demo-group.com` | `Password123!` | General Ledger, Cash Flow & Accounting |
+| **Supply Chain Manager** | `supply_chain_manager` | `supplychain@demo-group.com` | `Password123!` | Procurement, Purchase Orders & Stock |
+| **Operations Manager** | `operations_manager` | `operations@demo-group.com` | `Password123!` | Maintenance, Service Tickets & Work Orders |
+| **Lead Auditor** | `auditor` | `auditor@demo-group.com` | `Password123!` | Compliance, Audit Trail & Forensic Hash Logs |
+
+To grant platform administrator access to an existing user:
 
 ```bash
 php artisan auth:grant-platform-admin admin@demo-group.com
 ```
 
-Sign in as that user, list the requests with `GET /api/v1/admin/tenant-access-requests`, then call
-`POST /api/v1/admin/tenant-access-requests/{id}/approve`, `/move` or `/reject`.
+---
 
-#### Recovering a password
+## 9. Core REST Endpoints Reference
 
-`POST /api/v1/auth/forgot-password` always answers 202, and sends a link only to active accounts with a confirmed
-address. The link opens `/reset-password` on the frontend and lasts `AUTH_PASSWORD_RESET_EXPIRES_MINUTES`. Completing
-the
-reset revokes the user's access tokens and deletes their rows in `sessions`, which requires `SESSION_DRIVER=database`.
+All requests to protected endpoints require `Authorization: Bearer <token>` and `X-Tenant-Id: <tenant-uuid>` headers.
 
-#### Changing the password
+| Domain | Method | Endpoint | Description |
+|---|---|---|---|
+| **Health** | `GET` | `/up` | Application liveness probe |
+| | `GET` | `/api/v1/health/ready` | Readiness probe (database and cache checks) |
+| **Auth** | `POST` | `/api/v1/auth/login` | Authenticate and obtain Sanctum Bearer token |
+| | `POST` | `/api/v1/auth/two-factor-challenge` | Submit 2FA TOTP code |
+| | `GET` | `/api/v1/auth/profile` | Retrieve authenticated user profile |
+| **CRM** | `GET` | `/api/v1/crm/contacts` | List clients and suppliers |
+| | `POST` | `/api/v1/crm/contacts` | Create a new CRM contact |
+| **Sales** | `GET` | `/api/v1/sales/quotes` | List sales quotations |
+| | `POST` | `/api/v1/sales/quotes/{id}/convert-to-order` | Convert approved quote to sales order |
+| | `POST` | `/api/v1/sales/invoices` | Create standard or pro-forma invoice |
+| | `POST` | `/api/v1/sales/invoices/{id}/send-sdi` | Dispatch invoice to Italian SDI network |
+| | `GET` | `/api/v1/sales/invoices/{id}/qr-bill` | Generate Swiss QR-Bill payment slip |
+| **Purchasing**| `GET` | `/api/v1/purchases/orders` | List supplier purchase orders |
+| | `POST` | `/api/v1/purchases/orders/{id}/receive` | Register goods receipt note |
+| | `POST` | `/api/v1/purchases/export-pain001` | Export SEPA ISO 20022 payment run |
+| **Inventory** | `GET` | `/api/v1/inventory/products` | Query product catalog & variants |
+| | `GET` | `/api/v1/inventory/stock-levels` | Query multi-warehouse inventory levels |
+| **Service** | `GET` | `/api/v1/service-reports` | List technical intervention reports |
+| | `POST` | `/api/v1/service-reports/{id}/sign` | Capture digital customer signature |
+| **Accounting**| `GET` | `/api/v1/accounting/general-ledger` | Query double-entry ledger entries |
+| | `GET` | `/api/v1/accounting/vendor-aging` | Retrieve AP aging analysis |
 
-`PUT /api/v1/auth/password` asks the current password, and a code of the authenticator app or a recovery code when the
-user has two factors. A wrong answer counts as a failure for the user: after `AUTH_PASSWORD_CHANGE_MAX_FAILED_ATTEMPTS`
-the change is locked for `AUTH_PASSWORD_CHANGE_LOCKOUT_MINUTES`. A change revokes every token and session of the user,
-the current one included, so the client signs in again; an email reports the change.
+---
 
-### The Platform Bootstrap Command
+## 10. License
 
-The `php artisan erp:bootstrap` command fills a migrated database with reference data, users and demo records. It does
-not create the tables: run `php artisan migrate` first.
+This project is open-source software licensed under the **[MIT License](LICENSE)**.
 
-```bash
-# Full bootstrap with Demo Environment:
-php artisan erp:bootstrap
-
-# Production bootstrap (reference and system catalog only, zero demo records):
-php artisan erp:bootstrap --without-demo
+```text
+Copyright (c) 2026 FatturaFacile
 ```
-
-#### Bootstrap Execution Phases:
-
-1. **Roles & Permissions**: Seeds the global roles and system permissions.
-2. **Workflow Engine**: Seeds the approval statuses and states.
-3. **Global Reference Data**: Populates the lookups and translations in 4 languages (`it`, `en`, `de`, `fr`).
-4. **Domain Catalogs**: Registers the reference catalogs of each module.
-5. **Tenants**: Provisions the base and demo tenants.
-6. **Users**: Creates the administrative and departmental users.
-7. **Dashboards**: Generates the role-specific dashboard layouts.
-8. **Demo Environment**: Creates the cross-module demo records (skipped with `--without-demo`).
-
----
-
-## 🛡️ Enterprise Platform Capabilities
-
-### 1. Multi-Tenancy Architecture
-
-- **Tenant Context**: Automatically resolved via the `X-Tenant-Id` HTTP header or authenticated user's current tenant
-  profile.
-- **Tenant Isolation**: Model isolation enforced through the `BelongsToTenant` trait and global `TenantScope`. Prevents
-  data leakage across tenant boundaries.
-
-### 2. Workflow Engine V2
-
-- **State Machine**: Supports complex multi-stage approvals (`draft` -> `submitted` -> `cfo_review` -> `approved` ->
-  `completed`).
-- **Entity Locking**: Implements `LockableByWorkflowInterface` to protect documents under active review from concurrent
-  modification.
-- **Audit Entries**: Captures full decision provenance including approver user ID, transition timestamps, and rejection
-  comments.
-
-### 3. Event Bus & Outbox Pattern
-
-- **Reliable Messaging**: Domain events are committed within the database transaction using an Outbox pattern.
-- **Domain Events**: Dispatches business events (`InvoiceIssuedEvent`, `PaymentReceivedEvent`, `LeadConvertedEvent`,
-  `WorkOrderCompletedEvent`).
-
-### 4. Immutable Audit Ledger
-
-- **Tamper Evidence**: Every auditable change stores a SHA-256 cryptographic hash of the payload linked to the
-  `previous_hash` of the prior log entry.
-- **GDPR & Compliance**: Captures actor ID, IP address, user agent, old state, new state, and delta diff.
-
-### 5. Multilingual Reference Data
-
-Universal reference data items are stored once with `tenant_id = null` and dynamically translated across 4 locales:
-
-- 🇮🇹 **Italian (`it`)**: Native legal, tax, and accounting terms.
-- 🇬🇧 **English (`en`)**: International operational and business standards.
-- 🇩🇪 **German (`de`)**: Swiss and DACH compliance terms.
-- 🇫🇷 **French (`fr`)**: Swiss Romandie and French enterprise terms.
-
----
-
-## 📚 API Documentation
-
-### Interactive API Explorer
-
-- **Interactive OpenAPI Specification**: Access the schema at `/docs/api-docs.json` or view the rendered documentation
-  at `/docs/api`.
-- **Exporting API Docs**: Run `php artisan docs:export` to generate offline JSON, YAML, and Postman v2.1 collection
-  files.
-
-### Authentication & Headers
-
-All authenticated API requests require a Bearer token and the target tenant UUID:
-
-```http
-Authorization: Bearer <your-sanctum-token>
-X-Tenant-Id: 01a18933-49e9-700b-9f39-9ad411940151
-Content-Type: application/json
-Accept: application/json
-```
-
-### Core REST Endpoints
-
-| Domain          | Method | Endpoint                                      | Description                                       |
-|-----------------|--------|-----------------------------------------------|---------------------------------------------------|
-| **Auth**        | `POST` | `/api/v1/auth/login`                          | Authenticate and obtain Sanctum API token         |
-| **CRM**         | `GET`  | `/api/v1/crm/leads`                           | List and search CRM leads                         |
-| **CRM**         | `POST` | `/api/v1/crm/opportunities`                   | Create and advance pipeline opportunities         |
-| **Sales**       | `POST` | `/api/v1/sales/quotes`                        | Issue sales quotations                            |
-| **Sales**       | `POST` | `/api/v1/sales/orders`                        | Confirm customer sales orders                     |
-| **Invoicing**   | `POST` | `/api/v1/invoices`                            | Generate standard or electronic invoices (SDI/QR) |
-| **Procurement** | `POST` | `/api/v1/procurement/purchase-orders`         | Issue supplier purchase orders                    |
-| **Inventory**   | `GET`  | `/api/v1/inventory/items`                     | Query warehouse stock balances                    |
-| **Assets**      | `POST` | `/api/v1/eam/depreciation/run`                | Execute monthly fixed asset depreciation          |
-| **Service**     | `POST` | `/api/v1/esm/work-orders`                     | Dispatch field service work orders                |
-| **Workflow**    | `POST` | `/api/v1/workflows/instances/{id}/transition` | Execute state transition approval                 |
-
----
-
-## 👥 Demo Environment & Personas
-
-The demo tenant (`tenant_demo`: *Demo Manufacturing & Services Group S.p.A.*) comes pre-loaded with complete
-cross-module transactional flows.
-
-| Persona                  | Role                   | Email                        | Password       | Primary Workspace                                |
-|--------------------------|------------------------|------------------------------|----------------|--------------------------------------------------|
-| **Super Admin**          | `admin`                | `admin@fatturafacile.local`  | `Password123!` | System Configuration & Multi-Tenant Control      |
-| **CEO**                  | `ceo`                  | `ceo@demo-group.com`         | `Password123!` | Executive Performance & Revenue KPI Dashboard    |
-| **CFO**                  | `cfo`                  | `cfo@demo-group.com`         | `Password123!` | General Ledger, Cash Flow & Financial Reports    |
-| **Supply Chain Manager** | `supply_chain_manager` | `supplychain@demo-group.com` | `Password123!` | Procurement, Stock Movements & Supplier POs      |
-| **Operations Manager**   | `operations_manager`   | `operations@demo-group.com`  | `Password123!` | Asset Maintenance, Service Tickets & Work Orders |
-| **Lead Auditor**         | `auditor`              | `auditor@demo-group.com`     | `Password123!` | Compliance, Audit Trail & Forensic Hash Logs     |
-
----
-
-## 🧪 Testing Infrastructure
-
-The platform is fortified by a comprehensive Pest PHP feature and integration test suite covering end-to-end business
-lifecycles:
-
-The tests use a dedicated PostgreSQL kept in memory, from `docker-compose.test.yml` and `.env.testing`. It takes port
-5432 like the local database, so run one at a time:
-
-```bash
-docker compose -f docker-compose.local.yml stop           # free port 5432, keeping the local data
-docker compose -f docker-compose.test.yml up -d --wait    # start the test database
-php artisan migrate:fresh --env=testing --force           # create its tables
-
-# ... run the tests below ...
-
-docker compose -f docker-compose.test.yml down            # remove the test database
-docker compose -f docker-compose.local.yml up -d --wait   # back to local development
-```
-
-```bash
-# Run all enterprise integration tests:
-php artisan test --compact
-
-# Run specific end-to-end scenario lifecycle tests:
-php artisan test tests/Feature/ERPFullLifecycleTest.php
-
-# Run cross-module and platform governance tests:
-php artisan test tests/Feature/CrossModuleIntegrationTest.php \
-                 tests/Feature/EventBusIntegrationTest.php \
-                 tests/Feature/OpenAPICoverageTest.php \
-                 tests/Feature/AuditCoverageTest.php \
-                 tests/Feature/WorkflowCoverageTest.php \
-                 tests/Feature/RBACCoverageTest.php
-```
-
-### End-to-End Scenarios Covered:
-
-- **Scenario 1 (Procure-to-Pay)**: Purchase Order -> Goods Receipt Line Tracking -> Supplier Bill -> Payment Outflow ->
-  GL Posting.
-- **Scenario 2 (Order-to-Cash)**: Lead -> Opportunity -> Quotation -> Sales Order -> Delivery Note -> Electronic
-  Invoice -> Payment -> GL Posting.
-- **Scenario 3 (Fixed Asset Lifecycle)**: Category Definition -> Asset Capitalization -> Monthly Depreciation Run ->
-  Preventive Maintenance -> Book Value Updates.
-- **Scenario 4 (Project Delivery & Costing)**: Project Initiation -> WBS Tasks -> Billable Timesheet Recording ->
-  Milestone Billing.
-- **Scenario 5 (Field Service Execution)**: Incident Ticket -> Work Order Dispatch -> Technician Service Visit -> CSAT
-  5-Star Feedback.
-- **Scenario 6 (Subscription Lifecycle)**: Recurring Subscription -> Automated Billing Run -> Revenue Recognition (ASC
-  606 / IFRS 15).
-
----
-
-## 🤝 Contributing & Code of Conduct
-
-We welcome community contributions, bug reports, and pull requests!
-
-1. **Fork the Repository**: Create a feature branch (`git checkout -b feat/amazing-feature`).
-2. **Follow Coding Standards**: Keep control structures with braces, explicit return types, and constructor promotion.
-3. **Run Code Formatter**: Before submitting, format with Laravel Pint:
-   ```bash
-   vendor/bin/pint --dirty --format agent
-   ```
-4. **Ensure Tests Pass**: Run `php artisan test --compact` to guarantee zero regressions.
-5. **Open a Pull Request**: Provide a clear summary of your architectural changes.
-
----
-
-## 📄 License & Enterprise Support
-
-- **Community Edition**: Licensed under the open-source [Apache 2.0 License](LICENSE).
-- **Enterprise Support**: For custom SLA guarantees, multi-region high availability deployments, banking connector
-  certifications, and dedicated engineering support, contact `enterprise@fatturafacile.com`.
-
----
-
-## 🗺️ Roadmap to Release 2.0
-
-- [x] Multi-Tenant Architecture & Database Scopes
-- [x] Italian SDI FatturaPA v1.2.2 Invoicing Engine
-- [x] Swiss QR-Bill SIX Standards Engine
-- [x] General Ledger & Double-Entry Accounting Engine
-- [x] Workflow Engine V2 (Finite State Machine)
-- [x] Enterprise Asset Management (EAM) & Depreciation Engine
-- [x] Enterprise Service Management (ESM) & Field Operations
-- [x] Manufacturing MRP II & Shop Floor Control
-- [ ] AI-Powered Document OCR & Auto-Categorization (v2.0)
-- [ ] Real-Time Banking API Connectors (Open Banking PSD2 / bLink) (v2.0)
-- [ ] Multi-Company Consolidation & Transfer Pricing Engine (v2.0)
