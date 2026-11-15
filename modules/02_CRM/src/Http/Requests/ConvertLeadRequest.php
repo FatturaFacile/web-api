@@ -17,6 +17,7 @@ final class ConvertLeadRequest extends FormRequest
     {
         return [
             'existing_account_id' => ['nullable', 'uuid'],
+            'existing_contact_id' => ['nullable', 'uuid'],
             'new_account_name' => ['nullable', 'string', 'max:200'],
             'account_tier' => ['nullable', 'string', 'in:strategic,enterprise,mid_market,smb,standard'],
             'contact_role' => ['nullable', 'string', 'in:decision_maker,influencer,champion,evaluator,blocker,economic_buyer,technical_buyer'],
