@@ -15,7 +15,7 @@ use Illuminate\Validation\Rule;
  */
 class TenantPreferences
 {
-    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting'];
+    public const GROUPS = ['invoice', 'email', 'sdi', 'work_orders', 'company', 'labels', 'inventory', 'banking', 'accounting', 'fiscal'];
 
     /**
      * Preference keys that hold a group of options, merged option by option when updated.
@@ -118,8 +118,35 @@ class TenantPreferences
                 'auto_invoice' => ['nullable', 'boolean'],
                 'auto_email' => ['nullable', 'boolean'],
             ],
+            'fiscal' => $this->fiscalRules(),
             default => [],
         };
+    }
+
+    /**
+     * Italian fiscal defaults (issue #286): regime, default cassa and ritenuta, stamp duty payer, ENASARCO.
+     *
+     * @return array<string, array<int, mixed>>
+     */
+    private function fiscalRules(): array
+    {
+        return [
+            'regime_fiscale' => ['nullable', 'string', Rule::in((array) config('italian_tax.regimes', []))],
+            'default_fund' => ['nullable', 'array'],
+            'default_fund.type' => ['required_with:default_fund', 'string', Rule::in(array_keys((array) config('italian_tax.fund_types', [])))],
+            'default_fund.percent' => ['required_with:default_fund', 'numeric', 'min:0', 'max:100'],
+            'default_fund.vat_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'default_fund.natura' => ['nullable', 'string', Rule::in((array) config('italian_tax.natura_codes', []))],
+            'default_fund.withholding_applies' => ['nullable', 'boolean'],
+            'default_withholding' => ['nullable', 'array'],
+            'default_withholding.type' => ['required_with:default_withholding', 'string', Rule::in(array_keys((array) config('italian_tax.withholding.types', [])))],
+            'default_withholding.reason' => ['required_with:default_withholding', 'string', Rule::in((array) config('italian_tax.withholding.reasons', []))],
+            'default_withholding.rate' => ['required_with:default_withholding', 'numeric', 'min:0', 'max:100'],
+            'default_withholding.taxable_percent' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'default_withholding.includes_fund' => ['nullable', 'boolean'],
+            'stamp_duty_charge_mode' => ['nullable', 'string', Rule::in(['customer', 'issuer'])],
+            'enasarco_enabled' => ['nullable', 'boolean'],
+        ];
     }
 
     /**
@@ -178,6 +205,16 @@ class TenantPreferences
             }
 
             $settings['preferences'][$group] = $current;
+
+            // Backward compatibility: the FatturaPA builder historically read `settings.regime_fiscale`.
+            if ($group === 'fiscal' && array_key_exists('regime_fiscale', $values)) {
+                if ($values['regime_fiscale'] === null) {
+                    unset($settings['regime_fiscale']);
+                } else {
+                    $settings['regime_fiscale'] = $values['regime_fiscale'];
+                }
+            }
+
             $tenant->update(['settings' => $settings]);
             $this->tenantContext->setTenant($tenant);
 
