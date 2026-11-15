@@ -18,6 +18,7 @@ final class StockItem extends BaseEnterpriseModel
             'standard_cost' => 'decimal:4',
             'current_moving_average_cost' => 'decimal:4',
             'weight_kg' => 'decimal:3',
+            'volume_m3' => 'decimal:4',
             'is_active' => 'boolean',
         ];
     }
@@ -55,6 +56,14 @@ final class StockItem extends BaseEnterpriseModel
     public function reorderRules(): HasMany
     {
         return $this->hasMany(StockReorderRule::class, 'stock_item_id');
+    }
+
+    /**
+     * @return HasMany<InventoryCostLayer, $this>
+     */
+    public function costLayers(): HasMany
+    {
+        return $this->hasMany(InventoryCostLayer::class, 'stock_item_id');
     }
 
     public function getTotalOnHandAttribute(): float
