@@ -34,7 +34,7 @@ test('the French and Spanish charts import with their VAT accounts, and importin
         ->and($again)->toBe(['template' => $template, 'created' => 0, 'skipped' => $first['created']])
         ->and(ChartOfAccount::where('account_code', $code)->count())->toBe(1)
         ->and(ChartOfAccount::where('account_code', $code)->value('standard'))->toBe($template);
-})->with([['fr_pcg', '44571'], ['es_pgc', '4770']]);
+})->with([['fr_pcg', '44571'], ['es_pgc', '477']]);
 
 test('a VAT code pack is listed and imported idempotently as shared codes', function (): void {
     $packs = $this->getJson('/api/v1/general-ledger/vat-code-packs')->assertOk()->json('data');
@@ -43,8 +43,8 @@ test('a VAT code pack is listed and imported idempotently as shared codes', func
     $first = $this->postJson('/api/v1/general-ledger/vat-code-packs/FR/import')->assertOk()->json('data');
     $again = $this->postJson('/api/v1/general-ledger/vat-code-packs/FR/import')->assertOk()->json('data');
 
-    expect($first)->toBe(['country' => 'IT', 'created' => 7, 'updated' => 0])
-        ->and($again)->toBe(['country' => 'IT', 'created' => 0, 'updated' => 7])
+    expect($first)->toBe(['country' => 'FR', 'created' => 7, 'updated' => 0])
+        ->and($again)->toBe(['country' => 'FR', 'created' => 0, 'updated' => 7])
         ->and(DB::table('vat_codes')->where('code', 'FR_TVA_20')->count())->toBe(1)
         ->and((float) DB::table('vat_codes')->where('code', 'FR_TVA_55')->value('rate'))->toBe(5.5)
         ->and((bool) DB::table('vat_codes')->where('code', 'FR_TVA_AUTO')->value('is_reverse_charge'))->toBeTrue();
@@ -159,12 +159,12 @@ test('US tax data is isolated per tenant', function (): void {
     $this->postJson('/api/v1/general-ledger/us-tax/jurisdictions', ['code' => 'TX', 'name' => 'Texas', 'state' => 'TX', 'level' => 'state'])->assertCreated();
 });
 
-test('a read-only role cannot change US tax data but can read it', function (): void {
+test('a read-only role can neither read nor change the US tax and pack data', function (): void {
     $viewer = Tenant::create(['name' => 'Solo lettura', 'legal_name' => 'Solo lettura Srl', 'country' => 'IT', 'default_currency' => 'EUR']);
     app(TenantContext::class)->clear();
     actingAsMember($viewer, 'accountant_readonly');
 
-    $this->getJson('/api/v1/general-ledger/us-tax/nexus')->assertOk();
+    $this->getJson('/api/v1/general-ledger/us-tax/nexus')->assertForbidden();
     $this->postJson('/api/v1/general-ledger/us-tax/nexus', ['state' => 'CA', 'nexus_type' => 'physical', 'established_on' => '2026-01-01'])->assertForbidden();
     $this->postJson('/api/v1/general-ledger/vat-code-packs/FR/import')->assertForbidden();
 });

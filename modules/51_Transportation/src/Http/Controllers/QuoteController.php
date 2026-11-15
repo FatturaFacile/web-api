@@ -5,15 +5,14 @@ declare(strict_types=1);
 namespace Modules\Transportation\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Modules\Transportation\Http\Controllers\Concerns\InteractsWithTransportation;
 use Modules\Transportation\Http\Resources\QuoteResource;
 use Modules\Transportation\Models\TmsQuote;
 use Modules\Transportation\Services\QuoteService;
-use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
 /**

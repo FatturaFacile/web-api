@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Tenancy;
 
+use App\Exceptions\SodConflictException;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\Sso\ProvisionableRoles;
@@ -89,6 +90,7 @@ final class TenantMembershipService
      * @param  array<string, string>|null  $modules  module => level; a module that is absent keeps its level, `default` clears it
      *
      * @throws DomainException when the change would leave the tenant without an owner
+     * @throws SodConflictException when the change breaks a blocking segregation of duties rule without an exception
      */
     public function save(Tenant $tenant, User $user, ?string $role, ?array $modules): void
     {
@@ -98,10 +100,13 @@ final class TenantMembershipService
             $membership = $tenant->users()->where('users.id', $user->id)->first()?->pivot;
 
             if ($membership === null) {
+                $newPermissions = $this->applyLevels([], $modules ?? []);
+                $this->reviewSegregationOfDuties($tenant, $user, $role ?? 'member', $newPermissions);
+
                 $tenant->users()->attach($user->id, [
                     'id' => (string) Str::uuid(),
                     'role' => $role ?? 'member',
-                    'permissions' => json_encode($this->applyLevels([], $modules ?? [])),
+                    'permissions' => json_encode($newPermissions),
                 ]);
 
                 return;
@@ -111,9 +116,13 @@ final class TenantMembershipService
                 $this->assertAnotherOwnerExists($tenant, $user);
             }
 
+            $newRole = $role ?? $membership->role;
+            $newPermissions = $this->applyLevels($this->permissionsOf($membership->permissions), $modules ?? []);
+            $this->reviewSegregationOfDuties($tenant, $user, (string) $newRole, $newPermissions);
+
             $tenant->users()->updateExistingPivot($user->id, [
-                'role' => $role ?? $membership->role,
-                'permissions' => json_encode($this->applyLevels($this->permissionsOf($membership->permissions), $modules ?? [])),
+                'role' => $newRole,
+                'permissions' => json_encode($newPermissions),
             ]);
         });
     }
@@ -223,6 +232,20 @@ final class TenantMembershipService
         }
 
         return array_values(array_unique($permissions));
+    }
+
+    /**
+     * Lets the segregation of duties rules (governance module, when installed) refuse the assignment or record it.
+     *
+     * @param  list<string>  $permissions
+     *
+     * @throws SodConflictException
+     */
+    private function reviewSegregationOfDuties(Tenant $tenant, User $user, string $role, array $permissions): void
+    {
+        if (app()->bound(SodAssignmentGuard::class)) {
+            app(SodAssignmentGuard::class)->review((string) $tenant->id, (string) $user->id, $role, $permissions);
+        }
     }
 
     private function assertAnotherOwnerExists(Tenant $tenant, User $except): void

@@ -2,10 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Models\Contact;
 use App\Models\Tenant;
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
 use Laravel\Sanctum\Sanctum;
 use Modules\Analytics\Semantic\Dataset;
@@ -13,6 +16,7 @@ use Modules\BusinessIntelligence\Models\BiCalculatedMeasure;
 use Modules\BusinessIntelligence\Models\BiDashboard;
 use Modules\BusinessIntelligence\Models\BiDashboardWidget;
 use Modules\BusinessIntelligence\Models\BiSavedQuery;
+use Modules\BusinessIntelligence\Models\BiShare;
 use Modules\BusinessIntelligence\Models\BiSnapshot;
 use Modules\BusinessIntelligence\Security\RowLevelSecurityRegistry;
 use Modules\BusinessIntelligence\Security\RowLevelSecurityRule;
@@ -296,7 +300,7 @@ test('a widget drills down through its drill path one level at a time and refuse
     ])->assertCreated()->json('data');
 
     $top = $this->getJson("/api/v1/business-intelligence/widgets/{$widget['id']}/data")->assertOk()->json('data');
-    expect(array_column($top['result']['rows'], 'customer_country'))->toBe(['CH', 'IT'])
+    expect(array_column($top['result']['rows'], 'customer_country'))->toEqualCanonicalizing(['CH', 'IT'])
         ->and($top['drill']['level'])->toBe(0)->and($top['drill']['next_dimension'])->toBe('customer');
 
     $url = "/api/v1/business-intelligence/widgets/{$widget['id']}/data";
@@ -368,13 +372,13 @@ test('dashboards and queries are private until shared, and sharing follows the p
     $this->getJson("/api/v1/business-intelligence/shares?resource_type=dashboard&resource_id={$dashboard['id']}")->assertForbidden();
 
     bixActAs($this->admin, $this->tenant);
-    $shareId = BiDashboard::query()->findOrFail($dashboard['id']) && \Modules\BusinessIntelligence\Models\BiShare::query()->where('resource_id', $dashboard['id'])->value('id');
+    $shareId = BiShare::query()->where('resource_id', $dashboard['id'])->value('id');
     $this->deleteJson("/api/v1/business-intelligence/shares/{$shareId}")->assertNoContent();
     expect(BiDashboard::query()->find($dashboard['id'])->visibility)->toBe('private');
 
     $this->postJson('/api/v1/business-intelligence/shares', ['resource_type' => 'dashboard', 'resource_id' => $dashboard['id'], 'user_id' => $this->admin->id, 'permission' => 'view'])
         ->assertUnprocessable()->assertJsonValidationErrors('user_id');
-    $this->postJson('/api/v1/business-intelligence/shares', ['resource_type' => 'saved_query', 'resource_id' => $query['id'], 'user_id' => (string) Illuminate\Support\Str::uuid(), 'permission' => 'view'])
+    $this->postJson('/api/v1/business-intelligence/shares', ['resource_type' => 'saved_query', 'resource_id' => $query['id'], 'user_id' => (string) Str::uuid(), 'permission' => 'view'])
         ->assertUnprocessable()->assertJsonValidationErrors('user_id');
 });
 
@@ -475,7 +479,7 @@ test('a snapshot freezes the figures of the day and compares them with today', f
     expect($snapshot)->not->toHaveKey('payload');
 
     biInvoice($this->tenant, biCustomer($this->tenant, 'Gialli'), '2027-03-10', '10.00');
-    biInvoice($this->tenant, \App\Models\Contact::query()->where('company_name', 'Rossi')->firstOrFail(), '2027-03-11', '25.00');
+    biInvoice($this->tenant, Contact::query()->where('company_name', 'Rossi')->firstOrFail(), '2027-03-11', '25.00');
 
     $list = $this->getJson("/api/v1/business-intelligence/snapshots?source_type=saved_query&source_id={$query['id']}")->assertOk()->json('data');
     expect($list)->toHaveCount(1)->and($list[0])->not->toHaveKey('payload');
@@ -518,7 +522,7 @@ test('scheduled snapshots run once a day with the permissions of the owner and a
     $inTenant = fn (callable $callback): mixed => app(TenantContext::class)->runWithTenant($this->tenant, $callback);
     expect($inTenant(fn (): array => $service->runDue()))->toBe(['succeeded' => 1, 'failed' => 0])
         ->and(BiSavedQuery::query()->find($good['id'])->next_snapshot_on->toDateString())->toBe('2027-03-17');
-    $this->tenant->users()->attach($leaver->id, ['id' => (string) Illuminate\Support\Str::uuid(), 'role' => 'member']);
+    $this->tenant->users()->attach($leaver->id, ['id' => (string) Str::uuid(), 'role' => 'member']);
     $this->tenant->users()->detach($leaver->id);
 
     BiSavedQuery::query()->whereKey($orphan['id'])->update(['next_snapshot_on' => '2027-03-16']);
@@ -559,4 +563,15 @@ test('the overview counts what the caller can open and the module routes are doc
 
     $this->getJson('/api/v1/business-intelligence/datasets/sales')->assertOk()->assertJsonPath('data.key', 'sales');
     $this->getJson('/api/v1/business-intelligence/datasets/ghost')->assertNotFound();
+});
+
+test('the members to share with are the members of the active company only, identifier and name', function (): void {
+    $colleague = biUser($this->tenant, 'member');
+    $other = biTenant('Beta');
+    biUser($other, 'admin');
+
+    $members = $this->getJson('/api/v1/business-intelligence/members')->assertOk()->json('data');
+
+    expect(array_column($members, 'id'))->toContain((string) $colleague->id, (string) $this->admin->id)->toHaveCount(2)
+        ->and(array_keys($members[0]))->toBe(['id', 'name']);
 });

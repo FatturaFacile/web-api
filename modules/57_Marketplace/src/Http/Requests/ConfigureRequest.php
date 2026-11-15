@@ -16,7 +16,7 @@ final class ConfigureRequest extends MarketplaceFormRequest
     public function rules(): array
     {
         return [
-            'config' => ['required', 'array', 'max:30'],
+            'config' => ['present', 'array', 'max:30'],
             'rate_limit_per_minute' => ['sometimes', 'nullable', 'integer', 'min:1', 'max:10000'],
         ];
     }

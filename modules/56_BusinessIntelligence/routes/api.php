@@ -57,6 +57,7 @@ Route::prefix('api/v1/business-intelligence')
         Route::delete('/widgets/{id}', [WidgetController::class, 'destroy'])->name('widgets.destroy');
         Route::get('/widgets/{id}/data', [WidgetController::class, 'data'])->name('widgets.data');
 
+        Route::get('/members', [ShareController::class, 'members'])->name('members.index');
         Route::get('/shares', [ShareController::class, 'index'])->name('shares.index');
         Route::post('/shares', [ShareController::class, 'store'])->name('shares.store');
         Route::delete('/shares/{id}', [ShareController::class, 'destroy'])->name('shares.destroy');

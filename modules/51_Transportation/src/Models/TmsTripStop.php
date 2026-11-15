@@ -50,7 +50,6 @@ final class TmsTripStop extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsTrip, $this>
      */

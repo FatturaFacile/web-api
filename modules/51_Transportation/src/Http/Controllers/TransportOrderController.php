@@ -9,12 +9,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Modules\Transportation\Http\Controllers\Concerns\InteractsWithTransportation;
 use Modules\Transportation\Http\Requests\TransportOrderRequest;
 use Modules\Transportation\Http\Resources\TransportOrderResource;
 use Modules\Transportation\Models\TmsTransportOrder;
 use Modules\Transportation\Services\TransportOrderService;
-use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
 /**

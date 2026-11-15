@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace Modules\Transportation\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Validation\Rule;
-use Modules\Transportation\Models\TmsTariffBand;
 
 /**
  * Payload to create or change a tariff band.
@@ -31,7 +29,7 @@ final class TariffBandRequest extends TransportationFormRequest
         ]);
 
         return $this->isMethod('POST') ? [
-                'tariff_table_id' => ['required', 'uuid', $this->ownRow('tms_tariff_tables')],
+            'tariff_table_id' => ['required', 'uuid', $this->ownRow('tms_tariff_tables')],
             ...$rules,
         ] : $rules;
     }

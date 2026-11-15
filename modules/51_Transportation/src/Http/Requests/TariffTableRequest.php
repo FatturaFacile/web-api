@@ -31,7 +31,7 @@ final class TariffTableRequest extends TransportationFormRequest
         ]);
 
         return $this->isMethod('POST') ? [
-                'carrier_id' => ['required', 'uuid', $this->ownRow('tms_carriers')],
+            'carrier_id' => ['required', 'uuid', $this->ownRow('tms_carriers')],
             ...$rules,
         ] : $rules;
     }

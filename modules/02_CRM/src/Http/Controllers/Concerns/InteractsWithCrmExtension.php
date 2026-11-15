@@ -11,7 +11,7 @@ use App\Services\Tenancy\TenantContext;
  */
 trait InteractsWithCrmExtension
 {
-    private function tenantId(): string
+    protected function tenantId(): string
     {
         $tenantId = app(TenantContext::class)->getTenantId() ?? request()->user()?->tenant_id;
         abort_if($tenantId === null, 403, 'Missing or unresolvable tenant context');
@@ -19,17 +19,17 @@ trait InteractsWithCrmExtension
         return (string) $tenantId;
     }
 
-    private function userId(): string
+    protected function userId(): string
     {
         return (string) request()->user()?->getKey();
     }
 
-    private function userRole(): ?string
+    protected function userRole(): ?string
     {
         return request()->user()?->getRoleInTenant($this->tenantId());
     }
 
-    private function perPage(): int
+    protected function perPage(): int
     {
         return max(1, min(100, (int) request()->query('per_page', 25)));
     }

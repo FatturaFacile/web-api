@@ -68,7 +68,6 @@ final class TmsTrip extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsCarrier, $this>
      */

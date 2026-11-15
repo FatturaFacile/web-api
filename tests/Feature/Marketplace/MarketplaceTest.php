@@ -381,8 +381,6 @@ test('a newer version of a connector needs its new scopes and a complete configu
     $id = mkpInstall(['connector_key' => 'acme-erp', 'name' => 'Acme', 'granted_scopes' => ['reporting.read']])->assertCreated()->json('data.id');
     mkpConfigure($id, ['api_token' => $this->secret])->assertOk();
     $this->postJson("/api/v1/marketplace/installations/{$id}/enable")->assertOk();
-    $this->postJson("/api/v1/marketplace/installations/{$id}/upgrade")->assertUnprocessable()->assertJsonValidationErrors('connector_version');
-
     $newer = new ConnectorRegistry;
     $newer->register(mkpAcme('1.1.0', ['reporting.read', 'invoicing.write'], [new ConfigField('api_token', 'API token', 'secret'), new ConfigField('region', 'Region', 'select', options: ['eu', 'us'])]));
     app()->instance(ConnectorRegistry::class, $newer);
@@ -397,6 +395,13 @@ test('a newer version of a connector needs its new scopes and a complete configu
     $this->postJson("/api/v1/marketplace/installations/{$id}/enable")->assertUnprocessable();
 
     mkpConfigure($id, ['region' => 'eu'])->assertOk()->assertJsonPath('data.status', 'disabled');
+});
+
+test('an installation that already runs the latest version cannot be upgraded', function (): void {
+    $id = mkpInstall()->assertCreated()->json('data.id');
+
+    $this->getJson("/api/v1/marketplace/installations/{$id}")->assertOk()->assertJsonPath('data.update_available', false);
+    $this->postJson("/api/v1/marketplace/installations/{$id}/upgrade")->assertUnprocessable()->assertJsonValidationErrors('connector_version');
 });
 
 test('a connector plugged in through the contract is installable and its sync runs through the same log', function (): void {

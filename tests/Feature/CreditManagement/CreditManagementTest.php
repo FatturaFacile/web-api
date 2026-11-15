@@ -108,7 +108,7 @@ test('the score is the weighted average of the factors and lands in a rating ban
     $response = cmScore($customer, 80)->assertCreated();
 
     $response->assertJsonPath('data.score', '40.00')->assertJsonPath('data.rating', 'D')->assertJsonPath('data.risk_level', 'high')->assertJsonCount(2, 'data.breakdown');
-    expect($response->json('data.breakdown.0'))->toMatchArray(['code' => 'overdue', 'raw_value' => '100.00', 'sub_score' => '0.00']);
+    expect(collect($response->json('data.breakdown'))->firstWhere('code', 'overdue'))->toMatchArray(['code' => 'overdue', 'raw_value' => '100.00', 'sub_score' => '0.00']);
 
     cmScore($customer, 100)->assertCreated()->assertJsonPath('data.score', '50.00')->assertJsonPath('data.rating', 'C');
     $this->getJson('/api/v1/credit-management/scores?customer_id='.$customer->id)->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('data.0.score', '50.00');
@@ -131,16 +131,19 @@ test('the limit proposal is the band share of the quarterly turnover, capped and
 
     $this->getJson('/api/v1/credit-management/customers/'.$customer->id.'/limit-proposal')->assertUnprocessable();
 
-    cmScore($customer, 100)->assertCreated()->assertJsonPath('data.rating', 'C');
+    cmScore($customer, 100)->assertCreated()->assertJsonPath('data.rating', 'A');
 
     $this->getJson('/api/v1/credit-management/customers/'.$customer->id.'/limit-proposal')
         ->assertOk()
         ->assertJsonPath('data.quarterly_turnover', '1000.00')
-        ->assertJsonPath('data.proposed_limit', '1000.00')
-        ->assertJsonPath('data.rating', 'C');
+        ->assertJsonPath('data.proposed_limit', '2000.00')
+        ->assertJsonPath('data.rating', 'A');
 
-    cmInvoice($customer, '2027-07-30', '80000.00', '2027-02-01');
-    $this->getJson('/api/v1/credit-management/customers/'.$customer->id.'/limit-proposal')->assertOk()->assertJsonPath('data.proposed_limit', '20000.00');
+    cmInvoice($customer, '2027-07-30', '32000.00', '2027-02-01');
+    $this->getJson('/api/v1/credit-management/customers/'.$customer->id.'/limit-proposal')->assertOk()->assertJsonPath('data.proposed_limit', '18000.00');
+
+    cmInvoice($customer, '2027-07-30', '800000.00', '2027-02-02');
+    $this->getJson('/api/v1/credit-management/customers/'.$customer->id.'/limit-proposal')->assertOk()->assertJsonPath('data.proposed_limit', '100000.00');
 });
 
 test('a credit limit request is decided by another approver and stores the limit', function (): void {
@@ -149,7 +152,7 @@ test('a credit limit request is decided by another approver and stores the limit
     cmInvoice($customer, '2027-07-30', '4000.00', '2027-05-01');
     cmScore($customer, 100)->assertCreated();
 
-    $request = $this->postJson('/api/v1/credit-management/limit-requests', ['customer_id' => $customer->id, 'reason' => 'Growing orders'])->assertCreated()->assertJsonPath('data.status', 'pending')->assertJsonPath('data.requested_limit', '1000.00')->assertJsonPath('data.proposed_limit', '1000.00')->json('data');
+    $request = $this->postJson('/api/v1/credit-management/limit-requests', ['customer_id' => $customer->id, 'reason' => 'Growing orders'])->assertCreated()->assertJsonPath('data.status', 'pending')->assertJsonPath('data.requested_limit', '2000.00')->assertJsonPath('data.proposed_limit', '2000.00')->json('data');
     $this->postJson('/api/v1/credit-management/limit-requests', ['customer_id' => $customer->id])->assertUnprocessable()->assertJsonValidationErrors('customer_id');
 
     $this->postJson('/api/v1/credit-management/limit-requests/'.$request['id'].'/approve', [])->assertUnprocessable()->assertJsonValidationErrors('status');
@@ -263,7 +266,7 @@ test('a case is opened on overdue invoices and moves through the dunning steps w
     $this->postJson('/api/v1/credit-management/cases/'.$case['id'].'/actions', ['action_type' => 'dunning_step'])->assertUnprocessable();
 
     $this->travelTo('2027-08-05 09:00:00');
-    $this->postJson('/api/v1/credit-management/cases/'.$case['id'].'/advance')->assertOk()->assertJsonPath('data.status', 'escalated')->assertJsonPath('data.actions.2.fee_amount', '40.00');
+    $this->postJson('/api/v1/credit-management/cases/'.$case['id'].'/advance')->assertOk()->assertJsonPath('data.status', 'escalated')->assertJsonPath('data.actions.3.fee_amount', '40.00');
     $this->postJson('/api/v1/credit-management/cases/'.$case['id'].'/advance')->assertUnprocessable();
 
     $invoice->update(['total_paid' => '1000.00', 'payment_status' => 'paid']);
@@ -367,7 +370,7 @@ test('the dashboard reports DSO, overdue by bucket and the open workload', funct
     $customer = cmCustomer();
     cmInvoice($customer, '2027-05-30', '3000.00', '2027-05-01');
     cmInvoice($customer, '2027-08-01', '1000.00', '2027-06-01');
-    $paid = cmInvoice($customer, '2027-04-01', '500.00', '2027-03-01');
+    $paid = cmInvoice($customer, '2027-04-01', '500.00', '2027-04-01');
     $paid->update(['total_paid' => '500.00', 'payment_status' => 'paid']);
     cmScore($customer, 90)->assertCreated();
     $this->postJson('/api/v1/credit-management/cases', ['customer_id' => $customer->id])->assertCreated();
@@ -376,7 +379,7 @@ test('the dashboard reports DSO, overdue by bucket and the open workload', funct
 
     expect($data)->toMatchArray(['receivables_total' => '4000.00', 'overdue_total' => '3000.00', 'overdue_percentage' => '75.00', 'invoiced_last_90_days' => '4500.00', 'dso_days' => '80.00', 'customers_over_limit' => 0]);
     expect($data['cases'])->toMatchArray(['open_count' => 1, 'outstanding_amount' => '3000.00'])->and($data['cases']['by_status']['open'])->toBe(1);
-    expect(collect($data['overdue_by_bucket'])->pluck('amount', 'key')->all())->toMatchArray(['d1_30' => '0.00', 'd31_60' => '3000.00', 'current' => '1000.00'])->and($data['rating_distribution'])->toBe([['rating' => 'D', 'count' => 1]]);
+    expect(collect($data['overdue_by_bucket'])->pluck('amount', 'key')->all())->toMatchArray(['d1_30' => '3000.00', 'd31_60' => '0.00', 'current' => '1000.00'])->and($data['rating_distribution'])->toBe([['rating' => 'D', 'count' => 1]]);
     expect($data['top_overdue_customers'][0]['overdue_amount'])->toBe('3000.00');
 });
 

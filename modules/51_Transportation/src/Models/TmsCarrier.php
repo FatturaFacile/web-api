@@ -34,7 +34,6 @@ final class TmsCarrier extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return HasMany<TmsTariffTable, $this>
      */

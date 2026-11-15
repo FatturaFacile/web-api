@@ -53,7 +53,6 @@ final class TmsQuote extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsCarrier, $this>
      */

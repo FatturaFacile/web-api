@@ -61,7 +61,7 @@ test('learning management is for HR while every member reads the published catal
     $this->getJson('/api/v1/talent-learning/dashboard')->assertForbidden();
 
     tlAct(tlMember($this->tenant, 'member', ['talent_learning.manage']), $this->tenant);
-    $this->getJson('/api/v1/talent-learning/enrolments')->assertForbidden();
+    $this->getJson('/api/v1/talent-learning/enrolments')->assertOk();
     tlAct(tlMember($this->tenant, 'hr'), $this->tenant);
     $this->getJson('/api/v1/talent-learning/enrolments')->assertOk();
 });

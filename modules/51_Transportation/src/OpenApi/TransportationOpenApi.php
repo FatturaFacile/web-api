@@ -270,4 +270,36 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
     new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
 ])]
+#[OA\Schema(schema: 'TransportationRateOffer', type: 'object', properties: [
+    new OA\Property(property: 'carrier_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'carrier_name', type: 'string'),
+    new OA\Property(property: 'tariff_table_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'tariff_band_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'fixed_amount', type: 'string', example: '40.00'),
+    new OA\Property(property: 'weight_amount', type: 'string', example: '25.00'),
+    new OA\Property(property: 'distance_amount', type: 'string', example: '0.00'),
+    new OA\Property(property: 'minimum_applied', type: 'boolean'),
+    new OA\Property(property: 'base_amount', type: 'string', example: '65.00'),
+    new OA\Property(property: 'fuel_surcharge', type: 'string', example: '6.50'),
+    new OA\Property(property: 'total_amount', type: 'string', example: '71.50'),
+    new OA\Property(property: 'rank', type: 'integer', nullable: true, description: 'Position in a quote comparison, 1 is the cheapest'),
+])]
+#[OA\Schema(schema: 'TransportationFreightInvoiceRequest', type: 'object', required: ['carrier_id', 'invoice_number', 'invoice_date', 'lines'], properties: [
+    new OA\Property(property: 'carrier_id', description: 'Create only', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'invoice_number', type: 'string', maxLength: 60),
+    new OA\Property(property: 'invoice_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'lines', type: 'array', items: new OA\Items(properties: [new OA\Property(property: 'transport_order_id', type: 'string', format: 'uuid', nullable: true), new OA\Property(property: 'description', type: 'string', nullable: true), new OA\Property(property: 'billed_amount', type: 'string', example: '180.00')])),
+])]
+#[OA\Schema(schema: 'TransportationDashboard', type: 'object', properties: [
+    new OA\Property(property: 'period', type: 'object', properties: [new OA\Property(property: 'from', type: 'string', format: 'date'), new OA\Property(property: 'to', type: 'string', format: 'date'), new OA\Property(property: 'days', type: 'integer')]),
+    new OA\Property(property: 'on_time', type: 'object', properties: [new OA\Property(property: 'delivered', type: 'integer'), new OA\Property(property: 'on_time', type: 'integer'), new OA\Property(property: 'percent', type: 'string', nullable: true, example: '92.50')]),
+    new OA\Property(property: 'cost_per_km', type: 'object', properties: [new OA\Property(property: 'trips', type: 'integer'), new OA\Property(property: 'total_cost', type: 'string'), new OA\Property(property: 'total_km', type: 'string'), new OA\Property(property: 'value', type: 'string', nullable: true, example: '1.2143')]),
+    new OA\Property(property: 'cost_per_kg', type: 'object', properties: [new OA\Property(property: 'orders', type: 'integer'), new OA\Property(property: 'value', type: 'string', nullable: true, example: '0.4200')]),
+    new OA\Property(property: 'orders_by_status', type: 'object'),
+    new OA\Property(property: 'trips_by_status', type: 'object'),
+    new OA\Property(property: 'disputes', type: 'object', properties: [new OA\Property(property: 'open', type: 'integer'), new OA\Property(property: 'over_billed_amount', type: 'string', example: '120.00'), new OA\Property(property: 'credited_amount', type: 'string', example: '35.00')]),
+])]
 final class TransportationOpenApi {}

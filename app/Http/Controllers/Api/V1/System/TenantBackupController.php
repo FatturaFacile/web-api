@@ -90,6 +90,47 @@ class TenantBackupController extends Controller
     }
 
     #[OA\Get(
+        path: '/api/v1/system/backups/status',
+        operationId: 'getTenantBackupStatus',
+        description: 'Disaster recovery status of the current tenant: last completed and last failed backup, age against the recovery point objective, pending backups and the configured retention.',
+        summary: 'Backup and disaster recovery status',
+        security: [['bearerAuth' => []]],
+        tags: ['System', 'Backups'],
+        responses: [
+            new OA\Response(response: 200, description: 'Status retrieved: state is ok, stale, never or failing', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function status(): JsonResponse
+    {
+        $lastCompleted = TenantBackup::query()->where('status', TenantBackup::COMPLETED)->latest('completed_at')->first();
+        $lastFailed = TenantBackup::query()->where('status', TenantBackup::FAILED)->latest()->first();
+        $rpoHours = (int) config('backup.rpo_hours', 24);
+        $ageHours = $lastCompleted?->completed_at !== null ? (int) floor($lastCompleted->completed_at->diffInHours(now(), true)) : null;
+
+        $state = match (true) {
+            $lastCompleted === null => $lastFailed !== null ? 'failing' : 'never',
+            $ageHours > $rpoHours => 'stale',
+            $lastFailed !== null && $lastFailed->created_at > $lastCompleted->completed_at => 'failing',
+            default => 'ok',
+        };
+
+        return $this->successResponse([
+            'state' => $state,
+            'last_completed_at' => $lastCompleted?->completed_at?->toIso8601String(),
+            'last_completed_size_bytes' => $lastCompleted?->file_size_bytes,
+            'age_hours' => $ageHours,
+            'last_failed_at' => $lastFailed?->created_at?->toIso8601String(),
+            'last_error' => $lastFailed?->error_message,
+            'pending' => TenantBackup::query()->whereIn('status', [TenantBackup::PENDING, TenantBackup::PROCESSING])->count(),
+            'completed_count' => TenantBackup::query()->where('status', TenantBackup::COMPLETED)->count(),
+            'rpo_hours' => $rpoHours,
+            'rto_minutes' => (int) config('backup.rto_minutes', 240),
+            'retention' => (int) config('backup.retention', 7),
+        ], __('backup.messages.retrieved'));
+    }
+
+    #[OA\Get(
         path: '/api/v1/system/backups/{id}',
         operationId: 'getTenantBackupById',
         description: 'Get status and details of a specific backup archive.',

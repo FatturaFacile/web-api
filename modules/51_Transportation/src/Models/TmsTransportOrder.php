@@ -77,7 +77,6 @@ final class TmsTransportOrder extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsCarrier, $this>
      */

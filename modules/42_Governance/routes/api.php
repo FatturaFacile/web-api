@@ -11,6 +11,7 @@ use Modules\Governance\Http\Controllers\DashboardController;
 use Modules\Governance\Http\Controllers\FindingController;
 use Modules\Governance\Http\Controllers\ObligationController;
 use Modules\Governance\Http\Controllers\RiskController;
+use Modules\Governance\Http\Controllers\SegregationOfDutiesController;
 
 $uuid = '[0-9a-fA-F-]{36}';
 
@@ -66,6 +67,18 @@ Route::prefix('api/v1/governance')
         Route::get('/actions/{id}', [ActionController::class, 'show'])->name('actions.show');
         Route::put('/actions/{id}', [ActionController::class, 'update'])->name('actions.update');
         Route::post('/actions/{id}/transition', [ActionController::class, 'transition'])->name('actions.transition');
+
+        Route::get('/sod/rules', [SegregationOfDutiesController::class, 'rules'])->name('sod.rules.index');
+        Route::post('/sod/rules', [SegregationOfDutiesController::class, 'storeRule'])->name('sod.rules.store');
+        Route::post('/sod/rules/seed-defaults', [SegregationOfDutiesController::class, 'seedDefaults'])->name('sod.rules.seed-defaults');
+        Route::put('/sod/rules/{id}', [SegregationOfDutiesController::class, 'updateRule'])->name('sod.rules.update');
+        Route::delete('/sod/rules/{id}', [SegregationOfDutiesController::class, 'destroyRule'])->name('sod.rules.destroy');
+        Route::post('/sod/check', [SegregationOfDutiesController::class, 'check'])->name('sod.check');
+        Route::get('/sod/violations', [SegregationOfDutiesController::class, 'violations'])->name('sod.violations.index');
+        Route::post('/sod/scan', [SegregationOfDutiesController::class, 'scan'])->middleware('throttle:10,1')->name('sod.scan');
+        Route::get('/sod/exceptions', [SegregationOfDutiesController::class, 'exceptions'])->name('sod.exceptions.index');
+        Route::post('/sod/exceptions', [SegregationOfDutiesController::class, 'storeException'])->name('sod.exceptions.store');
+        Route::post('/sod/exceptions/{id}/revoke', [SegregationOfDutiesController::class, 'revokeException'])->name('sod.exceptions.revoke');
 
         Route::get('/obligations', [ObligationController::class, 'index'])->name('obligations.index');
         Route::post('/obligations', [ObligationController::class, 'store'])->name('obligations.store');

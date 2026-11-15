@@ -117,6 +117,8 @@ return new class extends Migration
             $table->decimal('tax_amount', 12, 2);
             $table->decimal('gross_amount', 12, 2);
             $table->timestamps();
+
+            $table->index(['tenant_id', 'retail_return_id']);
         });
 
         Schema::create('retail_session_reports', function (Blueprint $table): void {

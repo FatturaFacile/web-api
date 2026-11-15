@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Modules\Transportation\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Validation\Rule;
-use Modules\Transportation\Models\TmsTrip;
+use Illuminate\Support\Carbon;
 
 /**
  * Payload to create or change a trip.
@@ -46,7 +45,7 @@ final class TripRequest extends TransportationFormRequest
             $start = $this->valueOf('planned_start_at', 'tms_trips');
             $end = $this->valueOf('planned_end_at', 'tms_trips');
 
-            if ($start !== null && $end !== null && \Illuminate\Support\Carbon::parse((string) $end)->lessThan(\Illuminate\Support\Carbon::parse((string) $start))) {
+            if ($start !== null && $end !== null && Carbon::parse((string) $end)->lessThan(Carbon::parse((string) $start))) {
                 $validator->errors()->add('planned_end_at', __('transportation_errors.trip.ends_before_start'));
             }
         });

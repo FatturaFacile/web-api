@@ -9,12 +9,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Modules\Transportation\Http\Controllers\Concerns\InteractsWithTransportation;
 use Modules\Transportation\Http\Requests\TripRequest;
 use Modules\Transportation\Http\Resources\TripResource;
 use Modules\Transportation\Models\TmsTrip;
 use Modules\Transportation\Services\TripService;
-use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
 /**

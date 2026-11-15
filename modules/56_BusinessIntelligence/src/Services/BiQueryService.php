@@ -60,7 +60,7 @@ final readonly class BiQueryService
         $export = $this->engine->openExport($parsed, $user);
         $limit = max(1, min($maxRows ?? (int) config('business_intelligence.widget_max_rows', 1000), $this->engine->maxRows()));
         $truncated = (bool) ($export['meta']['truncated'] ?? false);
-        $trees = array_map(fn (BiCalculatedMeasure $measure): array => $this->formulas->parse($measure->formula), $measures);
+        $trees = array_values(array_map(fn (BiCalculatedMeasure $measure): array => $this->formulas->parse($measure->formula), $measures));
         $rows = [];
 
         foreach (($export['rows'])() as $row) {

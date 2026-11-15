@@ -57,7 +57,7 @@ function bdgAccount(Tenant $tenant, string $kind, string $normalBalance): ChartO
 
 function bdgCostCenter(Tenant $tenant): CostCenter
 {
-    return CostCenter::factory()->create(['tenant_id' => $tenant->id]);
+    return CostCenter::create(['tenant_id' => $tenant->id, 'code' => 'CC-'.Str::upper(Str::random(5)), 'name' => 'Cost center '.Str::random(4), 'is_active' => true]);
 }
 
 /**

@@ -53,7 +53,7 @@ final class PartnerController extends CrmExtensionController
     ])]
     public function show(string $id): JsonResponse
     {
-        return $this->present($this->find(Partner::class, $id));
+        return $this->present($this->find(Partner::class, $id, 'view', ['tier']));
     }
 
     #[OA\Put(path: '/api/v1/crm/partners/{id}', operationId: 'updateCrmPartner', description: 'Change a partner; only the fields sent are validated and changed.', summary: 'Update partner', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/CrmPartnerRequest')), tags: ['CRM Partners'], parameters: [new OA\Parameter(ref: '#/components/parameters/CrmExtId')], responses: [

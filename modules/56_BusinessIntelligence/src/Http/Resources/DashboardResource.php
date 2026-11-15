@@ -25,6 +25,7 @@ final class DashboardResource extends JsonResource
             'owner_id' => $this->owner_id,
             'owner_name' => $this->whenLoaded('owner', fn (): ?string => $this->owner?->name),
             'is_owner' => (string) $this->owner_id === (string) $request->user()?->id,
+            'can_edit' => (bool) $request->user()?->can('update', $this->resource),
             'name' => $this->name,
             'description' => $this->description,
             'visibility' => $this->visibility,

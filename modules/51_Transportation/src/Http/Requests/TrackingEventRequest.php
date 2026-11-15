@@ -25,7 +25,7 @@ final class TrackingEventRequest extends TransportationFormRequest
         ]);
 
         return $this->isMethod('POST') ? [
-                'transport_order_id' => ['required', 'uuid', $this->ownRow('tms_transport_orders')],
+            'transport_order_id' => ['required', 'uuid', $this->ownRow('tms_transport_orders')],
             ...$rules,
         ] : $rules;
     }

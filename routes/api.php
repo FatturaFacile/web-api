@@ -31,6 +31,7 @@ use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FieldServiceController;
 use App\Http\Controllers\Api\V1\FleetRentalController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HrController;
 use App\Http\Controllers\Api\V1\IncomingInvoiceWebhookController;
 use App\Http\Controllers\Api\V1\Inventory\ProductBarcodeController;
@@ -87,6 +88,9 @@ use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
+
+    // Readiness probe for load balancers and orchestrators (liveness is Laravel's /up): 200 when every check passes, 503 otherwise.
+    Route::get('/health/ready', [HealthController::class, 'ready'])->middleware('throttle:health')->name('health.ready');
 
     // ----------------------------------------------------
     // Public Auth & Bootstrap Routes
@@ -520,11 +524,12 @@ Route::prefix('v1')->group(function (): void {
         // System: manual tenant backups
         Route::prefix('system')->name('system.')->middleware('module.access:system')->group(function (): void {
             Route::get('/backups', [TenantBackupController::class, 'index'])->name('backups.index');
-            Route::post('/backups', [TenantBackupController::class, 'store'])->name('backups.store');
-            Route::post('/backups/restore-upload', [TenantBackupController::class, 'restoreUpload'])->name('backups.restore-upload');
+            Route::get('/backups/status', [TenantBackupController::class, 'status'])->name('backups.status');
+            Route::post('/backups', [TenantBackupController::class, 'store'])->middleware('throttle:sensitive-system')->name('backups.store');
+            Route::post('/backups/restore-upload', [TenantBackupController::class, 'restoreUpload'])->middleware('throttle:sensitive-system')->name('backups.restore-upload');
             Route::get('/backups/{id}', [TenantBackupController::class, 'show'])->name('backups.show');
-            Route::post('/backups/{id}/restore', [TenantBackupController::class, 'restore'])->name('backups.restore');
-            Route::get('/backups/{id}/download', [TenantBackupController::class, 'download'])->name('backups.download');
+            Route::post('/backups/{id}/restore', [TenantBackupController::class, 'restore'])->middleware('throttle:sensitive-system')->name('backups.restore');
+            Route::get('/backups/{id}/download', [TenantBackupController::class, 'download'])->middleware('throttle:sensitive-system')->name('backups.download');
             Route::delete('/backups/{id}', [TenantBackupController::class, 'destroy'])->name('backups.destroy');
         });
 
@@ -541,9 +546,9 @@ Route::prefix('v1')->group(function (): void {
                 // Exchange rates are central data shared by every tenant: only a platform administrator may write them.
                 Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->middleware('platform.admin')->name('exchange-rates.sync');
                 Route::get('/users', [SettingsController::class, 'users'])->name('users');
-                Route::post('/users', [TenantMemberController::class, 'store'])->name('users.store');
-                Route::put('/users/{userId}', [TenantMemberController::class, 'update'])->whereUuid('userId')->name('users.update');
-                Route::delete('/users/{userId}', [TenantMemberController::class, 'destroy'])->whereUuid('userId')->name('users.destroy');
+                Route::post('/users', [TenantMemberController::class, 'store'])->middleware('throttle:sensitive-system')->name('users.store');
+                Route::put('/users/{userId}', [TenantMemberController::class, 'update'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.update');
+                Route::delete('/users/{userId}', [TenantMemberController::class, 'destroy'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.destroy');
                 Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
                 Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');

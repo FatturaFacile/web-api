@@ -98,7 +98,7 @@ final class SlottingService
                     'to_bin_id' => $target->id,
                     'target_bin_type' => $wantedType,
                     'reason' => __('wms_errors.slotting.reason', ['class' => $class, 'velocity' => $velocity, 'from' => $from->bin_type, 'to' => $wantedType]),
-                ])->load(['stockItem:id,sku,name', 'fromBin:id,code', 'toBin:id,code']);
+                ])->refresh()->load(['stockItem:id,sku,name', 'fromBin:id,code', 'toBin:id,code']);
             }
 
             return [

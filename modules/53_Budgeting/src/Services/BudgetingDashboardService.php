@@ -64,13 +64,13 @@ final readonly class BudgetingDashboardService
 
         $cumulativeBudget = '0';
         $cumulativeActual = '0';
-        $rows = collect($byPeriod['rows'])->keyBy('key');
+        $actualRows = collect($byPeriod['rows'])->keyBy('key');
+        $budgetByPeriod = BudgetLine::query()->where('version_id', $selected->id)->get()->groupBy('period')->map(static fn ($lines): string => bcadd((string) $lines->sum('amount'), '0', 2));
         $series = [];
 
         foreach (range(1, BudgetPeriods::Count) as $period) {
-            $row = $rows->get((string) $period);
-            $budget = $row['budget'] ?? '0.00';
-            $actual = $period <= $through ? ($row['actual'] ?? '0.00') : null;
+            $budget = $budgetByPeriod->get($period, '0.00');
+            $actual = $period <= $through ? ($actualRows->get((string) $period)['actual'] ?? '0.00') : null;
             $cumulativeBudget = bcadd($cumulativeBudget, $budget, 2);
             $cumulativeActual = $actual === null ? null : bcadd($cumulativeActual ?? '0', $actual, 2);
             $series[] = ['period' => $period, 'month' => BudgetPeriods::label($selected, $period), 'budget' => $budget, 'actual' => $actual, 'cumulative_budget' => $cumulativeBudget, 'cumulative_actual' => $cumulativeActual];

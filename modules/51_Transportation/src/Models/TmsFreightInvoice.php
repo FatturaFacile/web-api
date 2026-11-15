@@ -73,7 +73,6 @@ final class TmsFreightInvoice extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsCarrier, $this>
      */

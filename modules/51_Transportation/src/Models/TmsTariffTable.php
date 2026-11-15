@@ -43,7 +43,6 @@ final class TmsTariffTable extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsCarrier, $this>
      */

@@ -6,7 +6,6 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Illuminate\Testing\TestResponse;
-use Modules\HumanResources\Models\Position;
 
 require_once __DIR__.'/TalentLearningSupport.php';
 
@@ -84,7 +83,7 @@ test('planning is closed to ordinary members and open to HR', function (): void 
 });
 
 test('a critical position takes its title from the HR position and a position is critical once', function (): void {
-    $position = Position::factory()->create(['tenant_id' => $this->tenant->id, 'title' => 'Head of Finance']);
+    $position = tlPosition($this->tenant, ['title' => 'Head of Finance']);
 
     $created = $this->postJson('/api/v1/talent-learning/succession/positions', ['position_id' => $position->id, 'criticality' => 'critical'])
         ->assertCreated()->assertJsonPath('data.title', 'Head of Finance')->assertJsonPath('data.coverage', 'uncovered')->json('data');
@@ -100,7 +99,7 @@ test('a critical position takes its title from the HR position and a position is
 test('succession positions of another company are invisible and its employees are refused', function (): void {
     $other = tlTenant('Other');
     $foreignEmployee = tlEmployee($other);
-    $foreignPosition = Position::factory()->create(['tenant_id' => $other->id]);
+    $foreignPosition = tlPosition($other);
 
     $this->postJson('/api/v1/talent-learning/succession/positions', ['position_id' => $foreignPosition->id])->assertUnprocessable();
     $this->postJson('/api/v1/talent-learning/succession/positions', ['title' => 'CFO', 'incumbent_employee_id' => $foreignEmployee->id])->assertUnprocessable()->assertJsonValidationErrors('incumbent_employee_id');
@@ -319,7 +318,7 @@ test('the lookups list active employees and positions without pay data', functio
     $this->getJson('/api/v1/talent-learning/lookups/employees')->assertJsonCount(1, 'data');
     $this->getJson('/api/v1/talent-learning/lookups/employees?limit=500')->assertUnprocessable();
 
-    Position::factory()->create(['tenant_id' => $this->tenant->id, 'title' => 'Treasurer']);
+    tlPosition($this->tenant, ['title' => 'Treasurer']);
     $this->getJson('/api/v1/talent-learning/lookups/positions?search=treas')->assertOk()->assertJsonCount(1, 'data');
 
     tlAct(tlMember($this->tenant, 'member'), $this->tenant);

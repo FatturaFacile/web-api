@@ -25,8 +25,6 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  */
 final class TmsTariffBand extends BaseEnterpriseModel
 {
-
-
     protected $table = 'tms_tariff_bands';
 
     protected function casts(): array
@@ -41,7 +39,6 @@ final class TmsTariffBand extends BaseEnterpriseModel
             'price_per_km' => 'decimal:4',
         ];
     }
-
 
     /**
      * @return BelongsTo<TmsTariffTable, $this>

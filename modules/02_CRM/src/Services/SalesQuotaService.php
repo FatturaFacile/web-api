@@ -23,7 +23,8 @@ final class SalesQuotaService
             ->where('tenant_id', $quota->tenant_id)
             ->where('status', 'won')
             ->where('owner_user_id', $quota->user_id)
-            ->whereBetween('actual_close_date', [$quota->period_start->toDateString(), $quota->period_end->toDateString()]);
+            ->whereDate('actual_close_date', '>=', $quota->period_start->toDateString())
+            ->whereDate('actual_close_date', '<=', $quota->period_end->toDateString());
 
         if ($quota->territory_id !== null) {
             $query->whereIn('account_id', AccountTerritory::query()->where('territory_id', $quota->territory_id)->select('account_id'));

@@ -103,7 +103,9 @@ test('quota attainment counts the opportunities won by the user in the period an
     $quota = $this->postJson('/api/v1/crm/sales-quotas', ['user_id' => $rep->id, 'period_start' => '2027-01-01', 'period_end' => '2027-03-31', 'target_amount' => '100000'])
         ->assertCreated()->json('data');
 
-    $this->getJson("/api/v1/crm/sales-quotas/{$quota['id']}")->assertOk()
+    $debug = $this->getJson("/api/v1/crm/sales-quotas/{$quota['id']}");
+    expect($debug->status())->toBe(200, $debug->getContent());
+    $debug
         ->assertJsonPath('data.attainment.achieved', '50000.00')
         ->assertJsonPath('data.attainment.remaining', '50000.00')
         ->assertJsonPath('data.attainment.attainment_percent', '50.00')

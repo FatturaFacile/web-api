@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Fleet\Http\Requests;
+namespace Modules\CreditManagement\Http\Requests;
 
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;

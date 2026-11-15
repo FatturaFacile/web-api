@@ -164,6 +164,10 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(5)->by('account:'.Str::lower((string) $request->input('email'))),
             Limit::perMinute(20)->by('ip:'.$request->ip()),
         ]);
+        // Backups, restores and membership changes: heavy or high-impact operations, capped per user and tenant.
+        RateLimiter::for('sensitive-system', fn (Request $request): Limit => Limit::perMinute(10)->by('sensitive:'.($request->user()?->getAuthIdentifier() ?? $request->ip()).':'.$request->header('X-Tenant-Id')));
+        // Readiness probe: unauthenticated, so it is capped per address.
+        RateLimiter::for('health', fn (Request $request): Limit => Limit::perMinute(120)->by('health:'.$request->ip()));
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(300)->by($request->user()?->getKey() ?: $request->ip()));
         // Routes of the stateful `web` group (Sanctum csrf-cookie, docs, root, health) open a session row per request:
         // csrf-cookie is the one a SPA hits once per login, so 60/min per address is generous; the rest gets 240/min.

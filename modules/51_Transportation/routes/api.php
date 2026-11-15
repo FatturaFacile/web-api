@@ -3,18 +3,18 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Modules\Transportation\Http\Controllers\CarrierController;
 use Modules\Transportation\Http\Controllers\DashboardController;
 use Modules\Transportation\Http\Controllers\FreightInvoiceController;
 use Modules\Transportation\Http\Controllers\QuoteComparisonController;
-use Modules\Transportation\Http\Controllers\RateController;
-use Modules\Transportation\Http\Controllers\TransportOrderActionController;
-use Modules\Transportation\Http\Controllers\TripActionController;
-use Modules\Transportation\Http\Controllers\CarrierController;
 use Modules\Transportation\Http\Controllers\QuoteController;
+use Modules\Transportation\Http\Controllers\RateController;
 use Modules\Transportation\Http\Controllers\TariffBandController;
 use Modules\Transportation\Http\Controllers\TariffTableController;
 use Modules\Transportation\Http\Controllers\TrackingEventController;
+use Modules\Transportation\Http\Controllers\TransportOrderActionController;
 use Modules\Transportation\Http\Controllers\TransportOrderController;
+use Modules\Transportation\Http\Controllers\TripActionController;
 use Modules\Transportation\Http\Controllers\TripController;
 
 $uuid = '[0-9a-fA-F-]{36}';
@@ -80,7 +80,6 @@ Route::prefix('api/v1/transportation')
         Route::get('/tracking-events', [TrackingEventController::class, 'index'])->name('tracking-events.index');
         Route::post('/tracking-events', [TrackingEventController::class, 'store'])->name('tracking-events.store');
         Route::get('/tracking-events/{id}', [TrackingEventController::class, 'show'])->name('tracking-events.show');
-
 
         Route::get('/freight-invoices', [FreightInvoiceController::class, 'index'])->name('freight-invoices.index');
         Route::post('/freight-invoices', [FreightInvoiceController::class, 'store'])->name('freight-invoices.store');

@@ -9,6 +9,7 @@ use Illuminate\Support\Str;
 use Laravel\Sanctum\Sanctum;
 use Modules\HumanResources\Models\Department;
 use Modules\HumanResources\Models\Employee;
+use Modules\HumanResources\Models\Position;
 
 /*
 | Helpers shared by the talent and learning feature tests.
@@ -36,7 +37,7 @@ function tlAct(User $user, Tenant $tenant): void
 
 function tlDepartment(Tenant $tenant, string $name = 'Engineering'): Department
 {
-    return Department::factory()->create(['tenant_id' => $tenant->id, 'name' => $name]);
+    return app(TenantContext::class)->runWithTenant($tenant, fn (): Department => Department::factory()->create(['tenant_id' => $tenant->id, 'name' => $name]));
 }
 
 /**
@@ -44,7 +45,17 @@ function tlDepartment(Tenant $tenant, string $name = 'Engineering'): Department
  */
 function tlEmployee(Tenant $tenant, array $overrides = []): Employee
 {
-    return Employee::factory()->create(['tenant_id' => $tenant->id, 'currency' => 'EUR', 'base_annual_salary' => '40000.00', ...$overrides]);
+    return app(TenantContext::class)->runWithTenant($tenant, fn (): Employee => Employee::factory()->create(['tenant_id' => $tenant->id, 'currency' => 'EUR', 'base_annual_salary' => '40000.00', ...$overrides]));
+}
+
+/**
+ * Records of another company are created inside its own tenant context: the active context always stamps the tenant.
+ *
+ * @param  array<string, mixed>  $overrides
+ */
+function tlPosition(Tenant $tenant, array $overrides = []): Position
+{
+    return app(TenantContext::class)->runWithTenant($tenant, fn (): Position => Position::factory()->create(['tenant_id' => $tenant->id, ...$overrides]));
 }
 
 /**

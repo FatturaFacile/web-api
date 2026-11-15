@@ -5,8 +5,7 @@ declare(strict_types=1);
 namespace Modules\Transportation\Http\Requests;
 
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Validation\Rule;
-use Modules\Transportation\Models\TmsTransportOrder;
+use Illuminate\Support\Carbon;
 
 /**
  * Payload to create or change a transport order.
@@ -58,7 +57,7 @@ final class TransportOrderRequest extends TransportationFormRequest
                 $from = $this->valueOf($fromField, 'tms_transport_orders');
                 $to = $this->valueOf($toField, 'tms_transport_orders');
 
-                if ($from !== null && $to !== null && \Illuminate\Support\Carbon::parse((string) $to)->lessThan(\Illuminate\Support\Carbon::parse((string) $from))) {
+                if ($from !== null && $to !== null && Carbon::parse((string) $to)->lessThan(Carbon::parse((string) $from))) {
                     $validator->errors()->add($toField, __('transportation_errors.order.window_order'));
                 }
             }

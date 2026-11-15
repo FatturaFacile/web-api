@@ -33,7 +33,6 @@ final class TmsTrackingEvent extends BaseEnterpriseModel
         ];
     }
 
-
     /**
      * @return BelongsTo<TmsTransportOrder, $this>
      */

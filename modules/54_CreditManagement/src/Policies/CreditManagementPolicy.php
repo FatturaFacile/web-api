@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Modules\Fleet\Policies;
+namespace Modules\CreditManagement\Policies;
 
 use App\Models\User;
 use App\Policies\Concerns\ResolvesTenantMembership;

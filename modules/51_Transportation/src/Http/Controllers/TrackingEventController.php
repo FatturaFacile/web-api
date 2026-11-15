@@ -9,12 +9,12 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 use Modules\Transportation\Http\Controllers\Concerns\InteractsWithTransportation;
 use Modules\Transportation\Http\Requests\TrackingEventRequest;
 use Modules\Transportation\Http\Resources\TrackingEventResource;
 use Modules\Transportation\Models\TmsTrackingEvent;
 use Modules\Transportation\Services\TrackingEventService;
-use Illuminate\Validation\Rule;
 use OpenApi\Attributes as OA;
 
 /**
