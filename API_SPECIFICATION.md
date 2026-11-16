@@ -202,3 +202,23 @@ Errors return HTTP status codes with `Content-Type: application/problem+json` ac
 | `404 Not Found`     | Resource Not Found                   | Record does not exist or has been soft-deleted.                  |
 | `409 Conflict`      | Already Clocked In                   | Worker attempted to clock in while an active shift was open.     |
 | `422 Unprocessable` | Unbalanced Ledger Entry / Validation | FormRequest validation failed or double-entry credits != debits. |
+
+---
+
+## Mobile Companion API (`/api/v1/mobile/*`)
+
+Backend for the Flutter app (iOS / Android / Android Rugged Zebra). All routes except the PKCE ones need `Authorization: Bearer`, `X-Tenant-Id` and (recommended) `X-Device-Id`. Config: `config/mobile.php`.
+
+| Area | Endpoints |
+|------|-----------|
+| OAuth2 PKCE (S256) | `POST /mobile/auth/pkce/authorize` → one-time `code`; `POST /mobile/auth/pkce/token` (`code`, `code_verifier`, device data) → device-bound Sanctum token |
+| Bootstrap | `GET /mobile/bootstrap` — profile, role-based workspaces/modules, badges, open shift, work sites, upcoming shifts, sync plan, `update_required` |
+| Devices | `POST /mobile/devices`, `GET /mobile/devices`, `PUT /mobile/devices/current/push-token`, `PUT /mobile/devices/current/biometric`, `DELETE /mobile/devices/{id}` (revoke), `GET /mobile/admin/devices` |
+| Remote wipe | A revoked device gets `401` + `X-Mobile-Wipe: required` on every call and a silent `wipe_cache` push; after erasing Drift/SQLite it calls `POST /mobile/devices/current/wipe-ack`, which deletes its token. Employee termination (`EmployeeTerminatedEvent`) revokes all devices automatically |
+| Offline | `GET /mobile/sync`, `GET /mobile/sync/{entity}?updated_since=&cursor=&limit=` (delta + tombstones), `GET/PUT /mobile/devices/current/manifest`; send `Idempotency-Key` on queued writes (clock-in/out, work-order complete/signature, approval decisions) |
+| Approvals | `GET /mobile/approvals`, `POST /mobile/approvals/{step}/decision` (`approved`/`rejected`); step assignment sends an interactive push (category `APPROVAL_ACTIONS`, payload carries single-use signed `approve_url`/`reject_url`) |
+| Attendance | `time-attendance/clock-in` enforces geofencing for mobile requests when active work sites exist; `GET/POST/PUT/DELETE /mobile/work-sites`, `GET/POST/DELETE /mobile/shifts` |
+| Documents | `GET /mobile/payslips`, `GET /mobile/payslips/{id}/download`, `POST /mobile/payslips/{id}/read-receipt`, `POST /mobile/admin/payslips` (payslip / CU / Lohnausweis, push on publish, `PayslipRead` event) |
+| Receipts | `POST /mobile/receipts/parse` — on-device OCR text → vendor, date, total, VAT (IT / CH) |
+
+Push delivery: `MOBILE_PUSH_DRIVER=log|relay` (`relay` posts to `MOBILE_PUSH_RELAY_URL` in front of FCM / APNs). Swiss QR-Bill scanning (`purchasing/passive-invoices/scan-qr-bill`) and GS1-128/EAN scanning (`inventory/barcode/scan`) are reused as they are.

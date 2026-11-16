@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Services;
 
 use App\Models\Tenant;
+use App\Services\Privacy\StatutoryRetentionCatalogue;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Modules\HumanResources\Models\TimeAuditEntry;
@@ -22,8 +23,8 @@ final class TimeRetentionService
     {
         // Italy LUL/INPS requires 10-year minimum; CH OLL 1 Art. 73 requires 5-year minimum
         $minimumYears = ($tenant->country ?? '') === 'IT'
-            ? DataRetentionPolicy::IT_MINIMUM_YEARS
-            : DataRetentionPolicy::MINIMUM_YEARS;
+            ? StatutoryRetentionCatalogue::STATUTORY_ACCOUNTING_YEARS
+            : StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS;
 
         $cutoff = DataRetentionPolicy::cutoff($today, max($configuredYears, $minimumYears));
         $cutoffInstant = $cutoff->utc()->format('Y-m-d H:i:s');

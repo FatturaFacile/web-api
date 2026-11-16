@@ -6,7 +6,9 @@ use App\Models\Contact;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Str;
+use Modules\Platform\Events\UnreadNotificationsChanged;
 use Modules\Platform\Models\IdempotencyKey;
 use Modules\Platform\Services\NotificationPreferenceService;
 
@@ -191,5 +193,67 @@ describe('notification centre', function (): void {
 
         $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'sms', 'category' => 'billing', 'enabled' => true]]])
             ->assertStatus(422);
+    });
+
+    it('broadcasts the unread counter to the private channel of the user when notifications change', function (): void {
+        Event::fake([UnreadNotificationsChanged::class]);
+        platformNotification($this->owner->id);
+        platformNotification($this->owner->id);
+
+        $this->postJson('/api/v1/platform/notifications/read-all')->assertOk();
+
+        Event::assertDispatched(UnreadNotificationsChanged::class, function (UnreadNotificationsChanged $event): bool {
+            return $event->userId === (string) $this->owner->id
+                && $event->unreadCount === 0
+                && $event->broadcastOn()->name === "private-users.{$this->owner->id}.notifications"
+                && $event->broadcastWith() === ['unread_count' => 0, 'notification' => null];
+        });
+    });
+
+    it('exposes the realtime connection only when Reverb is configured', function (): void {
+        $this->getJson('/api/v1/platform/notifications/realtime')->assertOk()
+            ->assertJsonPath('data.enabled', false)->assertJsonPath('data.key', null)
+            ->assertJsonPath('data.channel', "users.{$this->owner->id}.notifications");
+
+        config(['broadcasting.default' => 'reverb', 'broadcasting.connections.reverb.key' => 'k', 'broadcasting.connections.reverb.options.host' => 'ws.example.test', 'broadcasting.connections.reverb.options.port' => 443]);
+        $this->getJson('/api/v1/platform/notifications/realtime')->assertOk()
+            ->assertJsonPath('data.enabled', true)->assertJsonPath('data.host', 'ws.example.test')->assertJsonPath('data.port', 443)
+            ->assertJsonMissingPath('data.secret');
+    });
+
+    it('stores the delivery frequency per channel and category and keeps it when only enabled changes', function (): void {
+        $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'mail', 'category' => 'crm', 'frequency' => 'digest']]])->assertOk();
+        $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'mail', 'category' => 'crm', 'enabled' => true]]])->assertOk();
+
+        $row = collect($this->getJson('/api/v1/platform/notifications/preferences')->json('data.preferences'))
+            ->first(fn ($p) => $p['channel'] === 'mail' && $p['category'] === 'crm');
+        expect($row['frequency'])->toBe('digest')->and($row['enabled'])->toBeTrue();
+
+        $delivery = app(NotificationPreferenceService::class)->deliveryFor($this->owner, 'crm', ['database', 'mail']);
+        expect($delivery['immediate'])->toBe(['database'])->and($delivery['digest'])->toBe(['mail']);
+
+        $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'mail', 'category' => 'crm']]])->assertStatus(422);
+        $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'mail', 'category' => 'crm', 'frequency' => 'weekly']]])->assertStatus(422);
+    });
+
+    it('silences everything but the in-app channel during quiet hours that cross midnight and during a snooze', function (): void {
+        $this->putJson('/api/v1/platform/notifications/settings', [
+            'quiet_hours_enabled' => true, 'quiet_start' => '22:00', 'quiet_end' => '07:00', 'timezone' => 'Europe/Rome',
+        ])->assertOk()->assertJsonPath('data.quiet_start', '22:00');
+
+        $service = app(NotificationPreferenceService::class);
+        $night = Carbon::parse('2027-01-10 23:30:00', 'Europe/Rome');
+        $day = Carbon::parse('2027-01-10 12:00:00', 'Europe/Rome');
+
+        expect($service->isSilenced($this->owner, $night))->toBeTrue()
+            ->and($service->isSilenced($this->owner, $day))->toBeFalse()
+            ->and($service->deliveryFor($this->owner, 'billing', ['database', 'mail'], $night)['immediate'])->toBe(['database'])
+            ->and($service->deliveryFor($this->owner, 'billing', ['database', 'mail'], $day)['immediate'])->toBe(['database', 'mail']);
+
+        $this->putJson('/api/v1/platform/notifications/settings', ['quiet_hours_enabled' => false, 'muted_until' => now()->addHour()->toIso8601String()])->assertOk();
+        expect($service->isSilenced($this->owner))->toBeTrue();
+
+        $this->putJson('/api/v1/platform/notifications/settings', ['muted_until' => null, 'quiet_start' => '25:00'])->assertStatus(422);
+        $this->getJson('/api/v1/platform/notifications/settings')->assertOk()->assertJsonPath('data.quiet_hours_enabled', false);
     });
 });

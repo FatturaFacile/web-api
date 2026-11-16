@@ -4,8 +4,16 @@ namespace App\Providers;
 
 use App\Contracts\ExchangeRateProviderInterface;
 use App\Contracts\FiscalPrinterGateway;
+use App\Contracts\MobilePushGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
+use App\Listeners\Mobile\NotifyApproversOnStepAssigned;
+use App\Listeners\Mobile\RevokeMobileDevicesOnEmployeeTerminated;
+use App\Services\Mobile\LogPushGateway;
+use App\Services\Mobile\RelayPushGateway;
+use Illuminate\Support\Facades\Event;
+use Modules\HumanResources\Events\EmployeeTerminatedEvent;
+use Modules\Workflow\Events\WorkflowStepAssignedEvent;
 use App\Contracts\Security\HostResolver;
 use App\Models\Appointment;
 use App\Models\Contact;
@@ -91,6 +99,9 @@ class AppServiceProvider extends ServiceProvider
             $app->environment('local') ? (array) config('security.outbound.allowed_hosts', []) : [],
         ));
         $this->app->singleton(WidgetRegistry::class);
+        $this->app->bind(MobilePushGateway::class, fn () => config('mobile.push.driver') === 'relay'
+            ? new RelayPushGateway
+            : new LogPushGateway);
 
         Connection::resolverFor('pgsql', static fn ($connection, $database, $prefix, $config): PostgresConnection => new SafeDropPostgresConnection($connection, $database, $prefix, $config));
     }
@@ -100,6 +111,10 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Mobile companion: interactive approval pushes and offboarding revocation.
+        Event::listen(WorkflowStepAssignedEvent::class, NotifyApproversOnStepAssigned::class);
+        Event::listen(EmployeeTerminatedEvent::class, RevokeMobileDevicesOnEmployeeTerminated::class);
+
         // Grid lists: filters, sorting, grouping and distinct values over the whole dataset (see GridQuery), then paginates.
         foreach ([Builder::class, \Illuminate\Database\Query\Builder::class] as $builderClass) {
             $builderClass::macro('gridPaginate', function (...$arguments) {

@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Requests\Auth\TwoFactorChallengeRequest;
 use App\Http\Responses\ApiResponse;
+use App\Models\MobileDeviceSession;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\LoginResponder;
@@ -630,7 +631,12 @@ class AuthController extends Controller
 
         // A token is rotated: the old one stops working as soon as the new one is issued.
         $token->delete();
-        [$newToken, $expiresAt] = $this->responder->issueToken($request, $user, (string) ($token->getAttribute('auth_method') ?: LoginResponder::METHOD_PASSWORD), $token->getAttribute('auth_tenant_id') ?: null);
+        [$newToken, $expiresAt, $newTokenId] = $this->responder->issueToken($request, $user, (string) ($token->getAttribute('auth_method') ?: LoginResponder::METHOD_PASSWORD), $token->getAttribute('auth_tenant_id') ?: null);
+
+        // keep a mobile device session bound to the rotated token
+        MobileDeviceSession::withoutGlobalScopes()
+            ->where('access_token_id', $token->getKey())
+            ->update(['access_token_id' => (int) $newTokenId]);
 
         return $this->successResponse(
             data: [

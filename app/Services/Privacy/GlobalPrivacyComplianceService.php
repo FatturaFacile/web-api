@@ -259,8 +259,8 @@ final class GlobalPrivacyComplianceService
     {
         return DB::transaction(function () use ($tenantId, $dsr, $actorId): PrivacyDataSubjectRequest {
             $now = CarbonImmutable::now();
-            $tenYearsAgo = $now->subYears(10);
-            $fiveYearsAgo = $now->subYears(5);
+            $tenYearsAgo = $now->subYears(StatutoryRetentionCatalogue::FISCAL_RECORD_YEARS);
+            $fiveYearsAgo = $now->subYears(StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS);
 
             $legalHolds = [];
             $erasedFields = [];
@@ -282,7 +282,7 @@ final class GlobalPrivacyComplianceService
                 if ($recentInvoices > 0) {
                     $legalHolds[] = [
                         'statute' => 'Swiss CO Art. 958f',
-                        'retention_years' => 10,
+                        'retention_years' => StatutoryRetentionCatalogue::FISCAL_RECORD_YEARS,
                         'reason' => "Contact has {$recentInvoices} accounting/invoice record(s) within the mandatory 10-year statutory retention window.",
                     ];
                 }
@@ -319,7 +319,7 @@ final class GlobalPrivacyComplianceService
                 if ($recentPayslips > 0) {
                     $legalHolds[] = [
                         'statute' => 'Swiss CO Art. 958f',
-                        'retention_years' => 10,
+                        'retention_years' => StatutoryRetentionCatalogue::FISCAL_RECORD_YEARS,
                         'reason' => "Employee has {$recentPayslips} payroll/accounting voucher(s) within the mandatory 10-year statutory retention period.",
                     ];
                 }
@@ -333,7 +333,7 @@ final class GlobalPrivacyComplianceService
                 if ($recentAttendance > 0) {
                     $legalHolds[] = [
                         'statute' => 'Swiss ArG Art. 46 / ArGV 1 Art. 73',
-                        'retention_years' => 5,
+                        'retention_years' => StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS,
                         'reason' => "Employee has {$recentAttendance} working-time record(s) within the mandatory 5-year Labour Law retention window.",
                     ];
                 }

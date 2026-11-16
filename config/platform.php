@@ -41,7 +41,16 @@ return [
         'invoices' => ['model' => Invoice::class, 'label' => ['invoice_number'], 'purgeable' => false],
     ],
 
-    'notification_channels' => ['database', 'mail'],
+    'notification_channels' => ['database', 'mail', 'push', 'telegram', 'whatsapp'],
+
+    /*
+    | Outbound channels. push: Firebase Cloud Messaging HTTP v1 (iOS is delivered through FCM → APNs; credentials are the
+    | service-account JSON file). telegram: Bot API. whatsapp: Cloud API (an approved template is needed outside the
+    | 24-hour window).
+    */
+    'push' => ['fcm_project_id' => env('FCM_PROJECT_ID'), 'fcm_credentials' => env('FCM_CREDENTIALS_PATH')],
+    'telegram' => ['bot_token' => env('TELEGRAM_BOT_TOKEN'), 'bot_username' => env('TELEGRAM_BOT_USERNAME'), 'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET')],
+    'whatsapp' => ['token' => env('WHATSAPP_TOKEN'), 'phone_number_id' => env('WHATSAPP_PHONE_NUMBER_ID'), 'template' => env('WHATSAPP_TEMPLATE'), 'template_language' => env('WHATSAPP_TEMPLATE_LANGUAGE', 'it')],
 
     'notification_categories' => ['general', 'billing', 'crm', 'inventory', 'hr', 'system'],
 ];
