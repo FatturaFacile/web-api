@@ -49,6 +49,8 @@ class PermissionSeeder extends Seeder
             ['code' => 'logistics.transfers.manage', 'label_it' => 'Gestione Trasferimenti di Magazzino', 'label_en' => 'Manage Stock Transfers'],
             ['code' => 'logistics.consignment.reconcile', 'label_it' => 'Riconciliazione Conto Deposito e Conto Lavoro', 'label_en' => 'Reconcile Consignment & Subcontracting'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
+            ['code' => 'hr.payroll.view', 'label_it' => 'Consultazione Paghe Svizzere', 'label_en' => 'View Swiss Payroll'],
+            ['code' => 'hr.payroll.manage', 'label_it' => 'Gestione Paghe Svizzere', 'label_en' => 'Manage Swiss Payroll'],
         ];
 
         foreach ($permissions as $idx => $perm) {

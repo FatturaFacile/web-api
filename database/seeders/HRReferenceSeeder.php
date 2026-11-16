@@ -18,6 +18,7 @@ final class HRReferenceSeeder extends Seeder
             CertificationSeeder::class,
             LeaveTypeSeeder::class,
             HolidayCalendarSeeder::class,
+            SwissPayrollReferenceSeeder::class,
         ]);
     }
 }
