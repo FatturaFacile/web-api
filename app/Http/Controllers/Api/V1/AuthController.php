@@ -30,6 +30,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Laravel\Sanctum\PersonalAccessToken;
+use Modules\Logistics\Support\LogisticsPermissions;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -406,9 +407,10 @@ class AuthController extends Controller
                 'locale' => $user->locale,
                 'is_active' => $user->is_active,
                 'is_platform_admin' => (bool) $user->is_platform_admin,
-                'permissions' => $activeTenant ? app(TenantMembershipService::class)->permissionsOf(
-                    $user->tenants->firstWhere('id', $activeTenant->id)?->pivot?->permissions
-                ) : [],
+                'permissions' => $activeTenant ? array_values(array_unique(array_merge(
+                    app(TenantMembershipService::class)->permissionsOf($user->tenants->firstWhere('id', $activeTenant->id)?->pivot?->permissions),
+                    LogisticsPermissions::forUser($user),
+                ))) : [],
                 'active_tenant' => $activeTenant ? [
                     'id' => $activeTenant->id,
                     'name' => $activeTenant->name,

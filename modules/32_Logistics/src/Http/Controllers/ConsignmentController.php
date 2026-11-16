@@ -21,7 +21,7 @@ final class ConsignmentController extends Controller
     #[OA\Get(
         path: '/api/v1/logistics/consignment/ledger',
         summary: 'Register of goods at/for third parties',
-        description: 'Requires permission logistics.ddt.view.',
+        description: 'Requires permission delivery_notes.view.',
         tags: ['Logistics Consignment'],
         parameters: [
             new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -50,7 +50,7 @@ final class ConsignmentController extends Controller
     #[OA\Get(
         path: '/api/v1/logistics/consignment/valuation',
         summary: 'Inventory valuation split: balance sheet vs third-party owned',
-        description: 'Requires permission logistics.ddt.view.',
+        description: 'Requires permission delivery_notes.view.',
         tags: ['Logistics Consignment'],
         responses: [
             new OA\Response(response: 200, description: 'Success'),
@@ -66,7 +66,7 @@ final class ConsignmentController extends Controller
     #[OA\Get(
         path: '/api/v1/logistics/consignment/consumption-reports',
         summary: 'List consumption declarations',
-        description: 'Requires permission logistics.ddt.view.',
+        description: 'Requires permission delivery_notes.view.',
         tags: ['Logistics Consignment'],
         parameters: [
             new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string')),

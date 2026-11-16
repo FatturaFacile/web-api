@@ -16,19 +16,19 @@ use InvalidArgumentException;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Logistics\Enums\DeliveryNoteType;
 use Modules\Logistics\Enums\TransportReason;
-use Modules\Logistics\Services\DeferredInvoicingService;
 use Modules\Logistics\Services\DeliveryNoteService;
+use Modules\Logistics\Services\OrderBillingService;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Logistics DDT', description: 'Delivery notes (DDT) for IT/CH: numbering, issue, delivery, cancel, PDF, deferred invoicing')]
 final class DeliveryNoteController extends Controller
 {
-    public function __construct(private readonly DeliveryNoteService $service) {}
+    public function __construct(private readonly DeliveryNoteService $service, private readonly OrderBillingService $billing) {}
 
     #[OA\Get(
         path: '/api/v1/logistics/delivery-notes',
         summary: 'List delivery notes',
-        description: 'Requires permission logistics.ddt.view.',
+        description: 'Requires permission delivery_notes.view.',
         tags: ['Logistics DDT'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
@@ -63,7 +63,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Get(
         path: '/api/v1/logistics/delivery-notes/{id}',
         summary: 'Get a delivery note with lines and invoice links',
-        description: 'Requires permission logistics.ddt.view.',
+        description: 'Requires permission delivery_notes.view.',
         tags: ['Logistics DDT'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
@@ -82,7 +82,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Post(
         path: '/api/v1/logistics/delivery-notes',
         summary: 'Create a delivery note (free creation)',
-        description: 'Requires permission logistics.ddt.create.',
+        description: 'Requires permission delivery_notes.create.',
         tags: ['Logistics DDT'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DeliveryNoteInput')),
         responses: [
@@ -110,7 +110,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Post(
         path: '/api/v1/logistics/delivery-notes/from-orders',
         summary: 'Create one delivery note from one or more sales orders (total or partial fulfilment)',
-        description: 'Requires permission logistics.ddt.create.',
+        description: 'Requires permission delivery_notes.create.',
         tags: ['Logistics DDT'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DeliveryNoteFromOrdersInput')),
         responses: [
@@ -141,10 +141,113 @@ final class DeliveryNoteController extends Controller
         return response()->json(['data' => $note], 201);
     }
 
+    #[OA\Put(
+        path: '/api/v1/logistics/delivery-notes/{id}',
+        summary: 'Edit a draft delivery note (header and lines)',
+        description: 'Requires permission delivery_notes.update.',
+        tags: ['Logistics DDT'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function update(Request $request, string $id): JsonResponse
+    {
+        $validated = $request->validate($this->headerRules() + ['items' => ['sometimes', 'array', 'min:1']] + $this->itemRulesOptional());
+        $items = $validated['items'] ?? null;
+        unset($validated['items']);
+
+        return $this->transition(fn (SalesDeliveryNote $n) => $this->service->update($n, $validated, $items), $id);
+    }
+
+    #[OA\Delete(
+        path: '/api/v1/logistics/delivery-notes/{id}',
+        summary: 'Delete a standalone draft delivery note',
+        description: 'Requires permission delivery_notes.delete.',
+        tags: ['Logistics DDT'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 204, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function destroy(string $id): JsonResponse
+    {
+        $note = SalesDeliveryNote::query()->findOrFail($id);
+
+        try {
+            $this->service->delete($note);
+        } catch (DomainException $e) {
+            return $this->unprocessable($e);
+        }
+
+        return response()->json(null, 204);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/logistics/delivery-notes/{id}/dispatch',
+        summary: 'Dispatch an issued delivery note (in transit, books the carrier shipment)',
+        description: 'Requires permission delivery_notes.issue.',
+        tags: ['Logistics DDT'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function dispatch(string $id): JsonResponse
+    {
+        return $this->transition(fn (SalesDeliveryNote $n) => $this->service->startTransit($n), $id);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/logistics/delivery-notes/unbilled',
+        summary: 'Unbilled delivery notes grouped by customer',
+        description: 'Requires permission delivery_notes.invoice.',
+        tags: ['Logistics DDT'],
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function unbilled(): JsonResponse
+    {
+        return response()->json(['data' => $this->billing->unbilledByCustomer()]);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/logistics/delivery-notes/deferred-invoicing/run',
+        summary: 'Issue cumulative deferred invoices for all unbilled delivery notes (per customer and month)',
+        description: 'Requires permission delivery_notes.invoice.',
+        tags: ['Logistics DDT'],
+        responses: [
+            new OA\Response(response: 201, description: 'Success'),
+            new OA\Response(response: 403, description: 'Missing permission'),
+            new OA\Response(response: 422, description: 'Validation or business rule error'),
+        ]
+    )]
+    public function runDeferredInvoicing(Request $request): JsonResponse
+    {
+        $data = $request->validate(['up_to' => ['sometimes', 'date'], 'contact_id' => ['sometimes', 'uuid']]);
+
+        try {
+            $invoices = $this->billing->runDeferredInvoicing(isset($data['up_to']) ? now()->parse($data['up_to']) : null, $data['contact_id'] ?? null);
+        } catch (InvalidArgumentException|DomainException $e) {
+            return $this->unprocessable($e);
+        }
+
+        return response()->json(['data' => $invoices], 201);
+    }
+
     #[OA\Post(
         path: '/api/v1/logistics/delivery-notes/{id}/issue',
         summary: 'Issue a draft delivery note (in transit)',
-        description: 'Requires permission logistics.ddt.emit.',
+        description: 'Requires permission delivery_notes.issue.',
         tags: ['Logistics DDT'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
@@ -163,7 +266,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Post(
         path: '/api/v1/logistics/delivery-notes/{id}/deliver',
         summary: 'Mark an issued delivery note as delivered',
-        description: 'Requires permission logistics.ddt.emit.',
+        description: 'Requires permission delivery_notes.issue.',
         tags: ['Logistics DDT'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
@@ -188,7 +291,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Post(
         path: '/api/v1/logistics/delivery-notes/{id}/cancel',
         summary: 'Cancel a draft or issued delivery note',
-        description: 'Requires permission logistics.ddt.cancel.',
+        description: 'Requires permission delivery_notes.cancel.',
         tags: ['Logistics DDT'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
@@ -207,7 +310,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Post(
         path: '/api/v1/logistics/delivery-notes/deferred-invoice',
         summary: 'Generate a cumulative deferred invoice from several delivery notes',
-        description: 'Requires permission logistics.ddt.emit.',
+        description: 'Requires permission delivery_notes.issue.',
         tags: ['Logistics DDT'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DeferredInvoiceInput')),
         responses: [
@@ -216,7 +319,7 @@ final class DeliveryNoteController extends Controller
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
-    public function deferredInvoice(Request $request, DeferredInvoicingService $invoicing): JsonResponse
+    public function deferredInvoice(Request $request): JsonResponse
     {
         $data = $request->validate([
             'delivery_note_ids' => ['required', 'array', 'min:1'],
@@ -230,7 +333,7 @@ final class DeliveryNoteController extends Controller
         $overrides = array_intersect_key($data, array_flip(['due_date', 'payment_method', 'payment_terms']));
 
         try {
-            $invoice = $invoicing->invoice($data['delivery_note_ids'], $overrides, (bool) ($data['enforce_same_month'] ?? true));
+            $invoice = $this->billing->issueDeferredInvoice($data['delivery_note_ids'], $overrides, (bool) ($data['enforce_same_month'] ?? true));
         } catch (InvalidArgumentException|DomainException $e) {
             return $this->unprocessable($e);
         }
@@ -241,7 +344,7 @@ final class DeliveryNoteController extends Controller
     #[OA\Get(
         path: '/api/v1/logistics/delivery-notes/{id}/pdf',
         summary: 'Download the delivery note PDF (IT DPR 472/96 and CH layout)',
-        description: 'Requires permission logistics.ddt.view.',
+        description: 'Requires permission delivery_notes.view.',
         tags: ['Logistics DDT'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
@@ -252,11 +355,19 @@ final class DeliveryNoteController extends Controller
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
-    public function pdf(string $id, DocumentPdfService $pdf): Response
+    public function pdf(Request $request, string $id, DocumentPdfService $pdf): Response
     {
-        // The legacy model maps the same table and is what the PDF engine renders (single source of truth: delivery_notes).
+        $options = $request->validate([
+            'hide_prices' => ['sometimes', 'boolean'],
+            'lang' => ['sometimes', Rule::in(['it', 'en', 'de', 'fr'])],
+        ]);
+
+        // The legacy model maps the same table and extends the canonical one: single source of truth is delivery_notes.
         $note = LegacyDeliveryNote::query()->findOrFail(SalesDeliveryNote::query()->findOrFail($id)->id);
-        $rendered = $pdf->render($note);
+        $rendered = $pdf->render($note, [
+            'hide_prices' => $request->boolean('hide_prices'),
+            'locale' => $options['lang'] ?? null,
+        ]);
 
         return response($rendered->content, 200, [
             'Content-Type' => 'application/pdf',
@@ -316,6 +427,17 @@ final class DeliveryNoteController extends Controller
             'notes' => ['nullable', 'string'],
             'show_prices' => ['sometimes', 'boolean'],
         ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function itemRulesOptional(): array
+    {
+        $rules = $this->itemRules();
+        unset($rules['items']);
+
+        return $rules;
     }
 
     /**

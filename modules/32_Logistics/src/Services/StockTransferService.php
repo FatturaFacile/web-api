@@ -149,7 +149,7 @@ final class StockTransferService
             }
 
             $note = $this->deliveryNotes->create($header, $items);
-            $note = $this->deliveryNotes->issue($note);
+            $note = $this->deliveryNotes->startTransit($this->deliveryNotes->issue($note));
 
             $order->update([
                 'status' => TransferStatus::InTransit->value,
@@ -232,7 +232,7 @@ final class StockTransferService
 
             if ($order->delivery_note_id !== null) {
                 $note = SalesDeliveryNote::query()->find($order->delivery_note_id);
-                if ($note !== null && $note->status === 'issued') {
+                if ($note !== null && in_array($note->status, ['issued', 'in_transit'], true)) {
                     $this->deliveryNotes->markDelivered($note);
                 }
             }

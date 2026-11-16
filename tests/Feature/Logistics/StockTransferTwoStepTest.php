@@ -54,7 +54,8 @@ test('ship moves stock to the transit location and issues the transfer DDT', fun
 
     $ddt = SalesDeliveryNote::findOrFail($shipped->delivery_note_id);
     expect($ddt->type)->toBe('internal_transfer')
-        ->and($ddt->status)->toBe('issued')
+        ->and($ddt->status)->toBe('in_transit')
+        ->and($ddt->shipping_status)->toBe('dispatched')
         ->and($ddt->ddt_number)->toBe('DDT-TR-'.now()->format('Y').'-00001')
         ->and($ddt->transport_reason_code)->toBe('internal_transfer')
         ->and($ddt->origin_warehouse_id)->toBe($this->main->id)

@@ -11,6 +11,8 @@ use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Modules\Inventory\Models\Warehouse;
+use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
+use Modules\Invoicing\Models\SalesOrder;
 use Tests\TestCase;
 
 /*
@@ -156,4 +158,32 @@ function logisticsWarehouse(string $tenantId, string $code, array $attributes = 
 function logisticsCustomer(string $tenantId, string $name = 'Cliente SpA'): Contact
 {
     return Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenantId, 'company_name' => $name, 'type' => 'client', 'country' => 'IT']);
+}
+
+function logisticsUserWithRole(string $tenantId, string $role): User
+{
+    $user = User::create([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => $tenantId,
+        'name' => ucfirst($role).' user',
+        'email' => $role.'-'.Str::random(6).'@logistics.test',
+        'password' => bcrypt('password123'),
+    ]);
+    DB::table('tenant_user')->insert([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => $tenantId,
+        'user_id' => $user->id,
+        'role' => $role,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return $user;
+}
+
+function logisticsOrder(string $tenantId, string $customerId, string $productId, float $qty, string $number): SalesOrder
+{
+    return app(SalesOrderServiceInterface::class)->createOrder([
+        'tenant_id' => $tenantId, 'contact_id' => $customerId, 'order_number' => $number,
+    ], [['product_id' => $productId, 'description' => 'Gateway', 'quantity' => $qty, 'unit_price' => 50.0, 'tax_rate' => 22.0]]);
 }

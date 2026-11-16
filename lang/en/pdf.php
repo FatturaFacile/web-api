@@ -119,6 +119,7 @@ return [
         'incoterms' => 'Incoterms',
         'net_weight' => 'Net weight (kg)',
         'volume' => 'Volume (m3)',
+        'sign_sender' => 'Sender signature',
         'sign_driver' => 'Driver signature',
         'sign_carrier' => 'Carrier signature',
         'carriage' => [

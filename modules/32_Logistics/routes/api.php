@@ -14,13 +14,18 @@ Route::prefix('api/v1/logistics')
     ->group(function (): void {
         // DDT
         Route::get('delivery-notes', [DeliveryNoteController::class, 'index'])->middleware('logistics.can:'.P::DDT_VIEW)->name('ddt.index');
+        Route::get('delivery-notes/unbilled', [DeliveryNoteController::class, 'unbilled'])->middleware('logistics.can:'.P::DDT_INVOICE)->name('ddt.unbilled');
         Route::get('delivery-notes/{id}', [DeliveryNoteController::class, 'show'])->middleware('logistics.can:'.P::DDT_VIEW)->name('ddt.show');
-        Route::get('delivery-notes/{id}/pdf', [DeliveryNoteController::class, 'pdf'])->middleware('logistics.can:'.P::DDT_VIEW)->name('ddt.pdf');
+        Route::get('delivery-notes/{id}/pdf', [DeliveryNoteController::class, 'pdf'])->middleware('logistics.can:'.P::DDT_PDF)->name('ddt.pdf');
         Route::post('delivery-notes', [DeliveryNoteController::class, 'store'])->middleware('logistics.can:'.P::DDT_CREATE)->name('ddt.store');
         Route::post('delivery-notes/from-orders', [DeliveryNoteController::class, 'fromOrders'])->middleware('logistics.can:'.P::DDT_CREATE)->name('ddt.from-orders');
-        Route::post('delivery-notes/deferred-invoice', [DeliveryNoteController::class, 'deferredInvoice'])->middleware('logistics.can:'.P::DDT_EMIT)->name('ddt.deferred-invoice');
-        Route::post('delivery-notes/{id}/issue', [DeliveryNoteController::class, 'issue'])->middleware('logistics.can:'.P::DDT_EMIT)->name('ddt.issue');
-        Route::post('delivery-notes/{id}/deliver', [DeliveryNoteController::class, 'deliver'])->middleware('logistics.can:'.P::DDT_EMIT)->name('ddt.deliver');
+        Route::post('delivery-notes/deferred-invoice', [DeliveryNoteController::class, 'deferredInvoice'])->middleware('logistics.can:'.P::DDT_INVOICE)->name('ddt.deferred-invoice');
+        Route::post('delivery-notes/deferred-invoicing/run', [DeliveryNoteController::class, 'runDeferredInvoicing'])->middleware('logistics.can:'.P::DDT_INVOICE)->name('ddt.deferred-invoicing.run');
+        Route::put('delivery-notes/{id}', [DeliveryNoteController::class, 'update'])->middleware('logistics.can:'.P::DDT_UPDATE)->name('ddt.update');
+        Route::delete('delivery-notes/{id}', [DeliveryNoteController::class, 'destroy'])->middleware('logistics.can:'.P::DDT_DELETE)->name('ddt.destroy');
+        Route::post('delivery-notes/{id}/issue', [DeliveryNoteController::class, 'issue'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.issue');
+        Route::post('delivery-notes/{id}/dispatch', [DeliveryNoteController::class, 'dispatch'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.dispatch');
+        Route::post('delivery-notes/{id}/deliver', [DeliveryNoteController::class, 'deliver'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.deliver');
         Route::post('delivery-notes/{id}/cancel', [DeliveryNoteController::class, 'cancel'])->middleware('logistics.can:'.P::DDT_CANCEL)->name('ddt.cancel');
 
         // Transfers (two-step), discrepancies

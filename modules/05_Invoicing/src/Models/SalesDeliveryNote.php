@@ -17,7 +17,7 @@ use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
  * Canonical Delivery Note (DDT) model. The legacy {@see DeliveryNote} maps to the same
  * `delivery_notes` table and is kept only as a compatibility layer for the legacy API / PDF engine.
  */
-final class SalesDeliveryNote extends BaseEnterpriseModel
+class SalesDeliveryNote extends BaseEnterpriseModel
 {
     use HasAuditUsers;
 

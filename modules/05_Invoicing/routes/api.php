@@ -36,11 +36,14 @@ Route::prefix('api/v1/invoicing')->middleware(['api', 'auth:sanctum', 'tenant', 
     Route::post('orders/{id}/cancel', [SalesOrderController::class, 'cancel'])->name('invoicing.orders.cancel');
 
     // Delivery Notes / Fulfillment
-    Route::get('delivery-notes', [DeliveryNoteController::class, 'index'])->name('invoicing.delivery-notes.index');
-    Route::post('delivery-notes', [DeliveryNoteController::class, 'store'])->name('invoicing.delivery-notes.store');
-    Route::get('delivery-notes/{id}', [DeliveryNoteController::class, 'show'])->name('invoicing.delivery-notes.show');
-    Route::post('delivery-notes/{id}/dispatch', [DeliveryNoteController::class, 'dispatch'])->name('invoicing.delivery-notes.dispatch');
-    Route::post('delivery-notes/{id}/confirm', [DeliveryNoteController::class, 'confirm'])->name('invoicing.delivery-notes.confirm');
+    // DDT RBAC (delivery_notes.*) and tenant isolation are enforced here as well; the canonical API lives in api/v1/logistics.
+    Route::middleware(['auth:sanctum', 'tenant'])->group(function (): void {
+        Route::get('delivery-notes', [DeliveryNoteController::class, 'index'])->middleware('logistics.can:delivery_notes.view')->name('invoicing.delivery-notes.index');
+        Route::post('delivery-notes', [DeliveryNoteController::class, 'store'])->middleware('logistics.can:delivery_notes.create')->name('invoicing.delivery-notes.store');
+        Route::get('delivery-notes/{id}', [DeliveryNoteController::class, 'show'])->middleware('logistics.can:delivery_notes.view')->name('invoicing.delivery-notes.show');
+        Route::post('delivery-notes/{id}/dispatch', [DeliveryNoteController::class, 'dispatch'])->middleware('logistics.can:delivery_notes.issue')->name('invoicing.delivery-notes.dispatch');
+        Route::post('delivery-notes/{id}/confirm', [DeliveryNoteController::class, 'confirm'])->middleware('logistics.can:delivery_notes.issue')->name('invoicing.delivery-notes.confirm');
+    });
 
     // Invoices & Billing Engine
     Route::get('invoices', [InvoiceController::class, 'index'])->name('invoicing.invoices.index');
