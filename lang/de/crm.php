@@ -26,4 +26,10 @@ return [
         'subject' => 'Erinnerung: :subject',
         'body' => 'Die Aktivität ":subject" ist am :due fällig.',
     ],
+    'lead_rating_cold' => 'Kalt',
+    'lead_rating_warm' => 'Warm',
+    'lead_rating_hot' => 'Heiss',
+    'lead_notification_assigned_title' => 'Lead zugewiesen',
+    'lead_notification_duplicate_title' => 'Mögliches doppeltes Lead',
+    'lead_notification_body' => ':name (:company) – :label, Score :score',
 ];

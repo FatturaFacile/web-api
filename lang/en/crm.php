@@ -26,4 +26,10 @@ return [
         'subject' => 'Reminder: :subject',
         'body' => 'The activity ":subject" is due on :due.',
     ],
+    'lead_rating_cold' => 'Cold',
+    'lead_rating_warm' => 'Warm',
+    'lead_rating_hot' => 'Hot',
+    'lead_notification_assigned_title' => 'Lead assigned',
+    'lead_notification_duplicate_title' => 'Possible duplicate lead',
+    'lead_notification_body' => ':name (:company) – :label lead, score :score',
 ];

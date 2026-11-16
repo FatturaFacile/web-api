@@ -35,6 +35,7 @@ final class Lead extends BaseEnterpriseModel
             'custom_fields' => 'array',
             'score_breakdown' => 'array',
             'score_calculated_at' => 'datetime',
+            'assigned_at' => 'datetime',
         ];
     }
 

@@ -86,7 +86,20 @@ final class LeadScoringService
      */
     public function rating(int $score): string
     {
-        return $score >= 70 ? 'hot' : ($score >= 40 ? 'warm' : 'cold');
+        return self::ratingFor($score);
+    }
+
+    public static function ratingFor(int $score): string
+    {
+        return $score >= (int) config('crm_lead.thresholds.hot', 70)
+            ? 'hot'
+            : ($score >= (int) config('crm_lead.thresholds.warm', 40) ? 'warm' : 'cold');
+    }
+
+    /** Visual label (Freddo / Tiepido / Caldo) for a rating, translated to the current locale. */
+    public static function labelFor(?string $rating): string
+    {
+        return __('crm.lead_rating_'.($rating ?: 'cold'));
     }
 
     /**

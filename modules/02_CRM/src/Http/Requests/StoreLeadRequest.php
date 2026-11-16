@@ -36,6 +36,13 @@ final class StoreLeadRequest extends FormRequest
             'estimated_budget' => ['nullable', 'numeric', 'min:0'],
             'tags' => ['nullable', 'array'],
             'custom_fields' => ['nullable', 'array'],
+            'vat_number' => ['nullable', 'string', 'max:30'],
+            'industry' => ['nullable', 'string', 'max:100'],
+            'region' => ['nullable', 'string', 'max:100'],
+            'product_line' => ['nullable', 'string', 'max:100'],
+            'company_size' => ['nullable', 'integer', 'min:0'],
+            'estimated_revenue' => ['nullable', 'numeric', 'min:0'],
+            'duplicate_strategy' => ['nullable', 'in:merge,notify,create'],
         ];
     }
 }

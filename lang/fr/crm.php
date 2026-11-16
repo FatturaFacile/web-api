@@ -26,4 +26,10 @@ return [
         'subject' => 'Rappel : :subject',
         'body' => 'L\'activité « :subject » est prévue le :due.',
     ],
+    'lead_rating_cold' => 'Froid',
+    'lead_rating_warm' => 'Tiède',
+    'lead_rating_hot' => 'Chaud',
+    'lead_notification_assigned_title' => 'Lead attribué',
+    'lead_notification_duplicate_title' => 'Lead potentiellement en double',
+    'lead_notification_body' => ':name (:company) – lead :label, score :score',
 ];
