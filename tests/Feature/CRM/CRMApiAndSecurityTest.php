@@ -24,7 +24,13 @@ beforeEach(function (): void {
         ['id' => (string) Str::uuid7(), 'name' => 'CRM API User', 'password' => bcrypt('secret')]
     );
 
+    // CRM routes are authenticated and tenant-scoped: the user must belong to the tenant named in X-Tenant-Id.
+    $this->user->tenants()->syncWithoutDetaching([
+        $this->tenant->id => ['id' => (string) Str::uuid7(), 'role' => 'owner'],
+    ]);
+
     $this->actingAs($this->user);
+    $this->withHeader('X-Tenant-Id', (string) $this->tenant->id);
 });
 
 test('lists and creates leads via API', function (): void {
@@ -131,6 +137,7 @@ test('enforces soft deletes and multi-tenant isolation', function (): void {
     $delResponse = $this->deleteJson("/api/v1/crm/leads/{$lead->id}");
     $delResponse->assertStatus(204);
 
+    app(TenantContext::class)->setTenant($this->tenant); // the tenant middleware clears the context after the request
     expect(Lead::where('id', $lead->id)->count())->toBe(0);
     expect(Lead::withTrashed()->where('id', $lead->id)->count())->toBe(1);
 
