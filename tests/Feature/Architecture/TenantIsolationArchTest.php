@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\ContactAddress;
+use App\Models\CustomsTaricCode;
 use App\Models\DeliveryNoteItem;
 use App\Models\EiInboundLog;
 use App\Models\ExchangeRate;
+use App\Models\FreeTradeAgreement;
 use App\Models\GeneralLedgerLine;
 use App\Models\GoodsReceiptItem;
 use App\Models\InvoiceItem;
@@ -83,6 +85,9 @@ test('concrete domain models use BelongsToTenant trait', function (): void {
         User::class,
         Translation::class,
         ExchangeRate::class,
+        // Global customs reference catalogs shared by every tenant
+        CustomsTaricCode::class,
+        FreeTradeAgreement::class,
         EiInboundLog::class,
         LookupCategory::class,
         LookupItem::class,

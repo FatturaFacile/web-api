@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CustomsOriginType;
 use App\Models\Concerns\BelongsToTenant;
+use App\Support\MadeInLabel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -33,6 +35,14 @@ class Product extends Model
         'sale_price',
         'tax_rate',
         'hs_code',
+        'customs_taric_code_id',
+        'taric_code',
+        'country_of_origin',
+        'origin_type',
+        'made_in_label',
+        'preferential_agreement_id',
+        'eur1_required',
+        'origin_rule_notes',
         'track_inventory',
         'is_active',
         'category_id',
@@ -43,6 +53,23 @@ class Product extends Model
         'attributes',
         'min_stock',
     ];
+
+    protected static function booted(): void
+    {
+        static::saving(function (Product $product): void {
+            if ($product->country_of_origin !== null) {
+                $product->country_of_origin = strtoupper($product->country_of_origin);
+                if ($product->made_in_label === null || $product->made_in_label === '') {
+                    $product->made_in_label = MadeInLabel::fromCountry($product->country_of_origin);
+                }
+            }
+
+            // A catalog selection keeps the denormalised code in sync when no explicit code was typed.
+            if ($product->customs_taric_code_id !== null && ($product->taric_code === null || $product->taric_code === '')) {
+                $product->taric_code = CustomsTaricCode::query()->whereKey($product->customs_taric_code_id)->value('code');
+            }
+        });
+    }
 
     protected function casts(): array
     {
@@ -55,7 +82,25 @@ class Product extends Model
             'is_variant' => 'boolean',
             'attributes' => 'array',
             'min_stock' => 'decimal:4',
+            'origin_type' => CustomsOriginType::class,
+            'eur1_required' => 'boolean',
         ];
+    }
+
+    /**
+     * @return BelongsTo<CustomsTaricCode, $this>
+     */
+    public function customsTaricCode(): BelongsTo
+    {
+        return $this->belongsTo(CustomsTaricCode::class, 'customs_taric_code_id');
+    }
+
+    /**
+     * @return BelongsTo<FreeTradeAgreement, $this>
+     */
+    public function preferentialAgreement(): BelongsTo
+    {
+        return $this->belongsTo(FreeTradeAgreement::class, 'preferential_agreement_id');
     }
 
     /**

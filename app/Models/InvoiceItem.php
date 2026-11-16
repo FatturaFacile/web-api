@@ -22,6 +22,10 @@ class InvoiceItem extends Model
         'tax_rate',
         'discount_percentage',
         'line_total',
+        'taric_code',
+        'country_of_origin',
+        'origin_type',
+        'made_in_label',
     ];
 
     protected static function booted(): void

@@ -58,6 +58,9 @@ class Invoice extends Model
         'fund_type',
         'fund_percent',
         'fund_amount',
+        'free_trade_agreement_id',
+        'origin_declaration_text',
+        'duty_exemption_eligible',
     ];
 
     protected function casts(): array
@@ -72,6 +75,7 @@ class Invoice extends Model
             'rounding_amount' => 'decimal:2',
             'split_payment' => 'boolean',
             'reverse_charge' => 'boolean',
+            'duty_exemption_eligible' => 'boolean',
             'total_paid' => 'decimal:2',
             'is_deposit' => 'boolean',
             'withholding_tax_enabled' => 'boolean',

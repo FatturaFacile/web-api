@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Invoicing;
 
 use App\Models\Invoice;
+use App\Models\Product;
 use App\Services\SwissQrBill\QrBillGeneratorService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,9 @@ class InvoiceService
             $totalTax = 0.0;
 
             $computedItems = [];
+            $products = $this->loadProducts($itemsData);
             foreach ($itemsData as $item) {
+                $product = isset($item['product_id']) ? ($products[$item['product_id']] ?? null) : null;
                 $qty = (float) $item['quantity'];
                 $price = (float) $item['unit_price'];
                 $discount = (float) ($item['discount_percentage'] ?? 0);
@@ -58,6 +61,11 @@ class InvoiceService
                     'tax_rate' => $taxRate,
                     'discount_percentage' => $discount,
                     'line_total' => $lineSubtotal,
+                    // Customs snapshot: copied once so later product edits never rewrite issued documents.
+                    'taric_code' => $item['taric_code'] ?? $product?->taric_code,
+                    'country_of_origin' => $item['country_of_origin'] ?? $product?->country_of_origin,
+                    'origin_type' => $item['origin_type'] ?? $product?->origin_type?->value,
+                    'made_in_label' => $item['made_in_label'] ?? $product?->made_in_label,
                 ];
             }
 
@@ -87,5 +95,19 @@ class InvoiceService
 
             return $invoice->load(['items', 'contact']);
         });
+    }
+
+    /**
+     * @param  array<int, array<string, mixed>>  $itemsData
+     * @return array<string, Product>
+     */
+    private function loadProducts(array $itemsData): array
+    {
+        $ids = array_values(array_unique(array_filter(array_column($itemsData, 'product_id'))));
+        if ($ids === []) {
+            return [];
+        }
+
+        return Product::query()->whereIn('id', $ids)->get()->keyBy('id')->all();
     }
 }

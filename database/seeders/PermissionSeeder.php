@@ -38,6 +38,8 @@ class PermissionSeeder extends Seeder
             ['code' => 'treasury.payments.execute', 'label_it' => 'Esecuzione Pagamenti Bancari', 'label_en' => 'Execute Banking Dispositions'],
             ['code' => 'service.tickets.dispatch', 'label_it' => 'Assegnazione Ticket Assistenza', 'label_en' => 'Dispatch Service Tickets'],
             ['code' => 'assets.depreciation.run', 'label_it' => 'Esecuzione Ammortamenti Cespiti', 'label_en' => 'Run Asset Depreciation'],
+            ['code' => 'customs.view', 'label_it' => 'Visualizzazione Dogane e Origine', 'label_en' => 'View Customs and Origin Data'],
+            ['code' => 'customs.manage', 'label_it' => 'Gestione Dogane e Origine', 'label_en' => 'Manage Customs and Origin Data'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
         ];
 

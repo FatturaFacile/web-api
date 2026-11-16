@@ -66,6 +66,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(ServiceReport::class, ServiceReportPolicy::class);
         Gate::policy(Expense::class, ExpensePolicy::class);
 
+        Gate::define('customs.manage', fn ($user): bool => $user->hasTenantPermission(app(TenantContext::class)->getTenantId(), 'customs.manage'));
+
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 
         Gate::define('viewApiDocs', function ($user) {

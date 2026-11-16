@@ -36,6 +36,8 @@ class Tenant extends Model
         'sdi_code',
         'pec_email',
         'settings',
+        'customs_approved_exporter_number',
+        'rex_exporter_number',
         'id',
         'status',
     ];
