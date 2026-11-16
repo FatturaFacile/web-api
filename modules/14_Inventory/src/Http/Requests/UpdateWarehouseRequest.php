@@ -35,6 +35,11 @@ final class UpdateWarehouseRequest extends FormRequest
             'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:2'],
             'is_active' => ['sometimes', 'boolean'],
+            'manager_user_id' => ['nullable', 'uuid'],
+            'warehouse_type' => ['sometimes', 'string', 'in:standard,transit,mobile_van,customer_consignment,vendor_consignment,subcontractor'],
+            'legal_owner_type' => ['sometimes', 'string', 'in:company,vendor,customer'],
+            'linked_partner_id' => ['nullable', 'uuid'],
+            'company_entity_id' => ['nullable', 'uuid'],
         ];
     }
 }

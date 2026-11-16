@@ -43,6 +43,7 @@ use Modules\Intrastat\Providers\IntrastatServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
 use Modules\LeaseAccounting\Providers\LeaseAccountingServiceProvider;
+use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Marketplace\Providers\MarketplaceServiceProvider;
 use Modules\Payroll\Providers\PayrollServiceProvider;
@@ -140,4 +141,5 @@ return [
     ReturnsServiceProvider::class,
     WmsServiceProvider::class,
     TransportationServiceProvider::class,
+    LogisticsServiceProvider::class,
 ];

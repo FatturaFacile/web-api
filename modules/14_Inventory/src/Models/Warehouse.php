@@ -6,11 +6,14 @@ namespace Modules\Inventory\Models;
 
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Modules\Logistics\Concerns\HasAuditUsers;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Models\WorkflowInstance;
 
 final class Warehouse extends BaseEnterpriseModel implements LockableByWorkflowInterface
 {
+    use HasAuditUsers;
+
     protected $table = 'warehouses';
 
     protected function casts(): array

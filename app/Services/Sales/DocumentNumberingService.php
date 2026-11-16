@@ -28,6 +28,10 @@ class DocumentNumberingService
         'sales_order' => 'SO-',
         'delivery_note' => 'DDT-',
         'sales_return' => 'RMA-',
+        'ddt_transfer' => 'DDT-TR-',
+        'ddt_subcontract' => 'DDT-CL-',
+        'ddt_consignment' => 'DDT-CD-',
+        'stock_transfer' => 'TRF-',
         'work_order' => 'WO-',
         'workshop_estimate' => 'EST-',
         'workshop_warranty_claim' => 'WAR-',
@@ -58,9 +62,11 @@ class DocumentNumberingService
      * Prevents race conditions and duplicate key exceptions using atomic upsert and row locking.
      * Without a fiscal year, the year is the current one on the wall clock of the company, not in UTC.
      *
+     * `$padding` only applies when the sequence row is first created for the tenant/year.
+     *
      * @return array{number: string, sequential_number: int, fiscal_year: int}
      */
-    public function next(string $documentType, ?int $fiscalYear = null, ?string $tenantId = null): array
+    public function next(string $documentType, ?int $fiscalYear = null, ?string $tenantId = null, int $padding = 4): array
     {
         $tenantId ??= $this->tenantContext->getTenantId();
 
@@ -70,7 +76,7 @@ class DocumentNumberingService
 
         $fiscalYear ??= (int) ($this->clock ?? app(TenantClock::class))->now(Tenant::query()->find($tenantId))->format('Y');
 
-        return DB::transaction(function () use ($documentType, $fiscalYear, $tenantId): array {
+        return DB::transaction(function () use ($documentType, $fiscalYear, $tenantId, $padding): array {
             // Atomically ensure the sequence record exists without crashing on concurrent calls
             DocumentSequence::withoutGlobalScopes()->insertOrIgnore([
                 'id' => (string) Str::uuid(),
@@ -79,7 +85,7 @@ class DocumentNumberingService
                 'fiscal_year' => $fiscalYear,
                 'prefix' => self::DEFAULT_PREFIXES[$documentType] ?? strtoupper(substr($documentType, 0, 3)).'-',
                 'last_number' => 0,
-                'padding' => 4,
+                'padding' => $padding,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

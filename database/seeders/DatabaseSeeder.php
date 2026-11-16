@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
 
             TranslationSeeder::class,
             FrontendTranslationSeeder::class,
+            LogisticsTranslationSeeder::class,
             ErpLookupsSeeder::class,
             ComprehensiveLookupMasterSeeder::class,
             UnitOfMeasureSeeder::class,

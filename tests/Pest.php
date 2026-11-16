@@ -1,10 +1,16 @@
 <?php
 
 declare(strict_types=1);
-use App\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Modules\GeneralLedger\Models\FiscalPeriod;
 use Modules\GeneralLedger\Models\FiscalYear;
+use App\Models\Contact;
+use App\Models\Product;
+use App\Models\Tenant;
+use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use Modules\Inventory\Models\Warehouse;
 use Tests\TestCase;
 
 /*
@@ -82,4 +88,72 @@ function spaHeaders(): array
     $origin = rtrim((string) config('app.frontend_url'), '/');
 
     return ['Origin' => $origin, 'Referer' => $origin.'/'];
+}
+
+/**
+ * Logistics test fixtures (tenant + owner user + catalog + warehouses).
+ *
+ * @return array{tenant: Tenant, user: User}
+ */
+function logisticsTenant(string $name = 'Logistics Tenant', string $role = 'owner', ?array $permissions = null): array
+{
+    $tenant = Tenant::create([
+        'id' => (string) Str::uuid7(),
+        'name' => $name,
+        'legal_name' => $name.' Srl',
+        'country' => 'IT',
+        'default_currency' => 'EUR',
+    ]);
+
+    $user = User::create([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => $tenant->id,
+        'name' => $name.' User',
+        'email' => Str::slug($name).'-'.Str::random(5).'@logistics.test',
+        'password' => bcrypt('password123'),
+    ]);
+
+    DB::table('tenant_user')->insert([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => $tenant->id,
+        'user_id' => $user->id,
+        'role' => $role,
+        'permissions' => $permissions === null ? null : json_encode($permissions),
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    return ['tenant' => $tenant, 'user' => $user];
+}
+
+function logisticsProduct(string $tenantId, string $sku, float $cost = 10.0, float $sale = 25.0): Product
+{
+    return Product::create([
+        'id' => (string) Str::uuid7(),
+        'tenant_id' => $tenantId,
+        'sku' => $sku,
+        'name' => 'Product '.$sku,
+        'cost_price' => $cost,
+        'sale_price' => $sale,
+        'tax_rate' => 22.0,
+    ]);
+}
+
+/**
+ * @param  array<string, mixed>  $attributes
+ */
+function logisticsWarehouse(string $tenantId, string $code, array $attributes = []): Warehouse
+{
+    return Warehouse::create(array_merge([
+        'tenant_id' => $tenantId,
+        'code' => $code,
+        'name' => 'Warehouse '.$code,
+        'warehouse_type' => 'standard',
+        'legal_owner_type' => 'company',
+    ], $attributes));
+}
+
+function logisticsCustomer(string $tenantId, string $name = 'Cliente SpA'): Contact
+{
+    return Contact::create(['id' => (string) Str::uuid7(), 'tenant_id' => $tenantId, 'company_name' => $name, 'type' => 'client', 'country' => 'IT']);
 }

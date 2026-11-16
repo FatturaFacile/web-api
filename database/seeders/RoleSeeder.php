@@ -26,6 +26,15 @@ class RoleSeeder extends GlobalDataSeeder
 
         $roles = [
             [
+                'code' => 'logistics_manager',
+                'translations' => [
+                    'it' => ['label' => 'Responsabile Logistica', 'short_label' => 'LogMgr', 'description' => 'DDT, trasferimenti di magazzino, conto deposito e conto lavoro'],
+                    'en' => ['label' => 'Logistics Manager', 'short_label' => 'LogMgr', 'description' => 'Delivery notes, stock transfers, consignment and subcontracting'],
+                    'de' => ['label' => 'Logistikleiter', 'short_label' => 'LogL', 'description' => 'Lieferscheine, Umlagerungen, Konsignation und Lohnfertigung'],
+                    'fr' => ['label' => 'Responsable Logistique', 'short_label' => 'RespLog', 'description' => 'Bons de livraison, transferts, dépôt et sous-traitance'],
+                ],
+            ],
+            [
                 'code' => 'admin',
                 'translations' => [
                     'it' => ['label' => 'Amministratore di Sistema', 'short_label' => 'Admin', 'description' => 'Accesso totale alle configurazioni e a tutti i moduli'],

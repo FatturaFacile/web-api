@@ -39,6 +39,12 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'assets.depreciation.run', 'label_it' => 'Esecuzione Ammortamenti Cespiti', 'label_en' => 'Run Asset Depreciation'],
             ['code' => 'customs.view', 'label_it' => 'Visualizzazione Dogane e Origine', 'label_en' => 'View Customs and Origin Data'],
             ['code' => 'customs.manage', 'label_it' => 'Gestione Dogane e Origine', 'label_en' => 'Manage Customs and Origin Data'],
+            ['code' => 'logistics.ddt.view', 'label_it' => 'Visualizzazione DDT e Logistica', 'label_en' => 'View Delivery Notes & Logistics'],
+            ['code' => 'logistics.ddt.create', 'label_it' => 'Creazione DDT', 'label_en' => 'Create Delivery Notes'],
+            ['code' => 'logistics.ddt.emit', 'label_it' => 'Emissione e Fatturazione Differita DDT', 'label_en' => 'Issue Delivery Notes & Deferred Invoicing'],
+            ['code' => 'logistics.ddt.cancel', 'label_it' => 'Annullamento DDT', 'label_en' => 'Cancel Delivery Notes'],
+            ['code' => 'logistics.transfers.manage', 'label_it' => 'Gestione Trasferimenti di Magazzino', 'label_en' => 'Manage Stock Transfers'],
+            ['code' => 'logistics.consignment.reconcile', 'label_it' => 'Riconciliazione Conto Deposito e Conto Lavoro', 'label_en' => 'Reconcile Consignment & Subcontracting'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
         ];
 
