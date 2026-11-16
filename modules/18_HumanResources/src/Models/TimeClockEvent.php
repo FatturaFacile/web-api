@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\HumanResources\Casts\UtcInstant;
+use Modules\HumanResources\Models\Concerns\ProtectsTimeRecord;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
 use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
@@ -22,6 +23,8 @@ use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
  */
 final class TimeClockEvent extends BaseEnterpriseModel
 {
+    use ProtectsTimeRecord;
+
     protected $table = 'time_clock_events';
 
     protected function casts(): array

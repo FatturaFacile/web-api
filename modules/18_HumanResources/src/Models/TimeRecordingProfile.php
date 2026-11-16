@@ -44,6 +44,8 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
             'waiver_signed_date' => 'date',
             'reference_period_months' => 'integer',
             'ordinary_weekly_hours' => 'decimal:2',
+            'geolocation_enabled' => 'boolean',
+            'privacy_notice_acknowledged_at' => 'datetime',
         ];
     }
 

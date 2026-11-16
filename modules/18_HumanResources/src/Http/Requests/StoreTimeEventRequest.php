@@ -30,6 +30,9 @@ final class StoreTimeEventRequest extends FormRequest
             'source' => ['nullable', Rule::enum(TimeRecordSource::class)],
             'occurred_at' => ['bail', 'nullable', 'date', CorrectTimeEventRequest::notInTheFuture()],
             'note' => ['nullable', 'string', 'max:1000'],
+            'gps_lat' => ['nullable', 'numeric', 'between:-90,90'],
+            'gps_lng' => ['nullable', 'numeric', 'between:-180,180'],
+            'gps_accuracy_meters' => ['nullable', 'numeric', 'min:0'],
             'reason' => [
                 Rule::requiredIf(fn (): bool => $this->filled('occurred_at')
                     || ($this->filled('employee_id') && $this->input('employee_id') !== (string) $this->user()?->id)),
