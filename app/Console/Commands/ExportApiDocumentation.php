@@ -197,7 +197,8 @@ class ExportApiDocumentation extends Command
 
         return [
             'info' => [
-                '_postman_id' => (string) Str::uuid(),
+                // Stable id (UUID-shaped hash of a constant): a random one would change the file at every export.
+                '_postman_id' => vsprintf('%s%s-%s-%s-%s-%s%s%s', str_split(md5('fattura-facile-postman-collection'), 4)),
                 'name' => __('docs.info.title'),
                 'description' => __('docs.postman.description'),
                 'schema' => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
