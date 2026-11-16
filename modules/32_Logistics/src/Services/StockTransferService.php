@@ -23,6 +23,7 @@ use Modules\Logistics\Events\StockTransferShipped;
 use Modules\Logistics\Models\StockTransferOrder;
 use Modules\Logistics\Models\StockTransferOrderLine;
 use Modules\Logistics\Models\TransferDiscrepancy;
+use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * Two-step transfers: ship (origin -> transit + DDT) then receive (transit -> destination) with discrepancy workflow.
@@ -45,17 +46,17 @@ final class StockTransferService
     {
         $purpose = TransferPurpose::from((string) $data['purpose']);
         if ($lines === []) {
-            throw new InvalidArgumentException('A transfer needs at least one line.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.TRANSFER_NEEDS_LINE'));
         }
         if ($data['origin_warehouse_id'] === $data['destination_warehouse_id']) {
-            throw new InvalidArgumentException('Origin and destination warehouses must differ.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.WAREHOUSES_MUST_DIFFER'));
         }
 
         $origin = Warehouse::query()->findOrFail($data['origin_warehouse_id']);
         $destination = Warehouse::query()->findOrFail($data['destination_warehouse_id']);
         $this->assertDestinationMatchesPurpose($purpose, $destination);
         if ($origin->warehouse_type === WarehouseType::Transit->value || $origin->legal_owner_type !== 'company') {
-            throw new DomainException('Stock cannot be shipped from a transit location or from third-party-owned stock.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CANNOT_SHIP_FROM_TRANSIT'));
         }
 
         return DB::transaction(function () use ($data, $lines, $purpose, $origin, $destination): StockTransferOrder {
@@ -78,7 +79,7 @@ final class StockTransferService
             foreach ($lines as $line) {
                 $qty = (float) $line['quantity'];
                 if ($qty <= 0.0) {
-                    throw new InvalidArgumentException('Line quantity must be greater than zero.');
+                    throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.LINE_QTY_POSITIVE'));
                 }
                 $product = Product::query()->findOrFail($line['product_id']);
                 StockTransferOrderLine::create([
@@ -99,7 +100,7 @@ final class StockTransferService
         return DB::transaction(function () use ($order, $deliveryData): StockTransferOrder {
             $order = StockTransferOrder::query()->with('lines')->lockForUpdate()->findOrFail($order->id);
             if ($order->status !== TransferStatus::Draft->value) {
-                throw new DomainException('Only draft transfers can be shipped.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.TRANSFER_SHIP_DRAFT_ONLY'));
             }
 
             $purpose = TransferPurpose::from((string) $order->purpose);
@@ -181,7 +182,7 @@ final class StockTransferService
         return DB::transaction(function () use ($order, $received): StockTransferOrder {
             $order = StockTransferOrder::query()->with('lines')->lockForUpdate()->findOrFail($order->id);
             if ($order->status !== TransferStatus::InTransit->value) {
-                throw new DomainException('Only transfers in transit can be received.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.TRANSFER_RECEIVE_IN_TRANSIT_ONLY'));
             }
 
             $byLine = [];
@@ -190,7 +191,7 @@ final class StockTransferService
             }
             foreach (array_keys($byLine) as $lineId) {
                 if (! $order->lines->contains('id', $lineId)) {
-                    throw new InvalidArgumentException("Line {$lineId} does not belong to this transfer.");
+                    throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.LINE_NOT_IN_TRANSFER', ['line' => $lineId]));
                 }
             }
 
@@ -200,7 +201,7 @@ final class StockTransferService
                 $shipped = (float) $line->shipped_qty;
                 $qty = $row !== null ? (float) $row['received_qty'] : $shipped;
                 if ($qty < 0.0 || $qty > $shipped) {
-                    throw new DomainException("Received quantity for line {$line->id} must be between 0 and the shipped quantity ({$shipped}).");
+                    throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.RECEIVED_QTY_RANGE', ['line' => $line->id, 'shipped' => $shipped]));
                 }
 
                 if ($qty > 0.0) {
@@ -249,13 +250,13 @@ final class StockTransferService
     public function resolveDiscrepancy(TransferDiscrepancy $discrepancy, DiscrepancyStatus $resolution, ?string $userId = null): TransferDiscrepancy
     {
         if (! in_array($resolution->value, DiscrepancyStatus::resolutions(), true)) {
-            throw new InvalidArgumentException('Invalid discrepancy resolution.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.INVALID_RESOLUTION'));
         }
 
         return DB::transaction(function () use ($discrepancy, $resolution, $userId): TransferDiscrepancy {
             $discrepancy = TransferDiscrepancy::query()->lockForUpdate()->findOrFail($discrepancy->id);
             if ($discrepancy->status !== DiscrepancyStatus::PendingApproval->value) {
-                throw new DomainException('This discrepancy has already been resolved.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DISCREPANCY_RESOLVED'));
             }
 
             $order = StockTransferOrder::query()->findOrFail($discrepancy->stock_transfer_order_id);
@@ -266,7 +267,7 @@ final class StockTransferService
                 DiscrepancyStatus::ReturnedToOrigin => $this->stock->move($productId, (string) $order->transit_warehouse_id, (string) $order->origin_warehouse_id, $qty, 'transfer_return', StockTransferOrder::class, (string) $order->id),
                 DiscrepancyStatus::ApprovedWriteOff => $this->stock->move($productId, (string) $order->transit_warehouse_id, null, $qty, 'transfer_write_off', StockTransferOrder::class, (string) $order->id, $discrepancy->discrepancy_reason),
                 DiscrepancyStatus::CarrierClaim => $this->stock->move($productId, (string) $order->transit_warehouse_id, null, $qty, 'transfer_carrier_claim', StockTransferOrder::class, (string) $order->id, $discrepancy->discrepancy_reason),
-                default => throw new InvalidArgumentException('Invalid discrepancy resolution.'),
+                default => throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.INVALID_RESOLUTION')),
             };
 
             $discrepancy->update([
@@ -290,7 +291,7 @@ final class StockTransferService
     public function cancel(StockTransferOrder $order): StockTransferOrder
     {
         if ($order->status !== TransferStatus::Draft->value) {
-            throw new DomainException('Only draft transfers can be cancelled.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.TRANSFER_CANCEL_DRAFT_ONLY'));
         }
         $order->update(['status' => TransferStatus::Cancelled->value]);
 
@@ -307,10 +308,10 @@ final class StockTransferService
         };
 
         if ($expected !== null && $destination->warehouse_type !== $expected->value) {
-            throw new DomainException("The destination warehouse must be of type {$expected->value} for this transfer purpose.");
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DEST_TYPE_FOR_PURPOSE', ['type' => $expected->value]));
         }
         if ($expected === null && in_array($destination->warehouse_type, [WarehouseType::Transit->value, WarehouseType::VendorConsignment->value], true)) {
-            throw new DomainException('This destination warehouse type is not valid for an inter-warehouse transfer.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DEST_TYPE_INVALID'));
         }
     }
 }

@@ -10,6 +10,7 @@ use InvalidArgumentException;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Logistics\Enums\DeliveryNoteStatus;
+use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * Deferred ("differita") billing of delivery notes: one cumulative invoice per customer / currency / calendar month,
@@ -58,7 +59,7 @@ final class OrderBillingService
         }
 
         if ($groups !== [] && $this->tenantContext->getTenantId() === null) {
-            throw new InvalidArgumentException('An active tenant context is required.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.TENANT_REQUIRED'));
         }
 
         $invoices = [];

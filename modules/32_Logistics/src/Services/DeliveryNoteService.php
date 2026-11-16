@@ -19,6 +19,7 @@ use Modules\Invoicing\Models\SalesOrderItem;
 use Modules\Logistics\Enums\DeliveryNoteStatus;
 use Modules\Logistics\Enums\DeliveryNoteType;
 use Modules\Logistics\Enums\TransportReason;
+use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * DDT lifecycle: free creation, fulfilment from one or more sales orders, issue, delivery confirmation, cancel.
@@ -51,13 +52,13 @@ final class DeliveryNoteService
         $type = DeliveryNoteType::from((string) ($data['type'] ?? DeliveryNoteType::OutboundSale->value));
 
         if ($items === []) {
-            throw new InvalidArgumentException('A delivery note needs at least one line.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_NEEDS_LINE'));
         }
         if ($type->requiresCustomer() && empty($data['contact_id'])) {
-            throw new InvalidArgumentException('A customer is required for this delivery note type.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_CUSTOMER_REQUIRED'));
         }
         if (! $type->requiresCustomer() && empty($data['contact_id']) && empty($data['supplier_id']) && empty($data['destination_warehouse_id'])) {
-            throw new InvalidArgumentException('A recipient (customer, supplier or destination warehouse) is required.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_RECIPIENT_REQUIRED'));
         }
 
         return DB::transaction(function () use ($data, $items, $type): SalesDeliveryNote {
@@ -77,7 +78,7 @@ final class DeliveryNoteService
     public function createFromOrders(array $selection, array $data = []): SalesDeliveryNote
     {
         if ($selection === []) {
-            throw new InvalidArgumentException('Select at least one sales order.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.SELECT_ORDER'));
         }
 
         return DB::transaction(function () use ($selection, $data): SalesDeliveryNote {
@@ -101,28 +102,28 @@ final class DeliveryNoteService
                         continue;
                     }
                     if ($qty > $remaining) {
-                        throw new DomainException("Cannot ship {$qty} of order line {$orderItem->id}: only {$remaining} remaining.");
+                        throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CANNOT_SHIP_QTY', ['qty' => $qty, 'line' => $orderItem->id, 'remaining' => $remaining]));
                     }
                     $lines[] = [$orderItem, $qty];
                 }
                 foreach (array_keys($requested) as $itemId) {
                     if (! $order->items->contains('id', $itemId)) {
-                        throw new InvalidArgumentException("Order line {$itemId} does not belong to order {$order->id}.");
+                        throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.ORDER_LINE_MISMATCH', ['line' => $itemId, 'order' => $order->id]));
                     }
                 }
             }
 
             if ($lines === []) {
-                throw new DomainException('Nothing left to ship on the selected orders.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NOTHING_TO_SHIP'));
             }
 
             $customers = collect($orders)->pluck('contact_id')->map(fn ($id): string => (string) $id)->unique();
             if ($customers->count() > 1) {
-                throw new DomainException('All selected orders must belong to the same customer.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.ORDERS_SAME_CUSTOMER'));
             }
             $currencies = collect($orders)->pluck('currency')->map(fn ($c): string => (string) ($c ?? 'EUR'))->unique();
             if ($currencies->count() > 1) {
-                throw new DomainException('All selected orders must use the same currency.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.ORDERS_SAME_CURRENCY'));
             }
 
             $first = reset($orders);
@@ -166,7 +167,7 @@ final class DeliveryNoteService
         return DB::transaction(function () use ($note): SalesDeliveryNote {
             $note = SalesDeliveryNote::query()->with('items')->lockForUpdate()->findOrFail($note->id);
             if ($note->status !== DeliveryNoteStatus::Draft->value) {
-                throw new DomainException('Only draft delivery notes can be issued.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.ISSUE_DRAFT_ONLY'));
             }
 
             $type = DeliveryNoteType::from((string) $note->type);
@@ -193,7 +194,7 @@ final class DeliveryNoteService
     public function startTransit(SalesDeliveryNote $note): SalesDeliveryNote
     {
         if ($note->status !== DeliveryNoteStatus::Issued->value) {
-            throw new DomainException('Only issued delivery notes can be dispatched.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DISPATCH_ISSUED_ONLY'));
         }
 
         $shipment = $this->carriers->driverFor($note)->createShipment($note);
@@ -216,10 +217,10 @@ final class DeliveryNoteService
     public function update(SalesDeliveryNote $note, array $data, ?array $items = null): SalesDeliveryNote
     {
         if ($note->status !== DeliveryNoteStatus::Draft->value) {
-            throw new DomainException('Only draft delivery notes can be edited.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.EDIT_DRAFT_ONLY'));
         }
         if ($note->sales_order_id !== null || $note->items()->whereNotNull('sales_order_item_id')->exists()) {
-            throw new DomainException('Delivery notes generated from sales orders cannot be edited; cancel and recreate them.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.EDIT_FROM_ORDER'));
         }
 
         return DB::transaction(function () use ($note, $data, $items): SalesDeliveryNote {
@@ -228,7 +229,7 @@ final class DeliveryNoteService
 
             if ($items !== null) {
                 if ($items === []) {
-                    throw new InvalidArgumentException('A delivery note needs at least one line.');
+                    throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_NEEDS_LINE'));
                 }
                 $note->items()->delete();
                 $this->persistLines($note, $items);
@@ -241,7 +242,7 @@ final class DeliveryNoteService
     public function delete(SalesDeliveryNote $note): void
     {
         if ($note->status !== DeliveryNoteStatus::Draft->value || $note->sales_order_id !== null) {
-            throw new DomainException('Only standalone draft delivery notes can be deleted; cancel the others.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DELETE_STANDALONE_DRAFT_ONLY'));
         }
 
         DB::transaction(function () use ($note): void {
@@ -253,7 +254,7 @@ final class DeliveryNoteService
     public function markDelivered(SalesDeliveryNote $note, ?string $signatureName = null, ?Carbon $deliveredAt = null): SalesDeliveryNote
     {
         if (! in_array($note->status, [DeliveryNoteStatus::Issued->value, DeliveryNoteStatus::InTransit->value], true)) {
-            throw new DomainException('Only issued or in-transit delivery notes can be marked as delivered.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DELIVER_STATUS'));
         }
 
         $note->update([
@@ -273,13 +274,13 @@ final class DeliveryNoteService
             $note = SalesDeliveryNote::query()->with('items')->lockForUpdate()->findOrFail($note->id);
             $status = $note->status;
             if (! in_array($status, [DeliveryNoteStatus::Draft->value, DeliveryNoteStatus::Issued->value, DeliveryNoteStatus::InTransit->value], true)) {
-                throw new DomainException('Only draft, issued or in-transit delivery notes can be cancelled.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CANCEL_STATUS'));
             }
             if ($note->invoiceLinks()->exists()) {
-                throw new DomainException('A delivery note that has been invoiced cannot be cancelled.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CANCEL_INVOICED'));
             }
             if ($note->stock_transfer_order_id !== null) {
-                throw new DomainException('Delivery notes generated by a transfer order are cancelled through the transfer order.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CANCEL_VIA_TRANSFER'));
             }
 
             $type = DeliveryNoteType::from((string) $note->type);
@@ -347,7 +348,7 @@ final class DeliveryNoteService
         foreach ($items as $item) {
             $quantity = (float) ($item['quantity'] ?? 0);
             if ($quantity <= 0.0) {
-                throw new InvalidArgumentException('Line quantity must be greater than zero.');
+                throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.LINE_QTY_POSITIVE'));
             }
 
             SalesDeliveryNoteItem::create([
@@ -374,7 +375,7 @@ final class DeliveryNoteService
     {
         foreach (['origin_warehouse_id', 'destination_warehouse_id', 'warehouse_id'] as $field) {
             if (! empty($data[$field]) && ! Warehouse::query()->whereKey($data[$field])->exists()) {
-                throw new InvalidArgumentException("Unknown warehouse for {$field}.");
+                throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.UNKNOWN_WAREHOUSE', ['field' => $field]));
             }
         }
     }
