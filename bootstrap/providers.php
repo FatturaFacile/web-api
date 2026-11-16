@@ -14,6 +14,7 @@ use Modules\GeneralLedger\Providers\GeneralLedgerServiceProvider;
 use Modules\HumanResources\Providers\HumanResourcesServiceProvider;
 use Modules\Inventory\Providers\InventoryServiceProvider;
 use Modules\Invoicing\Providers\InvoicingServiceProvider;
+use Modules\Logistics\Providers\LogisticsServiceProvider;
 use Modules\Manufacturing\Providers\ManufacturingServiceProvider;
 use Modules\Procurement\Providers\ProcurementServiceProvider;
 use Modules\Projects\Providers\ProjectsServiceProvider;
@@ -44,4 +45,5 @@ return [
     ServiceManagementServiceProvider::class,
     SubscriptionBillingServiceProvider::class,
     ManufacturingServiceProvider::class,
+    LogisticsServiceProvider::class,
 ];

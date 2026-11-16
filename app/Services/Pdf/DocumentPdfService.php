@@ -167,7 +167,7 @@ class DocumentPdfService
 
         return ['documents.delivery-note', array_merge($this->common($note, $note->contact, 'delivery_note', $note->ddt_number), [
             'date' => $note->date?->toDateString(),
-            'currency' => 'EUR',
+            'currency' => $note->currency ?? 'EUR',
             'notes' => $note->notes,
             'lines' => $lines,
             'show_prices' => $showPrices,
@@ -182,7 +182,15 @@ class DocumentPdfService
                 'courier' => $note->courier,
                 'license_plate' => $note->carrier_license_plate,
                 'departure_time' => $note->departure_time?->format('Y-m-d H:i'),
+                'carriage_terms' => $note->carriage_terms,
+                'transport_by' => $note->transport_by,
+                'carrier_vat_number' => $note->carrier_vat_number,
+                'incoterms' => $note->incoterms,
+                'net_weight_kg' => $note->net_weight_kg !== null ? (float) $note->net_weight_kg : null,
+                'volume_m3' => $note->volume_m3 !== null ? (float) $note->volume_m3 : null,
+                'tracking_number' => $note->tracking_number,
             ],
+            'jurisdiction' => $note->tenant?->country === 'CH' ? 'CH' : 'IT',
         ]), 'delivery_note', $note->ddt_number];
     }
 

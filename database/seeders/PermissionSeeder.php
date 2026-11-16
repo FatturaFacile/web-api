@@ -38,6 +38,12 @@ class PermissionSeeder extends Seeder
             ['code' => 'treasury.payments.execute', 'label_it' => 'Esecuzione Pagamenti Bancari', 'label_en' => 'Execute Banking Dispositions'],
             ['code' => 'service.tickets.dispatch', 'label_it' => 'Assegnazione Ticket Assistenza', 'label_en' => 'Dispatch Service Tickets'],
             ['code' => 'assets.depreciation.run', 'label_it' => 'Esecuzione Ammortamenti Cespiti', 'label_en' => 'Run Asset Depreciation'],
+            ['code' => 'logistics.ddt.view', 'label_it' => 'Visualizzazione DDT e Logistica', 'label_en' => 'View Delivery Notes & Logistics'],
+            ['code' => 'logistics.ddt.create', 'label_it' => 'Creazione DDT', 'label_en' => 'Create Delivery Notes'],
+            ['code' => 'logistics.ddt.emit', 'label_it' => 'Emissione e Fatturazione Differita DDT', 'label_en' => 'Issue Delivery Notes & Deferred Invoicing'],
+            ['code' => 'logistics.ddt.cancel', 'label_it' => 'Annullamento DDT', 'label_en' => 'Cancel Delivery Notes'],
+            ['code' => 'logistics.transfers.manage', 'label_it' => 'Gestione Trasferimenti di Magazzino', 'label_en' => 'Manage Stock Transfers'],
+            ['code' => 'logistics.consignment.reconcile', 'label_it' => 'Riconciliazione Conto Deposito e Conto Lavoro', 'label_en' => 'Reconcile Consignment & Subcontracting'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
         ];
 
