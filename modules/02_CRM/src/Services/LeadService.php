@@ -196,6 +196,8 @@ final readonly class LeadService implements LeadServiceInterface
             ]);
 
             $merged = $this->absorb($lockedPrimary, $attributes, $actorUserId);
+            // The duplicate flag is resolved by the merge.
+            $merged->update(['duplicate_of_id' => null]);
             $lockedDuplicate->update(['duplicate_of_id' => $merged->id, 'status' => 'archived']);
             $lockedDuplicate->delete();
 
