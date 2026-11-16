@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Contracts\PdfGenerator;
 use App\Models\DeliveryNote as LegacyDeliveryNote;
 use App\Models\DeliveryNoteItem as LegacyDeliveryNoteItem;
+use App\Models\Translation;
 use App\Services\Pdf\DocumentPdfService;
 use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\TenantContext;
@@ -361,4 +362,28 @@ test('lookups feed the wizard with tenant-scoped data and an envelope the fronte
 
     $list = $this->getJson('/api/v1/logistics/delivery-notes?per_page=1', $h)->assertOk();
     expect($list->json('success'))->toBeTrue()->and($list->json('meta.total'))->toBe(2)->and($list->json('meta.per_page'))->toBe(1)->and($list->json('data'))->toHaveCount(1);
+});
+
+test('every logistics UI and PDF key is translated in IT, EN, DE and FR and seeded through the API tables', function (): void {
+    $this->seed(LogisticsTranslationSeeder::class);
+    $all = LogisticsTranslationSeeder::translations();
+
+    foreach ($all as $key => $values) {
+        expect($values)->toHaveCount(4, $key);
+        foreach ($values as $i => $value) {
+            expect(trim($value))->not->toBe('', "{$key} [{$i}] is empty");
+        }
+    }
+
+    foreach (['it', 'en', 'de', 'fr'] as $locale) {
+        expect(Translation::query()->whereNull('tenant_id')->where('locale', $locale)->where('key', 'like', 'LOGISTICS.%')->exists())->toBeTrue()
+            ->and(Translation::query()->whereNull('tenant_id')->where('locale', $locale)->where('key', 'PDF.DELIVERY.SIGN_SENDER')->exists())->toBeTrue();
+    }
+
+    // placeholders must survive in every language
+    foreach (['LOGISTICS.DDT.MESSAGES.INVOICED' => '{number}', 'LOGISTICS.DDT.MESSAGES.GROUPED_INVOICED' => '{count}'] as $key => $placeholder) {
+        foreach ($all[$key] as $value) {
+            expect($value)->toContain($placeholder);
+        }
+    }
 });
