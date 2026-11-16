@@ -20,9 +20,9 @@ use Modules\Logistics\Events\ConsignmentConsumptionPosted;
 use Modules\Logistics\Models\ConsignmentConsumptionLine;
 use Modules\Logistics\Models\ConsignmentConsumptionReport;
 use Modules\Logistics\Models\StockTransferOrder;
+use Modules\Logistics\Support\LogisticsMessage;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
-use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * Register of goods held by third parties (customer consignment, subcontractors) and goods of third parties held by us
