@@ -35,7 +35,7 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
 ])]
 #[OA\Schema(schema: 'PlatformNotificationPreference', type: 'object', properties: [
-    new OA\Property(property: 'channel', type: 'string', enum: ['database', 'mail']),
+    new OA\Property(property: 'channel', type: 'string', enum: ['database', 'mail', 'push', 'telegram', 'whatsapp']),
     new OA\Property(property: 'category', type: 'string', enum: ['general', 'billing', 'crm', 'inventory', 'hr', 'system']),
     new OA\Property(property: 'enabled', type: 'boolean'),
     new OA\Property(property: 'frequency', type: 'string', enum: ['immediate', 'digest']),
@@ -55,6 +55,8 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'quiet_end', type: 'string', example: '08:00'),
     new OA\Property(property: 'timezone', type: 'string', example: 'Europe/Rome'),
     new OA\Property(property: 'muted_until', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'whatsapp_number', type: 'string', nullable: true, example: '+41791234567'),
+    new OA\Property(property: 'telegram_linked', type: 'boolean', readOnly: true),
 ])]
 #[OA\Schema(schema: 'PlatformNotificationPreferences', type: 'object', properties: [
     new OA\Property(property: 'frequencies', type: 'array', items: new OA\Items(type: 'string')),

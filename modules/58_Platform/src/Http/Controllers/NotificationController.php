@@ -13,6 +13,7 @@ use Modules\Platform\Events\UnreadNotificationsChanged;
 use Modules\Platform\Http\Requests\UpdateNotificationPreferencesRequest;
 use Modules\Platform\Http\Requests\UpdateNotificationSettingsRequest;
 use Modules\Platform\Http\Resources\NotificationResource;
+use Modules\Platform\Models\NotificationDelivery;
 use Modules\Platform\Models\NotificationSetting;
 use Modules\Platform\Services\NotificationPreferenceService;
 use OpenApi\Attributes as OA;
@@ -51,6 +52,8 @@ final class NotificationController extends Controller
     {
         $notification = $this->user($request)->notifications()->whereKey($id)->firstOrFail();
         $notification->markAsRead();
+        // Opening the notification (in-app, or by tapping the push / chat link that carries its id) marks every channel's delivery as opened.
+        NotificationDelivery::query()->where('user_id', $this->user($request)->id)->where('notification_id', $id)->update(['status' => NotificationDelivery::OPENED, 'opened_at' => now()]);
         event(UnreadNotificationsChanged::for($this->user($request)));
 
         return response()->json(['data' => (new NotificationResource($notification->refresh()))->resolve()]);
@@ -159,6 +162,8 @@ final class NotificationController extends Controller
             'quiet_end' => $setting->quiet_end,
             'timezone' => $setting->timezone,
             'muted_until' => $setting->muted_until?->toIso8601String(),
+            'whatsapp_number' => $setting->whatsapp_number,
+            'telegram_linked' => $setting->telegram_chat_id !== null,
         ];
     }
 

@@ -39,6 +39,7 @@ use Modules\Inventory\Jobs\ExpireStockLotsJob;
 use Modules\Inventory\Jobs\RecalculateInventoryValuationJob;
 use Modules\Manufacturing\Jobs\ProcessManufacturingForecastJob;
 use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
+use Modules\Platform\Jobs\EvaluateNotificationAlertRulesJob;
 use Modules\PracticeManagement\Jobs\ExpireFeeProposalsJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
 use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
@@ -121,6 +122,7 @@ $forEachTenant('procurement:expiring-contracts', static fn (Tenant $tenant): obj
 $forEachTenant('procurement:supplier-otif', static fn (Tenant $tenant): object => new EvaluateSupplierOtifScoresJob($tenant->id))->monthlyOn(1, '05:20');
 $forEachTenant('hr:expiring-certifications', static fn (Tenant $tenant): object => new ScanExpiringCertificationsJob($tenant->id))->dailyAt('05:30');
 $forEachTenant('eam:expiring-coverage', static fn (Tenant $tenant): object => new NotifyExpiringAssetCoverageJob($tenant->id))->dailyAt('05:35');
+$forEachTenant('platform:notification-alert-rules', static fn (Tenant $tenant): object => new EvaluateNotificationAlertRulesJob($tenant->id))->everyFifteenMinutes();
 $forEachTenant('hr:leave-accruals', static fn (Tenant $tenant): object => new ProcessMonthlyLeaveAccrualsJob($tenant->id, now()->year))->monthlyOn(1, '05:40');
 $forEachTenant('hr:purge-applications', static fn (Tenant $tenant): object => new PurgeExpiredApplicationsJob($tenant->id))->dailyAt('03:40');
 $forEachTenant('hr:purge-employee-documents', static fn (Tenant $tenant): object => new PurgeExpiredEmployeeDocumentsJob($tenant->id))->dailyAt('03:45');

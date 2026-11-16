@@ -26,6 +26,7 @@ final class UpdateNotificationSettingsRequest extends FormRequest
             'quiet_start' => ['sometimes', 'date_format:H:i'],
             'quiet_end' => ['sometimes', 'date_format:H:i'],
             'timezone' => ['sometimes', 'timezone:all'],
+            'whatsapp_number' => ['sometimes', 'nullable', 'regex:/^\+[1-9][0-9]{7,14}$/'],
             'muted_until' => ['sometimes', 'nullable', 'date', 'after:now'],
         ];
     }
