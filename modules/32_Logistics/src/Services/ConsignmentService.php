@@ -22,6 +22,7 @@ use Modules\Logistics\Models\ConsignmentConsumptionReport;
 use Modules\Logistics\Models\StockTransferOrder;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
+use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * Register of goods held by third parties (customer consignment, subcontractors) and goods of third parties held by us
@@ -109,17 +110,17 @@ final class ConsignmentService
     public function declareConsumption(array $data, array $lines): ConsignmentConsumptionReport
     {
         if ($lines === []) {
-            throw new InvalidArgumentException('Declare at least one consumed product.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_CONSUMED_PRODUCT'));
         }
 
         $warehouse = Warehouse::query()->findOrFail($data['warehouse_id']);
         $direction = match ($warehouse->warehouse_type) {
             WarehouseType::CustomerConsignment->value => 'customer',
             WarehouseType::VendorConsignment->value => 'vendor',
-            default => throw new DomainException('Consumption can only be declared on customer or vendor consignment warehouses.'),
+            default => throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CONSUMPTION_WAREHOUSE_TYPE')),
         };
         if ($warehouse->linked_partner_id === null) {
-            throw new DomainException('The consignment warehouse has no linked partner to bill.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_PARTNER_TO_BILL'));
         }
 
         return DB::transaction(function () use ($data, $lines, $warehouse, $direction): ConsignmentConsumptionReport {

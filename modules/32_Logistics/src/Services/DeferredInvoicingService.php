@@ -14,6 +14,7 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Invoicing\Models\SalesInvoice;
 use Modules\Logistics\Enums\DeliveryNoteStatus;
 use Modules\Logistics\Models\DeliveryNoteInvoiceLink;
+use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * Cumulative deferred invoice ("fattura differita", art. 21 c.4 lett. a DPR 633/72 and the equivalent Swiss practice):
@@ -35,13 +36,13 @@ final class DeferredInvoicingService
     {
         $deliveryNoteIds = array_values(array_unique($deliveryNoteIds));
         if ($deliveryNoteIds === []) {
-            throw new InvalidArgumentException('Select at least one delivery note.');
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.SELECT_DELIVERY_NOTE'));
         }
 
         return DB::transaction(function () use ($deliveryNoteIds, $overrides, $enforceSameMonth): SalesInvoice {
             $notes = SalesDeliveryNote::query()->with('items')->whereIn('id', $deliveryNoteIds)->lockForUpdate()->get();
             if ($notes->count() !== count($deliveryNoteIds)) {
-                throw new DomainException('One or more delivery notes were not found.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DELIVERY_NOTES_NOT_FOUND'));
             }
 
             $this->assertCompatible($notes->all(), $enforceSameMonth);
@@ -67,7 +68,7 @@ final class DeferredInvoicingService
             }
 
             if ($invoiceItems === []) {
-                throw new DomainException('The selected delivery notes are already fully invoiced.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.ALREADY_INVOICED'));
             }
 
             /** @var SalesDeliveryNote $first */
@@ -121,10 +122,10 @@ final class DeferredInvoicingService
         $months = [];
         foreach ($notes as $note) {
             if (! in_array($note->status, DeliveryNoteStatus::invoiceable(), true)) {
-                throw new DomainException("Delivery note {$note->ddt_number} is not invoiceable (status {$note->status}).");
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NOT_INVOICEABLE', ['number' => $note->ddt_number, 'status' => $note->status]));
             }
             if ($note->contact_id === null) {
-                throw new DomainException("Delivery note {$note->ddt_number} has no customer to invoice.");
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_CUSTOMER_TO_INVOICE', ['number' => $note->ddt_number]));
             }
             $customers[(string) $note->contact_id] = true;
             $currencies[(string) ($note->currency ?? 'EUR')] = true;
@@ -132,13 +133,13 @@ final class DeferredInvoicingService
         }
 
         if (count($customers) > 1) {
-            throw new DomainException('All delivery notes must belong to the same customer.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_SAME_CUSTOMER'));
         }
         if (count($currencies) > 1) {
-            throw new DomainException('All delivery notes must use the same currency.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_SAME_CURRENCY'));
         }
         if ($enforceSameMonth && count($months) > 1) {
-            throw new DomainException('Deferred invoicing groups delivery notes of the same calendar month.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.DDT_SAME_MONTH'));
         }
     }
 }

@@ -14,7 +14,7 @@ uses [Semantic Versioning](https://semver.org/).
   approval workflow), consignment / subcontracting register, periodic consumption declarations that draft a sales
   invoice or purchase order, and a balance-sheet valuation that excludes vendor-owned stock (Issue #158).
 - Warehouse fields `legal_owner_type`, `linked_partner_id`, `company_entity_id` and audit columns; granular
-  `logistics.*` permissions and the `logistics_manager` role; IT/EN/DE/FR translations in `LogisticsTranslationSeeder`.
+  `logistics.*` permissions and the `logistics_manager` role; IT/EN/DE/FR translations (UI, DDT PDF and business-error messages, delivered already translated by the API) in `TranslationSeeder`.
 
 ## [1.0.0] - 2026-10-23
 

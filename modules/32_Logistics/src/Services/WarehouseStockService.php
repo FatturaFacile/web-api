@@ -14,6 +14,7 @@ use Modules\Inventory\Models\Warehouse;
 use Modules\Logistics\Enums\LegalOwnerType;
 use Modules\Logistics\Enums\WarehouseType;
 use Modules\Logistics\Models\WarehouseStockLevel;
+use Modules\Logistics\Support\LogisticsMessage;
 
 /**
  * Product-level stock per warehouse (the "StockLevel" ledger used by transfers and consignment) plus the
@@ -42,10 +43,10 @@ final class WarehouseStockService
         ?float $unitCost = null,
     ): void {
         if ($quantity <= 0.0) {
-            throw new DomainException('Movement quantity must be greater than zero.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.MOVEMENT_QTY_POSITIVE'));
         }
         if ($fromWarehouseId === null && $toWarehouseId === null) {
-            throw new DomainException('A stock movement needs a source or a destination warehouse.');
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.MOVEMENT_NEEDS_WAREHOUSE'));
         }
 
         DB::transaction(function () use ($productId, $fromWarehouseId, $toWarehouseId, $quantity, $movementType, $referenceType, $referenceId, $notes, $unitCost): void {
@@ -53,7 +54,7 @@ final class WarehouseStockService
                 $level = $this->lockedLevel($fromWarehouseId, $productId);
                 if ($level === null || (float) $level->quantity_on_hand < $quantity) {
                     $available = $level !== null ? (float) $level->quantity_on_hand : 0.0;
-                    throw new DomainException("Insufficient stock for product {$productId} in warehouse {$fromWarehouseId}: required {$quantity}, available {$available}.");
+                    throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.INSUFFICIENT_STOCK_DETAIL', ['product' => $productId, 'warehouse' => $fromWarehouseId, 'required' => $quantity, 'available' => $available]));
                 }
                 $level->quantity_on_hand = round((float) $level->quantity_on_hand - $quantity, 4);
                 $level->save();
@@ -92,7 +93,7 @@ final class WarehouseStockService
         if ($transitWarehouseId !== null) {
             $warehouse = Warehouse::query()->findOrFail($transitWarehouseId);
             if ($warehouse->warehouse_type !== WarehouseType::Transit->value) {
-                throw new DomainException('The selected transit warehouse is not of type transit.');
+                throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.TRANSIT_WAREHOUSE_TYPE'));
             }
 
             return $warehouse;

@@ -9,7 +9,7 @@ use App\Models\Translation;
 use App\Services\Pdf\DocumentPdfService;
 use App\Services\SwissQrBill\SwissQrBillService;
 use App\Services\Tenancy\TenantContext;
-use Database\Seeders\LogisticsTranslationSeeder;
+use Database\Seeders\TranslationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Modules\Inventory\Models\StockMovement;
@@ -241,7 +241,7 @@ test('cross-tenant access is rejected on every DDT action', function (): void {
 });
 
 test('PDF renders in the requested language from DB translations, with three+ signature blocks and optional hidden prices', function (): void {
-    $this->seed(LogisticsTranslationSeeder::class);
+    $this->seed(TranslationSeeder::class);
     $fake = new class implements PdfGenerator
     {
         /** @var list<array{view: string, data: array<string, mixed>}> */
@@ -365,26 +365,38 @@ test('lookups feed the wizard with tenant-scoped data and an envelope the fronte
     expect($list->json('success'))->toBeTrue()->and($list->json('meta.total'))->toBe(2)->and($list->json('meta.per_page'))->toBe(1)->and($list->json('data'))->toHaveCount(1);
 });
 
-test('every logistics UI and PDF key is translated in IT, EN, DE and FR and seeded through the API tables', function (): void {
-    $this->seed(LogisticsTranslationSeeder::class);
-    $all = LogisticsTranslationSeeder::translations();
+test('every logistics UI, error and PDF key is translated in IT, EN, DE and FR by the main TranslationSeeder', function (): void {
+    $this->seed(TranslationSeeder::class);
 
-    foreach ($all as $key => $values) {
-        expect($values)->toHaveCount(4, $key);
-        foreach ($values as $i => $value) {
-            expect(trim($value))->not->toBe('', "{$key} [{$i}] is empty");
+    $keysFor = fn (string $locale): array => Translation::query()->whereNull('tenant_id')->where('locale', $locale)
+        ->where(fn ($q) => $q->where('key', 'like', 'LOGISTICS.%')->orWhere('key', 'like', 'PDF.DELIVERY.%')->orWhere('key', 'like', 'PDF.TITLES.DELIVERY%'))
+        ->pluck('value', 'key')->all();
+
+    $it = $keysFor('it');
+    expect($it)->not->toBeEmpty();
+    foreach (['en', 'de', 'fr'] as $locale) {
+        $other = $keysFor($locale);
+        expect(array_keys($other))->toEqualCanonicalizing(array_keys($it));
+        foreach ($other as $key => $value) {
+            expect(trim($value))->not->toBe('', "{$locale} {$key} is empty");
         }
-    }
-
-    foreach (['it', 'en', 'de', 'fr'] as $locale) {
-        expect(Translation::query()->whereNull('tenant_id')->where('locale', $locale)->where('key', 'like', 'LOGISTICS.%')->exists())->toBeTrue()
-            ->and(Translation::query()->whereNull('tenant_id')->where('locale', $locale)->where('key', 'PDF.DELIVERY.SIGN_SENDER')->exists())->toBeTrue();
     }
 
     // placeholders must survive in every language
-    foreach (['LOGISTICS.DDT.MESSAGES.INVOICED' => '{number}', 'LOGISTICS.DDT.MESSAGES.GROUPED_INVOICED' => '{count}'] as $key => $placeholder) {
-        foreach ($all[$key] as $value) {
-            expect($value)->toContain($placeholder);
+    foreach (['LOGISTICS.DDT.MESSAGES.INVOICED' => '{number}', 'LOGISTICS.DDT.MESSAGES.GROUPED_INVOICED' => '{count}', 'LOGISTICS.ERRORS.NOT_INVOICEABLE' => '{status}', 'LOGISTICS.ERRORS.INSUFFICIENT_STOCK_DETAIL' => '{available}'] as $key => $placeholder) {
+        foreach (['it', 'en', 'de', 'fr'] as $locale) {
+            expect($keysFor($locale)[$key])->toContain($placeholder);
         }
     }
+});
+
+test('business errors reach the client already translated in the request language', function (): void {
+    $this->seed(TranslationSeeder::class);
+    $note = lifecycleDraft($this);
+    $h = ['X-Tenant-Id' => $this->tenant->id];
+
+    $this->postJson("/api/v1/logistics/delivery-notes/{$note->id}/deliver", [], $h + ['X-Language-Code' => 'de'])
+        ->assertStatus(422)->assertJsonPath('message', 'Nur ausgestellte oder im Transit befindliche Lieferscheine können als geliefert markiert werden');
+    $this->postJson("/api/v1/logistics/delivery-notes/{$note->id}/deliver", [], $h + ['X-Language-Code' => 'fr'])
+        ->assertStatus(422)->assertJsonPath('message', 'Seuls les bons de livraison émis ou en transit peuvent être marqués comme livrés');
 });
