@@ -61,6 +61,7 @@
             "Modules\\ServiceManagement\\": "modules/17_ServiceManagement/src/",
             "Modules\\SubscriptionBilling\\": "modules/19_SubscriptionBilling/src/",
             "Modules\\Manufacturing\\": "modules/30_Manufacturing/src/",
+            "Modules\\Logistics\\": "modules/32_Logistics/src/",
             "Modules\\": "modules/"
         }
     },

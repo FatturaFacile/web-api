@@ -14,6 +14,7 @@ use App\Models\Quote;
 use App\Models\SalesOrder;
 use App\Models\ServiceReport;
 use App\Models\Tenant;
+use App\Models\Translation;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Rules\PngSignature;
@@ -36,18 +37,69 @@ class DocumentPdfService
         private readonly SwissQrBillService $qrBills,
     ) {}
 
-    public function render(Model $document): RenderedPdf
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string}  $options  `locale` renders with the DB translations of that language
+     */
+    public function render(Model $document, array $options = []): RenderedPdf
+    {
+        $locale = $options['locale'] ?? null;
+        if ($locale === null) {
+            return $this->renderDocument($document, $options);
+        }
+
+        $previous = app()->getLocale();
+        app()->setLocale($locale);
+        try {
+            return $this->renderDocument($document, $options);
+        } finally {
+            app()->setLocale($previous);
+        }
+    }
+
+    /**
+     * Layers the API-managed `PDF.*` translations (translations table) over the lang files for the active locale,
+     * e.g. PDF.DELIVERY.SHIP_TO => pdf.delivery.ship_to.
+     */
+    private function loadDatabaseTranslations(?string $tenantId): void
+    {
+        $locale = app()->getLocale();
+        $lines = [];
+        $rows = Translation::query()
+            ->where('locale', $locale)
+            ->where('key', 'like', 'PDF.%')
+            ->where(fn ($q) => $q->whereNull('tenant_id')->when($tenantId !== null, fn ($q2) => $q2->orWhere('tenant_id', $tenantId)))
+            ->orderByRaw('tenant_id is not null')
+            ->get(['key', 'value']);
+
+        foreach ($rows as $row) {
+            // Translator::addLines() expects `<group>.<item>` keys: PDF.DELIVERY.SHIP_TO => pdf.delivery.ship_to
+            $lines[strtolower((string) $row->key)] = (string) $row->value;
+        }
+
+        if ($lines !== []) {
+            $translator = app('translator');
+            // Load the lang file group first: addLines() would otherwise mark the group as loaded and skip the file.
+            $translator->load('*', 'pdf', $locale);
+            $translator->addLines($lines, $locale);
+        }
+    }
+
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string}  $options
+     */
+    private function renderDocument(Model $document, array $options): RenderedPdf
     {
         $tenantContext = app(TenantContext::class);
         $tenantId = $document->getAttribute('tenant_id');
         $tenant = $document->relationLoaded('tenant') ? $document->getRelation('tenant') : ($tenantId ? Tenant::find($tenantId) : null);
 
-        $renderCallback = function () use ($document): RenderedPdf {
+        $renderCallback = function () use ($document, $options, $tenantId): RenderedPdf {
+            $this->loadDatabaseTranslations($tenantId !== null ? (string) $tenantId : null);
             [$view, $data, $type, $number] = match (true) {
                 $document instanceof Invoice => $this->invoice($document),
                 $document instanceof Quote => $this->quote($document),
                 $document instanceof SalesOrder => $this->salesOrder($document),
-                $document instanceof DeliveryNote => $this->deliveryNote($document),
+                $document instanceof DeliveryNote => $this->deliveryNote($document, $options),
                 $document instanceof WorkOrder => $this->workOrder($document),
                 $document instanceof ServiceReport => $this->serviceReport($document),
                 default => throw new InvalidArgumentException('Unsupported document class: '.$document::class),
@@ -156,18 +208,22 @@ class DocumentPdfService
     /**
      * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
      */
-    private function deliveryNote(DeliveryNote $note): array
+    /**
+     * @param  array{hide_prices?: bool, locale?: ?string}  $options
+     * @return array{0: string, 1: array<string, mixed>, 2: string, 3: string}
+     */
+    private function deliveryNote(DeliveryNote $note, array $options = []): array
     {
         $note->loadMissing(['tenant', 'contact.addresses', 'items']);
         $lines = $this->lines($note->items);
-        $showPrices = (bool) $note->show_prices;
+        $showPrices = (bool) $note->show_prices && ! ($options['hide_prices'] ?? false);
 
         $net = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'], $lines)), 2);
         $tax = round(array_sum(array_map(fn (array $line): float => $line['quantity'] * $line['unit_price'] * $line['tax_rate'] / 100, $lines)), 2);
 
         return ['documents.delivery-note', array_merge($this->common($note, $note->contact, 'delivery_note', $note->ddt_number), [
             'date' => $note->date?->toDateString(),
-            'currency' => 'EUR',
+            'currency' => $note->currency ?? 'EUR',
             'notes' => $note->notes,
             'lines' => $lines,
             'show_prices' => $showPrices,
@@ -182,7 +238,15 @@ class DocumentPdfService
                 'courier' => $note->courier,
                 'license_plate' => $note->carrier_license_plate,
                 'departure_time' => $note->departure_time?->format('Y-m-d H:i'),
+                'carriage_terms' => $note->carriage_terms,
+                'transport_by' => $note->transport_by,
+                'carrier_vat_number' => $note->carrier_vat_number,
+                'incoterms' => $note->incoterms,
+                'net_weight_kg' => $note->net_weight_kg !== null ? (float) $note->net_weight_kg : null,
+                'volume_m3' => $note->volume_m3 !== null ? (float) $note->volume_m3 : null,
+                'tracking_number' => $note->tracking_number,
             ],
+            'jurisdiction' => $note->tenant?->country === 'CH' ? 'CH' : 'IT',
         ]), 'delivery_note', $note->ddt_number];
     }
 

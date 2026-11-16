@@ -6,6 +6,16 @@ uses [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Logistics module** (`modules/32_Logistics`): enterprise DDT (IT DPR 472/96 and CH layout), progressive numbering per
+  tenant / fiscal year / section, fulfilment from one or more sales orders, cumulative deferred invoicing with
+  DDT-line to invoice-line links, two-step stock transfers (ship to transit + automatic DDT, receive with discrepancy
+  approval workflow), consignment / subcontracting register, periodic consumption declarations that draft a sales
+  invoice or purchase order, and a balance-sheet valuation that excludes vendor-owned stock (Issue #158).
+- Warehouse fields `legal_owner_type`, `linked_partner_id`, `company_entity_id` and audit columns; granular
+  `logistics.*` permissions and the `logistics_manager` role; IT/EN/DE/FR translations (UI, DDT PDF and business-error messages, delivered already translated by the API) in `TranslationSeeder`.
+
 ## [1.0.0] - 2026-10-23
 
 First production release: a complete multi-tenant ERP API for Italian and Swiss businesses. Database migrations are
