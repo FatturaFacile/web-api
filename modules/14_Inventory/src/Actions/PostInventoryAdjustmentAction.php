@@ -38,7 +38,7 @@ final readonly class PostInventoryAdjustmentAction
             $adjustment = InventoryAdjustment::query()->whereKey($adjustment->getKey())->lockForUpdate()->firstOrFail();
 
             if ($adjustment->status !== 'pending_approval') {
-                throw ValidationException::withMessages(['status' => "The adjustment is {$adjustment->status}: only a pending adjustment can be approved."]);
+                throw ValidationException::withMessages(['status' => __('inventory_errors.adjustment.approve_only_pending', ['status' => $adjustment->status])]);
             }
 
             ['lines' => $lines, 'session_id' => $sessionId] = $this->submission($adjustment);

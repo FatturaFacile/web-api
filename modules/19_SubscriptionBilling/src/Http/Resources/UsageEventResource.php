@@ -26,7 +26,7 @@ final class UsageEventResource extends JsonResource
             'subscription_item_id' => $this->subscription_item_id,
             'metric_code' => $this->metric_code,
             'idempotency_key' => $this->idempotency_key,
-            'quantity' => (string) $this->getRawOriginal('quantity'),
+            'quantity' => (string) $this->quantity,
             'event_timestamp' => $this->event_timestamp?->toIso8601String(),
             'is_processed' => (bool) $this->is_processed,
             'processed_at' => $this->processed_at?->toIso8601String(),

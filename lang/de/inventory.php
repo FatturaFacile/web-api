@@ -17,7 +17,7 @@ return [
     'duplicate_combination' => 'Eine Variante mit denselben Attributen existiert bereits.',
     'attributes_required' => 'Mindestens ein Attribut ist erforderlich.',
     'attributes_max' => 'Eine Variante darf maximal :max Attribute kombinieren.',
-    'attribute_value_invalid' => 'Der Attributwert muss ein nicht-leerer Text mit max. 100 Zeichen sein.',
+    'attribute_value_invalid' => 'Der Wert des Attributs ":attribute" muss ein nicht leerer Text mit höchstens 100 Zeichen sein.',
     'attribute_name_invalid' => 'Der Attributname muss ein nicht-leerer Text mit max. 50 Zeichen sein.',
     'attribute_values_duplicated' => 'Das Attribut ":attribute" enthält doppelte Werte.',
     'too_many_combinations' => 'Die Matrix würde :count Varianten erzeugen; das Maximum ist :max.',

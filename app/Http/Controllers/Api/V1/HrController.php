@@ -67,16 +67,23 @@ class HrController extends Controller
     {
         $tenant = $this->tenantContext->getTenant();
 
-        $rates = ($tenant?->country === 'CH') ? [
-            'canton' => 'TI',
-            'agreement' => 'New IT-CH Cross-border Agreement 2024',
-            'swiss_withholding_limit' => '80% cantonal tax rate applied at source in Switzerland',
-            'italian_tax_credit' => 'Applicable up to CHF 10,000 threshold with Italian IRPEF offsetting',
-        ] : [
-            'country' => 'IT',
-            'inps_contributions' => 'Standard IVS 9.19% employee, 23.81% employer',
-            'inail_rate' => 'Risk class tariff table',
-        ];
+        $rates = match (strtoupper((string) $tenant?->country)) {
+            'CH' => [
+                'canton' => 'TI',
+                'agreement' => 'New IT-CH Cross-border Agreement 2024',
+                'swiss_withholding_limit' => '80% cantonal tax rate applied at source in Switzerland',
+                'italian_tax_credit' => 'Applicable up to CHF 10,000 threshold with Italian IRPEF offsetting',
+            ],
+            'IT' => [
+                'country' => 'IT',
+                'inps_contributions' => 'Standard IVS 9.19% employee, 23.81% employer',
+                'inail_rate' => 'Risk class tariff table',
+            ],
+            default => [
+                'country' => strtoupper((string) $tenant?->country),
+                'note' => 'No cross-border withholding parameters are configured for this country.',
+            ],
+        };
 
         return $this->successResponse(data: $rates, message: 'Withholding tax rates and cross-border parameters');
     }

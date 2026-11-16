@@ -50,7 +50,7 @@ final class ThreeWayMatchController extends Controller
             $query->where('match_status', $request->input('match_status'));
         }
 
-        $logs = $query->paginate((int) $request->query('per_page', 25));
+        $logs = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(ThreeWayMatchLogResource::collection($logs)->response()->getData(true));
     }

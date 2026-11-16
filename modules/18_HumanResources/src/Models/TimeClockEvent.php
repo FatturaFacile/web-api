@@ -8,6 +8,7 @@ use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Builder;
 use Modules\HumanResources\Casts\UtcInstant;
+use Modules\HumanResources\Models\Concerns\ProtectsTimeRecord;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
 use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
@@ -19,9 +20,16 @@ use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
  * @property CarbonImmutable $occurred_at
  * @property TimeEventType $event_type
  * @property TimeRecordSource $source
+ * @property string|null $source_device
+ * @property string|null $amended_from_id
+ * @property string|null $gps_lat
+ * @property string|null $gps_lng
+ * @property CarbonImmutable|null $geolocation_consent_at
  */
 final class TimeClockEvent extends BaseEnterpriseModel
 {
+    use ProtectsTimeRecord;
+
     protected $table = 'time_clock_events';
 
     protected function casts(): array
@@ -30,6 +38,11 @@ final class TimeClockEvent extends BaseEnterpriseModel
             'occurred_at' => UtcInstant::class,
             'event_type' => TimeEventType::class,
             'source' => TimeRecordSource::class,
+            'gps_lat' => 'decimal:7',
+            'gps_lng' => 'decimal:7',
+            'geolocation_consent_at' => UtcInstant::class,
+            'amended_from_id' => 'string',
+            'source_device' => 'string',
         ];
     }
 
@@ -58,6 +71,9 @@ final class TimeClockEvent extends BaseEnterpriseModel
             'event_type' => $this->event_type->value,
             'source' => $this->source->value,
             'note' => $this->note,
+            'source_device' => $this->source_device,
+            'amended_from_id' => $this->amended_from_id,
+            'has_gps' => $this->gps_lat !== null,
         ];
     }
 }

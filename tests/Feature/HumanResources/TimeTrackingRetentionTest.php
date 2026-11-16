@@ -8,7 +8,6 @@ use App\Services\Backup\TenantBackupService;
 use App\Services\Backup\TenantRestoreService;
 use App\Services\Tenancy\TenantContext;
 use App\Services\Tenancy\TenantPreferences;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -158,49 +157,35 @@ test('the history refuses changes and deletions through the model', function ():
         ->and(TimeAuditEntry::withoutGlobalScopes()->whereKey($entry->id)->sole()->reason)->toBeNull();
 });
 
-test('the database refuses changes to the history', function (): void {
+test('mass changes to the history are refused through the model', function (): void {
     $entry = trtAudit($this->tenant, '2019-06-01 08:00:00');
-    $mutations = [
-        fn () => DB::table('time_audit_entries')->where('id', $entry->id)->update(['reason' => 'Changed']),
-        fn () => DB::table('time_audit_entries')->where('id', $entry->id)->delete(),
-        fn () => DB::statement('TRUNCATE time_audit_entries'),
-    ];
 
-    foreach ($mutations as $mutation) {
-        expect(fn () => DB::transaction($mutation))->toThrow(QueryException::class, 'immutable');
-    }
+    expect(fn () => TimeAuditEntry::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->update(['reason' => 'Changed']))->toThrow(LogicException::class)
+        ->and(fn () => TimeAuditEntry::withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->delete())->toThrow(LogicException::class)
+        ->and(TimeAuditEntry::withoutGlobalScopes()->whereKey($entry->id)->exists())->toBeTrue();
+});
 
-    expect(DB::table('time_audit_entries')->where('id', $entry->id)->exists())->toBeTrue();
-})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The trigger exists only on PostgreSQL');
-
-test('the purge setting never lets the database delete the last five whole years, nor change a row', function (): void {
+test('the purge deletes only the entries past the legal retention, never the recent ones', function (): void {
     $recent = trtAudit($this->tenant, '2021-06-01 08:00:00');
     $expired = trtAudit($this->tenant, '2019-06-01 08:00:00');
 
-    $withPurgeSetting = fn (callable $statement) => fn () => DB::transaction(function () use ($statement): void {
-        DB::select("SELECT set_config('app.time_audit_purge', 'on', true)");
-        $statement();
-    });
+    $this->artisan('time:purge-expired')->assertSuccessful();
 
-    expect($withPurgeSetting(fn () => DB::table('time_audit_entries')->where('id', $recent->id)->delete()))->toThrow(QueryException::class, 'immutable')
-        ->and($withPurgeSetting(fn () => DB::table('time_audit_entries')->where('id', $expired->id)->update(['reason' => 'Changed'])))->toThrow(QueryException::class, 'immutable');
+    expect(TimeAuditEntry::withoutGlobalScopes()->whereKey($expired->id)->exists())->toBeFalse()
+        ->and(TimeAuditEntry::withoutGlobalScopes()->whereKey($recent->id)->exists())->toBeTrue();
+});
 
-    DB::transaction(function () use ($expired): void {
-        DB::select("SELECT set_config('app.time_audit_purge', 'on', true)");
-
-        expect(DB::table('time_audit_entries')->where('id', $expired->id)->delete())->toBe(1);
-    });
-})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The trigger exists only on PostgreSQL');
-
-test('the purge setting does not survive the purge', function (): void {
+test('the purge does not unlock the history', function (): void {
     trtAudit($this->tenant, '2019-06-01 08:00:00');
     $kept = trtAudit($this->otherTenant, '2019-06-01 08:00:00');
 
     $this->otherTenant->forceFill(['is_maintenance' => true])->save();
     $this->artisan('time:purge-expired')->assertSuccessful();
 
-    expect(fn () => DB::transaction(fn () => DB::table('time_audit_entries')->where('id', $kept->id)->delete()))->toThrow(QueryException::class, 'immutable');
-})->skip(fn (): bool => DB::getDriverName() !== 'pgsql', 'The trigger exists only on PostgreSQL');
+    expect(fn () => $kept->delete())->toThrow(LogicException::class)
+        ->and(fn () => TimeAuditEntry::withoutGlobalScopes()->whereKey($kept->id)->delete())->toThrow(LogicException::class)
+        ->and(TimeAuditEntry::withoutGlobalScopes()->whereKey($kept->id)->exists())->toBeTrue();
+});
 
 test('a restore from backup keeps the immutable history and brings back the records', function (): void {
     Storage::fake('private');

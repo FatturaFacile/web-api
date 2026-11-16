@@ -17,6 +17,7 @@ use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Sanctum;
@@ -219,7 +220,7 @@ test('the credit notes of an invoice cannot exceed its total, and a refused one 
     $last = integrityCreditNote($invoice, 400);
 
     expect($last->invoice_number)->toBe('CN-2027-0002')
-        ->and((string) SalesInvoice::where('related_invoice_id', $invoice->id)->sum('total_gross'))->toBe('1220.00');
+        ->and(number_format((float) SalesInvoice::where('related_invoice_id', $invoice->id)->sum('total_gross'), 2, '.', ''))->toBe('1220.00');
 });
 
 // ------------------------------------------------------------ 4. Customer ledger
@@ -420,12 +421,6 @@ test('no actor id is invented when the action has no user', function (): void {
 // ------------------------------------------------------------ Indexes
 
 test('the invoice foreign keys of the ledger and of the credit applications are indexed', function (): void {
-    if (DB::connection()->getDriverName() !== 'pgsql') {
-        $this->markTestSkipped('PostgreSQL catalog check.');
-    }
-
-    $indexes = collect(DB::select("SELECT indexname FROM pg_indexes WHERE tablename IN ('customer_ledger_entries', 'invoice_credit_applications')"))->pluck('indexname')->all();
-
-    expect($indexes)->toContain('customer_ledger_entries_invoice_id_index')
-        ->and($indexes)->toContain('invoice_credit_applications_original_invoice_id_index');
+    expect(Schema::hasIndex('customer_ledger_entries', ['invoice_id']))->toBeTrue()
+        ->and(Schema::hasIndex('invoice_credit_applications', ['original_invoice_id']))->toBeTrue();
 });

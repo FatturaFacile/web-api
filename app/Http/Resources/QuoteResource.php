@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Resources;
 
+use App\Http\Resources\Concerns\SerializesDecimalAttributes;
 use App\Models\Quote;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -13,6 +14,8 @@ use Illuminate\Http\Resources\Json\JsonResource;
  */
 class QuoteResource extends JsonResource
 {
+    use SerializesDecimalAttributes;
+
     /**
      * Every column of the quote as stored (decimals as strings, dates as `Y-m-d`, timestamps as `Y-m-d H:i:s`) plus the
      * contact summary and, when loaded, the lines. Quote lines have no delivered or invoiced quantities: those exist on
@@ -25,7 +28,7 @@ class QuoteResource extends JsonResource
     public function toArray(Request $request): array
     {
         return array_merge(
-            collect($this->resource->getAttributes())->except(['deleted_at', 'signature_data'])->all(),
+            collect($this->attributesWithDecimals())->except(['deleted_at', 'signature_data'])->all(),
             [
                 'contact_id' => $this->contact_id,
                 'contact' => $this->whenLoaded('contact', fn () => ['id' => $this->contact->id, 'name' => $this->contact->company_name ?: trim($this->contact->first_name.' '.$this->contact->last_name)]),

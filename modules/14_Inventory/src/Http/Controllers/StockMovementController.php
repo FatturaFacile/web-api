@@ -62,7 +62,7 @@ final class StockMovementController extends Controller
             $query->where('movement_type', $request->query('movement_type'));
         }
 
-        $movements = $query->paginate((int) $request->query('per_page', 25));
+        $movements = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(StockMovementResource::collection($movements)->response()->getData(true));
     }

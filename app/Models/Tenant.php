@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Pivots\AuditedPivot;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -36,6 +37,8 @@ class Tenant extends Model
         'sdi_code',
         'pec_email',
         'settings',
+        'customs_approved_exporter_number',
+        'rex_exporter_number',
         'id',
         'status',
         'sdi_channel',
@@ -92,7 +95,8 @@ class Tenant extends Model
     public function users(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'tenant_user')
-            ->withPivot(['id', 'role', 'permissions'])
+            ->using(AuditedPivot::class)
+            ->withPivot(['id', 'role', 'permissions', 'suspended_at'])
             ->withTimestamps();
     }
 

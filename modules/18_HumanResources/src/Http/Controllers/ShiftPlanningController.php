@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Modules\HumanResources\Http\Requests\AssignShiftSequenceRequest;
@@ -49,7 +50,7 @@ final class ShiftPlanningController extends Controller
     ])]
     public function shiftTypes(): AnonymousResourceCollection
     {
-        return HrRecordResource::collection(ShiftType::query()->orderBy('code')->get());
+        return HrRecordResource::collection(ShiftType::query()->orderBy('code')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -94,7 +95,7 @@ final class ShiftPlanningController extends Controller
     ])]
     public function sequences(): AnonymousResourceCollection
     {
-        return HrRecordResource::collection(ShiftSequence::query()->with('assignments')->orderBy('name')->get());
+        return HrRecordResource::collection(ShiftSequence::query()->with('assignments')->orderBy('name')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

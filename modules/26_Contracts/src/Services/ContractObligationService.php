@@ -37,8 +37,8 @@ final readonly class ContractObligationService
             ->when($filters['type'] ?? null, static fn (Builder $query, string $type) => $query->where('type', $type))
             ->when($filters['status'] ?? null, static fn (Builder $query, string $status) => $query->where('status', $status))
             ->when($filters['owner_user_id'] ?? null, static fn (Builder $query, string $owner) => $query->where('owner_user_id', $owner))
-            ->when($filters['due_within_days'] ?? null, static fn (Builder $query, int|string $days) => $query->where('status', 'open')->whereBetween('due_date', [$today->toDateString(), $today->addDays((int) $days)->toDateString()]))
-            ->when($filters['overdue'] ?? false, static fn (Builder $query) => $query->where('status', 'open')->where('due_date', '<', $today->toDateString()))
+            ->when($filters['due_within_days'] ?? null, static fn (Builder $query, int|string $days) => $query->where('status', 'open')->whereDate('due_date', '>=', $today->toDateString())->whereDate('due_date', '<=', $today->addDays((int) $days)->toDateString()))
+            ->when($filters['overdue'] ?? false, static fn (Builder $query) => $query->where('status', 'open')->whereDate('due_date', '<', $today->toDateString()))
             ->orderBy('due_date')
             ->orderBy('created_at');
     }
@@ -54,7 +54,7 @@ final readonly class ContractObligationService
             $locked = ContractObligation::query()->lockForUpdate()->findOrFail($obligation->id);
 
             if ($locked->status !== 'open') {
-                throw new ConflictHttpException("This item is already {$locked->status}.");
+                throw new ConflictHttpException(__('contracts.obligation.already_status', ['status' => $locked->status]));
             }
 
             $locked->update(['status' => $outcome, 'completed_at' => now(), 'completed_by' => $userId, 'completion_note' => $note]);
@@ -75,9 +75,13 @@ final readonly class ContractObligationService
             ->whereNull('deleted_at')
             ->where('status', 'open')
             ->whereNull('reminded_at')
-            ->whereRaw('due_date - remind_days_before <= ?', [$today->toDateString()])
             ->orderBy('due_date')
             ->each(function (ContractObligation $item) use ($today, &$reminded): void {
+                // Portable replacement of the SQL date arithmetic: the window opens remind_days_before days before the due date.
+                if ($item->due_date->subDays((int) $item->remind_days_before)->toDateString() > $today->toDateString()) {
+                    return;
+                }
+
                 $item->forceFill(['reminded_at' => now()])->saveQuietly();
 
                 $this->events->publishAndDispatch(new ContractObligationDueEvent(

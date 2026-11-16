@@ -41,6 +41,20 @@ class MaintenancePlan extends BaseEnterpriseModel
 {
     protected $table = 'eam_maintenance_plans';
 
+    /**
+     * Calculated columns of the plan grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `activity` is the readable state of the boolean flag (`active` / `inactive`), the same on every database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'activity' => "CASE WHEN eam_maintenance_plans.is_active THEN 'active' ELSE 'inactive' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

@@ -14,6 +14,13 @@ final class StoreIntragroupTransactionRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('currency'))) {
+            $this->merge(['currency' => strtoupper(trim($this->input('currency')))]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -26,6 +33,7 @@ final class StoreIntragroupTransactionRequest extends FormRequest
             'asset_type' => ['required', Rule::in(['inventory', 'fixed_asset'])],
             'description' => ['nullable', 'string', 'max:255'],
             'transaction_date' => ['required', 'date'],
+            'currency' => ['nullable', 'string', 'regex:/^[A-Z]{3}$/'],
             'sale_price' => ['nullable', 'numeric', 'decimal:0,4'],
             'seller_cost' => ['nullable', 'numeric', 'decimal:0,4'],
             'margin_amount' => ['nullable', 'numeric', 'decimal:0,4'],

@@ -58,9 +58,12 @@ final class RecurringJournalController extends Controller
         $templates = RecurringJournal::query()
             ->when($request->query('status'), static fn ($query, $status) => $query->where('status', $status))
             ->orderBy('next_run_date')
-            ->get();
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
-        return $this->successResponse(RecurringJournalResource::collection($templates));
+        return $this->successResponse(
+            data: RecurringJournalResource::collection($templates),
+            meta: ['current_page' => $templates->currentPage(), 'last_page' => $templates->lastPage(), 'per_page' => $templates->perPage(), 'total' => $templates->total()],
+        );
     }
 
     /**

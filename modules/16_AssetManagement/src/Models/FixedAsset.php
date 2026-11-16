@@ -91,6 +91,20 @@ class FixedAsset extends BaseEnterpriseModel implements LockableByWorkflowInterf
 {
     protected $table = 'eam_fixed_assets';
 
+    /**
+     * Calculated columns of the asset grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `carrying_value` is what the register shows: the carrying amount once it exists, the acquisition cost before.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'carrying_value' => 'COALESCE(eam_fixed_assets.carrying_amount, eam_fixed_assets.acquisition_cost)',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

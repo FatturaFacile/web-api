@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\FiscalRetail\Services;
 
+use App\Support\Database\TransactionLock;
 use Illuminate\Support\Facades\DB;
 use LogicException;
 
@@ -14,7 +15,7 @@ use LogicException;
 final class CorrispettiviDayLock
 {
     /**
-     * Takes a PostgreSQL advisory lock held until the end of the current transaction.
+     * Takes a transaction lock held until the end of the current transaction.
      *
      * @throws LogicException when called outside a transaction, where the lock would be released at once
      */
@@ -24,6 +25,6 @@ final class CorrispettiviDayLock
             throw new LogicException('The corrispettivi day lock is taken inside a transaction.');
         }
 
-        DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ["corrispettivi:{$tenantId}:{$businessDate}"]);
+        TransactionLock::acquire("corrispettivi:{$tenantId}:{$businessDate}");
     }
 }

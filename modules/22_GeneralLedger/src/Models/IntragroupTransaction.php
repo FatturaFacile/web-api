@@ -22,6 +22,7 @@ use Illuminate\Support\Carbon;
  * @property string $buyer_tenant_id
  * @property string $asset_type
  * @property Carbon $transaction_date
+ * @property string $currency Always the group currency of the group
  * @property string|null $sale_price
  * @property string|null $seller_cost
  * @property string|null $margin_amount

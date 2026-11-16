@@ -79,7 +79,7 @@ final class SupplierController extends Controller
             $query->orderBy('company_name', 'asc');
         }
 
-        $suppliers = $query->paginate((int) $request->query('per_page', 25));
+        $suppliers = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(SupplierResource::collection($suppliers)->response()->getData(true));
     }

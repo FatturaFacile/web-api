@@ -12,6 +12,7 @@ use Modules\Treasury\Http\Controllers\FxRiskController;
 use Modules\Treasury\Http\Controllers\LiquidityController;
 use Modules\Treasury\Http\Controllers\LiquidityForecastController;
 use Modules\Treasury\Http\Controllers\OpenBankingController;
+use Modules\Treasury\Http\Controllers\PagoPaNoticeController;
 use Modules\Treasury\Http\Controllers\PaymentBatchController;
 use Modules\Treasury\Http\Controllers\PaymentProposalController;
 use Modules\Treasury\Http\Controllers\ReceivableCollectionController;
@@ -49,6 +50,14 @@ Route::prefix('api/v1/treasury')
         Route::get('payment-proposals/{id}', [PaymentProposalController::class, 'show'])->whereUuid('id')->name('treasury.payment-proposals.show');
         Route::post('payment-proposals/{id}/approve', [PaymentProposalController::class, 'approve'])->whereUuid('id')->name('treasury.payment-proposals.approve');
         Route::post('payment-proposals/{id}/reject', [PaymentProposalController::class, 'reject'])->whereUuid('id')->name('treasury.payment-proposals.reject');
+
+        // pagoPA payment notices of receivables (IUV, notice code, QR payload)
+        Route::get('pagopa-notices', [PagoPaNoticeController::class, 'index'])->name('treasury.pagopa-notices.index');
+        Route::post('pagopa-notices', [PagoPaNoticeController::class, 'store'])->name('treasury.pagopa-notices.store');
+        Route::get('pagopa-notices/{id}', [PagoPaNoticeController::class, 'show'])->whereUuid('id')->name('treasury.pagopa-notices.show');
+        Route::post('pagopa-notices/{id}/cancel', [PagoPaNoticeController::class, 'cancel'])->whereUuid('id')->name('treasury.pagopa-notices.cancel');
+        Route::post('pagopa-notices/{id}/mark-paid', [PagoPaNoticeController::class, 'markPaid'])->whereUuid('id')->name('treasury.pagopa-notices.mark-paid');
+        Route::get('pagopa-notices/{id}/qr-payload', [PagoPaNoticeController::class, 'qrPayload'])->whereUuid('id')->name('treasury.pagopa-notices.qr-payload');
 
         // Liquidity forecast with scenarios and recurring items, KPIs
         Route::get('liquidity/forecast', [LiquidityForecastController::class, 'forecast'])->name('treasury.liquidity.forecast');

@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Modules\Documents\Models;
 
+use App\Models\Pivots\AuditedPivot;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Modules\DocumentTrust\Exceptions\PreservationImmutableException;
 use Modules\DocumentTrust\Services\PreservationLock;
@@ -18,6 +20,7 @@ use Modules\DocumentTrust\Services\PreservationLock;
  * @property ?Carbon $retention_until
  * @property ?string $checked_out_by
  * @property ?Carbon $checked_out_at
+ * @property ?Carbon $lock_expires_at
  * @property ?string $checkout_note
  * @property array<string, mixed>|null $metadata
  */
@@ -60,6 +63,7 @@ final class DmsDocument extends BaseEnterpriseModel
             'legal_hold' => 'boolean',
             'legal_hold_at' => 'datetime',
             'checked_out_at' => 'datetime',
+            'lock_expires_at' => 'datetime',
             'current_version' => 'integer',
         ];
     }
@@ -69,7 +73,7 @@ final class DmsDocument extends BaseEnterpriseModel
      */
     public function isCheckedOut(): bool
     {
-        return $this->checked_out_by !== null;
+        return $this->checked_out_by !== null && ($this->lock_expires_at === null || $this->lock_expires_at->isFuture());
     }
 
     /**
@@ -97,6 +101,26 @@ final class DmsDocument extends BaseEnterpriseModel
     }
 
     /**
+     * @return HasOne<DmsDocumentVersion, $this>
+     */
+    public function latestVersion(): HasOne
+    {
+        return $this->hasOne(DmsDocumentVersion::class, 'document_id')->ofMany('version_number', 'max');
+    }
+
+    /**
+     * Calculated grid columns as portable SQL: the file name of the newest version.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'latest_file_name' => '(SELECT v.original_name FROM dms_document_versions v WHERE v.document_id = dms_documents.id ORDER BY v.version_number DESC LIMIT 1)',
+        ];
+    }
+
+    /**
      * @return HasMany<DmsDocumentLink, $this>
      */
     public function links(): HasMany
@@ -109,6 +133,8 @@ final class DmsDocument extends BaseEnterpriseModel
      */
     public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(DmsTag::class, 'dms_document_tag', 'document_id', 'tag_id')->withPivot('tenant_id');
+        return $this->belongsToMany(DmsTag::class, 'dms_document_tag', 'document_id', 'tag_id')
+            ->using(AuditedPivot::class)
+            ->withPivot('tenant_id');
     }
 }

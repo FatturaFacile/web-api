@@ -70,7 +70,7 @@ final class TimePeriodClosingService
             $to = CarbonImmutable::parse($from)->endOfMonth()->format('Y-m-d');
             $summary = [
                 'clock_events' => TimeClockEvent::query()->betweenLocalDays($from, $to)->count(),
-                'daily_records' => TimeDailyRecord::query()->whereBetween('work_date', [$from, $to])->count(),
+                'daily_records' => TimeDailyRecord::query()->whereDate('work_date', '>=', $from)->whereDate('work_date', '<=', $to)->count(),
                 'employees' => TimeClockEvent::query()->betweenLocalDays($from, $to)->distinct()->count('user_id'),
             ];
 

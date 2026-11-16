@@ -63,7 +63,7 @@ final readonly class ProjectScheduleService
             $end = $attributes['planned_end_date'] ?? $locked->planned_end_date->toDateString();
 
             if ($end < $start) {
-                throw ValidationException::withMessages(['planned_end_date' => 'The planned end date must be on or after the planned start date.']);
+                throw ValidationException::withMessages(['planned_end_date' => __('projects_errors.schedule.end_before_start')]);
             }
 
             if (($attributes['status'] ?? null) === 'completed') {
@@ -90,11 +90,11 @@ final readonly class ProjectScheduleService
     {
         DB::transaction(function () use ($task): void {
             if ($task->timesheets()->exists() || $task->costEntries()->exists()) {
-                throw new ConflictHttpException('Hours or costs are booked on this task: it cannot be deleted.');
+                throw new ConflictHttpException(__('projects_errors.task.cannot_delete_with_bookings'));
             }
 
             if ($task->subTasks()->exists()) {
-                throw new ConflictHttpException('The task has subtasks: delete or move them first.');
+                throw new ConflictHttpException(__('projects_errors.task.has_subtasks'));
             }
 
             ProjectTaskDependency::query()->where('predecessor_task_id', $task->id)->orWhere('successor_task_id', $task->id)->forceDelete();
@@ -115,19 +115,19 @@ final readonly class ProjectScheduleService
             $predecessor = ProjectTask::query()->whereKey($predecessorId)->first();
 
             if ($predecessor === null || $predecessor->project_id !== $successor->project_id) {
-                throw ValidationException::withMessages(['predecessor_task_id' => 'The predecessor must be a task of the same project.']);
+                throw ValidationException::withMessages(['predecessor_task_id' => __('projects_errors.dependency.predecessor_other_project')]);
             }
 
             if ($predecessor->id === $successor->id) {
-                throw ValidationException::withMessages(['predecessor_task_id' => 'A task cannot depend on itself.']);
+                throw ValidationException::withMessages(['predecessor_task_id' => __('projects_errors.dependency.self')]);
             }
 
             if (ProjectTaskDependency::query()->where('predecessor_task_id', $predecessor->id)->where('successor_task_id', $successor->id)->exists()) {
-                throw ValidationException::withMessages(['predecessor_task_id' => 'This dependency already exists.']);
+                throw ValidationException::withMessages(['predecessor_task_id' => __('projects_errors.dependency.already_exists')]);
             }
 
             if ($this->reaches((string) $successor->project_id, (string) $successor->id, (string) $predecessor->id)) {
-                throw ValidationException::withMessages(['predecessor_task_id' => 'This dependency would create a cycle in the schedule.']);
+                throw ValidationException::withMessages(['predecessor_task_id' => __('projects_errors.dependency.cycle')]);
             }
 
             return ProjectTaskDependency::create([
@@ -427,7 +427,7 @@ final readonly class ProjectScheduleService
         }
 
         if (count($order) !== count($ids)) {
-            throw new ConflictHttpException('The task dependencies form a cycle: the critical path cannot be computed.');
+            throw new ConflictHttpException(__('projects_errors.schedule.dependency_cycle'));
         }
 
         return $order;
@@ -475,18 +475,18 @@ final readonly class ProjectScheduleService
         $errors = [];
 
         if (isset($attributes['project_phase_id']) && ! ProjectPhase::query()->whereKey($attributes['project_phase_id'])->where('project_id', $project->id)->exists()) {
-            $errors['project_phase_id'] = 'The phase does not belong to the project.';
+            $errors['project_phase_id'] = __('projects_errors.phase.not_in_project');
         }
 
         if (isset($attributes['project_milestone_id']) && ! ProjectMilestone::query()->whereKey($attributes['project_milestone_id'])->where('project_id', $project->id)->exists()) {
-            $errors['project_milestone_id'] = 'The milestone does not belong to the project.';
+            $errors['project_milestone_id'] = __('projects_errors.milestone.not_in_project');
         }
 
         if (isset($attributes['parent_task_id'])) {
             $parentOk = ProjectTask::query()->whereKey($attributes['parent_task_id'])->where('project_id', $project->id)->exists();
 
             if (! $parentOk || ($task !== null && $attributes['parent_task_id'] === $task->id)) {
-                $errors['parent_task_id'] = 'The parent must be another task of the same project.';
+                $errors['parent_task_id'] = __('projects_errors.task.parent_invalid');
             }
         }
 
@@ -498,7 +498,7 @@ final readonly class ProjectScheduleService
     private function assertOpen(Project $project): void
     {
         if (! $project->isOpen()) {
-            throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: its schedule can no longer change.");
+            throw new ConflictHttpException(__('projects_errors.schedule.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
         }
     }
 }

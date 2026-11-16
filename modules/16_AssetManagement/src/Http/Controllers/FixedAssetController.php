@@ -81,10 +81,10 @@ final class FixedAssetController extends Controller
 
         if ($request->filled('search')) {
             $term = '%'.addcslashes((string) $request->query('search'), '%_\\').'%';
-            $query->where(fn ($inner) => $inner->where('asset_number', 'ilike', $term)->orWhere('name', 'ilike', $term)->orWhere('serial_number', 'ilike', $term)->orWhere('barcode_tag', 'ilike', $term));
+            $query->where(fn ($inner) => $inner->whereLike('asset_number', $term)->orWhereLike('name', $term)->orWhereLike('serial_number', $term)->orWhereLike('barcode_tag', $term));
         }
 
-        return FixedAssetResource::collection($query->orderByDesc('created_at')->paginate($this->perPage($request)));
+        return FixedAssetResource::collection($query->orderByDesc('created_at')->gridPaginate($this->perPage($request)));
     }
 
     /**

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Services;
 
+use App\Support\Database\TransactionLock;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -155,16 +156,11 @@ final class CustomerLedgerService implements CustomerLedgerServiceInterface
     }
 
     /**
-     * Serializes the entries of one customer until the surrounding transaction ends. PostgreSQL only: other drivers
-     * (SQLite in tests) already write one transaction at a time.
+     * Serializes the entries of one customer until the surrounding transaction ends.
      */
     private function lockCustomer(string $tenantId, string $customerId): void
     {
-        if (DB::connection()->getDriverName() !== 'pgsql') {
-            return;
-        }
-
-        DB::select('SELECT pg_advisory_xact_lock(hashtextextended(?, 0))', ['customer_ledger:'.$tenantId.':'.$customerId]);
+        TransactionLock::acquire('customer_ledger:'.$tenantId.':'.$customerId);
     }
 
     private function previousBalance(string $tenantId, string $customerId): float

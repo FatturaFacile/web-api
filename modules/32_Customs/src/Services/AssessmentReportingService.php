@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Customs\Services;
 
+use App\Support\Database\SqlDialect;
 use Illuminate\Support\Collection;
 use Modules\Customs\Enums\LedgerPostingStatus;
 use Modules\Customs\Enums\SignatureStatus;
@@ -85,9 +86,9 @@ final class AssessmentReportingService
     public function statistics(string $from, string $to): array
     {
         return CustomsAssessmentDecision::query()
-            ->whereBetween('document_date', [$from, $to])
-            ->selectRaw("to_char(document_date, 'YYYY-MM') as month, direction, document_type, count(*) as decisions, sum(duty_amount) as duty_total, sum(vat_amount) as vat_total")
-            ->groupByRaw("to_char(document_date, 'YYYY-MM'), direction, document_type")
+            ->whereDate('document_date', '>=', $from)->whereDate('document_date', '<=', $to)
+            ->selectRaw(SqlDialect::monthBucket('document_date').' as month, direction, document_type, count(*) as decisions, sum(duty_amount) as duty_total, sum(vat_amount) as vat_total')
+            ->groupByRaw(SqlDialect::monthBucket('document_date').', direction, document_type')
             ->orderBy('month')
             ->orderBy('direction')
             ->orderBy('document_type')

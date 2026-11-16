@@ -66,7 +66,7 @@ final class StockItemController extends Controller
             });
         }
 
-        $items = $query->paginate((int) $request->query('per_page', 25));
+        $items = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(StockItemResource::collection($items)->response()->getData(true));
     }

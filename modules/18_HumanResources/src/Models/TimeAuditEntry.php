@@ -19,6 +19,9 @@ use Modules\HumanResources\Casts\UtcInstant;
  * An immutable audit record of a change to the working time records (who, when, what, why). Not a
  * BaseEnterpriseModel: an append-only row has no soft delete, and it would only be copied to the audit ledger.
  * The database refuses changes too (trigger on PostgreSQL); the only deletion is the retention purge, by query.
+ *
+ * @property string|null $record_hash
+ * @property string|null $prev_hash
  */
 #[UseFactory(TimeAuditEntryFactory::class)]
 final class TimeAuditEntry extends Model
@@ -53,6 +56,8 @@ final class TimeAuditEntry extends Model
             'after_values' => 'array',
             'occurred_at' => UtcInstant::class,
             'created_at' => UtcInstant::class,
+            'record_hash' => 'string',
+            'prev_hash' => 'string',
         ];
     }
 
@@ -60,29 +65,33 @@ final class TimeAuditEntry extends Model
      * Mass updates and deletes do not fire model events, so they are refused here.
      *
      * @param  QueryBuilder  $query
-     * @return Builder<TimeAuditEntry>
      */
-    public function newEloquentBuilder($query): Builder
+    public function newEloquentBuilder($query): TimeAuditEntryBuilder
     {
-        return new class($query) extends Builder
-        {
-            /**
-             * @param  array<string, mixed>  $values
-             */
-            public function update(array $values): int
-            {
-                throw new LogicException(TimeAuditEntry::IMMUTABLE_MESSAGE);
-            }
+        return new TimeAuditEntryBuilder($query);
+    }
+}
 
-            public function delete(): mixed
-            {
-                throw new LogicException(TimeAuditEntry::IMMUTABLE_MESSAGE);
-            }
+/**
+ * @extends Builder<TimeAuditEntry>
+ */
+final class TimeAuditEntryBuilder extends Builder
+{
+    /**
+     * @param  array<string, mixed>  $values
+     */
+    public function update(array $values): int
+    {
+        throw new LogicException(TimeAuditEntry::IMMUTABLE_MESSAGE);
+    }
 
-            public function forceDelete(): mixed
-            {
-                throw new LogicException(TimeAuditEntry::IMMUTABLE_MESSAGE);
-            }
-        };
+    public function delete(): mixed
+    {
+        throw new LogicException(TimeAuditEntry::IMMUTABLE_MESSAGE);
+    }
+
+    public function forceDelete(): mixed
+    {
+        throw new LogicException(TimeAuditEntry::IMMUTABLE_MESSAGE);
     }
 }

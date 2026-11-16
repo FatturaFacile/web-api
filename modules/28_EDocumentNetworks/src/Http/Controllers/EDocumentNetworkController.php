@@ -11,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use Modules\EDocumentNetworks\Contracts\EDocumentGateway;
 use Modules\EDocumentNetworks\DTOs\EDocumentEnvelope;
 use Modules\EDocumentNetworks\Enums\Network;
 use Modules\EDocumentNetworks\Exceptions\NetworkNotAvailableException;
@@ -95,7 +96,7 @@ final class EDocumentNetworkController extends Controller
             ->when($filters['status'] ?? null, static fn ($query, string $status) => $query->where('status', $status))
             ->when($filters['document_reference'] ?? null, static fn ($query, string $reference) => $query->where('document_reference', $reference))
             ->latest()
-            ->paginate((int) ($filters['per_page'] ?? 100));
+            ->gridPaginate((int) ($filters['per_page'] ?? 100));
 
         return $this->successResponse(
             TransmissionResource::collection($page->getCollection()),
@@ -153,36 +154,87 @@ final class EDocumentNetworkController extends Controller
         $payload = base64_decode((string) $request->validated('payload_base64'), true);
 
         if ($payload === false) {
-            throw ValidationException::withMessages(['payload_base64' => 'This is not valid base64.']);
+            throw ValidationException::withMessages(['payload_base64' => __('edocument_networks_errors.payload.invalid_base64')]);
         }
 
         $digest = hash('sha256', $payload);
+        $reference = (string) $request->validated('document_reference');
 
-        if (EDocumentTransmission::query()->where('network', $network)->where('document_reference', $request->validated('document_reference'))->where('payload_sha256', $digest)->exists()) {
+        if (EDocumentTransmission::query()->where('network', $network)->where('document_reference', $reference)->where('payload_sha256', $digest)->where('status', '!=', EDocumentTransmission::Failed)->exists()) {
             return $this->problemDetailsResponse('Already transmitted', 'This exact document was already handed to this network: it is not sent twice.', Response::HTTP_CONFLICT);
         }
 
+        $transmission = EDocumentTransmission::query()
+            ->where('network', $network)->where('document_reference', $reference)->where('payload_sha256', $digest)->where('status', EDocumentTransmission::Failed)
+            ->first() ?? new EDocumentTransmission([
+                'network' => $network,
+                'document_reference' => $reference,
+                'recipient_identifier' => $request->validated('recipient_identifier'),
+                'payload_sha256' => $digest,
+                'driver' => $gateway->name(),
+                'sent_by' => $request->user()->id,
+                'attempts' => 0,
+            ]);
+
+        return $this->hand($transmission, $gateway, $payload, Response::HTTP_CREATED);
+    }
+
+    /**
+     * Retry a failed transmission.
+     */
+    #[OA\Post(
+        path: '/api/v1/edocument-networks/transmissions/{id}/retry',
+        operationId: 'retryEDocumentTransmission',
+        description: 'Hands the stored payload of a failed transmission to the driver again. 409 when the transmission has not failed or its payload is gone; 503 (and one more attempt on the row) when the network is still not available.',
+        summary: 'Retry a failed transmission',
+        security: [['bearerAuth' => [], 'tenantHeader' => []]],
+        tags: ['Document Networks'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Accepted by the driver', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/EDocumentTransmissionResource')])),
+            new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 404, description: 'Not found in the active tenant', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 409, description: 'Not retryable', content: new OA\JsonContent(ref: '#/components/schemas/ApiProblemDetailsResponse')),
+            new OA\Response(response: 503, description: 'The network is still not available', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function retry(string $id): JsonResponse
+    {
+        $transmission = EDocumentTransmission::findOrFail($id);
+
+        if (! $transmission->canRetry()) {
+            return $this->problemDetailsResponse('Not retryable', 'Only a failed transmission with a stored payload can be retried.', Response::HTTP_CONFLICT);
+        }
+
+        return $this->hand($transmission, $this->gateways->for(Network::from((string) $transmission->network)), (string) $transmission->payload, Response::HTTP_OK);
+    }
+
+    /**
+     * Hands the payload to the driver and records the outcome on the transmission: accepted (payload erased) or failed (payload kept for a retry).
+     */
+    private function hand(EDocumentTransmission $transmission, EDocumentGateway $gateway, string $payload, int $successStatus): JsonResponse
+    {
+        $transmission->attempts = (int) $transmission->attempts + 1;
+        $transmission->last_attempt_at = now();
+        $transmission->driver = $gateway->name();
+
         try {
-            $receipt = $gateway->send($this->tenantContext->getTenant(), new EDocumentEnvelope(
-                $request->validated('document_reference'),
-                $request->validated('recipient_identifier'),
-                $payload
-            ));
+            $receipt = $gateway->send($this->tenantContext->getTenant(), new EDocumentEnvelope((string) $transmission->document_reference, (string) $transmission->recipient_identifier, $payload));
         } catch (NetworkNotAvailableException $exception) {
+            $transmission->status = EDocumentTransmission::Failed;
+            $transmission->error_message = $exception->getMessage();
+            $transmission->payload = $payload;
+            $transmission->save();
+
             return $this->problemDetailsResponse('Network not available', $exception->getMessage(), Response::HTTP_SERVICE_UNAVAILABLE);
         }
 
-        $transmission = EDocumentTransmission::create([
-            'network' => $network,
-            'document_reference' => $request->validated('document_reference'),
-            'recipient_identifier' => $request->validated('recipient_identifier'),
-            'payload_sha256' => $digest,
-            'status' => $receipt['status'],
-            'external_id' => $receipt['external_id'],
-            'driver' => $gateway->name(),
-            'sent_by' => $request->user()->id,
-        ]);
+        $transmission->status = $receipt['status'];
+        $transmission->external_id = $receipt['external_id'];
+        $transmission->error_message = null;
+        $transmission->payload = null;
+        $transmission->save();
 
-        return $this->successResponse(new TransmissionResource($transmission), 'Document handed to the driver', Response::HTTP_CREATED);
+        return $this->successResponse(new TransmissionResource($transmission), 'Document handed to the driver', $successStatus);
     }
 }

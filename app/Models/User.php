@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Pivots\AuditedPivot;
 use App\Services\Auth\UserSessions;
 use App\Services\Tenancy\TenantContext;
 use Database\Factories\UserFactory;
@@ -99,6 +100,7 @@ class User extends Authenticatable
     public function tenants(): BelongsToMany
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user')
+            ->using(AuditedPivot::class)
             ->withPivot(['id', 'role', 'permissions'])
             ->wherePivotNull('suspended_at')
             ->withTimestamps();
@@ -149,5 +151,31 @@ class User extends Authenticatable
     public function getCurrentTenantIdAttribute(): ?string
     {
         return $this->tenant_id;
+    }
+
+    /**
+     * True when the user holds the permission slug in the tenant, either through the pivot permission list
+     * (`*` grants everything) or through one of the given privileged roles.
+     *
+     * @param  list<string>  $grantingRoles
+     */
+    public function hasTenantPermission(?string $tenantId, string $slug, array $grantingRoles = ['owner', 'admin']): bool
+    {
+        if ($tenantId === null) {
+            return false;
+        }
+
+        $pivot = $this->tenants()->where('tenants.id', $tenantId)->first()?->pivot;
+        if ($pivot === null) {
+            return false;
+        }
+
+        if (in_array($pivot->role, $grantingRoles, true)) {
+            return true;
+        }
+
+        $permissions = is_string($pivot->permissions) ? json_decode($pivot->permissions, true) : $pivot->permissions;
+
+        return is_array($permissions) && (in_array($slug, $permissions, true) || in_array('*', $permissions, true));
     }
 }

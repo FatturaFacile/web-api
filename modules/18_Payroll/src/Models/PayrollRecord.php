@@ -34,6 +34,16 @@ abstract class PayrollRecord extends Model
     }
 
     /**
+     * Calculated grid columns (see App\Support\Http\GridColumns): `is_generic` mirrors {@see self::isGeneric()}.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return ['is_generic' => "CASE WHEN {$this->getTable()}.tenant_id IS NULL THEN 1 ELSE 0 END"];
+    }
+
+    /**
      * @return Factory<static>|null
      */
     protected static function newFactory()

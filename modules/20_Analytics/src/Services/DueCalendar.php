@@ -45,7 +45,7 @@ final class DueCalendar
     private function receivables(CarbonImmutable $from, CarbonImmutable $to, ?string $contactId): Collection
     {
         return Invoice::with('contact')
-            ->whereBetween('due_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('due_date', '>=', $from->toDateString())->whereDate('due_date', '<=', $to->toDateString())
             ->whereNotIn('invoice_type', ['proforma', 'credit_note'])
             ->where('payment_status', '!=', 'paid')
             ->when($contactId, static fn ($query, string $id) => $query->where('contact_id', $id))
@@ -61,7 +61,7 @@ final class DueCalendar
     private function payables(CarbonImmutable $from, CarbonImmutable $to, ?string $contactId): Collection
     {
         return PassiveInvoice::with('supplier')
-            ->whereBetween('due_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('due_date', '>=', $from->toDateString())->whereDate('due_date', '<=', $to->toDateString())
             ->where('document_type', '!=', 'TD04')
             ->where('payment_status', '!=', 'paid')
             ->when($contactId, static fn ($query, string $id) => $query->where('supplier_id', $id))

@@ -61,7 +61,7 @@ final class VatAnnualReconciliationService
             ->whereIn('je.status', ['posted', 'reversed'])
             ->where('je.ledger_type', 'statutory')
             ->where('je.journal_type', '<>', 'closing')
-            ->whereBetween('je.posting_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('je.posting_date', '>=', $from->toDateString())->whereDate('je.posting_date', '<=', $to->toDateString())
             ->where(function ($q): void {
                 $q->whereNull('je.source_document_type')
                     ->orWhereNotIn('je.source_document_type', [

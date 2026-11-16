@@ -29,7 +29,7 @@ final readonly class ContractRegister
     public function __construct(private TenantContext $tenantContext) {}
 
     /**
-     * @param  array{kind?: ?string, status?: ?string, expiring_within_days?: int|string|null}  $filters
+     * @param  array{kind?: ?string, status?: ?string, expiring_within_days?: int|string|null, search?: ?string}  $filters
      * @return LengthAwarePaginator<int, object>
      */
     public function paginate(array $filters, int $perPage): LengthAwarePaginator
@@ -52,9 +52,10 @@ final readonly class ContractRegister
 
         return DB::query()->fromSub($union, 'contracts')
             ->when($filters['status'] ?? null, static fn (Builder $query, string $status): Builder => $query->where('status', $status))
-            ->when($filters['expiring_within_days'] ?? null, static fn (Builder $query, int|string $days): Builder => $query->whereBetween('end_date', [now()->toDateString(), now()->addDays((int) $days)->toDateString()]))
+            ->when($filters['search'] ?? null, static fn (Builder $query, string $term): Builder => $query->where(static fn (Builder $inner): Builder => $inner->whereLike('contract_number', "%{$term}%")->orWhereLike('title', "%{$term}%")))
+            ->when($filters['expiring_within_days'] ?? null, static fn (Builder $query, int|string $days): Builder => $query->whereDate('end_date', '>=', now()->toDateString())->whereDate('end_date', '<=', now()->addDays((int) $days)->toDateString()))
             ->orderBy('end_date')
-            ->paginate($perPage);
+            ->gridPaginate($perPage);
     }
 
     /**
@@ -127,21 +128,21 @@ final readonly class ContractRegister
             $status = ContractStatus::fromStored((string) $locked->getAttribute('status'));
 
             if (in_array($status, [ContractStatus::Draft, ContractStatus::Review, ContractStatus::Terminated], true)) {
-                throw new ConflictHttpException("A contract in status {$status->value} cannot be renewed.");
+                throw new ConflictHttpException(__('contracts.register.renew_status', ['status' => $status->value]));
             }
 
             if ($currentEnd === null) {
-                throw new ConflictHttpException('This contract has no end date to extend.');
+                throw new ConflictHttpException(__('contracts.register.renew_no_end'));
             }
 
             if ($newEndDate === null && empty($locked->renewal_term_months)) {
-                throw new ConflictHttpException('This contract has no renewal term: state the new end date.');
+                throw new ConflictHttpException(__('contracts.register.renew_no_term'));
             }
 
             $newEnd = $newEndDate ?? CarbonImmutable::parse($currentEnd)->addMonthsNoOverflow((int) $locked->renewal_term_months)->toDateString();
 
             if (CarbonImmutable::parse($newEnd)->lte(CarbonImmutable::parse($currentEnd))) {
-                throw new ConflictHttpException('The new end date must be after the current end date.');
+                throw new ConflictHttpException(__('contracts.register.renew_end_after'));
             }
 
             ContractRenewal::create([
@@ -177,11 +178,11 @@ final readonly class ContractRegister
     }
 
     /**
-     * Records that notice was given, which stops the automatic renewal.
+     * Records that notice was given, which stops the automatic renewal. The day defaults to today.
      */
-    public function giveNotice(Model $contract): Model
+    public function giveNotice(Model $contract, ?CarbonImmutable $givenAt = null): Model
     {
-        $contract->update(['notice_given_at' => now()]);
+        $contract->update(['notice_given_at' => $givenAt ?? now()]);
 
         return $contract;
     }

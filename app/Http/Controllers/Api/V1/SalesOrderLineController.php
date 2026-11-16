@@ -52,7 +52,7 @@ class SalesOrderLineController extends Controller
             ->latest();
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $lines = $query->paginate($perPage);
+        $lines = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: $lines->getCollection()->map(fn (SalesOrderItem $line): array => [

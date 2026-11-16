@@ -59,10 +59,13 @@ final class PayrollRunController extends PayrollController
         $this->authorize('viewAny', PayrollRun::class);
 
         $runs = PayrollRun::query()
+            ->withCount('payslips as employees_count')
+            ->withSum('payslips as total_gross', 'gross_salary')
+            ->withSum('payslips as total_net', 'net_salary')
             ->when($request->integer('year') > 0, static fn ($query) => $query->where('year', $request->integer('year')))
             ->orderByDesc('year')
             ->orderByDesc('month')
-            ->paginate($this->perPage($request, 24));
+            ->gridPaginate($this->perPage($request, 24));
 
         return PayrollRunResource::collection($runs);
     }

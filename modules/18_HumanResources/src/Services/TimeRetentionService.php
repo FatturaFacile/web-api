@@ -21,8 +21,12 @@ final class TimeRetentionService
 {
     public function purge(Tenant $tenant, CarbonImmutable $today, int $configuredYears): DataRetentionResult
     {
-        $years = max(StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS, $configuredYears);
-        $cutoff = DataRetentionPolicy::cutoff($today, $years);
+        // Italy LUL/INPS requires 10-year minimum; CH OLL 1 Art. 73 requires 5-year minimum
+        $minimumYears = ($tenant->country ?? '') === 'IT'
+            ? StatutoryRetentionCatalogue::STATUTORY_ACCOUNTING_YEARS
+            : StatutoryRetentionCatalogue::STATUTORY_EMPLOYMENT_YEARS;
+
+        $cutoff = DataRetentionPolicy::cutoff($today, max($configuredYears, $minimumYears));
         $cutoffInstant = $cutoff->utc()->format('Y-m-d H:i:s');
 
         return DB::transaction(function () use ($tenant, $cutoff, $cutoffInstant): DataRetentionResult {
@@ -33,7 +37,7 @@ final class TimeRetentionService
 
             $dailyRecords = DB::table('time_daily_records')
                 ->where('tenant_id', $tenant->id)
-                ->where('work_date', '<', $cutoff->format('Y-m-d'))
+                ->whereDate('work_date', '<', $cutoff->format('Y-m-d'))
                 ->delete();
 
             $auditEntries = $this->purgeAuditEntries((string) $tenant->id, $cutoffInstant);
@@ -65,25 +69,13 @@ final class TimeRetentionService
     }
 
     /**
-     * The PostgreSQL trigger lets a deletion through only with this setting, local to the transaction.
+     * The only legitimate deletion of the history: the cutoff is the end of the legal retention (five whole calendar years).
      */
     private function purgeAuditEntries(string $tenantId, string $cutoffInstant): int
     {
-        $usesTrigger = DB::getDriverName() === 'pgsql';
-
-        if ($usesTrigger) {
-            DB::select("SELECT set_config('app.time_audit_purge', 'on', true)");
-        }
-
-        $deleted = DB::table('time_audit_entries')
+        return DB::table('time_audit_entries')
             ->where('tenant_id', $tenantId)
             ->where('occurred_at', '<', $cutoffInstant)
             ->delete();
-
-        if ($usesTrigger) {
-            DB::select("SELECT set_config('app.time_audit_purge', 'off', true)");
-        }
-
-        return $deleted;
     }
 }

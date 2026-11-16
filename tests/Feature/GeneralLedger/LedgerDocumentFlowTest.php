@@ -6,6 +6,7 @@ use App\Actions\Purchases\RecordSupplierPayment;
 use App\Actions\Sales\RecordPayment;
 use App\Models\Contact;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\PassiveInvoice;
 use App\Models\Payment;
 use App\Models\Tenant;
@@ -425,22 +426,28 @@ test('reversing a journal inverts the customer and supplier subledgers', functio
     expect((float) SupplierLedger::withoutGlobalScopes()->where('tenant_id', $tenantId)->sum('open_amount'))->toEqual(0.0);
 });
 
-test('the database refuses changes to issued invoices and posted entries', function (): void {
+test('issued invoices and posted entries refuse changes through the models', function (): void {
     $company = ledgerCompany('IT');
     $invoiceId = $this->postJson('/api/v1/sales/invoices', ledgerInvoicePayload($company))->json('data.id');
-    $entryId = Invoice::findOrFail($invoiceId)->gl_journal_entry_id;
-    $refused = fn (callable $statement) => expect(fn () => DB::transaction($statement))->toThrow(QueryException::class);
+    $invoice = Invoice::findOrFail($invoiceId);
+    $item = InvoiceItem::withoutGlobalScopes()->where('invoice_id', $invoiceId)->firstOrFail();
+    $entry = JournalEntry::withoutGlobalScopes()->findOrFail($invoice->gl_journal_entry_id);
+    $line = JournalLine::withoutGlobalScopes()->where('journal_entry_id', $entry->id)->firstOrFail();
+    $refused = fn (Closure $change) => expect($change)->toThrow(LogicException::class);
 
-    $refused(fn () => DB::table('invoices')->where('id', $invoiceId)->update(['total_gross' => 1]));
-    $refused(fn () => DB::table('invoices')->where('id', $invoiceId)->update(['deleted_at' => now()]));
-    $refused(fn () => DB::table('invoices')->where('id', $invoiceId)->delete());
-    $refused(fn () => DB::table('invoice_items')->where('invoice_id', $invoiceId)->update(['unit_price' => 1]));
-    $refused(fn () => DB::table('journal_entries')->where('id', $entryId)->update(['description' => 'Changed']));
-    $refused(fn () => DB::table('journal_entries')->where('id', $entryId)->delete());
-    $refused(fn () => DB::table('journal_lines')->where('journal_entry_id', $entryId)->update(['debit_amount' => 1]));
-    $refused(fn () => DB::table('journal_lines')->where('journal_entry_id', $entryId)->delete());
+    $refused(fn () => $invoice->update(['total_gross' => 1]));
+    $refused(fn () => $invoice->update(['deleted_at' => now()]));
+    $refused(fn () => $invoice->delete());
+    $refused(fn () => $item->update(['unit_price' => 1]));
+    $refused(fn () => $item->delete());
+    $refused(fn () => $entry->update(['description' => 'Changed']));
+    $refused(fn () => $entry->delete());
+    $refused(fn () => $line->update(['debit_amount' => 1]));
+    $refused(fn () => $line->delete());
 
-    DB::table('invoices')->where('id', $invoiceId)->update(['notes' => 'Still free']);
+    $invoice->refresh()->update(['notes' => 'Still free']);
+
+    expect($invoice->fresh()->notes)->toBe('Still free');
 
     $this->deleteJson("/api/v1/sales/invoices/{$invoiceId}")->assertForbidden();
 });

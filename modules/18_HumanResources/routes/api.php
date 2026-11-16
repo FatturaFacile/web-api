@@ -31,6 +31,9 @@ Route::prefix('api/v1/hr/me')
         Route::get('/training', [EmployeeSelfServiceController::class, 'training'])->name('training');
         Route::get('/documents', [EmployeeSelfServiceController::class, 'documents'])->name('documents.index');
         Route::get('/documents/{id}/download', [EmployeeSelfServiceController::class, 'downloadDocument'])->name('documents.download');
+        Route::post('/clock', [EmployeeSelfServiceController::class, 'clock'])->name('clock');
+        Route::get('/time/events', [EmployeeSelfServiceController::class, 'timeEvents'])->name('time.events');
+        Route::get('/clock-settings', [EmployeeSelfServiceController::class, 'clockSettings'])->name('clock-settings');
     });
 
 Route::prefix('api/v1/hr')
@@ -85,6 +88,9 @@ Route::prefix('api/v1/hr')
             Route::get('/profiles/{userId}', [TimeTrackingController::class, 'profile'])->whereUuid('userId')->name('profiles.show');
             Route::put('/profiles/{userId}', [TimeTrackingController::class, 'saveProfile'])->whereUuid('userId')->name('profiles.save');
             Route::get('/overtime', [WorkingTimeRulesController::class, 'overtime'])->name('overtime');
+            Route::get('/export', [TimeTrackingController::class, 'exportLegal'])->name('export');
+            Route::get('/verify-integrity', [TimeTrackingController::class, 'verifyIntegrity'])->name('verify-integrity');
+            Route::get('/compliance-alerts', [TimeTrackingController::class, 'complianceAlerts'])->name('compliance-alerts');
         });
 
         // Contract history and salary components

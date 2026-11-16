@@ -62,7 +62,7 @@ final class RecruitingService
     public function apply(JobPosting $posting, array $values, ?User $actor): JobApplication
     {
         if ($posting->status !== JobPosting::StatusOpen) {
-            throw ValidationException::withMessages(['job_posting_id' => "L'annuncio non è aperto."]);
+            throw ValidationException::withMessages(['job_posting_id' => __('hr_errors.recruiting.job_posting_not_open')]);
         }
 
         return DB::transaction(function () use ($posting, $values, $actor): JobApplication {
@@ -79,7 +79,7 @@ final class RecruitingService
         $this->assertActive($application);
 
         if ($stage->outcome !== null) {
-            throw ValidationException::withMessages(['pipeline_stage_id' => 'Una candidatura si chiude con le azioni di assunzione o rifiuto.']);
+            throw ValidationException::withMessages(['pipeline_stage_id' => __('hr_errors.recruiting.application_closed_by_actions')]);
         }
 
         return DB::transaction(function () use ($application, $stage, $actor): JobApplication {
@@ -259,7 +259,7 @@ final class RecruitingService
     private function assertActive(JobApplication $application): void
     {
         if ($application->status !== JobApplication::StatusActive) {
-            throw ValidationException::withMessages(['status' => 'La candidatura è già chiusa.']);
+            throw ValidationException::withMessages(['status' => __('hr_errors.recruiting.application_already_closed')]);
         }
     }
 }

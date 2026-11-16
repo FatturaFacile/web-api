@@ -68,4 +68,51 @@ final class SalesInvoiceFactory extends Factory
             'receivable_amount' => 0.00,
         ]);
     }
+
+    public function paid(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'posted',
+            'payment_status' => 'paid',
+            'total_paid' => $attributes['total_gross'] ?? 2318.00,
+            'receivable_amount' => 0.00,
+        ]);
+    }
+
+    public function overdue(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'status' => 'posted',
+            'payment_status' => 'unpaid',
+            'due_date' => now()->subDays(15)->toDateString(),
+            'total_paid' => 0.00,
+        ]);
+    }
+
+    public function swissQr(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'jurisdiction' => 'CH',
+            'currency' => 'CHF',
+            'payment_method' => 'QRR',
+            'notes' => 'Swiss QR-Bill payment details',
+        ]);
+    }
+
+    public function italianSdi(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'jurisdiction' => 'IT',
+            'currency' => 'EUR',
+            'split_payment' => false,
+            'reverse_charge' => false,
+        ]);
+    }
+
+    public function withStock(): self
+    {
+        return $this->state(fn (array $attributes) => [
+            'notes' => 'Stock-affecting commercial document',
+        ]);
+    }
 }

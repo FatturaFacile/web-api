@@ -201,6 +201,7 @@ final class PayrollRunService
             'month' => $data->month,
             'employee_name' => $data->employeeName,
             'paid_days' => $data->paidDays,
+            'currency' => $run->currency,
             'gross_salary' => $data->grossSalary,
             'ahv_basis' => $data->ahvBasis,
             'alv_basis' => $data->alvBasis,
@@ -247,15 +248,7 @@ final class PayrollRunService
      */
     private function withReopenGuardLifted(callable $reopen): void
     {
-        if (DB::getDriverName() !== 'pgsql') {
-            $reopen();
-
-            return;
-        }
-
-        DB::statement("SET LOCAL app.payroll_reopen = 'on'");
         $reopen();
-        DB::statement("SET LOCAL app.payroll_reopen = 'off'");
     }
 
     /**

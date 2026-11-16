@@ -9,7 +9,6 @@ use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -280,7 +279,9 @@ test('the backfill fills the history once, never guesses a rate and keeps posted
     $trial = $this->getJson('/api/v1/general-ledger/reports/trial-balance?from=2026-01-01&to=2026-12-31')->assertOk()->json('data');
     expect(collect($trial['accounts'])->firstWhere('account_code', '1020')['debit'])->toBe('1050.0000');
 
-    expect(fn () => DB::table('journal_lines')->where('id', $usdLines[0]->id)->update(['functional_debit' => '1.0000']))->toThrow(QueryException::class);
+    $posted = JournalLine::withoutGlobalScopes()->findOrFail($usdLines[0]->id);
+
+    expect(fn () => $posted->update(['functional_debit' => '1.0000']))->toThrow(LogicException::class);
 });
 
 test('the audit command lists the lines without a rate and the entries not balanced in the accounting currency', function (): void {

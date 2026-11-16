@@ -55,9 +55,12 @@ final class AccrualController extends Controller
             ->when($request->query('cutoff_date'), static fn ($query, $date) => $query->whereDate('cutoff_date', $date))
             ->orderByDesc('cutoff_date')
             ->orderByDesc('created_at')
-            ->get();
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
-        return $this->successResponse(AccrualResource::collection($accruals));
+        return $this->successResponse(
+            data: AccrualResource::collection($accruals),
+            meta: ['current_page' => $accruals->currentPage(), 'last_page' => $accruals->lastPage(), 'per_page' => $accruals->perPage(), 'total' => $accruals->total()],
+        );
     }
 
     /**

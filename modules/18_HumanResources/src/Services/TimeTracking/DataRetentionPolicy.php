@@ -14,6 +14,9 @@ final class DataRetentionPolicy
 {
     public const MINIMUM_YEARS = 5;
 
+    /** Italy LUL/INPS retention (D.Lgs. 82/2005, circolari INPS): 10 whole calendar years. */
+    public const IT_MINIMUM_YEARS = 10;
+
     public const MAXIMUM_YEARS = 30;
 
     /**

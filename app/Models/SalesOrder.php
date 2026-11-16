@@ -59,6 +59,18 @@ class SalesOrder extends Model
     }
 
     /**
+     * Calculated grid columns: the number of lines of the order.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'items_count' => 'SELECT COUNT(*) FROM sales_order_items WHERE sales_order_items.sales_order_id = sales_orders.id AND sales_order_items.deleted_at IS NULL',
+        ];
+    }
+
+    /**
      * @return HasMany<SalesOrderItem, $this>
      */
     public function items(): HasMany

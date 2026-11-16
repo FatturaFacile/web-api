@@ -35,7 +35,7 @@ class RecordSupplierPayment
             $amount = round((float) $data['amount'], 2);
 
             if ($invoice->isPaymentBlocked()) {
-                throw ValidationException::withMessages(['invoice' => "Invoice {$invoice->invoice_number} is not approved for payment."]);
+                throw ValidationException::withMessages(['invoice' => __('purchases_errors.invoice.not_approved_for_payment', ['number' => $invoice->invoice_number])]);
             }
 
             if (($data['type'] ?? 'payment') !== 'bank_fee' && $amount > round((float) $invoice->amountDue() - (float) $invoice->total_paid, 2)) {
@@ -45,6 +45,7 @@ class RecordSupplierPayment
             $payment = $invoice->payments()->create([
                 'tenant_id' => $invoice->tenant_id,
                 'amount' => $amount,
+                'currency' => $invoice->currency ?: 'EUR',
                 'paid_at' => $data['paid_at'],
                 'type' => $data['type'] ?? 'payment',
                 'reference' => $data['reference'] ?? null,

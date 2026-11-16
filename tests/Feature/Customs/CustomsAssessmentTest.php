@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Services\Backup\TenantBackupService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Console\Scheduling\Schedule;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -70,21 +69,19 @@ test('a decision is stored once on the private disk with its hashes', function (
         ->and(customsArchive($this->tenant, customsVatDecisionXml(version: 2))->id)->not->toBe($decision->id);
 });
 
-test('the database refuses any change to a decision', function (string $statement): void {
-    customsArchive($this->tenant, customsVatDecisionXml());
-
-    expect(fn () => DB::statement($statement))->toThrow(QueryException::class, 'immutable');
-})->with([
-    'update' => 'UPDATE customs_assessment_decisions SET vat_amount = 0',
-    'delete' => 'DELETE FROM customs_assessment_decisions',
-    'truncate' => 'TRUNCATE customs_assessment_decisions CASCADE',
-]);
-
-test('the model cannot get around the trigger', function (): void {
+test('a decision refuses any change through the model', function (Closure $change): void {
     $decision = customsArchive($this->tenant, customsVatDecisionXml());
 
-    expect(fn () => $decision->update(['vat_amount' => '0']))->toThrow(QueryException::class)
-        ->and(fn () => $decision->delete())->toThrow(QueryException::class);
+    expect(fn () => $change($decision))->toThrow(LogicException::class);
+})->with([
+    'forced save' => [fn (CustomsAssessmentDecision $decision) => $decision->forceFill(['vat_amount' => '0'])->save()],
+    'force delete' => [fn (CustomsAssessmentDecision $decision) => $decision->forceDelete()],
+]);
+test('a decision cannot be changed or deleted through the model', function (): void {
+    $decision = customsArchive($this->tenant, customsVatDecisionXml());
+
+    expect(fn () => $decision->update(['vat_amount' => '0']))->toThrow(LogicException::class)
+        ->and(fn () => $decision->delete())->toThrow(LogicException::class);
 });
 
 test('a restore keeps the table as append-only', function (): void {
@@ -295,9 +292,7 @@ test('a run on demand answers with its outcome', function (): void {
 test('archived content is never overwritten', function (): void {
     $decision = customsArchive($this->tenant, customsVatDecisionXml());
     Storage::disk('private')->put($decision->xml_path, 'other');
-    DB::unprepared('ALTER TABLE customs_assessment_decisions DISABLE TRIGGER trg_prevent_customs_assessment_mutation');
     DB::table('customs_assessment_decisions')->delete();
-    DB::unprepared('ALTER TABLE customs_assessment_decisions ENABLE TRIGGER trg_prevent_customs_assessment_mutation');
 
     expect(fn () => customsArchive($this->tenant, customsVatDecisionXml()))->toThrow(CustomsException::class, 'different content');
 });

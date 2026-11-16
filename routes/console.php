@@ -17,12 +17,18 @@ use Modules\Associations\Jobs\SendCertificateAlertsJob;
 use Modules\Associations\Jobs\SendFeeRemindersJob;
 use Modules\Associations\Jobs\SendRenewalRemindersJob;
 use Modules\Associations\Jobs\SendVolunteerAlertsJob;
+use Modules\Communication\Jobs\ProcessDueCampaignsJob;
+use Modules\Contracts\Jobs\ExpireSignatureRequestsJob;
 use Modules\Contracts\Jobs\ProcessContractDeadlinesJob;
 use Modules\CRM\Jobs\SendCrmActivityRemindersJob;
 use Modules\Customs\Jobs\RetrieveAssessmentDecisionsJob;
+use Modules\Documents\Jobs\AnchorPreservationChainJob;
 use Modules\Documents\Jobs\ApplyDocumentRetentionJob;
 use Modules\DocumentTrust\Jobs\VerifyPreservationPackagesJob;
+use Modules\Facility\Jobs\GenerateFacilityInspectionsJob;
+use Modules\Facility\Jobs\ReleaseNoShowBookingsJob;
 use Modules\FiscalRetail\Jobs\RetryCorrispettiviTransmissionsJob;
+use Modules\Hospitality\Jobs\ReleaseExpiredGroupBlocksJob;
 use Modules\HumanResources\Jobs\ProcessMonthlyLeaveAccrualsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredApplicationsJob;
 use Modules\HumanResources\Jobs\PurgeExpiredEmployeeDocumentsJob;
@@ -33,6 +39,8 @@ use Modules\Inventory\Jobs\ExpireStockLotsJob;
 use Modules\Inventory\Jobs\RecalculateInventoryValuationJob;
 use Modules\Manufacturing\Jobs\ProcessManufacturingForecastJob;
 use Modules\Manufacturing\Jobs\ProcessMrpRunJob;
+use Modules\Platform\Jobs\EvaluateNotificationAlertRulesJob;
+use Modules\PracticeManagement\Jobs\ExpireFeeProposalsJob;
 use Modules\Procurement\Jobs\CheckExpiringSupplierContractsJob;
 use Modules\Procurement\Jobs\EvaluateSupplierOtifScoresJob;
 use Modules\ServiceManagement\Jobs\PollSupportMailboxesJob;
@@ -61,8 +69,14 @@ Schedule::command('general-ledger:run-scheduled')->dailyAt('02:30')->withoutOver
 // Analytics: daily KPI snapshots (the day that just ended) first, then the scheduled report exports.
 Schedule::command('analytics:refresh-kpi-snapshots')->dailyAt('01:10')->withoutOverlapping()->onOneServer();
 Schedule::command('analytics:run-scheduled-exports')->dailyAt('06:00')->withoutOverlapping()->onOneServer();
+Schedule::command('exports:run-scheduled')->dailyAt('05:30')->withoutOverlapping()->onOneServer();
+// Business intelligence: the scheduled snapshots of saved queries, after the KPI snapshots of the day that just ended.
+Schedule::command('business-intelligence:run-snapshots')->dailyAt('01:40')->withoutOverlapping()->onOneServer();
+// Marketplace: health of the enabled connector installations.
+Schedule::command('marketplace:check-health')->everySixHours()->withoutOverlapping()->onOneServer();
 Schedule::command('invoices:send-reminders')->dailyAt('08:00')->withoutOverlapping()->onOneServer();
 Schedule::command('sales:expire-quotes')->dailyAt('00:30')->withoutOverlapping()->onOneServer();
+Schedule::command('supplier-portal:alert-expiring-documents')->dailyAt('05:50')->withoutOverlapping()->onOneServer();
 Schedule::command('auth:prune-unverified-users')->dailyAt('04:00')->withoutOverlapping()->onOneServer();
 // Expired Bearer tokens stop working at once; this only removes their rows.
 Schedule::command('sanctum:prune-expired', ['--hours' => 24])->dailyAt('04:05')->withoutOverlapping()->onOneServer();
@@ -88,6 +102,7 @@ Schedule::command('demo:reset')->everyThirtyMinutes()->withoutOverlapping()->onO
 // recognition run on the subscription engine (real invoices, idempotent per period): see config/subscription_billing.php.
 Schedule::job(new RelayOutboxEventsJob)->everyMinute()->withoutOverlapping()->onOneServer();
 Schedule::job(new MaintainOutboxLifecycleJob)->dailyAt('03:15')->withoutOverlapping()->onOneServer();
+Schedule::command('crm:process-automation')->hourly()->withoutOverlapping()->onOneServer();
 
 $forEachTenant = static fn (string $name, Closure $job): CallbackEvent => Schedule::call(
     static fn (): int => app(TenantJobDispatcher::class)->dispatchForEachTenant($job)
@@ -107,6 +122,7 @@ $forEachTenant('procurement:expiring-contracts', static fn (Tenant $tenant): obj
 $forEachTenant('procurement:supplier-otif', static fn (Tenant $tenant): object => new EvaluateSupplierOtifScoresJob($tenant->id))->monthlyOn(1, '05:20');
 $forEachTenant('hr:expiring-certifications', static fn (Tenant $tenant): object => new ScanExpiringCertificationsJob($tenant->id))->dailyAt('05:30');
 $forEachTenant('eam:expiring-coverage', static fn (Tenant $tenant): object => new NotifyExpiringAssetCoverageJob($tenant->id))->dailyAt('05:35');
+$forEachTenant('platform:notification-alert-rules', static fn (Tenant $tenant): object => new EvaluateNotificationAlertRulesJob($tenant->id))->everyFifteenMinutes();
 $forEachTenant('hr:leave-accruals', static fn (Tenant $tenant): object => new ProcessMonthlyLeaveAccrualsJob($tenant->id, now()->year))->monthlyOn(1, '05:40');
 $forEachTenant('hr:purge-applications', static fn (Tenant $tenant): object => new PurgeExpiredApplicationsJob($tenant->id))->dailyAt('03:40');
 $forEachTenant('hr:purge-employee-documents', static fn (Tenant $tenant): object => new PurgeExpiredEmployeeDocumentsJob($tenant->id))->dailyAt('03:45');
@@ -120,12 +136,20 @@ $forEachTenant('associations:certificate-alerts', static fn (Tenant $tenant): ob
 $forEachTenant('associations:volunteer-alerts', static fn (Tenant $tenant): object => new SendVolunteerAlertsJob($tenant->id))->dailyAt('07:45');
 $forEachTenant('customs:assessment-decisions', static fn (Tenant $tenant): object => new RetrieveAssessmentDecisionsJob($tenant->id))->dailyAt('04:30');
 $forEachTenant('dms:retention', static fn (Tenant $tenant): object => new ApplyDocumentRetentionJob($tenant->id))->dailyAt('03:40');
+// Anchoring is idempotent: it appends only the links that are missing.
+$forEachTenant('dms:anchor-preservation-chain', static fn (Tenant $tenant): object => new AnchorPreservationChainJob($tenant->id))->dailyAt('03:30');
 $forEachTenant('document-trust:verify-preservation', static fn (Tenant $tenant): object => new VerifyPreservationPackagesJob($tenant->id))->weeklyOn(0, '02:30');
 // Before procurement:expiring-contracts at 05:10, so a supplier contract that renews by itself is not marked expired.
 $forEachTenant('contracts:deadlines', static fn (Tenant $tenant): object => new ProcessContractDeadlinesJob($tenant->id))->dailyAt('04:50');
+$forEachTenant('contracts:expire-signature-requests', static fn (Tenant $tenant): object => new ExpireSignatureRequestsJob($tenant->id))->dailyAt('04:55');
 $forEachTenant('workspace:sync', static fn (Tenant $tenant): object => new SyncWorkspaceConnectionsJob($tenant->id))->hourly();
 $forEachTenant('visitors:purge', static fn (Tenant $tenant): object => new PurgeExpiredVisitorsJob($tenant->id))->dailyAt('03:50');
+$forEachTenant('facility:release-no-shows', static fn (Tenant $tenant): object => new ReleaseNoShowBookingsJob($tenant->id))->everyFiveMinutes();
+$forEachTenant('hospitality:release-expired-blocks', static fn (Tenant $tenant): object => new ReleaseExpiredGroupBlocksJob($tenant->id))->dailyAt('00:10');
+$forEachTenant('practice:expire-fee-proposals', static fn (Tenant $tenant): object => new ExpireFeeProposalsJob($tenant->id))->dailyAt('00:20');
+$forEachTenant('facility:generate-inspections', static fn (Tenant $tenant): object => new GenerateFacilityInspectionsJob($tenant->id))->dailyAt('05:45');
 $forEachTenant('fiscal-retail:retry-transmissions', static fn (Tenant $tenant): object => new RetryCorrispettiviTransmissionsJob($tenant->id))->everyFiveMinutes();
+$forEachTenant('communication:due-campaigns', static fn (Tenant $tenant): object => new ProcessDueCampaignsJob($tenant->id))->everyMinute();
 
 /*
 |--------------------------------------------------------------------------

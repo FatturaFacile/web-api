@@ -51,7 +51,7 @@ final class NonconformityController extends Controller
                 ->when($request->boolean('open'), static fn ($query) => $query->whereIn('status', QmsNonconformity::OpenStatuses))
                 ->orderByDesc('detected_at')
                 ->orderByDesc('number')
-                ->paginate($this->perPage())
+                ->gridPaginate($this->perPage())
         );
     }
 

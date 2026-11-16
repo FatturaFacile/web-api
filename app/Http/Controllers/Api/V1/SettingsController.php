@@ -5,21 +5,27 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1;
 
 use App\Contracts\ExchangeRateProviderInterface;
+use App\Enums\SupportedCountry;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\ExchangeRate;
+use App\Models\Invoice;
+use App\Models\PassiveInvoice;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\Warehouse;
 use App\Services\Auth\TaxIdentifier;
 use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantMembershipService;
 use Closure;
 use Enterprise\AuditLedger\Models\AuditLedgerEntry;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
+use Modules\GeneralLedger\Models\JournalEntry;
 use Modules\SDI\Enums\RegimeFiscale;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -88,11 +94,14 @@ class SettingsController extends Controller
                     new OA\Property(property: 'fiscal_code', type: 'string', maxLength: 16, nullable: true, example: 'RSSMRA85M01H501Q'),
                     new OA\Property(property: 'vat_number', type: 'string', maxLength: 30, nullable: true, example: 'CHE-123.456.789'),
                     new OA\Property(property: 'uid_number', type: 'string', maxLength: 20, nullable: true, example: 'CHE123456789'),
+                    new OA\Property(property: 'country', description: 'Company country (SupportedCountry). Cannot change once invoices or journal entries exist.', type: 'string', enum: ['IT', 'CH', 'FR', 'ES', 'DE', 'US'], example: 'FR'),
                     new OA\Property(property: 'default_currency', type: 'string', maxLength: 3, nullable: true, example: 'CHF'),
                     new OA\Property(property: 'iban', type: 'string', maxLength: 34, nullable: true, example: 'CH9300000000000000000'),
                     new OA\Property(property: 'qr_iban', type: 'string', maxLength: 34, nullable: true, example: 'CH4430000000000000000'),
                     new OA\Property(property: 'sdi_code', type: 'string', maxLength: 7, nullable: true, example: 'M5UXCR1'),
                     new OA\Property(property: 'pec_email', type: 'string', format: 'email', nullable: true, example: 'acme@pec.it'),
+                    new OA\Property(property: 'customs_approved_exporter_number', type: 'string', maxLength: 50, nullable: true, example: 'CH-AE-123456'),
+                    new OA\Property(property: 'rex_exporter_number', type: 'string', maxLength: 50, nullable: true, example: 'CHREX123456789'),
                     new OA\Property(property: 'settings', description: 'Free settings. `regime_fiscale` must be a RegimeFiscale of the FatturaPA schema (RF01-RF20).', type: 'object', nullable: true),
                 ]
             )
@@ -138,15 +147,22 @@ class SettingsController extends Controller
                 },
             ],
             'uid_number' => ['nullable', 'string', 'max:20'],
+            'country' => ['sometimes', 'required', 'string', Rule::enum(SupportedCountry::class)],
             'default_currency' => ['nullable', 'string', 'size:3'],
             'iban' => ['nullable', 'string', 'max:34'],
             'qr_iban' => ['nullable', 'string', 'max:34'],
             'sdi_code' => ['nullable', 'string', 'size:7'],
             'pec_email' => ['nullable', 'email'],
+            'customs_approved_exporter_number' => ['nullable', 'string', 'max:50'],
+            'rex_exporter_number' => ['nullable', 'string', 'max:50'],
             'settings' => ['nullable', 'array'],
             'settings.regime_fiscale' => ['nullable', Rule::enum(RegimeFiscale::class)],
             'settings.enasarco_agent_type' => ['nullable', Rule::in(EnasarcoParameter::AGENT_TYPES)],
         ]);
+
+        if (isset($validated['country']) && $validated['country'] !== $tenant->country && $this->hasPostedAccountingData()) {
+            throw ValidationException::withMessages(['country' => [__('validation.tenant_country_locked')]]);
+        }
 
         // The settings are merged, never replaced: the preferences and the security policy have their own endpoints, and
         // a body that sent them here would wipe them (two-factor requirement included).
@@ -160,13 +176,28 @@ class SettingsController extends Controller
         return $this->successResponse(data: $tenant, message: 'Tenant settings updated successfully');
     }
 
+    /**
+     * The country drives the chart of accounts, VAT codes and payroll rules: once documents or journal entries exist it
+     * can no longer change without corrupting them.
+     */
+    private function hasPostedAccountingData(): bool
+    {
+        return Invoice::query()->exists()
+            || PassiveInvoice::query()->exists()
+            || JournalEntry::query()->exists();
+    }
+
     #[OA\Get(
         path: '/api/v1/settings/branches',
         operationId: 'getBranches',
-        description: 'Get operational warehouses and company branch locations.',
+        description: 'Get operational warehouses and company branch locations. Grid contract: sort_by, sort_dir, filter, filter_like, grid_values.',
         summary: 'List branches',
         security: [['bearerAuth' => []]],
         tags: ['Settings'],
+        parameters: [
+            new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1000)),
+        ],
         responses: [
             new OA\Response(
                 response: 200,
@@ -180,11 +211,17 @@ class SettingsController extends Controller
             ),
         ]
     )]
-    public function branches(): JsonResponse
+    public function branches(Request $request): JsonResponse
     {
-        $branches = Warehouse::all();
+        $branches = Warehouse::query()
+            ->orderBy('name')
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
-        return $this->successResponse(data: $branches, message: 'Branches and operational locations');
+        return $this->successResponse(
+            data: $branches->getCollection(),
+            message: 'Branches and operational locations',
+            meta: ['current_page' => $branches->currentPage(), 'last_page' => $branches->lastPage(), 'per_page' => $branches->perPage(), 'total' => $branches->total()],
+        );
     }
 
     /**
@@ -255,18 +292,9 @@ class SettingsController extends Controller
             ),
         ]
     )]
-    public function users(): JsonResponse
+    public function users(TenantMembershipService $memberships): JsonResponse
     {
-        $tenant = $this->tenantContext->getTenant();
-        $users = $tenant->users()->get()->map(fn ($u) => [
-            'id' => $u->id,
-            'name' => $u->name,
-            'email' => $u->email,
-            'role' => $u->pivot?->role,
-            'is_active' => $u->is_active,
-        ]);
-
-        return $this->successResponse(data: $users, message: 'Tenant users retrieved');
+        return $this->successResponse(data: $memberships->members($this->tenantContext->getTenant()), message: 'Tenant users retrieved');
     }
 
     #[OA\Get(
@@ -378,7 +406,7 @@ class SettingsController extends Controller
         }
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 25)));
-        $logs = $query->paginate($perPage);
+        $logs = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: $logs,

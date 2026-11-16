@@ -65,7 +65,7 @@ final readonly class JobCostingAccumulationService implements JobCostingAccumula
             }
 
             if (! $project->isOpen()) {
-                throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: no further costs can be booked.");
+                throw new ConflictHttpException(__('projects_errors.cost.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
             }
 
             $this->assertFitsProject($project, $dto);
@@ -123,7 +123,7 @@ final readonly class JobCostingAccumulationService implements JobCostingAccumula
             $locked = ProjectCostEntry::query()->whereKey($entry->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->approval_status !== 'pending') {
-                throw new ConflictHttpException("Cost entry is {$locked->approval_status}, only pending entries can be approved.");
+                throw new ConflictHttpException(__('projects_errors.cost.approve_only_pending', ['status' => $locked->approval_status]));
             }
 
             $locked->update(['approval_status' => 'approved', 'approved_by' => $approverUserId, 'approved_at' => now(), 'rejection_reason' => null]);
@@ -144,7 +144,7 @@ final readonly class JobCostingAccumulationService implements JobCostingAccumula
             $locked = ProjectCostEntry::query()->whereKey($entry->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->approval_status !== 'pending') {
-                throw new ConflictHttpException("Cost entry is {$locked->approval_status}, only pending entries can be rejected.");
+                throw new ConflictHttpException(__('projects_errors.cost.reject_only_pending', ['status' => $locked->approval_status]));
             }
 
             $locked->update(['approval_status' => 'rejected', 'approved_by' => $approverUserId, 'approved_at' => now(), 'rejection_reason' => $reason]);
@@ -306,19 +306,19 @@ final readonly class JobCostingAccumulationService implements JobCostingAccumula
         $errors = [];
 
         if (! in_array($dto->costCategory, ProjectCostEntry::Categories, true)) {
-            $errors['cost_category'] = 'The cost category is not valid.';
+            $errors['cost_category'] = __('projects_errors.cost.category_invalid');
         }
 
         if (Money::isNegative($dto->totalCost)) {
-            $errors['total_cost'] = 'The total cost cannot be negative.';
+            $errors['total_cost'] = __('projects_errors.cost.total_negative');
         }
 
         if ($dto->taskId !== null && ! ProjectTask::query()->whereKey($dto->taskId)->where('project_id', $project->id)->exists()) {
-            $errors['task_id'] = 'The task does not belong to the project.';
+            $errors['task_id'] = __('projects_errors.task.not_in_project');
         }
 
         if ($dto->phaseId !== null && ! ProjectPhase::query()->whereKey($dto->phaseId)->where('project_id', $project->id)->exists()) {
-            $errors['phase_id'] = 'The phase does not belong to the project.';
+            $errors['phase_id'] = __('projects_errors.phase.not_in_project');
         }
 
         if ($dto->allocations !== []) {
@@ -327,9 +327,9 @@ final readonly class JobCostingAccumulationService implements JobCostingAccumula
             $percentages = array_map(static fn (array $allocation): string => Money::of($allocation['percentage']), $dto->allocations);
 
             if ($known !== count(array_unique($taskIds))) {
-                $errors['allocations'] = 'Every allocation must point to a task of the project.';
+                $errors['allocations'] = __('projects_errors.cost.allocation_needs_task');
             } elseif (Money::compare(Money::add(...$percentages), 100) !== 0) {
-                $errors['allocations'] = 'The allocation percentages must add up to 100.';
+                $errors['allocations'] = __('projects_errors.cost.allocation_not_100');
             }
         }
 

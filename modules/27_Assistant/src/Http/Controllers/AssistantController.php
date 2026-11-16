@@ -40,7 +40,7 @@ final class AssistantController extends Controller
     #[OA\Post(
         path: '/api/v1/assistant/ask',
         operationId: 'askAssistant',
-        description: 'Answer a question in natural language from the fixed catalogue. Read-only and limited to the role of the caller. Every question is logged.',
+        description: 'Answer a question in natural language from the fixed catalogue. Read-only and limited to the role of the caller. Every question is logged. Send the thread_id of an own conversation to continue it; without it a new thread is started. The answer carries thread_id and log_id (the id to send feedback to).',
         summary: 'Ask the assistant',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/AskAssistantRequest')),
@@ -53,7 +53,7 @@ final class AssistantController extends Controller
     )]
     public function ask(AskAssistantRequest $request): JsonResponse
     {
-        return $this->successResponse($this->assistant->ask($request->user(), (string) $this->tenantContext->getTenantId(), $request->validated('question')));
+        return $this->successResponse($this->assistant->ask($request->user(), (string) $this->tenantContext->getTenantId(), $request->validated('question'), $request->validated('thread_id')));
     }
 
     /**
@@ -126,7 +126,7 @@ final class AssistantController extends Controller
             ->when($filters['from'] ?? null, static fn ($query, string $from) => $query->whereDate('created_at', '>=', $from))
             ->when($filters['to'] ?? null, static fn ($query, string $to) => $query->whereDate('created_at', '<=', $to))
             ->latest()
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 25))));
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 25))));
 
         return $this->successResponse(
             AssistantLogResource::collection($logs->getCollection()),

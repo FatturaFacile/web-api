@@ -33,6 +33,19 @@ final class Account extends BaseEnterpriseModel
     }
 
     /**
+     * Calculated grid columns: `display_name` is what the API returns as `name` (the linked contact's company name,
+     * else the account column).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'display_name' => "COALESCE(NULLIF((SELECT contacts.company_name FROM contacts WHERE contacts.id = crm_accounts.contact_id), ''), crm_accounts.name)",
+        ];
+    }
+
+    /**
      * The contact of the party master that owns this account's master data.
      *
      * @return BelongsTo<Contact, $this>

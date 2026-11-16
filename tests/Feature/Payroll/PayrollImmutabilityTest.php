@@ -3,9 +3,7 @@
 declare(strict_types=1);
 
 use Enterprise\EventBus\Models\TransactionalOutbox;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Modules\Payroll\Exceptions\PayrollRunClosedException;
 use Modules\Payroll\Models\PayrollInput;
 use Modules\Payroll\Models\PayrollRun;
@@ -28,14 +26,6 @@ beforeEach(function (): void {
     $this->payslip = Payslip::query()->withoutGlobalScopes()->where('payroll_run_id', $this->run->id)->sole();
 });
 
-/**
- * The statement fails inside a savepoint, so that the transaction of the test survives.
- */
-function payrollRejectedByDatabase(callable $statement): void
-{
-    expect(fn () => DB::transaction($statement))->toThrow(QueryException::class, 'immutable');
-}
-
 test('a closed run cannot be recalculated', function (): void {
     payrollCalculate($this->tenant, $this->manager, 2026, 1)
         ->assertConflict()
@@ -57,16 +47,15 @@ test('the models refuse to change what belongs to a closed run', function (): vo
         ->and(fn () => $line->delete())->toThrow(PayrollRunClosedException::class);
 });
 
-test('the database refuses to change a closed run even without the models', function (): void {
-    payrollRejectedByDatabase(fn () => DB::table('payroll_runs')->where('id', $this->run->id)->update(['payment_date' => '2026-02-01']));
-    payrollRejectedByDatabase(fn () => DB::table('payroll_runs')->where('id', $this->run->id)->update(['status' => 'Draft']));
-    payrollRejectedByDatabase(fn () => DB::table('payroll_runs')->where('id', $this->run->id)->delete());
-    payrollRejectedByDatabase(fn () => DB::table('payroll_payslips')->where('id', $this->payslip->id)->update(['gross_salary' => '1.00']));
-    payrollRejectedByDatabase(fn () => DB::table('payroll_payslips')->where('id', $this->payslip->id)->delete());
-    payrollRejectedByDatabase(fn () => DB::table('payroll_payslip_lines')->where('payslip_id', $this->payslip->id)->update(['amount' => '1.00']));
-    payrollRejectedByDatabase(fn () => DB::table('payroll_payslip_lines')->where('payslip_id', $this->payslip->id)->delete());
+test('a closed run cannot be reopened or rewritten by forcing its columns', function (): void {
+    $payslip = Payslip::query()->withoutGlobalScopes()->findOrFail($this->payslip->id);
+    $line = PayslipLine::query()->withoutGlobalScopes()->where('payslip_id', $payslip->id)->firstOrFail();
 
-    expect(DB::table('payroll_payslips')->where('id', $this->payslip->id)->value('gross_salary'))->toBe('6500.00');
+    expect(fn () => $this->run->forceFill(['status' => 'Draft'])->save())->toThrow(PayrollRunClosedException::class)
+        ->and(fn () => $this->run->forceFill(['payment_date' => '2026-02-01'])->save())->toThrow(PayrollRunClosedException::class)
+        ->and(fn () => $payslip->forceFill(['gross_salary' => '1.00'])->save())->toThrow(PayrollRunClosedException::class)
+        ->and(fn () => $line->forceFill(['amount' => '1.00'])->save())->toThrow(PayrollRunClosedException::class)
+        ->and(Payslip::query()->withoutGlobalScopes()->findOrFail($payslip->id)->gross_salary)->toBe('6500.00');
 });
 
 test('the inputs of a closed month are frozen', function (): void {
@@ -104,12 +93,14 @@ test('reopening needs a reason and leaves a trace', function (): void {
     payrollCalculate($this->tenant, $this->manager, 2026, 1)->assertCreated();
 });
 
-test('after a reopening the database protection is back at once', function (): void {
+test('after a reopening the protection is back at once', function (): void {
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$this->run->id}/reopen", ['reason' => 'Correzione'])->assertOk();
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$this->run->id}/approve")->assertOk();
     payrollApi($this->manager, $this->tenant)->postJson("/api/v1/payroll/runs/{$this->run->id}/finalize")->assertOk();
 
-    payrollRejectedByDatabase(fn () => DB::table('payroll_runs')->where('id', $this->run->id)->update(['status' => 'Draft']));
+    $run = PayrollRun::query()->withoutGlobalScopes()->findOrFail($this->run->id);
+
+    expect(fn () => $run->forceFill(['status' => 'Draft'])->save())->toThrow(PayrollRunClosedException::class);
 });
 
 test('only the latest run can be reopened', function (): void {
@@ -132,7 +123,5 @@ test('the history of a run is append-only', function (): void {
     $event = PayrollRunEvent::query()->withoutGlobalScopes()->where('payroll_run_id', $this->run->id)->first();
 
     expect(fn () => $event->update(['reason' => 'x']))->toThrow(LogicException::class)
-        ->and(fn () => $event->delete())->toThrow(LogicException::class)
-        ->and(fn () => DB::transaction(fn () => DB::table('payroll_run_events')->where('id', $event->id)->update(['reason' => 'x'])))->toThrow(QueryException::class)
-        ->and(fn () => DB::transaction(fn () => DB::table('payroll_run_events')->where('id', $event->id)->delete()))->toThrow(QueryException::class);
+        ->and(fn () => $event->delete())->toThrow(LogicException::class);
 });

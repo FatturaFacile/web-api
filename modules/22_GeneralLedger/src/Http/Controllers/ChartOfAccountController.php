@@ -35,6 +35,7 @@ final class ChartOfAccountController extends Controller
         parameters: [
             new OA\Parameter(name: 'type', in: 'query', required: false, description: 'Filter by type', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'active', in: 'query', required: false, description: 'Filter by active', schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Case-insensitive match on account code or name', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Number of items per page', schema: new OA\Schema(type: 'integer', default: 50)),
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
         ],
@@ -53,8 +54,9 @@ final class ChartOfAccountController extends Controller
         $accounts = ChartOfAccount::where('tenant_id', $tenantId)
             ->when($request->query('type'), fn ($q, $type) => $q->where('account_type', $type))
             ->when($request->query('active'), fn ($q, $act) => $q->where('is_active', filter_var($act, FILTER_VALIDATE_BOOLEAN)))
+            ->when($request->query('search'), fn ($q, $term) => $q->where(fn ($inner) => $inner->whereLike('account_code', "%{$term}%")->orWhereLike('name', "%{$term}%")))
             ->orderBy('account_code')
-            ->paginate((int) $request->query('per_page', 50));
+            ->gridPaginate((int) $request->query('per_page', 50));
 
         return response()->json([
             'data' => ChartOfAccountResource::collection($accounts),

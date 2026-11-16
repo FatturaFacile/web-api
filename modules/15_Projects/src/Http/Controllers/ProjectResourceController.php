@@ -69,7 +69,7 @@ final class ProjectResourceController extends Controller
         ])]
     public function index(Request $request): JsonResponse
     {
-        return $this->paginated(ProjectResource::query()->with('capacityProfile')->orderBy('name')->paginate($this->perPage($request, 50)), PersonResourceResource::class);
+        return $this->paginated(ProjectResource::query()->with('capacityProfile')->orderBy('name')->gridPaginate($this->perPage($request, 50)), PersonResourceResource::class);
     }
 
     /**
@@ -112,7 +112,7 @@ final class ProjectResourceController extends Controller
             ->when($request->query('project_id'), fn ($query, $projectId) => $query->where('project_id', $projectId))
             ->when($request->query('user_id'), fn ($query, $userId) => $query->where('user_id', $userId))
             ->orderByDesc('created_at')
-            ->paginate($this->perPage($request, 50));
+            ->gridPaginate($this->perPage($request, 50));
 
         return $this->paginated($cards, ProjectRateCardResource::class);
     }
@@ -146,7 +146,7 @@ final class ProjectResourceController extends Controller
             ->exists();
 
         if ($overlap) {
-            throw ValidationException::withMessages(['valid_from' => 'Another rate card for the same scope overlaps this validity period.']);
+            throw ValidationException::withMessages(['valid_from' => __('projects_errors.rate_card.overlaps')]);
         }
 
         $card = ProjectRateCard::create([
@@ -193,7 +193,7 @@ final class ProjectResourceController extends Controller
         $user = $request->user();
 
         if (! $user instanceof User || ! $this->policy->isManager($user)) {
-            throw new AccessDeniedHttpException('Only the managers of the company can change company-wide rates and capacity.');
+            throw new AccessDeniedHttpException(__('projects_errors.rate_card.managers_only'));
         }
     }
 }

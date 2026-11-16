@@ -91,7 +91,7 @@ final class ConstructionSiteController extends Controller
         $site = $this->find($id, 'delete');
 
         if ($site->progressBillings()->exists()) {
-            throw ValidationException::withMessages(['site' => 'The site has progress billings: set it to completed instead of deleting it.']);
+            throw ValidationException::withMessages(['site' => __('construction_trades_errors.site.has_progress_billings')]);
         }
 
         $site->delete();

@@ -11,6 +11,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\TireHotelRecord;
 use App\Models\Vehicle;
 use App\Models\VehicleInspection;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -34,7 +35,7 @@ class AutomotiveController extends Controller
     )]
     public function vehicles(): JsonResponse
     {
-        $vehicles = Vehicle::latest()->paginate(25);
+        $vehicles = Vehicle::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $vehicles, message: 'Vehicles retrieved');
     }
@@ -116,7 +117,7 @@ class AutomotiveController extends Controller
     #[OA\Get(
         path: '/api/v1/automotive/tire-hotel/seasonal-switch-plan',
         operationId: 'seasonalSwitchPlan',
-        description: 'Get schedule of vehicles with stored tires due for summer/winter seasonal switch.',
+        description: 'Paginated schedule of the stored tire sets due for the summer/winter seasonal switch, with the vehicle plate, make and model. Supports the grid contract (sorting, column filters, grouping and grid_values).',
         summary: 'Seasonal tire switch plan',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Automotive'],
@@ -127,10 +128,18 @@ class AutomotiveController extends Controller
     )]
     public function seasonalSwitchPlan(): JsonResponse
     {
-        $plan = TireHotelRecord::join('vehicles', 'vehicles.id', '=', 'tire_hotel_records.vehicle_id')
-            ->where('tire_hotel_records.status', 'stored')
-            ->select('tire_hotel_records.*', 'vehicles.license_plate', 'vehicles.make', 'vehicles.model as vehicle_model')
-            ->get();
+        $plan = TireHotelRecord::query()
+            ->with('vehicle')
+            ->where('status', 'stored')
+            ->latest()
+            ->gridPaginate(RequestedPerPage::resolve(25))
+            ->through(static function (TireHotelRecord $record): TireHotelRecord {
+                $record->setAttribute('license_plate', $record->vehicle?->license_plate);
+                $record->setAttribute('make', $record->vehicle?->make);
+                $record->setAttribute('vehicle_model', $record->vehicle?->model);
+
+                return $record;
+            });
 
         return $this->successResponse(data: $plan, message: 'Seasonal switch plan generated');
     }

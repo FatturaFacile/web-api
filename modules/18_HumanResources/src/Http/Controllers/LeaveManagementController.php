@@ -5,7 +5,10 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
 use Modules\HumanResources\Http\Requests\HrPeriodRequest;
@@ -93,9 +96,9 @@ final class LeaveManagementController extends Controller
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
     )]
-    public function policies(): JsonResponse
+    public function policies(): AnonymousResourceCollection
     {
-        return response()->json(['data' => LeaveAccrualPolicy::query()->orderBy('code')->get()]);
+        return JsonResource::collection(LeaveAccrualPolicy::query()->orderBy('code')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

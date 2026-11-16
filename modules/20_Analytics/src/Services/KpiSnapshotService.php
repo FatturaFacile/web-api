@@ -155,7 +155,7 @@ final readonly class KpiSnapshotService
     {
         return KpiSnapshot::query()
             ->where('kpi_key', $key)
-            ->whereBetween('snapshot_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('snapshot_date', '>=', $from->toDateString())->whereDate('snapshot_date', '<=', $to->toDateString())
             ->orderBy('snapshot_date')
             ->limit(400)
             ->get();
@@ -166,6 +166,6 @@ final readonly class KpiSnapshotService
      */
     public function prune(int $keepDays = 800): int
     {
-        return KpiSnapshot::query()->where('snapshot_date', '<', $this->clock->today()->subDays($keepDays)->toDateString())->forceDelete();
+        return KpiSnapshot::query()->whereDate('snapshot_date', '<', $this->clock->today()->subDays($keepDays)->toDateString())->forceDelete();
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Quality\Services;
 
+use App\Support\Database\TransactionLock;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -17,9 +18,7 @@ final class QualityNumbers
         $year = now()->format('Y');
         $like = "{$prefix}-{$year}-%";
 
-        if (DB::getDriverName() === 'pgsql') {
-            DB::select('select pg_advisory_xact_lock(hashtext(?))', ["{$table}:{$tenantId}"]);
-        }
+        TransactionLock::acquire("{$table}:{$tenantId}");
 
         $last = DB::table($table)->where('tenant_id', $tenantId)->where('number', 'like', $like)->max('number');
         $sequence = $last === null ? 1 : ((int) substr((string) $last, -4)) + 1;

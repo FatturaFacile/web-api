@@ -55,7 +55,7 @@ final readonly class ProjectLifecycleService
             [$from, $to] = self::Transitions[$transition];
 
             if (! in_array($locked->status, $from, true)) {
-                throw new ConflictHttpException("Project is {$locked->status}: it cannot {$transition}.");
+                throw new ConflictHttpException(__("projects_errors.project.cannot_{$transition}", ['status' => $locked->status]));
             }
 
             $previous = $locked->status;
@@ -101,16 +101,16 @@ final readonly class ProjectLifecycleService
             $locked = Project::query()->whereKey($project->id)->lockForUpdate()->firstOrFail();
 
             if (! $locked->isOpen()) {
-                throw new ConflictHttpException("Project is {$locked->status}: it can no longer change.");
+                throw new ConflictHttpException(__('projects_errors.project.no_longer_changeable', ['status' => $locked->status]));
             }
 
             if (array_key_exists('contract_value', $attributes) && Money::compare($attributes['contract_value'], $locked->contract_value) !== 0 && ! in_array($locked->status, ['draft', 'planned', 'approved'], true)) {
-                throw ValidationException::withMessages(['contract_value' => 'The contract value of a started project changes only through change orders.']);
+                throw ValidationException::withMessages(['contract_value' => __('projects_errors.project.contract_value_via_change_orders')]);
             }
 
             if (array_key_exists('revenue_recognition_method', $attributes) && $attributes['revenue_recognition_method'] !== $locked->revenue_recognition_method
                 && (ProjectCostEntry::query()->where('project_id', $locked->id)->exists() || ProjectRevenueRecognition::query()->where('project_id', $locked->id)->exists())) {
-                throw ValidationException::withMessages(['revenue_recognition_method' => 'The recognition method cannot change once costs are booked on the project.']);
+                throw ValidationException::withMessages(['revenue_recognition_method' => __('projects_errors.project.recognition_method_locked')]);
             }
 
             if (isset($attributes['contract_value'])) {
@@ -136,7 +136,7 @@ final readonly class ProjectLifecycleService
             $locked = Project::query()->whereKey($project->id)->lockForUpdate()->firstOrFail();
 
             if (ProjectCostEntry::query()->where('project_id', $locked->id)->exists() || ProjectTimesheet::query()->where('project_id', $locked->id)->exists()) {
-                throw new ConflictHttpException('Time or costs are booked on the project: it cannot be deleted.');
+                throw new ConflictHttpException(__('projects_errors.project.cannot_delete_with_bookings'));
             }
 
             $locked->delete();

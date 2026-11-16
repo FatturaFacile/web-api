@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     'messages' => [
         'imported' => 'Relevé bancaire importé avec succès',
         'listed' => 'Relevés bancaires récupérés avec succès',
@@ -42,4 +43,18 @@ return [
     'problem_titles' => [
         'import' => 'Importation de relevé bancaire',
     ],
+
+    'parse_errors' => [
+        'unsupported_format' => 'Le fichier n\'est pas un relevé bancaire pris en charge (CBI, CAMT.053 ou CAMT.054).',
+        'invalid_xml' => 'Le fichier n\'est pas un document XML valide.',
+        'unsafe_xml' => 'Les documents XML contenant un DOCTYPE ou des déclarations d\'entités ne sont pas acceptés.',
+        'no_statement' => 'Le document ne contient ni relevé ni notification.',
+        'invalid_line_length' => 'La ligne :line comporte :length caractères au lieu de :expected.',
+        'invalid_record' => 'La ligne :line contient un enregistrement :record invalide ou inattendu.',
+        'missing_header' => 'Le relevé n\'a pas d\'en-tête valide (IBAN du compte).',
+        'missing_trailer' => 'Le relevé est incomplet : l\'enregistrement de fin EF est manquant.',
+        'record_count_mismatch' => 'L\'enregistrement de fin déclare :expected enregistrements mais :actual ont été lus.',
+        'empty_file' => 'Le fichier est vide.',
+    ],
+
 ];

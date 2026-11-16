@@ -40,10 +40,10 @@ final class LedgerReportService
      */
     public function trialBalance(string $tenantId, CarbonImmutable $from, CarbonImmutable $to, ?CarbonImmutable $compareFrom = null, ?CarbonImmutable $compareTo = null, array $dimensions = []): array
     {
-        $opening = $this->sums($this->lines($tenantId, $dimensions)->where('journal_entries.posting_date', '<', $from->toDateString()));
-        $period = $this->sums($this->lines($tenantId, $dimensions)->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()]));
+        $opening = $this->sums($this->lines($tenantId, $dimensions)->whereDate('journal_entries.posting_date', '<', $from->toDateString()));
+        $period = $this->sums($this->lines($tenantId, $dimensions)->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString()));
         $comparison = $compareFrom !== null && $compareTo !== null
-            ? $this->sums($this->lines($tenantId, $dimensions)->whereBetween('journal_entries.posting_date', [$compareFrom->toDateString(), $compareTo->toDateString()]))
+            ? $this->sums($this->lines($tenantId, $dimensions)->whereDate('journal_entries.posting_date', '>=', $compareFrom->toDateString())->whereDate('journal_entries.posting_date', '<=', $compareTo->toDateString()))
             : collect();
 
         $accountIds = $opening->keys()->merge($period->keys())->merge($comparison->keys())->unique()->values();
@@ -106,11 +106,11 @@ final class LedgerReportService
     {
         $opening = $this->balanceOf($this->sums($this->lines($tenantId, $dimensions)
             ->where('journal_lines.account_id', $account->id)
-            ->where('journal_entries.posting_date', '<', $from->toDateString()))->get((string) $account->id));
+            ->whereDate('journal_entries.posting_date', '<', $from->toDateString()))->get((string) $account->id));
 
         $inRange = fn (): Builder => $this->lines($tenantId, $dimensions)
             ->where('journal_lines.account_id', $account->id)
-            ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()]);
+            ->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString());
 
         $totals = $inRange()->selectRaw('COUNT(*) as line_count, COALESCE(SUM(COALESCE(journal_lines.functional_debit, journal_lines.debit_amount)), 0) as debit, COALESCE(SUM(COALESCE(journal_lines.functional_credit, journal_lines.credit_amount)), 0) as credit, COALESCE(SUM(journal_lines.debit_amount), 0) as transaction_debit, COALESCE(SUM(journal_lines.credit_amount), 0) as transaction_credit, COUNT(DISTINCT journal_lines.currency) as currency_count, MIN(journal_lines.currency) as single_currency')->first();
         $total = (int) ($totals->line_count ?? 0);
@@ -271,7 +271,7 @@ final class LedgerReportService
         };
 
         $rows = $this->lines($tenantId)
-            ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
             ->where('journal_entries.journal_type', '!=', 'closing')
             ->whereIn('chart_of_accounts.account_type', LedgerBalanceReader::IncomeTypes)
             ->groupBy("journal_lines.{$column}", 'chart_of_accounts.id', 'chart_of_accounts.account_code', 'chart_of_accounts.name', 'chart_of_accounts.account_type', 'chart_of_accounts.normal_balance')
@@ -325,7 +325,7 @@ final class LedgerReportService
         string $targetCurrency,
         ?CarbonImmutable $periodStart = null,
     ): array {
-        $sums = $this->sums($this->lines($tenantId)->where('journal_entries.posting_date', '<=', $asOf->toDateString()));
+        $sums = $this->sums($this->lines($tenantId)->whereDate('journal_entries.posting_date', '<=', $asOf->toDateString()));
         $accounts = $this->accounts($tenantId, $sums->keys()->all());
 
         $translate = $targetCurrency !== $functionalCurrency;
@@ -443,7 +443,7 @@ final class LedgerReportService
         string $targetCurrency,
     ): array {
         $sums = $this->sums($this->lines($tenantId, $dimensions)
-            ->whereBetween('journal_entries.posting_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('journal_entries.posting_date', '>=', $from->toDateString())->whereDate('journal_entries.posting_date', '<=', $to->toDateString())
             ->where('journal_entries.journal_type', '!=', 'closing')
             ->whereIn('chart_of_accounts.account_type', LedgerBalanceReader::IncomeTypes));
 
@@ -594,7 +594,7 @@ final class LedgerReportService
         $directRates = ExchangeRate::query()
             ->where('source', $functionalCurrency)
             ->where('target', $presentationCurrency)
-            ->whereBetween('effective_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('effective_date', '>=', $from->toDateString())->whereDate('effective_date', '<=', $to->toDateString())
             ->pluck('rate')
             ->filter(static fn ($rate): bool => Decimal::isPositive((string) $rate))
             ->values();
@@ -611,7 +611,7 @@ final class LedgerReportService
         $inverseRates = ExchangeRate::query()
             ->where('source', $presentationCurrency)
             ->where('target', $functionalCurrency)
-            ->whereBetween('effective_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('effective_date', '>=', $from->toDateString())->whereDate('effective_date', '<=', $to->toDateString())
             ->pluck('rate')
             ->filter(static fn ($rate): bool => Decimal::isPositive((string) $rate))
             ->values();

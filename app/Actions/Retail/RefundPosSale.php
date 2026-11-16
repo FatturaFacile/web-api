@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\FiscalRetail\Actions\IssueCommercialDocument;
 use Modules\FiscalRetail\Models\CommercialDocument;
+use Modules\FiscalRetail\Models\RetailReturn;
 
 class RefundPosSale
 {
@@ -34,6 +35,10 @@ class RefundPosSale
 
             if ($sale->status === 'refunded') {
                 throw ValidationException::withMessages(['sale' => __('pos.already_refunded')]);
+            }
+
+            if (RetailReturn::where('pos_sale_id', $sale->id)->exists()) {
+                throw ValidationException::withMessages(['sale' => __('pos.refund_has_returns')]);
             }
 
             if (RtFiscalReceipt::where('pos_sale_id', $sale->id)->exists()) {

@@ -56,14 +56,14 @@ class SalesOrderController extends Controller
     )]
     public function index(Request $request): JsonResponse
     {
-        $query = SalesOrder::with(['contact', 'holds' => static fn ($holds) => $holds->where('status', 'active')])->latest('date');
+        $query = SalesOrder::with(['contact', 'holds' => static fn ($holds) => $holds->where('status', 'active')])->withCount('items')->latest('date');
 
         if ($request->filled('status')) {
             $query->where('status', $request->query('status'));
         }
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $orders = $query->paginate($perPage);
+        $orders = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: SalesOrderResource::collection($orders),

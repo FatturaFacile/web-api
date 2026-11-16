@@ -80,7 +80,7 @@ final class WorkflowDefinitionManager
         return DB::transaction(function () use ($definition, $data, $userId): WorkflowDefinition {
             if (array_key_exists('is_active', $data)) {
                 if ((bool) $data['is_active'] && $definition->status !== 'published') {
-                    throw ValidationException::withMessages(['is_active' => 'Publish the definition to activate it.']);
+                    throw ValidationException::withMessages(['is_active' => __('workflow_errors.definition.publish_to_activate')]);
                 }
 
                 if ((bool) $data['is_active']) {
@@ -102,7 +102,7 @@ final class WorkflowDefinitionManager
             ->exists();
 
         if ($hasRunningInstances) {
-            throw ValidationException::withMessages(['definition' => 'The definition has running instances: cancel them or deactivate the definition.']);
+            throw ValidationException::withMessages(['definition' => __('workflow_errors.definition.has_running_instances')]);
         }
 
         $definition->update(['is_active' => false, 'status' => 'archived']);
@@ -203,7 +203,7 @@ final class WorkflowDefinitionManager
     private function assertDraft(WorkflowDefinition $definition): void
     {
         if ($definition->status !== 'draft') {
-            throw ValidationException::withMessages(['definition' => 'Only a draft definition can change its graph: create a new version.']);
+            throw ValidationException::withMessages(['definition' => __('workflow_errors.definition.graph_locked')]);
         }
     }
 

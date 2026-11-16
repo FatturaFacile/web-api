@@ -159,6 +159,8 @@ test('guardians see their own child, sign forms and exchange messages on the fam
 
     $this->postJson('/api/v1/childcare/notes', ['child_id' => $child['id'], 'date' => '2026-11-02', 'category' => 'meal', 'body' => 'Ha mangiato tutto', 'visible_to_family' => true])->assertCreated();
     $this->postJson('/api/v1/childcare/notes', ['child_id' => $child['id'], 'date' => '2026-11-02', 'category' => 'behaviour', 'body' => 'Nota interna'])->assertCreated();
+    $this->getJson('/api/v1/childcare/notes')->assertOk()->assertJsonCount(2, 'data');
+    $this->getJson("/api/v1/childcare/notes?child_id={$child['id']}")->assertOk()->assertJsonCount(2, 'data');
     $requirement = $this->postJson('/api/v1/childcare/document-requirements', ['name' => 'Consenso foto', 'requires_signature' => true])->assertCreated()->json('data.id');
     $document = $this->postJson("/api/v1/childcare/children/{$child['id']}/documents", ['title' => 'Consenso foto', 'requirement_id' => $requirement])->assertCreated()->json('data.id');
     $this->getJson('/api/v1/childcare/documents/outstanding')->assertOk()->assertJsonPath('data.total_missing', 2);

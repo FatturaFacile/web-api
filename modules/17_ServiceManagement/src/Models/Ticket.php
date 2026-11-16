@@ -46,6 +46,24 @@ final class Ticket extends BaseEnterpriseModel implements LockableByWorkflowInte
         ];
     }
 
+    /**
+     * Calculated grid columns as portable SQL, so they filter, sort, group and list their values in the database.
+     * `sla_state` mirrors TicketSlaClock::state() (the warning share uses the warning-sent flags, like the list filter).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        $active = implode(', ', array_map(static fn (string $status): string => "'".$status."'", TicketStatus::activeValues()));
+        $table = $this->getTable();
+        $overdue = "(($table.first_responded_at IS NULL AND $table.response_due_at IS NOT NULL AND $table.response_due_at <= CURRENT_TIMESTAMP) OR ($table.resolution_due_at IS NOT NULL AND $table.resolution_due_at <= CURRENT_TIMESTAMP))";
+        $closedState = "CASE WHEN $table.resolution_due_at IS NOT NULL AND $table.resolved_at IS NOT NULL AND $table.resolved_at > $table.resolution_due_at THEN 'breached' ELSE 'met' END";
+
+        return [
+            'sla_state' => "CASE WHEN $table.status NOT IN ($active) THEN $closedState WHEN $table.status = 'pending_customer' OR $table.sla_paused_at IS NOT NULL THEN 'paused' WHEN $overdue THEN 'breached' WHEN $table.response_warning_sent_at IS NOT NULL OR $table.resolution_warning_sent_at IS NOT NULL THEN 'warning' ELSE 'ok' END",
+        ];
+    }
+
     public function lockByWorkflow(WorkflowInstance $instance): void
     {
         $this->update([

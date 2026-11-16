@@ -173,19 +173,29 @@ final class CustomsMasterDataImporter
     {
         $now = now();
         $query = $model::query()->withoutGlobalScopes();
+        $identity = static fn (object|array $row): string => implode('|', array_map(static fn (string $key): string => (string) (is_array($row) ? $row[$key] : $row->{$key}), $keys));
 
         foreach (array_chunk(array_values($rows), self::BATCH) as $chunk) {
-            $values = array_map(static fn (array $row): array => $row + [
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => null,
-                'is_active' => true,
-                'source' => self::SOURCE,
-                'created_at' => $now,
-                'updated_at' => $now,
-            ], $chunk);
+            $existing = (clone $query)->whereNull('tenant_id')->whereIn('code', array_column($chunk, 'code'))->get(['id', ...$keys])
+                ->mapWithKeys(static fn ($row): array => [$identity($row) => $row->id]);
 
-            $columns = array_values(array_diff(array_keys($values[0]), ['id', 'tenant_id', 'created_at', ...$keys]));
-            $query->upsert($values, ['tenant_id', ...$keys], $columns);
+            $inserts = [];
+
+            foreach ($chunk as $row) {
+                $id = $existing->get($identity($row));
+
+                if ($id === null) {
+                    $inserts[] = $row + ['id' => (string) Str::uuid7(), 'tenant_id' => null, 'is_active' => true, 'source' => self::SOURCE, 'created_at' => $now, 'updated_at' => $now];
+
+                    continue;
+                }
+
+                (clone $query)->whereKey($id)->toBase()->update(array_diff_key($row + ['is_active' => true, 'source' => self::SOURCE, 'updated_at' => $now], array_flip($keys)));
+            }
+
+            if ($inserts !== []) {
+                (clone $query)->toBase()->insert($inserts);
+            }
         }
 
         return count($rows);

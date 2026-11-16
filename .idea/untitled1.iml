@@ -57,6 +57,28 @@
       <sourceFolder url="file://$MODULE_DIR$/modules/38_Visitors/src" isTestSource="false" packagePrefix="Modules\Visitors\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/39_Intrastat/src" isTestSource="false" packagePrefix="Modules\Intrastat\" />
       <sourceFolder url="file://$MODULE_DIR$/modules/40_Quality/src" isTestSource="false" packagePrefix="Modules\Quality\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/41_TravelExpense/src" isTestSource="false" packagePrefix="Modules\TravelExpense\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/42_Governance/src" isTestSource="false" packagePrefix="Modules\Governance\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/43_Facility/src" isTestSource="false" packagePrefix="Modules\Facility\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/44_SupplierPortal/src" isTestSource="false" packagePrefix="Modules\SupplierPortal\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/45_LeaseAccounting/src" isTestSource="false" packagePrefix="Modules\LeaseAccounting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/46_Configurator/src" isTestSource="false" packagePrefix="Modules\Configurator\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/47_Sustainability/src" isTestSource="false" packagePrefix="Modules\Sustainability\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/48_Fleet/src" isTestSource="false" packagePrefix="Modules\Fleet\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/49_Returns/src" isTestSource="false" packagePrefix="Modules\Returns\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/50_Wms/src" isTestSource="false" packagePrefix="Modules\Wms\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/51_Transportation/src" isTestSource="false" packagePrefix="Modules\Transportation\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/52_Planning/src" isTestSource="false" packagePrefix="Modules\Planning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/53_Budgeting/src" isTestSource="false" packagePrefix="Modules\Budgeting\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/54_CreditManagement/src" isTestSource="false" packagePrefix="Modules\CreditManagement\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/55_TalentLearning/src" isTestSource="false" packagePrefix="Modules\TalentLearning\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/56_BusinessIntelligence/src" isTestSource="false" packagePrefix="Modules\BusinessIntelligence\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/57_Marketplace/src" isTestSource="false" packagePrefix="Modules\Marketplace\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/58_Platform/src" isTestSource="false" packagePrefix="Modules\Platform\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/59_Collaboration/src" isTestSource="false" packagePrefix="Modules\Collaboration\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/60_Rebates/src" isTestSource="false" packagePrefix="Modules\Rebates\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/61_Events/src" isTestSource="false" packagePrefix="Modules\Events\" />
+      <sourceFolder url="file://$MODULE_DIR$/modules/62_Plm/src" isTestSource="false" packagePrefix="Modules\Plm\" />
       <excludeFolder url="file://$MODULE_DIR$/bootstrap/cache" />
       <excludeFolder url="file://$MODULE_DIR$/storage/app" />
       <excludeFolder url="file://$MODULE_DIR$/storage/framework" />

@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\HumanResources\Contracts\EmployeeLifecycleServiceInterface;
@@ -61,7 +62,7 @@ final class EmployeeController extends Controller
             $query->where('department_id', $request->query('department_id'));
         }
 
-        $employees = $query->orderByDesc('created_at')->paginate(25);
+        $employees = $query->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => EmployeeResource::collection($employees),
@@ -354,7 +355,8 @@ final class EmployeeController extends Controller
             employeeId: (string) $employee->id,
             terminationDate: (string) $request->input('termination_date'),
             reason: (string) $request->input('reason'),
-            startOffboarding: (bool) $request->input('start_offboarding', true)
+            startOffboarding: (bool) $request->input('start_offboarding', true),
+            offboardingTemplateId: $request->input('offboarding_template_id')
         ), $actorId);
 
         return response()->json(['data' => new EmployeeResource($updated)]);

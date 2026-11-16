@@ -39,6 +39,19 @@ final class IntrastatDeclaration extends IntrastatRecord
 {
     protected $table = 'intrastat_declarations';
 
+    /**
+     * Calculated grid columns as portable SQL (same on SQLite and PostgreSQL).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'model' => "CASE WHEN intrastat_declarations.flow = 'sales' THEN 'INTRA-1' ELSE 'INTRA-2' END",
+            'period_label' => "CAST(intrastat_declarations.year AS VARCHAR(4)) || ' / ' || intrastat_declarations.periodicity || CAST(intrastat_declarations.period AS VARCHAR(2))",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

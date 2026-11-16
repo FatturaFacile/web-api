@@ -6,6 +6,7 @@ namespace Modules\Treasury\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use App\Support\Http\RequestedPerPage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -28,13 +29,14 @@ final class RibaPortfolioController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/riba/batches',
         operationId: 'listRibaBatches',
-        description: 'Lists the Ri.Ba. collection batches of the active tenant, newest first, optionally by status or bank account.',
+        description: 'Lists the Ri.Ba. collection batches of the active tenant, newest first, optionally by status or bank account, paginated; sortable and filterable by column (grid contract).',
         summary: 'List Ri.Ba. batches',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Ri.Ba.'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'bank_account_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(ref: '#/components/parameters/TreasuryPerPage'),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Batches', content: new OA\JsonContent(ref: '#/components/schemas/TreasuryRibaBatchListEnvelope')),
@@ -47,13 +49,14 @@ final class RibaPortfolioController extends Controller
     {
         $filters = $request->validate(['status' => ['nullable', 'string', 'max:30'], 'bank_account_id' => ['nullable', 'uuid']]);
 
-        $batches = PaymentBatch::query()
+        $page = PaymentBatch::query()
             ->where('payment_method', 'riba')
             ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
             ->when($filters['bank_account_id'] ?? null, fn ($query, string $id) => $query->where('bank_account_id', $id))
             ->latest()
-            ->limit(200)
-            ->get()
+            ->gridPaginate(RequestedPerPage::resolve(25));
+
+        $batches = collect($page->items())
             ->map(static fn (PaymentBatch $batch): array => [
                 'id' => $batch->id,
                 'batch_reference' => $batch->batch_reference,
@@ -65,7 +68,7 @@ final class RibaPortfolioController extends Controller
                 'item_count' => (int) $batch->item_count,
             ]);
 
-        return $this->successResponse($batches->values()->all(), 'Ri.Ba. batches');
+        return $this->successResponse($batches->values()->all(), 'Ri.Ba. batches', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**

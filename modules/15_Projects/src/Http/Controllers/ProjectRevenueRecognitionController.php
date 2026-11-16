@@ -39,7 +39,7 @@ final class ProjectRevenueRecognitionController extends Controller
     {
         $project = Project::findOrFail($id);
 
-        return $this->paginated(ProjectRevenueRecognition::query()->where('project_id', $project->id)->orderByDesc('accounting_period_date')->paginate($this->perPage($request, 15)), ProjectRevenueRecognitionResource::class);
+        return $this->paginated(ProjectRevenueRecognition::query()->where('project_id', $project->id)->orderByDesc('accounting_period_date')->gridPaginate($this->perPage($request, 15)), ProjectRevenueRecognitionResource::class);
     }
 
     /**

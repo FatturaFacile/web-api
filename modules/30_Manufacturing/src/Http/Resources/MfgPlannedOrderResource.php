@@ -25,6 +25,8 @@ final class MfgPlannedOrderResource extends JsonResource
             'planned_order_number' => $this->planned_order_number,
             'mrp_run_id' => $this->mrp_run_id,
             'mfg_item_id' => $this->mfg_item_id,
+            'item_code' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->item_code),
+            'item_name' => $this->whenLoaded('mfgItem', fn () => $this->mfgItem?->name),
             'order_type' => $this->order_type,
             'quantity' => $this->quantity,
             'net_requirement' => $this->net_requirement,

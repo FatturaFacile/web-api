@@ -101,7 +101,7 @@ return new class extends Migration
             DB::table('sub_dunning_records')->where('status', 'active')->where('invoice_id', $invoiceId)->where('id', '!=', $keep)->update(['status' => 'superseded', 'updated_at' => now()]);
         }
 
-        if (DB::connection()->getDriverName() === 'pgsql') {
+        if (in_array(DB::connection()->getDriverName(), ['pgsql', 'sqlite'], true)) {
             // One recurring invoice per subscription and service period: the last defence of idempotent billing.
             DB::statement("CREATE UNIQUE INDEX IF NOT EXISTS sub_invoice_schedules_one_recurring_per_period ON sub_invoice_schedules (subscription_id, service_period_start) WHERE billing_kind = 'recurring' AND status IN ('processing', 'invoiced')");
             // One open dunning case per invoice.

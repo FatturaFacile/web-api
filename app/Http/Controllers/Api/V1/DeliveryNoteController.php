@@ -38,6 +38,7 @@ class DeliveryNoteController extends Controller
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', schema: new OA\Schema(type: 'integer')),
             new OA\Parameter(name: 'per_page', in: 'query', schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'billable', in: 'query', description: 'Only the delivery notes that can still be invoiced (neither draft nor invoiced)', schema: new OA\Schema(type: 'boolean')),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Delivery notes list retrieved'),
@@ -50,7 +51,10 @@ class DeliveryNoteController extends Controller
         $this->authorize('viewAny', DeliveryNote::class);
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $notes = DeliveryNote::with('contact')->latest('date')->paginate($perPage);
+        $notes = DeliveryNote::with('contact')
+            ->when($request->boolean('billable'), static fn ($query) => $query->whereNotIn('status', ['draft', 'invoiced']))
+            ->latest('date')
+            ->gridPaginate($perPage);
 
         return $this->successResponse(
             data: DeliveryNoteResource::collection($notes),

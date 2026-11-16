@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\Admin\TenantAccessRequestController;
+use App\Http\Controllers\Api\V1\Admin\UserTenantAccessController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\AppointmentController;
 use App\Http\Controllers\Api\V1\AttachmentController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\Api\V1\Banking\BankStatementController;
 use App\Http\Controllers\Api\V1\ConstructionController;
 use App\Http\Controllers\Api\V1\ContactInsightsController;
 use App\Http\Controllers\Api\V1\CrmController;
+use App\Http\Controllers\Api\V1\CustomsTaricCodeController;
 use App\Http\Controllers\Api\V1\Dashboard\DashboardBuilderController;
 use App\Http\Controllers\Api\V1\DashboardController;
 use App\Http\Controllers\Api\V1\DeliveryNoteController;
@@ -30,6 +32,8 @@ use App\Http\Controllers\Api\V1\Ecommerce\EcommerceWebhookController;
 use App\Http\Controllers\Api\V1\ExpenseController;
 use App\Http\Controllers\Api\V1\FieldServiceController;
 use App\Http\Controllers\Api\V1\FleetRentalController;
+use App\Http\Controllers\Api\V1\FreeTradeAgreementController;
+use App\Http\Controllers\Api\V1\HealthController;
 use App\Http\Controllers\Api\V1\HrController;
 use App\Http\Controllers\Api\V1\IncomingInvoiceWebhookController;
 use App\Http\Controllers\Api\V1\Inventory\ProductBarcodeController;
@@ -37,10 +41,19 @@ use App\Http\Controllers\Api\V1\Inventory\ProductLabelController;
 use App\Http\Controllers\Api\V1\Inventory\ProductVariantController;
 use App\Http\Controllers\Api\V1\InventoryController;
 use App\Http\Controllers\Api\V1\InvoiceController;
+use App\Http\Controllers\Api\V1\InvoiceCustomsOriginController;
 use App\Http\Controllers\Api\V1\InvoicePaymentController;
 use App\Http\Controllers\Api\V1\InvoiceQrBillController;
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
 use App\Http\Controllers\Api\V1\LoyaltyCardController;
+use App\Http\Controllers\Api\V1\Mobile\MobileApprovalController;
+use App\Http\Controllers\Api\V1\Mobile\MobileAuthController;
+use App\Http\Controllers\Api\V1\Mobile\MobileBootstrapController;
+use App\Http\Controllers\Api\V1\Mobile\MobileDeviceController;
+use App\Http\Controllers\Api\V1\Mobile\MobilePayslipController;
+use App\Http\Controllers\Api\V1\Mobile\MobileReceiptController;
+use App\Http\Controllers\Api\V1\Mobile\MobileSyncController;
+use App\Http\Controllers\Api\V1\Mobile\MobileWorkforceController;
 use App\Http\Controllers\Api\V1\PasswordChangeController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
@@ -68,6 +81,7 @@ use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\Settings\TenantMemberController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
 use App\Http\Controllers\Api\V1\SubscriptionController;
@@ -85,6 +99,9 @@ use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
+
+    // Readiness probe for load balancers and orchestrators (liveness is Laravel's /up): 200 when every check passes, 503 otherwise.
+    Route::get('/health/ready', [HealthController::class, 'ready'])->middleware('throttle:health')->name('health.ready');
 
     // ----------------------------------------------------
     // Public Auth & Bootstrap Routes
@@ -108,9 +125,21 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/tenant-access-requests/{id}/move', [TenantAccessRequestController::class, 'move'])->name('tenant-access-requests.move');
         Route::put('/tenants/{id}/document-quota', [DocumentQuotaController::class, 'update'])->name('tenants.document-quota');
         Route::post('/tenant-access-requests/{id}/reject', [TenantAccessRequestController::class, 'reject'])->name('tenant-access-requests.reject');
+        Route::get('/access-options', [UserTenantAccessController::class, 'options'])->name('access-options');
+        Route::get('/users', [UserTenantAccessController::class, 'users'])->name('users.index');
+        Route::get('/tenants', [UserTenantAccessController::class, 'tenants'])->name('tenants.index');
+        Route::get('/users/{userId}/tenants', [UserTenantAccessController::class, 'userTenants'])->whereUuid('userId')->name('users.tenants.index');
+        Route::put('/users/{userId}/tenants/{tenantId}', [UserTenantAccessController::class, 'saveUserTenant'])->whereUuid(['userId', 'tenantId'])->name('users.tenants.update');
+        Route::delete('/users/{userId}/tenants/{tenantId}', [UserTenantAccessController::class, 'removeUserTenant'])->whereUuid(['userId', 'tenantId'])->name('users.tenants.destroy');
     });
 
-    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
+    // Mobile companion: OAuth2 authorization-code + PKCE (S256) on top of the regular login pipeline
+    Route::prefix('mobile/auth/pkce')->name('mobile.auth.pkce.')->middleware(['locale', 'throttle:login'])->group(function (): void {
+        Route::post('/authorize', [MobileAuthController::class, 'authorizeRequest'])->name('authorize');
+        Route::post('/token', [MobileAuthController::class, 'token'])->name('token');
+    });
+
+    Route::get('/system/bootstrap-support',BootstrapSupportUserController::class)
         ->middleware('throttle:5,1')
         ->name('system.bootstrap-support');
 
@@ -149,7 +178,7 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
     // ----------------------------------------------------
-    Route::middleware(['auth:sanctum', 'tenant', 'locale'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'mobile.device', 'tenant', 'locale'])->group(function (): void {
 
         // Every route below declares its module (config/permissions.php), except the ones listed in
         // tests/Feature/Foundation/RouteModuleAccessTest.php, which check the user themselves (own records, own profile).
@@ -204,6 +233,7 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/invoices/{id}/generate-qr-bill', [InvoiceController::class, 'generateQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.generate-qr-bill');
             Route::get('/invoices/{id}/download-qr-bill', [InvoiceController::class, 'downloadQrBill'])->middleware('deprecated:/api/v1/sales/invoices/{id}/qr-bill')->name('invoices.download-qr-bill');
             Route::get('/invoices/{id}/qr-bill', [InvoiceQrBillController::class, 'show'])->name('invoices.qr-bill');
+            Route::post('/invoices/{id}/evaluate-customs-origin', [InvoiceCustomsOriginController::class, 'evaluate'])->name('invoices.evaluate-customs-origin');
             Route::get('/invoices/{id}/payments', [InvoicePaymentController::class, 'index'])->name('invoices.payments.index');
             Route::post('/invoices/{id}/payments', [InvoicePaymentController::class, 'store'])->name('invoices.payments.store');
             Route::post('/invoices/{id}/convert-proforma', [InvoicePaymentController::class, 'convertProforma'])->name('invoices.convert-proforma');
@@ -257,6 +287,12 @@ Route::prefix('v1')->group(function (): void {
 
             Route::apiResource('delivery-notes', DeliveryNoteController::class)->only(['index', 'show', 'destroy'])->parameters(['delivery-notes' => 'id']);
             Route::post('/delivery-notes/{id}/invoice', [DeliveryNoteController::class, 'createInvoice'])->name('delivery-notes.invoice');
+        });
+
+        // Global customs reference catalogs: readable by every member, written through the customs.manage gate
+        Route::prefix('catalog')->name('catalog.')->group(function (): void {
+            Route::apiResource('customs-taric-codes', CustomsTaricCodeController::class)->parameters(['customs-taric-codes' => 'id']);
+            Route::apiResource('free-trade-agreements', FreeTradeAgreementController::class)->parameters(['free-trade-agreements' => 'id']);
         });
 
         // 4b. Catalog, Price Lists & Payment Terms
@@ -512,12 +548,49 @@ Route::prefix('v1')->group(function (): void {
         // System: manual tenant backups
         Route::prefix('system')->name('system.')->middleware('module.access:system')->group(function (): void {
             Route::get('/backups', [TenantBackupController::class, 'index'])->name('backups.index');
-            Route::post('/backups', [TenantBackupController::class, 'store'])->name('backups.store');
-            Route::post('/backups/restore-upload', [TenantBackupController::class, 'restoreUpload'])->name('backups.restore-upload');
+            Route::get('/backups/status', [TenantBackupController::class, 'status'])->name('backups.status');
+            Route::post('/backups', [TenantBackupController::class, 'store'])->middleware('throttle:sensitive-system')->name('backups.store');
+            Route::post('/backups/restore-upload', [TenantBackupController::class, 'restoreUpload'])->middleware('throttle:sensitive-system')->name('backups.restore-upload');
             Route::get('/backups/{id}', [TenantBackupController::class, 'show'])->name('backups.show');
-            Route::post('/backups/{id}/restore', [TenantBackupController::class, 'restore'])->name('backups.restore');
-            Route::get('/backups/{id}/download', [TenantBackupController::class, 'download'])->name('backups.download');
+            Route::post('/backups/{id}/restore', [TenantBackupController::class, 'restore'])->middleware('throttle:sensitive-system')->name('backups.restore');
+            Route::get('/backups/{id}/download', [TenantBackupController::class, 'download'])->middleware('throttle:sensitive-system')->name('backups.download');
             Route::delete('/backups/{id}', [TenantBackupController::class, 'destroy'])->name('backups.destroy');
+        });
+
+        // Mobile companion app (Flutter iOS / Android). Offline writes are replayed safely through the platform `Idempotency-Key` middleware.
+        Route::prefix('mobile')->name('mobile.')->group(function (): void {
+            Route::get('/bootstrap', MobileBootstrapController::class)->name('bootstrap');
+
+            Route::get('/devices', [MobileDeviceController::class, 'index'])->name('devices.index');
+            Route::post('/devices', [MobileDeviceController::class, 'register'])->name('devices.register');
+            Route::put('/devices/current/push-token', [MobileDeviceController::class, 'updatePushToken'])->name('devices.push-token');
+            Route::put('/devices/current/biometric', [MobileDeviceController::class, 'updateBiometric'])->name('devices.biometric');
+            Route::post('/devices/current/wipe-ack', [MobileDeviceController::class, 'wipeAck'])->name('devices.wipe-ack');
+            Route::get('/devices/current/manifest', [MobileDeviceController::class, 'manifest'])->name('devices.manifest');
+            Route::put('/devices/current/manifest', [MobileDeviceController::class, 'updateManifest'])->name('devices.manifest.update');
+            Route::delete('/devices/{id}', [MobileDeviceController::class, 'revoke'])->name('devices.revoke');
+            Route::get('/admin/devices', [MobileDeviceController::class, 'adminIndex'])->name('admin.devices.index');
+
+            Route::get('/approvals', [MobileApprovalController::class, 'inbox'])->name('approvals.inbox');
+            Route::post('/approvals/{stepId}/decision', [MobileApprovalController::class, 'decide'])->name('approvals.decide');
+
+            Route::get('/sync', [MobileSyncController::class, 'entities'])->name('sync.entities');
+            Route::get('/sync/{entity}', [MobileSyncController::class, 'delta'])->name('sync.delta');
+
+            Route::get('/work-sites', [MobileWorkforceController::class, 'workSites'])->name('work-sites.index');
+            Route::post('/work-sites', [MobileWorkforceController::class, 'storeWorkSite'])->name('work-sites.store');
+            Route::put('/work-sites/{id}', [MobileWorkforceController::class, 'updateWorkSite'])->name('work-sites.update');
+            Route::delete('/work-sites/{id}', [MobileWorkforceController::class, 'destroyWorkSite'])->name('work-sites.destroy');
+            Route::get('/shifts', [MobileWorkforceController::class, 'shifts'])->name('shifts.index');
+            Route::post('/shifts', [MobileWorkforceController::class, 'storeShift'])->name('shifts.store');
+            Route::delete('/shifts/{id}', [MobileWorkforceController::class, 'destroyShift'])->name('shifts.destroy');
+
+            Route::get('/payslips', [MobilePayslipController::class, 'index'])->name('payslips.index');
+            Route::get('/payslips/{id}/download', [MobilePayslipController::class, 'download'])->name('payslips.download');
+            Route::post('/payslips/{id}/read-receipt', [MobilePayslipController::class, 'readReceipt'])->name('payslips.read-receipt');
+            Route::post('/admin/payslips', [MobilePayslipController::class, 'store'])->name('admin.payslips.store');
+
+            Route::post('/receipts/parse', [MobileReceiptController::class, 'parse'])->name('receipts.parse');
         });
 
         Route::prefix('settings')->name('settings.')->group(function (): void {
@@ -533,6 +606,10 @@ Route::prefix('v1')->group(function (): void {
                 // Exchange rates are central data shared by every tenant: only a platform administrator may write them.
                 Route::post('/exchange-rates/sync', [SettingsController::class, 'syncExchangeRates'])->middleware('platform.admin')->name('exchange-rates.sync');
                 Route::get('/users', [SettingsController::class, 'users'])->name('users');
+                Route::post('/users', [TenantMemberController::class, 'store'])->middleware('throttle:sensitive-system')->name('users.store');
+                Route::put('/users/{userId}', [TenantMemberController::class, 'update'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.update');
+                Route::delete('/users/{userId}', [TenantMemberController::class, 'destroy'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.destroy');
+                Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
                 Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');

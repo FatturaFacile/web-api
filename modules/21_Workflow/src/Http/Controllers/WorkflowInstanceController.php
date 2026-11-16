@@ -53,11 +53,12 @@ final class WorkflowInstanceController extends Controller
     public function index(Request $request): JsonResponse
     {
         $instances = WorkflowInstance::query()
+            ->with(['definition', 'creator'])
             ->when($request->query('status'), fn ($q, $status) => $q->where('status', $status))
             ->when($request->query('approvable_type'), fn ($q, $type) => $q->where('approvable_type', $type))
             ->when($request->query('approvable_id'), fn ($q, $id) => $q->where('approvable_id', $id))
             ->orderBy('started_at', 'desc')
-            ->paginate((int) $request->query('per_page', 25));
+            ->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(WorkflowInstanceResource::collection($instances)->response()->getData(true));
     }

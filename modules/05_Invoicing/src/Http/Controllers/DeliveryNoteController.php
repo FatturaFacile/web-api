@@ -43,7 +43,7 @@ final class DeliveryNoteController extends Controller
     public function index(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
-        $query = SalesDeliveryNote::with('items')->where('tenant_id', $tenantId);
+        $query = SalesDeliveryNote::with(['items', 'customer'])->where('tenant_id', $tenantId);
 
         if ($request->has('shipping_status')) {
             $query->where('shipping_status', (string) $request->query('shipping_status'));
@@ -52,7 +52,7 @@ final class DeliveryNoteController extends Controller
             $query->where('sales_order_id', (string) $request->query('sales_order_id'));
         }
 
-        $notes = $query->orderBy('created_at', 'desc')->paginate((int) $request->query('per_page', 25));
+        $notes = $query->orderBy('created_at', 'desc')->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(SalesDeliveryNoteResource::collection($notes)->response()->getData(true));
     }

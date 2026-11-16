@@ -267,13 +267,17 @@ final readonly class ConsolidationGroupService
     }
 
     /**
-     * @throws ConsolidationException when an entity is not a member or both are the same
+     * @throws ConsolidationException when an entity is not a member, both are the same or the currency is not the group currency
      * @throws ConflictHttpException when the pair already has a relation
      */
-    public function createRelation(User $user, ConsolidationGroup $group, string $entityA, string $entityB, string $tolerance, ?string $description): IntercompanyRelation
+    public function createRelation(User $user, ConsolidationGroup $group, string $entityA, string $entityB, string $tolerance, ?string $description, ?string $currency = null): IntercompanyRelation
     {
         if ($entityA === $entityB) {
             throw new ConsolidationException('An intercompany relation needs two different entities.');
+        }
+
+        if ($currency !== null && $currency !== '' && strtoupper($currency) !== $group->group_currency) {
+            throw new ConsolidationException("The tolerance is in the group currency {$group->group_currency}.");
         }
 
         foreach ([$entityA, $entityB] as $entity) {
@@ -298,6 +302,7 @@ final readonly class ConsolidationGroupService
             'entity_a_tenant_id' => $entityA,
             'entity_b_tenant_id' => $entityB,
             'tolerance_amount' => $tolerance,
+            'currency' => $group->group_currency,
             'description' => $description,
         ]);
     }

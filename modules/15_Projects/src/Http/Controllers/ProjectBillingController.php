@@ -86,6 +86,6 @@ final class ProjectBillingController extends Controller
     {
         $project = Project::findOrFail($id);
 
-        return $this->paginated(ProjectBillingEvent::query()->where('project_id', $project->id)->orderByDesc('created_at')->paginate($this->perPage($request)), ProjectBillingEventResource::class);
+        return $this->paginated(ProjectBillingEvent::query()->where('project_id', $project->id)->orderByDesc('created_at')->gridPaginate($this->perPage($request)), ProjectBillingEventResource::class);
     }
 }

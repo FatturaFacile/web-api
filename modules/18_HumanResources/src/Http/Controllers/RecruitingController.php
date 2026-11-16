@@ -6,6 +6,7 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -46,7 +47,7 @@ final class RecruitingController extends Controller
     ])]
     public function postings(): AnonymousResourceCollection
     {
-        return HrRecordResource::collection(JobPosting::query()->orderByDesc('created_at')->get());
+        return HrRecordResource::collection(JobPosting::query()->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -104,7 +105,7 @@ final class RecruitingController extends Controller
             ->with('stage')
             ->when($request->query('job_posting_id'), static fn ($query, $postingId) => $query->where('job_posting_id', $postingId))
             ->orderByDesc('created_at')
-            ->paginate(50));
+            ->gridPaginate(RequestedPerPage::resolve(50)));
     }
 
     /**
@@ -278,10 +279,11 @@ final class RecruitingController extends Controller
     public function checklists(Request $request): AnonymousResourceCollection
     {
         return HrRecordResource::collection(OnboardingChecklist::query()
+            ->where('kind', OnboardingChecklist::KindOnboarding)
             ->with('tasks')
             ->when($request->query('employee_id'), static fn ($query, $employeeId) => $query->where('employee_id', $employeeId))
             ->orderByDesc('created_at')
-            ->get());
+            ->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**

@@ -1,0 +1,33 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Database\Factories;
+
+use App\Models\Tenant;
+use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Support\Str;
+use Modules\Transportation\Models\TmsTrackingEvent;
+use Modules\Transportation\Models\TmsTransportOrder;
+
+/**
+ * @extends Factory<TmsTrackingEvent>
+ */
+final class TmsTrackingEventFactory extends Factory
+{
+    protected $model = TmsTrackingEvent::class;
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function definition(): array
+    {
+        return [
+            'id' => (string) Str::uuid7(),
+            'tenant_id' => Tenant::factory(),
+            'transport_order_id' => TmsTransportOrder::factory(),
+            'event_type' => 'picked_up',
+            'occurred_at' => '2027-01-15 09:00:00',
+        ];
+    }
+}

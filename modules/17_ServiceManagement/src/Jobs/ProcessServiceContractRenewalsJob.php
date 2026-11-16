@@ -29,7 +29,7 @@ final class ProcessServiceContractRenewalsJob implements ShouldQueue
     {
         $query = ServiceContract::where('status', 'active')
             ->whereNotNull('end_date')
-            ->where('end_date', '<=', now()->addDays($this->advanceNoticeDays)->toDateString());
+            ->whereDate('end_date', '<=', now()->addDays($this->advanceNoticeDays)->toDateString());
 
         if ($this->tenantId !== null) {
             $query->where('tenant_id', $this->tenantId);

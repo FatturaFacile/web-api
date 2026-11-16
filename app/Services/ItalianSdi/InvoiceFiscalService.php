@@ -7,10 +7,10 @@ namespace App\Services\ItalianSdi;
 use App\Models\Contact;
 use App\Models\Tenant;
 use App\Services\Sales\VatSummaryCalculator;
+use App\Support\Database\TransactionLock;
 use Carbon\CarbonImmutable;
 use Enterprise\MultiTenant\Scopes\TenantScope;
 use Illuminate\Support\Facades\Date;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 use Modules\GeneralLedger\Models\EnasarcoParameter;
 use Modules\GeneralLedger\Services\Tax\Decimal;
@@ -342,11 +342,7 @@ final class InvoiceFiscalService
      */
     private function serializeCeiling(string $tenantId, string $contactId, int $year): void
     {
-        if (DB::getDriverName() !== 'pgsql' || DB::transactionLevel() === 0) {
-            return;
-        }
-
-        DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ["enasarco-ceiling:{$tenantId}:{$contactId}:{$year}"]);
+        TransactionLock::acquire("enasarco-ceiling:{$tenantId}:{$contactId}:{$year}");
     }
 
     /**

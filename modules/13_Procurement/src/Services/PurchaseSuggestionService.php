@@ -245,7 +245,7 @@ final readonly class PurchaseSuggestionService
             ->whereNull('l.deleted_at')
             ->where('c.internal_sku', $item->sku)
             ->whereIn('po.status', [PurchaseOrderStatus::Draft->value, PurchaseOrderStatus::PendingApproval->value, PurchaseOrderStatus::Approved->value, PurchaseOrderStatus::Sent->value, PurchaseOrderStatus::PartiallyReceived->value])
-            ->selectRaw('COALESCE(SUM(GREATEST(l.quantity_ordered - l.quantity_cancelled - l.quantity_received, 0)), 0) as open_quantity')
+            ->selectRaw('COALESCE(SUM((CASE WHEN l.quantity_ordered - l.quantity_cancelled - l.quantity_received > 0 THEN l.quantity_ordered - l.quantity_cancelled - l.quantity_received ELSE 0 END)), 0) as open_quantity')
             ->value('open_quantity');
 
         return Decimal::of((string) $open, 4);

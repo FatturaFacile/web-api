@@ -9,6 +9,7 @@ use App\Models\DeliveryNote;
 use App\Models\Product;
 use App\Models\Tenant;
 use App\Services\Sales\DocumentNumberingService;
+use App\Support\Database\SqlDialect;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -179,12 +180,12 @@ final class CustomsDeclarationService
             ->join('customs_goods_declarations as d', 'd.id', '=', 'customs_declaration_items.declaration_id')
             ->whereNull('d.deleted_at')
             ->where('d.status', '<>', DeclarationStatus::Cancelled->value)
-            ->selectRaw('customs_declaration_items.commodity_code, customs_declaration_items.statistical_code, customs_declaration_items.origin_country, customs_declaration_items.description, customs_declaration_items.packaging_type, max(customs_declaration_items.id::text) as last_item_id, count(*) as times_used, max(d.created_at) as last_used_at')
+            ->selectRaw('customs_declaration_items.commodity_code, customs_declaration_items.statistical_code, customs_declaration_items.origin_country, customs_declaration_items.description, customs_declaration_items.packaging_type, max('.SqlDialect::castText('customs_declaration_items.id').') as last_item_id, count(*) as times_used, max(d.created_at) as last_used_at')
             ->groupBy('customs_declaration_items.commodity_code', 'customs_declaration_items.statistical_code', 'customs_declaration_items.origin_country', 'customs_declaration_items.description', 'customs_declaration_items.packaging_type')
             ->orderByDesc('last_used_at');
 
         if (! empty($filters['search'])) {
-            $query->where('customs_declaration_items.description', 'ilike', '%'.$filters['search'].'%');
+            $query->whereLike('customs_declaration_items.description', '%'.$filters['search'].'%');
         }
 
         if (! empty($filters['commodity_code'])) {
@@ -199,7 +200,7 @@ final class CustomsDeclarationService
             $query->where('d.consignee_contact_id', $filters['consignee_contact_id']);
         }
 
-        return $query->paginate($perPage);
+        return $query->gridPaginate($perPage);
     }
 
     /**

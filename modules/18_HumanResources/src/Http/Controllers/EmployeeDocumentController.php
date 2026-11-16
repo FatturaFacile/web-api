@@ -7,8 +7,10 @@ namespace Modules\HumanResources\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\StoredFileHeaders;
 use App\Models\User;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Modules\HumanResources\Http\Requests\StoreEmployeeDocumentRequest;
 use Modules\HumanResources\Http\Resources\EmployeeDocumentResource;
@@ -42,11 +44,11 @@ final class EmployeeDocumentController extends Controller
             new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
         ]
     )]
-    public function index(string $id): JsonResponse
+    public function index(string $id): AnonymousResourceCollection
     {
         $employee = Employee::query()->findOrFail($id);
 
-        return response()->json(['data' => EmployeeDocumentResource::collection(EmployeeDocument::query()->where('employee_id', $employee->id)->orderByDesc('created_at')->get())]);
+        return EmployeeDocumentResource::collection(EmployeeDocument::query()->where('employee_id', $employee->id)->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**

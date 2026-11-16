@@ -41,6 +41,10 @@ final class SalesOrderResource extends JsonResource
             'payment_terms' => $this->payment_terms,
             'shipping_method' => $this->shipping_method,
             'notes' => $this->notes,
+            'contact' => $this->whenLoaded('customer', fn (): ?array => $this->customer === null ? null : [
+                'id' => $this->customer->id,
+                'name' => $this->customer->company_name ?: trim($this->customer->first_name.' '.$this->customer->last_name),
+            ]),
             'items' => $this->whenLoaded('items'),
             'holds' => $this->whenLoaded('holds'),
             'created_at' => $this->created_at?->toISOString(),

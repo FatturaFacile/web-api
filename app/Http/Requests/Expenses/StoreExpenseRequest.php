@@ -78,10 +78,10 @@ class StoreExpenseRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'category_id.exists' => 'The selected expense category is invalid.',
-            'contact_id.exists' => 'The selected supplier contact does not belong to the active tenant.',
-            'ticket_id.exists' => 'The selected ticket does not belong to the active tenant.',
-            'service_report_id.exists' => 'The selected service report does not belong to the active tenant.',
+            'category_id.exists' => __('expenses_errors_2.category.invalid'),
+            'contact_id.exists' => __('expenses_errors_2.contact.not_in_tenant'),
+            'ticket_id.exists' => __('expenses_errors_2.ticket.not_in_tenant'),
+            'service_report_id.exists' => __('expenses_errors_2.service_report.not_in_tenant'),
         ];
     }
 }

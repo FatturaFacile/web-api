@@ -13,7 +13,9 @@ use App\Http\Responses\ApiResponse;
 use App\Models\TimeEntry;
 use App\Models\User;
 use App\Services\Attendance\AttendanceComplianceService;
+use App\Services\Mobile\GeofenceService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -80,7 +82,7 @@ class TimeAttendanceController extends Controller
             $query->where('clock_in', '<=', Carbon::parse($request->query('to_date'))->endOfDay());
         }
 
-        $entries = $query->paginate(25);
+        $entries = $query->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(
             data: TimeEntryResource::collection($entries),
@@ -143,7 +145,25 @@ class TimeAttendanceController extends Controller
             );
         }
 
-        $entry = $this->legacyBridge->clockIn($user, $request->validated());
+        $validated = $request->validated();
+
+        $geofence = app(GeofenceService::class)->check(
+            isset($validated['latitude']) ? (float) $validated['latitude'] : null,
+            isset($validated['longitude']) ? (float) $validated['longitude'] : null,
+            strict: $request->hasHeader('X-Device-Id') || $request->attributes->has('mobile_device'),
+        );
+
+        if (! $geofence['allowed']) {
+            return $this->problemDetailsResponse(
+                title: $geofence['reason'] === 'position_required' ? 'Position Required' : 'Outside Geofence',
+                detail: $geofence['reason'] === 'position_required'
+                    ? 'GPS coordinates are required to clock in at a geofenced work site.'
+                    : sprintf('You are %.0f m from the nearest work site (%s).', (float) $geofence['distance_m'], $geofence['site']?->name),
+                status: Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $entry = $this->legacyBridge->clockIn($user, $validated);
 
         if ($entry === null) {
             return $this->problemDetailsResponse(

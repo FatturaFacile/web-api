@@ -43,7 +43,7 @@ final class WorkflowDecisionController extends Controller
     #[EnterpriseEndpoint(summary: 'Retrieve user pending approvals worklist', tags: ['Workflow Engine'])]
     public function myPending(Request $request, WorkflowInboxService $inbox): JsonResponse
     {
-        $steps = $inbox->tasks($request->user())->paginate(min(100, max(1, (int) $request->query('per_page', 25))));
+        $steps = $inbox->tasks($request->user())->gridPaginate(min(100, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json(WorkflowInstanceStepResource::collection($steps)->response()->getData(true));
     }

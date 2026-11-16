@@ -70,9 +70,9 @@ final readonly class PurchasesKpi implements KpiCalculator
         $convertible = $this->sql->convertible('passive_invoices');
         $totals = $this->posted($period)
             ->toBase()
-            ->selectRaw("COUNT(*) FILTER (WHERE {$convertible}) AS documents")
-            ->selectRaw("COUNT(*) FILTER (WHERE NOT {$convertible}) AS excluded")
-            ->selectRaw("COALESCE(SUM({$net} * {$this->sql->rate('passive_invoices')}) FILTER (WHERE {$convertible}), 0) AS net")
+            ->selectRaw("COUNT(CASE WHEN {$convertible} THEN 1 END) AS documents")
+            ->selectRaw("COUNT(CASE WHEN NOT {$convertible} THEN 1 END) AS excluded")
+            ->selectRaw("COALESCE(SUM(CASE WHEN {$convertible} THEN {$net} * {$this->sql->rate('passive_invoices')} END), 0) AS net")
             ->first();
 
         $documents = (int) $totals->documents;
@@ -114,7 +114,7 @@ final readonly class PurchasesKpi implements KpiCalculator
     {
         return PassiveInvoice::query()
             ->whereNotNull('passive_invoices.gl_journal_entry_id')
-            ->whereBetween('passive_invoices.date', [$period->from->toDateString(), $period->to->toDateString()]);
+            ->whereDate('passive_invoices.date', '>=', $period->from->toDateString())->whereDate('passive_invoices.date', '<=', $period->to->toDateString());
     }
 
     private function net(): string

@@ -8,6 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Invoice;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -22,17 +23,16 @@ final class PaymentLinkController extends Controller
 {
     use ApiResponse;
 
-    #[OA\Get(path: '/api/v1/payment-links', operationId: 'listPaymentLinks', description: 'Payment links of the active tenant, optionally for an invoice.', summary: 'List payment links', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Payment Links'], parameters: [new OA\Parameter(name: 'invoice_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
+    #[OA\Get(path: '/api/v1/payment-links', operationId: 'listPaymentLinks', description: 'Payment links of the active tenant, optionally for an invoice.', summary: 'List payment links', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Payment Links'], parameters: [new OA\Parameter(name: 'invoice_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 200))], responses: [
         new OA\Response(response: 200, description: 'The links', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
     ])]
     public function index(Request $request): JsonResponse
     {
         $validated = $request->validate(['invoice_id' => ['nullable', 'uuid']]);
 
-        return $this->successResponse(
-            PaymentLink::query()->when($validated['invoice_id'] ?? null, static fn ($query, string $id) => $query->where('invoice_id', $id))->latest()->limit(200)->get(),
-            'Payment links retrieved',
-        );
+        $links = PaymentLink::query()->when($validated['invoice_id'] ?? null, static fn ($query, string $id) => $query->where('invoice_id', $id))->latest()->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse($links->items(), 'Payment links retrieved', meta: ['current_page' => $links->currentPage(), 'last_page' => $links->lastPage(), 'per_page' => $links->perPage(), 'total' => $links->total()]);
     }
 
     #[OA\Post(path: '/api/v1/payment-links', operationId: 'createPaymentLink', description: 'Creates a hosted payment page for the open balance of an invoice. Card data never reaches this application.', summary: 'Create payment link', security: [['bearerAuth' => [], 'tenantHeader' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(required: ['invoice_id'], properties: [new OA\Property(property: 'invoice_id', type: 'string', format: 'uuid')])), tags: ['Payment Links'], responses: [

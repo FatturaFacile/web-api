@@ -45,6 +45,18 @@ final class MfgBom extends BaseEnterpriseModel
 
     protected $table = 'mfg_boms';
 
+    /**
+     * Calculated grid columns (see the GridColumns class of the grid engine).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'components_count' => '(SELECT COUNT(*) FROM mfg_bom_components WHERE mfg_bom_components.bom_id = mfg_boms.id)',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

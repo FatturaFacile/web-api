@@ -27,6 +27,9 @@ final readonly class TenantClock
         'VA' => 'Europe/Vatican',
         'CH' => 'Europe/Zurich',
         'LI' => 'Europe/Vaduz',
+        'FR' => 'Europe/Paris',
+        'ES' => 'Europe/Madrid',
+        'DE' => 'Europe/Berlin',
     ];
 
     public function __construct(private TenantContext $tenantContext) {}

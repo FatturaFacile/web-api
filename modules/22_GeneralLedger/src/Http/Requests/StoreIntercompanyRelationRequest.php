@@ -13,6 +13,13 @@ final class StoreIntercompanyRelationRequest extends FormRequest
         return true;
     }
 
+    protected function prepareForValidation(): void
+    {
+        if (is_string($this->input('currency'))) {
+            $this->merge(['currency' => strtoupper(trim($this->input('currency')))]);
+        }
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -22,6 +29,7 @@ final class StoreIntercompanyRelationRequest extends FormRequest
             'entity_a_tenant_id' => ['required', 'uuid'],
             'entity_b_tenant_id' => ['required', 'uuid', 'different:entity_a_tenant_id'],
             'tolerance_amount' => ['nullable', 'numeric', 'min:0', 'decimal:0,4'],
+            'currency' => ['nullable', 'string', 'regex:/^[A-Z]{3}$/'],
             'description' => ['nullable', 'string', 'max:5000'],
         ];
     }

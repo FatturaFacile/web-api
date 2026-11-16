@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Workshop\Models;
 
+use App\Models\Contact;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 /**
@@ -24,5 +25,13 @@ final class VehicleSale extends WorkshopRecord
     public function stockUnit(): BelongsTo
     {
         return $this->belongsTo(VehicleStockUnit::class, 'stock_id');
+    }
+
+    /**
+     * @return BelongsTo<Contact, $this>
+     */
+    public function buyer(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'buyer_contact_id');
     }
 }

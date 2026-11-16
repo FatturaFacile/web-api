@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     'messages' => [
         'imported' => 'Kontoauszug erfolgreich importiert',
         'listed' => 'Kontoauszüge erfolgreich abgerufen',
@@ -42,4 +43,18 @@ return [
     'problem_titles' => [
         'import' => 'Kontoauszugsimport',
     ],
+
+    'parse_errors' => [
+        'unsupported_format' => 'Die Datei ist kein unterstützter Kontoauszug (CBI, CAMT.053 oder CAMT.054).',
+        'invalid_xml' => 'Die Datei ist kein gültiges XML-Dokument.',
+        'unsafe_xml' => 'XML-Dokumente mit DOCTYPE oder Entitätsdeklarationen werden nicht akzeptiert.',
+        'no_statement' => 'Das Dokument enthält weder einen Kontoauszug noch eine Avisierung.',
+        'invalid_line_length' => 'Zeile :line hat :length Zeichen statt :expected.',
+        'invalid_record' => 'Zeile :line enthält einen ungültigen oder unerwarteten Datensatz :record.',
+        'missing_header' => 'Der Kontoauszug hat keinen gültigen Kopfsatz (IBAN des Kontos).',
+        'missing_trailer' => 'Der Kontoauszug ist unvollständig: Der Abschlusssatz EF fehlt.',
+        'record_count_mismatch' => 'Der Abschlusssatz deklariert :expected Datensätze, gelesen wurden jedoch :actual.',
+        'empty_file' => 'Die Datei ist leer.',
+    ],
+
 ];

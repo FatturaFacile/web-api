@@ -34,14 +34,14 @@ final class ReimbursementController extends AssociationController
     {
         $this->allow(AssociationCapability::Read);
 
-        return AssociationRecordResource::collection(Reimbursement::query()->with('attachments')
+        return AssociationRecordResource::collection(Reimbursement::query()->with(['attachments', 'member.contact:id,first_name,last_name,company_name'])
             ->when($request->integer('year') > 0, static fn ($query) => $query->whereYear('incurred_on', $request->integer('year')))
             ->when($request->filled('status'), static fn ($query) => $query->where('status', $request->string('status')->toString()))
             ->when($request->filled('member_id'), static fn ($query) => $query->where('member_id', $request->string('member_id')->toString()))
             ->when($request->filled('campaign_id'), static fn ($query) => $query->where('campaign_id', $request->string('campaign_id')->toString()))
             ->when($request->filled('project_id'), static fn ($query) => $query->where('project_id', $request->string('project_id')->toString()))
             ->orderByDesc('incurred_on')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/reimbursements', 'submitAssociationReimbursement', 'Submit an expense or a journey with an own vehicle; a journey is distance times the unit price given', 'AssociationReimbursementRequest', response: 'AssociationRecord')]

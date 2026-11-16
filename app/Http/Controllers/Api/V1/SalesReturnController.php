@@ -62,7 +62,7 @@ class SalesReturnController extends Controller
             ->when($request->filled('contact_id'), static fn ($query) => $query->where('contact_id', (string) $request->query('contact_id')))
             ->latest('date')
             ->latest('return_number')
-            ->paginate(min(100, max(5, (int) $request->query('per_page', 15))));
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 15))));
 
         return $this->successResponse(SalesReturnResource::collection($returns), __('sales.messages.returns_list'), meta: [
             'current_page' => $returns->currentPage(),

@@ -50,6 +50,7 @@ final class ProjectController extends Controller
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'project_type', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Matches the project number or name', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'contact_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(name: 'project_manager_user_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
             new OA\Parameter(ref: '#/components/parameters/ProjectsPerPage'),
@@ -66,8 +67,12 @@ final class ProjectController extends Controller
             ->when($request->query('project_type'), fn ($query, $type) => $query->where('project_type', $type))
             ->when($request->query('contact_id'), fn ($query, $contactId) => $query->where('contact_id', $contactId))
             ->when($request->query('project_manager_user_id'), fn ($query, $userId) => $query->where('project_manager_user_id', $userId))
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $term = '%'.addcslashes((string) $request->query('search'), '%_\\').'%';
+                $query->where(fn ($inner) => $inner->whereLike('project_number', $term)->orWhereLike('name', $term));
+            })
             ->orderByDesc('created_at')
-            ->paginate($this->perPage($request, 15));
+            ->gridPaginate($this->perPage($request, 15));
 
         return $this->paginated($projects, ProjectResource::class);
     }
@@ -322,7 +327,7 @@ final class ProjectController extends Controller
     {
         $project = Project::findOrFail($id);
 
-        return $this->paginated(ProjectEvmSnapshot::query()->where('project_id', $project->id)->orderByDesc('snapshot_date')->paginate($this->perPage($request)), ProjectEvmSnapshotResource::class);
+        return $this->paginated(ProjectEvmSnapshot::query()->where('project_id', $project->id)->orderByDesc('snapshot_date')->gridPaginate($this->perPage($request)), ProjectEvmSnapshotResource::class);
     }
 
     /**
@@ -390,7 +395,7 @@ final class ProjectController extends Controller
             ->where('project_id', $project->id)
             ->when($request->query('event_type'), fn ($query, $type) => $query->where('event_type', $type))
             ->orderByDesc('created_at')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return $this->paginated($entries, ProjectAuditEntryResource::class);
     }

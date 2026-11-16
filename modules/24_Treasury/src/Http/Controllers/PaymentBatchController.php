@@ -60,7 +60,7 @@ final class PaymentBatchController extends Controller
             $query->where('bank_account_id', $request->query('bank_account_id'));
         }
 
-        $batches = $query->latest('execution_date')->paginate((int) $request->query('per_page', 25));
+        $batches = $query->latest('execution_date')->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(PaymentBatchResource::collection($batches)->response()->getData(true));
     }

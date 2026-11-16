@@ -12,6 +12,8 @@ use App\Models\DeliveryNote;
 use App\Models\Product;
 use App\Models\StockMovement;
 use App\Models\Warehouse;
+use App\Support\Http\RequestedPerPage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use OpenApi\Attributes as OA;
@@ -28,6 +30,9 @@ class InventoryController extends Controller
         summary: 'List products',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Inventory'],
+        parameters: [
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Contains match on SKU, name or barcode', schema: new OA\Schema(type: 'string')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Products retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -35,7 +40,13 @@ class InventoryController extends Controller
     )]
     public function products(Request $request): JsonResponse
     {
-        $products = Product::with(['brand', 'parent'])->latest()->paginate(25);
+        $products = Product::with(['brand', 'parent'])
+            ->when($request->query('search'), static fn (Builder $query, string $term): Builder => $query->where(static fn (Builder $inner): Builder => $inner
+                ->whereLike('sku', "%{$term}%")
+                ->orWhereLike('name', "%{$term}%")
+                ->orWhereLike('barcode', "%{$term}%")))
+            ->latest()
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $products, message: 'Products retrieved');
     }
@@ -59,6 +70,14 @@ class InventoryController extends Controller
                     new OA\Property(property: 'cost_price', type: 'number', format: 'float', nullable: true, example: 25.00),
                     new OA\Property(property: 'tax_rate', type: 'number', format: 'float', example: 22.0),
                     new OA\Property(property: 'track_inventory', type: 'boolean', example: true),
+                    new OA\Property(property: 'customs_taric_code_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'taric_code', type: 'string', nullable: true, pattern: '^\d{6}(\d{2}(\d{2})?)?$', example: '91012100'),
+                    new OA\Property(property: 'country_of_origin', type: 'string', nullable: true, example: 'CH'),
+                    new OA\Property(property: 'origin_type', type: 'string', nullable: true, enum: ['preferential', 'non_preferential']),
+                    new OA\Property(property: 'made_in_label', type: 'string', nullable: true, example: 'Swiss Made'),
+                    new OA\Property(property: 'preferential_agreement_id', type: 'string', format: 'uuid', nullable: true),
+                    new OA\Property(property: 'eur1_required', type: 'boolean', example: false),
+                    new OA\Property(property: 'origin_rule_notes', type: 'string', nullable: true),
                 ]
             )
         ),
@@ -113,7 +132,7 @@ class InventoryController extends Controller
 
     public function movements(Request $request): JsonResponse
     {
-        $movements = StockMovement::latest()->paginate(25);
+        $movements = StockMovement::latest()->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $movements, message: 'Stock movements retrieved');
     }
@@ -132,7 +151,7 @@ class InventoryController extends Controller
     )]
     public function deliveryNotes(Request $request): JsonResponse
     {
-        $ddts = DeliveryNote::latest('date')->paginate(25);
+        $ddts = DeliveryNote::latest('date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $ddts, message: 'Delivery notes (DDT) retrieved');
     }

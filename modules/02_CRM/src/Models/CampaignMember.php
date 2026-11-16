@@ -31,6 +31,22 @@ final class CampaignMember extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * Calculated grid columns: the member's display name and email, taken from its contact or, else, its lead.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        $contactName = "COALESCE(NULLIF(contacts.company_name, ''), NULLIF(TRIM(COALESCE(contacts.first_name, '') || ' ' || COALESCE(contacts.last_name, '')), ''))";
+        $leadName = "COALESCE(NULLIF(crm_leads.company_name, ''), NULLIF(TRIM(COALESCE(crm_leads.first_name, '') || ' ' || COALESCE(crm_leads.last_name, '')), ''))";
+
+        return [
+            'name' => "COALESCE((SELECT {$contactName} FROM contacts WHERE contacts.id = crm_campaign_members.contact_id), (SELECT {$leadName} FROM crm_leads WHERE crm_leads.id = crm_campaign_members.lead_id))",
+            'email' => 'COALESCE((SELECT contacts.email FROM contacts WHERE contacts.id = crm_campaign_members.contact_id), (SELECT crm_leads.email FROM crm_leads WHERE crm_leads.id = crm_campaign_members.lead_id))',
+        ];
+    }
+
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class, 'campaign_id');

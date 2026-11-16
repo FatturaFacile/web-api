@@ -41,7 +41,7 @@ final class CollectiveAgreementController extends PayrollController
     {
         $this->authorize('viewAny', CollectiveAgreement::class);
 
-        return PayrollCollectiveAgreementResource::collection(CollectiveAgreement::query()->with('levels')->orderBy('code')->paginate($this->perPage($request, 50)));
+        return PayrollCollectiveAgreementResource::collection(CollectiveAgreement::query()->with('levels')->orderBy('code')->gridPaginate($this->perPage($request, 50)));
     }
 
     /**

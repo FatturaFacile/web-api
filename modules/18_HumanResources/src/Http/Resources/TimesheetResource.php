@@ -15,6 +15,7 @@ final class TimesheetResource extends JsonResource
             'id' => $this->id,
             'timesheet_number' => $this->timesheet_number,
             'employee_id' => $this->employee_id,
+            'employee_name' => $this->whenLoaded('employee', fn () => $this->employee?->full_name),
             'project_id' => $this->project_id,
             'work_date' => $this->work_date?->format('Y-m-d'),
             'regular_hours' => (float) $this->regular_hours,

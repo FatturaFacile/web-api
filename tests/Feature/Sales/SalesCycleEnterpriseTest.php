@@ -311,8 +311,8 @@ test('a return of delivered and invoiced goods goes back into stock and is credi
     $creditNote = DB::table('invoices')->where('id', $credited->json('data.credit_note_id'))->first();
     expect($creditNote->invoice_type)->toBe('credit_note')
         ->and($creditNote->related_invoice_id)->toBe($invoice['id'])
-        ->and((string) $creditNote->total_net)->toBe('200.00')
-        ->and((string) $creditNote->total_gross)->toBe('244.00');
+        ->and(number_format((float) $creditNote->total_net, 2, '.', ''))->toBe('200.00')
+        ->and(number_format((float) $creditNote->total_gross, 2, '.', ''))->toBe('244.00');
 
     salesCycleApi()->postJson("/api/v1/sales/returns/{$returnId}/credit-note")->assertOk()->assertJsonPath('data.credit_note_id', $creditNote->id);
     expect(DB::table('invoices')->where('related_invoice_id', $invoice['id'])->where('invoice_type', 'credit_note')->count())->toBe(1);

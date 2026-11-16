@@ -47,7 +47,7 @@ final class WebhookDeliveryController extends Controller
             ->when($filters['status'] ?? null, fn ($query, $status) => $query->where('status', $status))
             ->when($filters['event_name'] ?? null, fn ($query, $name) => $query->where('event_name', $name))
             ->latest()
-            ->paginate((int) ($filters['per_page'] ?? 25));
+            ->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return response()->json(WebhookDeliveryResource::collection($deliveries)->response()->getData(true));
     }

@@ -44,6 +44,7 @@ final class WorkflowTaskResource extends JsonResource
             'approvable_id' => $instance?->approvable_id,
             'approvable_label' => $this->labelOf($approvable),
             'initiated_by' => $instance?->created_by,
+            'initiator_name' => $instance?->creator?->name,
             'assigned_user_id' => $this->assigned_user_id,
             'assigned_role' => $this->assigned_role,
             'via_delegation_from' => $isDelegated ? $this->assigned_user_id : null,

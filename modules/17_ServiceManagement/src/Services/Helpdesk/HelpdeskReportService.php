@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\ServiceManagement\Services\Helpdesk;
 
+use App\Support\Database\SqlDialect;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -55,15 +56,15 @@ final class HelpdeskReportService
             ->whereBetween('created_at', [$start, $end])
             ->whereNotNull('response_due_at')
             ->selectRaw('count(*) as total')
-            ->selectRaw('count(*) filter (where first_responded_at is not null and first_responded_at <= response_due_at) as met')
-            ->selectRaw('count(*) filter (where (first_responded_at is not null and first_responded_at > response_due_at) or (first_responded_at is null and response_due_at < ?)) as breached', [now()])
+            ->selectRaw('sum(case when first_responded_at is not null and first_responded_at <= response_due_at then 1 else 0 end) as met')
+            ->selectRaw('sum(case when (first_responded_at is not null and first_responded_at > response_due_at) or (first_responded_at is null and response_due_at < ?) then 1 else 0 end) as breached', [now()])
             ->first();
 
         $resolution = $this->tickets($tenantId)
             ->whereBetween('resolved_at', [$start, $end])
             ->whereNotNull('resolution_due_at')
             ->selectRaw('count(*) as total')
-            ->selectRaw('count(*) filter (where resolved_at <= resolution_due_at) as met')
+            ->selectRaw('sum(case when resolved_at <= resolution_due_at then 1 else 0 end) as met')
             ->first();
 
         $rate = static fn (int $met, int $total): ?float => $total === 0 ? null : round($met * 100 / $total, 2);
@@ -80,18 +81,41 @@ final class HelpdeskReportService
      */
     private function durations(Builder $query, string $column): array
     {
-        $minutes = "extract(epoch from ({$column} - created_at)) / 60";
+        $minutes = $query->get(['created_at', $column])
+            ->map(static fn (Ticket $ticket): float => $ticket->created_at->diffInSeconds($ticket->getAttribute($column), false) / 60)
+            ->sort()
+            ->values()
+            ->all();
 
-        $row = $query
-            ->selectRaw('count(*) as total')
-            ->selectRaw("avg({$minutes}) as mean")
-            ->selectRaw("percentile_cont(0.5) within group (order by {$minutes}) as p50")
-            ->selectRaw("percentile_cont(0.9) within group (order by {$minutes}) as p90")
-            ->first();
+        $count = count($minutes);
+        $round = static fn (?float $value): ?float => $value === null ? null : round($value, 1);
 
-        $round = static fn (mixed $value): ?float => $value === null ? null : round((float) $value, 1);
+        return [
+            'count' => $count,
+            'mean' => $round($count === 0 ? null : array_sum($minutes) / $count),
+            'p50' => $round($this->percentile($minutes, 0.5)),
+            'p90' => $round($this->percentile($minutes, 0.9)),
+        ];
+    }
 
-        return ['count' => (int) $row->total, 'mean' => $round($row->mean), 'p50' => $round($row->p50), 'p90' => $round($row->p90)];
+    /**
+     * Continuous percentile with linear interpolation between the closest ranks, like PostgreSQL percentile_cont.
+     *
+     * @param  list<float>  $sorted
+     */
+    private function percentile(array $sorted, float $fraction): ?float
+    {
+        $count = count($sorted);
+
+        if ($count === 0) {
+            return null;
+        }
+
+        $position = $fraction * ($count - 1);
+        $lower = (int) floor($position);
+        $upper = (int) ceil($position);
+
+        return $sorted[$lower] + ($sorted[$upper] - $sorted[$lower]) * ($position - $lower);
     }
 
     /**
@@ -104,11 +128,20 @@ final class HelpdeskReportService
         $byStatus = (clone $active)->selectRaw('status, count(*) as total')->groupBy('status')->pluck('total', 'status')->map(fn (mixed $total): int => (int) $total)->all();
 
         // The application clock, not the database one, so the age follows the time the request runs at.
-        $age = 'extract(epoch from (cast(? as timestamp) - created_at)) / 86400';
-        $now = now()->toDateTimeString();
-        $byAge = (clone $active)->selectRaw("case when {$age} < 1 then 'under_1_day' when {$age} < 3 then '1_to_3_days' when {$age} < 7 then '3_to_7_days' when {$age} < 30 then '7_to_30_days' else 'over_30_days' end as bucket, count(*) as total", array_fill(0, 4, $now))
-            ->groupBy('bucket')->pluck('total', 'bucket')->map(fn (mixed $total): int => (int) $total)->all();
+        $now = now();
+        $byAge = (clone $active)->pluck('created_at')
+            ->countBy(static function ($createdAt) use ($now): string {
+                $days = $createdAt->diffInSeconds($now, false) / 86400;
 
+                return match (true) {
+                    $days < 1 => 'under_1_day',
+                    $days < 3 => '1_to_3_days',
+                    $days < 7 => '3_to_7_days',
+                    $days < 30 => '7_to_30_days',
+                    default => 'over_30_days',
+                };
+            })
+            ->all();
         $buckets = array_fill_keys(['under_1_day', '1_to_3_days', '3_to_7_days', '7_to_30_days', 'over_30_days'], 0);
 
         return ['by_status' => $byStatus, 'by_age' => array_merge($buckets, $byAge), 'total' => array_sum($byStatus)];
@@ -154,9 +187,9 @@ final class HelpdeskReportService
             ->whereNull('technicians.deleted_at')
             ->groupBy('technicians.id', 'technicians.first_name', 'technicians.last_name')
             ->selectRaw('technicians.id, technicians.first_name, technicians.last_name')
-            ->selectRaw("count(tickets.id) filter (where tickets.status in ({$active})) as open_tickets")
-            ->selectRaw('count(tickets.id) filter (where tickets.resolved_at between ? and ?) as resolved_in_period', [$start, $end])
-            ->selectRaw('avg(extract(epoch from (tickets.resolved_at - tickets.created_at)) / 60) filter (where tickets.resolved_at between ? and ?) as mean_resolution', [$start, $end])
+            ->selectRaw("sum(case when tickets.status in ({$active}) then 1 else 0 end) as open_tickets")
+            ->selectRaw('sum(case when tickets.resolved_at between ? and ? then 1 else 0 end) as resolved_in_period', [$start, $end])
+            ->selectRaw('avg(case when tickets.resolved_at between ? and ? then '.SqlDialect::secondsBetween('tickets.created_at', 'tickets.resolved_at').' / 60 end) as mean_resolution', [$start, $end])
             ->orderByDesc('open_tickets')
             ->get()
             ->map(fn (object $row): array => [
@@ -183,7 +216,7 @@ final class HelpdeskReportService
             ->leftJoin('esm_service_teams', 'esm_service_teams.id', '=', 'esm_tickets.assigned_team_id')
             ->groupBy('esm_tickets.assigned_team_id')
             ->selectRaw('esm_tickets.assigned_team_id as team_id, max(esm_service_teams.name) as name, count(*) as responses, avg(esm_csat_surveys.score) as mean_score')
-            ->selectRaw('count(*) filter (where esm_csat_surveys.score >= 4) * 100.0 / count(*) as satisfied')
+            ->selectRaw('sum(case when esm_csat_surveys.score >= 4 then 1 else 0 end) * 100.0 / count(*) as satisfied')
             ->orderByDesc('responses')
             ->get()
             ->map(fn (object $row): array => [

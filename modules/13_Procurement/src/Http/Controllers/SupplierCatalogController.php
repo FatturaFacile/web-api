@@ -60,7 +60,7 @@ final class SupplierCatalogController extends Controller
             $query->where('internal_sku', (string) $request->query('internal_sku'));
         }
 
-        return SupplierCatalogResource::collection($query->paginate($this->perPage($request)));
+        return SupplierCatalogResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

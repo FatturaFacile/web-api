@@ -48,7 +48,7 @@ final class CapaController extends Controller
                 ->when($request->boolean('overdue'), static fn ($query) => $query->whereIn('status', QmsCapaAction::OpenStatuses)->whereDate('due_date', '<', now()->toDateString()))
                 ->orderBy('due_date')
                 ->orderBy('number')
-                ->paginate($this->perPage())
+                ->gridPaginate($this->perPage())
         );
     }
 

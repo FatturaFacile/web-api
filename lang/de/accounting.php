@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 return [
+
     'messages' => [
         'ledger_retrieved' => 'Hauptbuch erfolgreich abgerufen',
         'vendor_aging_retrieved' => 'Kreditoren-Fälligkeitsanalyse erfolgreich abgerufen',
@@ -47,5 +48,30 @@ return [
         'generic_expense' => 'Sonstige betriebliche Aufwendungen',
         'transfer_clearing' => 'Geldtransit',
         'other' => 'Sachkonto',
+        'bank_account' => 'Bank :iban',
     ],
+
+    'categories' => [
+        'tax_payment' => 'Steuerzahlung',
+        'payroll' => 'Löhne und Gehälter',
+        'bank_expense' => 'Bankspesen',
+        'internal_transfer' => 'Interne Umbuchung',
+        'generic_expense' => 'Aufwand',
+    ],
+
+    'descriptions' => [
+        'receivable' => 'Rechnung :number',
+        'revenue' => 'Erlös der Rechnung :number',
+        'output_vat' => 'Umsatzsteuer der Rechnung :number',
+        'cost' => 'Aufwand der Lieferantenrechnung :number',
+        'input_vat' => 'Vorsteuer der Lieferantenrechnung :number',
+        'payable' => 'Lieferantenrechnung :number',
+        'receipt' => 'Zahlungseingang zur Rechnung :number',
+        'supplier_payment' => 'Zahlung der Lieferantenrechnung :number',
+        'bank_fee' => 'Bankgebühren zur Rechnung :number',
+        'bank_fee_line' => 'Bankgebühren',
+        'write_off' => 'Nachlass auf Rechnung :number',
+        'rounding' => 'Rundungsdifferenz',
+    ],
+
 ];

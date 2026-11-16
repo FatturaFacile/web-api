@@ -23,6 +23,7 @@ class Contact extends Model
 
     protected $fillable = [
         'type',
+        'legal_type',
         'country',
         'company_name',
         'first_name',
@@ -49,6 +50,20 @@ class Contact extends Model
         return [
             'processing_restricted_at' => 'datetime',
             'anonymized_at' => 'datetime',
+        ];
+    }
+
+    /**
+     * Calculated grid columns as portable SQL (same on SQLite and PostgreSQL), so they filter, sort, group and list
+     * their values in the database like real columns. Reachable from related grids as `contact.name`.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'tax_id' => "COALESCE(NULLIF(contacts.vat_number, ''), NULLIF(contacts.fiscal_code, ''), NULLIF(contacts.uid_number, ''))",
+            'name' => "COALESCE(NULLIF(contacts.company_name, ''), NULLIF(TRIM(COALESCE(contacts.first_name, '') || ' ' || COALESCE(contacts.last_name, '')), ''), '-')",
         ];
     }
 

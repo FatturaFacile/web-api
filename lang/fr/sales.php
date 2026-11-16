@@ -118,6 +118,7 @@ return [
     'commercial_document_refund_blocked' => 'La vente ne peut pas être remboursée car son document commercial :number ne peut pas être annulé : :reason',
     'corrispettivi_day_closed' => 'Cette journée est déjà clôturée.',
     'corrispettivi_day_empty' => 'Cette journée n\'a aucun document à clôturer.',
+    'corrispettivi_open_sessions' => 'Fermez la session de caisse encore ouverte avant de clôturer la journée.|Fermez les :count sessions de caisse encore ouvertes avant de clôturer la journée.',
     'corrispettivi_future_day' => 'Une journée future ne peut pas être clôturée.',
     'tessera_sanitaria_disabled' => 'Le flux Sistema Tessera Sanitaria n\'est pas activé pour cette entreprise.',
     'tessera_sanitaria_already_flagged' => 'Ce document est déjà indiqué comme dépense de santé.',

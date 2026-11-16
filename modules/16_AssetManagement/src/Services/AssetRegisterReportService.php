@@ -38,7 +38,7 @@ final class AssetRegisterReportService
      */
     public function page(string $tenantId, int $year, string $ledgerType, int $perPage = 50): LengthAwarePaginator
     {
-        $paginator = $this->query($tenantId, $year, AssetLedger::normalize($ledgerType))->paginate($perPage);
+        $paginator = $this->query($tenantId, $year, AssetLedger::normalize($ledgerType))->gridPaginate($perPage);
         $rows = $this->rows($tenantId, $year, AssetLedger::normalize($ledgerType), collect($paginator->items()));
 
         return new \Illuminate\Pagination\LengthAwarePaginator($rows, $paginator->total(), $paginator->perPage(), $paginator->currentPage());

@@ -113,7 +113,7 @@ final class HealthExpenseController extends Controller
         $expenses = HealthExpense::query()
             ->when($validated['year'] ?? null, static fn ($query, int|string $year) => $query->whereYear('payment_date', $year))
             ->latest('payment_date')
-            ->paginate((int) ($validated['per_page'] ?? 25));
+            ->gridPaginate((int) ($validated['per_page'] ?? 25));
 
         return $this->successResponse($expenses->items(), 'Health expenses retrieved', meta: ['total' => $expenses->total(), 'current_page' => $expenses->currentPage(), 'last_page' => $expenses->lastPage()]);
     }

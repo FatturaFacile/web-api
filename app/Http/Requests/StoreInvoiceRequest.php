@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\CustomsOriginType;
 use App\Http\Requests\Concerns\ValidatesItalianFiscalFields;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Http\FormRequest;
@@ -55,6 +56,13 @@ class StoreInvoiceRequest extends FormRequest
             'items.*.tax_rate' => ['required', 'numeric', 'min:0', 'max:100'],
             'items.*.discount_percentage' => ['nullable', 'numeric', 'min:0', 'max:100'],
             ...$this->italianFiscalRules($tenantId),
+            'items.*.taric_code' => ['nullable', 'string', 'regex:/^\d{6}(\d{2}(\d{2})?)?$/'],
+            'items.*.country_of_origin' => ['nullable', 'string', 'size:2'],
+            'items.*.origin_type' => ['nullable', Rule::enum(CustomsOriginType::class)],
+            'items.*.made_in_label' => ['nullable', 'string', 'max:255'],
+            'free_trade_agreement_id' => ['nullable', 'uuid', Rule::exists('free_trade_agreements', 'id')],
+            'origin_declaration_text' => ['nullable', 'string', 'max:2000'],
+            'duty_exemption_eligible' => ['nullable', 'boolean'],
         ];
     }
 }

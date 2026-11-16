@@ -46,7 +46,7 @@ final class CashForecastController extends Controller
         $tenantId = $tenantContext->getTenantId();
         $forecasts = CashForecast::where('tenant_id', $tenantId)
             ->latest('calculation_date')
-            ->paginate((int) $request->query('per_page', 25));
+            ->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(CashForecastResource::collection($forecasts)->response()->getData(true));
     }

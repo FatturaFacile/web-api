@@ -55,7 +55,7 @@ final class MessageController extends Controller
         $settings = $this->dispatcher->settings($data['channel']);
         $template = $this->renderer->resolve($data['template_code'], $data['channel'], $data['locale'] ?? null);
 
-        abort_if($template === null, Response::HTTP_NOT_FOUND, 'No active template for this code and channel.');
+        abort_if($template === null, Response::HTTP_NOT_FOUND, __('communication_errors.template.not_found'));
 
         $rendered = $this->renderer->render($template, $data['variables'] ?? []);
         $subject = $rendered['subject'] ?? $data['template_code'];
@@ -96,7 +96,7 @@ final class MessageController extends Controller
         $settings = $this->dispatcher->settings($channel);
 
         if ($settings === null && $channel !== 'email') {
-            throw ValidationException::withMessages(['channel' => 'Configure the channel before testing it.']);
+            throw ValidationException::withMessages(['channel' => __('communication_errors.channel.not_configured')]);
         }
 
         $log = $this->dispatcher->dispatch(

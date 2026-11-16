@@ -7,6 +7,7 @@ namespace Modules\DocumentTrust\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\Carbon;
 use Closure;
 use Illuminate\Http\JsonResponse;
@@ -47,7 +48,7 @@ final class DocumentTrustController extends Controller
         return $this->guarded(fn (): DocumentSignature => $this->trust->sign($data['document_type'], $data['document_id']));
     }
 
-    #[OA\Get(path: '/api/v1/document-trust/signatures', operationId: 'listDocumentSignatures', description: 'Signatures of a document.', summary: 'List signatures', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'document_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
+    #[OA\Get(path: '/api/v1/document-trust/signatures', operationId: 'listDocumentSignatures', description: 'Signatures of a document.', summary: 'List signatures', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'document_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 200))], responses: [
         new OA\Response(response: 200, description: 'The signatures', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
     ])]
     /**
@@ -57,7 +58,9 @@ final class DocumentTrustController extends Controller
     {
         $validated = $request->validate(['document_id' => ['required', 'uuid']]);
 
-        return $this->successResponse(DocumentSignature::where('document_id', $validated['document_id'])->latest()->get(), 'Signatures retrieved');
+        $page = DocumentSignature::where('document_id', $validated['document_id'])->latest()->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse($page->items(), 'Signatures retrieved', meta: ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]);
     }
 
     #[OA\Post(path: '/api/v1/document-trust/signatures/{id}/verify', operationId: 'verifyDocumentSignature', description: 'Checks a stored signature against the XML the document has now: a changed file, an altered signature or a missing document make it invalid. Only the binding between signature and content is checked; the certificate chain is NOT validated against a trust list (`trust_chain_validated` is always false), so a valid answer proves the document was not altered, not who signed it.', summary: 'Verify a signature', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
@@ -99,7 +102,7 @@ final class DocumentTrustController extends Controller
         return $this->guarded(fn (): PreservationRecord => $this->trust->preserve($data['document_type'], $data['document_id']));
     }
 
-    #[OA\Get(path: '/api/v1/document-trust/preservation', operationId: 'listPreservationRecords', description: 'Preservation records of a document.', summary: 'List preservation records', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'document_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))], responses: [
+    #[OA\Get(path: '/api/v1/document-trust/preservation', operationId: 'listPreservationRecords', description: 'Preservation records of a document.', summary: 'List preservation records', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], parameters: [new OA\Parameter(name: 'document_id', in: 'query', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 200))], responses: [
         new OA\Response(response: 200, description: 'The records', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
     ])]
     /**
@@ -109,7 +112,9 @@ final class DocumentTrustController extends Controller
     {
         $validated = $request->validate(['document_id' => ['required', 'uuid']]);
 
-        return $this->successResponse(PreservationRecord::where('document_id', $validated['document_id'])->latest()->get(), 'Preservation records retrieved');
+        $page = PreservationRecord::where('document_id', $validated['document_id'])->latest()->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse($page->items(), 'Preservation records retrieved', meta: ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]);
     }
 
     #[OA\Get(path: '/api/v1/document-trust/settings', operationId: 'getDocumentSigningSettings', description: 'For owners and admins. The driver and the certificate expiry; certificate, key and passphrase are never returned.', summary: 'Show document signing settings', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Document Trust'], responses: [

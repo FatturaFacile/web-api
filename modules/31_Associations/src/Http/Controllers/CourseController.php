@@ -59,7 +59,7 @@ final class CourseController extends AssociationController
             ->when($request->filled('discipline_id'), static fn ($query) => $query->where('discipline_id', (string) $request->query('discipline_id')))
             ->when($request->filled('year_id'), static fn ($query) => $query->where('year_id', (string) $request->query('year_id')))
             ->orderByDesc('starts_on')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($courses);
     }
@@ -218,7 +218,7 @@ final class CourseController extends AssociationController
         $records = Attendance::query()->where('course_id', $course->id)
             ->when($request->filled('date'), static fn ($query) => $query->whereDate('attended_on', (string) $request->query('date')))
             ->orderByDesc('attended_on')
-            ->paginate($this->perPage($request, 100, 500));
+            ->gridPaginate($this->perPage($request, 100, 500));
 
         return AssociationRecordResource::collection($records);
     }

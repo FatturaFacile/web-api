@@ -83,12 +83,12 @@ abstract readonly class AgingKpi implements KpiCalculator
         $query = $this->openItems();
 
         foreach ($this->bucketSql($today) as $bucket => $condition) {
-            $query->selectRaw("COALESCE(SUM({$amount}) FILTER (WHERE {$condition} AND {$convertible}), 0) AS {$bucket}");
+            $query->selectRaw("COALESCE(SUM(CASE WHEN {$condition} AND {$convertible} THEN {$amount} END), 0) AS {$bucket}");
         }
 
         $totals = $query
-            ->selectRaw("COUNT(*) FILTER (WHERE {$convertible}) AS documents")
-            ->selectRaw("COUNT(*) FILTER (WHERE NOT {$convertible}) AS excluded")
+            ->selectRaw("COUNT(CASE WHEN {$convertible} THEN 1 END) AS documents")
+            ->selectRaw("COUNT(CASE WHEN NOT {$convertible} THEN 1 END) AS excluded")
             ->first();
 
         $documents = (int) $totals->documents;
@@ -131,7 +131,7 @@ abstract readonly class AgingKpi implements KpiCalculator
             ->selectRaw("{$counterparty} AS counterparty_id, {$name} AS counterparty");
 
         foreach ($this->bucketSql($today) as $bucket => $condition) {
-            $query->selectRaw("COALESCE(SUM({$amount}) FILTER (WHERE {$condition}), 0) AS {$bucket}");
+            $query->selectRaw("COALESCE(SUM(CASE WHEN {$condition} THEN {$amount} END), 0) AS {$bucket}");
         }
 
         return $query->selectRaw("SUM({$amount}) AS outstanding")

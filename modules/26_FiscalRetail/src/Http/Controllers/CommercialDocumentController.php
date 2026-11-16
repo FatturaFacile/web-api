@@ -56,7 +56,7 @@ final class CommercialDocumentController extends Controller
             ->when($validated['to'] ?? null, static fn ($query, string $to) => $query->whereDate('issue_date', '<=', $to))
             ->orderByDesc('fiscal_year')
             ->orderByDesc('sequential_number')
-            ->paginate((int) ($validated['per_page'] ?? 25));
+            ->gridPaginate((int) ($validated['per_page'] ?? 25));
 
         return $this->successResponse($documents->items(), 'Commercial documents retrieved', meta: [
             'total' => $documents->total(), 'current_page' => $documents->currentPage(), 'last_page' => $documents->lastPage(),

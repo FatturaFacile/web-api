@@ -6,6 +6,7 @@ namespace Modules\PracticeManagement\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\FeeNote;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -39,9 +40,10 @@ final class RetainerController extends Controller
         $this->authorize('viewAny', Retainer::class);
 
         return PracticeResource::collection(Retainer::query()
+            ->with(['client', 'legalCase'])
             ->when($request->validated('client_id') !== null, fn ($query) => $query->where('client_id', $request->validated('client_id')))
             ->when($request->validated('status') !== null, fn ($query) => $query->where('status', $request->validated('status')))
-            ->latest('received_on')->get());
+            ->latest('received_on')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**

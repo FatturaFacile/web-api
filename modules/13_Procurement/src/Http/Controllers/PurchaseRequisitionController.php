@@ -82,7 +82,7 @@ final class PurchaseRequisitionController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $requisitions = $query->paginate((int) $request->query('per_page', 25));
+        $requisitions = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(PurchaseRequisitionResource::collection($requisitions)->response()->getData(true));
     }

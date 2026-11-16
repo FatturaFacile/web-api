@@ -50,7 +50,7 @@ final class StockPickListController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $lists = $query->paginate((int) $request->query('per_page', 25));
+        $lists = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(StockPickListResource::collection($lists)->response()->getData(true));
     }

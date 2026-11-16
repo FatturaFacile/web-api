@@ -78,13 +78,13 @@ class SaveServiceReport
 
             if ($report->signed_at !== null) {
                 throw ValidationException::withMessages([
-                    'service_report' => 'Signed service reports cannot be modified.',
+                    'service_report' => __('service_reports_errors.save.signed_locked'),
                 ]);
             }
 
             if ($report->invoiced_at !== null) {
                 throw ValidationException::withMessages([
-                    'service_report' => 'Invoiced service reports cannot be modified.',
+                    'service_report' => __('service_reports_errors.save.invoiced_locked'),
                 ]);
             }
 

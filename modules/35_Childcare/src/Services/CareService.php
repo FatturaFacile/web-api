@@ -73,7 +73,7 @@ final class CareService
     public function staffHours(string $month): array
     {
         $start = CarbonImmutable::parse("{$month}-01");
-        $shifts = StaffShift::query()->whereBetween('date', [$start->toDateString(), $start->endOfMonth()->toDateString()])->get()->groupBy('user_id');
+        $shifts = StaffShift::query()->whereDate('date', '>=', $start->toDateString())->whereDate('date', '<=', $start->endOfMonth()->toDateString())->get()->groupBy('user_id');
         $names = User::query()->whereIn('id', $shifts->keys())->pluck('name', 'id');
 
         return $shifts->map(static fn (Collection $userShifts, string $userId): array => [

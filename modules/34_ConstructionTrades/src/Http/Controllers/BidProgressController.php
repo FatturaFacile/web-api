@@ -115,7 +115,7 @@ final class BidProgressController extends Controller
     {
         $bid = $this->find($id, 'view');
 
-        return TradesResource::collection(SiteCost::query()->where('bid_id', $bid->id)->orderByDesc('cost_date')->paginate(100));
+        return TradesResource::collection(SiteCost::query()->where('bid_id', $bid->id)->orderByDesc('cost_date')->gridPaginate(100));
     }
 
     /**

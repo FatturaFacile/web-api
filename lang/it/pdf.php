@@ -13,7 +13,7 @@ return [
         'credit_note' => 'Nota di credito',
         'proforma' => 'Fattura proforma',
         'quote' => 'Preventivo',
-        'sales_order' => 'Conferma d\'ordine',
+        'sales_order' => "Conferma d'ordine",
         'delivery_note' => 'Documento di trasporto',
         'work_order' => 'Rapporto di intervento',
     ],
@@ -73,6 +73,20 @@ return [
         'terms' => 'Condizioni di pagamento',
         'bank' => 'Banca',
         'iban' => 'IBAN',
+    ],
+
+    'qr' => [
+        'receipt' => 'Ricevuta',
+        'payment_part' => 'Sezione pagamento',
+        'account_payable_to' => 'Conto / Pagabile a',
+        'reference' => 'Riferimento',
+        'additional_information' => 'Informazioni aggiuntive',
+        'payable_by' => 'Pagabile da',
+        'payable_by_blank' => 'Pagabile da (nome/indirizzo)',
+        'currency' => 'Valuta',
+        'amount' => 'Importo',
+        'acceptance_point' => 'Punto di accettazione',
+        'unavailable' => "Non è stato possibile generare la polizza di versamento QR svizzera per questa fattura. Contatta l'emittente per i dati di pagamento.",
     ],
 
     'signature' => [

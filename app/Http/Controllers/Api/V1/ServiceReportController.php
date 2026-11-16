@@ -92,11 +92,11 @@ class ServiceReportController extends Controller
         }
 
         if ($request->filled('from_date')) {
-            $query->where('report_date', '>=', $request->query('from_date'));
+            $query->whereDate('report_date', '>=', $request->query('from_date'));
         }
 
         if ($request->filled('to_date')) {
-            $query->where('report_date', '<=', $request->query('to_date'));
+            $query->whereDate('report_date', '<=', $request->query('to_date'));
         }
 
         if ($request->boolean('uninvoiced')) {
@@ -108,7 +108,7 @@ class ServiceReportController extends Controller
         }
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $reports = $query->paginate($perPage);
+        $reports = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: ServiceReportResource::collection($reports),

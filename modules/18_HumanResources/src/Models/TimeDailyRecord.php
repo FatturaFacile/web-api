@@ -7,6 +7,7 @@ namespace Modules\HumanResources\Models;
 use Carbon\CarbonImmutable;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Modules\HumanResources\Casts\UtcInstant;
+use Modules\HumanResources\Models\Concerns\ProtectsTimeRecord;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 
 /**
@@ -18,6 +19,8 @@ use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
  */
 final class TimeDailyRecord extends BaseEnterpriseModel
 {
+    use ProtectsTimeRecord;
+
     protected $table = 'time_daily_records';
 
     protected function casts(): array
@@ -27,6 +30,7 @@ final class TimeDailyRecord extends BaseEnterpriseModel
             'worked_minutes' => 'integer',
             'start_time' => UtcInstant::class,
             'end_time' => UtcInstant::class,
+            'qualifying_break_minutes' => 'integer',
         ];
     }
 

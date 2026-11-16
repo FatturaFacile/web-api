@@ -45,12 +45,12 @@ final class FeeController extends AssociationController
     {
         $this->allow(AssociationCapability::Finance);
 
-        $assignments = FeeAssignment::query()->with('instalments')
+        $assignments = FeeAssignment::query()->with(['instalments', 'member.contact:id,first_name,last_name,company_name'])
             ->when($request->filled('member_id'), static fn ($query) => $query->where('member_id', (string) $request->query('member_id')))
             ->when($request->filled('course_id'), static fn ($query) => $query->where('course_id', (string) $request->query('course_id')))
             ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->orderByDesc('created_at')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($assignments);
     }
@@ -95,7 +95,7 @@ final class FeeController extends AssociationController
             ->when($request->filled('due_before'), static fn ($query) => $query->whereDate('due_on', '<=', (string) $request->query('due_before')))
             ->when($request->filled('member_id'), static fn ($query) => $query->whereHas('assignment', static fn ($inner) => $inner->where('member_id', (string) $request->query('member_id'))))
             ->orderBy('due_on')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($instalments);
     }
@@ -135,7 +135,7 @@ final class FeeController extends AssociationController
             ->when($request->filled('fiscal_year'), static fn ($query) => $query->where('fiscal_year', $request->integer('fiscal_year')))
             ->orderByDesc('fiscal_year')
             ->orderByDesc('sequential_number')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($receipts);
     }

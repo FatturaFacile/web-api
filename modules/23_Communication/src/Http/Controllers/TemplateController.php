@@ -33,7 +33,7 @@ final class TemplateController extends Controller
     #[OA\Get(
         path: '/api/v1/communication/templates',
         operationId: 'listCommunicationTemplates',
-        description: 'Message templates of the company by code, channel and language. Filter by `code`, `channel` or `locale`.',
+        description: 'Message templates of the company by code, channel and language, paginated. Filter by `code`, `channel` or `locale`; the grid parameters (sort_by, filter, filter_like, grid_values) apply over the whole list.',
         summary: 'List templates',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Communication Templates'],
@@ -41,23 +41,30 @@ final class TemplateController extends Controller
             new OA\Parameter(name: 'code', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'channel', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['email', 'whatsapp', 'telegram', 'sms'])),
             new OA\Parameter(name: 'locale', in: 'query', required: false, schema: new OA\Schema(type: 'string', example: 'it_CH')),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, maximum: 100, minimum: 1)),
         ],
         responses: [
-            new OA\Response(response: 200, description: 'Templates', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CommunicationTemplateResource'))])),
+            new OA\Response(response: 200, description: 'Templates', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/CommunicationTemplateResource')), new OA\Property(property: 'meta', type: 'object')])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 403, description: 'The role cannot read the communication module', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function index(Request $request): JsonResponse
     {
+        $perPage = min(100, max(1, (int) $request->query('per_page', 25)));
+
         $templates = CommunicationTemplate::query()
             ->when($request->query('code'), static fn ($query, string $code) => $query->where('code', $code))
             ->when($request->query('channel'), static fn ($query, string $channel) => $query->where('channel', $channel))
             ->when($request->query('locale'), static fn ($query, string $locale) => $query->where('locale', $locale))
             ->orderBy('code')->orderBy('channel')->orderBy('locale')
-            ->get();
+            ->gridPaginate($perPage);
 
-        return $this->successResponse($templates->map(fn (CommunicationTemplate $template): array => $this->present($template))->all(), 'Templates retrieved');
+        return $this->successResponse(
+            $templates->getCollection()->map(fn (CommunicationTemplate $template): array => $this->present($template))->all(),
+            'Templates retrieved',
+            meta: ['total' => $templates->total(), 'current_page' => $templates->currentPage(), 'last_page' => $templates->lastPage(), 'per_page' => $templates->perPage()],
+        );
     }
 
     /**

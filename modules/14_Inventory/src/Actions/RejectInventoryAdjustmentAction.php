@@ -22,7 +22,7 @@ final class RejectInventoryAdjustmentAction
             $locked = InventoryAdjustment::query()->whereKey($adjustment->getKey())->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== 'pending_approval') {
-                throw ValidationException::withMessages(['status' => "The adjustment is {$locked->status}: only a pending adjustment can be rejected."]);
+                throw ValidationException::withMessages(['status' => __('inventory_errors.adjustment.reject_only_pending', ['status' => $locked->status])]);
             }
 
             $locked->update(['status' => 'rejected', 'is_locked' => false]);

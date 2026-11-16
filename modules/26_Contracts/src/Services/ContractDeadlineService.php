@@ -78,18 +78,21 @@ final readonly class ContractDeadlineService
             return 0;
         }
 
-        $alert = ContractAlert::withoutGlobalScopes()->firstOrCreate(
-            [
-                'tenant_id' => $contract->getAttribute('tenant_id'),
-                'contract_kind' => $kind->value,
-                'contract_id' => $contract->getKey(),
-                'alert_type' => $type,
-                'due_on' => $due->toDateString(),
-            ],
-            ['status' => 'open']
-        );
+        $key = [
+            'tenant_id' => $contract->getAttribute('tenant_id'),
+            'contract_kind' => $kind->value,
+            'contract_id' => $contract->getKey(),
+            'alert_type' => $type,
+        ];
 
-        return $alert->wasRecentlyCreated ? 1 : 0;
+        // whereDate keeps the lookup portable: the date column is stored as a date-time text on SQLite.
+        if (ContractAlert::withoutGlobalScopes()->where($key)->whereDate('due_on', $due->toDateString())->exists()) {
+            return 0;
+        }
+
+        ContractAlert::withoutGlobalScopes()->create([...$key, 'due_on' => $due->toDateString(), 'status' => 'open']);
+
+        return 1;
     }
 
     /**

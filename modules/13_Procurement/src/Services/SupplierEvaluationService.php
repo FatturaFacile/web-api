@@ -70,7 +70,7 @@ final class SupplierEvaluationService implements SupplierEvaluationServiceInterf
             $end = Carbon::create($year, $month, 1)->endOfQuarter();
 
             $orders = PurchaseOrder::where('supplier_id', $supplier->id)
-                ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+                ->whereDate('date', '>=', $start->toDateString())->whereDate('date', '<=', $end->toDateString())
                 ->with('receipts')
                 ->get();
 

@@ -86,7 +86,7 @@ final readonly class LedgerSettingsService
                 $account = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereKey($accountId)->first();
 
                 if ($account === null || ! in_array($account->account_type, $role->allowedAccountTypes(), true)) {
-                    throw ValidationException::withMessages(["posting_accounts.{$role->value}" => ["The account for [{$role->value}] must be an account of type ".implode(' or ', $role->allowedAccountTypes()).' of this tenant.']]);
+                    throw ValidationException::withMessages(["posting_accounts.{$role->value}" => [__('general_ledger_errors.settings.posting_account_type', ['role' => $role->value, 'types' => implode(' / ', $role->allowedAccountTypes())])]]);
                 }
 
                 if ($existing !== null) {
@@ -131,7 +131,7 @@ final readonly class LedgerSettingsService
                         $provisionAccount = ChartOfAccount::withoutGlobalScopes()->where('tenant_id', $tenantId)->whereKey($provisionId)->first();
                         $allowed = PostingAccountRole::FxUnrealisedGainProvision->allowedAccountTypes();
                         if ($provisionAccount === null || ! in_array($provisionAccount->account_type, $allowed, true)) {
-                            throw ValidationException::withMessages(['fx_unrealised_gain_provision_account_id' => ['The FX unrealised gain provision account must be of type '.implode(' or ', $allowed).' of this tenant.']]);
+                            throw ValidationException::withMessages(['fx_unrealised_gain_provision_account_id' => [__('general_ledger_errors.settings.fx_provision_account_type', ['types' => implode(' / ', $allowed)])]]);
                         }
                     }
                     $setting->setAttribute('fx_unrealised_gain_provision_account_id', $provisionId);

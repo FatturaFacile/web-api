@@ -29,6 +29,22 @@ class RentalVehicle extends Model
         'current_mileage',
     ];
 
+    /**
+     * Calculated grid columns as portable SQL: the renter and return date come from the active booking.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        $activeBooking = "FROM rental_bookings rb JOIN contacts c ON c.id = rb.client_id WHERE rb.rental_vehicle_id = rental_vehicles.id AND rb.status = 'active' AND rb.deleted_at IS NULL";
+
+        return [
+            'current_client' => "(SELECT COALESCE(NULLIF(c.company_name, ''), NULLIF(TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')), ''), '-') {$activeBooking} LIMIT 1)",
+            'current_return_date' => "(SELECT MAX(rb.end_date) {$activeBooking})",
+            'rental_status' => "CASE WHEN rental_vehicles.is_available THEN 'available' ELSE 'rented' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

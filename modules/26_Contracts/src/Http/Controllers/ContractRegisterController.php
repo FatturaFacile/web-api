@@ -6,9 +6,12 @@ namespace Modules\Contracts\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
+use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Modules\Contracts\Enums\ContractKind;
+use Modules\Contracts\Http\Requests\GiveContractNoticeRequest;
 use Modules\Contracts\Http\Requests\RenewContractRequest;
 use Modules\Contracts\Http\Requests\StoreContractRequest;
 use Modules\Contracts\Http\Requests\UpdateContractTermsRequest;
@@ -45,6 +48,7 @@ final class ContractRegisterController extends Controller
             new OA\Parameter(name: 'kind', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['customer', 'supplier'])),
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'expiring_within_days', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Contains match on contract number or title', schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer')),
         ],
         responses: [
@@ -55,7 +59,7 @@ final class ContractRegisterController extends Controller
     public function index(Request $request): JsonResponse
     {
         $contracts = $this->register->paginate(
-            $request->only(['kind', 'status', 'expiring_within_days']),
+            $request->only(['kind', 'status', 'expiring_within_days', 'search']),
             min(100, max(5, (int) $request->query('per_page', 25)))
         );
 
@@ -186,14 +190,17 @@ final class ContractRegisterController extends Controller
             new OA\Parameter(name: 'kind', in: 'path', required: true, schema: new OA\Schema(type: 'string', enum: ['customer', 'supplier'])),
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(properties: [new OA\Property(property: 'notice_given_at', type: 'string', format: 'date', nullable: true, description: 'Day the notice was given; today when absent, never in the future.')])),
         responses: [
             new OA\Response(response: 200, description: 'Notice recorded', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', ref: '#/components/schemas/ContractResource')])),
             new OA\Response(response: 404, description: 'Not found', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+            new OA\Response(response: 422, description: 'Validation error', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse')),
         ]
     )]
-    public function giveNotice(string $kind, string $id): JsonResponse
+    public function giveNotice(GiveContractNoticeRequest $request, string $kind, string $id): JsonResponse
     {
-        $contract = $this->register->giveNotice($this->register->find(ContractKind::from($kind), $id));
+        $givenAt = $request->date('notice_given_at');
+        $contract = $this->register->giveNotice($this->register->find(ContractKind::from($kind), $id), $givenAt === null ? null : CarbonImmutable::instance($givenAt));
 
         return $this->successResponse(new ContractResource($contract->refresh()), 'Notice recorded');
     }
@@ -208,17 +215,50 @@ final class ContractRegisterController extends Controller
         summary: 'List contract alerts',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Contract Register'],
-        parameters: [new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['open', 'acknowledged']))],
+        parameters: [
+            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['open', 'acknowledged'])),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', maximum: 100, minimum: 5)),
+        ],
         responses: [
-            new OA\Response(response: 200, description: 'Alerts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ContractAlertResource'))])),
+            new OA\Response(response: 200, description: 'Alerts', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ContractAlertResource')), new OA\Property(property: 'meta', type: 'object')])),
             new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
     public function alerts(Request $request): JsonResponse
     {
-        return $this->successResponse(ContractAlertResource::collection(
-            ContractAlert::query()->where('status', (string) $request->query('status', 'open'))->orderBy('due_on')->get()
-        ));
+        $page = ContractAlert::query()
+            ->where('status', (string) $request->query('status', 'open'))
+            ->orderBy('due_on')
+            ->gridPaginate(min(100, max(5, (int) $request->query('per_page', 25))));
+
+        $this->attachContractLabels($page->getCollection());
+
+        return $this->successResponse(
+            ContractAlertResource::collection($page->getCollection()),
+            'Alerts',
+            meta: ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]
+        );
+    }
+
+    /**
+     * Sets the number and title of the contract on each alert of the page (one query per contract kind).
+     *
+     * @param  Collection<int, ContractAlert>  $alerts
+     */
+    private function attachContractLabels(Collection $alerts): void
+    {
+        foreach ($alerts->groupBy('contract_kind') as $kind => $group) {
+            $contractKind = ContractKind::tryFrom((string) $kind);
+            if ($contractKind === null) {
+                continue;
+            }
+            $contracts = $contractKind->modelClass()::query()->whereIn('id', $group->pluck('contract_id')->all())->get()->keyBy('id');
+            foreach ($group as $alert) {
+                $contract = $contracts->get($alert->contract_id);
+                $alert->setAttribute('contract_number', $contract?->contract_number);
+                $alert->setAttribute('contract_title', $contract?->title);
+            }
+        }
     }
 
     /**

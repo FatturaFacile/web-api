@@ -52,7 +52,7 @@ final class BankAccountController extends Controller
             $query->where('is_active', filter_var($request->query('is_active'), FILTER_VALIDATE_BOOLEAN));
         }
 
-        $accounts = $query->paginate((int) $request->query('per_page', 25));
+        $accounts = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(BankAccountResource::collection($accounts)->response()->getData(true));
     }

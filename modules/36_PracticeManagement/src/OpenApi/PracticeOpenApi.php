@@ -14,9 +14,10 @@ use OpenApi\Attributes as OA;
 #[OA\Response(response: 'PracticeForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'PracticeNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
 #[OA\Response(response: 'PracticeUnprocessable', description: 'Validation error or business rule violation', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
-#[OA\Schema(schema: 'PracticeFeeNoteRequest', type: 'object', required: ['client_id', 'activity_ids', 'date', 'cpa_rate', 'ritenuta_rate', 'vat_rate'], properties: [
+#[OA\Schema(schema: 'PracticeFeeNoteRequest', type: 'object', required: ['client_id', 'date', 'cpa_rate', 'ritenuta_rate', 'vat_rate'], properties: [
     new OA\Property(property: 'client_id', type: 'string', format: 'uuid'),
-    new OA\Property(property: 'activity_ids', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+    new OA\Property(property: 'activity_ids', description: 'Required when expense_ids is empty', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
+    new OA\Property(property: 'expense_ids', description: 'Billable expenses of the client pulled into the fee note, outside the taxable base. Required when activity_ids is empty', type: 'array', items: new OA\Items(type: 'string', format: 'uuid')),
     new OA\Property(property: 'note_number', description: 'Defaults to the next number of the year', type: 'string', nullable: true),
     new OA\Property(property: 'date', type: 'string', format: 'date'),
     new OA\Property(property: 'cpa_rate', description: 'Social security contribution rate, entered by the user', type: 'string'),

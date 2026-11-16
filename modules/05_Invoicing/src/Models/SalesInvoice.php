@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Invoicing\Models;
 
 use App\Models\Concerns\HasFiscalAmounts;
+use App\Models\Concerns\ProtectsIssuedInvoice;
 use App\Models\Contact;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,7 +16,7 @@ use Modules\Projects\Models\ProjectMilestone;
 
 final class SalesInvoice extends BaseEnterpriseModel
 {
-    use HasFiscalAmounts;
+    use HasFiscalAmounts, ProtectsIssuedInvoice;
 
     protected $table = 'invoices';
 

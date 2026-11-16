@@ -39,6 +39,18 @@ final class Lead extends BaseEnterpriseModel
     }
 
     /**
+     * Calculated grid columns: `display_name` is the text the lead list shows (full name, else the company name).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'display_name' => "COALESCE(NULLIF(TRIM(COALESCE(crm_leads.first_name, '') || ' ' || COALESCE(crm_leads.last_name, '')), ''), crm_leads.company_name)",
+        ];
+    }
+
+    /**
      * @return BelongsTo<LeadSource, $this>
      */
     public function leadSource(): BelongsTo

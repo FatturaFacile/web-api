@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Requests\Auth\TwoFactorChallengeRequest;
 use App\Http\Responses\ApiResponse;
+use App\Models\MobileDeviceSession;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Auth\LoginResponder;
@@ -20,6 +21,7 @@ use App\Services\Auth\Sso\SsoLogout;
 use App\Services\Auth\TokenMode;
 use App\Services\Auth\TwoFactorAuthentication;
 use App\Services\Tenancy\TenantContext;
+use App\Services\Tenancy\TenantMembershipService;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Logout;
 use Illuminate\Http\JsonResponse;
@@ -404,6 +406,10 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'locale' => $user->locale,
                 'is_active' => $user->is_active,
+                'is_platform_admin' => (bool) $user->is_platform_admin,
+                'permissions' => $activeTenant ? app(TenantMembershipService::class)->permissionsOf(
+                    $user->tenants->firstWhere('id', $activeTenant->id)?->pivot?->permissions
+                ) : [],
                 'active_tenant' => $activeTenant ? [
                     'id' => $activeTenant->id,
                     'name' => $activeTenant->name,
@@ -414,6 +420,7 @@ class AuthController extends Controller
                     'id' => $t->id,
                     'name' => $t->name,
                     'role' => $t->pivot?->role,
+                    'permissions' => app(TenantMembershipService::class)->permissionsOf($t->pivot?->permissions),
                 ]),
             ],
             message: 'Profile retrieved successfully'
@@ -622,7 +629,12 @@ class AuthController extends Controller
 
         // A token is rotated: the old one stops working as soon as the new one is issued.
         $token->delete();
-        [$newToken, $expiresAt] = $this->responder->issueToken($request, $user, (string) ($token->getAttribute('auth_method') ?: LoginResponder::METHOD_PASSWORD), $token->getAttribute('auth_tenant_id') ?: null);
+        [$newToken, $expiresAt, $newTokenId] = $this->responder->issueToken($request, $user, (string) ($token->getAttribute('auth_method') ?: LoginResponder::METHOD_PASSWORD), $token->getAttribute('auth_tenant_id') ?: null);
+
+        // keep a mobile device session bound to the rotated token
+        MobileDeviceSession::withoutGlobalScopes()
+            ->where('access_token_id', $token->getKey())
+            ->update(['access_token_id' => (int) $newTokenId]);
 
         return $this->successResponse(
             data: [

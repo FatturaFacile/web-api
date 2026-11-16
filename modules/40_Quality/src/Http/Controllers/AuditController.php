@@ -48,7 +48,7 @@ final class AuditController extends Controller
                 ->when($request->filled('audit_type'), static fn ($query) => $query->where('audit_type', (string) $request->query('audit_type')))
                 ->orderByDesc('planned_date')
                 ->orderByDesc('number')
-                ->paginate($this->perPage())
+                ->gridPaginate($this->perPage())
         );
     }
 

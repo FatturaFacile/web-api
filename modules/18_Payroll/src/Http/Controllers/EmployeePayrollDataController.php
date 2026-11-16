@@ -50,7 +50,7 @@ final class EmployeePayrollDataController extends PayrollController
 
         return PayrollEmployeeProfileResource::collection(PayrollEmployeeProfile::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
-            ->paginate((int) $request->validated('per_page', 50)));
+            ->gridPaginate((int) $request->validated('per_page', 50)));
     }
 
     /**
@@ -145,7 +145,7 @@ final class EmployeePayrollDataController extends PayrollController
             ->when($request->validated('month') !== null, static fn ($query) => $query->where('month', (int) $request->validated('month')))
             ->orderByDesc('year')
             ->orderByDesc('month')
-            ->paginate((int) $request->validated('per_page', 50)));
+            ->gridPaginate((int) $request->validated('per_page', 50)));
     }
 
     /**
@@ -260,7 +260,7 @@ final class EmployeePayrollDataController extends PayrollController
         return PayrollAbsenceResource::collection(PayrollAbsence::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
             ->orderByDesc('start_date')
-            ->paginate((int) $request->validated('per_page', 50)));
+            ->gridPaginate((int) $request->validated('per_page', 50)));
     }
 
     /**
@@ -372,7 +372,7 @@ final class EmployeePayrollDataController extends PayrollController
         return PayrollEmployeeChildResource::collection(PayrollEmployeeChild::query()
             ->when($request->validated('employee_id') !== null, static fn ($query) => $query->where('employee_id', $request->validated('employee_id')))
             ->orderBy('date_of_birth')
-            ->paginate((int) $request->validated('per_page', 50)));
+            ->gridPaginate((int) $request->validated('per_page', 50)));
     }
 
     /**

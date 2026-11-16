@@ -6,8 +6,11 @@ namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 use InvalidArgumentException;
 use Modules\HumanResources\Contracts\LeaveAndTimeServiceInterface;
 use Modules\HumanResources\DTOs\RecordTimesheetDTO;
@@ -30,35 +33,30 @@ final class LeaveAndTimeController extends Controller
         private readonly TenantContext $tenantContext
     ) {}
 
-    public function leaveTypes(): JsonResponse
+    public function leaveTypes(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
 
-        return response()->json([
-            'data' => LeaveType::where('tenant_id', $tenant->id)->orderBy('code')->get(),
-        ]);
+        return JsonResource::collection(LeaveType::where('tenant_id', $tenant->id)->orderBy('code')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
-    public function leaveBalances(Request $request): JsonResponse
+    public function leaveBalances(Request $request): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $query = LeaveBalance::where('tenant_id', $tenant->id);
+        $query = LeaveBalance::where('tenant_id', $tenant->id)->with('employee:id,full_name');
 
         if ($request->has('employee_id')) {
             $query->where('employee_id', $request->query('employee_id'));
         }
 
-        return response()->json([
-            'data' => LeaveBalanceResource::collection($query->get()),
-        ]);
+        return LeaveBalanceResource::collection($query->orderByDesc('fiscal_year')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
-    public function leaveRequests(): JsonResponse
+    public function leaveRequests(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $requests = LeaveRequest::where('tenant_id', $tenant->id)->orderByDesc('created_at')->get();
 
-        return response()->json(['data' => LeaveRequestResource::collection($requests)]);
+        return LeaveRequestResource::collection(LeaveRequest::where('tenant_id', $tenant->id)->with(['employee:id,full_name', 'leaveType:id,name'])->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     public function submitLeave(SubmitLeaveRequestFormRequest $request): JsonResponse
@@ -120,12 +118,11 @@ final class LeaveAndTimeController extends Controller
         return response()->json(['data' => ['balances_accrued' => $processed]]);
     }
 
-    public function timesheets(): JsonResponse
+    public function timesheets(): AnonymousResourceCollection
     {
         $tenant = $this->tenantContext->getTenant();
-        $timesheets = Timesheet::where('tenant_id', $tenant->id)->orderByDesc('work_date')->get();
 
-        return response()->json(['data' => TimesheetResource::collection($timesheets)]);
+        return TimesheetResource::collection(Timesheet::where('tenant_id', $tenant->id)->with('employee:id,full_name')->orderByDesc('work_date')->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     public function submitTimesheet(SubmitTimesheetRequest $request): JsonResponse

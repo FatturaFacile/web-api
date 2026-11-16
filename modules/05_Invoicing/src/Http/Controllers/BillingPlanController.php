@@ -62,7 +62,7 @@ final class BillingPlanController extends Controller
             ->when($request->filled('sales_order_id'), static fn ($query) => $query->where('sales_order_id', (string) $request->query('sales_order_id')))
             ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->latest()
-            ->paginate(min(100, max(1, (int) $request->query('per_page', 25))));
+            ->gridPaginate(min(100, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json(BillingPlanResource::collection($plans)->response()->getData(true));
     }

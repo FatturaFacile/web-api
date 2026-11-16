@@ -107,7 +107,7 @@ final class CustomerPortalStockController extends Controller
             ->with(['item', 'lot'])
             ->where(static fn ($query) => $query->whereIn('source_location_id', $bins)->orWhereIn('destination_location_id', $bins))
             ->orderByDesc('executed_at')
-            ->paginate(min(100, (int) $request->query('per_page', 25)));
+            ->gridPaginate(min(100, (int) $request->query('per_page', 25)));
 
         return response()->json([
             'data' => collect($movements->items())->map(static fn (StockMovement $movement): array => [

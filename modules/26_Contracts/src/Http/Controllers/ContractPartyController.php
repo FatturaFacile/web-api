@@ -88,7 +88,7 @@ final class ContractPartyController extends Controller
             ->exists();
 
         if ($duplicate) {
-            abort(Response::HTTP_CONFLICT, 'This party already holds this role on the contract.');
+            abort(Response::HTTP_CONFLICT, __('contracts.party.role_exists'));
         }
 
         $party = ContractParty::create([...$data, 'contract_kind' => $kind, 'contract_id' => $contract->getKey()]);

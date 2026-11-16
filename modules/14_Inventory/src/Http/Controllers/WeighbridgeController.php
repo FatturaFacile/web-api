@@ -141,7 +141,7 @@ final class WeighbridgeController extends Controller
         return response()->json(WeighbridgeTicket::query()
             ->when($request->filled('status'), static fn ($query) => $query->where('status', $request->query('status')))
             ->orderByDesc('first_weighed_at')
-            ->paginate((int) $request->query('per_page', 25)));
+            ->gridPaginate((int) $request->query('per_page', 25)));
     }
 
     #[OA\Post(

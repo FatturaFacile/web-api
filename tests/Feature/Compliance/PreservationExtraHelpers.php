@@ -8,7 +8,6 @@ use App\Models\InvoiceSdiMetadata;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
-use Illuminate\Support\Facades\DB;
 use Modules\DocumentTrust\Models\PreservationItem;
 
 require_once __DIR__.'/ComplianceHelpers.php';
@@ -56,14 +55,4 @@ function peActAs(Tenant $tenant, string $role = 'admin'): User
     app(TenantContext::class)->clear();
 
     return actingAsMember($tenant, $role);
-}
-
-/**
- * Runs a callback with a trigger of a table disabled (the way a tampering with raw SQL would have to).
- */
-function peWithoutTrigger(string $table, string $trigger, Closure $callback): void
-{
-    DB::unprepared("ALTER TABLE {$table} DISABLE TRIGGER {$trigger}");
-    $callback();
-    DB::unprepared("ALTER TABLE {$table} ENABLE TRIGGER {$trigger}");
 }

@@ -21,8 +21,8 @@ class ExpenseExportService
     {
         return Expense::query()
             ->with(['category.translations', 'contact', 'user', 'ticket', 'serviceReport'])
-            ->when(! empty($filters['date_from']), fn (Builder $q) => $q->where('date', '>=', $filters['date_from']))
-            ->when(! empty($filters['date_to']), fn (Builder $q) => $q->where('date', '<=', $filters['date_to']))
+            ->when(! empty($filters['date_from']), fn (Builder $q) => $q->whereDate('date', '>=', $filters['date_from']))
+            ->when(! empty($filters['date_to']), fn (Builder $q) => $q->whereDate('date', '<=', $filters['date_to']))
             ->when(! empty($filters['category_id']), fn (Builder $q) => $q->where('category_id', $filters['category_id']))
             ->when(! empty($filters['project_id']), fn (Builder $q) => $q->where('project_id', $filters['project_id']))
             ->when(! empty($filters['contact_id']), fn (Builder $q) => $q->where('contact_id', $filters['contact_id']))

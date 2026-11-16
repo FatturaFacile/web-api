@@ -7,6 +7,7 @@ namespace Modules\Analytics\Services;
 use App\Models\Invoice;
 use App\Models\PassiveInvoice;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Database\SqlDialect;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -36,7 +37,7 @@ final class RevenueAnalytics
     public function yearOverYear(int $year): array
     {
         $byMonth = fn (int $target): Collection => $this->issued($target)
-            ->selectRaw('EXTRACT(MONTH FROM invoices.date)::int AS period, SUM('.$this->signedNet().') AS amount')
+            ->selectRaw(SqlDialect::monthNumber('invoices.date').' AS period, SUM('.$this->signedNet().') AS amount')
             ->groupBy('period')
             ->pluck('amount', 'period');
 
@@ -110,7 +111,7 @@ final class RevenueAnalytics
 
         return $this->issued($year)
             ->join('invoice_items', 'invoice_items.invoice_id', '=', 'invoices.id')
-            ->selectRaw("COALESCE(invoice_items.product_id::text, invoice_items.description) AS group_key, MIN(invoice_items.description) AS label, SUM({$amount}) AS amount")
+            ->selectRaw('COALESCE('.SqlDialect::castText('invoice_items.product_id').", invoice_items.description) AS group_key, MIN(invoice_items.description) AS label, SUM({$amount}) AS amount")
             ->groupBy('group_key')
             ->toBase()
             ->get()
@@ -128,7 +129,7 @@ final class RevenueAnalytics
             ->join('contacts', 'contacts.id', '=', 'passive_invoices.supplier_id')
             ->whereYear('passive_invoices.date', $year)
             ->where(fn (Builder $query) => $query->where('passive_invoices.currency', $this->accountingCurrency())->orWhereNotNull('passive_invoices.exchange_rate'))
-            ->selectRaw("passive_invoices.supplier_id::text AS group_key, MIN(contacts.company_name) AS label, SUM({$net}) AS amount")
+            ->selectRaw(''.SqlDialect::castText('passive_invoices.supplier_id')." AS group_key, MIN(contacts.company_name) AS label, SUM({$net}) AS amount")
             ->groupBy('group_key')
             ->toBase()
             ->get()

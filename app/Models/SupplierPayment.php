@@ -22,6 +22,7 @@ class SupplierPayment extends Model
         'tenant_id',
         'passive_invoice_id',
         'amount',
+        'currency',
         'paid_at',
         'type',
         'reference',

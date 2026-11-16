@@ -76,12 +76,14 @@ final class TicketController extends Controller
             $filters = [...array_intersect_key((array) $view->filters, array_flip(TicketListFilter::Keys)), ...$filters];
         }
 
-        $tickets = $filter->apply($query, $filters)->orderByDesc('created_at')->paginate((int) ($request->validated('per_page') ?? 25));
+        $tickets = $filter->apply($query, $filters)->orderByDesc('created_at')->gridPaginate((int) ($request->validated('per_page') ?? 25));
 
         return response()->json([
             'data' => TicketResource::collection($tickets),
             'meta' => [
                 'current_page' => $tickets->currentPage(),
+                'last_page' => $tickets->lastPage(),
+                'per_page' => $tickets->perPage(),
                 'total' => $tickets->total(),
             ],
         ]);

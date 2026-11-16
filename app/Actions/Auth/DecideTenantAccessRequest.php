@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Auth;
 
+use App\Enums\SupportedCountry;
 use App\Exceptions\TenantAccessRequestNotDecidableException;
 use App\Mail\TenantAccessDecisionMail;
 use App\Models\Tenant;
@@ -124,7 +125,7 @@ class DecideTenantAccessRequest
             'name' => $request->requested_company_name,
             'legal_name' => $request->requested_company_name,
             'country' => $request->requested_country,
-            'default_currency' => $isSwiss ? 'CHF' : 'EUR',
+            'default_currency' => SupportedCountry::tryFrom((string) $request->requested_country)?->defaultCurrency() ?? 'EUR',
             'vat_number' => $isSwiss ? null : $request->requested_tax_id,
             'uid_number' => $isSwiss ? TaxIdentifier::formatUid($request->requested_tax_id) : null,
         ]);

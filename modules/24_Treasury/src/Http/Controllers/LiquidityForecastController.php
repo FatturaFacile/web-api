@@ -7,6 +7,7 @@ namespace Modules\Treasury\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -79,7 +80,7 @@ final class LiquidityForecastController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/forecast-scenarios',
         operationId: 'listTreasuryForecastScenarios',
-        description: 'Lists the liquidity forecast scenarios of the active tenant.',
+        description: 'Lists the liquidity forecast scenarios of the active tenant, paginated; sortable and filterable by column (grid contract).',
         summary: 'List forecast scenarios',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Liquidity'],
@@ -88,6 +89,7 @@ final class LiquidityForecastController extends Controller
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryForecastScenarioResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
@@ -95,7 +97,9 @@ final class LiquidityForecastController extends Controller
     )]
     public function scenarios(): JsonResponse
     {
-        return $this->successResponse(ForecastScenarioResource::collection(ForecastScenario::query()->orderBy('code')->get()), 'Forecast scenarios');
+        $page = ForecastScenario::query()->orderBy('code')->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse(ForecastScenarioResource::collection($page->items()), 'Forecast scenarios', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**
@@ -133,7 +137,7 @@ final class LiquidityForecastController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/recurring-items',
         operationId: 'listTreasuryRecurringItems',
-        description: 'Lists the recurring cash items (rent, instalments, salaries...) projected by the liquidity forecast.',
+        description: 'Lists the recurring cash items (rent, instalments, salaries...) projected by the liquidity forecast, paginated; sortable and filterable by column (grid contract).',
         summary: 'List recurring cash items',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Liquidity'],
@@ -142,6 +146,7 @@ final class LiquidityForecastController extends Controller
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryRecurringCashItemResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
@@ -149,7 +154,9 @@ final class LiquidityForecastController extends Controller
     )]
     public function recurringItems(): JsonResponse
     {
-        return $this->successResponse(RecurringCashItemResource::collection(RecurringCashItem::query()->orderBy('next_date')->get()), 'Recurring cash items');
+        $page = RecurringCashItem::query()->orderBy('next_date')->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse(RecurringCashItemResource::collection($page->items()), 'Recurring cash items', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**

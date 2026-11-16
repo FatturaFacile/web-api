@@ -52,6 +52,20 @@ class EcommerceChannel extends Model
     }
 
     /**
+     * Calculated grid columns as portable SQL, so they filter, sort, group and list their values in the database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        $table = $this->getTable();
+
+        return [
+            'status' => "CASE WHEN $table.is_active THEN 'active' ELSE 'inactive' END",
+        ];
+    }
+
+    /**
      * @return HasMany<EcommerceMapping, $this>
      */
     public function mappings(): HasMany

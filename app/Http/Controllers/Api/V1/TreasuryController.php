@@ -10,6 +10,7 @@ use App\Http\Responses\ApiResponse;
 use App\Models\BankTransaction;
 use App\Models\Invoice;
 use App\Models\InvoiceQrBillData;
+use App\Support\Http\RequestedPerPage;
 use DOMDocument;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,6 +30,8 @@ class TreasuryController extends Controller
         tags: ['Treasury', 'Banking'],
         parameters: [
             new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Items per page', schema: new OA\Schema(type: 'integer', default: 25)),
+            new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Text contained in the description or the reference', schema: new OA\Schema(type: 'string')),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Transactions retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
@@ -37,7 +40,12 @@ class TreasuryController extends Controller
     )]
     public function transactions(Request $request): JsonResponse
     {
-        $transactions = BankTransaction::latest('booking_date')->paginate(25);
+        $search = trim((string) $request->query('search', ''));
+        $transactions = BankTransaction::query()
+            ->with('bankAccount:id,bank_name,iban')
+            ->when($search !== '', fn ($query) => $query->where(fn ($inner) => $inner->whereLike('description', "%{$search}%")->orWhereLike('reference', "%{$search}%")))
+            ->latest('booking_date')
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $transactions, message: 'Transactions retrieved');
     }

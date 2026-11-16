@@ -78,7 +78,7 @@ final readonly class VisitorService
             $locked = VisitorVisit::query()->lockForUpdate()->findOrFail($visit->id);
 
             if ($locked->status !== VisitorVisit::Expected) {
-                throw ValidationException::withMessages(['visit' => 'Only an expected visit can be checked in.']);
+                throw ValidationException::withMessages(['visit' => __('visitors_errors.visit.check_in_only_expected')]);
             }
 
             $badgeTaken = VisitorVisit::query()
@@ -88,7 +88,7 @@ final readonly class VisitorService
                 ->exists();
 
             if ($badgeTaken) {
-                throw ValidationException::withMessages(['badge_number' => 'This badge is already worn by a visitor on site.']);
+                throw ValidationException::withMessages(['badge_number' => __('visitors_errors.badge.in_use')]);
             }
 
             $now = CarbonImmutable::now();
@@ -118,7 +118,7 @@ final readonly class VisitorService
             $locked = VisitorVisit::query()->lockForUpdate()->findOrFail($visit->id);
 
             if ($locked->status !== VisitorVisit::CheckedIn) {
-                throw ValidationException::withMessages(['visit' => 'Only a visitor on site can be checked out.']);
+                throw ValidationException::withMessages(['visit' => __('visitors_errors.visit.check_out_only_on_site')]);
             }
 
             $now = CarbonImmutable::now();
@@ -137,7 +137,7 @@ final readonly class VisitorService
         $visit = VisitorVisit::query()->where('status', VisitorVisit::CheckedIn)->where('badge_number', $badgeNumber)->first();
 
         if ($visit === null) {
-            throw ValidationException::withMessages(['badge_number' => 'No visitor on site wears this badge.']);
+            throw ValidationException::withMessages(['badge_number' => __('visitors_errors.badge.not_worn')]);
         }
 
         return $this->checkOut($visit);
@@ -153,7 +153,7 @@ final readonly class VisitorService
             $locked = VisitorVisit::query()->lockForUpdate()->findOrFail($visit->id);
 
             if ($locked->status !== VisitorVisit::Expected) {
-                throw ValidationException::withMessages(['visit' => 'Only an expected visit can be cancelled.']);
+                throw ValidationException::withMessages(['visit' => __('visitors_errors.visit.cancel_only_expected')]);
             }
 
             $locked->update(['status' => VisitorVisit::Cancelled]);

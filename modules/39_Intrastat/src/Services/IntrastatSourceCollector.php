@@ -69,7 +69,7 @@ final class IntrastatSourceCollector
 
         $invoices = Invoice::query()
             ->with(['contact', 'items'])
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString())
             ->where('invoice_type', '!=', 'proforma')
             ->orderBy('date')
             ->orderBy('invoice_number')
@@ -163,7 +163,7 @@ final class IntrastatSourceCollector
 
         $invoices = PassiveInvoice::query()
             ->with(['supplier', 'lines'])
-            ->whereBetween('date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('date', '>=', $from->toDateString())->whereDate('date', '<=', $to->toDateString())
             ->orderBy('date')
             ->orderBy('invoice_number')
             ->get();

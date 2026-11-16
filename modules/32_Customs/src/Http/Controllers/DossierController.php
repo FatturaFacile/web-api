@@ -52,7 +52,7 @@ final class DossierController extends CustomsController
             ->when($request->filled('customer_contact_id'), static fn ($query) => $query->where('customer_contact_id', (string) $request->query('customer_contact_id')))
             ->latest();
 
-        return CustomsRecordResource::collection($query->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

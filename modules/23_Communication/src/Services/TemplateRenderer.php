@@ -77,7 +77,7 @@ final class TemplateRenderer
         $missing = array_values(array_filter($needed, static fn (string $name): bool => ! array_key_exists($name, $variables)));
 
         if ($missing !== []) {
-            throw ValidationException::withMessages(['variables' => 'Missing variables: '.implode(', ', $missing).'.']);
+            throw ValidationException::withMessages(['variables' => __('communication_errors.template.missing_variables', ['variables' => implode(', ', $missing)])]);
         }
 
         $fill = static fn (string $text, bool $singleLine): string => (string) preg_replace_callback(

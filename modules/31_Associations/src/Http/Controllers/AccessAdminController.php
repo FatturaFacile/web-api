@@ -33,7 +33,7 @@ final class AccessAdminController extends AssociationController
     {
         $this->allow(AssociationCapability::Manage);
 
-        return AssociationRecordResource::collection(AccessDevice::query()->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection(AccessDevice::query()->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/access-devices', 'registerAssociationAccessDevice', 'Register a reader. Its secret is shown only in this response', 'AssociationDeviceRequest')]
@@ -73,7 +73,7 @@ final class AccessAdminController extends AssociationController
             ->when($request->filled('member_id'), static fn ($query) => $query->where('member_id', (string) $request->query('member_id')))
             ->when($request->filled('decision'), static fn ($query) => $query->where('decision', (string) $request->query('decision')))
             ->orderByDesc('occurred_at')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($logs);
     }

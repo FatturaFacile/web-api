@@ -48,6 +48,20 @@ final class ProjectCostEntry extends BaseEnterpriseModel
 
     protected $table = 'project_cost_entries';
 
+    /**
+     * Calculated columns of the grid (portable SQL, see App\Support\Http\GridColumns).
+     *
+     * `billable` is the readable state of the boolean `is_billable` flag (`yes` / `no`), the same on every database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'billable' => "CASE WHEN project_cost_entries.is_billable THEN 'yes' ELSE 'no' END",
+        ];
+    }
+
     protected function casts(): array
     {
         return [

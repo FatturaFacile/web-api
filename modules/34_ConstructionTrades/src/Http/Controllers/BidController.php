@@ -32,6 +32,7 @@ final class BidController extends Controller
      */
     #[OA\Get(path: '/api/v1/construction-trades/bids', operationId: 'listTradesBids', description: 'Return the bids, newest first, optionally by status.', summary: 'List bids', security: [['bearerAuth' => []]], tags: ['Construction Trades'], parameters: [
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Text contained in the bid number, the title or the customer name', schema: new OA\Schema(type: 'string')),
     ], responses: [
         new OA\Response(response: 200, description: 'Bids', content: new OA\JsonContent(ref: '#/components/schemas/TradesRecordCollection')),
         new OA\Response(ref: '#/components/responses/TradesUnauthenticated', response: 401),
@@ -43,8 +44,18 @@ final class BidController extends Controller
 
         return TradesResource::collection(Bid::query()
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
+            ->when($request->filled('search'), function ($query) use ($request): void {
+                $term = $request->string('search')->trim()->toString();
+                $query->where(fn ($match) => $match
+                    ->whereLike('bid_number', "%{$term}%")
+                    ->orWhereLike('title', "%{$term}%")
+                    ->orWhereHas('contact', fn ($contact) => $contact
+                        ->whereLike('company_name', "%{$term}%")
+                        ->orWhereLike('first_name', "%{$term}%")
+                        ->orWhereLike('last_name', "%{$term}%")));
+            })
             ->latest()
-            ->paginate(max(1, min($request->integer('per_page', 25), 100))));
+            ->gridPaginate(max(1, min($request->integer('per_page', 25), 200))));
     }
 
     /**

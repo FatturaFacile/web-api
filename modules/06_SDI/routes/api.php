@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\SDI\Http\Controllers\SdiChannelController;
 use Modules\SDI\Http\Controllers\SdiGatewayWebhookController;
+use Modules\SDI\Http\Controllers\SdiTransmissionController;
 
 Route::prefix('api/v1/settings/sdi-channel')
     ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:system'])
@@ -20,3 +21,9 @@ Route::post('api/v1/webhooks/sdi/gateways/{tenant}', SdiGatewayWebhookController
     ->middleware(['api', 'throttle:120,1'])
     ->whereUuid('tenant')
     ->name('sdi.gateway-webhook');
+
+Route::prefix('api/v1/sdi')
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'module.access:invoicing'])
+    ->group(function (): void {
+        Route::get('transmissions', [SdiTransmissionController::class, 'index'])->name('sdi.transmissions.index');
+    });

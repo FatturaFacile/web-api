@@ -44,7 +44,7 @@ final class MrpController extends Controller
         responses: [new OA\Response(response: 200, description: 'MRP runs', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgMrpRun'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function index(Request $request): AnonymousResourceCollection
     {
-        return MfgMrpRunResource::collection(MfgMrpRun::query()->where('tenant_id', $this->tenantId())->latest('executed_at')->paginate($this->perPage($request)));
+        return MfgMrpRunResource::collection(MfgMrpRun::query()->where('tenant_id', $this->tenantId())->latest('executed_at')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -87,14 +87,14 @@ final class MrpController extends Controller
         responses: [new OA\Response(response: 200, description: 'Planned orders', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgPlannedOrder'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function plannedOrders(Request $request): AnonymousResourceCollection
     {
-        $query = MfgMrpPlannedOrder::query()->where('tenant_id', $this->tenantId());
+        $query = MfgMrpPlannedOrder::query()->with('mfgItem')->where('tenant_id', $this->tenantId());
         foreach (['mrp_run_id', 'order_type', 'status'] as $filter) {
             if ($request->filled($filter)) {
                 $query->where($filter, (string) $request->query($filter));
             }
         }
 
-        return MfgPlannedOrderResource::collection($query->orderBy('due_date')->orderBy('planned_order_number')->paginate($this->perPage($request)));
+        return MfgPlannedOrderResource::collection($query->orderBy('due_date')->orderBy('planned_order_number')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -105,7 +105,7 @@ final class MrpController extends Controller
         responses: [new OA\Response(response: 200, description: 'Purchase suggestions', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgPlannedOrder'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function purchaseSuggestions(Request $request): AnonymousResourceCollection
     {
-        return MfgPlannedOrderResource::collection(MfgMrpPlannedOrder::query()->where('tenant_id', $this->tenantId())->where('order_type', 'buy')->where('status', 'planned')->orderBy('due_date')->paginate($this->perPage($request)));
+        return MfgPlannedOrderResource::collection(MfgMrpPlannedOrder::query()->with('mfgItem')->where('tenant_id', $this->tenantId())->where('order_type', 'buy')->where('status', 'planned')->orderBy('due_date')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -116,12 +116,12 @@ final class MrpController extends Controller
         responses: [new OA\Response(response: 200, description: 'Shortages', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/MfgShortage'))])), new OA\Response(ref: '#/components/responses/MfgUnauthenticated', response: 401)])]
     public function shortages(Request $request): AnonymousResourceCollection
     {
-        $query = MfgMrpShortage::query()->where('tenant_id', $this->tenantId());
+        $query = MfgMrpShortage::query()->with('mfgItem')->where('tenant_id', $this->tenantId());
         if ($request->filled('mrp_run_id')) {
             $query->where('mrp_run_id', (string) $request->query('mrp_run_id'));
         }
 
-        return MfgShortageResource::collection($query->orderBy('required_date')->paginate($this->perPage($request)));
+        return MfgShortageResource::collection($query->orderBy('required_date')->gridPaginate($this->perPage($request)));
     }
 
     /**
@@ -164,7 +164,7 @@ final class MrpController extends Controller
             $query->where('mfg_item_id', (string) $request->query('mfg_item_id'));
         }
 
-        return MfgForecastResource::collection($query->orderBy('forecast_date')->paginate($this->perPage($request)));
+        return MfgForecastResource::collection($query->orderBy('forecast_date')->gridPaginate($this->perPage($request)));
     }
 
     /**

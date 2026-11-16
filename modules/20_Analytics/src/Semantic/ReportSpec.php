@@ -76,7 +76,7 @@ final readonly class ReportSpec
         $rawDimensions = $input['dimensions'] ?? [];
 
         if (! is_array($rawDimensions) || ! array_is_list($rawDimensions) || count($rawDimensions) > self::MaxDimensions) {
-            $errors['dimensions'][] = 'Dimensions must be a list of at most '.self::MaxDimensions.' items.';
+            $errors['dimensions'][] = self::message('analytics_errors.spec.dimensions_list', ['max' => self::MaxDimensions]);
             $rawDimensions = [];
         }
 
@@ -86,7 +86,7 @@ final readonly class ReportSpec
             if (is_string($parsed)) {
                 $errors["dimensions.{$index}"][] = $parsed;
             } elseif (in_array($parsed['key'], array_column($dimensions, 'key'), true)) {
-                $errors["dimensions.{$index}"][] = "The dimension [{$parsed['key']}] is repeated.";
+                $errors["dimensions.{$index}"][] = self::message('analytics_errors.spec.dimension_repeated', ['key' => $parsed['key']]);
             } else {
                 $dimensions[] = $parsed;
             }
@@ -96,15 +96,15 @@ final readonly class ReportSpec
         $rawMeasures = $input['measures'] ?? [];
 
         if (! is_array($rawMeasures) || ! array_is_list($rawMeasures) || $rawMeasures === [] || count($rawMeasures) > self::MaxMeasures) {
-            $errors['measures'][] = 'Choose between 1 and '.self::MaxMeasures.' measures.';
+            $errors['measures'][] = self::message('analytics_errors.spec.measures_count', ['max' => self::MaxMeasures]);
             $rawMeasures = [];
         }
 
         foreach ($rawMeasures as $index => $raw) {
             if (! is_string($raw) || $dataset->measure($raw) === null) {
-                $errors["measures.{$index}"][] = 'Unknown measure for this dataset.';
+                $errors["measures.{$index}"][] = self::message('analytics_errors.spec.unknown_measure');
             } elseif (in_array($raw, $measures, true)) {
-                $errors["measures.{$index}"][] = "The measure [{$raw}] is repeated.";
+                $errors["measures.{$index}"][] = self::message('analytics_errors.spec.measure_repeated', ['measure' => $raw]);
             } else {
                 $measures[] = $raw;
             }
@@ -117,11 +117,11 @@ final readonly class ReportSpec
         $compare = $input['compare'] ?? ReportPeriod::CompareNone;
 
         if (! in_array($compare, [ReportPeriod::CompareNone, ReportPeriod::ComparePreviousPeriod, ReportPeriod::ComparePreviousYear], true)) {
-            $errors['compare'][] = 'Unknown comparison.';
+            $errors['compare'][] = self::message('analytics_errors.spec.unknown_comparison');
             $compare = ReportPeriod::CompareNone;
         } elseif ($compare !== ReportPeriod::CompareNone) {
             if ($dataset->periodDimension === null || $period === null) {
-                $errors['compare'][] = 'A comparison needs a dataset with a period and a period.';
+                $errors['compare'][] = self::message('analytics_errors.spec.comparison_needs_period');
             }
         }
 
@@ -154,22 +154,34 @@ final readonly class ReportSpec
     private static function parseDimension(mixed $raw, Dataset $dataset): array|string
     {
         if (! is_string($raw) || preg_match('/^([a-z][a-z0-9_]*)(?::([a-z]+))?$/', $raw, $matches) !== 1) {
-            return 'A dimension is a key, optionally followed by :granularity.';
+            return self::message('analytics_errors.spec.dimension_format', ['granularity' => ':granularity']);
         }
 
         $dimension = $dataset->dimension($matches[1]);
 
         if ($dimension === null) {
-            return 'Unknown dimension for this dataset.';
+            return self::message('analytics_errors.spec.unknown_dimension');
         }
 
         $granularity = $matches[2] ?? null;
 
         if ($granularity !== null && ($dimension->type !== Dimension::TypeDate || ! in_array($granularity, Dimension::Granularities, true))) {
-            return 'Unknown granularity for this dimension.';
+            return self::message('analytics_errors.spec.unknown_granularity');
         }
 
         return ['key' => $dimension->key, 'granularity' => $dimension->type === Dimension::TypeDate ? ($granularity ?? 'day') : null];
+    }
+
+    /**
+     * The translated text of an error: a translation key that resolves to a group of lines is not a message.
+     *
+     * @param  array<string, scalar>  $replace
+     */
+    private static function message(string $key, array $replace = []): string
+    {
+        $text = __($key, $replace);
+
+        return is_string($text) ? $text : $key;
     }
 
     /**
@@ -179,7 +191,7 @@ final readonly class ReportSpec
     private static function parseFilters(mixed $raw, Dataset $dataset, array &$errors): array
     {
         if (! is_array($raw) || ! array_is_list($raw) || count($raw) > self::MaxFilters) {
-            $errors['filters'][] = 'Filters must be a list of at most '.self::MaxFilters.' items.';
+            $errors['filters'][] = self::message('analytics_errors.spec.filters_list', ['max' => self::MaxFilters]);
 
             return [];
         }
@@ -192,7 +204,7 @@ final readonly class ReportSpec
             $dimension = $field === null ? null : ($measure !== null ? new Dimension($measure->key, $measure->label, Dimension::TypeNumber, '1') : $dataset->dimension($field));
 
             if ($dimension === null) {
-                $errors["filters.{$index}.field"][] = 'Unknown dimension or measure for this dataset.';
+                $errors["filters.{$index}.field"][] = self::message('analytics_errors.spec.unknown_dimension_or_measure');
 
                 continue;
             }
@@ -201,7 +213,7 @@ final readonly class ReportSpec
             $allowed = $measure !== null ? self::MeasureOperators : $dimension->operators();
 
             if (! is_string($operator) || ! in_array($operator, $allowed, true)) {
-                $errors["filters.{$index}.operator"][] = 'Operator not allowed for this field.';
+                $errors["filters.{$index}.operator"][] = self::message('analytics_errors.spec.operator_not_allowed');
 
                 continue;
             }
@@ -209,7 +221,7 @@ final readonly class ReportSpec
             $value = self::coerceValue($dimension, $operator, $filter['value'] ?? null);
 
             if ($value === false) {
-                $errors["filters.{$index}.value"][] = 'Invalid value for a '.$dimension->type.' dimension and the operator '.$operator.'.';
+                $errors["filters.{$index}.value"][] = self::message('analytics_errors.spec.invalid_filter_value', ['type' => $dimension->type, 'operator' => $operator]);
 
                 continue;
             }
@@ -292,7 +304,7 @@ final readonly class ReportSpec
     private static function parseSort(mixed $raw, array $dimensions, array $measures, array &$errors): array
     {
         if (! is_array($raw) || ! array_is_list($raw) || count($raw) > self::MaxSort) {
-            $errors['sort'][] = 'Sort must be a list of at most '.self::MaxSort.' items.';
+            $errors['sort'][] = self::message('analytics_errors.spec.sort_list', ['max' => self::MaxSort]);
 
             return [];
         }
@@ -305,11 +317,11 @@ final readonly class ReportSpec
             $direction = is_array($item) ? strtolower((string) ($item['direction'] ?? 'asc')) : 'asc';
 
             if (! is_string($field) || ! in_array($field, $selectable, true)) {
-                $errors["sort.{$index}.field"][] = 'Sort only by a chosen dimension or measure.';
+                $errors["sort.{$index}.field"][] = self::message('analytics_errors.spec.sort_field');
             } elseif (! in_array($direction, ['asc', 'desc'], true)) {
-                $errors["sort.{$index}.direction"][] = 'Direction is asc or desc.';
+                $errors["sort.{$index}.direction"][] = self::message('analytics_errors.spec.sort_direction');
             } elseif (in_array($field, array_column($sort, 'field'), true)) {
-                $errors["sort.{$index}.field"][] = 'The field is already used to sort.';
+                $errors["sort.{$index}.field"][] = self::message('analytics_errors.spec.sort_field_repeated');
             } else {
                 $sort[] = ['field' => $field, 'direction' => $direction];
             }
@@ -328,7 +340,7 @@ final readonly class ReportSpec
         }
 
         if (! is_int($raw) && ! (is_string($raw) && ctype_digit($raw)) || (int) $raw < 1 || (int) $raw > $maxRows) {
-            $errors['limit'][] = "The top-N limit is a whole number between 1 and {$maxRows}.";
+            $errors['limit'][] = self::message('analytics_errors.spec.limit_range', ['max' => $maxRows]);
 
             return null;
         }
@@ -347,20 +359,20 @@ final readonly class ReportSpec
         }
 
         if ($dataset->periodDimension === null) {
-            $errors['period'][] = 'This dataset describes today and has no period.';
+            $errors['period'][] = self::message('analytics_errors.spec.no_period');
 
             return null;
         }
 
         if (! is_array($raw)) {
-            $errors['period'][] = 'The period is an object with a preset, or with from and to.';
+            $errors['period'][] = self::message('analytics_errors.spec.period_format');
 
             return null;
         }
 
         if (isset($raw['preset'])) {
             if (! is_string($raw['preset']) || ! in_array($raw['preset'], self::Presets, true)) {
-                $errors['period.preset'][] = 'Unknown preset.';
+                $errors['period.preset'][] = self::message('analytics_errors.spec.unknown_preset');
 
                 return null;
             }
@@ -372,19 +384,19 @@ final readonly class ReportSpec
         $to = $raw['to'] ?? null;
 
         if (! is_string($from) || ! is_string($to) || ! self::isDate($from) || ! self::isDate($to)) {
-            $errors['period'][] = 'from and to are dates (Y-m-d).';
+            $errors['period'][] = self::message('analytics_errors.spec.period_dates');
 
             return null;
         }
 
         if ($from > $to) {
-            $errors['period'][] = 'The start of the period is after its end.';
+            $errors['period'][] = self::message('analytics_errors.spec.period_inverted');
 
             return null;
         }
 
         if (CarbonImmutable::parse($from)->diffInDays(CarbonImmutable::parse($to)) > $maxDays) {
-            $errors['period'][] = "The period cannot be longer than {$maxDays} days.";
+            $errors['period'][] = self::message('analytics_errors.spec.period_too_long', ['days' => $maxDays]);
 
             return null;
         }

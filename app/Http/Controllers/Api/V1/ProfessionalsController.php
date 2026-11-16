@@ -11,8 +11,10 @@ use App\Http\Responses\ApiResponse;
 use App\Models\BillableActivity;
 use App\Models\FeeNote;
 use App\Models\LegalCase;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -20,6 +22,20 @@ use Symfony\Component\HttpFoundation\Response;
 class ProfessionalsController extends Controller
 {
     use ApiResponse;
+
+    /**
+     * A grid page in the list envelope the frontend grids read: `data` is the rows and `meta` the paging.
+     *
+     * @param  LengthAwarePaginator<int, *>  $page
+     */
+    private function pageResponse(LengthAwarePaginator $page, string $message): JsonResponse
+    {
+        return $this->successResponse(
+            data: $page->items(),
+            message: $message,
+            meta: ['current_page' => $page->currentPage(), 'last_page' => $page->lastPage(), 'per_page' => $page->perPage(), 'total' => $page->total()]
+        );
+    }
 
     #[OA\Get(
         path: '/api/v1/professionals/cases',
@@ -35,9 +51,13 @@ class ProfessionalsController extends Controller
     )]
     public function cases(): JsonResponse
     {
-        $cases = LegalCase::latest()->paginate(25);
+        $cases = LegalCase::with('client')
+            ->withSum('billableActivities as logged_minutes', 'duration_minutes')
+            ->withSum('billableActivities as fee_total', 'fee_amount')
+            ->latest()
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(data: $cases, message: 'Legal cases (Fascicoli) retrieved');
+        return $this->pageResponse($cases, 'Legal cases (Fascicoli) retrieved');
     }
 
     #[OA\Get(
@@ -47,6 +67,11 @@ class ProfessionalsController extends Controller
         summary: 'List billable time logs',
         security: [['bearerAuth' => []], ['tenantHeader' => []]],
         tags: ['Professionals'],
+        parameters: [
+            new OA\Parameter(name: 'from', in: 'query', required: false, description: 'First day of the period (Y-m-d)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'to', in: 'query', required: false, description: 'Last day of the period (Y-m-d)', schema: new OA\Schema(type: 'string', format: 'date')),
+            new OA\Parameter(name: 'is_billed', in: 'query', required: false, description: 'Only billed (true) or unbilled (false) activities', schema: new OA\Schema(type: 'boolean')),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Billable activities retrieved', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
@@ -54,9 +79,14 @@ class ProfessionalsController extends Controller
     )]
     public function timeLogs(Request $request): JsonResponse
     {
-        $logs = BillableActivity::latest('date')->paginate(25);
+        $logs = BillableActivity::with('legalCase.client')
+            ->when($request->filled('from'), fn ($query) => $query->whereDate('date', '>=', (string) $request->query('from')))
+            ->when($request->filled('to'), fn ($query) => $query->whereDate('date', '<=', (string) $request->query('to')))
+            ->when($request->filled('is_billed'), fn ($query) => $query->where('is_billed', $request->boolean('is_billed')))
+            ->latest('date')
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(data: $logs, message: 'Billable activities retrieved');
+        return $this->pageResponse($logs, 'Billable activities retrieved');
     }
 
     #[OA\Post(
@@ -123,9 +153,9 @@ class ProfessionalsController extends Controller
     )]
     public function feeNotes(): JsonResponse
     {
-        $notes = FeeNote::latest('date')->paginate(25);
+        $notes = FeeNote::with('client')->latest('date')->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(data: $notes, message: 'Professional fee notes (Parcelle) retrieved');
+        return $this->pageResponse($notes, 'Professional fee notes (Parcelle) retrieved');
     }
 
     #[OA\Post(

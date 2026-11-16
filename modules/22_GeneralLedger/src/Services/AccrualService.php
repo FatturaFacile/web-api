@@ -46,7 +46,7 @@ final readonly class AccrualService
         $cutoff = CarbonImmutable::parse($data['cutoff_date'])->startOfDay();
 
         if ($cutoff->lessThan($start) || $cutoff->greaterThanOrEqualTo($end)) {
-            throw ValidationException::withMessages(['cutoff_date' => ['The cut-off date must fall within the coverage, before its last day.']]);
+            throw ValidationException::withMessages(['cutoff_date' => [__('general_ledger_errors.accrual.cutoff_outside_coverage')]]);
         }
 
         [$incomeAccount, $balanceAccount] = $this->accounts($tenantId, $type, $data['income_statement_account_id'], $data['balance_sheet_account_id']);
@@ -58,7 +58,7 @@ final readonly class AccrualService
         $amount = Decimal::round2(bcdiv(bcmul($total, (string) $accruedDays, 8), (string) $coverageDays, 8));
 
         if (! Decimal::isPositive($amount)) {
-            throw ValidationException::withMessages(['total_amount' => ['The share at the cut-off date is zero: nothing to post.']]);
+            throw ValidationException::withMessages(['total_amount' => [__('general_ledger_errors.accrual.nothing_to_post')]]);
         }
 
         return DB::transaction(function () use ($tenantId, $data, $actorId, $type, $start, $end, $cutoff, $incomeAccount, $balanceAccount, $total, $coverageDays, $accruedDays, $amount): Accrual {
@@ -123,11 +123,11 @@ final readonly class AccrualService
         $errors = [];
 
         if ($income === null || ! in_array($income->account_type, $incomeTypes, true)) {
-            $errors['income_statement_account_id'] = ['For '.$type.' the income statement account must be of type '.implode(' or ', $incomeTypes).'.'];
+            $errors['income_statement_account_id'] = [__('general_ledger_errors.accrual.income_account_type', ['type' => $type, 'types' => implode(' / ', $incomeTypes)])];
         }
 
         if ($balance === null || ! in_array($balance->account_type, $balanceTypes, true)) {
-            $errors['balance_sheet_account_id'] = ['For '.$type.' the balance sheet account must be of type '.implode(' or ', $balanceTypes).'.'];
+            $errors['balance_sheet_account_id'] = [__('general_ledger_errors.accrual.balance_account_type', ['type' => $type, 'types' => implode(' / ', $balanceTypes)])];
         }
 
         if ($errors !== []) {

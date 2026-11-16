@@ -8,7 +8,10 @@ use App\Http\Requests\Appointments\ConflictCheckRequest;
 use App\Models\Payment;
 use App\Models\User;
 use App\Policies\PaymentPolicy;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
 
 test('conflict check request authorization and validation rules', function (): void {
     $request = new ConflictCheckRequest;

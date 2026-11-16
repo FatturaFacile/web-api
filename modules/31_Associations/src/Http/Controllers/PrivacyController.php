@@ -44,7 +44,7 @@ final class PrivacyController extends AssociationController
         return AssociationRecordResource::collection(ProcessingActivity::query()
             ->when($request->boolean('current'), static fn ($query) => $query->where('status', ProcessingActivity::Final))
             ->orderBy('name')->orderByDesc('version')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/privacy/activities', 'createAssociationProcessingActivity', 'Describe a processing activity as a draft', 'AssociationProcessingActivityRequest', response: 'AssociationProcessingActivity')]
@@ -136,7 +136,7 @@ final class PrivacyController extends AssociationController
             ->when($request->filled('member_id'), static fn ($query) => $query->where('member_id', $request->string('member_id')->toString()))
             ->when($request->filled('activity_id'), static fn ($query) => $query->where('activity_id', $request->string('activity_id')->toString()))
             ->orderByDesc('given_at')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/privacy/consents', 'recordAssociationConsent', 'Record a consent with the proof of how it was given', 'AssociationConsentRequest', response: 'AssociationRecord')]
@@ -165,7 +165,7 @@ final class PrivacyController extends AssociationController
             ->when($request->boolean('overdue'), static fn ($query) => $query->whereIn('status', DataSubjectRequest::OpenStatuses)
                 ->whereRaw('coalesce(extended_due_on, due_on) < ?', [now()->toDateString()]))
             ->orderBy('due_on')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/privacy/requests', 'receiveAssociationDataSubjectRequest', 'Register a request of a data subject; it is due one month after receipt', 'AssociationDataSubjectRequest', response: 'AssociationRecord')]

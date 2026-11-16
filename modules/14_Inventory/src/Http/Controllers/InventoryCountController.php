@@ -53,7 +53,7 @@ final class InventoryCountController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $sessions = $query->paginate((int) $request->query('per_page', 25));
+        $sessions = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(InventoryCountSessionResource::collection($sessions)->response()->getData(true));
     }

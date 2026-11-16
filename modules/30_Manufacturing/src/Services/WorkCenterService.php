@@ -105,7 +105,7 @@ final readonly class WorkCenterService
 
         $shifts = MfgWorkCenterShift::query()->where('work_center_id', $workCenter->id)->get();
         $exceptions = MfgWorkCenterCapacity::query()->where('work_center_id', $workCenter->id)
-            ->whereBetween('calendar_date', [$start->toDateString(), $end->toDateString()])->get()
+            ->whereDate('calendar_date', '>=', $start->toDateString())->whereDate('calendar_date', '<=', $end->toDateString())->get()
             ->keyBy(static fn (MfgWorkCenterCapacity $row): string => $row->calendar_date->toDateString());
 
         $loads = MfgProductionOrderOperation::query()
@@ -114,7 +114,7 @@ final readonly class WorkCenterService
             ->whereIn('o.status', ['released', 'in_progress'])
             ->whereNull('o.deleted_at')
             ->where('mfg_production_order_operations.status', '!=', 'completed')
-            ->whereBetween('mfg_production_order_operations.scheduled_date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('mfg_production_order_operations.scheduled_date', '>=', $start->toDateString())->whereDate('mfg_production_order_operations.scheduled_date', '<=', $end->toDateString())
             ->get(['mfg_production_order_operations.*'])
             ->groupBy(static fn (MfgProductionOrderOperation $operation): string => (string) $operation->scheduled_date?->toDateString());
 
@@ -152,7 +152,7 @@ final readonly class WorkCenterService
     {
         $shifts = MfgWorkCenterShift::query()->where('work_center_id', $workCenter->id)->get();
         $exceptions = MfgWorkCenterCapacity::query()->where('work_center_id', $workCenter->id)
-            ->whereBetween('calendar_date', [$from->toDateString(), $from->addDays(self::MaxDays)->toDateString()])->get()
+            ->whereDate('calendar_date', '>=', $from->toDateString())->whereDate('calendar_date', '<=', $from->addDays(self::MaxDays)->toDateString())->get()
             ->keyBy(static fn (MfgWorkCenterCapacity $row): string => $row->calendar_date->toDateString());
 
         $day = $from;

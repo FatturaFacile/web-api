@@ -12,6 +12,13 @@ use Illuminate\Support\ServiceProvider;
 use Modules\Contracts\Enums\ContractKind;
 use Modules\Contracts\Events\ContractObligationDueEvent;
 use Modules\Contracts\Listeners\DispatchOutboxOnContractEventListener;
+use Modules\Contracts\Models\ContractClause;
+use Modules\Contracts\Models\ContractComment;
+use Modules\Contracts\Models\ContractDocumentVersion;
+use Modules\Contracts\Models\ContractNegotiationRound;
+use Modules\Contracts\Models\ContractSignatureRequest;
+use Modules\Contracts\Models\ContractTemplate;
+use Modules\Contracts\Policies\ContractAuthoringPolicy;
 
 /**
  * Registers the routes, gates and event listeners of the Contracts module.
@@ -40,6 +47,10 @@ final class ContractsServiceProvider extends ServiceProvider
                 || ($kind === ContractKind::Supplier && $role === 'procurement_manager')
                 || ($kind === ContractKind::Customer && in_array($role, ['sales_manager', 'service_manager'], true));
         });
+
+        foreach ([ContractClause::class, ContractTemplate::class, ContractDocumentVersion::class, ContractComment::class, ContractNegotiationRound::class, ContractSignatureRequest::class] as $model) {
+            Gate::policy($model, ContractAuthoringPolicy::class);
+        }
 
         Event::listen(ContractObligationDueEvent::class, DispatchOutboxOnContractEventListener::class);
     }

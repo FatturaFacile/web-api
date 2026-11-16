@@ -64,7 +64,7 @@ final class WorkflowInboxController extends Controller
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
-        $tasks = $this->inbox->tasks($request->user(), $filters)->paginate((int) ($filters['per_page'] ?? 25));
+        $tasks = $this->inbox->tasks($request->user(), $filters)->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             WorkflowTaskResource::collection($tasks->getCollection()),
@@ -152,7 +152,7 @@ final class WorkflowInboxController extends Controller
     public function myRequests(Request $request): JsonResponse
     {
         $filters = $request->validate(['status' => ['nullable', 'in:pending,in_progress,approved,rejected,cancelled,expired'], 'per_page' => ['nullable', 'integer', 'min:1', 'max:100']]);
-        $instances = $this->inbox->requests($request->user(), $filters['status'] ?? null)->paginate((int) ($filters['per_page'] ?? 25));
+        $instances = $this->inbox->requests($request->user(), $filters['status'] ?? null)->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             WorkflowInstanceResource::collection($instances->getCollection()),
@@ -191,7 +191,7 @@ final class WorkflowInboxController extends Controller
         $from = isset($validated['from']) ? CarbonImmutable::parse($validated['from']) : $to->subDays(30);
 
         if ($from->diffInDays($to) > 366) {
-            throw ValidationException::withMessages(['to' => 'The period cannot be longer than 366 days.']);
+            throw ValidationException::withMessages(['to' => __('workflow_errors.inbox.period_too_long')]);
         }
 
         return $this->successResponse($report->report($from, $to), 'SLA report retrieved');

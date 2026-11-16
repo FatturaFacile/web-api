@@ -38,12 +38,12 @@ final readonly class TreasuryKpiService
         $to = $asOf->toDateString();
 
         $sales = '0';
-        foreach (Invoice::query()->where('tenant_id', $tenantId)->where('currency', $currency)->where('invoice_type', '!=', 'proforma')->whereBetween('date', [$from, $to])->get(['invoice_type', 'total_gross']) as $invoice) {
+        foreach (Invoice::query()->where('tenant_id', $tenantId)->where('currency', $currency)->where('invoice_type', '!=', 'proforma')->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->get(['invoice_type', 'total_gross']) as $invoice) {
             $sales = Decimal::add($sales, $invoice->invoice_type === 'credit_note' ? Decimal::neg((string) $invoice->total_gross) : (string) $invoice->total_gross);
         }
 
         $purchases = '0';
-        foreach (PassiveInvoice::query()->where('tenant_id', $tenantId)->where('currency', $currency)->whereBetween('date', [$from, $to])->get(['document_type', 'total_amount']) as $invoice) {
+        foreach (PassiveInvoice::query()->where('tenant_id', $tenantId)->where('currency', $currency)->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->get(['document_type', 'total_amount']) as $invoice) {
             $purchases = Decimal::add($purchases, $invoice->document_type === 'TD04' ? Decimal::neg((string) $invoice->total_amount) : (string) $invoice->total_amount);
         }
 

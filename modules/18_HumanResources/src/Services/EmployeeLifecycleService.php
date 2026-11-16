@@ -21,10 +21,13 @@ use Modules\HumanResources\Events\EmployeeHiredEvent;
 use Modules\HumanResources\Events\EmployeePromotedEvent;
 use Modules\HumanResources\Events\EmployeeTerminatedEvent;
 use Modules\HumanResources\Events\EmployeeTransferredEvent;
+use Modules\HumanResources\Exceptions\HumanResourcesException;
 use Modules\HumanResources\Models\Employee;
 use Modules\HumanResources\Models\EmployeeLifecycleEvent;
 use Modules\HumanResources\Models\EmploymentContract;
+use Modules\HumanResources\Models\OnboardingTemplate;
 use Modules\HumanResources\Models\Position;
+use Modules\HumanResources\Services\Offboarding\OffboardingService;
 use Modules\Workflow\Contracts\LockableByWorkflowInterface;
 use Modules\Workflow\Contracts\WorkflowEngineInterface;
 use Modules\Workflow\DTOs\StartWorkflowDTO;
@@ -35,6 +38,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
     public function __construct(
         private EventDispatcher $dispatcher,
         private AuditLedgerInterface $auditLedger,
+        private OffboardingService $offboarding,
         private ?WorkflowEngineInterface $workflowEngine = null
     ) {}
 
@@ -448,7 +452,7 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
             $locked = Employee::where('id', $dto->employeeId)->lockForUpdate()->firstOrFail();
 
             if ($locked->employment_status === 'terminated') {
-                throw new InvalidArgumentException("Employee [{$locked->employee_number}] is already terminated.");
+                throw new HumanResourcesException("Employee [{$locked->employee_number}] is already terminated.");
             }
 
             $before = $locked->toArray();
@@ -482,6 +486,13 @@ final readonly class EmployeeLifecycleService implements EmployeeLifecycleServic
                 'reason' => $dto->reason,
                 'initiated_by_user_id' => $actorUuid,
             ]);
+
+            if ($dto->startOffboarding) {
+                $this->offboarding->startForTermination(
+                    $locked,
+                    $dto->offboardingTemplateId !== null ? OnboardingTemplate::query()->where('kind', OnboardingTemplate::KindOffboarding)->findOrFail($dto->offboardingTemplateId) : null
+                );
+            }
 
             $this->tryStartWorkflowIfDefined(
                 workflowCode: 'HR_TERMINATION_OFFBOARDING',

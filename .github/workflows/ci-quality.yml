@@ -1,0 +1,104 @@
+name: Backend Quality & Merge Gates
+
+on:
+  pull_request:
+    branches: [main, master, develop]
+    paths:
+      - 'app/**'
+      - 'modules/**'
+      - 'database/**'
+      - 'config/**'
+      - 'tests/**'
+      - 'composer.json'
+      - 'composer.lock'
+      - 'phpstan.neon'
+      - '.github/workflows/ci-quality.yml'
+  push:
+    branches: [main, master]
+  schedule:
+    # Weekly security audit every Monday at 04:00 UTC
+    - cron: '0 4 * * 1'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend-static-analysis:
+    name: Backend Static Analysis & Architecture Gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, bcmath, zip
+          coverage: none
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Run Laravel Pint Code Formatter Check
+        run: ./vendor/bin/pint --test
+
+      - name: Run PHPStan / Larastan (Level 8)
+        run: ./vendor/bin/phpstan analyse --level=8 --memory-limit=1G --no-progress
+
+      - name: Run Pest Architecture Boundary Tests
+        run: ./vendor/bin/pest tests/Architecture --no-coverage
+
+  backend-tests:
+    name: Backend Pest Tests & Coverage Gate (>=80%)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP with PCOV Coverage Driver
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring, xml, ctype, iconv, intl, pdo, sqlite, pdo_sqlite, bcmath, zip, pcov
+          coverage: pcov
+
+      - name: Install Composer Dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Execute Pest Parallel Test Suite with Coverage Gate
+        run: >
+          php -d pcov.enabled=1 -d pcov.directory=. -d pcov.exclude="~vendor|tests|database|bootstrap|storage~"
+          ./vendor/bin/pest --parallel --processes=4 --compact --coverage --min=80
+
+  security-audit:
+    name: Composer Security Dependency Audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Codebase
+        uses: actions/checkout@v4
+
+      - name: Setup PHP Environment
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          coverage: none
+
+      - name: Check for Known Vulnerabilities (composer audit)
+        run: composer audit --locked
+
+      - name: Generate Security Report Artifact (Weekly Cron)
+        if: github.event_name == 'schedule'
+        run: |
+          mkdir -p reports
+          composer audit --format=json > reports/composer-security-audit.json || true
+        continue-on-error: true
+
+      - name: Upload Security Artifact
+        if: github.event_name == 'schedule'
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-security-audit-report
+          path: reports/composer-security-audit.json
+          retention-days: 30

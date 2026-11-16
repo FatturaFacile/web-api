@@ -327,7 +327,7 @@ final class AssetOperationsController extends Controller
             $query->where('meter_code', (string) $request->query('meter_code'));
         }
 
-        return AssetMeterReadingResource::collection($query->orderByDesc('read_at')->paginate(max(1, min(100, (int) $request->query('per_page', '25')))));
+        return AssetMeterReadingResource::collection($query->orderByDesc('read_at')->gridPaginate(max(1, min(100, (int) $request->query('per_page', '25')))));
     }
 
     /**

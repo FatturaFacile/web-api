@@ -7,6 +7,7 @@ namespace Modules\Treasury\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\Treasury\Http\Requests\StorePaymentProposalRequest;
@@ -32,16 +33,17 @@ final class PaymentProposalController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/payment-proposals',
         operationId: 'listTreasuryPaymentProposals',
-        description: 'Lists the supplier payment proposals of the active tenant, newest first, optionally by status.',
+        description: 'Lists the supplier payment proposals of the active tenant, newest first, optionally by status, paginated; sortable and filterable by column (grid contract).',
         summary: 'List payment proposals',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Payment Proposals'],
-        parameters: [new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'converted', 'rejected']))],
+        parameters: [new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['draft', 'converted', 'rejected'])), new OA\Parameter(ref: '#/components/parameters/TreasuryPerPage')],
         responses: [
             new OA\Response(response: 200, description: 'Proposals', content: new OA\JsonContent(properties: [
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryPaymentProposalResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
@@ -51,9 +53,9 @@ final class PaymentProposalController extends Controller
     public function index(Request $request): JsonResponse
     {
         $status = $request->validate(['status' => ['nullable', 'in:draft,converted,rejected']])['status'] ?? null;
-        $proposals = PaymentProposal::query()->when($status, fn ($query, string $value) => $query->where('status', $value))->latest()->limit(200)->get();
+        $page = PaymentProposal::query()->when($status, fn ($query, string $value) => $query->where('status', $value))->latest()->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(PaymentProposalResource::collection($proposals), 'Payment proposals');
+        return $this->successResponse(PaymentProposalResource::collection($page->items()), 'Payment proposals', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**

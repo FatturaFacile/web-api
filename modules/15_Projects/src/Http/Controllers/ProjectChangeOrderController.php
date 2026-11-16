@@ -44,7 +44,7 @@ final class ProjectChangeOrderController extends Controller
             ->when($request->query('status'), fn ($query, $status) => $query->where('status', $status))
             ->with('lines')
             ->orderByDesc('created_at')
-            ->paginate($this->perPage($request, 15));
+            ->gridPaginate($this->perPage($request, 15));
 
         return $this->paginated($orders, ProjectChangeOrderResource::class);
     }

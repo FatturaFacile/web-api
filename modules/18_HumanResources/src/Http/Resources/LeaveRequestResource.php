@@ -22,6 +22,8 @@ final class LeaveRequestResource extends JsonResource
             'total_days' => (float) $this->total_days,
             'status' => $this->status,
             'is_locked' => (bool) $this->is_locked,
+            'employee_name' => $this->whenLoaded('employee', fn () => $this->employee?->full_name),
+            'leave_type_name' => $this->whenLoaded('leaveType', fn () => $this->leaveType?->name),
             'reason' => $this->reason,
             'approved_at' => $this->approved_at?->toIso8601String(),
         ];

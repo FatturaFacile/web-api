@@ -88,7 +88,7 @@ final class PurchaseOrderController extends Controller
             $query->orderBy('created_at', 'desc');
         }
 
-        $orders = $query->paginate(max(1, min(100, (int) $request->query('per_page', '25'))));
+        $orders = $query->gridPaginate(max(1, min(100, (int) $request->query('per_page', '25'))));
 
         return response()->json(PurchaseOrderResource::collection($orders)->response()->getData(true));
     }

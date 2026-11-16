@@ -44,7 +44,7 @@ final class ShopFloorController extends Controller
             $query->where('production_order_id', (string) $request->query('production_order_id'));
         }
 
-        return MfgShopFloorExecutionResource::collection($query->latest('started_at')->paginate($this->perPage($request)));
+        return MfgShopFloorExecutionResource::collection($query->latest('started_at')->gridPaginate($this->perPage($request)));
     }
 
     /**

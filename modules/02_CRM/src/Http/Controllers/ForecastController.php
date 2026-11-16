@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Contracts\ForecastServiceInterface;
@@ -50,12 +51,14 @@ final class ForecastController extends Controller
             $query->where('period', $request->query('period'));
         }
 
-        $forecasts = $query->orderByDesc('period')->paginate(25);
+        $forecasts = $query->orderByDesc('period')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => ForecastResource::collection($forecasts),
             'meta' => [
                 'current_page' => $forecasts->currentPage(),
+                'last_page' => $forecasts->lastPage(),
+                'per_page' => $forecasts->perPage(),
                 'total' => $forecasts->total(),
             ],
         ]);

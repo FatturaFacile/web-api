@@ -9,6 +9,7 @@ use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Modules\Inventory\DTOs\StockTransferDTO;
 use Modules\Inventory\Models\InventoryAuditEntry;
@@ -88,6 +89,7 @@ test('the migration merges the duplicate lot-less quants of a slot, keeping quan
     DB::table('stock_reservation_allocations')->insert(['id' => (string) Str::uuid7(), 'tenant_id' => $this->tenant->id, 'stock_reservation_id' => $reservation, 'stock_quant_id' => $duplicate['id'], 'warehouse_bin_id' => $this->bin->id, 'quantity' => 2, 'created_at' => now(), 'updated_at' => now()]);
 
     (require database_path('migrations/2027_04_10_000200_make_stock_quant_slot_unique_without_lot.php'))->up();
+    (require database_path('migrations/2027_05_22_000300_enforce_one_stock_quant_per_slot_on_every_engine.php'))->up();
 
     $quants = DB::table('stock_quants')->where('stock_item_id', $this->item->id)->get();
 
@@ -100,5 +102,5 @@ test('the migration merges the duplicate lot-less quants of a slot, keeping quan
 });
 
 test('stock movements are indexed by product', function (): void {
-    expect(DB::table('pg_indexes')->where('tablename', 'stock_movements')->where('indexname', 'stock_movements_product_id_index')->exists())->toBeTrue();
+    expect(Schema::hasIndex('stock_movements', 'stock_movements_product_id_index'))->toBeTrue();
 });

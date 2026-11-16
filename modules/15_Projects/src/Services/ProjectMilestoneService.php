@@ -54,7 +54,7 @@ final readonly class ProjectMilestoneService
             $this->assertPhase($project, $attributes);
 
             if ($locked->is_billed) {
-                throw new ConflictHttpException('The milestone is already billed and can no longer change.');
+                throw new ConflictHttpException(__('projects_errors.milestone.billed_locked'));
             }
 
             $locked->update($this->amounts($attributes));
@@ -74,7 +74,7 @@ final readonly class ProjectMilestoneService
             $this->assertOpen($project);
 
             if ($locked->is_completed) {
-                throw new ConflictHttpException('The milestone is already completed.');
+                throw new ConflictHttpException(__('projects_errors.milestone.already_completed'));
             }
 
             $locked->update(['is_completed' => true, 'completed_at' => now()]);
@@ -116,14 +116,14 @@ final readonly class ProjectMilestoneService
     private function assertPhase(Project $project, array $attributes): void
     {
         if (! empty($attributes['project_phase_id']) && ! ProjectPhase::query()->whereKey($attributes['project_phase_id'])->where('project_id', $project->id)->exists()) {
-            throw ValidationException::withMessages(['project_phase_id' => 'The phase does not belong to the project.']);
+            throw ValidationException::withMessages(['project_phase_id' => __('projects_errors.phase.not_in_project')]);
         }
     }
 
     private function assertOpen(Project $project): void
     {
         if (! $project->isOpen()) {
-            throw new ConflictHttpException("Project {$project->project_number} is {$project->status}: its milestones can no longer change.");
+            throw new ConflictHttpException(__('projects_errors.milestone.project_closed', ['number' => $project->project_number, 'status' => $project->status]));
         }
     }
 }

@@ -119,7 +119,7 @@ test('a POS sale is issued once: the sale row is locked and the database refuses
         'pos_sale_id' => $sale->id, 'document_type' => 'sale', 'fiscal_year' => 2027, 'sequential_number' => 99, 'document_number' => '99/2027',
         'issue_date' => '2027-04-15', 'total_net' => 0, 'total_tax' => 0, 'total_gross' => 0,
     ])))->toThrow(UniqueConstraintViolationException::class);
-});
+})->skip(fn (): bool => DB::getDriverName() === 'sqlite', 'SQLite has no row locks, so the lock statements this test records are never issued');
 
 test('a refunded POS sale gets no commercial document', function (): void {
     $sale = transmissionPosSale();

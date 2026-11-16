@@ -78,7 +78,7 @@ final readonly class StockValueKpi implements KpiCalculator
             ->selectRaw('COUNT(DISTINCT stock_quants.stock_item_id) AS items')
             ->selectRaw('COALESCE(SUM(stock_quants.quantity_on_hand), 0) AS quantity')
             ->selectRaw('COALESCE(SUM(stock_quants.quantity_on_hand * stock_items.current_moving_average_cost), 0) AS value')
-            ->selectRaw('COUNT(DISTINCT stock_quants.stock_item_id) FILTER (WHERE stock_items.current_moving_average_cost = 0) AS items_without_cost')
+            ->selectRaw('COUNT(DISTINCT CASE WHEN stock_items.current_moving_average_cost = 0 THEN stock_quants.stock_item_id END) AS items_without_cost')
             ->first();
 
         $items = (int) $totals->items;

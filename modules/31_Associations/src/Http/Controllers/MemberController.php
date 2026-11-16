@@ -42,7 +42,7 @@ final class MemberController extends AssociationController
     {
         $this->authorize('viewAny', Member::class);
 
-        return MemberResource::collection($this->filtered($request)->with('contact')->paginate($this->perPage($request)));
+        return MemberResource::collection($this->filtered($request)->with('contact')->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationGet('/api/v1/associations/members/export', 'exportAssociationMembers', 'Export the people of the registry as CSV, without health data', query: ['status', 'registry_type_id', 'social_role_id', 'year_id', 'membership_status', 'search'], file: true)]
@@ -126,7 +126,7 @@ final class MemberController extends AssociationController
             ->when($request->filled('social_role_id'), static fn (Builder $query) => $query->whereHas('socialRoles', static fn (Builder $inner) => $inner->where('social_role_id', (string) $request->query('social_role_id'))->where(static fn (Builder $open) => $open->whereNull('valid_to')->orWhereDate('valid_to', '>=', $today))))
             ->when($request->filled('year_id'), static fn (Builder $query) => $query->whereHas('memberships', static fn (Builder $inner) => $inner->where('year_id', (string) $request->query('year_id'))))
             ->when($request->filled('membership_status'), static fn (Builder $query) => $query->whereHas('memberships', static fn (Builder $inner) => $inner->where('status', (string) $request->query('membership_status'))))
-            ->when($search !== '', static fn (Builder $query) => $query->whereHas('contact', static fn (Builder $inner) => $inner->where(static fn (Builder $any) => $any->whereRaw('first_name ILIKE ?', ["%{$search}%"])->orWhereRaw('last_name ILIKE ?', ["%{$search}%"])->orWhereRaw('email ILIKE ?', ["%{$search}%"]))))
+            ->when($search !== '', static fn (Builder $query) => $query->whereHas('contact', static fn (Builder $inner) => $inner->where(static fn (Builder $any) => $any->whereLike('first_name', "%{$search}%")->orWhereLike('last_name', "%{$search}%")->orWhereLike('email', "%{$search}%"))))
             ->orderBy('id');
     }
 

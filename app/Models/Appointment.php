@@ -51,6 +51,18 @@ class Appointment extends Model
     ];
 
     /**
+     * Calculated grid columns (see App\Support\Http\GridColumns): the lifecycle state the grid shows, in portable SQL.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'lifecycle_status' => "CASE WHEN appointments.cancelled_at IS NOT NULL THEN 'cancelled' WHEN appointments.service_report_id IS NOT NULL THEN 'completed' WHEN appointments.confirmed_at IS NOT NULL THEN 'confirmed' ELSE 'scheduled' END",
+        ];
+    }
+
+    /**
      * @return array<string, string>
      */
     protected function casts(): array

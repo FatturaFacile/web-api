@@ -1,0 +1,307 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Modules\Fleet\OpenApi;
+
+use OpenApi\Attributes as OA;
+
+/**
+ * Responses, payloads and records of the fleet management endpoints.
+ */
+#[OA\Tag(name: 'Fleet', description: 'Fleet management (company vehicles): vehicles and odometer, driver assignments, fuel and charging, services and scheduled maintenance, compliance deadlines, incidents and fines, cost of ownership')]
+#[OA\Response(response: 'FleetUnauthenticated', description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+#[OA\Response(response: 'FleetForbidden', description: 'The role of the user does not allow this', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+#[OA\Response(response: 'FleetNotFound', description: 'Record not found in the active company', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse'))]
+#[OA\Response(response: 'FleetUnprocessable', description: 'Validation error or business rule violation', content: new OA\JsonContent(ref: '#/components/schemas/ApiValidationErrorResponse'))]
+#[OA\Schema(schema: 'FleetVehicle', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'license_plate', type: 'string', example: 'AB123CD'),
+    new OA\Property(property: 'vin', type: 'string', nullable: true),
+    new OA\Property(property: 'make', type: 'string'),
+    new OA\Property(property: 'model', type: 'string'),
+    new OA\Property(property: 'model_year', type: 'integer', nullable: true),
+    new OA\Property(property: 'vehicle_type', type: 'string', enum: ['car', 'van', 'truck', 'motorcycle', 'bus', 'trailer', 'other']),
+    new OA\Property(property: 'fuel_type', type: 'string', enum: ['petrol', 'diesel', 'electric', 'hybrid', 'plugin_hybrid', 'lpg', 'cng', 'hydrogen', 'other']),
+    new OA\Property(property: 'status', type: 'string', enum: ['active', 'maintenance', 'sold', 'disposed']),
+    new OA\Property(property: 'initial_odometer_km', type: 'integer'),
+    new OA\Property(property: 'odometer_km', description: 'Never decreases', type: 'integer'),
+    new OA\Property(property: 'ownership', type: 'string', enum: ['owned', 'leased', 'rented']),
+    new OA\Property(property: 'acquired_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'contract_ends_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'purchase_value', type: 'string', nullable: true, example: '28500.00'),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'asset_id', description: 'Fixed asset of the asset register', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'current_assignment', ref: '#/components/schemas/FleetAssignment', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetVehicleRequest', type: 'object', required: ['license_plate', 'make', 'model'], properties: [
+    new OA\Property(property: 'license_plate', description: 'Unique in the company, stored in upper case', type: 'string', maxLength: 20),
+    new OA\Property(property: 'vin', type: 'string', maxLength: 32, nullable: true),
+    new OA\Property(property: 'make', type: 'string', maxLength: 80),
+    new OA\Property(property: 'model', type: 'string', maxLength: 80),
+    new OA\Property(property: 'model_year', type: 'integer', nullable: true),
+    new OA\Property(property: 'vehicle_type', type: 'string', enum: ['car', 'van', 'truck', 'motorcycle', 'bus', 'trailer', 'other']),
+    new OA\Property(property: 'fuel_type', type: 'string', enum: ['petrol', 'diesel', 'electric', 'hybrid', 'plugin_hybrid', 'lpg', 'cng', 'hydrogen', 'other']),
+    new OA\Property(property: 'status', type: 'string', enum: ['active', 'maintenance', 'sold', 'disposed']),
+    new OA\Property(property: 'odometer_km', description: 'Starting odometer on creation; afterwards it can only go up', type: 'integer'),
+    new OA\Property(property: 'ownership', type: 'string', enum: ['owned', 'leased', 'rented']),
+    new OA\Property(property: 'acquired_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'contract_ends_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'purchase_value', type: 'string', nullable: true),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'asset_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetAssignment', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'license_plate', type: 'string')]),
+    new OA\Property(property: 'employee_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'employee', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'full_name', type: 'string')]),
+    new OA\Property(property: 'driver_label', type: 'string', nullable: true),
+    new OA\Property(property: 'starts_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'ends_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'start_odometer_km', type: 'integer'),
+    new OA\Property(property: 'end_odometer_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'is_open', type: 'boolean'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetAssignmentRequest', type: 'object', required: ['vehicle_id', 'starts_on'], properties: [
+    new OA\Property(property: 'vehicle_id', description: 'Required on creation, fixed afterwards', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'employee_id', description: 'Employee of the company; without it driver_label is required', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'driver_label', type: 'string', maxLength: 120, nullable: true),
+    new OA\Property(property: 'starts_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'ends_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'start_odometer_km', description: 'Defaults to the odometer of the vehicle', type: 'integer'),
+    new OA\Property(property: 'end_odometer_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetAssignmentEndRequest', type: 'object', required: ['ends_on', 'end_odometer_km'], properties: [
+    new OA\Property(property: 'ends_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'end_odometer_km', type: 'integer'),
+])]
+#[OA\Schema(schema: 'FleetFuelEntry', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'license_plate', type: 'string')]),
+    new OA\Property(property: 'employee_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'employee', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'full_name', type: 'string')]),
+    new OA\Property(property: 'entry_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'energy_unit', type: 'string', enum: ['liter', 'kwh', 'kg']),
+    new OA\Property(property: 'quantity', type: 'string', example: '40.000'),
+    new OA\Property(property: 'unit_price', type: 'string', nullable: true, example: '1.8000'),
+    new OA\Property(property: 'total_cost', type: 'string', example: '72.00'),
+    new OA\Property(property: 'currency', type: 'string'),
+    new OA\Property(property: 'odometer_km', type: 'integer'),
+    new OA\Property(property: 'is_full_tank', type: 'boolean'),
+    new OA\Property(property: 'station', type: 'string', nullable: true),
+    new OA\Property(property: 'distance_km', description: 'Kilometres since the previous full tank', type: 'integer', nullable: true),
+    new OA\Property(property: 'consumption_per_100km', description: 'Energy per 100 km between two full tanks', type: 'string', nullable: true, example: '6.500'),
+    new OA\Property(property: 'cost_per_km', type: 'string', nullable: true, example: '0.1170'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetFuelEntryRequest', type: 'object', required: ['vehicle_id', 'entry_date', 'energy_unit', 'quantity', 'odometer_km'], properties: [
+    new OA\Property(property: 'vehicle_id', description: 'Required on creation, fixed afterwards', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'employee_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'entry_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'energy_unit', description: 'An electric vehicle is charged in kwh', type: 'string', enum: ['liter', 'kwh', 'kg']),
+    new OA\Property(property: 'quantity', type: 'string', example: '40'),
+    new OA\Property(property: 'unit_price', description: 'Unit price or total_cost is required', type: 'string', nullable: true),
+    new OA\Property(property: 'total_cost', type: 'string', nullable: true),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'odometer_km', type: 'integer'),
+    new OA\Property(property: 'is_full_tank', type: 'boolean'),
+    new OA\Property(property: 'station', type: 'string', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetServiceRecord', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'license_plate', type: 'string')]),
+    new OA\Property(property: 'scheduled_service_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'service_type', type: 'string', enum: ['maintenance', 'repair', 'tyres', 'inspection', 'cleaning', 'other']),
+    new OA\Property(property: 'service_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'odometer_km', type: 'integer'),
+    new OA\Property(property: 'vendor', type: 'string', nullable: true),
+    new OA\Property(property: 'description', type: 'string'),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'cost', type: 'string', example: '180.00'),
+    new OA\Property(property: 'currency', type: 'string'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetServiceRecordRequest', type: 'object', required: ['vehicle_id', 'service_date', 'odometer_km', 'description'], properties: [
+    new OA\Property(property: 'vehicle_id', description: 'Required on creation, fixed afterwards', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'scheduled_service_id', description: 'Scheduled service of the same vehicle that this record completes', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'service_type', type: 'string', enum: ['maintenance', 'repair', 'tyres', 'inspection', 'cleaning', 'other']),
+    new OA\Property(property: 'service_date', type: 'string', format: 'date'),
+    new OA\Property(property: 'odometer_km', type: 'integer'),
+    new OA\Property(property: 'vendor', type: 'string', nullable: true),
+    new OA\Property(property: 'description', type: 'string', maxLength: 255),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'cost', type: 'string', example: '180.00'),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetScheduledService', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'license_plate', type: 'string'), new OA\Property(property: 'odometer_km', type: 'integer')]),
+    new OA\Property(property: 'name', type: 'string'),
+    new OA\Property(property: 'service_type', type: 'string', enum: ['maintenance', 'repair', 'tyres', 'inspection', 'cleaning', 'other']),
+    new OA\Property(property: 'interval_days', type: 'integer', nullable: true),
+    new OA\Property(property: 'interval_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'last_service_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'last_service_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'next_due_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'next_due_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'days_to_due', description: 'Negative once the date has passed', type: 'integer', nullable: true),
+    new OA\Property(property: 'km_to_due', description: 'Zero or negative once the kilometres are reached', type: 'integer', nullable: true),
+    new OA\Property(property: 'is_overdue', type: 'boolean'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetScheduledServiceRequest', type: 'object', required: ['vehicle_id', 'name'], properties: [
+    new OA\Property(property: 'vehicle_id', description: 'Required on creation, fixed afterwards', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'name', type: 'string', maxLength: 160),
+    new OA\Property(property: 'service_type', type: 'string', enum: ['maintenance', 'repair', 'tyres', 'inspection', 'cleaning', 'other']),
+    new OA\Property(property: 'interval_days', type: 'integer', nullable: true),
+    new OA\Property(property: 'interval_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'last_service_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'last_service_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'next_due_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'next_due_km', type: 'integer', nullable: true),
+    new OA\Property(property: 'is_active', type: 'boolean'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetDeadline', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'license_plate', type: 'string')]),
+    new OA\Property(property: 'deadline_type', type: 'string', enum: ['road_tax', 'insurance', 'inspection', 'other']),
+    new OA\Property(property: 'provider', type: 'string', nullable: true),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'expires_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'days_to_expiry', description: 'Negative once expired', type: 'integer'),
+    new OA\Property(property: 'is_expired', type: 'boolean'),
+    new OA\Property(property: 'cost', type: 'string', example: '600.00'),
+    new OA\Property(property: 'currency', type: 'string'),
+    new OA\Property(property: 'status', type: 'string', enum: ['open', 'renewed']),
+    new OA\Property(property: 'renewed_at', type: 'string', format: 'date-time', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetDeadlineRequest', type: 'object', required: ['vehicle_id', 'deadline_type', 'expires_on'], properties: [
+    new OA\Property(property: 'vehicle_id', description: 'Required on creation, fixed afterwards', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'deadline_type', type: 'string', enum: ['road_tax', 'insurance', 'inspection', 'other']),
+    new OA\Property(property: 'provider', type: 'string', nullable: true),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'expires_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'cost', type: 'string', example: '600.00'),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetDeadlineRenewRequest', type: 'object', required: ['expires_on'], properties: [
+    new OA\Property(property: 'expires_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'cost', type: 'string', nullable: true),
+    new OA\Property(property: 'provider', type: 'string', nullable: true),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetIncident', type: 'object', properties: [
+    new OA\Property(property: 'id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'vehicle', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'license_plate', type: 'string')]),
+    new OA\Property(property: 'employee_id', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'employee', type: 'object', nullable: true, properties: [new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'full_name', type: 'string')]),
+    new OA\Property(property: 'kind', type: 'string', enum: ['fine', 'accident', 'damage', 'other']),
+    new OA\Property(property: 'occurred_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'description', type: 'string'),
+    new OA\Property(property: 'location', type: 'string', nullable: true),
+    new OA\Property(property: 'amount', type: 'string', example: '85.00'),
+    new OA\Property(property: 'currency', type: 'string'),
+    new OA\Property(property: 'payment_status', type: 'string', enum: ['unpaid', 'paid', 'contested', 'cancelled']),
+    new OA\Property(property: 'due_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'paid_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'is_overdue', type: 'boolean'),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+    new OA\Property(property: 'created_at', type: 'string', format: 'date-time'),
+    new OA\Property(property: 'updated_at', type: 'string', format: 'date-time'),
+])]
+#[OA\Schema(schema: 'FleetIncidentRequest', type: 'object', required: ['vehicle_id', 'occurred_on', 'description'], properties: [
+    new OA\Property(property: 'vehicle_id', description: 'Required on creation, fixed afterwards', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'employee_id', description: 'Driver; taken from the assignment on the day when left out', type: 'string', format: 'uuid', nullable: true),
+    new OA\Property(property: 'kind', type: 'string', enum: ['fine', 'accident', 'damage', 'other']),
+    new OA\Property(property: 'occurred_on', type: 'string', format: 'date'),
+    new OA\Property(property: 'reference', type: 'string', nullable: true),
+    new OA\Property(property: 'description', type: 'string', maxLength: 255),
+    new OA\Property(property: 'location', type: 'string', nullable: true),
+    new OA\Property(property: 'amount', type: 'string', example: '85.00'),
+    new OA\Property(property: 'currency', type: 'string', example: 'EUR'),
+    new OA\Property(property: 'payment_status', type: 'string', enum: ['unpaid', 'paid', 'contested', 'cancelled']),
+    new OA\Property(property: 'due_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'paid_on', type: 'string', format: 'date', nullable: true),
+    new OA\Property(property: 'notes', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetIncidentPayRequest', type: 'object', properties: [
+    new OA\Property(property: 'paid_on', description: 'Defaults to today', type: 'string', format: 'date', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetVehicleCosts', type: 'object', properties: [
+    new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+    new OA\Property(property: 'license_plate', type: 'string'),
+    new OA\Property(property: 'make', type: 'string'),
+    new OA\Property(property: 'model', type: 'string'),
+    new OA\Property(property: 'status', type: 'string'),
+    new OA\Property(property: 'odometer_km', type: 'integer'),
+    new OA\Property(property: 'distance_km', description: 'Kilometres since the starting odometer', type: 'integer'),
+    new OA\Property(property: 'fuel_cost', type: 'string', example: '1200.00'),
+    new OA\Property(property: 'service_cost', type: 'string'),
+    new OA\Property(property: 'deadline_cost', type: 'string'),
+    new OA\Property(property: 'incident_cost', description: 'Cancelled incidents are left out', type: 'string'),
+    new OA\Property(property: 'running_cost', type: 'string'),
+    new OA\Property(property: 'purchase_value', type: 'string', nullable: true),
+    new OA\Property(property: 'total_cost_of_ownership', description: 'Purchase value plus running cost', type: 'string'),
+    new OA\Property(property: 'cost_per_km', type: 'string', nullable: true, example: '0.2500'),
+    new OA\Property(property: 'average_consumption_per_100km', type: 'string', nullable: true),
+])]
+#[OA\Schema(schema: 'FleetDashboard', type: 'object', properties: [
+    new OA\Property(property: 'vehicles', type: 'object', properties: [
+        new OA\Property(property: 'total', type: 'integer'),
+        new OA\Property(property: 'by_status', type: 'object', additionalProperties: new OA\AdditionalProperties(type: 'integer')),
+    ]),
+    new OA\Property(property: 'totals', type: 'object', properties: [
+        new OA\Property(property: 'fuel_cost', type: 'string'), new OA\Property(property: 'service_cost', type: 'string'),
+        new OA\Property(property: 'deadline_cost', type: 'string'), new OA\Property(property: 'incident_cost', type: 'string'),
+        new OA\Property(property: 'running_cost', type: 'string'), new OA\Property(property: 'distance_km', type: 'integer'),
+        new OA\Property(property: 'cost_per_km', type: 'string', nullable: true),
+    ]),
+    new OA\Property(property: 'per_vehicle', type: 'array', items: new OA\Items(ref: '#/components/schemas/FleetVehicleCosts')),
+    new OA\Property(property: 'upcoming_deadlines', type: 'array', items: new OA\Items(type: 'object', properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'license_plate', type: 'string', nullable: true), new OA\Property(property: 'deadline_type', type: 'string'),
+        new OA\Property(property: 'expires_on', type: 'string', format: 'date'), new OA\Property(property: 'days_to_expiry', type: 'integer'),
+        new OA\Property(property: 'is_expired', type: 'boolean'),
+    ])),
+    new OA\Property(property: 'overdue_services', type: 'array', items: new OA\Items(type: 'object', properties: [
+        new OA\Property(property: 'id', type: 'string', format: 'uuid'), new OA\Property(property: 'vehicle_id', type: 'string', format: 'uuid'),
+        new OA\Property(property: 'license_plate', type: 'string', nullable: true), new OA\Property(property: 'name', type: 'string'),
+        new OA\Property(property: 'days_to_due', type: 'integer', nullable: true), new OA\Property(property: 'km_to_due', type: 'integer', nullable: true),
+        new OA\Property(property: 'is_overdue', type: 'boolean'),
+    ])),
+    new OA\Property(property: 'unpaid_incidents', type: 'object', properties: [
+        new OA\Property(property: 'count', type: 'integer'), new OA\Property(property: 'amount', type: 'string'),
+    ]),
+])]
+final class FleetOpenApi {}

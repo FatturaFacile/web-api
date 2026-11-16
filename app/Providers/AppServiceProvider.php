@@ -4,8 +4,16 @@ namespace App\Providers;
 
 use App\Contracts\ExchangeRateProviderInterface;
 use App\Contracts\FiscalPrinterGateway;
+use App\Contracts\MobilePushGateway;
 use App\Contracts\PdfGenerator;
 use App\Contracts\SdiProvider;
+use App\Listeners\Mobile\NotifyApproversOnStepAssigned;
+use App\Listeners\Mobile\RevokeMobileDevicesOnEmployeeTerminated;
+use App\Services\Mobile\LogPushGateway;
+use App\Services\Mobile\RelayPushGateway;
+use Illuminate\Support\Facades\Event;
+use Modules\HumanResources\Events\EmployeeTerminatedEvent;
+use Modules\Workflow\Events\WorkflowStepAssignedEvent;
 use App\Contracts\Security\HostResolver;
 use App\Models\Appointment;
 use App\Models\Contact;
@@ -41,14 +49,20 @@ use App\Services\Security\DnsHostResolver;
 use App\Services\Security\OutboundUrlGuard;
 use App\Services\Tenancy\DocumentQuotaService;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Auditing\AuditStamper;
 use App\Support\Database\SafeDropPostgresConnection;
+use App\Support\Http\GridQuery;
+use App\Validation\LocalizedAttributeValidator;
 use Dedoc\Scramble\Scramble;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Contracts\Translation\Translator;
 use Illuminate\Database\Connection;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\PostgresConnection;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rules\Password;
@@ -85,6 +99,9 @@ class AppServiceProvider extends ServiceProvider
             $app->environment('local') ? (array) config('security.outbound.allowed_hosts', []) : [],
         ));
         $this->app->singleton(WidgetRegistry::class);
+        $this->app->bind(MobilePushGateway::class, fn () => config('mobile.push.driver') === 'relay'
+            ? new RelayPushGateway
+            : new LogPushGateway);
 
         Connection::resolverFor('pgsql', static fn ($connection, $database, $prefix, $config): PostgresConnection => new SafeDropPostgresConnection($connection, $database, $prefix, $config));
     }
@@ -94,6 +111,21 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        // Mobile companion: interactive approval pushes and offboarding revocation.
+        Event::listen(WorkflowStepAssignedEvent::class, NotifyApproversOnStepAssigned::class);
+        Event::listen(EmployeeTerminatedEvent::class, RevokeMobileDevicesOnEmployeeTerminated::class);
+
+        // Grid lists: filters, sorting, grouping and distinct values over the whole dataset (see GridQuery), then paginates.
+        foreach ([Builder::class, \Illuminate\Database\Query\Builder::class] as $builderClass) {
+            $builderClass::macro('gridPaginate', function (...$arguments) {
+                /** @var Builder|\Illuminate\Database\Query\Builder $this */
+                return GridQuery::paginate($this, $arguments);
+            });
+        }
+
+        // Fields are named in the language of the request in every validation message (lang/<locale>/validation_attributes.php).
+        Validator::resolver(static fn (Translator $translator, array $data, array $rules, array $messages, array $attributes): LocalizedAttributeValidator => new LocalizedAttributeValidator($translator, $data, $rules, $messages, $attributes));
+
         // The quota is checked here so every path that creates an invoice stops at the same limit.
         // Both models write the `invoices` table: the module SalesInvoice is the one InvoicingService uses.
         $assertInvoiceQuota = static function (Invoice|SalesInvoice $invoice): void {
@@ -105,6 +137,8 @@ class AppServiceProvider extends ServiceProvider
         };
         Invoice::creating($assertInvoiceQuota);
         SalesInvoice::creating($assertInvoiceQuota);
+
+        AuditStamper::register();
 
         Gate::policy(Invoice::class, InvoicePolicy::class);
         Gate::policy(Quote::class, QuotePolicy::class);
@@ -148,6 +182,10 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(5)->by('account:'.Str::lower((string) $request->input('email'))),
             Limit::perMinute(20)->by('ip:'.$request->ip()),
         ]);
+        // Backups, restores and membership changes: heavy or high-impact operations, capped per user and tenant.
+        RateLimiter::for('sensitive-system', fn (Request $request): Limit => Limit::perMinute(10)->by('sensitive:'.($request->user()?->getAuthIdentifier() ?? $request->ip()).':'.$request->header('X-Tenant-Id')));
+        // Readiness probe: unauthenticated, so it is capped per address.
+        RateLimiter::for('health', fn (Request $request): Limit => Limit::perMinute(120)->by('health:'.$request->ip()));
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(300)->by($request->user()?->getKey() ?: $request->ip()));
         // Routes of the stateful `web` group (Sanctum csrf-cookie, docs, root, health) open a session row per request:
         // csrf-cookie is the one a SPA hits once per login, so 60/min per address is generous; the rest gets 240/min.
@@ -171,6 +209,7 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute((int) config('auth.two_factor.rate_limits.challenge_per_minute'))->by('challenge:'.hash('sha256', (string) $request->input('challenge_token'))),
             Limit::perMinute((int) config('auth.two_factor.rate_limits.challenge_per_minute') * 3)->by('ip:'.$request->ip()),
         ]);
+        Gate::define('customs.manage', fn ($user): bool => $user->hasTenantPermission(app(TenantContext::class)->getTenantId(), 'customs.manage'));
 
         Scramble::afterOpenApiGenerated(function ($openApi) {});
 

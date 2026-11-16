@@ -169,19 +169,12 @@ test('roles are enforced on the module', function (): void {
 });
 
 /**
- * Whether another database session could take the day lock now. The test transaction is still open, so a lock taken by
- * the request is still held.
+ * Whether the day lock has not been taken yet. The test transaction is still open, so the row of a lock taken by the
+ * request is still there.
  */
 function corrispettiviDayIsFree(string $tenantId, string $day): bool
 {
-    Config::set('database.connections.lock_probe', config('database.connections.'.config('database.default')));
-
-    try {
-        return DB::connection('lock_probe')->transaction(static fn (): bool => (bool) DB::connection('lock_probe')
-            ->selectOne('SELECT pg_try_advisory_xact_lock(hashtextextended(?, 0)) AS taken', ["corrispettivi:{$tenantId}:{$day}"])->taken);
-    } finally {
-        DB::purge('lock_probe');
-    }
+    return ! DB::table('transaction_locks')->where('name', hash('sha256', "corrispettivi:{$tenantId}:{$day}"))->exists();
 }
 
 test('issuing a document takes the lock of its day, the one the closure takes, so it cannot commit after the aggregation', function (): void {
@@ -199,12 +192,12 @@ test('closing a day takes the lock of that day', function (): void {
     $this->travelTo('2027-04-15 10:00:00');
     $keys = [];
     DB::listen(function (QueryExecuted $query) use (&$keys): void {
-        if (str_contains($query->sql, 'pg_advisory_xact_lock')) {
+        if (str_contains($query->sql, 'transaction_locks') && str_starts_with(strtolower($query->sql), 'insert')) {
             $keys[] = $query->bindings[0];
         }
     });
 
     $this->postJson('/api/v1/fiscal-retail/corrispettivi/daily/2027-04-14/close')->assertCreated();
 
-    expect($keys)->toBe(["corrispettivi:{$this->tenant->id}:2027-04-14"]);
+    expect($keys)->toBe([hash('sha256', "corrispettivi:{$this->tenant->id}:2027-04-14")]);
 });

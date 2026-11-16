@@ -48,6 +48,6 @@ final class KioskCheckInRequest extends FormRequest
      */
     public function messages(): array
     {
-        return ['visit_id.exists' => 'The visit is not expected here.'];
+        return ['visit_id.exists' => __('visitors_errors.visit.not_expected_here')];
     }
 }

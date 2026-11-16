@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\ProtectsIssuedInvoiceItem;
 use Enterprise\MultiTenant\Concerns\StampsTenantFromParent;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -12,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InvoiceItem extends Model
 {
-    use HasFactory, HasUuids, StampsTenantFromParent;
+    use HasFactory, HasUuids, ProtectsIssuedInvoiceItem, StampsTenantFromParent;
 
     protected $fillable = [
         'invoice_id',
@@ -25,6 +26,10 @@ class InvoiceItem extends Model
         'line_total',
         'revenue_account_id',
         'product_charge_type_id',
+        'taric_code',
+        'country_of_origin',
+        'origin_type',
+        'made_in_label',
     ];
 
     protected function casts(): array

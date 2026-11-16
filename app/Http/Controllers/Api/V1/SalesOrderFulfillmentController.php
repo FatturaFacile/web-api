@@ -207,7 +207,7 @@ class SalesOrderFulfillmentController extends Controller
             ->orderBy('sales_orders.order_number')
             ->orderBy('sales_order_items.id')
             ->select(['sales_order_items.*', 'sales_orders.order_number', 'sales_orders.date as order_date', 'sales_orders.status as order_status', 'sales_orders.contact_id'])
-            ->paginate((int) ($request->validated('per_page') ?? 25));
+            ->gridPaginate((int) ($request->validated('per_page') ?? 25));
 
         $lines = collect($page->items())->map(static function (SalesOrderItem $item): array {
             $quantity = DocumentTotalsCalculator::decimal($item->quantity);

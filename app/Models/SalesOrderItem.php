@@ -33,6 +33,9 @@ class SalesOrderItem extends Model
             'line_total' => 'decimal:2',
             'quantity' => 'decimal:4',
             'quantity_delivered' => 'decimal:4',
+            'quantity_reserved' => 'decimal:4',
+            'quantity_invoiced' => 'decimal:4',
+            'cost_price' => 'decimal:4',
             'tax_rate' => 'decimal:2',
             'unit_price' => 'decimal:4',
         ];

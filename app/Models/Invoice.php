@@ -6,6 +6,7 @@ namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
 use App\Models\Concerns\HasFiscalAmounts;
+use App\Models\Concerns\ProtectsIssuedInvoice;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -17,7 +18,7 @@ use Modules\Invoicing\Models\DeclarationOfIntent;
 
 class Invoice extends Model
 {
-    use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, SoftDeletes;
+    use BelongsToTenant, HasFactory, HasFiscalAmounts, HasUuids, ProtectsIssuedInvoice, SoftDeletes;
 
     protected $fillable = [
         'contact_id',
@@ -80,7 +81,23 @@ class Invoice extends Model
         'enasarco_base',
         'enasarco_percent',
         'enasarco_amount',
+        'free_trade_agreement_id',
+        'origin_declaration_text',
+        'duty_exemption_eligible',
     ];
+
+    /**
+     * Calculated grid columns as portable SQL, so they filter, sort, group and list their values in the database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            // The status the grid shows: proforma and overdue override the stored status.
+            'display_status' => "CASE WHEN invoices.invoice_type = 'proforma' THEN 'proforma' WHEN invoices.payment_status = 'overdue' AND invoices.status <> 'paid' THEN 'overdue' ELSE invoices.status END",
+        ];
+    }
 
     protected function casts(): array
     {
@@ -95,7 +112,9 @@ class Invoice extends Model
             'split_payment' => 'boolean',
             'sdi_excluded' => 'boolean',
             'reverse_charge' => 'boolean',
+            'duty_exemption_eligible' => 'boolean',
             'total_paid' => 'decimal:2',
+            'receivable_amount' => 'decimal:2',
             'is_deposit' => 'boolean',
             'exchange_rate_date' => 'date',
             'withholding_tax_enabled' => 'boolean',

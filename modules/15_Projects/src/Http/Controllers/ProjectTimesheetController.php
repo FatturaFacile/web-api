@@ -57,7 +57,7 @@ final class ProjectTimesheetController extends Controller
             ->when($request->query('from'), fn ($query, $from) => $query->whereDate('work_date', '>=', $from))
             ->when($request->query('to'), fn ($query, $to) => $query->whereDate('work_date', '<=', $to))
             ->orderByDesc('work_date')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return $this->paginated($sheets, ProjectTimesheetResource::class);
     }

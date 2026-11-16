@@ -41,11 +41,16 @@ final class FolderController extends Controller
     {
         $this->authorize('viewAny', WorkshopFolder::class);
 
+        $term = '%'.trim($request->string('search')->toString()).'%';
         $folders = WorkshopFolder::query()
+            ->with(['vehicle', 'contact'])
+            ->when($request->filled('search'), fn ($query) => $query->where(fn ($inner) => $inner->whereLike('folder_number', $term)
+                ->orWhereHas('vehicle', fn ($vehicle) => $vehicle->whereLike('license_plate', $term))
+                ->orWhereHas('contact', fn ($contact) => $contact->whereLike('company_name', $term)->orWhereLike('last_name', $term))))
             ->when($request->filled('status'), fn ($query) => $query->where('status', $request->string('status')->toString()))
             ->when($request->filled('vehicle_id'), fn ($query) => $query->where('vehicle_id', $request->string('vehicle_id')->toString()))
             ->latest()
-            ->paginate(max(1, min($request->integer('per_page', 25), 100)));
+            ->gridPaginate(max(1, min($request->integer('per_page', 25), 100)));
 
         return WorkshopResource::collection($folders);
     }

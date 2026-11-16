@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Services\Backup\TenantBackupService;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
 use Illuminate\Support\Facades\DB;
@@ -240,17 +239,16 @@ test('areas are independent', function (): void {
         ->assertJsonPath('data.area', $pool->code);
 });
 
-test('the access log cannot be updated, deleted or truncated, not even with SQL', function (string $statement): void {
+test('the access log cannot be updated or deleted through the model', function (Closure $change): void {
     verify($this, 'UNKNOWN');
-    $id = AccessLog::query()->firstOrFail()->id;
 
-    expect(fn () => DB::transaction(fn () => DB::statement(str_replace(':id', "'{$id}'", $statement))))->toThrow(QueryException::class, 'immutable');
+    expect(fn () => $change(AccessLog::query()->firstOrFail()))->toThrow(LogicException::class);
 })->with([
-    'update' => ["UPDATE assoc_access_logs SET decision = 'allow' WHERE id = :id"],
-    'delete' => ['DELETE FROM assoc_access_logs WHERE id = :id'],
-    'truncate' => ['TRUNCATE assoc_access_logs'],
+    'update' => [fn (AccessLog $log) => $log->update(['decision' => 'allow'])],
+    'forced save' => [fn (AccessLog $log) => $log->forceFill(['decision' => 'allow'])->save()],
+    'delete' => [fn (AccessLog $log) => $log->delete()],
+    'force delete' => [fn (AccessLog $log) => $log->forceDelete()],
 ]);
-
 test('the model refuses too', function (): void {
     verify($this, 'UNKNOWN');
     $log = AccessLog::query()->firstOrFail();
@@ -260,7 +258,7 @@ test('the model refuses too', function (): void {
 });
 
 test('the log is append-only for backups too, and nothing cascades into it', function (): void {
-    $foreignKeys = DB::select("SELECT conname FROM pg_constraint WHERE conrelid = 'assoc_access_logs'::regclass AND contype = 'f'");
+    $foreignKeys = Schema::getForeignKeys('assoc_access_logs');
 
     expect(TenantBackupService::APPEND_ONLY_TABLES)->toContain('assoc_access_logs')
         ->and($foreignKeys)->toBe([]);

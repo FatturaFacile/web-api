@@ -75,8 +75,8 @@ class ExpenseController extends Controller
         $query = Expense::query()
             ->with(['category.translations', 'contact', 'user', 'expenseAttachments'])
             ->withCount('expenseAttachments')
-            ->when($request->filled('date_from'), fn ($q) => $q->where('date', '>=', $request->query('date_from')))
-            ->when($request->filled('date_to'), fn ($q) => $q->where('date', '<=', $request->query('date_to')))
+            ->when($request->filled('date_from'), fn ($q) => $q->whereDate('date', '>=', $request->query('date_from')))
+            ->when($request->filled('date_to'), fn ($q) => $q->whereDate('date', '<=', $request->query('date_to')))
             ->when($request->filled('category_id'), fn ($q) => $q->where('category_id', $request->query('category_id')))
             ->when($request->filled('project_id'), fn ($q) => $q->where('project_id', $request->query('project_id')))
             ->when($request->filled('ticket_id'), fn ($q) => $q->where('ticket_id', $request->query('ticket_id')))
@@ -87,16 +87,16 @@ class ExpenseController extends Controller
             ->when($request->filled('search'), function ($q) use ($request): void {
                 $search = (string) $request->query('search');
                 $q->where(function ($sub) use ($search): void {
-                    $sub->where('expense_number', 'ilike', "%{$search}%")
-                        ->orWhere('merchant_name', 'ilike', "%{$search}%")
-                        ->orWhere('notes', 'ilike', "%{$search}%");
+                    $sub->whereLike('expense_number', "%{$search}%")
+                        ->orWhereLike('merchant_name', "%{$search}%")
+                        ->orWhereLike('notes', "%{$search}%");
                 });
             })
             ->latest('date')
             ->latest('created_at');
 
         $perPage = min(100, max(5, (int) $request->query('per_page', 15)));
-        $expenses = $query->paginate($perPage);
+        $expenses = $query->gridPaginate($perPage);
 
         return $this->successResponse(
             data: ExpenseResource::collection($expenses),

@@ -439,15 +439,16 @@ test('the figures of a posted settlement are immutable in the model and in the d
         ->and(fn () => $settlement->delete())->toThrow(VatSettlementException::class, 'immutable');
 });
 
-test('the database refuses to change a posted settlement behind the model', function (): void {
+test('a posted settlement cannot be reopened by forcing its status', function (): void {
     ['tenant' => $tenant] = vatTenant('IT');
     vatSale($tenant, '2026-01-10', '1000.00', '220.00', '22');
     $settlement = vatMonth($tenant, 1);
     vatService($tenant)->post((string) $tenant->id, (string) $settlement->id);
+    $settlement->refresh();
 
-    expect(fn () => DB::table('vat_settlements')->where('id', $settlement->id)->update(['status' => 'calculated']))
-        ->toThrow(QueryException::class, 'immutable');
-})->skip(fn () => DB::getDriverName() !== 'pgsql', 'The trigger exists on PostgreSQL only.');
+    expect(fn () => $settlement->forceFill(['status' => 'calculated'])->save())->toThrow(VatSettlementException::class, 'immutable')
+        ->and($settlement->fresh()->status)->toBe('posted');
+});
 
 test('the journal entry of a settlement cannot be reversed', function (): void {
     ['tenant' => $tenant] = vatTenant('IT');

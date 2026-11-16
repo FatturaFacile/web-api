@@ -33,6 +33,7 @@ final class RetentionSuggestions
         'esm_ticket_messages' => ['days' => 1095, 'rationale' => 'Author addresses of ticket messages older than three years.'],
         'hr_job_applications' => ['days' => 180, 'rationale' => 'Applications of candidates not hired: six months, unless the candidate consented to a longer period (the recruiting purge job honours the consent).'],
         'hr_interview_notes' => ['days' => 180, 'rationale' => 'Interview notes follow the application.'],
+        'fleet_vehicle_assignments' => ['days' => 1825, 'rationale' => 'Names of external drivers of vehicle assignments ended more than five years ago.'],
         'hosp_reservations' => ['days' => 365, 'rationale' => 'Guest contact data of reservations older than a year.'],
         'visitors' => ['days' => 90, 'rationale' => 'Visitors register: three months. The visitors module has its own retention setting and purge job, which takes precedence.'],
     ];

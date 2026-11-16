@@ -6,8 +6,12 @@ return [
 
     'messages' => [
         'product_updated' => 'Product updated successfully',
+        'movement_created' => 'Stock movement recorded successfully',
+        'stock_reserved' => 'Stock reserved successfully',
+        'stock_released' => 'Stock released successfully',
+        'count_completed' => 'Physical inventory completed successfully',
+        'adjustment_posted' => 'Inventory adjustment posted successfully',
     ],
-
     'variant_inactive' => 'Variant :sku is deactivated: reactivate it before loading stock into it.',
     'parent_is_variant' => 'A variant cannot be the parent of other variants.',
     'duplicate_combination' => 'A variant with the same attributes already exists for this product.',
@@ -21,8 +25,10 @@ return [
     'variant_has_references' => 'The variant is referenced by stock movements or documents and cannot be deleted.',
     'barcode_generation_failed' => 'A unique barcode could not be generated.',
     'variant_name' => ':name (:attributes)',
+
     'safety_sheets' => [
         'subject' => 'Safety data sheets for delivery note :number',
         'body' => 'Attached are the safety data sheets of the products delivered with delivery note :number.',
     ],
+
 ];

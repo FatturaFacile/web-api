@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\FiscalRetail\Models;
 
+use App\Casts\DateOnly;
 use App\Models\Concerns\BelongsToTenant;
 use Database\Factories\DailyCorrispettivoFactory;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -28,7 +29,7 @@ class DailyCorrispettivo extends Model
     protected function casts(): array
     {
         return [
-            'business_date' => 'date',
+            'business_date' => DateOnly::class,
             'tax_rate' => 'decimal:2',
             'sales_net' => 'decimal:2',
             'sales_tax' => 'decimal:2',

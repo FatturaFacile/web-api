@@ -29,6 +29,8 @@ class DocumentNumberingService
         'delivery_note' => 'DDT-',
         'sales_return' => 'RMA-',
         'work_order' => 'WO-',
+        'workshop_estimate' => 'EST-',
+        'workshop_warranty_claim' => 'WAR-',
         'pos_receipt' => 'REC-',
         'purchase_order' => 'PO-',
         'goods_receipt' => 'GR-',

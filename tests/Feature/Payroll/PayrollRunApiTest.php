@@ -49,6 +49,7 @@ test('a Swiss run gives the payslip of the desktop test case and stores its line
         ->and($payslip->employee_deductions)->toBe('768.35')
         ->and($payslip->net_salary)->toBe('5731.65')
         ->and($payslip->payout_amount)->toBe('5731.65')
+        ->and($payslip->currency)->toBe('CHF')
         ->and($payslip->warnings)->toBeNull()
         ->and(payrollLine($payslip->id, SwissWageTypeCodes::Ahv)->amount)->toBe('-344.50')
         ->and(payrollLine($payslip->id, SwissWageTypeCodes::Bvg)->amount)->toBe('-241.85')

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Services;
 
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -12,6 +13,7 @@ use Modules\HumanResources\Models\TimeAuditEntry;
 use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Models\TimeRecordingProfile;
+use Modules\HumanResources\Services\TimeTracking\HashChainIntegrityService;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
 use Modules\HumanResources\Services\TimeTracking\TimePeriodClosingService;
@@ -23,7 +25,11 @@ use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
  */
 final class TimeRecordService
 {
-    public function __construct(private readonly TimePeriodClosingService $closings) {}
+    public function __construct(
+        private readonly TimePeriodClosingService $closings,
+        private readonly HashChainIntegrityService $hashChain,
+        private readonly TenantContext $tenantContext,
+    ) {}
 
     private const STATE_OFF = 'Off';
 
@@ -33,10 +39,12 @@ final class TimeRecordService
 
     /**
      * The employee clocks now: the sequence entry, (break start, break end)*, exit is enforced.
+     *
+     * @param  array{lat: float, lng: float, accuracy_meters?: float}|null  $gps  Point-in-time GPS only when consent is on file.
      */
-    public function clock(User $employee, TimeEventType $eventType, TimeRecordSource $source, ?string $note): TimeClockEvent
+    public function clock(User $employee, TimeEventType $eventType, TimeRecordSource $source, ?string $note, ?array $gps = null): TimeClockEvent
     {
-        return DB::transaction(function () use ($employee, $eventType, $source, $note): TimeClockEvent {
+        return DB::transaction(function () use ($employee, $eventType, $source, $note, $gps): TimeClockEvent {
             // Two clicks on the badge must not both see the previous state.
             User::query()->whereKey($employee->id)->lockForUpdate()->first();
 
@@ -45,11 +53,11 @@ final class TimeRecordService
 
             if (! $this->isAllowed($state, $eventType)) {
                 throw ValidationException::withMessages([
-                    'event_type' => "Timbratura non valida nello stato attuale ({$state}).",
+                    'event_type' => __('hr_errors.time_record.invalid_in_state', ['state' => $state]),
                 ]);
             }
 
-            return $this->storeEvent($employee, (string) $employee->id, $now->startOfMinute(), $eventType, $source, $note, null);
+            return $this->storeEvent($employee, (string) $employee->id, $now->startOfMinute(), $eventType, $source, $note, null, $gps);
         });
     }
 
@@ -70,13 +78,16 @@ final class TimeRecordService
     }
 
     /**
+     * Append-only correction: soft-deletes the original event (reason='amended') and creates a replacement
+     * linked via amended_from_id. Complies with CJEU C-55/18 immutability requirements.
+     *
      * @param  array{occurred_at?: CarbonImmutable, event_type?: TimeEventType, source: TimeRecordSource, note?: string|null}  $values
      */
     public function correct(User $actor, TimeClockEvent $event, array $values, string $reason): TimeClockEvent
     {
         if ($event->trashed()) {
             throw ValidationException::withMessages([
-                'id' => 'Una timbratura eliminata non può essere modificata: inserirne una nuova.',
+                'id' => __('hr_errors.time_record.deleted_not_editable'),
             ]);
         }
 
@@ -88,10 +99,24 @@ final class TimeRecordService
             }
 
             $before = $event->auditValues();
-            $event->fill($values)->save();
-            $this->audit($actor, (string) $event->user_id, 'TimeClockEvent', (string) $event->id, 'Modified', $before, $event->auditValues(), $reason);
 
-            return $event;
+            // Soft-delete original: append-only means the original record stays in the history
+            $event->fill(['deleted_by' => $actor->id, 'deletion_reason' => 'amended'])->save();
+            $event->delete();
+
+            $newEvent = TimeClockEvent::create([
+                'user_id' => $event->user_id,
+                'occurred_at' => $values['occurred_at'] ?? $event->occurred_at,
+                'event_type' => $values['event_type'] ?? $event->event_type,
+                'source' => $values['source'],
+                'note' => array_key_exists('note', $values) ? $values['note'] : $event->note,
+                'created_by' => $actor->id,
+                'amended_from_id' => $event->id,
+            ]);
+
+            $this->audit($actor, (string) $event->user_id, 'TimeClockEvent', (string) $newEvent->id, 'Amended', $before, $newEvent->auditValues(), $reason);
+
+            return $newEvent;
         });
     }
 
@@ -129,7 +154,7 @@ final class TimeRecordService
             }
 
             if ($reason === null) {
-                throw ValidationException::withMessages(['reason' => 'Indicare il motivo della correzione (resta nello storico).']);
+                throw ValidationException::withMessages(['reason' => __('hr_errors.time_record.correction_reason_required')]);
             }
 
             $before = $record->auditValues();
@@ -177,6 +202,9 @@ final class TimeRecordService
         });
     }
 
+    /**
+     * @param  array{lat: float, lng: float, accuracy_meters?: float}|null  $gps
+     */
     private function storeEvent(
         User $actor,
         string $employeeId,
@@ -185,8 +213,11 @@ final class TimeRecordService
         TimeRecordSource $source,
         ?string $note,
         ?string $reason,
+        ?array $gps = null,
     ): TimeClockEvent {
         $this->closings->assertOpen($occurredAt);
+
+        $gpsData = $this->resolveGps($employeeId, $gps);
 
         $event = TimeClockEvent::create([
             'user_id' => $employeeId,
@@ -195,11 +226,39 @@ final class TimeRecordService
             'source' => $source,
             'note' => $note,
             'created_by' => $actor->id,
+            'gps_lat' => $gpsData['lat'] ?? null,
+            'gps_lng' => $gpsData['lng'] ?? null,
+            'geolocation_consent_at' => $gpsData !== null ? CarbonImmutable::now() : null,
         ]);
 
         $this->audit($actor, $employeeId, 'TimeClockEvent', (string) $event->id, 'Created', null, $event->auditValues(), $reason);
 
         return $event;
+    }
+
+    /**
+     * Art. 4 L. 300/1970 & GDPR: GPS is stored only when the employee's profile has geolocation_enabled=true
+     * AND privacy_notice_acknowledged_at is set. Returns null if either condition is unmet.
+     *
+     * @param  array{lat: float, lng: float, accuracy_meters?: float}|null  $gps
+     * @return array{lat: float, lng: float}|null
+     */
+    private function resolveGps(string $employeeId, ?array $gps): ?array
+    {
+        if ($gps === null) {
+            return null;
+        }
+
+        $profile = TimeRecordingProfile::query()
+            ->where('user_id', $employeeId)
+            ->select(['geolocation_enabled', 'privacy_notice_acknowledged_at'])
+            ->first();
+
+        if ($profile === null || ! $profile->geolocation_enabled || $profile->privacy_notice_acknowledged_at === null) {
+            return null;
+        }
+
+        return ['lat' => (float) $gps['lat'], 'lng' => (float) $gps['lng']];
     }
 
     private function clockState(string $employeeId, CarbonImmutable $now): string
@@ -231,11 +290,31 @@ final class TimeRecordService
     }
 
     /**
+     * Writes an immutable audit entry and extends the SHA-256 hash chain (CJEU C-55/18).
+     *
      * @param  array<string, mixed>|null  $before
      * @param  array<string, mixed>|null  $after
      */
     private function audit(User $actor, string $employeeId, string $entityType, string $entityId, string $action, ?array $before, ?array $after, ?string $reason): void
     {
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $occurredAt = CarbonImmutable::now();
+        $prevHash = $this->hashChain->latestHash($tenantId);
+
+        $hashPayload = [
+            'tenant_id' => $tenantId,
+            'user_id' => $employeeId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'action' => $action,
+            'before_values' => $before,
+            'after_values' => $after,
+            'actor_id' => (string) $actor->id,
+            'occurred_at' => $occurredAt->utc()->format('Y-m-d H:i:s'),
+        ];
+
+        $recordHash = $this->hashChain->computeHash($hashPayload, $prevHash);
+
         TimeAuditEntry::create([
             'user_id' => $employeeId,
             'entity_type' => $entityType,
@@ -246,7 +325,9 @@ final class TimeRecordService
             'reason' => $reason,
             'actor_id' => $actor->id,
             'actor_name' => (string) $actor->name,
-            'occurred_at' => CarbonImmutable::now(),
+            'occurred_at' => $occurredAt,
+            'prev_hash' => $prevHash,
+            'record_hash' => $recordHash,
         ]);
     }
 }

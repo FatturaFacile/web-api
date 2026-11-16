@@ -42,7 +42,7 @@ final class TenantRecordSeeder
         $context = app(TenantContext::class);
 
         try {
-            return DB::transaction(static function () use ($modelClass, $tenant, $context, $hasFactory): string {
+            return self::withoutForeignKeys(static fn (): string => DB::transaction(static function () use ($modelClass, $tenant, $context, $hasFactory): string {
                 $context->setTenant($tenant);
 
                 if ($hasFactory) {
@@ -68,7 +68,7 @@ final class TenantRecordSeeder
                 }
 
                 return self::insert($modelClass, $tenant);
-            });
+            }));
         } catch (Throwable $exception) {
             $reasons[$modelClass] = substr($exception->getMessage(), 0, 160);
 
@@ -87,10 +87,39 @@ final class TenantRecordSeeder
     public static function seedNullTenantRow(string $modelClass): ?string
     {
         try {
-            return DB::transaction(static fn (): string => self::insert($modelClass, null));
+            return self::withoutForeignKeys(static fn (): string => DB::transaction(static fn (): string => self::insert($modelClass, null)));
         } catch (Throwable) {
             return null;
         }
+    }
+
+    /**
+     * Runs the callback with foreign keys not enforced. PostgreSQL does it per transaction inside insert() through
+     * session_replication_role; the other engines switch the setting around the callback, outside any transaction
+     * (SQLite ignores the change inside one).
+     *
+     * @template T
+     *
+     * @param  callable(): T  $callback
+     * @return T
+     */
+    private static function withoutForeignKeys(callable $callback): mixed
+    {
+        $driver = DB::connection()->getDriverName();
+
+        if ($driver === 'pgsql') {
+            return $callback();
+        }
+
+        if ($driver === 'sqlite' && DB::transactionLevel() > 0) {
+            // Inside a transaction (a test wrapped by RefreshDatabase) the pragma that turns enforcement off is
+            // ignored: defer the checks to the end of the outermost transaction instead, which is rolled back.
+            DB::statement('PRAGMA defer_foreign_keys = ON');
+
+            return $callback();
+        }
+
+        return Schema::withoutForeignKeyConstraints($callback);
     }
 
     /**
@@ -121,13 +150,13 @@ final class TenantRecordSeeder
             $values[$name] = match (true) {
                 $type === 'uuid' => (string) Str::uuid7(),
                 str_contains($type, 'int') => 1,
-                in_array($type, ['numeric', 'float4', 'float8', 'decimal'], true) => 1,
-                $type === 'bool' => false,
+                in_array($type, ['numeric', 'float4', 'float8', 'float', 'double', 'real', 'decimal'], true) => 1,
+                in_array($type, ['bool', 'boolean'], true) => false,
                 $type === 'date' => '2026-01-01',
-                str_starts_with($type, 'timestamp') => now()->toDateTimeString(),
+                str_starts_with($type, 'timestamp') || $type === 'datetime' => now()->toDateTimeString(),
                 str_starts_with($type, 'time') => '10:00:00',
                 in_array($type, ['json', 'jsonb'], true) => '{}',
-                in_array($type, ['varchar', 'text', 'bpchar'], true) => $name === $key ? (string) Str::uuid7() : 'x',
+                in_array($type, ['varchar', 'text', 'bpchar', 'char'], true) => $name === $key ? (string) Str::uuid7() : 'x',
                 default => throw new RuntimeException("No value for {$table}.{$name} ({$type})"),
             };
         }
@@ -136,7 +165,7 @@ final class TenantRecordSeeder
             $values[$key] = (string) Str::uuid7();
         }
 
-        if (! $enforceForeignKeys) {
+        if (! $enforceForeignKeys && DB::connection()->getDriverName() === 'pgsql') {
             DB::statement('SET LOCAL session_replication_role = replica');
         }
 

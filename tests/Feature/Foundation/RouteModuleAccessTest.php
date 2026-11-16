@@ -32,6 +32,11 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/auth/two-factor/disable' => 'own second factor',
         'POST api/v1/auth/two-factor/recovery-codes' => 'own second factor',
         'POST api/v1/auth/sessions/revoke-others' => 'own sessions',
+        // In-app notification centre and its preferences: the notifications of the user themselves.
+        'PUT api/v1/platform/notifications/preferences' => 'own notification preferences',
+        'POST api/v1/platform/notifications/read-all' => 'own notifications',
+        'POST api/v1/platform/notifications/{id}/read' => 'own notifications',
+        'DELETE api/v1/platform/notifications/{id}' => 'own notifications',
         'DELETE api/v1/auth/sessions/{kind}/{id}' => 'own sessions',
         // Personal dashboard layout, stored per user.
         'PUT api/v1/dashboard/layout' => 'own layout',
@@ -63,6 +68,8 @@ function writeRoutesWithoutModule(): array
         'POST api/v1/admin/tenant-access-requests/{id}/move' => 'platform.admin',
         'POST api/v1/admin/tenant-access-requests/{id}/reject' => 'platform.admin',
         'PUT api/v1/admin/tenants/{id}/document-quota' => 'platform.admin',
+        'PUT api/v1/admin/users/{userId}/tenants/{tenantId}' => 'platform.admin',
+        'DELETE api/v1/admin/users/{userId}/tenants/{tenantId}' => 'platform.admin',
     ];
 }
 

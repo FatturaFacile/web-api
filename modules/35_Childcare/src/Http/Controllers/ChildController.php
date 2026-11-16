@@ -6,6 +6,7 @@ namespace Modules\Childcare\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Sales\DocumentNumberingService;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
@@ -65,6 +66,9 @@ final class ChildController extends Controller
     #[OA\Get(path: '/api/v1/childcare/children', operationId: 'listChildcareChildren', description: 'Return the children, optionally of a group or with a status, sorted by name.', summary: 'List children', security: [['bearerAuth' => []]], tags: ['Childcare'], parameters: [
         new OA\Parameter(name: 'group_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
         new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['active', 'left', 'waiting'])),
+        new OA\Parameter(name: 'search', in: 'query', required: false, description: 'Contains-match on the reference code (names are encrypted at rest)', schema: new OA\Schema(type: 'string')),
+        new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1)),
+        new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25, maximum: 200)),
     ], responses: [
         new OA\Response(response: 200, description: 'Children', content: new OA\JsonContent(ref: '#/components/schemas/ChildcareRecordCollection')),
         new OA\Response(ref: '#/components/responses/ChildcareUnauthenticated', response: 401),
@@ -75,11 +79,13 @@ final class ChildController extends Controller
         $this->authorize('care', Child::class);
 
         $children = Child::query()
+            ->with(['group', 'billingContact'])
             ->when($request->filled('group_id'), fn ($query) => $query->where('group_id', $request->string('group_id')->toString()))
+            ->when($request->filled('search'), fn ($query) => $query->whereLike('reference_code', '%'.$request->string('search')->toString().'%'))
             ->where('status', $request->string('status', 'active')->toString())
-            ->get()
-            ->sortBy(static fn (Child $child): string => mb_strtolower("{$child->last_name} {$child->first_name}"))
-            ->values();
+            ->orderBy('reference_code')
+            ->gridPaginate(RequestedPerPage::resolve(25));
+        $children->getCollection()->each->append(['group_name', 'billing_contact_name']);
 
         return ChildcareResource::collection($children);
     }

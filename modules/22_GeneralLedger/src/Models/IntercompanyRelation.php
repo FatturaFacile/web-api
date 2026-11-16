@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $entity_a_tenant_id
  * @property string $entity_b_tenant_id
  * @property string $tolerance_amount
+ * @property string|null $currency The group currency the tolerance is in
  */
 final class IntercompanyRelation extends BaseEnterpriseModel
 {

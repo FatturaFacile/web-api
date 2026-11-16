@@ -57,7 +57,7 @@ final class InventoryAdjustmentController extends Controller
             $query->where('status', $request->query('status'));
         }
 
-        $adjustments = $query->paginate((int) $request->query('per_page', 25));
+        $adjustments = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(InventoryAdjustmentResource::collection($adjustments)->response()->getData(true));
     }

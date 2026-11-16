@@ -41,6 +41,20 @@ class ApiKey extends Model
         return $this->belongsTo(Tenant::class);
     }
 
+    /**
+     * Calculated grid columns as portable SQL, so they filter, sort, group and list their values in the database.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        $table = $this->getTable();
+
+        return [
+            'status' => "CASE WHEN $table.revoked_at IS NOT NULL THEN 'revoked' ELSE 'active' END",
+        ];
+    }
+
     public function isUsable(): bool
     {
         return $this->revoked_at === null && ($this->expires_at === null || $this->expires_at->isFuture());

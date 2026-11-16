@@ -7,8 +7,11 @@ namespace Modules\HumanResources\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Response;
 use Modules\HumanResources\Http\Requests\CloseTimePeriodRequest;
 use Modules\HumanResources\Http\Requests\HrPeriodRequest;
@@ -53,9 +56,9 @@ final class WorkingTimeRulesController extends Controller
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
     )]
-    public function rules(): JsonResponse
+    public function rules(): AnonymousResourceCollection
     {
-        return response()->json(['data' => OvertimeRule::query()->orderBy('basis')->orderBy('threshold_minutes')->get()]);
+        return JsonResource::collection(OvertimeRule::query()->orderBy('basis')->orderBy('threshold_minutes')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**
@@ -187,11 +190,11 @@ final class WorkingTimeRulesController extends Controller
             new OA\Response(ref: '#/components/responses/HrForbidden', response: 403),
         ]
     )]
-    public function closings(Request $request): JsonResponse
+    public function closings(Request $request): AnonymousResourceCollection
     {
-        return response()->json(['data' => TimePeriodClosing::query()
+        return JsonResource::collection(TimePeriodClosing::query()
             ->when($request->integer('year') > 0, static fn ($query) => $query->where('year', $request->integer('year')))
-            ->orderByDesc('year')->orderByDesc('month')->get()]);
+            ->orderByDesc('year')->orderByDesc('month')->gridPaginate(RequestedPerPage::resolve(24)));
     }
 
     /**

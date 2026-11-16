@@ -58,40 +58,40 @@ final readonly class ProjectClosingService
 
         $openTimesheets = ProjectTimesheet::query()->where('project_id', $project->id)->whereIn('status', ProjectTimesheet::OpenStatuses)->count();
         if ($openTimesheets > 0) {
-            $blockers[] = ['code' => 'open_timesheets', 'message' => "{$openTimesheets} timesheets are still draft, submitted or rejected."];
+            $blockers[] = ['code' => 'open_timesheets', 'message' => __('projects_errors.closing.open_timesheets', ['count' => $openTimesheets])];
         }
 
         $pendingCosts = ProjectCostEntry::query()->where('project_id', $project->id)->where('approval_status', 'pending')->count();
         if ($pendingCosts > 0) {
-            $blockers[] = ['code' => 'pending_expenses', 'message' => "{$pendingCosts} expenses are waiting for approval."];
+            $blockers[] = ['code' => 'pending_expenses', 'message' => __('projects_errors.closing.pending_expenses', ['count' => $pendingCosts])];
         }
 
         $unbilled = $this->billing->billsTimeAndMaterials($project) ? $this->billing->unbilledValue($project) : '0';
         if (Money::isPositive($unbilled)) {
-            $blockers[] = ['code' => 'unbilled_time_and_materials', 'message' => "Approved billable hours and costs worth {$unbilled} are not invoiced."];
+            $blockers[] = ['code' => 'unbilled_time_and_materials', 'message' => __('projects_errors.closing.unbilled_time_and_materials', ['amount' => $unbilled])];
         }
 
         $unbilledMilestones = $this->billing->unbilledMilestoneCount($project);
         if ($unbilledMilestones > 0) {
-            $blockers[] = ['code' => 'unbilled_milestones', 'message' => "{$unbilledMilestones} completed milestones are not invoiced."];
+            $blockers[] = ['code' => 'unbilled_milestones', 'message' => __('projects_errors.closing.unbilled_milestones', ['count' => $unbilledMilestones])];
         }
 
         $drafts = SalesInvoice::query()->where('project_id', $project->id)->where('status', 'draft')->count();
         if ($drafts > 0) {
-            $blockers[] = ['code' => 'draft_invoices', 'message' => "{$drafts} draft invoices of the project are not issued yet."];
+            $blockers[] = ['code' => 'draft_invoices', 'message' => __('projects_errors.closing.draft_invoices', ['count' => $drafts])];
         }
 
         if ($project->revenue_recognition_method !== null) {
             $unbilledRevenue = Money::sub($this->lastRecognisedRevenue($project), $this->invoices->billedRevenue($project));
 
             if (Money::isPositive($unbilledRevenue)) {
-                $blockers[] = ['code' => 'unbilled_recognised_revenue', 'message' => 'Recognised revenue exceeds the invoiced revenue by '.Money::amount($unbilledRevenue).': invoice it before closing.'];
+                $blockers[] = ['code' => 'unbilled_recognised_revenue', 'message' => __('projects_errors.closing.unbilled_recognised_revenue', ['amount' => Money::amount($unbilledRevenue)])];
             }
         }
 
         $committed = $this->commitments->openCommitments($project);
         if (Money::isPositive($committed)) {
-            $warnings[] = ['code' => 'open_commitments', 'message' => "Purchase orders worth {$committed} are still open on the project."];
+            $warnings[] = ['code' => 'open_commitments', 'message' => __('projects_errors.closing.open_commitments', ['amount' => $committed])];
         }
 
         return ['can_close' => $blockers === [], 'blockers' => $blockers, 'warnings' => $warnings];
@@ -109,7 +109,7 @@ final readonly class ProjectClosingService
             $locked = Project::query()->whereKey($project->id)->lockForUpdate()->firstOrFail();
 
             if (! $locked->isOpen() || $locked->status === 'pending_closure') {
-                throw new ConflictHttpException("Project {$locked->project_number} is {$locked->status}: it cannot be closed again.");
+                throw new ConflictHttpException(__('projects_errors.closing.already_closed', ['number' => $locked->project_number, 'status' => $locked->status]));
             }
 
             $checks = $this->checks($locked);

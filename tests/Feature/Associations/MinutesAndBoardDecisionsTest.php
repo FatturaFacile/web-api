@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Routing\Middleware\ThrottleRequests;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -76,22 +75,22 @@ test('minutes start from the meeting with attendance and agenda written, and sta
     expect($this->get("/api/v1/associations/minutes/{$minutes['id']}/pdf")->assertOk()->headers->get('Content-Type'))->toBe('application/pdf');
 });
 
-test('approved minutes are protected by the database itself', function (): void {
+test('approved minutes are protected by the model', function (): void {
     $meeting = minutesHeldBoardMeeting($this);
     $id = $this->postJson("/api/v1/associations/meetings/{$meeting->id}/minutes")->json('data.id');
     $this->postJson("/api/v1/associations/minutes/{$id}/approve")->assertOk();
 
-    expect(fn () => DB::table('assoc_minutes')->where('id', $id)->update(['title' => 'forged']))->toThrow(Exception::class);
+    expect(fn () => Minutes::query()->withoutGlobalScopes()->findOrFail($id)->update(['title' => 'forged']))->toThrow(Exception::class);
 });
 
-test('draft minutes can still be deleted at the database level, approved ones cannot', function (): void {
+test('draft minutes can still be changed through the model, approved ones cannot be deleted', function (): void {
     $meeting = minutesHeldBoardMeeting($this);
     $id = $this->postJson("/api/v1/associations/meetings/{$meeting->id}/minutes")->json('data.id');
 
-    expect(DB::table('assoc_minutes')->where('id', $id)->update(['title' => 'Draft title']))->toBe(1);
+    expect(Minutes::query()->withoutGlobalScopes()->findOrFail($id)->update(['title' => 'Draft title']))->toBeTrue();
     $this->postJson("/api/v1/associations/minutes/{$id}/approve")->assertOk();
 
-    expect(fn () => DB::table('assoc_minutes')->where('id', $id)->delete())->toThrow(Exception::class);
+    expect(fn () => Minutes::query()->withoutGlobalScopes()->findOrFail($id)->delete())->toThrow(Exception::class);
 });
 
 test('approved minutes are distributed with a delivery per participant', function (): void {

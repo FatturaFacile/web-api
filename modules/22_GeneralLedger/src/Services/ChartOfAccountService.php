@@ -32,7 +32,7 @@ final class ChartOfAccountService
                 || (isset($data['normal_balance']) && $data['normal_balance'] !== $locked->normal_balance);
 
             if ($changesClass && $this->hasPostings($locked)) {
-                throw new LedgerConflictException("Account {$locked->account_code} already carries postings: its type and normal balance cannot change. Create a new account and reclassify with a journal.");
+                throw new LedgerConflictException(__('general_ledger_errors.account.type_locked', ['code' => $locked->account_code]));
             }
 
             if (! empty($data['parent_account_id'])) {
@@ -54,15 +54,15 @@ final class ChartOfAccountService
             $locked = ChartOfAccount::whereKey($account->id)->lockForUpdate()->firstOrFail();
 
             if ($this->hasPostings($locked)) {
-                throw new LedgerConflictException("Account {$locked->account_code} carries postings: deactivate it (is_active = false) instead of deleting it.");
+                throw new LedgerConflictException(__('general_ledger_errors.account.has_postings', ['code' => $locked->account_code]));
             }
 
             if (ChartOfAccount::where('parent_account_id', $locked->id)->exists()) {
-                throw new LedgerConflictException("Account {$locked->account_code} has sub-accounts: move or delete them first.");
+                throw new LedgerConflictException(__('general_ledger_errors.account.has_sub_accounts', ['code' => $locked->account_code]));
             }
 
             if (DefaultPostingAccount::where('account_id', $locked->id)->exists()) {
-                throw new LedgerConflictException("Account {$locked->account_code} is a default posting account: choose another one in the ledger settings first.");
+                throw new LedgerConflictException(__('general_ledger_errors.account.is_default_posting', ['code' => $locked->account_code]));
             }
 
             $locked->delete();
@@ -84,7 +84,7 @@ final class ChartOfAccountService
 
         while ($current !== '' && ! isset($seen[$current])) {
             if ($current === (string) $account->id) {
-                throw ValidationException::withMessages(['parent_account_id' => ['An account cannot be placed under itself or one of its sub-accounts.']]);
+                throw ValidationException::withMessages(['parent_account_id' => [__('general_ledger_errors.account.parent_cycle')]]);
             }
 
             $seen[$current] = true;

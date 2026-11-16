@@ -8,17 +8,22 @@ use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Models\Tenant;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Modules\Intrastat\Enums\DeclarationStatus;
+use Modules\Intrastat\Enums\IntrastatFlow;
 use Modules\Intrastat\Enums\SupplyKind;
 use Modules\Intrastat\Http\Requests\DeclarationRequest;
 use Modules\Intrastat\Http\Requests\GenerateDeclarationRequest;
 use Modules\Intrastat\Http\Requests\SubmitDeclarationRequest;
 use Modules\Intrastat\Http\Resources\DeclarationResource;
 use Modules\Intrastat\Models\IntrastatDeclaration;
+use Modules\Intrastat\Models\IntrastatDeclarationLine;
 use Modules\Intrastat\Services\DeclarationGenerator;
 use Modules\Intrastat\Services\DeclarationValidator;
 use OpenApi\Attributes as OA;
@@ -43,17 +48,38 @@ final class DeclarationController extends Controller
     {
         $this->authorize('viewAny', IntrastatDeclaration::class);
 
-        $declarations = IntrastatDeclaration::query()
+        $filtered = IntrastatDeclaration::query()
             ->when($request->filled('flow'), static fn ($query) => $query->where('flow', (string) $request->query('flow')))
             ->when($request->filled('year'), static fn ($query) => $query->where('year', (int) $request->query('year')))
-            ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
+            ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')));
+
+        $declarations = (clone $filtered)
             ->orderByDesc('year')
             ->orderByDesc('period')
             ->orderByDesc('reference_number')
-            ->limit(500)
-            ->get();
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
-        return DeclarationResource::collection($declarations);
+        return DeclarationResource::collection($declarations)->additional(['summary' => $this->summary($filtered)]);
+    }
+
+    /**
+     * Totals of the whole filtered list (not just the page), shown by the KPI cards.
+     *
+     * @param  Builder<IntrastatDeclaration>  $filtered
+     * @return array{sales_total_eur: int, purchases_total_eur: int, draft_count: int, submitted_count: int}
+     */
+    private function summary(Builder $filtered): array
+    {
+        $totalOf = static fn (IntrastatFlow $flow): int => (int) IntrastatDeclarationLine::query()
+            ->whereIn('declaration_id', (clone $filtered)->where('flow', $flow->value)->select('intrastat_declarations.id'))
+            ->sum(DB::raw("CASE WHEN section = 2 AND sign = '-' THEN -COALESCE(amount_eur, 0) ELSE COALESCE(amount_eur, 0) END"));
+
+        return [
+            'sales_total_eur' => $totalOf(IntrastatFlow::Sales),
+            'purchases_total_eur' => $totalOf(IntrastatFlow::Purchases),
+            'draft_count' => (clone $filtered)->where('status', DeclarationStatus::Draft->value)->count(),
+            'submitted_count' => (clone $filtered)->where('status', DeclarationStatus::Submitted->value)->count(),
+        ];
     }
 
     #[OA\Post(path: '/api/v1/intrastat/declarations', operationId: 'storeIntrastatDeclaration', description: 'Create an empty INTRA list, to be filled by hand (for example a list of corrections only). The VAT number of the obliged party defaults to the one of the company; the reference number to the next of the company.', summary: 'Create INTRA list', security: [['bearerAuth' => []]], requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/IntrastatDeclarationRequest')), tags: ['Intrastat'], responses: [

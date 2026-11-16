@@ -19,6 +19,7 @@ final class TerminateEmployeeRequest extends FormRequest
             'termination_date' => ['required', 'date'],
             'reason' => ['required', 'string', 'max:1000'],
             'start_offboarding' => ['nullable', 'boolean'],
+            'offboarding_template_id' => ['nullable', 'uuid', TenantScopedRules::exists('hr_onboarding_templates')],
         ];
     }
 }

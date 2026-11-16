@@ -47,10 +47,11 @@ final class FiscalYearController extends Controller
         $years = FiscalYear::where('tenant_id', $tenantId)
             ->with('periods')
             ->orderBy('year_code', 'desc')
-            ->get();
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
         return response()->json([
             'data' => FiscalYearResource::collection($years),
+            'meta' => ['current_page' => $years->currentPage(), 'last_page' => $years->lastPage(), 'per_page' => $years->perPage(), 'total' => $years->total()],
         ]);
     }
 

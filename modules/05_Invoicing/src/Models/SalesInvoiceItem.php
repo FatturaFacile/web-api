@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Invoicing\Models;
 
+use App\Models\Concerns\ProtectsIssuedInvoiceItem;
 use App\Models\Product;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,6 +12,8 @@ use Modules\GeneralLedger\Models\ChartOfAccount;
 
 final class SalesInvoiceItem extends BaseEnterpriseModel
 {
+    use ProtectsIssuedInvoiceItem;
+
     protected $table = 'invoice_items';
 
     protected function casts(): array

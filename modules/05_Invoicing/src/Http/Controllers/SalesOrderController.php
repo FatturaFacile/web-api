@@ -43,7 +43,7 @@ final class SalesOrderController extends Controller
     public function index(Request $request, TenantContext $tenantContext): JsonResponse
     {
         $tenantId = $tenantContext->getTenantId();
-        $query = SalesOrder::with(['items', 'holds'])->where('tenant_id', $tenantId);
+        $query = SalesOrder::with(['items', 'holds', 'customer'])->where('tenant_id', $tenantId);
 
         if ($request->has('status')) {
             $query->where('status', (string) $request->query('status'));
@@ -58,7 +58,7 @@ final class SalesOrderController extends Controller
             $query->where('sales_rep_id', (string) $request->query('sales_rep_id'));
         }
 
-        $orders = $query->orderBy('created_at', 'desc')->paginate(min(200, max(1, (int) $request->query('per_page', 25))));
+        $orders = $query->orderBy('created_at', 'desc')->gridPaginate(min(200, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json(SalesOrderResource::collection($orders)->response()->getData(true));
     }

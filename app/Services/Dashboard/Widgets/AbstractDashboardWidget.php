@@ -6,7 +6,7 @@ namespace App\Services\Dashboard\Widgets;
 
 use App\Contracts\Dashboard\DashboardWidgetInterface;
 use App\Services\Tenancy\TenantContext;
-use Illuminate\Support\Facades\DB;
+use App\Support\Database\SqlDialect;
 
 /**
  * Shared behaviour of the built-in widgets: titles from the language files, settings validation against the
@@ -83,10 +83,6 @@ abstract class AbstractDashboardWidget implements DashboardWidgetInterface
      */
     protected function monthBucket(string $column): string
     {
-        return match (DB::connection()->getDriverName()) {
-            'sqlite' => "strftime('%Y-%m', {$column})",
-            'pgsql' => "to_char({$column}, 'YYYY-MM')",
-            default => "DATE_FORMAT({$column}, '%Y-%m')",
-        };
+        return SqlDialect::monthBucket($column);
     }
 }

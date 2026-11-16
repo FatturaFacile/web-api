@@ -49,7 +49,7 @@ final class DocumentLifecycleController extends Controller
     #[OA\Post(
         path: '/api/v1/dms/documents/{id}/check-out',
         operationId: 'checkOutDmsDocument',
-        description: 'Take the document out for editing. While it is checked out nobody else can add a version, change its metadata or delete it; the holder can. Asking again as the holder changes nothing. A document under legal hold cannot be checked out.',
+        description: 'Take the document out for editing. While it is checked out nobody else can add a version, change its metadata or delete it; the holder can. Asking again as the holder changes nothing, or extends the lock when `expires_in_minutes` is given. An expired lock no longer blocks anybody. A document under legal hold cannot be checked out.',
         summary: 'Check out a document',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/DmsCheckOutRequest')),
@@ -66,7 +66,7 @@ final class DocumentLifecycleController extends Controller
     )]
     public function checkOut(CheckOutDocumentRequest $request, string $id): JsonResponse
     {
-        $document = $this->library->checkOut($this->access->findVisible($id, $request->user()), $request->user(), $request->validated('note'));
+        $document = $this->library->checkOut($this->access->findVisible($id, $request->user()), $request->user(), $request->validated('note'), $request->validated('expires_in_minutes'));
 
         return $this->successResponse(new DocumentResource($document), 'Document checked out');
     }

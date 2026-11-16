@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\Workflow\Models;
 
+use App\Models\User;
 use App\Services\Tenancy\TenantContext;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Model;
@@ -115,6 +116,16 @@ final class WorkflowInstance extends BaseEnterpriseModel
     public function definition(): BelongsTo
     {
         return $this->belongsTo(WorkflowDefinition::class, 'workflow_definition_id');
+    }
+
+    /**
+     * The user who started the instance.
+     *
+     * @return BelongsTo<User, $this>
+     */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
     }
 
     /**

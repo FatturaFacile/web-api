@@ -41,7 +41,7 @@ final class ShipmentRequestController extends CustomsController
             ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->latest();
 
-        return CustomsRecordResource::collection($query->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

@@ -55,7 +55,7 @@ final class MeetingController extends AssociationController
             ->when($request->filled('body'), static fn ($query) => $query->where('body', $request->string('body')->toString()))
             ->when($request->filled('status'), static fn ($query) => $query->where('status', $request->string('status')->toString()))
             ->orderByDesc('scheduled_at')
-            ->paginate($this->perPage($request)));
+            ->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/meetings', 'createAssociationMeeting', 'Prepare a meeting of a body, with its quorum rules', 'AssociationMeetingRequest', response: 'AssociationMeeting')]
@@ -181,7 +181,7 @@ final class MeetingController extends AssociationController
         $this->allow(AssociationCapability::Read);
         Meeting::query()->findOrFail($id);
 
-        return AssociationRecordResource::collection(AssociationDelivery::query()->where('subject_id', $id)->orderByDesc('attempted_at')->paginate($this->perPage($request, 100, 500)));
+        return AssociationRecordResource::collection(AssociationDelivery::query()->where('subject_id', $id)->orderByDesc('attempted_at')->gridPaginate($this->perPage($request, 100, 500)));
     }
 
     #[AssociationGet('/api/v1/associations/meetings/{id}/letter', 'printAssociationMeetingLetters', 'Printable letters of the notice, one page per participant; the print is recorded as a delivery', query: ['participant_ids'], file: true)]

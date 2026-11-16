@@ -73,7 +73,7 @@ final class VatLedgerReader
             ->whereIn('je.status', ['posted', 'reversed'])
             ->where('je.ledger_type', 'statutory')
             ->where('je.journal_type', '<>', 'closing')
-            ->whereBetween('je.posting_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('je.posting_date', '>=', $from->toDateString())->whereDate('je.posting_date', '<=', $to->toDateString())
             ->where(function ($query): void {
                 $query->whereNull('je.source_document_type')
                     ->orWhereNotIn('je.source_document_type', [self::SOURCE_SETTLEMENT, self::SOURCE_SETTLEMENT_PAYMENT]);

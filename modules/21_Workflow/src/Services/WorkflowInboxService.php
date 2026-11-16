@@ -72,8 +72,9 @@ final readonly class WorkflowInboxService
             })
             ->when($filters['definition_code'] ?? null, static fn (Builder $query, string $code) => $query->whereHas('instance.definition', static fn (Builder $definition) => $definition->where('code', $code)))
             ->when($filters['approvable_type'] ?? null, static fn (Builder $query, string $type) => $query->whereHas('instance', static fn (Builder $instance) => $instance->where('approvable_type', $type)))
-            ->with(['instance.definition', 'instance.approvable', 'node'])
-            ->orderByRaw('due_at ASC NULLS LAST')
+            ->with(['instance.definition', 'instance.creator', 'instance.approvable', 'node'])
+            ->orderByRaw('CASE WHEN workflow_instance_steps.due_at IS NULL THEN 1 ELSE 0 END')
+            ->orderBy('workflow_instance_steps.due_at')
             ->orderBy('workflow_instance_steps.created_at');
     }
 
@@ -107,7 +108,7 @@ final readonly class WorkflowInboxService
             ->when($filters['to'] ?? null, static fn (Builder $query, string $to) => $query->whereDate('decided_at', '<=', $to))
             ->with(['step.instance.definition', 'step.instance.approvable'])
             ->orderByDesc('decided_at')
-            ->paginate($perPage);
+            ->gridPaginate($perPage);
     }
 
     /**

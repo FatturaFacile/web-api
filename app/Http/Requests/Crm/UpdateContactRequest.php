@@ -25,9 +25,10 @@ class UpdateContactRequest extends FormRequest
         return [
             'type' => ['sometimes', 'string', 'in:client,customer,supplier,both,lead'],
             'country' => ['sometimes', 'string', 'regex:/^[A-Z]{2}$/'],
-            'company_name' => ['nullable', 'string', 'max:255'],
+            'legal_type' => ['nullable', 'string', 'in:company,person'],
+            'company_name' => ['required_if:legal_type,company', 'nullable', 'string', 'max:255'],
             'first_name' => ['nullable', 'string', 'max:100'],
-            'last_name' => ['nullable', 'string', 'max:100'],
+            'last_name' => ['required_if:legal_type,person', 'nullable', 'string', 'max:100'],
             'email' => ['nullable', 'email'],
             'phone' => ['nullable', 'string', 'max:50'],
             'vat_number' => ['nullable', 'string', 'max:30'],

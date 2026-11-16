@@ -45,7 +45,7 @@ final class StockLotController extends Controller
     #[EnterpriseEndpoint(summary: 'List lots', tags: ['Inventory'])]
     public function index(Request $request): JsonResponse
     {
-        $query = StockLot::query()->orderByRaw('expiration_date ASC NULLS LAST')->orderBy('id');
+        $query = StockLot::query()->orderByRaw('expiration_date IS NULL')->orderBy('expiration_date')->orderBy('id');
 
         if ($request->filled('stock_item_id')) {
             $query->where('stock_item_id', $request->query('stock_item_id'));
@@ -63,7 +63,7 @@ final class StockLotController extends Controller
             $query->whereNotNull('expiration_date')->whereDate('expiration_date', '<=', CarbonImmutable::today()->addDays((int) $request->query('expiring_within_days')));
         }
 
-        return response()->json(StockLotResource::collection($query->paginate((int) $request->query('per_page', 25)))->response()->getData(true));
+        return response()->json(StockLotResource::collection($query->gridPaginate((int) $request->query('per_page', 25)))->response()->getData(true));
     }
 
     #[OA\Post(

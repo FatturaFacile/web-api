@@ -48,9 +48,12 @@ final class LedgerBudgetController extends Controller
             ->when($request->query('fiscal_year_id'), static fn ($query, $id) => $query->where('fiscal_year_id', $id))
             ->orderBy('name')
             ->orderByDesc('version')
-            ->get();
+            ->gridPaginate(min(1000, max(1, (int) $request->query('per_page', 1000))));
 
-        return $this->successResponse(LedgerBudgetResource::collection($budgets));
+        return $this->successResponse(
+            data: LedgerBudgetResource::collection($budgets),
+            meta: ['current_page' => $budgets->currentPage(), 'last_page' => $budgets->lastPage(), 'per_page' => $budgets->perPage(), 'total' => $budgets->total()],
+        );
     }
 
     #[OA\Post(

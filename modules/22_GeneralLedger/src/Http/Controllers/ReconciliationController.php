@@ -50,7 +50,7 @@ final class ReconciliationController extends Controller
         $runs = ReconciliationRun::where('tenant_id', $tenantId)
             ->with('items')
             ->orderBy('created_at', 'desc')
-            ->paginate(min(200, max(1, (int) $request->query('per_page', 25))));
+            ->gridPaginate(min(200, max(1, (int) $request->query('per_page', 25))));
 
         return response()->json([
             'data' => ReconciliationRunResource::collection($runs),

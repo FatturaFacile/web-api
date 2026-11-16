@@ -171,7 +171,7 @@ final class StockAllocationPlanner
             ->where(function (Builder|\Illuminate\Database\Query\Builder $lot) use ($item): void {
                 $lot->whereNull('stock_quants.lot_id')->orWhere(function ($usable) use ($item): void {
                     $usable->where('l.is_quarantined', false)->where(function ($expiry) use ($item): void {
-                        $expiry->whereNull('l.expiration_date')->orWhere('l.expiration_date', '>=', $this->earliestAcceptableExpiry($item));
+                        $expiry->whereNull('l.expiration_date')->orWhereDate('l.expiration_date', '>=', $this->earliestAcceptableExpiry($item));
                     });
                 });
             });
@@ -191,7 +191,7 @@ final class StockAllocationPlanner
         $strategy = $this->strategyFor($item, $warehouse);
 
         if ($strategy === PickingStrategy::Fefo) {
-            $query->orderByRaw('l.expiration_date ASC NULLS LAST');
+            $query->orderByRaw('l.expiration_date IS NULL')->orderBy('l.expiration_date');
         }
 
         $direction = $strategy === PickingStrategy::Lifo ? 'DESC' : 'ASC';

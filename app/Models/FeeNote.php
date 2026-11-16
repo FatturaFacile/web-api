@@ -27,9 +27,22 @@ class FeeNote extends Model
         'cassa_previdenza_amount',
         'ritenuta_acconto_amount',
         'vat_amount',
+        'expenses_amount',
         'net_payable',
         'status',
     ];
+
+    /**
+     * Calculated columns of the grid: the gross amount of the fee note (fees plus contribution and VAT).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'gross_amount' => 'fee_notes.taxable_fees + fee_notes.cassa_previdenza_amount + fee_notes.vat_amount',
+        ];
+    }
 
     protected function casts(): array
     {
@@ -39,6 +52,7 @@ class FeeNote extends Model
             'cassa_previdenza_amount' => 'decimal:2',
             'ritenuta_acconto_amount' => 'decimal:2',
             'vat_amount' => 'decimal:2',
+            'expenses_amount' => 'decimal:2',
             'net_payable' => 'decimal:2',
         ];
     }

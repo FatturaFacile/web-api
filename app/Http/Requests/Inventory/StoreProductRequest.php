@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Inventory;
 
+use App\Http\Requests\Concerns\CustomsOriginRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 /**
@@ -12,6 +13,8 @@ use Illuminate\Foundation\Http\FormRequest;
  */
 class StoreProductRequest extends FormRequest
 {
+    use CustomsOriginRules;
+
     public function authorize(): bool
     {
         return true;
@@ -23,6 +26,7 @@ class StoreProductRequest extends FormRequest
     public function rules(): array
     {
         return [
+            ...$this->customsOriginRules(),
             'sku' => ['required', 'string', 'max:50'],
             'barcode' => ['nullable', 'string', 'max:50'],
             'name' => ['required', 'string'],

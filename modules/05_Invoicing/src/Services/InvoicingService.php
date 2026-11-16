@@ -179,6 +179,9 @@ final class InvoicingService implements InvoicingServiceInterface
             'project_milestone_id' => $data['project_milestone_id'] ?? null,
             'customer_agreement_id' => $data['customer_agreement_id'] ?? null,
             'notes' => $data['notes'] ?? null,
+            'free_trade_agreement_id' => $data['free_trade_agreement_id'] ?? null,
+            'origin_declaration_text' => $data['origin_declaration_text'] ?? null,
+            'duty_exemption_eligible' => (bool) ($data['duty_exemption_eligible'] ?? false),
             'created_by' => ! empty($data['created_by']) && Str::isUuid((string) $data['created_by']) ? (string) $data['created_by'] : null,
             ...array_filter(Arr::only($data, self::LINK_FIELDS), static fn (mixed $value): bool => $value !== null),
             ...Arr::only($data, InvoiceFiscalService::INPUT_FIELDS),
@@ -209,6 +212,10 @@ final class InvoicingService implements InvoicingServiceInterface
                 'product_charge_type_id' => $item['product_charge_type_id'] ?? null,
                 'uom' => $item['uom'] ?? 'EA',
                 'notes' => $item['notes'] ?? null,
+                'taric_code' => $item['taric_code'] ?? null,
+                'country_of_origin' => $item['country_of_origin'] ?? null,
+                'origin_type' => $item['origin_type'] ?? null,
+                'made_in_label' => $item['made_in_label'] ?? null,
             ]);
         }
 
@@ -449,7 +456,7 @@ final class InvoicingService implements InvoicingServiceInterface
             $locked = SalesInvoice::withoutGlobalScope(TenantScope::class)->whereKey($invoice->id)->lockForUpdate()->firstOrFail();
 
             if ($locked->status !== InvoiceStatus::Draft->value || ! InvoiceStatus::allows($locked->status, InvoiceStatus::Approved)) {
-                throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be approved.");
+                throw new LedgerPostingException(__('invoicing_errors.invoice.cannot_be_approved', ['status' => $locked->status]));
             }
 
             $locked->status = InvoiceStatus::Approved->value;
@@ -485,11 +492,11 @@ final class InvoicingService implements InvoicingServiceInterface
             }
 
             if ($locked->invoice_type === 'proforma') {
-                throw new LedgerPostingException('A proforma is not a fiscal document and cannot be posted.');
+                throw new LedgerPostingException(__('invoicing_errors.invoice.proforma_not_postable'));
             }
 
             if (! InvoiceStatus::allows($locked->status, InvoiceStatus::Posted)) {
-                throw new LedgerPostingException("Invoice in status [{$locked->status}] cannot be posted.");
+                throw new LedgerPostingException(__('invoicing_errors.invoice.cannot_be_posted', ['status' => $locked->status]));
             }
 
             return $locked->isCreditNote() ? $this->postCreditNote($locked, $userId) : $this->postLockedInvoice($locked, $userId);
@@ -875,7 +882,7 @@ final class InvoicingService implements InvoicingServiceInterface
     {
         foreach ($items as $item) {
             if (! isset($item['tax_rate'])) {
-                throw new LedgerPostingException('Every invoice line must state its VAT rate.');
+                throw new LedgerPostingException(__('invoicing_errors.invoice.line_vat_rate_required'));
             }
         }
     }

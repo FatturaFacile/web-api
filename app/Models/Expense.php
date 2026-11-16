@@ -63,6 +63,18 @@ class Expense extends Model
     }
 
     /**
+     * Calculated grid columns: the category label (English translation of the lookup item, the code when untranslated).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'category_label' => "COALESCE((SELECT lookup_item_translations.label FROM lookup_item_translations WHERE lookup_item_translations.lookup_item_id = expenses.category_id AND lookup_item_translations.locale = 'en' LIMIT 1), (SELECT lookup_items.code FROM lookup_items WHERE lookup_items.id = expenses.category_id))",
+        ];
+    }
+
+    /**
      * Category from the shared lookup engine.
      *
      * @return BelongsTo<LookupItem, $this>

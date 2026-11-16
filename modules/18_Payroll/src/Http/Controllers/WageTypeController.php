@@ -39,7 +39,7 @@ final class WageTypeController extends PayrollController
     {
         $this->authorize('viewAny', PayrollWageType::class);
 
-        return PayrollWageTypeResource::collection(PayrollWageType::query()->orderBy('sort_order')->orderBy('code')->paginate($this->perPage($request, 100, 200)));
+        return PayrollWageTypeResource::collection(PayrollWageType::query()->orderBy('sort_order')->orderBy('code')->gridPaginate($this->perPage($request, 100, 200)));
     }
 
     /**

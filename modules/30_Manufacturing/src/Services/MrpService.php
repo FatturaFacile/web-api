@@ -408,7 +408,7 @@ final readonly class MrpService implements MrpServiceInterface
         }
 
         $forecasts = MfgDemandForecast::query()->where('tenant_id', $tenantId)->whereIn('mfg_item_id', $items->keys()->all())
-            ->whereBetween('forecast_date', [$start->toDateString(), $end->toDateString()])->orderBy('forecast_date')->get();
+            ->whereDate('forecast_date', '>=', $start->toDateString())->whereDate('forecast_date', '<=', $end->toDateString())->orderBy('forecast_date')->get();
         foreach ($forecasts as $forecast) {
             $itemId = (string) $forecast->mfg_item_id;
             $month = $forecast->forecast_date->format('Y-m');

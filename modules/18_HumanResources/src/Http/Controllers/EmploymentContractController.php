@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
 use Modules\HumanResources\Http\Requests\SaveSalaryComponentRequest;
 use Modules\HumanResources\Http\Requests\StoreEmploymentContractRequest;
@@ -42,12 +44,11 @@ final class EmploymentContractController extends Controller
             new OA\Response(ref: '#/components/responses/HrNotFound', response: 404),
         ]
     )]
-    public function index(string $id): JsonResponse
+    public function index(string $id): AnonymousResourceCollection
     {
         $employee = Employee::query()->findOrFail($id);
-        $contracts = EmploymentContract::query()->where('employee_id', $employee->id)->with('salaryComponents')->orderByDesc('start_date')->get();
 
-        return response()->json(['data' => EmploymentContractResource::collection($contracts)]);
+        return EmploymentContractResource::collection(EmploymentContract::query()->where('employee_id', $employee->id)->with('salaryComponents')->orderByDesc('start_date')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

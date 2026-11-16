@@ -6,6 +6,7 @@ namespace Modules\CRM\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Modules\CRM\Contracts\ActivityServiceInterface;
@@ -70,15 +71,17 @@ final class ActivityController extends Controller
         }
 
         if ($request->boolean('overdue')) {
-            $query->whereIn('status', ['pending', 'in_progress'])->where('due_date', '<', now());
+            $query->whereIn('status', ['pending', 'in_progress'])->whereDate('due_date', '<', now());
         }
 
-        $activities = $query->orderBy('due_date')->paginate(25);
+        $activities = $query->orderBy('due_date')->gridPaginate(RequestedPerPage::resolve(25));
 
         return response()->json([
             'data' => ActivityResource::collection($activities),
             'meta' => [
                 'current_page' => $activities->currentPage(),
+                'last_page' => $activities->lastPage(),
+                'per_page' => $activities->perPage(),
                 'total' => $activities->total(),
             ],
         ]);

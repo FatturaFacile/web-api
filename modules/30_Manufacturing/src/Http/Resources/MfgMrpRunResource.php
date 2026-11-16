@@ -32,6 +32,7 @@ final class MfgMrpRunResource extends JsonResource
             'total_shortages' => $this->total_shortages,
             'executed_by' => $this->executed_by,
             'executed_at' => $this->executed_at?->toIso8601String(),
+            'created_at' => $this->created_at?->toIso8601String(),
             'planned_orders' => MfgPlannedOrderResource::collection($this->whenLoaded('plannedOrders')),
             'shortages' => MfgShortageResource::collection($this->whenLoaded('shortages')),
         ];

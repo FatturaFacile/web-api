@@ -7,6 +7,7 @@ namespace Modules\Projects\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Projects\Http\Controllers\Concerns\PaginatesProjectRecords;
 use Modules\Projects\Http\Requests\StoreMilestoneRequest;
 use Modules\Projects\Http\Resources\ProjectMilestoneResource;
 use Modules\Projects\Models\Project;
@@ -19,22 +20,24 @@ use OpenApi\Attributes as OA;
  */
 final class ProjectMilestoneController extends Controller
 {
+    use PaginatesProjectRecords;
+
     public function __construct(private readonly ProjectMilestoneService $milestones) {}
 
     /**
      * Milestones of the project in date order.
      */
     #[OA\Get(path: '/api/v1/projects/{id}/milestones', operationId: 'projectsMilestonesList', summary: 'List project milestones', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Projects'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId')],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/ProjectsId'), new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25)), new OA\Parameter(name: 'page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 1))],
         responses: [
-            new OA\Response(response: 200, description: 'Milestones', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsMilestone'))])),
+            new OA\Response(response: 200, description: 'Milestones', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/ProjectsMilestone')), new OA\Property(property: 'meta', type: 'object')])),
             new OA\Response(response: 404, ref: '#/components/responses/ProjectsNotFound'),
         ])]
-    public function index(string $id): JsonResponse
+    public function index(string $id, Request $request): JsonResponse
     {
         $project = Project::findOrFail($id);
 
-        return response()->json(['data' => ProjectMilestoneResource::collection(ProjectMilestone::query()->where('project_id', $project->id)->orderBy('milestone_date')->limit(500)->get())]);
+        return $this->paginated(ProjectMilestone::query()->where('project_id', $project->id)->orderBy('milestone_date')->gridPaginate($this->perPage($request)), ProjectMilestoneResource::class);
     }
 
     /**

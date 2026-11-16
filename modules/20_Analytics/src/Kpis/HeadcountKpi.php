@@ -67,8 +67,8 @@ final readonly class HeadcountKpi implements KpiCalculator
             ->first();
 
         $headcount = (int) $totals->headcount;
-        $hires = $this->base()->whereBetween('hr_employees.hire_date', [$period->from->toDateString(), $period->to->toDateString()])->count();
-        $leavers = $this->base()->whereBetween('hr_employees.termination_date', [$period->from->toDateString(), $period->to->toDateString()])->count();
+        $hires = $this->base()->whereDate('hr_employees.hire_date', '>=', $period->from->toDateString())->whereDate('hr_employees.hire_date', '<=', $period->to->toDateString())->count();
+        $leavers = $this->base()->whereDate('hr_employees.termination_date', '>=', $period->from->toDateString())->whereDate('hr_employees.termination_date', '<=', $period->to->toDateString())->count();
 
         return [
             'value' => $headcount === 0 ? null : (string) $headcount,
@@ -107,7 +107,7 @@ final readonly class HeadcountKpi implements KpiCalculator
         $asOf = $period->to->toDateString();
 
         return $this->base()
-            ->where('hr_employees.hire_date', '<=', $asOf)
-            ->where(static fn (Builder $query): Builder => $query->whereNull('hr_employees.termination_date')->orWhere('hr_employees.termination_date', '>', $asOf));
+            ->whereDate('hr_employees.hire_date', '<=', $asOf)
+            ->where(static fn (Builder $query): Builder => $query->whereNull('hr_employees.termination_date')->orWhereDate('hr_employees.termination_date', '>', $asOf));
     }
 }

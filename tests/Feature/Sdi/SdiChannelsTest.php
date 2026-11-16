@@ -8,6 +8,7 @@ use App\Contracts\Security\HostResolver;
 use App\Exceptions\SdiProviderException;
 use App\Models\Contact;
 use App\Models\EiInboundLog;
+use App\Models\EiOutboundLog;
 use App\Models\Invoice;
 use App\Models\InvoiceSdiMetadata;
 use App\Models\PassiveInvoice;
@@ -935,4 +936,24 @@ test('administrators list quarantined messages and retry them', function (): voi
 
     $this->user->tenants()->updateExistingPivot($this->tenant->id, ['role' => 'member']);
     channelApi()->getJson('/api/v1/settings/sdi-channel/quarantine')->assertForbidden();
+});
+
+test('the SDI history lists the transmissions with the last error of a failed one', function (): void {
+    Sanctum::actingAs($this->user);
+    $this->withHeader('X-Tenant-Id', $this->tenant->id);
+
+    $failed = channelInvoice(['invoice_number' => 'INV-F-1']);
+    $delivered = channelInvoice(['invoice_number' => 'INV-D-1']);
+    InvoiceSdiMetadata::create(['invoice_id' => $failed->id, 'transmission_format' => 'FPR12', 'sdi_status' => 'failed', 'file_name' => 'IT0001_00001.xml']);
+    InvoiceSdiMetadata::create(['invoice_id' => $delivered->id, 'transmission_format' => 'FPR12', 'sdi_status' => 'delivered', 'sdi_identifier' => '123', 'file_name' => 'IT0001_00002.xml', 'sent_at' => now()]);
+    EiOutboundLog::create(['tenant_id' => $this->tenant->id, 'invoice_id' => $failed->id, 'provider' => 'api', 'action' => 'send', 'status' => 'failed', 'error' => 'Provider timeout']);
+
+    $all = $this->getJson('/api/v1/sdi/transmissions')->assertOk()->assertJsonPath('meta.total', 2)->json('data');
+    $row = collect($all)->firstWhere('invoice_number', 'INV-F-1');
+    expect($row['can_retry'])->toBeTrue()->and($row['last_error'])->toBe('Provider timeout')
+        ->and(collect($all)->firstWhere('invoice_number', 'INV-D-1')['can_retry'])->toBeFalse();
+
+    $this->getJson('/api/v1/sdi/transmissions?status=failed')->assertOk()->assertJsonCount(1, 'data');
+    $this->getJson('/api/v1/sdi/transmissions?search=INV-D')->assertOk()->assertJsonCount(1, 'data')->assertJsonPath('data.0.sdi_status', 'delivered');
+    $this->getJson('/api/v1/sdi/transmissions?status=nope')->assertUnprocessable();
 });

@@ -6,6 +6,7 @@ namespace Modules\ConstructionTrades\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Models\ConstructionSite;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Http\Response;
@@ -86,7 +87,7 @@ final class SubcontractController extends Controller
     {
         $site = $this->constructionSite($id, 'view');
 
-        return TradesResource::collection(Subcontract::query()->where('construction_site_id', $site->id)->with('subcontractor')->latest()->get());
+        return TradesResource::collection(Subcontract::query()->where('construction_site_id', $site->id)->with('subcontractor')->latest()->gridPaginate(RequestedPerPage::resolve(25)));
     }
 
     /**

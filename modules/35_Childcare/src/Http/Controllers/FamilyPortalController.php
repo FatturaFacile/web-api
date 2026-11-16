@@ -62,7 +62,7 @@ final class FamilyPortalController extends Controller
         $child = $this->portal->childOf($this->contact($request), $id);
         $start = CarbonImmutable::parse($request->validated('month').'-01');
 
-        return response()->json(['data' => Attendance::query()->where('child_id', $child->id)->whereBetween('date', [$start->toDateString(), $start->endOfMonth()->toDateString()])->orderBy('date')->get()
+        return response()->json(['data' => Attendance::query()->where('child_id', $child->id)->whereDate('date', '>=', $start->toDateString())->whereDate('date', '<=', $start->endOfMonth()->toDateString())->orderBy('date')->get()
             ->map(static fn (Attendance $attendance): array => [
                 'date' => $attendance->date->toDateString(), 'status' => $attendance->status, 'absence_reason' => $attendance->absence_reason,
                 'check_in_at' => $attendance->check_in_at?->format('H:i'), 'check_out_at' => $attendance->check_out_at?->format('H:i'),

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\GeneralLedger\Services;
 
 use App\Models\PassiveInvoice;
+use App\Support\Database\TransactionLock;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -46,9 +47,7 @@ final readonly class EnasarcoPrincipalService
     public function generate(string $tenantId, int $year, int $quarter, string $defaultAgentType, array $agentTypes = [], ?string $userId = null): Collection
     {
         return DB::transaction(function () use ($tenantId, $year, $quarter, $defaultAgentType, $agentTypes, $userId): Collection {
-            if (DB::getDriverName() === 'pgsql') {
-                DB::select('SELECT pg_advisory_xact_lock(hashtext(?))', ["enasarco-principal:{$tenantId}:{$year}"]);
-            }
+            TransactionLock::acquire("enasarco-principal:{$tenantId}:{$year}");
 
             [$from, $to] = $this->quarterBounds($year, $quarter);
             $existing = EnasarcoPrincipalStatement::withoutGlobalScopes()->where('tenant_id', $tenantId)->where('year', $year)->where('quarter', $quarter)->pluck('contact_id')->all();

@@ -9,6 +9,7 @@ return [
     'created' => ':resource created successfully',
     'updated' => ':resource updated successfully',
     'deleted' => ':resource deleted successfully',
+    'customs_origin_evaluated' => 'Customs origin evaluated successfully',
 
     'labels' => [
         'product_category' => 'Product category',
@@ -18,6 +19,8 @@ return [
         'payment_term' => 'Payment term',
         'alert' => 'Alert',
         'loyalty_card' => 'Loyalty card',
+        'customs_taric_code' => 'Customs code',
+        'free_trade_agreement' => 'Free trade agreement',
     ],
 
 ];

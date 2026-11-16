@@ -124,6 +124,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
                     'value_date' => $l['value_date'] ?? $statement->statement_date,
                     'amount' => $amt,
                     'fee_amount' => (float) ($l['fee_amount'] ?? 0.0),
+                    'currency' => $statement->currency,
                     'direction' => $amt >= 0 ? 'credit' : 'debit',
                     'bank_reference' => $l['bank_reference'] ?? null,
                     'customer_reference' => $l['customer_reference'] ?? null,
@@ -334,7 +335,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
             $line = BankStatementLine::where('id', $bankStatementLineId)->lockForUpdate()->firstOrFail();
 
             if ($line->reconciled) {
-                throw new InvalidArgumentException('Bank statement line is already reconciled.');
+                throw new InvalidArgumentException(__('treasury_errors.reconciliation.line_already_reconciled'));
             }
 
             $amount = (float) ($matchData['allocated_amount'] ?? abs((float) $line->amount));
@@ -480,7 +481,7 @@ final readonly class BankReconciliationService implements BankReconciliationServ
         /** @var Collection<int, ReceivableCollection> $candidates */
         $candidates = ReceivableCollection::where('tenant_id', $tenantId)
             ->whereIn('status', self::OPEN_COLLECTION_STATUSES)
-            ->whereRaw('(expected_amount - collected_amount) = ?', [round($amount, 2)])
+            ->whereRaw('ROUND(expected_amount - collected_amount, 2) = CAST(? AS DECIMAL(15, 2))', [number_format($amount, 2, '.', '')])
             ->orderBy('due_date')
             ->get();
 

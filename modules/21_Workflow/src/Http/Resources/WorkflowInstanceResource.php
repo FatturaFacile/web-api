@@ -31,6 +31,8 @@ final class WorkflowInstanceResource extends JsonResource
             'started_at' => $this->started_at?->toIso8601String(),
             'completed_at' => $this->completed_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
+            'definition' => $this->whenLoaded('definition', fn (): WorkflowDefinitionResource => new WorkflowDefinitionResource($this->definition)),
+            'initiator_name' => $this->whenLoaded('creator', fn (): ?string => $this->creator?->name),
             'steps' => WorkflowInstanceStepResource::collection($this->whenLoaded('steps')),
         ];
     }

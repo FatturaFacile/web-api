@@ -197,7 +197,7 @@ final class WorkspaceConnectionController extends Controller
             // The counterpart is the address of the other party, as the provider wrote it ("Name <address>" included).
             ->when($email, static fn ($query, string $address) => $query->whereRaw('lower(counterpart) like ?', ['%'.str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], mb_strtolower($address)).'%']))
             ->orderByDesc('starts_at')
-            ->paginate((int) ($filters['per_page'] ?? 200));
+            ->gridPaginate((int) ($filters['per_page'] ?? 200));
 
         return $this->successResponse(
             WorkspaceItemResource::collection($page->getCollection()),
@@ -219,7 +219,7 @@ final class WorkspaceConnectionController extends Controller
         try {
             return $call();
         } catch (RequestException|ConnectionException) {
-            throw new HttpException(Response::HTTP_BAD_GATEWAY, 'The provider could not be reached or refused the request.');
+            throw new HttpException(Response::HTTP_BAD_GATEWAY, __('workspace_sync_errors.provider.unreachable'));
         }
     }
 

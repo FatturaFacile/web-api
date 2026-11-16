@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Modules\CRM\Services;
 
+use App\Support\Database\SqlDialect;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Facades\DB;
@@ -31,7 +32,7 @@ final readonly class ForecastService implements ForecastServiceInterface
 
             // Approximate period filter if format YYYY-MM
             if (preg_match('/^\d{4}-\d{2}$/', $dto->period)) {
-                $query->whereRaw("TO_CHAR(expected_close_date, 'YYYY-MM') = ?", [$dto->period]);
+                $query->whereRaw(SqlDialect::monthBucket('expected_close_date').' = ?', [$dto->period]);
             }
 
             $opportunities = $query->get();

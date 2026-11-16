@@ -47,7 +47,7 @@ final class AuditTrailExportService
             ->leftJoin('users as poster', 'poster.id', '=', 'entry.posted_by')
             ->where('entry.tenant_id', $tenantId)
             ->whereNull('entry.deleted_at')
-            ->whereBetween('entry.posting_date', [$from->toDateString(), $to->toDateString()])
+            ->whereDate('entry.posting_date', '>=', $from->toDateString())->whereDate('entry.posting_date', '<=', $to->toDateString())
             ->orderBy('entry.posting_date')
             ->orderBy('entry.journal_number')
             ->orderBy('entry.id')

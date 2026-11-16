@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Auth;
 
+use App\Enums\SupportedCountry;
 use App\Services\Auth\TaxIdentifier;
 use Closure;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends FormRequest
@@ -36,7 +38,7 @@ class RegisterRequest extends FormRequest
             'email' => ['required', 'string', 'email:rfc', 'max:255'],
             'password' => ['required', 'string', 'confirmed', Password::defaults()],
             'company_name' => ['required', 'string', 'max:255'],
-            'country' => ['required', 'string', 'in:IT,CH'],
+            'country' => ['required', 'string', Rule::enum(SupportedCountry::class)],
             'tax_id' => ['required', 'string', 'max:30', function (string $attribute, mixed $value, Closure $fail): void {
                 if (TaxIdentifier::normalize((string) $value, (string) $this->input('country')) === null) {
                     $fail(__('registration.errors.invalid_tax_id'));

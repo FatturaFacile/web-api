@@ -7,6 +7,7 @@ namespace Modules\Workflow\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Modules\Workflow\Http\Requests\SaveEscalationRuleRequest;
 use Modules\Workflow\Models\WorkflowEscalationRule;
 use Modules\Workflow\Models\WorkflowNode;
@@ -33,15 +34,25 @@ final class WorkflowEscalationRuleController extends Controller
         summary: 'List escalation rules',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Workflow Escalation Rules'],
+        parameters: [
+            new OA\Parameter(name: 'per_page', in: 'query', required: false, description: 'Rows per page (1-100)', schema: new OA\Schema(type: 'integer', default: 100)),
+            new OA\Parameter(name: 'page', in: 'query', required: false, description: 'Page number', schema: new OA\Schema(type: 'integer', default: 1)),
+        ],
         responses: [
             new OA\Response(response: 200, description: 'Rules', content: new OA\JsonContent(type: 'object', properties: [new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/WorkflowEscalationRule'))])),
             new OA\Response(response: 401, description: 'Unauthenticated', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
             new OA\Response(response: 403, description: 'Forbidden', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
         ]
     )]
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        return $this->successResponse(WorkflowEscalationRule::query()->orderBy('name')->get()->map(fn (WorkflowEscalationRule $rule): array => $this->present($rule))->all(), 'Escalation rules retrieved');
+        $rules = WorkflowEscalationRule::query()->orderBy('name')->gridPaginate(max(1, min(100, (int) $request->query('per_page', 100))));
+
+        return $this->successResponse(
+            $rules->getCollection()->map(fn (WorkflowEscalationRule $rule): array => $this->present($rule))->all(),
+            'Escalation rules retrieved',
+            meta: ['current_page' => $rules->currentPage(), 'last_page' => $rules->lastPage(), 'per_page' => $rules->perPage(), 'total' => $rules->total()]
+        );
     }
 
     /**

@@ -118,6 +118,7 @@ return [
     'commercial_document_refund_blocked' => 'Der Verkauf kann nicht erstattet werden, weil sein Handelsdokument :number nicht storniert werden kann: :reason',
     'corrispettivi_day_closed' => 'Dieser Tag ist bereits abgeschlossen.',
     'corrispettivi_day_empty' => 'Dieser Tag hat keine Dokumente zum Abschließen.',
+    'corrispettivi_open_sessions' => 'Schließen Sie die noch offene Kassensitzung, bevor Sie den Tag abschließen.|Schließen Sie die :count noch offenen Kassensitzungen, bevor Sie den Tag abschließen.',
     'corrispettivi_future_day' => 'Ein zukünftiger Tag kann nicht abgeschlossen werden.',
     'tessera_sanitaria_disabled' => 'Der Sistema-Tessera-Sanitaria-Ablauf ist für dieses Unternehmen nicht aktiviert.',
     'tessera_sanitaria_already_flagged' => 'Dieses Dokument ist bereits als Gesundheitsausgabe gekennzeichnet.',

@@ -80,7 +80,7 @@ final readonly class PreservationSealService
 
         foreach ($payslips as $payslip) {
             $source = "payroll_payslip:{$payslip->id}";
-            $existing = DmsDocument::query()->whereRaw("metadata ->> 'sealed_source' = ?", [$source])->first();
+            $existing = DmsDocument::query()->where('metadata->sealed_source', $source)->first();
 
             if ($existing !== null) {
                 $results[] = ['document' => $existing, 'reused' => true, 'payslip_id' => (string) $payslip->id];

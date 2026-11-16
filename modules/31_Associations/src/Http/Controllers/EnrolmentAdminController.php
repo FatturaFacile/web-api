@@ -40,7 +40,7 @@ final class EnrolmentAdminController extends AssociationController
     {
         $this->allow(AssociationCapability::Manage);
 
-        return AssociationRecordResource::collection(EnrolmentForm::query()->with('documents')->orderByDesc('created_at')->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection(EnrolmentForm::query()->with('documents')->orderByDesc('created_at')->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/enrolment-forms', 'createAssociationEnrolmentForm', 'Create an enrolment form and its public link', 'AssociationEnrolmentFormRequest')]
@@ -114,7 +114,7 @@ final class EnrolmentAdminController extends AssociationController
             ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->when($request->filled('form_id'), static fn ($query) => $query->where('form_id', (string) $request->query('form_id')))
             ->orderByDesc('created_at')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($applications);
     }

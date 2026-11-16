@@ -44,7 +44,7 @@ final class WorkCenterController extends Controller
             $query->where('status', (string) $request->query('status'));
         }
 
-        return MfgWorkCenterResource::collection($query->orderBy('work_center_code')->paginate($this->perPage($request)));
+        return MfgWorkCenterResource::collection($query->orderBy('work_center_code')->gridPaginate($this->perPage($request)));
     }
 
     /**

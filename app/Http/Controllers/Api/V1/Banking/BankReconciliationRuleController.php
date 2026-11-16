@@ -10,6 +10,7 @@ use App\Http\Resources\BankReconciliationRuleResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\BankReconciliationRule;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
@@ -28,15 +29,17 @@ class BankReconciliationRuleController extends Controller
     #[OA\Get(
         path: '/api/v1/banking/reconciliation-rules',
         operationId: 'listBankReconciliationRules',
-        description: 'Lists the reconciliation rules of the active tenant by ascending priority (the order in which the automatic reconciliation tries them).',
+        description: 'Lists the reconciliation rules of the active tenant by ascending priority (the order in which the automatic reconciliation tries them), paginated; sortable and filterable by column (grid contract).',
         summary: 'List reconciliation rules',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Banking', 'Reconciliation'],
+        parameters: [new OA\Parameter(name: 'per_page', in: 'query', required: false, schema: new OA\Schema(type: 'integer', default: 25))],
         responses: [
             new OA\Response(response: 200, description: 'Rules', content: new OA\JsonContent(properties: [
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/BankingReconciliationRuleResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/BankingUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/BankingForbidden', response: 403),
@@ -44,9 +47,9 @@ class BankReconciliationRuleController extends Controller
     )]
     public function index(): JsonResponse
     {
-        $rules = BankReconciliationRule::query()->orderBy('priority')->orderBy('name')->get();
+        $page = BankReconciliationRule::query()->orderBy('priority')->orderBy('name')->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(BankReconciliationRuleResource::collection($rules), 'Reconciliation rules');
+        return $this->successResponse(BankReconciliationRuleResource::collection($page->items()), 'Reconciliation rules', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**

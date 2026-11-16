@@ -56,7 +56,7 @@ final class SupplierContractController extends Controller
             $query->where('status', $request->input('status'));
         }
 
-        $contracts = $query->paginate((int) $request->query('per_page', 25));
+        $contracts = $query->gridPaginate((int) $request->query('per_page', 25));
 
         return response()->json(SupplierContractResource::collection($contracts)->response()->getData(true));
     }

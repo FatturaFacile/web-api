@@ -20,7 +20,7 @@ final class StockMovementResource extends JsonResource
 
         return [
             'id' => $this->id,
-            'movement_number' => $this->movement_number,
+            'movement_number' => $this->movement_number ?? substr((string) $this->id, 0, 8),
             'warehouse_id' => $this->warehouse_id,
             'stock_item_id' => $this->stock_item_id,
             'source_bin_id' => $source,
@@ -35,6 +35,7 @@ final class StockMovementResource extends JsonResource
             'reference_type' => $this->origin_document_type,
             'reference_id' => $this->origin_document_id,
             'created_by' => $this->executed_by_user_id,
+            'notes' => $this->notes,
             'item' => new StockItemResource($this->whenLoaded('item')),
             'source_bin' => new WarehouseBinResource($this->whenLoaded('sourceBin')),
             'destination_bin' => new WarehouseBinResource($this->whenLoaded('destinationBin')),

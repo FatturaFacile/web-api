@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
 
             ProductCategorySeeder::class,
             ProductBrandSeeder::class,
+            CustomsAndPemOriginSeeder::class,
             ProductSeeder::class,
 
             ContactSeeder::class,
@@ -70,6 +71,7 @@ class DatabaseSeeder extends Seeder
             GoodsReceiptItemSeeder::class,
 
             ProcurementLookupSeeder::class,
+            ExpenseLookupSeeder::class,
             ProcurementDemoDataSeeder::class,
 
             PaymentSeeder::class,
@@ -133,6 +135,7 @@ class DatabaseSeeder extends Seeder
             ManufacturingReferenceSeeder::class,
             AssociationsReferenceSeeder::class,
             ManufacturingDemoDataSeeder::class,
+            NewerModulesReferenceSeeder::class,
             EnterpriseDemoMasterSeeder::class,
         ]);
     }

@@ -35,13 +35,13 @@ final readonly class ExportSupplierPaymentsAction
         $invoices = PassiveInvoice::with('supplier')->whereIn('id', $data['invoice_ids'])->get();
 
         if ($invoices->count() !== count(array_unique($data['invoice_ids']))) {
-            throw ValidationException::withMessages(['invoice_ids' => 'Some supplier invoices do not exist.']);
+            throw ValidationException::withMessages(['invoice_ids' => __('treasury_errors.payment_export.invoices_missing')]);
         }
 
         $currencies = $invoices->pluck('currency')->unique();
 
         if ($currencies->count() !== 1) {
-            throw ValidationException::withMessages(['invoice_ids' => 'The invoices of a payment file must share one currency.']);
+            throw ValidationException::withMessages(['invoice_ids' => __('treasury_errors.payment_export.currency_mismatch')]);
         }
 
         $currency = (string) $currencies->first();
@@ -82,7 +82,7 @@ final readonly class ExportSupplierPaymentsAction
             ->orderByDesc('is_default')
             ->first();
 
-        return $account ?? throw ValidationException::withMessages(['bank_account_id' => "No active bank account in {$currency} to debit."]);
+        return $account ?? throw ValidationException::withMessages(['bank_account_id' => __('treasury_errors.payment_export.no_bank_account', ['currency' => $currency])]);
     }
 
     /**
@@ -93,11 +93,11 @@ final readonly class ExportSupplierPaymentsAction
         $balance = round((float) $invoice->amountDue() - (float) $invoice->total_paid, 2);
 
         if ($balance <= 0 || $invoice->document_type === 'TD04') {
-            throw ValidationException::withMessages(['invoice_ids' => "Invoice {$invoice->invoice_number} has nothing to pay."]);
+            throw ValidationException::withMessages(['invoice_ids' => __('treasury_errors.payment_export.nothing_to_pay', ['number' => $invoice->invoice_number])]);
         }
 
         if ($invoice->isPaymentBlocked()) {
-            throw ValidationException::withMessages(['invoice_ids' => "Invoice {$invoice->invoice_number} is not approved for payment."]);
+            throw ValidationException::withMessages(['invoice_ids' => __('treasury_errors.payment_export.not_approved', ['number' => $invoice->invoice_number])]);
         }
 
         $qrLines = $invoice->qr_raw_payload !== null ? preg_split('/\r\n|\r|\n/', trim((string) $invoice->qr_raw_payload)) : [];
@@ -105,7 +105,7 @@ final readonly class ExportSupplierPaymentsAction
         $iban = ($qrLines[3] ?? '') ?: ($supplier?->iban ?: $supplier?->qr_iban);
 
         if (empty($iban)) {
-            throw ValidationException::withMessages(['invoice_ids' => "Supplier of invoice {$invoice->invoice_number} has no IBAN."]);
+            throw ValidationException::withMessages(['invoice_ids' => __('treasury_errors.payment_export.supplier_no_iban', ['number' => $invoice->invoice_number])]);
         }
 
         $reference = $qrLines[28] ?? '';

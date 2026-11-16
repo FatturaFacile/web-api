@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\Payroll\Http\Controllers;
 
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -61,7 +62,7 @@ final class PayrollComplianceController extends PayrollController
     {
         $this->authorize('viewAny', PayrollRun::class);
 
-        return PayrollRecordResource::collection(PayrollLegalParameter::query()->orderBy('topic')->orderByDesc('year')->get());
+        return PayrollRecordResource::collection(PayrollLegalParameter::query()->orderBy('topic')->orderByDesc('year')->gridPaginate(RequestedPerPage::resolve(200)));
     }
 
     /**

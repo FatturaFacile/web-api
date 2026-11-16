@@ -7,6 +7,7 @@ namespace Modules\Treasury\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Http\Responses\ApiResponse;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Modules\Treasury\Http\Requests\CloseCashRegisterRequest;
 use Modules\Treasury\Http\Requests\StoreCashMovementRequest;
@@ -37,15 +38,17 @@ final class CashRegisterController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/cash-registers',
         operationId: 'listTreasuryCashRegisters',
-        description: 'Lists the cash registers of the active tenant with their balance and last closed day.',
+        description: 'Lists the cash registers of the active tenant with their balance and last closed day, paginated; sortable and filterable by column (grid contract).',
         summary: 'List cash registers',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Cash'],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/TreasuryPerPage')],
         responses: [
             new OA\Response(response: 200, description: 'Cash registers', content: new OA\JsonContent(properties: [
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryCashRegisterResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
@@ -53,7 +56,9 @@ final class CashRegisterController extends Controller
     )]
     public function index(): JsonResponse
     {
-        return $this->successResponse(CashRegisterResource::collection(CashRegister::query()->orderBy('code')->get()), 'Cash registers');
+        $page = CashRegister::query()->orderBy('code')->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse(CashRegisterResource::collection($page->items()), 'Cash registers', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**
@@ -118,16 +123,17 @@ final class CashRegisterController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/cash-registers/{id}/movements',
         operationId: 'listTreasuryCashMovements',
-        description: 'Lists the receipts and payments of a cash register, newest first (the cash book).',
+        description: 'Lists the receipts and payments of a cash register, newest first (the cash book), paginated; sortable and filterable by column (grid contract).',
         summary: 'List cash movements',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Cash'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/TreasuryCashRegisterId')],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/TreasuryCashRegisterId'), new OA\Parameter(ref: '#/components/parameters/TreasuryPerPage')],
         responses: [
             new OA\Response(response: 200, description: 'Cash movements', content: new OA\JsonContent(properties: [
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryCashMovementResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
@@ -137,9 +143,9 @@ final class CashRegisterController extends Controller
     public function movements(string $id): JsonResponse
     {
         $register = CashRegister::query()->findOrFail($id);
-        $movements = CashMovement::query()->where('cash_register_id', $register->id)->orderByDesc('movement_date')->orderByDesc('created_at')->limit(500)->get();
+        $page = CashMovement::query()->where('cash_register_id', $register->id)->orderByDesc('movement_date')->orderByDesc('created_at')->gridPaginate(RequestedPerPage::resolve(25));
 
-        return $this->successResponse(CashMovementResource::collection($movements), 'Cash movements');
+        return $this->successResponse(CashMovementResource::collection($page->items()), 'Cash movements', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 
     /**
@@ -220,16 +226,17 @@ final class CashRegisterController extends Controller
     #[OA\Get(
         path: '/api/v1/treasury/cash-registers/{id}/closings',
         operationId: 'listTreasuryCashClosings',
-        description: 'Lists the daily closings of a cash register, newest first.',
+        description: 'Lists the daily closings of a cash register, newest first, paginated; sortable and filterable by column (grid contract).',
         summary: 'List cash closings',
         security: [['bearerAuth' => [], 'tenantHeader' => []]],
         tags: ['Treasury Cash'],
-        parameters: [new OA\Parameter(ref: '#/components/parameters/TreasuryCashRegisterId')],
+        parameters: [new OA\Parameter(ref: '#/components/parameters/TreasuryCashRegisterId'), new OA\Parameter(ref: '#/components/parameters/TreasuryPerPage')],
         responses: [
             new OA\Response(response: 200, description: 'Closings', content: new OA\JsonContent(properties: [
                 new OA\Property(property: 'success', type: 'boolean'),
                 new OA\Property(property: 'message', type: 'string'),
                 new OA\Property(property: 'data', type: 'array', items: new OA\Items(ref: '#/components/schemas/TreasuryCashClosingResource')),
+                new OA\Property(property: 'meta', type: 'object', properties: [new OA\Property(property: 'total', type: 'integer'), new OA\Property(property: 'current_page', type: 'integer'), new OA\Property(property: 'last_page', type: 'integer')]),
             ])),
             new OA\Response(ref: '#/components/responses/TreasuryUnauthenticated', response: 401),
             new OA\Response(ref: '#/components/responses/TreasuryForbidden', response: 403),
@@ -240,6 +247,8 @@ final class CashRegisterController extends Controller
     {
         $register = CashRegister::query()->findOrFail($id);
 
-        return $this->successResponse(CashClosingResource::collection(CashClosing::query()->where('cash_register_id', $register->id)->orderByDesc('closing_date')->limit(400)->get()), 'Cash closings');
+        $page = CashClosing::query()->where('cash_register_id', $register->id)->orderByDesc('closing_date')->gridPaginate(RequestedPerPage::resolve(25));
+
+        return $this->successResponse(CashClosingResource::collection($page->items()), 'Cash closings', meta: ['total' => $page->total(), 'current_page' => $page->currentPage(), 'last_page' => $page->lastPage()]);
     }
 }

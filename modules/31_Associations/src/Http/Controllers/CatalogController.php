@@ -28,7 +28,7 @@ final class CatalogController extends AssociationController
         $this->allow($this->catalogs->readCapability($catalog));
         $model = $this->catalogs->model($catalog);
 
-        return AssociationRecordResource::collection($model::query()->paginate($this->perPage($request)));
+        return AssociationRecordResource::collection($model::query()->gridPaginate($this->perPage($request)));
     }
 
     #[AssociationPost('/api/v1/associations/catalogs/{catalog}', 'createAssociationCatalogEntry', 'Create an entry of a catalog', 'AssociationCatalogEntryRequest')]

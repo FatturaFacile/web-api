@@ -17,6 +17,7 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Modules\GeneralLedger\Services\Tax\Decimal;
 use Modules\PracticeManagement\Models\PeriodClosing;
+use Modules\PracticeManagement\Models\PracticeExpense;
 
 /**
  * Activity control, fee notes from the logged activities, and the closing of a period across many clients. It builds on
@@ -35,7 +36,7 @@ final class PracticeService
     public function activityControl(string $from, string $to, ?string $userId, int $staleDays): array
     {
         $activities = BillableActivity::query()
-            ->whereBetween('date', [$from, $to])
+            ->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)
             ->when($userId !== null, fn ($query) => $query->where('user_id', $userId))
             ->get();
         $cases = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->get()->keyBy('id');
@@ -71,7 +72,8 @@ final class PracticeService
     }
 
     /**
-     * A fee note from unbilled activities of one client. The contribution, withholding and VAT rates come from the
+     * A fee note from unbilled activities and billable expenses of one client. Expenses advanced for the client are added
+     * to the amount payable outside the taxable base. The contribution, withholding and VAT rates come from the
      * request: the module applies no default rate.
      *
      * @param  array<string, mixed>  $data
@@ -79,11 +81,26 @@ final class PracticeService
     public function feeNoteFromActivities(array $data): FeeNote
     {
         return DB::transaction(function () use ($data): FeeNote {
-            $activities = BillableActivity::query()->whereIn('id', $data['activity_ids'])->lockForUpdate()->get();
-            $caseClients = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->pluck('client_id', 'id');
+            $activityIds = $data['activity_ids'] ?? [];
+            $expenseIds = $data['expense_ids'] ?? [];
+            $activities = BillableActivity::query()->whereIn('id', $activityIds)->lockForUpdate()->get();
+            $expenses = PracticeExpense::query()->whereIn('id', $expenseIds)->lockForUpdate()->get();
+            $caseClients = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id')->merge($expenses->pluck('legal_case_id')))->pluck('client_id', 'id');
 
-            if ($activities->count() !== count(array_unique($data['activity_ids']))) {
+            if ($activities->count() !== count(array_unique($activityIds))) {
                 throw new BusinessRuleException('Some activities do not exist.');
+            }
+
+            if ($expenses->count() !== count(array_unique($expenseIds))) {
+                throw new BusinessRuleException('Some expenses do not exist.');
+            }
+
+            if ($expenses->contains(static fn (PracticeExpense $expense): bool => $expense->is_billed || ! $expense->is_billable)) {
+                throw new BusinessRuleException('Some expenses are already billed or not billable.');
+            }
+
+            if ($expenses->contains(static fn (PracticeExpense $expense): bool => (string) $caseClients[$expense->legal_case_id] !== (string) $data['client_id'])) {
+                throw new BusinessRuleException('Every expense must belong to a case of the client.');
             }
 
             if ($activities->contains('is_billed', true)) {
@@ -99,7 +116,8 @@ final class PracticeService
             $vatBase = Decimal::add($taxable, $contribution);
             $vat = Decimal::round2(Decimal::div(Decimal::mul($vatBase, (string) $data['vat_rate']), '100'));
             $withholding = Decimal::round2(Decimal::div(Decimal::mul($taxable, (string) $data['ritenuta_rate']), '100'));
-            $cases = $activities->pluck('legal_case_id')->unique();
+            $reimbursed = Decimal::round2((string) $expenses->sum('amount'));
+            $cases = $activities->pluck('legal_case_id')->merge($expenses->pluck('legal_case_id'))->unique();
 
             $note = FeeNote::create([
                 'legal_case_id' => $cases->count() === 1 ? $cases->first() : null,
@@ -110,11 +128,13 @@ final class PracticeService
                 'cassa_previdenza_amount' => $contribution,
                 'ritenuta_acconto_amount' => $withholding,
                 'vat_amount' => $vat,
-                'net_payable' => Decimal::round2(Decimal::sub(Decimal::add($vatBase, $vat), $withholding)),
+                'expenses_amount' => $reimbursed,
+                'net_payable' => Decimal::round2(Decimal::add(Decimal::sub(Decimal::add($vatBase, $vat), $withholding), $reimbursed)),
                 'status' => 'draft',
             ]);
 
             BillableActivity::query()->whereIn('id', $activities->pluck('id'))->update(['is_billed' => true, 'fee_note_id' => $note->id]);
+            PracticeExpense::query()->whereIn('id', $expenses->pluck('id'))->update(['is_billed' => true, 'fee_note_id' => $note->id]);
 
             return $note;
         });
@@ -127,10 +147,10 @@ final class PracticeService
      */
     public function closingOverview(string $from, string $to): array
     {
-        $activities = BillableActivity::query()->whereBetween('date', [$from, $to])->where('is_billed', false)->get();
+        $activities = BillableActivity::query()->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->where('is_billed', false)->get();
         $caseClients = LegalCase::query()->whereIn('id', $activities->pluck('legal_case_id'))->pluck('client_id', 'id');
         $unbilled = $activities->groupBy(static fn (BillableActivity $activity): string => (string) $caseClients[$activity->legal_case_id]);
-        $drafts = FeeNote::query()->whereBetween('date', [$from, $to])->where('status', 'draft')->get()->groupBy('client_id');
+        $drafts = FeeNote::query()->whereDate('date', '>=', $from)->whereDate('date', '<=', $to)->where('status', 'draft')->get()->groupBy('client_id');
         $closings = PeriodClosing::query()->whereDate('period_start', $from)->whereDate('period_end', $to)->get()->keyBy('client_id');
         $clientIds = $unbilled->keys()->merge($drafts->keys())->merge($closings->keys())->unique()->values();
         $openInvoices = Invoice::query()->whereIn('contact_id', $clientIds)->whereDate('date', '<=', $to)->where('payment_status', '!=', 'paid')->where('invoice_type', '!=', 'proforma')->get()->groupBy('contact_id');
@@ -223,7 +243,7 @@ final class PracticeService
 
             $caseIds = LegalCase::query()->where('client_id', $locked->client_id)->pluck('id');
             $unbilled = BillableActivity::query()->whereIn('legal_case_id', $caseIds)->where('is_billed', false)
-                ->whereBetween('date', [$locked->period_start->toDateString(), $locked->period_end->toDateString()])->count();
+                ->whereDate('date', '>=', $locked->period_start->toDateString())->whereDate('date', '<=', $locked->period_end->toDateString())->count();
 
             if ($unbilled > 0 && ! $allowUnbilled) {
                 throw new BusinessRuleException("{$unbilled} activities of the period are not billed.");

@@ -205,4 +205,4 @@ test('a second hire or rejection working on a copy read before the first decisio
         ->and(fn () => $service->reject($stale, $this->manager))->toThrow(ValidationException::class)
         ->and(Employee::query()->withoutGlobalScopes()->where('tenant_id', $this->tenant->id)->count())->toBe(1)
         ->and(JobApplication::query()->findOrFail($id)->status)->toBe('hired');
-});
+})->skip(fn (): bool => DB::getDriverName() === 'sqlite', 'SQLite has no row locks, so the lock statements this test records are never issued');

@@ -393,9 +393,9 @@ final readonly class LeadService implements LeadServiceInterface
 
         if (! empty($companyName)) {
             if ($conditions) {
-                $query->orWhere('company_name', 'ilike', "%{$companyName}%");
+                $query->orWhereLike('company_name', "%{$companyName}%");
             } else {
-                $query->where('company_name', 'ilike', "%{$companyName}%");
+                $query->whereLike('company_name', "%{$companyName}%");
                 $conditions = true;
             }
         }

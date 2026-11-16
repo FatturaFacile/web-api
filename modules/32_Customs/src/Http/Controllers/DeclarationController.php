@@ -52,7 +52,7 @@ final class DeclarationController extends CustomsController
             ->when($request->filled('mrn'), static fn ($query) => $query->where('mrn', (string) $request->query('mrn')))
             ->latest();
 
-        return CustomsRecordResource::collection($query->paginate($this->perPage($request)));
+        return CustomsRecordResource::collection($query->gridPaginate($this->perPage($request)));
     }
 
     /**

@@ -27,6 +27,7 @@ use App\Models\ServiceReport;
 use App\Models\Ticket;
 use App\Services\Pdf\DocumentPdfService;
 use App\Services\Portal\PortalTokenService;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response as HttpResponse;
@@ -343,11 +344,12 @@ class CustomerPortalController extends Controller
             ->where('contact_id', $accessToken->contact_id)
             ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->latest('date')
-            ->paginate(20);
+            ->gridPaginate(RequestedPerPage::resolve(20));
 
         return $this->successResponse(
             data: PortalInvoiceResource::collection($invoices),
-            message: 'Invoices retrieved successfully'
+            message: 'Invoices retrieved successfully',
+            meta: ['current_page' => $invoices->currentPage(), 'last_page' => $invoices->lastPage(), 'per_page' => $invoices->perPage(), 'total' => $invoices->total()]
         );
     }
 
@@ -426,11 +428,12 @@ class CustomerPortalController extends Controller
             ->when($scopedId !== null, fn ($query) => $query->whereKey($scopedId))
             ->portalVisible()
             ->latest('report_date')
-            ->paginate(20);
+            ->gridPaginate(RequestedPerPage::resolve(20));
 
         return $this->successResponse(
             data: PortalServiceReportResource::collection($reports),
-            message: 'Service reports retrieved successfully'
+            message: 'Service reports retrieved successfully',
+            meta: ['current_page' => $reports->currentPage(), 'last_page' => $reports->lastPage(), 'per_page' => $reports->perPage(), 'total' => $reports->total()]
         );
     }
 

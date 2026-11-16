@@ -52,11 +52,11 @@
     <env name="CACHE_STORE" value="array"/>
 
     <!--
-        DB_CONNECTION and DB_DATABASE are resolved via .env.testing or environment variables (e.g. CI pgsql).
-        Uncomment below if local SQLite in-memory fallback is needed when no .env.testing is present:
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
+        SQLite is the default for local runs; CI and real environment variables (e.g. pgsql) take precedence.
+        DatabaseTransactions-based tests need a migrated file database: DB_DATABASE=<path>.sqlite php artisan migrate.
     -->
+    <env name="DB_CONNECTION" value="sqlite"/>
+    <env name="DB_DATABASE" value=":memory:"/>
     <env name="MAIL_MAILER" value="array"/>
     <env name="QUEUE_CONNECTION" value="sync"/>
     <env name="TENANCY_REQUIRE_REQUEST_CONTEXT" value="false"/>

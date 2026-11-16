@@ -16,6 +16,21 @@ final class StockMovement extends BaseEnterpriseModel
 {
     protected $table = 'stock_movements';
 
+    /**
+     * Calculated grid columns as portable SQL: the short movement number and the signed quantity the movements grid
+     * shows (a movement that only leaves a location is negative).
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            // The movements table has no number column: the grid and the API show the first 8 characters of the id.
+            'movement_number' => 'SUBSTR(CAST(stock_movements.id AS VARCHAR(36)), 1, 8)',
+            'signed_quantity' => 'CASE WHEN stock_movements.source_location_id IS NOT NULL AND stock_movements.destination_location_id IS NULL THEN -ABS(stock_movements.quantity) ELSE ABS(stock_movements.quantity) END',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

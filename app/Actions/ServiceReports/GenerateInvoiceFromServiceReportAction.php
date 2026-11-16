@@ -33,19 +33,19 @@ class GenerateInvoiceFromServiceReportAction
 
             if ($report->status?->code === 'cancelled') {
                 throw ValidationException::withMessages([
-                    'service_report' => 'Cancelled service reports cannot be invoiced.',
+                    'service_report' => __('service_reports_errors.invoice.cancelled'),
                 ]);
             }
 
             if ($report->signed_at === null) {
                 throw ValidationException::withMessages([
-                    'service_report' => 'The service report must be signed by the customer before generating an invoice.',
+                    'service_report' => __('service_reports_errors.invoice.not_signed'),
                 ]);
             }
 
             if ($report->invoiced_at !== null || $report->invoiceLink()->exists()) {
                 throw ValidationException::withMessages([
-                    'service_report' => 'This service report has already been invoiced.',
+                    'service_report' => __('service_reports_errors.invoice.already_invoiced'),
                 ]);
             }
 
@@ -53,7 +53,7 @@ class GenerateInvoiceFromServiceReportAction
 
             if ($billableLines->isEmpty()) {
                 throw ValidationException::withMessages([
-                    'service_report' => 'The service report has no billable lines.',
+                    'service_report' => __('service_reports_errors.invoice.no_billable_lines'),
                 ]);
             }
 

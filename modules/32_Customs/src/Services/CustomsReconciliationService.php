@@ -23,7 +23,7 @@ final class CustomsReconciliationService
     {
         $groups = CustomsAssessmentDecision::query()
             ->where('direction', 'import')
-            ->whereBetween('document_date', [$from, $to])
+            ->whereDate('document_date', '>=', $from)->whereDate('document_date', '<=', $to)
             ->orderBy('mrn')
             ->orderBy('version')
             ->get()

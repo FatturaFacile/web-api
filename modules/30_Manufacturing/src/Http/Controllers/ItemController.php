@@ -54,7 +54,7 @@ final class ItemController extends Controller
             $query->where('is_active', $request->boolean('active'));
         }
 
-        return MfgItemResource::collection($query->orderBy('item_code')->paginate($this->perPage($request)));
+        return MfgItemResource::collection($query->orderBy('item_code')->gridPaginate($this->perPage($request)));
     }
 
     /**

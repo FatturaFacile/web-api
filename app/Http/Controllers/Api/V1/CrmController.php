@@ -11,6 +11,7 @@ use App\Http\Requests\Crm\UpdateContactRequest;
 use App\Http\Resources\ContactResource;
 use App\Http\Responses\ApiResponse;
 use App\Models\Contact;
+use App\Support\Http\RequestedPerPage;
 use Illuminate\Foundation\Auth\Access\AuthorizesRequests;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -75,7 +76,7 @@ class CrmController extends Controller
         }
 
         return $this->successResponse(
-            data: $query->paginate(25),
+            data: $query->gridPaginate(RequestedPerPage::resolve(25)),
             message: 'Contacts retrieved successfully'
         );
     }
@@ -102,7 +103,7 @@ class CrmController extends Controller
         $clients = Contact::with('addresses')
             ->whereIn('type', ['client', 'customer', 'both'])
             ->latest()
-            ->paginate(25);
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $clients, message: 'Clients retrieved');
     }
@@ -129,7 +130,7 @@ class CrmController extends Controller
         $suppliers = Contact::with('addresses')
             ->whereIn('type', ['supplier', 'both'])
             ->latest()
-            ->paginate(25);
+            ->gridPaginate(RequestedPerPage::resolve(25));
 
         return $this->successResponse(data: $suppliers, message: 'Suppliers retrieved');
     }
@@ -147,6 +148,7 @@ class CrmController extends Controller
                 required: ['type', 'country'],
                 properties: [
                     new OA\Property(property: 'type', type: 'string', enum: ['client', 'customer', 'supplier', 'both', 'lead'], example: 'client'),
+                    new OA\Property(property: 'legal_type', type: 'string', enum: ['company', 'person'], nullable: true, description: 'Company: company_name is required. Person: last_name is required.', example: 'company'),
                     new OA\Property(property: 'country', type: 'string', maxLength: 2, example: 'CH'),
                     new OA\Property(property: 'company_name', type: 'string', maxLength: 255, nullable: true, example: 'Acme SA'),
                     new OA\Property(property: 'first_name', type: 'string', maxLength: 100, nullable: true, example: 'John'),
@@ -234,6 +236,7 @@ class CrmController extends Controller
             content: new OA\JsonContent(
                 properties: [
                     new OA\Property(property: 'type', type: 'string', enum: ['client', 'customer', 'supplier', 'both', 'lead']),
+                    new OA\Property(property: 'legal_type', type: 'string', enum: ['company', 'person'], nullable: true, description: 'Company: company_name is required. Person: last_name is required.'),
                     new OA\Property(property: 'country', type: 'string', maxLength: 2),
                     new OA\Property(property: 'company_name', type: 'string', maxLength: 255, nullable: true),
                     new OA\Property(property: 'first_name', type: 'string', maxLength: 100, nullable: true),

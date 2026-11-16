@@ -74,7 +74,7 @@ final class ContractObligationController extends Controller
             'per_page' => ['nullable', 'integer', 'min:5', 'max:100'],
         ]);
 
-        $page = $this->obligations->query($filters, $this->clock->today())->paginate((int) ($filters['per_page'] ?? 25));
+        $page = $this->obligations->query($filters, $this->clock->today())->gridPaginate((int) ($filters['per_page'] ?? 25));
 
         return $this->successResponse(
             ContractObligationResource::collection($page->getCollection()),
@@ -138,7 +138,7 @@ final class ContractObligationController extends Controller
         $contract = $this->register->find($contractKind, $id);
 
         if (in_array($contract->getAttribute('status'), ['terminated', 'cancelled'], true)) {
-            abort(Response::HTTP_CONFLICT, 'A terminated contract takes no new obligations.');
+            abort(Response::HTTP_CONFLICT, __('contracts.obligation.terminated_contract'));
         }
 
         $obligation = ContractObligation::create([
@@ -178,7 +178,7 @@ final class ContractObligationController extends Controller
         $obligation = ContractObligation::query()->findOrFail($obligationId);
 
         if ($obligation->status !== 'open') {
-            abort(Response::HTTP_CONFLICT, "A {$obligation->status} item cannot change.");
+            abort(Response::HTTP_CONFLICT, __('contracts.obligation.item_locked', ['status' => $obligation->status]));
         }
 
         $data = $request->validated();
@@ -212,7 +212,7 @@ final class ContractObligationController extends Controller
         $obligation = ContractObligation::query()->findOrFail($obligationId);
 
         if ($obligation->status !== 'open') {
-            abort(Response::HTTP_CONFLICT, 'A closed item stays on record.');
+            abort(Response::HTTP_CONFLICT, __('contracts.obligation.item_closed'));
         }
 
         $obligation->delete();

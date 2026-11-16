@@ -48,7 +48,7 @@ final class MembershipController extends AssociationController
             ->when($request->filled('status'), static fn ($query) => $query->where('status', (string) $request->query('status')))
             ->when($request->filled('member_id'), static fn ($query) => $query->where('member_id', (string) $request->query('member_id')))
             ->orderByDesc('valid_to')
-            ->paginate($this->perPage($request));
+            ->gridPaginate($this->perPage($request));
 
         return AssociationRecordResource::collection($memberships);
     }

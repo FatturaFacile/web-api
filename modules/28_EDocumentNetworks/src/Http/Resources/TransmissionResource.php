@@ -26,6 +26,10 @@ final class TransmissionResource extends JsonResource
             'status' => $this->status,
             'external_id' => $this->external_id,
             'driver' => $this->driver,
+            'error_message' => $this->error_message,
+            'attempts' => (int) $this->attempts,
+            'last_attempt_at' => $this->last_attempt_at?->toIso8601String(),
+            'can_retry' => $this->canRetry(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

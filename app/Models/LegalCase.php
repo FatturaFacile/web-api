@@ -29,6 +29,19 @@ class LegalCase extends Model
         'jurisdiction',
     ];
 
+    /**
+     * Calculated columns of the grid: the logged time and the fees of the case, summed over its billable activities.
+     *
+     * @return array<string, string>
+     */
+    public function gridColumns(): array
+    {
+        return [
+            'logged_minutes' => 'COALESCE((SELECT SUM(billable_activities.duration_minutes) FROM billable_activities WHERE billable_activities.legal_case_id = legal_cases.id), 0)',
+            'fee_total' => 'COALESCE((SELECT SUM(billable_activities.fee_amount) FROM billable_activities WHERE billable_activities.legal_case_id = legal_cases.id), 0)',
+        ];
+    }
+
     protected function casts(): array
     {
         return [

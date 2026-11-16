@@ -34,7 +34,7 @@ class GenerateConsolidatedInvoiceAction
         return DB::transaction(function () use ($reportIds): Invoice {
             if (count($reportIds) < 2) {
                 throw ValidationException::withMessages([
-                    'report_ids' => 'At least two service reports are required to generate a consolidated invoice.',
+                    'report_ids' => __('service_reports_errors.consolidated.min_two'),
                 ]);
             }
 
@@ -48,7 +48,7 @@ class GenerateConsolidatedInvoiceAction
 
             if ($reports->count() !== count($reportIds)) {
                 throw ValidationException::withMessages([
-                    'report_ids' => 'One or more service reports could not be found.',
+                    'report_ids' => __('service_reports_errors.consolidated.not_found'),
                 ]);
             }
 
@@ -56,7 +56,7 @@ class GenerateConsolidatedInvoiceAction
             $contactIds = $reports->pluck('contact_id')->unique();
             if ($contactIds->count() > 1) {
                 throw ValidationException::withMessages([
-                    'report_ids' => 'All consolidated service reports must belong to the same customer/contact.',
+                    'report_ids' => __('service_reports_errors.consolidated.same_customer'),
                 ]);
             }
 
@@ -64,19 +64,19 @@ class GenerateConsolidatedInvoiceAction
             foreach ($reports as $report) {
                 if ($report->status?->code === 'cancelled') {
                     throw ValidationException::withMessages([
-                        'report_ids' => "Service report {$report->report_number} is cancelled and cannot be invoiced.",
+                        'report_ids' => __('service_reports_errors.consolidated.cancelled', ['number' => $report->report_number]),
                     ]);
                 }
 
                 if ($report->signed_at === null) {
                     throw ValidationException::withMessages([
-                        'report_ids' => "Service report {$report->report_number} is not signed by the customer.",
+                        'report_ids' => __('service_reports_errors.consolidated.not_signed', ['number' => $report->report_number]),
                     ]);
                 }
 
                 if ($report->invoiced_at !== null || $report->invoiceLink()->exists()) {
                     throw ValidationException::withMessages([
-                        'report_ids' => "Service report {$report->report_number} has already been invoiced.",
+                        'report_ids' => __('service_reports_errors.consolidated.already_invoiced', ['number' => $report->report_number]),
                     ]);
                 }
             }
@@ -97,7 +97,7 @@ class GenerateConsolidatedInvoiceAction
 
             if (empty($lineItems)) {
                 throw ValidationException::withMessages([
-                    'report_ids' => 'None of the selected service reports contain billable lines.',
+                    'report_ids' => __('service_reports_errors.consolidated.no_billable_lines'),
                 ]);
             }
 

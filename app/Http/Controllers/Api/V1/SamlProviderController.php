@@ -296,7 +296,7 @@ class SamlProviderController extends Controller
     private function activeTenant(): Tenant
     {
         $tenant = $this->tenantContext->getTenant();
-        abort_if($tenant === null, Response::HTTP_BAD_REQUEST, 'Missing tenant context.');
+        abort_if($tenant === null, Response::HTTP_BAD_REQUEST, __('tenant_errors.missing_context'));
 
         return $tenant;
     }

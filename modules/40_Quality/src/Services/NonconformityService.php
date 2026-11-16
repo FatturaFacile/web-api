@@ -79,16 +79,16 @@ final readonly class NonconformityService
             $actions = QmsCapaAction::query()->where('nonconformity_id', $locked->id)->get();
             $unsettled = $actions->reject(static fn (QmsCapaAction $action): bool => in_array($action->status, QmsCapaAction::SettledStatuses, true));
             if ($unsettled->isNotEmpty()) {
-                throw ValidationException::withMessages(['status' => ['Every corrective and preventive action must be verified or cancelled before closing: '.$unsettled->pluck('number')->implode(', ').'.']]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.nonconformity.actions_unsettled', ['numbers' => $unsettled->pluck('number')->implode(', ')])]]);
             }
 
             if (in_array($locked->severity, ['major', 'critical'], true)) {
                 if (blank($locked->root_cause)) {
-                    throw ValidationException::withMessages(['root_cause' => ['A major or critical non-conformity needs a root cause before it is closed.']]);
+                    throw ValidationException::withMessages(['root_cause' => [__('quality_errors.nonconformity.root_cause_required')]]);
                 }
 
                 if (! $actions->contains(static fn (QmsCapaAction $action): bool => $action->status === 'verified' && $action->type === 'corrective')) {
-                    throw ValidationException::withMessages(['status' => ['A major or critical non-conformity needs at least one verified corrective action before it is closed.']]);
+                    throw ValidationException::withMessages(['status' => [__('quality_errors.nonconformity.verified_action_required')]]);
                 }
             }
 
@@ -124,7 +124,7 @@ final readonly class NonconformityService
         return DB::transaction(function () use ($nonconformity, $from, $to, $event, $extra): QmsNonconformity {
             $locked = QmsNonconformity::query()->whereKey($nonconformity->id)->lockForUpdate()->firstOrFail();
             if (! in_array($locked->status, $from, true)) {
-                throw ValidationException::withMessages(['status' => ["The non-conformity is {$locked->status}: expected ".implode(' or ', $from).'.']]);
+                throw ValidationException::withMessages(['status' => [__('quality_errors.nonconformity.status_expected', ['status' => $locked->status, 'expected' => implode(' / ', $from)])]]);
             }
 
             $locked->update(['status' => $to, ...$extra()]);
@@ -137,7 +137,7 @@ final readonly class NonconformityService
     private function assertOpen(QmsNonconformity $nonconformity): void
     {
         if (! $nonconformity->isOpen()) {
-            throw ValidationException::withMessages(['status' => ["The non-conformity is {$nonconformity->status} and cannot be changed."]]);
+            throw ValidationException::withMessages(['status' => [__('quality_errors.nonconformity.locked', ['status' => $nonconformity->status])]]);
         }
     }
 
@@ -148,12 +148,12 @@ final readonly class NonconformityService
         }
 
         if ($source !== 'manufacturing') {
-            throw ValidationException::withMessages(['mfg_non_conformance_id' => ['A manufacturing reference is accepted only for the source manufacturing.']]);
+            throw ValidationException::withMessages(['mfg_non_conformance_id' => [__('quality_errors.nonconformity.mfg_reference_source')]]);
         }
 
         $exists = DB::table('mfg_quality_non_conformances')->where('tenant_id', $tenantId)->where('id', $reference)->exists();
         if (! $exists) {
-            throw ValidationException::withMessages(['mfg_non_conformance_id' => ['The manufacturing non-conformance does not exist in this company.']]);
+            throw ValidationException::withMessages(['mfg_non_conformance_id' => [__('quality_errors.nonconformity.mfg_not_found')]]);
         }
     }
 

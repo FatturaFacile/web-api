@@ -26,15 +26,15 @@ class ApproveQuoteAction
             $quote = Quote::lockForUpdate()->findOrFail($quote->id);
 
             if ($quote->contact_id !== $token->contact_id || $quote->tenant_id !== $token->tenant_id) {
-                throw ValidationException::withMessages(['quote' => 'Unauthorized quote access.']);
+                throw ValidationException::withMessages(['quote' => __('portal_errors.quote.unauthorized')]);
             }
 
             if ($quote->signed_at !== null || $quote->status === QuoteStatus::Accepted->value) {
-                throw ValidationException::withMessages(['quote' => 'This quote has already been accepted.']);
+                throw ValidationException::withMessages(['quote' => __('portal_errors.quote.already_accepted')]);
             }
 
             if (! QuoteStatus::allows($quote->status, QuoteStatus::Accepted)) {
-                throw ValidationException::withMessages(['quote' => 'This quote is no longer available for acceptance.']);
+                throw ValidationException::withMessages(['quote' => __('portal_errors.quote.not_acceptable')]);
             }
 
             $quote->update([

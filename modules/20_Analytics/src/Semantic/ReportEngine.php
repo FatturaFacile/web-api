@@ -7,6 +7,7 @@ namespace Modules\Analytics\Semantic;
 use App\Models\User;
 use App\Services\Tenancy\TenantClock;
 use App\Services\Tenancy\TenantContext;
+use App\Support\Database\SqlDialect;
 use Carbon\CarbonImmutable;
 use Closure;
 use Generator;
@@ -57,10 +58,10 @@ final readonly class ReportEngine
      */
     public function datasetFor(string $key, User $user): Dataset
     {
-        $dataset = $this->catalog->find($key) ?? throw new NotFoundHttpException('Unknown dataset.');
+        $dataset = $this->catalog->find($key) ?? throw new NotFoundHttpException(__('analytics_errors.report.unknown_dataset'));
 
         if (! $this->catalog->canRead($dataset, $user)) {
-            throw new AuthorizationException("Your role cannot read the {$dataset->module} data this dataset is drawn from.");
+            throw new AuthorizationException(__('analytics_errors.report.role_cannot_read', ['module' => $dataset->module]));
         }
 
         return $dataset;
@@ -223,7 +224,7 @@ final readonly class ReportEngine
         $tenantId = $this->tenantContext->getTenantId();
 
         if ($tenantId === null) {
-            throw new AuthorizationException('No active company.');
+            throw new AuthorizationException(__('analytics_errors.report.no_active_company'));
         }
 
         $query = DB::table($dataset->table)->where("{$dataset->table}.tenant_id", $tenantId);
@@ -258,12 +259,17 @@ final readonly class ReportEngine
             $query->whereRaw('('.$dataset->dimensions[$dataset->periodDimension]->sql.') BETWEEN ? AND ?', [$period['from'], $period['to']]);
         }
 
+        $grammar = $query->getGrammar();
+        $expressions = [];
+
         foreach ($spec->dimensions as $selected) {
-            $query->selectRaw($this->dimensionSql($dataset->dimensions[$selected['key']], $selected['granularity']).' AS "'.$selected['key'].'"');
+            $expressions[$selected['key']] = $this->dimensionSql($dataset->dimensions[$selected['key']], $selected['granularity']);
+            $query->selectRaw($expressions[$selected['key']].' AS '.$grammar->wrap($selected['key']));
         }
 
         foreach ($spec->measures as $key) {
-            $query->selectRaw($dataset->measures[$key]->sql.' AS "'.$key.'"');
+            $expressions[$key] = $dataset->measures[$key]->sql;
+            $query->selectRaw($expressions[$key].' AS '.$grammar->wrap($key));
         }
 
         if ($spec->dimensions !== []) {
@@ -271,7 +277,9 @@ final readonly class ReportEngine
         }
 
         foreach ($this->ordering($spec) as $order) {
-            $query->orderByRaw('"'.$order['field'].'" '.($order['direction'] === 'desc' ? 'DESC' : 'ASC').' NULLS LAST');
+            // NULLs last on every database: an alias cannot sit inside an expression of ORDER BY, so the expression is repeated.
+            $expression = $expressions[$order['field']];
+            $query->orderByRaw('(CASE WHEN '.$expression.' IS NULL THEN 1 ELSE 0 END)')->orderByRaw($expression.($order['direction'] === 'desc' ? ' DESC' : ' ASC'));
         }
 
         return $query;
@@ -296,20 +304,16 @@ final readonly class ReportEngine
             return $dimension->sql;
         }
 
-        if ($granularity === 'day') {
-            return "to_char(({$dimension->sql})::date, 'YYYY-MM-DD')";
-        }
-
-        return "to_char(date_trunc('{$granularity}', ({$dimension->sql})::timestamp), 'YYYY-MM-DD')";
+        return SqlDialect::periodStart("({$dimension->sql})", $granularity);
     }
 
     private function filter(Builder $query, Dimension $dimension, string $operator, mixed $value): void
     {
-        $column = "({$dimension->sql})";
+        $column = $dimension->type === Dimension::TypeDate ? SqlDialect::dateOf("({$dimension->sql})") : "({$dimension->sql})";
 
         match ($operator) {
             'eq' => $query->whereRaw("{$column} = ?", [$value]),
-            'neq' => $query->whereRaw("{$column} IS DISTINCT FROM ?", [$value]),
+            'neq' => $query->whereRaw("({$column} IS NULL OR {$column} <> ?)", [$value]),
             'gt' => $query->whereRaw("{$column} > ?", [$value]),
             'gte' => $query->whereRaw("{$column} >= ?", [$value]),
             'lt' => $query->whereRaw("{$column} < ?", [$value]),
@@ -317,8 +321,8 @@ final readonly class ReportEngine
             'between' => $query->whereRaw("{$column} BETWEEN ? AND ?", $value),
             'in' => $query->whereRaw("{$column} IN (".implode(', ', array_fill(0, count($value), '?')).')', $value),
             'not_in' => $query->whereRaw("({$column} IS NULL OR {$column} NOT IN (".implode(', ', array_fill(0, count($value), '?')).'))', $value),
-            'contains' => $query->whereRaw("{$column} ILIKE ? ESCAPE '\\'", ['%'.$this->escapeLike((string) $value).'%']),
-            'starts_with' => $query->whereRaw("{$column} ILIKE ? ESCAPE '\\'", [$this->escapeLike((string) $value).'%']),
+            'contains' => $query->whereRaw("LOWER({$column}) LIKE LOWER(?) ESCAPE '\\'", ['%'.$this->escapeLike((string) $value).'%']),
+            'starts_with' => $query->whereRaw("LOWER({$column}) LIKE LOWER(?) ESCAPE '\\'", [$this->escapeLike((string) $value).'%']),
             'is_null' => $query->whereRaw("{$column} IS NULL"),
             'not_null' => $query->whereRaw("{$column} IS NOT NULL"),
             default => throw new \LogicException("Unvalidated operator [{$operator}]."),
@@ -331,15 +335,16 @@ final readonly class ReportEngine
     private function having(Builder $query, Measure $measure, string $operator, mixed $value): void
     {
         $column = "({$measure->sql})";
+        $number = static fn (mixed $bound): int|float => $bound + 0;
 
         match ($operator) {
-            'eq' => $query->havingRaw("{$column} = CAST(? AS numeric)", [$value]),
-            'neq' => $query->havingRaw("{$column} IS DISTINCT FROM CAST(? AS numeric)", [$value]),
-            'gt' => $query->havingRaw("{$column} > CAST(? AS numeric)", [$value]),
-            'gte' => $query->havingRaw("{$column} >= CAST(? AS numeric)", [$value]),
-            'lt' => $query->havingRaw("{$column} < CAST(? AS numeric)", [$value]),
-            'lte' => $query->havingRaw("{$column} <= CAST(? AS numeric)", [$value]),
-            'between' => $query->havingRaw("{$column} BETWEEN CAST(? AS numeric) AND CAST(? AS numeric)", $value),
+            'eq' => $query->havingRaw("{$column} = CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'neq' => $query->havingRaw("({$column} IS NULL OR {$column} <> CAST(? AS DECIMAL(24, 6)))", [$number($value)]),
+            'gt' => $query->havingRaw("{$column} > CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'gte' => $query->havingRaw("{$column} >= CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'lt' => $query->havingRaw("{$column} < CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'lte' => $query->havingRaw("{$column} <= CAST(? AS DECIMAL(24, 6))", [$number($value)]),
+            'between' => $query->havingRaw("{$column} BETWEEN CAST(? AS DECIMAL(24, 6)) AND CAST(? AS DECIMAL(24, 6))", array_map($number, array_values($value))),
             'is_null' => $query->havingRaw("{$column} IS NULL"),
             'not_null' => $query->havingRaw("{$column} IS NOT NULL"),
             default => throw new \LogicException("Unvalidated operator [{$operator}]."),
@@ -538,7 +543,7 @@ final readonly class ReportEngine
             });
         } catch (QueryException $exception) {
             if ($exception->getCode() === '57014' || str_contains($exception->getMessage(), 'statement timeout')) {
-                throw ValidationException::withMessages(['report' => 'The report took longer than '.($timeout / 1000).' seconds and was cancelled: narrow the period, add filters or group by fewer dimensions.']);
+                throw ValidationException::withMessages(['report' => __('analytics_errors.report.timeout', ['seconds' => $timeout / 1000])]);
             }
 
             throw $exception;
