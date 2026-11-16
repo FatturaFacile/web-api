@@ -105,6 +105,28 @@ final class NotificationController extends Controller
         return response()->json(['data' => $this->preferences->matrix($user)]);
     }
 
+    #[OA\Get(path: '/api/v1/platform/notifications/realtime', operationId: 'getNotificationRealtime', description: 'Public connection parameters of the WebSocket server for the live unread counter. `enabled` is false when broadcasting is not configured; clients then fall back to polling.', summary: 'Get realtime connection settings', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Platform'], responses: [
+        new OA\Response(response: 200, description: 'Realtime settings', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/PlatformNotificationRealtime')])),
+        new OA\Response(ref: '#/components/responses/PlatformUnauthenticated', response: 401),
+    ])]
+    public function realtime(Request $request): JsonResponse
+    {
+        $user = $this->user($request);
+        $connection = (array) config('broadcasting.connections.reverb');
+        $options = (array) ($connection['options'] ?? []);
+        $enabled = config('broadcasting.default') === 'reverb' && ! empty($connection['key']) && ! empty($options['host']);
+
+        return response()->json(['data' => [
+            'enabled' => $enabled,
+            'key' => $enabled ? $connection['key'] : null,
+            'host' => $enabled ? $options['host'] : null,
+            'port' => $enabled ? (int) ($options['port'] ?? 443) : null,
+            'scheme' => $enabled ? ($options['scheme'] ?? 'https') : null,
+            'channel' => "users.{$user->id}.notifications",
+            'auth_endpoint' => '/api/v1/broadcasting/auth',
+        ]]);
+    }
+
     #[OA\Get(path: '/api/v1/platform/notifications/settings', operationId: 'getNotificationSettings', description: 'Do-not-disturb settings of the user: daily quiet hours and snooze.', summary: 'Get notification settings', security: [['bearerAuth' => [], 'tenantHeader' => []]], tags: ['Platform'], responses: [
         new OA\Response(response: 200, description: 'Settings', content: new OA\JsonContent(properties: [new OA\Property(property: 'data', ref: '#/components/schemas/PlatformNotificationSettings')])),
         new OA\Response(ref: '#/components/responses/PlatformUnauthenticated', response: 401),

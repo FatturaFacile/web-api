@@ -40,6 +40,15 @@ use OpenApi\Attributes as OA;
     new OA\Property(property: 'enabled', type: 'boolean'),
     new OA\Property(property: 'frequency', type: 'string', enum: ['immediate', 'digest']),
 ])]
+#[OA\Schema(schema: 'PlatformNotificationRealtime', type: 'object', properties: [
+    new OA\Property(property: 'enabled', type: 'boolean'),
+    new OA\Property(property: 'key', type: 'string', nullable: true),
+    new OA\Property(property: 'host', type: 'string', nullable: true),
+    new OA\Property(property: 'port', type: 'integer', nullable: true),
+    new OA\Property(property: 'scheme', type: 'string', enum: ['http', 'https'], nullable: true),
+    new OA\Property(property: 'channel', type: 'string', description: 'Private channel of the user'),
+    new OA\Property(property: 'auth_endpoint', type: 'string'),
+])]
 #[OA\Schema(schema: 'PlatformNotificationSettings', type: 'object', properties: [
     new OA\Property(property: 'quiet_hours_enabled', type: 'boolean'),
     new OA\Property(property: 'quiet_start', type: 'string', example: '20:00'),

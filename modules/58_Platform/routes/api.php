@@ -20,6 +20,7 @@ Route::prefix('api/v1/platform')
             Route::get('/', [NotificationController::class, 'index'])->name('index');
             Route::get('/preferences', [NotificationController::class, 'preferences'])->name('preferences.show');
             Route::put('/preferences', [NotificationController::class, 'updatePreferences'])->name('preferences.update');
+            Route::get('/realtime', [NotificationController::class, 'realtime'])->name('realtime');
             Route::get('/settings', [NotificationController::class, 'settings'])->name('settings.show');
             Route::put('/settings', [NotificationController::class, 'updateSettings'])->name('settings.update');
             Route::post('/read-all', [NotificationController::class, 'markAllRead'])->name('read-all');

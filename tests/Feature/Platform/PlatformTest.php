@@ -210,6 +210,17 @@ describe('notification centre', function (): void {
         });
     });
 
+    it('exposes the realtime connection only when Reverb is configured', function (): void {
+        $this->getJson('/api/v1/platform/notifications/realtime')->assertOk()
+            ->assertJsonPath('data.enabled', false)->assertJsonPath('data.key', null)
+            ->assertJsonPath('data.channel', "users.{$this->owner->id}.notifications");
+
+        config(['broadcasting.default' => 'reverb', 'broadcasting.connections.reverb.key' => 'k', 'broadcasting.connections.reverb.options.host' => 'ws.example.test', 'broadcasting.connections.reverb.options.port' => 443]);
+        $this->getJson('/api/v1/platform/notifications/realtime')->assertOk()
+            ->assertJsonPath('data.enabled', true)->assertJsonPath('data.host', 'ws.example.test')->assertJsonPath('data.port', 443)
+            ->assertJsonMissingPath('data.secret');
+    });
+
     it('stores the delivery frequency per channel and category and keeps it when only enabled changes', function (): void {
         $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'mail', 'category' => 'crm', 'frequency' => 'digest']]])->assertOk();
         $this->putJson('/api/v1/platform/notifications/preferences', ['preferences' => [['channel' => 'mail', 'category' => 'crm', 'enabled' => true]]])->assertOk();
