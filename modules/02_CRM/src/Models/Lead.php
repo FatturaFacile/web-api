@@ -21,6 +21,8 @@ final class Lead extends BaseEnterpriseModel
             'converted_at' => 'datetime',
             'tags' => 'array',
             'custom_fields' => 'array',
+            'score_breakdown' => 'array',
+            'assigned_at' => 'datetime',
         ];
     }
 

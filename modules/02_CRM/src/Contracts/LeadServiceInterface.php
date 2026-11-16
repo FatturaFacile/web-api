@@ -8,6 +8,7 @@ use App\Models\Contact;
 use Illuminate\Support\Collection;
 use Modules\CRM\DTOs\ConvertLeadDTO;
 use Modules\CRM\DTOs\CreateLeadDTO;
+use Modules\CRM\DTOs\LeadCaptureResult;
 use Modules\CRM\Models\Account;
 use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\Opportunity;
@@ -15,6 +16,16 @@ use Modules\CRM\Models\Opportunity;
 interface LeadServiceInterface
 {
     public function captureLead(CreateLeadDTO $dto, ?string $actorUserId = null): Lead;
+
+    public function captureLeadWithOutcome(CreateLeadDTO $dto, ?string $actorUserId = null): LeadCaptureResult;
+
+    public function rescoreLead(Lead $lead): Lead;
+
+    /** Records a behavioural event (email_open, catalog_download, site_visit) and re-scores the lead. */
+    public function recordBehavior(Lead $lead, string $event, int $count = 1): Lead;
+
+    /** Merges $duplicate into $primary (filling gaps, summing engagement) and archives the duplicate. */
+    public function mergeLeads(Lead $primary, Lead $duplicate, string $actorUserId): Lead;
 
     public function scoreLead(Lead $lead): int;
 
@@ -27,7 +38,7 @@ interface LeadServiceInterface
      */
     public function convertLead(Lead $lead, ConvertLeadDTO $dto, string $actorUserId): array;
 
-    public function detectDuplicates(string $tenantId, ?string $email, ?string $phone, ?string $companyName): Collection;
+    public function detectDuplicates(string $tenantId, ?string $email, ?string $phone, ?string $companyName, ?string $vatNumber = null): Collection;
 
     public function assignLead(Lead $lead, string $assignedUserId, string $actorUserId): Lead;
 }

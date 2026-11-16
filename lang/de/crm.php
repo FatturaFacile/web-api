@@ -21,4 +21,10 @@ return [
     'stage_negotiation' => 'Vertragsverhandlung',
     'stage_won' => 'Erfolgreich abgeschlossen',
     'stage_lost' => 'Verloren',
+    'lead_rating_cold' => 'Kalt',
+    'lead_rating_warm' => 'Warm',
+    'lead_rating_hot' => 'Heiss',
+    'lead_notification_assigned_title' => 'Lead zugewiesen',
+    'lead_notification_duplicate_title' => 'Mögliches doppeltes Lead',
+    'lead_notification_body' => ':name (:company) – :label, Score :score',
 ];

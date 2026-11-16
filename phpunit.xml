@@ -50,12 +50,9 @@
     <env name="BROADCAST_CONNECTION" value="null"/>
     <env name="CACHE_STORE" value="array"/>
 
-    <!--
-        DB_CONNECTION and DB_DATABASE are resolved via .env.testing or environment variables (e.g. CI pgsql).
-        Uncomment below if local SQLite in-memory fallback is needed when no .env.testing is present:
-        <env name="DB_CONNECTION" value="sqlite"/>
-        <env name="DB_DATABASE" value=":memory:"/>
-    -->
+    <!-- SQLite in-memory by default; CI overrides DB_* through real environment variables (e.g. pgsql). -->
+    <env name="DB_CONNECTION" value="sqlite"/>
+    <env name="DB_DATABASE" value="database/testing.sqlite"/>
     <env name="MAIL_MAILER" value="array"/>
     <env name="QUEUE_CONNECTION" value="sync"/>
     <env name="SESSION_DRIVER" value="array"/>

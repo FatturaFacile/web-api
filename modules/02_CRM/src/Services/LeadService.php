@@ -5,15 +5,18 @@ declare(strict_types=1);
 namespace Modules\CRM\Services;
 
 use App\Models\Contact;
+use App\Models\User;
 use Enterprise\AuditLedger\Contracts\AuditLedgerInterface;
 use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\DTOs\ConvertLeadDTO;
 use Modules\CRM\DTOs\CreateLeadDTO;
+use Modules\CRM\DTOs\LeadCaptureResult;
 use Modules\CRM\Events\LeadConvertedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
 use Modules\CRM\Events\LeadQualifiedEvent;
@@ -24,60 +27,82 @@ use Modules\CRM\Models\Lead;
 use Modules\CRM\Models\LeadSource;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
+use Modules\CRM\Notifications\LeadAssignedNotification;
+use Modules\CRM\Support\LeadNormalizer;
+use Throwable;
 
 final readonly class LeadService implements LeadServiceInterface
 {
+    private const BEHAVIOUR_COUNTERS = [
+        'email_open' => 'email_opens',
+        'catalog_download' => 'catalog_downloads',
+        'site_visit' => 'site_visits',
+    ];
+
     public function __construct(
         private EventDispatcher $dispatcher,
-        private AuditLedgerInterface $auditLedger
+        private AuditLedgerInterface $auditLedger,
+        private LeadScoringService $scoring,
+        private LeadDeduplicationService $deduplication,
+        private LeadRoutingService $routing,
     ) {}
 
     public function captureLead(CreateLeadDTO $dto, ?string $actorUserId = null): Lead
     {
-        return DB::transaction(function () use ($dto, $actorUserId) {
-            $actorUuid = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7();
+        return $this->captureLeadWithOutcome($dto, $actorUserId)->lead;
+    }
 
-            $sourceId = null;
-            if ($dto->leadSourceCode) {
-                $source = LeadSource::where('tenant_id', $dto->tenantId)
-                    ->where('code', $dto->leadSourceCode)
-                    ->first();
-                $sourceId = $source?->id;
+    public function captureLeadWithOutcome(CreateLeadDTO $dto, ?string $actorUserId = null): LeadCaptureResult
+    {
+        [$result, $notifications] = DB::transaction(function () use ($dto, $actorUserId): array {
+            $actorUuid = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : null;
+            $attributes = $this->normalizedAttributes($dto);
+
+            $strategy = $dto->duplicateStrategy ?? (string) config('crm_lead.duplicate_strategy', 'notify');
+            $duplicates = $strategy === 'create'
+                ? collect()
+                : $this->deduplication->findMatches(
+                    $dto->tenantId, $dto->email, $dto->phone, $dto->companyName, $dto->vatNumber, $dto->country
+                );
+
+            // Duplicate + automatic merge: no new lead, the existing one absorbs the data.
+            if ($strategy === 'merge' && $duplicates->isNotEmpty()) {
+                $primary = Lead::where('id', $duplicates->first()->id)->lockForUpdate()->firstOrFail();
+                $merged = $this->absorb($primary, $attributes, $actorUuid);
+
+                return [
+                    new LeadCaptureResult($merged, true, $duplicates),
+                    $merged->assigned_user_id ? [[(string) $merged->assigned_user_id, $merged, $merged]] : [],
+                ];
             }
 
-            $duplicateHash = $this->generateDuplicateHash($dto->email, $dto->phone, $dto->companyName);
+            $original = $strategy === 'notify' ? $duplicates->first() : null;
 
-            $lead = Lead::create([
+            $lead = Lead::create($attributes + [
                 'id' => (string) Str::uuid7(),
                 'tenant_id' => $dto->tenantId,
-                'lead_source_id' => $sourceId,
                 'campaign_id' => $dto->campaignId,
-                'assigned_user_id' => $dto->assignedUserId ?? $actorUuid,
-                'first_name' => $dto->firstName,
-                'last_name' => $dto->lastName,
-                'company_name' => $dto->companyName,
-                'title' => $dto->title,
-                'email' => $dto->email ? strtolower(trim($dto->email)) : null,
-                'phone' => $dto->phone,
-                'website' => $dto->website,
-                'country' => $dto->country,
+                'assigned_user_id' => $dto->assignedUserId ?? $original?->assigned_user_id,
                 'status' => 'new',
-                'estimated_budget' => $dto->estimatedBudget,
-                'tags' => $dto->tags,
-                'custom_fields' => $dto->customFields,
-                'duplicate_hash' => $duplicateHash,
+                'duplicate_of_id' => $original?->id,
+                'duplicate_hash' => $this->generateDuplicateHash($dto->email, $dto->phone, $dto->companyName),
             ]);
 
-            // Calculate and assign initial lead score
-            $score = $this->scoreLead($lead);
-            $rating = $score >= 70 ? 'hot' : ($score >= 40 ? 'warm' : 'cold');
+            // Automatic routing (geographic / product line / size / round-robin), falling back to the creator.
+            if (empty($lead->assigned_user_id)) {
+                $lead->assigned_user_id = $this->routing->resolveAssignee($lead) ?? $actorUuid;
+            }
+            if (! empty($lead->assigned_user_id)) {
+                $lead->assigned_at = now();
+            }
 
-            $lead->update([
-                'score' => $score,
-                'rating' => $rating,
-            ]);
+            $evaluation = $this->scoring->evaluate($lead);
+            $lead->fill([
+                'score' => $evaluation['score'],
+                'rating' => $evaluation['rating'],
+                'score_breakdown' => $evaluation['breakdown'],
+            ])->save();
 
-            // Audit Trail
             $this->auditLedger->record(
                 action: 'LEAD_CREATED',
                 model: $lead,
@@ -86,13 +111,12 @@ final readonly class LeadService implements LeadServiceInterface
                 moduleCode: 'MODULE_02_CRM'
             );
 
-            // Outbox Domain Event
             $event = new LeadCreatedEvent(
                 leadId: (string) $lead->id,
                 fullName: $lead->full_name,
                 companyName: $lead->company_name,
                 email: $lead->email,
-                score: $score,
+                score: $evaluation['score'],
                 status: (string) $lead->status,
                 tenantId: $dto->tenantId,
                 companyId: $dto->companyId ?? $dto->tenantId
@@ -100,63 +124,163 @@ final readonly class LeadService implements LeadServiceInterface
             $this->dispatcher->publish($event);
             event($event);
 
-            // Auto-qualify high scoring leads (score >= 80)
-            if ($score >= 80) {
-                $this->qualifyLead($lead, $actorUuid);
+            if ($evaluation['score'] >= (int) config('crm_lead.auto_qualify_score', 80)) {
+                $this->qualifyLead($lead, $actorUuid ?? (string) Str::uuid7());
             }
 
-            return $lead->fresh();
+            $notifications = [];
+            if ($original !== null && $original->assigned_user_id) {
+                $notifications[] = [(string) $original->assigned_user_id, $lead, $original];
+            } elseif ($lead->assigned_user_id && (string) $lead->assigned_user_id !== $actorUuid) {
+                $notifications[] = [(string) $lead->assigned_user_id, $lead, null];
+            }
+
+            return [new LeadCaptureResult($lead->fresh(), false, $duplicates), $notifications];
         });
+
+        $this->notify($notifications);
+
+        return $result;
     }
 
     public function scoreLead(Lead $lead): int
     {
-        $score = 0;
+        return $this->scoring->evaluate($lead)['score'];
+    }
 
-        // 1. Title / Seniority check (+20)
-        $title = strtolower((string) $lead->title);
-        if (preg_match('/(director|vp|c-level|ceo|cfo|cto|coo|head|chief|president|founder|owner|partner|manager)/', $title)) {
-            $score += 20;
+    public function rescoreLead(Lead $lead): Lead
+    {
+        $evaluation = $this->scoring->evaluate($lead);
+        $lead->update([
+            'score' => $evaluation['score'],
+            'rating' => $evaluation['rating'],
+            'score_breakdown' => $evaluation['breakdown'],
+        ]);
+
+        return $lead;
+    }
+
+    public function recordBehavior(Lead $lead, string $event, int $count = 1): Lead
+    {
+        $counter = self::BEHAVIOUR_COUNTERS[$event] ?? throw new InvalidArgumentException("Unknown behaviour event [{$event}].");
+
+        $updated = DB::transaction(function () use ($lead, $counter, $count): Lead {
+            $locked = Lead::where('id', $lead->id)->lockForUpdate()->firstOrFail();
+            $locked->{$counter} = (int) $locked->{$counter} + max(1, $count);
+            $this->rescoreLead($locked);
+
+            return $locked;
+        });
+
+        if ((int) $updated->score >= (int) config('crm_lead.auto_qualify_score', 80) && $updated->status === 'new') {
+            $this->qualifyLead($updated, (string) ($updated->assigned_user_id ?? Str::uuid7()));
         }
 
-        // 2. Business Email check (+15)
-        $email = strtolower((string) $lead->email);
-        if (! empty($email)) {
-            $freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'libero.it', 'icloud.com'];
-            $domain = substr(strrchr($email, '@') ?: '', 1);
-            if (! in_array($domain, $freeProviders, true) && ! empty($domain)) {
-                $score += 15;
-            } else {
-                $score += 5;
+        return $updated->fresh();
+    }
+
+    public function mergeLeads(Lead $primary, Lead $duplicate, string $actorUserId): Lead
+    {
+        if ((string) $primary->id === (string) $duplicate->id || $primary->tenant_id !== $duplicate->tenant_id) {
+            throw new InvalidArgumentException('Leads to merge must be two distinct leads of the same tenant.');
+        }
+
+        return DB::transaction(function () use ($primary, $duplicate, $actorUserId): Lead {
+            $lockedPrimary = Lead::where('id', $primary->id)->lockForUpdate()->firstOrFail();
+            $lockedDuplicate = Lead::where('id', $duplicate->id)->lockForUpdate()->firstOrFail();
+
+            $attributes = $lockedDuplicate->only([
+                'first_name', 'last_name', 'company_name', 'title', 'phone', 'phone_e164', 'website', 'vat_number',
+                'company_normalized', 'industry', 'region', 'product_line', 'company_size', 'estimated_revenue',
+                'estimated_budget', 'email', 'tags', 'custom_fields', 'email_opens', 'catalog_downloads', 'site_visits',
+            ]);
+
+            $merged = $this->absorb($lockedPrimary, $attributes, $actorUserId);
+            $lockedDuplicate->update(['duplicate_of_id' => $merged->id, 'status' => 'archived']);
+            $lockedDuplicate->delete();
+
+            return $merged;
+        });
+    }
+
+    public function detectDuplicates(string $tenantId, ?string $email, ?string $phone, ?string $companyName, ?string $vatNumber = null): Collection
+    {
+        return $this->deduplication->findMatches($tenantId, $email, $phone, $companyName, $vatNumber);
+    }
+
+    /**
+     * Applies incoming data on an existing lead (merge), then re-scores it.
+     *
+     * @param  array<string, mixed>  $attributes
+     */
+    private function absorb(Lead $primary, array $attributes, ?string $actorUuid): Lead
+    {
+        $before = $primary->toArray();
+        $primary->update($this->deduplication->mergeAttributes($primary, $attributes));
+        $this->rescoreLead($primary);
+
+        $this->auditLedger->record(
+            action: 'LEAD_MERGED',
+            model: $primary,
+            payloadBefore: $before,
+            payloadAfter: $primary->toArray(),
+            moduleCode: 'MODULE_02_CRM'
+        );
+
+        return $primary;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function normalizedAttributes(CreateLeadDTO $dto): array
+    {
+        $sourceId = $dto->leadSourceId;
+        if ($sourceId === null && $dto->leadSourceCode) {
+            $sourceId = LeadSource::where('tenant_id', $dto->tenantId)->where('code', $dto->leadSourceCode)->value('id');
+        }
+
+        return [
+            'lead_source_id' => $sourceId,
+            'first_name' => $dto->firstName,
+            'last_name' => $dto->lastName,
+            'company_name' => $dto->companyName,
+            'company_normalized' => LeadNormalizer::company($dto->companyName),
+            'title' => $dto->title,
+            'email' => LeadNormalizer::email($dto->email),
+            'phone' => $dto->phone,
+            'phone_e164' => LeadNormalizer::phoneE164($dto->phone, $dto->country),
+            'vat_number' => LeadNormalizer::vat($dto->vatNumber),
+            'website' => $dto->website,
+            'country' => $dto->country,
+            'industry' => $dto->industry,
+            'region' => $dto->region,
+            'product_line' => $dto->productLine,
+            'company_size' => $dto->companySize,
+            'estimated_revenue' => $dto->estimatedRevenue,
+            'estimated_budget' => $dto->estimatedBudget,
+            'email_opens' => $dto->emailOpens,
+            'catalog_downloads' => $dto->catalogDownloads,
+            'site_visits' => $dto->siteVisits,
+            'tags' => $dto->tags,
+            'custom_fields' => $dto->customFields,
+        ];
+    }
+
+    /**
+     * Sends assignment / duplicate notifications (mail + in-app + mobile push); never fails the capture.
+     *
+     * @param  array<int, array{0: string, 1: Lead, 2: ?Lead}>  $notifications
+     */
+    private function notify(array $notifications): void
+    {
+        foreach ($notifications as [$userId, $lead, $duplicateOf]) {
+            try {
+                User::find($userId)?->notify(new LeadAssignedNotification($lead, $duplicateOf));
+            } catch (Throwable $e) {
+                Log::warning('Lead notification failed', ['lead_id' => (string) $lead->id, 'error' => $e->getMessage()]);
             }
         }
-
-        // 3. Phone presence (+10)
-        if (! empty($lead->phone)) {
-            $score += 10;
-        }
-
-        // 4. Company presence (+15)
-        if (! empty($lead->company_name)) {
-            $score += 15;
-        }
-
-        // 5. Budget capability (+20 / +30)
-        $budget = (float) $lead->estimated_budget;
-        if ($budget >= 50000.0) {
-            $score += 30;
-        } elseif ($budget >= 10000.0) {
-            $score += 20;
-        } elseif ($budget > 0.0) {
-            $score += 10;
-        }
-
-        // 6. Website presence (+10)
-        if (! empty($lead->website)) {
-            $score += 10;
-        }
-
-        return min(100, $score);
     }
 
     public function qualifyLead(Lead $lead, string $actorUserId): Lead
@@ -379,37 +503,6 @@ final readonly class LeadService implements LeadServiceInterface
                 'opportunity' => $opportunity,
             ];
         });
-    }
-
-    public function detectDuplicates(string $tenantId, ?string $email, ?string $phone, ?string $companyName): Collection
-    {
-        $query = Lead::where('tenant_id', $tenantId);
-
-        $conditions = false;
-        if (! empty($email)) {
-            $query->where('email', strtolower(trim($email)));
-            $conditions = true;
-        }
-
-        if (! empty($phone)) {
-            if ($conditions) {
-                $query->orWhere('phone', $phone);
-            } else {
-                $query->where('phone', $phone);
-                $conditions = true;
-            }
-        }
-
-        if (! empty($companyName)) {
-            if ($conditions) {
-                $query->orWhere('company_name', 'ilike', "%{$companyName}%");
-            } else {
-                $query->where('company_name', 'ilike', "%{$companyName}%");
-                $conditions = true;
-            }
-        }
-
-        return $conditions ? $query->get() : collect();
     }
 
     public function assignLead(Lead $lead, string $assignedUserId, string $actorUserId): Lead

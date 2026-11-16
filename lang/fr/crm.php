@@ -21,4 +21,10 @@ return [
     'stage_negotiation' => 'Négociation contractuelle',
     'stage_won' => 'Gagnée',
     'stage_lost' => 'Perdue',
+    'lead_rating_cold' => 'Froid',
+    'lead_rating_warm' => 'Tiède',
+    'lead_rating_hot' => 'Chaud',
+    'lead_notification_assigned_title' => 'Lead attribué',
+    'lead_notification_duplicate_title' => 'Lead potentiellement en double',
+    'lead_notification_body' => ':name (:company) – lead :label, score :score',
 ];

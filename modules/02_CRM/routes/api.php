@@ -8,6 +8,9 @@ use Modules\CRM\Http\Controllers\ActivityController;
 use Modules\CRM\Http\Controllers\CampaignController;
 use Modules\CRM\Http\Controllers\ForecastController;
 use Modules\CRM\Http\Controllers\LeadController;
+use Modules\CRM\Http\Controllers\LeadRoutingRuleController;
+use Modules\CRM\Http\Controllers\LeadWebhookController;
+use Modules\CRM\Http\Controllers\LeadWebhookEndpointController;
 use Modules\CRM\Http\Controllers\OpportunityController;
 
 Route::prefix('api/v1/crm')->middleware(['api'])->group(function (): void {
@@ -16,6 +19,15 @@ Route::prefix('api/v1/crm')->middleware(['api'])->group(function (): void {
     Route::post('leads/{id}/qualify', [LeadController::class, 'qualify'])->name('crm.leads.qualify');
     Route::post('leads/{id}/disqualify', [LeadController::class, 'disqualify'])->name('crm.leads.disqualify');
     Route::post('leads/{id}/convert', [LeadController::class, 'convert'])->name('crm.leads.convert');
+    Route::post('leads/{id}/merge', [LeadController::class, 'merge'])->name('crm.leads.merge');
+    Route::post('leads/{id}/behavior', [LeadController::class, 'behavior'])->name('crm.leads.behavior');
+
+    // Lead capture configuration: Web-to-Lead endpoints and automatic assignment rules
+    Route::middleware('auth:sanctum')->group(function (): void {
+        Route::post('lead-webhooks/{id}/rotate-secret', [LeadWebhookEndpointController::class, 'rotateSecret'])->name('crm.lead-webhooks.rotate');
+        Route::apiResource('lead-webhooks', LeadWebhookEndpointController::class)->only(['index', 'store', 'destroy'])->names('crm.lead-webhooks');
+        Route::apiResource('lead-routing-rules', LeadRoutingRuleController::class)->except(['show'])->names('crm.lead-routing-rules');
+    });
     Route::apiResource('leads', LeadController::class)->names('crm.leads');
 
     // 2. Opportunities
@@ -41,4 +53,10 @@ Route::prefix('api/v1/crm')->middleware(['api'])->group(function (): void {
     // 6. Campaigns
     Route::get('campaigns/{id}/roi', [CampaignController::class, 'roi'])->name('crm.campaigns.roi');
     Route::apiResource('campaigns', CampaignController::class)->names('crm.campaigns');
+});
+
+// Public Web-to-Lead webhooks (WordPress, Webflow, Meta Ads, LinkedIn Lead Gen): authenticated by endpoint secret
+Route::prefix('api/v1/webhooks/leads')->middleware(['api', 'throttle:300,1'])->group(function (): void {
+    Route::get('{token}', [LeadWebhookController::class, 'verify'])->name('webhooks.leads.verify');
+    Route::post('{token}', [LeadWebhookController::class, 'receive'])->name('webhooks.leads.receive');
 });

@@ -31,7 +31,8 @@ final readonly class ForecastService implements ForecastServiceInterface
 
             // Approximate period filter if format YYYY-MM
             if (preg_match('/^\d{4}-\d{2}$/', $dto->period)) {
-                $query->whereRaw("TO_CHAR(expected_close_date, 'YYYY-MM') = ?", [$dto->period]);
+                $bucket = DB::connection()->getDriverName() === 'sqlite' ? "strftime('%Y-%m', expected_close_date)" : "TO_CHAR(expected_close_date, 'YYYY-MM')";
+                $query->whereRaw("{$bucket} = ?", [$dto->period]);
             }
 
             $opportunities = $query->get();
