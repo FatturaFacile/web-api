@@ -163,7 +163,7 @@ test('delivery lifecycle over the API: create, issue, deliver with signature, th
     $this->getJson('/api/v1/logistics/delivery-notes?status=draft', $h)->assertOk()->assertJsonCount(0, 'data');
 
     $invoice = $this->postJson('/api/v1/logistics/delivery-notes/deferred-invoice', ['delivery_note_ids' => [$id]], $h)->assertCreated();
-    expect($invoice->json('data.invoice_type'))->toBe('deferred')
+    expect($invoice->json('data.notes'))->toContain('Fattura differita')
         ->and(SalesDeliveryNote::find($id)->status)->toBe('invoiced');
 });
 
