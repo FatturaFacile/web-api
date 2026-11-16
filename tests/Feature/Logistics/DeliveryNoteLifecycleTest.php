@@ -341,3 +341,24 @@ test('the logistics:run-deferred-invoicing command bills every tenant', function
     app(TenantContext::class)->setTenant($this->tenant);
     expect($note->fresh()->status)->toBe('invoiced');
 });
+
+test('lookups feed the wizard with tenant-scoped data and an envelope the frontend can paginate', function (): void {
+    $order = logisticsOrder($this->tenant->id, $this->customer->id, $this->product->id, 10, 'SO-LK');
+    $this->ddt->createFromOrders([['sales_order_id' => $order->id, 'items' => [['sales_order_item_id' => $order->items->first()->id, 'quantity' => 4]]]]);
+    lifecycleDraft($this);
+    ['tenant' => $other] = logisticsTenant('Other LK');
+    logisticsProduct($other->id, 'OTHER-SKU');
+
+    Sanctum::actingAs($this->user);
+    $h = ['X-Tenant-Id' => $this->tenant->id];
+
+    $open = $this->getJson('/api/v1/logistics/lookups/open-orders?contact_id='.$this->customer->id, $h)->assertOk()->assertJsonPath('success', true);
+    expect($open->json('data.0.items.0.remaining'))->toEqual(6)->and($open->json('data.0.order_number'))->toBe('SO-LK');
+    expect($this->getJson('/api/v1/logistics/lookups/products?search=LC-', $h)->json('data'))->toHaveCount(1);
+    expect(collect($this->getJson('/api/v1/logistics/lookups/products', $h)->json('data'))->pluck('sku')->all())->not->toContain('OTHER-SKU');
+    $this->getJson('/api/v1/logistics/lookups/warehouses', $h)->assertOk()->assertJsonPath('data.0.code', 'MAIN');
+    $this->getJson('/api/v1/logistics/lookups/partners?search=Cliente', $h)->assertOk()->assertJsonCount(1, 'data');
+
+    $list = $this->getJson('/api/v1/logistics/delivery-notes?per_page=1', $h)->assertOk();
+    expect($list->json('success'))->toBeTrue()->and($list->json('meta.total'))->toBe(2)->and($list->json('meta.per_page'))->toBe(1)->and($list->json('data'))->toHaveCount(1);
+});

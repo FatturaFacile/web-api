@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Modules\Logistics\Console\RunDeferredInvoicingCommand;
 use Modules\Logistics\Http\Middleware\EnsureLogisticsPermission;
+use Modules\Logistics\Http\Middleware\WrapApiEnvelope;
 use Modules\Logistics\Services\ConsignmentService;
 use Modules\Logistics\Services\DeferredInvoicingService;
 use Modules\Logistics\Services\DeliveryNoteNumberingService;
@@ -32,6 +33,7 @@ final class LogisticsServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Route::aliasMiddleware('logistics.can', EnsureLogisticsPermission::class);
+        Route::aliasMiddleware('logistics.envelope', WrapApiEnvelope::class);
         $this->loadRoutesFrom(__DIR__.'/../../routes/api.php');
 
         if ($this->app->runningInConsole()) {

@@ -5,13 +5,20 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Logistics\Http\Controllers\ConsignmentController;
 use Modules\Logistics\Http\Controllers\DeliveryNoteController;
+use Modules\Logistics\Http\Controllers\LogisticsLookupController;
 use Modules\Logistics\Http\Controllers\StockTransferController;
 use Modules\Logistics\Support\LogisticsPermissions as P;
 
 Route::prefix('api/v1/logistics')
-    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale'])
+    ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'logistics.envelope'])
     ->name('logistics.')
     ->group(function (): void {
+        // Lookups for the screens
+        Route::get('lookups/warehouses', [LogisticsLookupController::class, 'warehouses'])->middleware('logistics.can:'.P::DDT_VIEW)->name('lookups.warehouses');
+        Route::get('lookups/products', [LogisticsLookupController::class, 'products'])->middleware('logistics.can:'.P::DDT_VIEW)->name('lookups.products');
+        Route::get('lookups/partners', [LogisticsLookupController::class, 'partners'])->middleware('logistics.can:'.P::DDT_VIEW)->name('lookups.partners');
+        Route::get('lookups/open-orders', [LogisticsLookupController::class, 'openOrders'])->middleware('logistics.can:'.P::DDT_CREATE)->name('lookups.open-orders');
+
         // DDT
         Route::get('delivery-notes', [DeliveryNoteController::class, 'index'])->middleware('logistics.can:'.P::DDT_VIEW)->name('ddt.index');
         Route::get('delivery-notes/unbilled', [DeliveryNoteController::class, 'unbilled'])->middleware('logistics.can:'.P::DDT_INVOICE)->name('ddt.unbilled');
