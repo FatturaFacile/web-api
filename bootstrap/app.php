@@ -3,6 +3,7 @@
 use App\Http\Middleware\EnforceHttps;
 use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Middleware\EnsureHttpsFrontendRequestsAreStateful;
+use App\Http\Middleware\EnsureMobileDeviceActive;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureTwoFactorEnrolled;
 use App\Http\Middleware\IdentifyTenant;
@@ -80,6 +81,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'deprecated' => MarkDeprecated::class,
             'normalize.tenant' => NormalizeTenantInput::class,
             'privacy.sensitive.log' => LogSensitiveDataReadAccess::class,
+            'mobile.device' => EnsureMobileDeviceActive::class,
         ]);
 
         $middleware->priority([

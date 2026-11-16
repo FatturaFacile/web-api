@@ -46,6 +46,14 @@ use App\Http\Controllers\Api\V1\InvoicePaymentController;
 use App\Http\Controllers\Api\V1\InvoiceQrBillController;
 use App\Http\Controllers\Api\V1\InvoiceSdiController;
 use App\Http\Controllers\Api\V1\LoyaltyCardController;
+use App\Http\Controllers\Api\V1\Mobile\MobileApprovalController;
+use App\Http\Controllers\Api\V1\Mobile\MobileAuthController;
+use App\Http\Controllers\Api\V1\Mobile\MobileBootstrapController;
+use App\Http\Controllers\Api\V1\Mobile\MobileDeviceController;
+use App\Http\Controllers\Api\V1\Mobile\MobilePayslipController;
+use App\Http\Controllers\Api\V1\Mobile\MobileReceiptController;
+use App\Http\Controllers\Api\V1\Mobile\MobileSyncController;
+use App\Http\Controllers\Api\V1\Mobile\MobileWorkforceController;
 use App\Http\Controllers\Api\V1\PasswordChangeController;
 use App\Http\Controllers\Api\V1\PasswordResetController;
 use App\Http\Controllers\Api\V1\PaymentImportController;
@@ -125,7 +133,13 @@ Route::prefix('v1')->group(function (): void {
         Route::delete('/users/{userId}/tenants/{tenantId}', [UserTenantAccessController::class, 'removeUserTenant'])->whereUuid(['userId', 'tenantId'])->name('users.tenants.destroy');
     });
 
-    Route::get('/system/bootstrap-support', BootstrapSupportUserController::class)
+    // Mobile companion: OAuth2 authorization-code + PKCE (S256) on top of the regular login pipeline
+    Route::prefix('mobile/auth/pkce')->name('mobile.auth.pkce.')->middleware(['locale', 'throttle:login'])->group(function (): void {
+        Route::post('/authorize', [MobileAuthController::class, 'authorizeRequest'])->name('authorize');
+        Route::post('/token', [MobileAuthController::class, 'token'])->name('token');
+    });
+
+    Route::get('/system/bootstrap-support',BootstrapSupportUserController::class)
         ->middleware('throttle:5,1')
         ->name('system.bootstrap-support');
 
@@ -164,7 +178,7 @@ Route::prefix('v1')->group(function (): void {
     // ----------------------------------------------------
     // Protected Enterprise Routes (Sanctum + Tenant + Locale)
     // ----------------------------------------------------
-    Route::middleware(['auth:sanctum', 'tenant', 'locale'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'mobile.device', 'tenant', 'locale'])->group(function (): void {
 
         // Every route below declares its module (config/permissions.php), except the ones listed in
         // tests/Feature/Foundation/RouteModuleAccessTest.php, which check the user themselves (own records, own profile).
@@ -541,6 +555,42 @@ Route::prefix('v1')->group(function (): void {
             Route::post('/backups/{id}/restore', [TenantBackupController::class, 'restore'])->middleware('throttle:sensitive-system')->name('backups.restore');
             Route::get('/backups/{id}/download', [TenantBackupController::class, 'download'])->middleware('throttle:sensitive-system')->name('backups.download');
             Route::delete('/backups/{id}', [TenantBackupController::class, 'destroy'])->name('backups.destroy');
+        });
+
+        // Mobile companion app (Flutter iOS / Android). Offline writes are replayed safely through the platform `Idempotency-Key` middleware.
+        Route::prefix('mobile')->name('mobile.')->group(function (): void {
+            Route::get('/bootstrap', MobileBootstrapController::class)->name('bootstrap');
+
+            Route::get('/devices', [MobileDeviceController::class, 'index'])->name('devices.index');
+            Route::post('/devices', [MobileDeviceController::class, 'register'])->name('devices.register');
+            Route::put('/devices/current/push-token', [MobileDeviceController::class, 'updatePushToken'])->name('devices.push-token');
+            Route::put('/devices/current/biometric', [MobileDeviceController::class, 'updateBiometric'])->name('devices.biometric');
+            Route::post('/devices/current/wipe-ack', [MobileDeviceController::class, 'wipeAck'])->name('devices.wipe-ack');
+            Route::get('/devices/current/manifest', [MobileDeviceController::class, 'manifest'])->name('devices.manifest');
+            Route::put('/devices/current/manifest', [MobileDeviceController::class, 'updateManifest'])->name('devices.manifest.update');
+            Route::delete('/devices/{id}', [MobileDeviceController::class, 'revoke'])->name('devices.revoke');
+            Route::get('/admin/devices', [MobileDeviceController::class, 'adminIndex'])->name('admin.devices.index');
+
+            Route::get('/approvals', [MobileApprovalController::class, 'inbox'])->name('approvals.inbox');
+            Route::post('/approvals/{stepId}/decision', [MobileApprovalController::class, 'decide'])->name('approvals.decide');
+
+            Route::get('/sync', [MobileSyncController::class, 'entities'])->name('sync.entities');
+            Route::get('/sync/{entity}', [MobileSyncController::class, 'delta'])->name('sync.delta');
+
+            Route::get('/work-sites', [MobileWorkforceController::class, 'workSites'])->name('work-sites.index');
+            Route::post('/work-sites', [MobileWorkforceController::class, 'storeWorkSite'])->name('work-sites.store');
+            Route::put('/work-sites/{id}', [MobileWorkforceController::class, 'updateWorkSite'])->name('work-sites.update');
+            Route::delete('/work-sites/{id}', [MobileWorkforceController::class, 'destroyWorkSite'])->name('work-sites.destroy');
+            Route::get('/shifts', [MobileWorkforceController::class, 'shifts'])->name('shifts.index');
+            Route::post('/shifts', [MobileWorkforceController::class, 'storeShift'])->name('shifts.store');
+            Route::delete('/shifts/{id}', [MobileWorkforceController::class, 'destroyShift'])->name('shifts.destroy');
+
+            Route::get('/payslips', [MobilePayslipController::class, 'index'])->name('payslips.index');
+            Route::get('/payslips/{id}/download', [MobilePayslipController::class, 'download'])->name('payslips.download');
+            Route::post('/payslips/{id}/read-receipt', [MobilePayslipController::class, 'readReceipt'])->name('payslips.read-receipt');
+            Route::post('/admin/payslips', [MobilePayslipController::class, 'store'])->name('admin.payslips.store');
+
+            Route::post('/receipts/parse', [MobileReceiptController::class, 'parse'])->name('receipts.parse');
         });
 
         Route::prefix('settings')->name('settings.')->group(function (): void {
