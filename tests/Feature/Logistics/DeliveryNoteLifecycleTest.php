@@ -400,3 +400,15 @@ test('business errors reach the client already translated in the request languag
     $this->postJson("/api/v1/logistics/delivery-notes/{$note->id}/deliver", [], $h + ['X-Language-Code' => 'fr'])
         ->assertStatus(422)->assertJsonPath('message', 'Seuls les bons de livraison émis ou en transit peuvent être marqués comme livrés');
 });
+
+test('field validation errors are translated in the request language', function (): void {
+    $h = ['X-Tenant-Id' => $this->tenant->id];
+    $expect = ['it' => 'obbligatorio', 'en' => 'is required', 'de' => 'erforderlich', 'fr' => 'obligatoire'];
+
+    foreach ($expect as $locale => $fragment) {
+        $response = $this->postJson('/api/v1/logistics/delivery-notes', [], $h + ['X-Language-Code' => $locale])->assertStatus(422);
+        $messages = collect($response->json('errors'))->flatten()->all();
+        expect($messages)->not->toBeEmpty()
+            ->and(implode(' ', $messages))->toContain($fragment)->not->toContain('validation.');
+    }
+});
