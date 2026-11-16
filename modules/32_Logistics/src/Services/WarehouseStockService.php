@@ -12,6 +12,7 @@ use Illuminate\Support\Str;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Logistics\Enums\LegalOwnerType;
+use Modules\Logistics\Enums\OwnershipType;
 use Modules\Logistics\Enums\WarehouseType;
 use Modules\Logistics\Models\WarehouseStockLevel;
 use Modules\Logistics\Support\LogisticsMessage;
@@ -143,6 +144,9 @@ final class WarehouseStockService
 
     private function recordMovement(string $productId, string $warehouseId, float $signedQty, string $movementType, ?string $referenceType, ?string $referenceId, ?string $notes, ?float $unitCost): void
     {
+        $warehouse = $this->warehouse($warehouseId);
+        $ownership = OwnershipType::forWarehouse($warehouse);
+
         StockMovement::create([
             'id' => (string) Str::uuid7(),
             'tenant_id' => $this->tenantContext->getTenantId(),
@@ -150,6 +154,9 @@ final class WarehouseStockService
             'warehouse_id' => $warehouseId,
             'type' => 'transfer',
             'movement_type' => $movementType,
+            'ownership_type' => $ownership->value,
+            'third_party_id' => $warehouse->linked_partner_id,
+            'in_transit' => $warehouse->warehouse_type === WarehouseType::Transit->value,
             'quantity' => abs($signedQty),
             'unit_cost' => $unitCost ?? 0,
             'total_valuation' => round(abs($signedQty) * ($unitCost ?? 0), 2),
@@ -159,5 +166,10 @@ final class WarehouseStockService
             'executed_at' => Carbon::now(),
             'notes' => $notes,
         ]);
+    }
+
+    private function warehouse(string $warehouseId): Warehouse
+    {
+        return Warehouse::query()->findOrFail($warehouseId);
     }
 }

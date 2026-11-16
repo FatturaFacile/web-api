@@ -10,6 +10,9 @@ enum TransportReason: string
     case InternalTransfer = 'internal_transfer';
     case Subcontracting = 'subcontracting';
     case Consignment = 'consignment';
+    case ConsignmentDelivery = 'consignment_delivery';
+    case ConsignmentReturn = 'consignment_return';
+    case SubcontractorReturn = 'subcontractor_return';
     case Repair = 'repair';
     case Gift = 'gift';
     case Return = 'return';
@@ -22,6 +25,9 @@ enum TransportReason: string
             self::InternalTransfer => 'Trasferimento interno',
             self::Subcontracting => 'Conto lavorazione',
             self::Consignment => 'Conto deposito',
+            self::ConsignmentDelivery => 'Conto deposito / conto vendita',
+            self::ConsignmentReturn => 'Reso da conto deposito',
+            self::SubcontractorReturn => 'Reso da terzista',
             self::Repair => 'Riparazione',
             self::Gift => 'Omaggio',
             self::Return => 'Reso',

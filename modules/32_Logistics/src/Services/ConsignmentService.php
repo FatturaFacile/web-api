@@ -9,17 +9,21 @@ use App\Services\Tenancy\TenantContext;
 use DomainException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use InvalidArgumentException;
 use Modules\Inventory\Models\StockMovement;
 use Modules\Inventory\Models\Warehouse;
 use Modules\Invoicing\Contracts\InvoicingServiceInterface;
 use Modules\Invoicing\Models\SalesDeliveryNote;
 use Modules\Logistics\Enums\LegalOwnerType;
+use Modules\Logistics\Enums\OwnershipType;
 use Modules\Logistics\Enums\WarehouseType;
 use Modules\Logistics\Events\ConsignmentConsumptionPosted;
-use Modules\Logistics\Models\ConsignmentConsumptionLine;
-use Modules\Logistics\Models\ConsignmentConsumptionReport;
+use Modules\Logistics\Models\ConsignmentAgreement;
+use Modules\Logistics\Models\ConsignmentConsumptionDeclaration;
+use Modules\Logistics\Models\ConsignmentConsumptionDeclarationLine;
 use Modules\Logistics\Models\StockTransferOrder;
+use Modules\Logistics\Queries\InventoryValuationReportQuery;
 use Modules\Logistics\Support\LogisticsMessage;
 use Modules\Procurement\Contracts\ProcurementServiceInterface;
 use Modules\Procurement\DTOs\CreatePurchaseOrderDTO;
@@ -34,6 +38,7 @@ final class ConsignmentService
         private readonly WarehouseStockService $stock,
         private readonly InvoicingServiceInterface $invoicing,
         private readonly TenantContext $tenantContext,
+        private readonly InventoryValuationReportQuery $valuation,
     ) {}
 
     /**
@@ -104,27 +109,27 @@ final class ConsignmentService
      * Declares consumption and posts it: stock leaves the consignment warehouse for good and a draft sales invoice
      * (customer consignment) or a draft purchase order (vendor consignment) is generated.
      *
-     * @param  array{warehouse_id: string, period_start: string, period_end: string, notes?: ?string}  $data
+     * @param  array{warehouse_id: string, agreement_id?: ?string, period_start: string, period_end: string, notes?: ?string}  $data
      * @param  list<array{product_id: string, quantity: float|int|string, unit_price?: float|int|string|null, tax_rate?: float|int|string|null}>  $lines
      */
-    public function declareConsumption(array $data, array $lines): ConsignmentConsumptionReport
+    public function declareConsumption(array $data, array $lines): ConsignmentConsumptionDeclaration
     {
         if ($lines === []) {
             throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_CONSUMED_PRODUCT'));
         }
 
         $warehouse = Warehouse::query()->findOrFail($data['warehouse_id']);
-        $direction = match ($warehouse->warehouse_type) {
-            WarehouseType::CustomerConsignment->value => 'customer',
-            WarehouseType::VendorConsignment->value => 'vendor',
-            default => throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CONSUMPTION_WAREHOUSE_TYPE')),
-        };
+        if (! in_array($warehouse->warehouse_type, [WarehouseType::CustomerConsignment->value, WarehouseType::VendorConsignment->value], true)) {
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.CONSUMPTION_WAREHOUSE_TYPE'));
+        }
+        $direction = $this->directionFor($warehouse);
         if ($warehouse->linked_partner_id === null) {
             throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_PARTNER_TO_BILL'));
         }
+        $agreement = $this->resolveAgreement($warehouse, $data['agreement_id'] ?? null);
 
-        return DB::transaction(function () use ($data, $lines, $warehouse, $direction): ConsignmentConsumptionReport {
-            $report = ConsignmentConsumptionReport::create([
+        return DB::transaction(function () use ($data, $lines, $warehouse, $direction, $agreement): ConsignmentConsumptionDeclaration {
+            $declaration = ConsignmentConsumptionDeclaration::create([
                 'tenant_id' => $this->tenantContext->getTenantId(),
                 'warehouse_id' => $warehouse->id,
                 'partner_id' => $warehouse->linked_partner_id,
@@ -132,6 +137,10 @@ final class ConsignmentService
                 'period_start' => $data['period_start'],
                 'period_end' => $data['period_end'],
                 'status' => 'draft',
+                'agreement_id' => $agreement?->id,
+                // Ownership shift booked with the declaration: vendor goods become ours, our goods at the customer become theirs.
+                'ownership_from' => $direction === 'vendor' ? OwnershipType::VendorConsignment->value : OwnershipType::CustomerConsignment->value,
+                'ownership_to' => $direction === 'vendor' ? OwnershipType::Owned->value : 'transferred_to_customer',
                 'notes' => $data['notes'] ?? null,
             ]);
 
@@ -143,11 +152,11 @@ final class ConsignmentService
                 $price = isset($line['unit_price']) ? (float) $line['unit_price'] : $defaultPrice;
                 $tax = isset($line['tax_rate']) ? (float) $line['tax_rate'] : (float) $product->tax_rate;
 
-                $this->stock->move((string) $product->id, (string) $warehouse->id, null, $qty, 'consignment_consumption', ConsignmentConsumptionReport::class, (string) $report->id, unitCost: (float) $product->cost_price);
+                $this->stock->move((string) $product->id, (string) $warehouse->id, null, $qty, 'consignment_consumption', ConsignmentConsumptionDeclaration::class, (string) $declaration->id, unitCost: (float) $product->cost_price);
 
-                ConsignmentConsumptionLine::create([
-                    'tenant_id' => $report->tenant_id,
-                    'report_id' => $report->id,
+                ConsignmentConsumptionDeclarationLine::create([
+                    'tenant_id' => $declaration->tenant_id,
+                    'declaration_id' => $declaration->id,
                     'product_id' => $product->id,
                     'quantity' => $qty,
                     'unit_price' => $price,
@@ -157,90 +166,132 @@ final class ConsignmentService
             }
 
             [$type, $documentId, $total] = $direction === 'customer'
-                ? $this->draftSalesInvoice($report, $documentLines)
-                : $this->draftPurchaseOrder($report, $documentLines);
+                ? $this->draftSalesInvoice($declaration, $documentLines)
+                : $this->draftPurchaseOrder($declaration, $documentLines);
 
-            $report->update([
+            $declaration->update([
                 'status' => 'posted',
                 'generated_document_type' => $type,
                 'generated_document_id' => $documentId,
                 'total_amount' => $total,
             ]);
 
-            event(new ConsignmentConsumptionPosted((string) $report->id, $direction, $documentId, (string) $report->tenant_id));
+            event(new ConsignmentConsumptionPosted((string) $declaration->id, $direction, $documentId, (string) $declaration->tenant_id));
 
-            return $report->load('lines');
+            return $declaration->load('lines');
         });
     }
 
     /**
-     * Inventory value for the balance sheet: company-owned stock (including goods at customers, subcontractors and in
-     * transit) is assets; vendor-owned consignment stock physically in our premises is excluded.
+     * Inventory value for the balance sheet, segregated by legal ownership / location (see InventoryValuationReportQuery).
      *
-     * @return array{total_balance_sheet_value: float, excluded_third_party_value: float, by_warehouse_type: array<string, float>, by_warehouse: list<array<string, mixed>>}
+     * @return array{total_balance_sheet_value: float, excluded_third_party_value: float, buckets: array<string, float>, by_warehouse_type: array<string, float>, by_warehouse: list<array<string, mixed>>}
      */
     public function inventoryValuation(): array
     {
-        $tenantId = $this->tenantContext->getTenantId();
+        return $this->valuation->execute();
+    }
 
-        $rows = DB::table('warehouse_stock_levels as l')
-            ->join('warehouses as w', 'w.id', '=', 'l.warehouse_id')
-            ->join('products as p', 'p.id', '=', 'l.product_id')
-            ->where('l.tenant_id', $tenantId)
-            ->whereNull('l.deleted_at')
-            ->whereNull('w.deleted_at')
-            ->selectRaw('w.id as warehouse_id, w.code as warehouse_code, w.warehouse_type as warehouse_type, w.legal_owner_type as legal_owner_type, SUM(l.quantity_on_hand * p.cost_price) as value')
-            ->groupBy('w.id', 'w.code', 'w.warehouse_type', 'w.legal_owner_type')
-            ->get();
-
-        $balanceSheet = 0.0;
-        $excluded = 0.0;
-        $byType = [];
-        $byWarehouse = [];
-        foreach ($rows as $row) {
-            $value = round((float) $row->value, 2);
-            $onBalanceSheet = $row->legal_owner_type === LegalOwnerType::Company->value;
-            if ($onBalanceSheet) {
-                $balanceSheet += $value;
-                $byType[$row->warehouse_type] = round(($byType[$row->warehouse_type] ?? 0.0) + $value, 2);
-            } else {
-                $excluded += $value;
-            }
-            $byWarehouse[] = [
-                'warehouse_id' => $row->warehouse_id,
-                'warehouse_code' => $row->warehouse_code,
-                'warehouse_type' => $row->warehouse_type,
-                'legal_owner_type' => $row->legal_owner_type,
-                'value' => $value,
-                'on_balance_sheet' => $onBalanceSheet,
-            ];
+    /**
+     * Books vendor-owned goods received on a vendor consignment warehouse. They stay legally owned by the vendor (excluded
+     * from the balance-sheet valuation) until withdrawn by a consumption declaration.
+     *
+     * @param  list<array{product_id: string, quantity: float|int|string}>  $lines
+     */
+    public function receiveVendorStock(string $warehouseId, array $lines): Warehouse
+    {
+        $warehouse = Warehouse::query()->findOrFail($warehouseId);
+        if ($warehouse->warehouse_type !== WarehouseType::VendorConsignment->value) {
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.VENDOR_RECEIPT_WAREHOUSE_TYPE'));
+        }
+        if ($lines === []) {
+            throw new InvalidArgumentException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_CONSUMED_PRODUCT'));
         }
 
-        return [
-            'total_balance_sheet_value' => round($balanceSheet, 2),
-            'excluded_third_party_value' => round($excluded, 2),
-            'by_warehouse_type' => $byType,
-            'by_warehouse' => $byWarehouse,
-        ];
+        DB::transaction(function () use ($warehouse, $lines): void {
+            foreach ($lines as $line) {
+                $product = Product::query()->findOrFail($line['product_id']);
+                $this->stock->move((string) $product->id, null, (string) $warehouse->id, (float) $line['quantity'], 'vendor_consignment_receipt', unitCost: (float) $product->cost_price);
+            }
+        });
+
+        return $warehouse;
+    }
+
+    /**
+     * @param  array{warehouse_id: string, partner_id?: ?string, agreement_number?: ?string, valid_from: string, valid_to?: ?string, billing_frequency?: ?string, payment_terms_days?: ?int, notes?: ?string}  $data
+     */
+    public function createAgreement(array $data): ConsignmentAgreement
+    {
+        $warehouse = Warehouse::query()->findOrFail($data['warehouse_id']);
+        $direction = $this->directionFor($warehouse);
+        $partnerId = $data['partner_id'] ?? $warehouse->linked_partner_id;
+        if ($partnerId === null) {
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.NO_PARTNER_TO_BILL'));
+        }
+
+        return ConsignmentAgreement::create([
+            'tenant_id' => $this->tenantContext->getTenantId(),
+            'agreement_number' => $data['agreement_number'] ?? 'CA-'.now()->format('Y').'-'.strtoupper(substr(str_replace('-', '', (string) Str::uuid7()), -6)),
+            'direction' => $direction,
+            'partner_id' => $partnerId,
+            'warehouse_id' => $warehouse->id,
+            'status' => 'active',
+            'billing_frequency' => $data['billing_frequency'] ?? 'monthly',
+            'valid_from' => $data['valid_from'],
+            'valid_to' => $data['valid_to'] ?? null,
+            'payment_terms_days' => $data['payment_terms_days'] ?? 30,
+            'notes' => $data['notes'] ?? null,
+        ]);
+    }
+
+    public function terminateAgreement(ConsignmentAgreement $agreement): ConsignmentAgreement
+    {
+        $agreement->update(['status' => 'terminated', 'valid_to' => $agreement->valid_to ?? now()->toDateString()]);
+
+        return $agreement;
+    }
+
+    private function directionFor(Warehouse $warehouse): string
+    {
+        return match ($warehouse->warehouse_type) {
+            WarehouseType::CustomerConsignment->value => 'customer',
+            WarehouseType::VendorConsignment->value => 'vendor',
+            default => throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.AGREEMENT_WAREHOUSE_TYPE')),
+        };
+    }
+
+    private function resolveAgreement(Warehouse $warehouse, ?string $agreementId): ?ConsignmentAgreement
+    {
+        $query = ConsignmentAgreement::query()->where('warehouse_id', $warehouse->id);
+        if ($agreementId === null) {
+            return $query->where('status', 'active')->orderByDesc('valid_from')->first();
+        }
+        $agreement = $query->findOrFail($agreementId);
+        if ($agreement->status !== 'active') {
+            throw new DomainException(LogisticsMessage::get('LOGISTICS.ERRORS.AGREEMENT_NOT_ACTIVE'));
+        }
+
+        return $agreement;
     }
 
     /**
      * @param  list<array{product: Product, quantity: float, unit_price: float, tax_rate: float}>  $documentLines
      * @return array{0: string, 1: string, 2: float}
      */
-    private function draftSalesInvoice(ConsignmentConsumptionReport $report, array $documentLines): array
+    private function draftSalesInvoice(ConsignmentConsumptionDeclaration $declaration, array $documentLines): array
     {
         $items = array_map(fn (array $l): array => [
             'product_id' => (string) $l['product']->id,
-            'description' => sprintf('%s (consumo conto deposito %s - %s)', $l['product']->name, $report->period_start->format('d/m/Y'), $report->period_end->format('d/m/Y')),
+            'description' => sprintf('%s (consumo conto deposito %s - %s)', $l['product']->name, $declaration->period_start->format('d/m/Y'), $declaration->period_end->format('d/m/Y')),
             'quantity' => $l['quantity'],
             'unit_price' => $l['unit_price'],
             'tax_rate' => $l['tax_rate'],
         ], $documentLines);
 
         $invoice = $this->invoicing->createInvoice([
-            'tenant_id' => (string) $report->tenant_id,
-            'contact_id' => (string) $report->partner_id,
+            'tenant_id' => (string) $declaration->tenant_id,
+            'contact_id' => (string) $declaration->partner_id,
             'notes' => 'Fattura a consumo conto deposito',
             'created_by' => auth()->id(),
         ], $items);
@@ -252,10 +303,10 @@ final class ConsignmentService
      * @param  list<array{product: Product, quantity: float, unit_price: float, tax_rate: float}>  $documentLines
      * @return array{0: string, 1: string, 2: float}
      */
-    private function draftPurchaseOrder(ConsignmentConsumptionReport $report, array $documentLines): array
+    private function draftPurchaseOrder(ConsignmentConsumptionDeclaration $declaration, array $documentLines): array
     {
         $order = app(ProcurementServiceInterface::class)->createPurchaseOrder(new CreatePurchaseOrderDTO(
-            supplierId: (string) $report->partner_id,
+            supplierId: (string) $declaration->partner_id,
             orderDate: now()->toDateString(),
             expectedDeliveryDate: now()->toDateString(),
             lines: array_map(fn (array $l): array => [
@@ -266,7 +317,7 @@ final class ConsignmentService
                 'tax_rate' => $l['tax_rate'],
             ], $documentLines),
             notes: 'Ordine generato da prelievo conto deposito fornitore',
-            tenantId: (string) $report->tenant_id,
+            tenantId: (string) $declaration->tenant_id,
             creatorUserId: auth()->id() !== null ? (string) auth()->id() : null,
         ));
 

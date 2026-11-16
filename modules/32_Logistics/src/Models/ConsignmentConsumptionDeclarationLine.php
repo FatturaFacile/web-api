@@ -7,11 +7,11 @@ namespace Modules\Logistics\Models;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Modules\Logistics\Concerns\HasAuditUsers;
 
-final class ConsignmentConsumptionLine extends BaseEnterpriseModel
+final class ConsignmentConsumptionDeclarationLine extends BaseEnterpriseModel
 {
     use HasAuditUsers;
 
-    protected $table = 'consignment_consumption_lines';
+    protected $table = 'consignment_consumption_declaration_lines';
 
     protected function casts(): array
     {

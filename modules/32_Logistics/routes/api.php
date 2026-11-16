@@ -35,21 +35,51 @@ Route::prefix('api/v1/logistics')
         Route::post('delivery-notes/{id}/deliver', [DeliveryNoteController::class, 'deliver'])->middleware('logistics.can:'.P::DDT_ISSUE)->name('ddt.deliver');
         Route::post('delivery-notes/{id}/cancel', [DeliveryNoteController::class, 'cancel'])->middleware('logistics.can:'.P::DDT_CANCEL)->name('ddt.cancel');
 
-        // Transfers (two-step), discrepancies
-        Route::middleware('logistics.can:'.P::TRANSFERS_MANAGE)->group(function (): void {
-            Route::get('transfers', [StockTransferController::class, 'index'])->name('transfers.index');
-            Route::post('transfers', [StockTransferController::class, 'store'])->name('transfers.store');
-            Route::get('transfers/{id}', [StockTransferController::class, 'show'])->name('transfers.show');
-            Route::post('transfers/{id}/ship', [StockTransferController::class, 'ship'])->name('transfers.ship');
-            Route::post('transfers/{id}/receive', [StockTransferController::class, 'receive'])->name('transfers.receive');
-            Route::post('transfers/{id}/cancel', [StockTransferController::class, 'cancel'])->name('transfers.cancel');
-            Route::get('transfer-discrepancies', [StockTransferController::class, 'discrepancies'])->name('discrepancies.index');
-            Route::post('transfer-discrepancies/{id}/resolve', [StockTransferController::class, 'resolveDiscrepancy'])->name('discrepancies.resolve');
-        });
-
-        // Consignment / third-party goods
-        Route::get('consignment/ledger', [ConsignmentController::class, 'ledger'])->middleware('logistics.can:'.P::DDT_VIEW)->name('consignment.ledger');
-        Route::get('consignment/valuation', [ConsignmentController::class, 'valuation'])->middleware('logistics.can:'.P::DDT_VIEW)->name('consignment.valuation');
-        Route::get('consignment/consumption-reports', [ConsignmentController::class, 'reports'])->middleware('logistics.can:'.P::DDT_VIEW)->name('consignment.reports');
-        Route::post('consignment/consumption-reports', [ConsignmentController::class, 'declare'])->middleware('logistics.can:'.P::CONSIGNMENT_RECONCILE)->name('consignment.declare');
     });
+
+/*
+ * WMS transfers, discrepancies and consignment: served under the versioned WMS prefix (/api/v1/wms) and, for existing
+ * clients, under the legacy logistics prefix (/api/v1/logistics) with the same controllers and RBAC.
+ */
+foreach (['wms' => 'api/v1/wms', 'logistics' => 'api/v1/logistics'] as $name => $prefix) {
+    Route::prefix($prefix)
+        ->middleware(['api', 'auth:sanctum', 'tenant', 'locale', 'logistics.envelope'])
+        ->name($name === 'wms' ? 'wms.' : 'logistics.legacy.')
+        ->group(function (): void {
+            // Transfers (two-step) and discrepancies
+            Route::middleware('logistics.can:'.P::TRANSFERS_MANAGE)->group(function (): void {
+                Route::get('transfers', [StockTransferController::class, 'index'])->name('transfers.index');
+                Route::post('transfers', [StockTransferController::class, 'store'])->name('transfers.store');
+                Route::get('transfers/{id}', [StockTransferController::class, 'show'])->name('transfers.show');
+                Route::post('transfers/{id}/ship', [StockTransferController::class, 'ship'])->name('transfers.ship');
+                Route::post('transfers/{id}/receive', [StockTransferController::class, 'receive'])->name('transfers.receive');
+                Route::post('transfers/{id}/scan', [StockTransferController::class, 'scan'])->name('transfers.scan');
+                Route::post('transfers/{id}/cancel', [StockTransferController::class, 'cancel'])->name('transfers.cancel');
+                Route::get('transfer-discrepancies', [StockTransferController::class, 'discrepancies'])->name('discrepancies.index');
+            });
+            Route::middleware('logistics.can:'.P::TRANSFERS_APPROVE)->group(function (): void {
+                Route::post('transfers/{id}/approve', [StockTransferController::class, 'approve'])->name('transfers.approve');
+                Route::post('transfers/{id}/close', [StockTransferController::class, 'close'])->name('transfers.close');
+                Route::post('transfers/{id}/discrepancies/{discrepancyId}/resolve', [StockTransferController::class, 'resolveTransferDiscrepancy'])->name('transfers.discrepancies.resolve');
+                Route::post('transfer-discrepancies/{id}/resolve', [StockTransferController::class, 'resolveDiscrepancy'])->name('discrepancies.resolve');
+            });
+
+            // Consignment / third-party goods
+            Route::middleware('logistics.can:'.P::DDT_VIEW)->group(function (): void {
+                Route::get('consignment/ledger', [ConsignmentController::class, 'ledger'])->name('consignment.ledger');
+                Route::get('consignment/valuation', [ConsignmentController::class, 'valuation'])->name('consignment.valuation');
+                Route::get('reports/inventory-valuation', [ConsignmentController::class, 'valuation'])->name('reports.inventory-valuation');
+                Route::get('reports/third-party-register', [ConsignmentController::class, 'register'])->name('reports.third-party-register');
+                Route::get('consignment/declarations', [ConsignmentController::class, 'declarations'])->name('consignment.declarations');
+                Route::get('consignment/consumption-reports', [ConsignmentController::class, 'declarations'])->name('consignment.reports');
+                Route::get('consignment/agreements', [ConsignmentController::class, 'agreements'])->name('consignment.agreements');
+            });
+            Route::middleware('logistics.can:'.P::CONSIGNMENT_RECONCILE)->group(function (): void {
+                Route::post('consignment/declarations', [ConsignmentController::class, 'declare'])->name('consignment.declare');
+                Route::post('consignment/consumption-reports', [ConsignmentController::class, 'declare'])->name('consignment.declare-legacy');
+                Route::post('consignment/vendor-receipts', [ConsignmentController::class, 'vendorReceipt'])->name('consignment.vendor-receipts');
+                Route::post('consignment/agreements', [ConsignmentController::class, 'storeAgreement'])->name('consignment.agreements.store');
+                Route::post('consignment/agreements/{id}/terminate', [ConsignmentController::class, 'terminateAgreement'])->name('consignment.agreements.terminate');
+            });
+        });
+}

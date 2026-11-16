@@ -11,6 +11,7 @@ enum DeliveryNoteType: string
     case SubcontractingOut = 'subcontracting_out';
     case SubcontractingReturn = 'subcontracting_return';
     case CustomerConsignment = 'customer_consignment';
+    case CustomerConsignmentReturn = 'customer_consignment_return';
     case VendorConsignmentReturn = 'vendor_consignment_return';
     case ReturnFromCustomer = 'return_from_customer';
 
@@ -21,7 +22,7 @@ enum DeliveryNoteType: string
             self::OutboundSale, self::ReturnFromCustomer => 'delivery_note',
             self::InternalTransfer => 'ddt_transfer',
             self::SubcontractingOut, self::SubcontractingReturn => 'ddt_subcontract',
-            self::CustomerConsignment, self::VendorConsignmentReturn => 'ddt_consignment',
+            self::CustomerConsignment, self::CustomerConsignmentReturn, self::VendorConsignmentReturn => 'ddt_consignment',
         };
     }
 
@@ -30,8 +31,10 @@ enum DeliveryNoteType: string
         return match ($this) {
             self::OutboundSale => TransportReason::Sale,
             self::InternalTransfer => TransportReason::InternalTransfer,
-            self::SubcontractingOut, self::SubcontractingReturn => TransportReason::Subcontracting,
-            self::CustomerConsignment, self::VendorConsignmentReturn => TransportReason::Consignment,
+            self::SubcontractingOut => TransportReason::Subcontracting,
+            self::SubcontractingReturn => TransportReason::SubcontractorReturn,
+            self::CustomerConsignment => TransportReason::ConsignmentDelivery,
+            self::CustomerConsignmentReturn, self::VendorConsignmentReturn => TransportReason::ConsignmentReturn,
             self::ReturnFromCustomer => TransportReason::Return,
         };
     }

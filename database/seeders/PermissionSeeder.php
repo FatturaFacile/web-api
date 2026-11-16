@@ -48,6 +48,7 @@ class PermissionSeeder extends GlobalDataSeeder
             ['code' => 'delivery_notes.invoice', 'label_it' => 'Fatturazione differita DDT', 'label_en' => 'Deferred Invoicing of Delivery Notes'],
             ['code' => 'delivery_notes.pdf', 'label_it' => 'Download PDF DDT', 'label_en' => 'Download Delivery Note PDF'],
             ['code' => 'logistics.transfers.manage', 'label_it' => 'Gestione Trasferimenti di Magazzino', 'label_en' => 'Manage Stock Transfers'],
+            ['code' => 'logistics.transfers.approve', 'label_it' => 'Approvazione Trasferimenti e Discrepanze di Magazzino', 'label_en' => 'Approve Stock Transfers & Discrepancies'],
             ['code' => 'logistics.consignment.reconcile', 'label_it' => 'Riconciliazione Conto Deposito e Conto Lavoro', 'label_en' => 'Reconcile Consignment & Subcontracting'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
         ];

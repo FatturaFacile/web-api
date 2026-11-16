@@ -38,7 +38,7 @@ function sendToConsignment(object $t, float $qty): StockTransferOrder
         'purpose' => 'customer_consignment', 'origin_warehouse_id' => $t->main->id, 'destination_warehouse_id' => $t->deposit->id,
     ], [['product_id' => $t->product->id, 'quantity' => $qty]]);
 
-    return $t->transfers->receive($t->transfers->ship($order));
+    return $t->transfers->receive($t->transfers->ship($t->transfers->approve($order)));
 }
 
 test('customer consignment DDT is addressed to the customer and stock lands on the consignment warehouse', function (): void {
@@ -47,7 +47,7 @@ test('customer consignment DDT is addressed to the customer and stock lands on t
 
     expect($ddt->type)->toBe('customer_consignment')
         ->and($ddt->ddt_number)->toStartWith('DDT-CD-')
-        ->and($ddt->transport_reason_code)->toBe('consignment')
+        ->and($ddt->transport_reason_code)->toBe('consignment_delivery')
         ->and($ddt->contact_id)->toBe($this->customer->id)
         ->and($this->stock->onHand($this->deposit->id, $this->product->id))->toBe(30.0);
 });

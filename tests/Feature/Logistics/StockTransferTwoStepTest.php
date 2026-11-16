@@ -32,16 +32,16 @@ beforeEach(function (): void {
 
 function draftTransfer(object $t, float $qty = 40, string $purpose = 'inter_warehouse', ?string $destination = null): StockTransferOrder
 {
-    return $t->transfers->create([
+    return $t->transfers->approve($t->transfers->create([
         'purpose' => $purpose,
         'origin_warehouse_id' => $t->main->id,
         'destination_warehouse_id' => $destination ?? $t->branch->id,
-    ], [['product_id' => $t->product->id, 'quantity' => $qty]]);
+    ], [['product_id' => $t->product->id, 'quantity' => $qty]]));
 }
 
 test('ship moves stock to the transit location and issues the transfer DDT', function (): void {
     $order = draftTransfer($this);
-    expect($order->status)->toBe('draft')->and($order->transfer_number)->toBe('TRF-'.now()->format('Y').'-00001');
+    expect($order->status)->toBe('approved')->and($order->transfer_number)->toBe('TRF-'.now()->format('Y').'-00001');
 
     $shipped = $this->transfers->ship($order, ['carrier_name' => 'Furgone aziendale']);
 
@@ -102,7 +102,7 @@ test('short receipt creates a discrepancy and corrective movements happen only a
         ->and($resolved->resolved_at)->not->toBeNull()
         ->and($this->stock->onHand($transitId, $this->product->id))->toBe(0.0)
         ->and(StockMovement::query()->where('movement_type', 'transfer_write_off_out')->count())->toBe(1)
-        ->and($received->fresh()->status)->toBe('reconciled');
+        ->and($received->fresh()->status)->toBe('closed');
 
     // A resolved discrepancy cannot be resolved twice
     expect(fn () => $this->transfers->resolveDiscrepancy($resolved, DiscrepancyStatus::CarrierClaim))->toThrow(DomainException::class);
@@ -184,6 +184,8 @@ test('transfer lifecycle and discrepancy approval over the API', function (): vo
         'lines' => [['product_id' => $this->product->id, 'quantity' => 12]],
     ], $h)->assertCreated()->json('data.id');
 
+    $this->postJson("/api/v1/logistics/transfers/{$id}/ship", [], $h)->assertUnprocessable(); // must be approved first
+    $this->postJson("/api/v1/logistics/transfers/{$id}/approve", [], $h)->assertOk()->assertJsonPath('data.status', 'approved');
     $ship = $this->postJson("/api/v1/logistics/transfers/{$id}/ship", ['carrier_name' => 'Van', 'packages_count' => 2], $h)->assertOk()->assertJsonPath('data.status', 'in_transit');
     $lineId = $ship->json('data.lines.0.id');
 
@@ -194,6 +196,6 @@ test('transfer lifecycle and discrepancy approval over the API', function (): vo
     $this->getJson('/api/v1/logistics/transfer-discrepancies?status=pending_approval', $h)->assertOk()->assertJsonCount(1, 'data');
     $this->postJson("/api/v1/logistics/transfer-discrepancies/{$discrepancyId}/resolve", ['resolution' => 'bogus'], $h)->assertUnprocessable();
     $this->postJson("/api/v1/logistics/transfer-discrepancies/{$discrepancyId}/resolve", ['resolution' => 'approved_write_off'], $h)->assertOk()->assertJsonPath('data.status', 'approved_write_off');
-    $this->getJson("/api/v1/logistics/transfers/{$id}", $h)->assertOk()->assertJsonPath('data.status', 'reconciled');
+    $this->getJson("/api/v1/logistics/transfers/{$id}", $h)->assertOk()->assertJsonPath('data.status', 'closed');
     $this->postJson("/api/v1/logistics/transfers/{$id}/ship", [], $h)->assertUnprocessable();
 });

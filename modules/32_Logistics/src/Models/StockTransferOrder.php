@@ -20,14 +20,22 @@ final class StockTransferOrder extends BaseEnterpriseModel
             'is_inter_company' => 'boolean',
             'shipped_at' => 'datetime',
             'received_at' => 'datetime',
+            'approved_at' => 'datetime',
+            'closed_at' => 'datetime',
         ];
     }
 
+    /**
+     * @return HasMany<StockTransferOrderLine, $this>
+     */
     public function lines(): HasMany
     {
         return $this->hasMany(StockTransferOrderLine::class, 'stock_transfer_order_id');
     }
 
+    /**
+     * @return HasMany<TransferDiscrepancy, $this>
+     */
     public function discrepancies(): HasMany
     {
         return $this->hasMany(TransferDiscrepancy::class, 'stock_transfer_order_id');

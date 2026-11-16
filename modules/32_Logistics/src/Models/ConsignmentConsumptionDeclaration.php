@@ -8,11 +8,11 @@ use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Logistics\Concerns\HasAuditUsers;
 
-final class ConsignmentConsumptionReport extends BaseEnterpriseModel
+final class ConsignmentConsumptionDeclaration extends BaseEnterpriseModel
 {
     use HasAuditUsers;
 
-    protected $table = 'consignment_consumption_reports';
+    protected $table = 'consignment_consumption_declarations';
 
     protected function casts(): array
     {
@@ -23,8 +23,11 @@ final class ConsignmentConsumptionReport extends BaseEnterpriseModel
         ];
     }
 
+    /**
+     * @return HasMany<ConsignmentConsumptionDeclarationLine, $this>
+     */
     public function lines(): HasMany
     {
-        return $this->hasMany(ConsignmentConsumptionLine::class, 'report_id');
+        return $this->hasMany(ConsignmentConsumptionDeclarationLine::class, 'declaration_id');
     }
 }

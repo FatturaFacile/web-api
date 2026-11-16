@@ -10,8 +10,8 @@ use OpenApi\Attributes as OA;
     schema: 'DeliveryNoteInput',
     required: ['type', 'items'],
     properties: [
-        new OA\Property(property: 'type', type: 'string', enum: ['outbound_sale', 'internal_transfer', 'subcontracting_out', 'subcontracting_return', 'customer_consignment', 'vendor_consignment_return', 'return_from_customer']),
-        new OA\Property(property: 'transport_reason_code', type: 'string', enum: ['sale', 'internal_transfer', 'subcontracting', 'consignment', 'repair', 'gift', 'return']),
+        new OA\Property(property: 'type', type: 'string', enum: ['outbound_sale', 'internal_transfer', 'subcontracting_out', 'subcontracting_return', 'customer_consignment', 'customer_consignment_return', 'vendor_consignment_return', 'return_from_customer']),
+        new OA\Property(property: 'transport_reason_code', type: 'string', enum: ['sale', 'internal_transfer', 'subcontracting', 'consignment', 'consignment_delivery', 'consignment_return', 'subcontractor_return', 'repair', 'gift', 'return']),
         new OA\Property(property: 'carriage_terms', type: 'string', enum: ['free', 'collect', 'free_with_charge']),
         new OA\Property(property: 'transport_by', type: 'string', enum: ['sender', 'recipient', 'carrier']),
         new OA\Property(property: 'incoterms', type: 'string', example: 'DAP'),
@@ -57,7 +57,7 @@ use OpenApi\Attributes as OA;
     schema: 'TransferInput',
     required: ['purpose', 'origin_warehouse_id', 'destination_warehouse_id', 'lines'],
     properties: [
-        new OA\Property(property: 'purpose', type: 'string', enum: ['inter_warehouse', 'technician_van', 'customer_consignment', 'subcontracting']),
+        new OA\Property(property: 'purpose', type: 'string', enum: ['inter_warehouse', 'technician_van', 'inter_company', 'customer_consignment', 'consignment_return', 'subcontracting', 'subcontracting_return']),
         new OA\Property(property: 'origin_warehouse_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'destination_warehouse_id', type: 'string', format: 'uuid'),
         new OA\Property(property: 'transit_warehouse_id', type: 'string', format: 'uuid', nullable: true),
@@ -83,6 +83,18 @@ use OpenApi\Attributes as OA;
             new OA\Property(property: 'product_id', type: 'string', format: 'uuid'),
             new OA\Property(property: 'quantity', type: 'number'),
             new OA\Property(property: 'unit_price', type: 'number', nullable: true),
+        ], type: 'object')),
+    ],
+)]
+#[OA\Schema(
+    schema: 'TransferReceiptInput',
+    properties: [
+        new OA\Property(property: 'final', type: 'boolean', default: true, description: 'false = partial receipt, the rest is still in transit'),
+        new OA\Property(property: 'lines', type: 'array', items: new OA\Items(properties: [
+            new OA\Property(property: 'line_id', type: 'string', format: 'uuid'),
+            new OA\Property(property: 'received_qty', type: 'number'),
+            new OA\Property(property: 'damaged_qty', type: 'number'),
+            new OA\Property(property: 'discrepancy_reason', type: 'string', nullable: true),
         ], type: 'object')),
     ],
 )]

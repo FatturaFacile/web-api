@@ -32,6 +32,9 @@ final class LogisticsPermissions
 
     public const TRANSFERS_MANAGE = 'logistics.transfers.manage';
 
+    /** Manager sign-off: approving a transfer, resolving shortage/damage discrepancies and closing transfers. */
+    public const TRANSFERS_APPROVE = 'logistics.transfers.approve';
+
     public const CONSIGNMENT_RECONCILE = 'logistics.consignment.reconcile';
 
     /**
@@ -41,7 +44,7 @@ final class LogisticsPermissions
     {
         return [
             self::DDT_VIEW, self::DDT_CREATE, self::DDT_UPDATE, self::DDT_DELETE, self::DDT_ISSUE, self::DDT_CANCEL,
-            self::DDT_INVOICE, self::DDT_PDF, self::TRANSFERS_MANAGE, self::CONSIGNMENT_RECONCILE,
+            self::DDT_INVOICE, self::DDT_PDF, self::TRANSFERS_MANAGE, self::TRANSFERS_APPROVE, self::CONSIGNMENT_RECONCILE,
         ];
     }
 

@@ -21,9 +21,13 @@ final class StockTransferOrderLine extends BaseEnterpriseModel
             'shipped_qty' => 'decimal:4',
             'received_qty' => 'decimal:4',
             'discrepancy_qty' => 'decimal:4',
+            'damaged_qty' => 'decimal:4',
         ];
     }
 
+    /**
+     * @return BelongsTo<StockTransferOrder, $this>
+     */
     public function order(): BelongsTo
     {
         return $this->belongsTo(StockTransferOrder::class, 'stock_transfer_order_id');

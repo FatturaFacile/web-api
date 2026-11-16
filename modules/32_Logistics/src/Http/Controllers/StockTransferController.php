@@ -5,60 +5,80 @@ declare(strict_types=1);
 namespace Modules\Logistics\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Product;
 use DomainException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use InvalidArgumentException;
+use Modules\Logistics\Actions\ApproveStockTransferOrderAction;
+use Modules\Logistics\Actions\CloseStockTransferOrderAction;
+use Modules\Logistics\Actions\CreateStockTransferOrderAction;
+use Modules\Logistics\Actions\ReceiveStockTransferOrderAction;
+use Modules\Logistics\Actions\ResolveTransferDiscrepancyAction;
+use Modules\Logistics\Actions\ShipStockTransferOrderAction;
 use Modules\Logistics\Enums\DiscrepancyStatus;
-use Modules\Logistics\Enums\TransferPurpose;
+use Modules\Logistics\Http\Requests\ReceiveTransferOrderRequest;
+use Modules\Logistics\Http\Requests\ResolveTransferDiscrepancyRequest;
+use Modules\Logistics\Http\Requests\ScanTransferLineRequest;
+use Modules\Logistics\Http\Requests\ShipTransferOrderRequest;
+use Modules\Logistics\Http\Requests\StoreTransferOrderRequest;
 use Modules\Logistics\Models\StockTransferOrder;
 use Modules\Logistics\Models\TransferDiscrepancy;
 use Modules\Logistics\Services\StockTransferService;
+use Modules\Logistics\Support\LogisticsMessage;
 use OpenApi\Attributes as OA;
 
-#[OA\Tag(name: 'Logistics Transfers', description: 'Two-step stock transfers (origin -> transit -> destination) and discrepancy approval')]
+#[OA\Tag(name: 'WMS Transfers', description: 'Two-step stock transfers (draft, approved, shipped, received, closed) and discrepancy approval. Also served under the legacy prefix /api/v1/logistics.')]
 final class StockTransferController extends Controller
 {
     public function __construct(private readonly StockTransferService $service) {}
 
     #[OA\Get(
-        path: '/api/v1/logistics/transfers',
+        path: '/api/v1/wms/transfers',
         summary: 'List transfer orders',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
+        description: 'Filters: status, purpose, is_inter_company, warehouse_id (origin or destination), direction (inbound|outbound, needs warehouse_id). Requires permission logistics.transfers.manage.',
+        tags: ['WMS Transfers'],
         parameters: [
             new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
             new OA\Parameter(name: 'purpose', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
+            new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'direction', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['inbound', 'outbound'])),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Success'),
             new OA\Response(response: 403, description: 'Missing logistics permission'),
-            new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
     public function index(Request $request): JsonResponse
     {
+        $warehouseId = $request->query('warehouse_id');
+        $direction = $request->query('direction');
+
         $query = StockTransferOrder::query()->with('lines')
-            ->when($request->query('status'), fn ($q, $v) => $q->where('status', $v))
+            ->when($request->query('status'), fn ($q, $v) => $q->whereIn('status', explode(',', (string) $v)))
             ->when($request->query('purpose'), fn ($q, $v) => $q->where('purpose', $v))
+            ->when($request->boolean('is_inter_company'), fn ($q) => $q->where('is_inter_company', true))
+            ->when($warehouseId !== null, fn ($q) => $q->where(function ($w) use ($warehouseId, $direction): void {
+                match ($direction) {
+                    'inbound' => $w->where('destination_warehouse_id', $warehouseId),
+                    'outbound' => $w->where('origin_warehouse_id', $warehouseId),
+                    default => $w->where('destination_warehouse_id', $warehouseId)->orWhere('origin_warehouse_id', $warehouseId),
+                };
+            }))
             ->orderByDesc('created_at');
 
         return response()->json($query->paginate(min(100, (int) $request->query('per_page', 25))));
     }
 
     #[OA\Get(
-        path: '/api/v1/logistics/transfers/{id}',
-        summary: 'Get a transfer order',
+        path: '/api/v1/wms/transfers/{id}',
+        summary: 'Get a transfer order with lines and discrepancies',
         description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 200, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
-            new OA\Response(response: 422, description: 'Validation or business rule error'),
+            new OA\Response(response: 404, description: 'Not found'),
         ]
     )]
     public function show(string $id): JsonResponse
@@ -67,101 +87,97 @@ final class StockTransferController extends Controller
     }
 
     #[OA\Post(
-        path: '/api/v1/logistics/transfers',
+        path: '/api/v1/wms/transfers',
         summary: 'Create a transfer order (draft)',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
+        description: 'Purposes: inter_warehouse, technician_van, inter_company, customer_consignment, consignment_return, subcontracting, subcontracting_return. Requires permission logistics.transfers.manage.',
+        tags: ['WMS Transfers'],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/TransferInput')),
         responses: [
-            new OA\Response(response: 201, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
+            new OA\Response(response: 201, description: 'Created'),
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
-    public function store(Request $request): JsonResponse
+    public function store(StoreTransferOrderRequest $request, CreateStockTransferOrderAction $action): JsonResponse
     {
-        $data = $request->validate([
-            'purpose' => ['required', Rule::in(TransferPurpose::values())],
-            'origin_warehouse_id' => ['required', 'uuid'],
-            'destination_warehouse_id' => ['required', 'uuid'],
-            'transit_warehouse_id' => ['nullable', 'uuid'],
-            'notes' => ['nullable', 'string'],
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.product_id' => ['required', 'uuid'],
-            'lines.*.quantity' => ['required', 'numeric', 'gt:0'],
-            'lines.*.description' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        return $this->run(fn () => response()->json(['data' => $this->service->create($data, $data['lines'])], 201));
+        return $this->run(fn () => response()->json(['data' => $action->execute($request->validated())], 201));
     }
 
     #[OA\Post(
-        path: '/api/v1/logistics/transfers/{id}/ship',
-        summary: 'Ship: origin -> transit location and automatic DDT',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        path: '/api/v1/wms/transfers/{id}/approve',
+        summary: 'Approve a draft transfer (manager sign-off before dispatch)',
+        description: 'Requires permission logistics.transfers.approve.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 200, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
+            new OA\Response(response: 422, description: 'Business rule error'),
+        ]
+    )]
+    public function approve(Request $request, string $id, ApproveStockTransferOrderAction $action): JsonResponse
+    {
+        return $this->run(fn () => response()->json(['data' => $action->execute($id, $request->user() !== null ? (string) $request->user()->id : null)]));
+    }
+
+    #[OA\Post(
+        path: '/api/v1/wms/transfers/{id}/ship',
+        summary: 'Step 1 dispatch: origin to in-transit, fiscal DDT and inter-company invoice draft',
+        description: 'Requires permission logistics.transfers.manage and an approved transfer.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
-    public function ship(Request $request, string $id): JsonResponse
+    public function ship(ShipTransferOrderRequest $request, string $id, ShipStockTransferOrderAction $action): JsonResponse
     {
-        $delivery = $request->validate([
-            'carrier_name' => ['nullable', 'string', 'max:255'],
-            'carrier_license_plate' => ['nullable', 'string', 'max:30'],
-            'transport_by' => ['nullable', Rule::in(['sender', 'recipient', 'carrier'])],
-            'carriage_terms' => ['nullable', Rule::in(['free', 'collect', 'free_with_charge'])],
-            'goods_appearance' => ['nullable', 'string', 'max:100'],
-            'packages_count' => ['nullable', 'integer', 'min:0'],
-            'gross_weight_kg' => ['nullable', 'numeric', 'min:0'],
-        ]);
-
-        return $this->run(fn () => response()->json(['data' => $this->service->ship(StockTransferOrder::query()->findOrFail($id), $delivery)]));
+        return $this->run(fn () => response()->json(['data' => $action->execute($id, $request->validated())]));
     }
 
     #[OA\Post(
-        path: '/api/v1/logistics/transfers/{id}/receive',
-        summary: 'Receive: transit -> destination, with shortages/damages creating discrepancies',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        path: '/api/v1/wms/transfers/{id}/receive',
+        summary: 'Step 2 receipt: in-transit to destination; shortages and damages raise discrepancies',
+        description: 'Per line received_qty (good) and damaged_qty. Send final=false for a partial receipt while the rest is still on its way. Requires permission logistics.transfers.manage.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: false, content: new OA\JsonContent(ref: '#/components/schemas/TransferReceiptInput')),
         responses: [
             new OA\Response(response: 200, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
-    public function receive(Request $request, string $id): JsonResponse
+    public function receive(ReceiveTransferOrderRequest $request, string $id, ReceiveStockTransferOrderAction $action): JsonResponse
     {
-        $data = $request->validate([
-            'lines' => ['sometimes', 'array'],
-            'lines.*.line_id' => ['required', 'uuid'],
-            'lines.*.received_qty' => ['required', 'numeric', 'min:0'],
-            'lines.*.discrepancy_reason' => ['nullable', 'string', 'max:255'],
-        ]);
+        $data = $request->validated();
 
-        return $this->run(fn () => response()->json(['data' => $this->service->receive(StockTransferOrder::query()->findOrFail($id), $data['lines'] ?? [])]));
+        return $this->run(fn () => response()->json(['data' => $action->execute($id, $data['lines'] ?? [], (bool) ($data['final'] ?? true))]));
     }
 
     #[OA\Post(
-        path: '/api/v1/logistics/transfers/{id}/cancel',
-        summary: 'Cancel a draft transfer',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
-        parameters: [
-            new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
-        ],
+        path: '/api/v1/wms/transfers/{id}/close',
+        summary: 'Close a fully received transfer',
+        description: 'Requires permission logistics.transfers.approve.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
         responses: [
             new OA\Response(response: 200, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
-            new OA\Response(response: 422, description: 'Validation or business rule error'),
+            new OA\Response(response: 422, description: 'Business rule error'),
+        ]
+    )]
+    public function close(string $id, CloseStockTransferOrderAction $action): JsonResponse
+    {
+        return $this->run(fn () => response()->json(['data' => $action->execute($id)]));
+    }
+
+    #[OA\Post(
+        path: '/api/v1/wms/transfers/{id}/cancel',
+        summary: 'Cancel a draft or approved transfer',
+        description: 'Requires permission logistics.transfers.manage.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Success'),
+            new OA\Response(response: 422, description: 'Business rule error'),
         ]
     )]
     public function cancel(string $id): JsonResponse
@@ -169,19 +185,45 @@ final class StockTransferController extends Controller
         return $this->run(fn () => response()->json(['data' => $this->service->cancel(StockTransferOrder::query()->findOrFail($id))]));
     }
 
-    #[OA\Get(
-        path: '/api/v1/logistics/transfer-discrepancies',
-        summary: 'List transfer discrepancies',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
-        parameters: [
-            new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string')),
-        ],
+    #[OA\Post(
+        path: '/api/v1/wms/transfers/{id}/scan',
+        summary: 'Resolve a scanned barcode / SKU to a transfer line (warehouse floor dispatch and receipt)',
+        description: 'Returns the matching line with its outstanding quantity. Requires permission logistics.transfers.manage.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(properties: [new OA\Property(property: 'code', type: 'string')], type: 'object')),
         responses: [
-            new OA\Response(response: 200, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
-            new OA\Response(response: 422, description: 'Validation or business rule error'),
+            new OA\Response(response: 200, description: 'Matching line'),
+            new OA\Response(response: 422, description: 'Code does not belong to this transfer'),
         ]
+    )]
+    public function scan(ScanTransferLineRequest $request, string $id): JsonResponse
+    {
+        $order = StockTransferOrder::query()->with('lines')->findOrFail($id);
+        $code = (string) $request->validated('code');
+
+        $products = Product::query()
+            ->whereIn('id', $order->lines->pluck('product_id'))
+            ->where(fn ($q) => $q->where('barcode', $code)->orWhere('sku', $code))
+            ->pluck('id');
+        $line = $order->lines->first(fn ($l): bool => $products->contains($l->product_id));
+        if ($line === null) {
+            return response()->json(['message' => LogisticsMessage::get('LOGISTICS.ERRORS.LINE_NOT_IN_TRANSFER', ['line' => $code])], 422);
+        }
+
+        return response()->json(['data' => [
+            'line' => $line,
+            'outstanding_qty' => round((float) $line->shipped_qty - (float) $line->received_qty - (float) $line->damaged_qty, 4),
+        ]]);
+    }
+
+    #[OA\Get(
+        path: '/api/v1/wms/transfer-discrepancies',
+        summary: 'List transfer discrepancies (shortage / damage)',
+        description: 'Requires permission logistics.transfers.manage.',
+        tags: ['WMS Transfers'],
+        parameters: [new OA\Parameter(name: 'status', in: 'query', required: false, schema: new OA\Schema(type: 'string'))],
+        responses: [new OA\Response(response: 200, description: 'Success')]
     )]
     public function discrepancies(Request $request): JsonResponse
     {
@@ -193,28 +235,40 @@ final class StockTransferController extends Controller
     }
 
     #[OA\Post(
-        path: '/api/v1/logistics/transfer-discrepancies/{id}/resolve',
-        summary: 'Approve a discrepancy resolution (write-off, carrier claim, return to origin)',
-        description: 'Requires permission logistics.transfers.manage.',
-        tags: ['Logistics Transfers'],
+        path: '/api/v1/wms/transfers/{id}/discrepancies/{discrepancyId}/resolve',
+        summary: 'Manager approval of a discrepancy: write-off, return to origin or carrier claim',
+        description: 'Requires permission logistics.transfers.approve. Closes the transfer when the last discrepancy is resolved.',
+        tags: ['WMS Transfers'],
         parameters: [
             new OA\Parameter(name: 'id', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
+            new OA\Parameter(name: 'discrepancyId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid')),
         ],
         requestBody: new OA\RequestBody(required: true, content: new OA\JsonContent(ref: '#/components/schemas/DiscrepancyResolutionInput')),
         responses: [
             new OA\Response(response: 200, description: 'Success'),
-            new OA\Response(response: 403, description: 'Missing logistics permission'),
             new OA\Response(response: 422, description: 'Validation or business rule error'),
         ]
     )]
-    public function resolveDiscrepancy(Request $request, string $id): JsonResponse
+    public function resolveTransferDiscrepancy(ResolveTransferDiscrepancyRequest $request, string $id, string $discrepancyId, ResolveTransferDiscrepancyAction $action): JsonResponse
     {
-        $data = $request->validate(['resolution' => ['required', Rule::in(DiscrepancyStatus::resolutions())]]);
+        return $this->resolveWith($request, $discrepancyId, $action, $id);
+    }
 
-        return $this->run(fn () => response()->json(['data' => $this->service->resolveDiscrepancy(
-            TransferDiscrepancy::query()->findOrFail($id),
-            DiscrepancyStatus::from($data['resolution']),
+    /** Legacy flat route: /transfer-discrepancies/{id}/resolve. */
+    public function resolveDiscrepancy(ResolveTransferDiscrepancyRequest $request, string $id, ResolveTransferDiscrepancyAction $action): JsonResponse
+    {
+        return $this->resolveWith($request, $id, $action, null);
+    }
+
+    private function resolveWith(ResolveTransferDiscrepancyRequest $request, string $discrepancyId, ResolveTransferDiscrepancyAction $action, ?string $transferId): JsonResponse
+    {
+        $resolution = DiscrepancyStatus::from((string) $request->validated('resolution'));
+
+        return $this->run(fn () => response()->json(['data' => $action->execute(
+            $discrepancyId,
+            $resolution,
             $request->user() !== null ? (string) $request->user()->id : null,
+            $transferId,
         )]));
     }
 
