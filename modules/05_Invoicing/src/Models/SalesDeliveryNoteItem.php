@@ -7,15 +7,19 @@ namespace Modules\Invoicing\Models;
 use App\Models\Product;
 use Enterprise\Foundation\Models\BaseEnterpriseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Modules\Logistics\Concerns\HasAuditUsers;
 
-final class SalesDeliveryNoteItem extends BaseEnterpriseModel
+class SalesDeliveryNoteItem extends BaseEnterpriseModel
 {
+    use HasAuditUsers;
+
     protected $table = 'delivery_note_items';
 
     protected function casts(): array
     {
         return [
             'quantity' => 'decimal:4',
+            'invoiced_quantity' => 'decimal:4',
             'unit_price' => 'decimal:4',
             'tax_rate' => 'decimal:2',
         ];

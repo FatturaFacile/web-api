@@ -38,6 +38,16 @@ class PermissionSeeder extends Seeder
             ['code' => 'treasury.payments.execute', 'label_it' => 'Esecuzione Pagamenti Bancari', 'label_en' => 'Execute Banking Dispositions'],
             ['code' => 'service.tickets.dispatch', 'label_it' => 'Assegnazione Ticket Assistenza', 'label_en' => 'Dispatch Service Tickets'],
             ['code' => 'assets.depreciation.run', 'label_it' => 'Esecuzione Ammortamenti Cespiti', 'label_en' => 'Run Asset Depreciation'],
+            ['code' => 'delivery_notes.view', 'label_it' => 'Visualizzazione DDT', 'label_en' => 'View Delivery Notes'],
+            ['code' => 'delivery_notes.create', 'label_it' => 'Creazione DDT', 'label_en' => 'Create Delivery Notes'],
+            ['code' => 'delivery_notes.update', 'label_it' => 'Modifica DDT in bozza', 'label_en' => 'Edit Draft Delivery Notes'],
+            ['code' => 'delivery_notes.delete', 'label_it' => 'Eliminazione DDT in bozza', 'label_en' => 'Delete Draft Delivery Notes'],
+            ['code' => 'delivery_notes.issue', 'label_it' => 'Emissione, spedizione e consegna DDT', 'label_en' => 'Issue, Dispatch and Deliver Delivery Notes'],
+            ['code' => 'delivery_notes.cancel', 'label_it' => 'Annullamento DDT', 'label_en' => 'Cancel Delivery Notes'],
+            ['code' => 'delivery_notes.invoice', 'label_it' => 'Fatturazione differita DDT', 'label_en' => 'Deferred Invoicing of Delivery Notes'],
+            ['code' => 'delivery_notes.pdf', 'label_it' => 'Download PDF DDT', 'label_en' => 'Download Delivery Note PDF'],
+            ['code' => 'logistics.transfers.manage', 'label_it' => 'Gestione Trasferimenti di Magazzino', 'label_en' => 'Manage Stock Transfers'],
+            ['code' => 'logistics.consignment.reconcile', 'label_it' => 'Riconciliazione Conto Deposito e Conto Lavoro', 'label_en' => 'Reconcile Consignment & Subcontracting'],
             ['code' => 'audit.ledger.view', 'label_it' => 'Consultazione Piste di Audit', 'label_en' => 'Inspect Enterprise Audit Trails'],
         ];
 

@@ -5,45 +5,21 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Models\Concerns\BelongsToTenant;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\SoftDeletes;
+use Modules\Invoicing\Models\SalesDeliveryNote;
 
-class DeliveryNote extends Model
+/**
+ * Legacy alias of the canonical delivery note ({@see SalesDeliveryNote}). Same table, same columns, same scopes,
+ * same behaviour: it only keeps the legacy relation names (`contact`, `salesOrder`, `items`) used by the old API,
+ * the PDF engine and the policies registered on this class.
+ *
+ * @deprecated Use {@see SalesDeliveryNote} in new code.
+ */
+class DeliveryNote extends SalesDeliveryNote
 {
-    use BelongsToTenant, HasFactory, HasUuids, SoftDeletes;
-
-    protected $fillable = [
-        'contact_id',
-        'sales_order_id',
-        'ddt_number',
-        'date',
-        'transport_reason',
-        'goods_appearance',
-        'packages_count',
-        'gross_weight_kg',
-        'carrier_name',
-        'carrier_license_plate',
-        'departure_time',
-        'notes',
-        'shipping_address',
-        'courier',
-        'show_prices',
-        'status',
-    ];
-
-    protected function casts(): array
-    {
-        return [
-            'date' => 'date',
-            'departure_time' => 'datetime',
-            'gross_weight_kg' => 'decimal:2',
-            'show_prices' => 'boolean',
-        ];
-    }
+    // Tenant isolation is inherited from the canonical model; the legacy trait is kept so the tenancy architecture rules still see it.
+    use BelongsToTenant;
 
     /**
      * @return BelongsTo<Contact, $this>

@@ -103,6 +103,26 @@ return [
         'license_plate' => 'License plate',
         'departure' => 'Departure',
         'receipt' => 'Goods received in good condition',
+        'carriage_terms' => 'Carriage terms',
+        'transport_by' => 'Transport arranged by',
+        'carrier_vat' => 'Carrier VAT no.',
+        'carrier_uid' => 'Carrier UID',
+        'incoterms' => 'Incoterms',
+        'net_weight' => 'Net weight (kg)',
+        'volume' => 'Volume (m3)',
+        'sign_sender' => 'Sender signature',
+        'sign_driver' => 'Driver signature',
+        'sign_carrier' => 'Carrier signature',
+        'carriage' => [
+            'free' => 'Carriage paid',
+            'collect' => 'Carriage forward',
+            'free_with_charge' => 'Carriage paid, charged back',
+        ],
+        'by' => [
+            'sender' => 'Sender',
+            'recipient' => 'Recipient',
+            'carrier' => 'Carrier',
+        ],
     ],
 
     'work_order' => [

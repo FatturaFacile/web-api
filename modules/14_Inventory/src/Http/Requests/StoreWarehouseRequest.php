@@ -28,6 +28,10 @@ final class StoreWarehouseRequest extends FormRequest
             'country' => ['nullable', 'string', 'max:2'],
             'is_active' => ['nullable', 'boolean'],
             'manager_user_id' => ['nullable', 'uuid'],
+            'warehouse_type' => ['nullable', 'string', 'in:standard,transit,mobile_van,customer_consignment,vendor_consignment,subcontractor'],
+            'legal_owner_type' => ['nullable', 'string', 'in:company,vendor,customer'],
+            'linked_partner_id' => ['nullable', 'uuid'],
+            'company_entity_id' => ['nullable', 'uuid'],
         ];
     }
 }

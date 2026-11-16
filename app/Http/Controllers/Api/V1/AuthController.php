@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\PersonalAccessToken;
+use Modules\Logistics\Support\LogisticsPermissions;
 use OpenApi\Attributes as OA;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -187,6 +188,7 @@ class AuthController extends Controller
                 'phone' => $user->phone,
                 'locale' => $user->locale,
                 'is_active' => $user->is_active,
+                'permissions' => LogisticsPermissions::forUser($user),
                 'active_tenant' => $activeTenant ? [
                     'id' => $activeTenant->id,
                     'name' => $activeTenant->name,
