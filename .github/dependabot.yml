@@ -1,23 +1,6 @@
-# To get started with Dependabot version updates, you'll need to specify which
-# package ecosystems to update and where the package manifests are located.
-# Please see the documentation for all configuration options:
-# https://docs.github.com/code-security/dependabot/dependabot-version-updates/configuration-options-for-the-dependabot.yml-file
-
 version: 2
 updates:
-  # 1. .NET Ecosystem (NuGet) - Ideal for solutions with NuGet packages
-  - package-ecosystem: "nuget"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "08:00"
-      timezone: "Europe/Rome"
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: "deps(nuget)"
-
-  # 2. GitHub Actions (to keep CI/CD workflows up to date)
+  # GitHub Actions: one grouped PR per week
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -25,8 +8,16 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
 
-  # 3. Node.js / npm (for frontends or supporting tooling)
+  # npm: one grouped PR for minor and patch updates; major versions are handled by hand
   - package-ecosystem: "npm"
     directory: "/"
     schedule:
@@ -34,17 +25,22 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    commit-message:
+      prefix: "deps"
+    groups:
+      npm-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
 
-  # 4. Docker (for managing base images in Dockerfiles)
-  - package-ecosystem: "docker"
-    directory: "/"
-    schedule:
-      interval: "weekly"
-      day: "monday"
-      time: "08:00"
-      timezone: "Europe/Rome"
-
-  # 5. Composer (PHP dependencies: the real attack surface of the API)
+  # Composer (PHP): one grouped PR for minor and patch updates; major versions are handled by hand
   - package-ecosystem: "composer"
     directory: "/"
     schedule:
@@ -52,5 +48,34 @@ updates:
       day: "monday"
       time: "08:00"
       timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
     commit-message:
       prefix: "deps(composer)"
+    groups:
+      composer-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  # Docker base images: one grouped PR per week
+  - package-ecosystem: "docker"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "08:00"
+      timezone: "Europe/Rome"
+    open-pull-requests-limit: 2
+    assignees:
+      - "aledv"
+      - "davide-nava"
+    groups:
+      docker:
+        patterns:
+          - "*"
