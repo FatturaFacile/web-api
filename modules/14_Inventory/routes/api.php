@@ -5,7 +5,11 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Modules\Inventory\Http\Controllers\BarcodeController;
 use Modules\Inventory\Http\Controllers\InventoryAdjustmentController;
+use Modules\Inventory\Http\Controllers\InventoryBookController;
+use Modules\Inventory\Http\Controllers\InventoryCostLayerController;
 use Modules\Inventory\Http\Controllers\InventoryCountController;
+use Modules\Inventory\Http\Controllers\InventoryValuationConfigController;
+use Modules\Inventory\Http\Controllers\LandedCostDocumentController;
 use Modules\Inventory\Http\Controllers\StockItemController;
 use Modules\Inventory\Http\Controllers\StockMovementController;
 use Modules\Inventory\Http\Controllers\StockPickListController;
@@ -60,4 +64,22 @@ Route::prefix('api/v1/inventory')
         // 10. Valuation (FIFO / AVCO / Standard Costing)
         Route::get('valuation/summary', [StockValuationController::class, 'summary'])->name('inventory.valuation.summary');
         Route::post('valuation/snapshot', [StockValuationController::class, 'captureSnapshot'])->name('inventory.valuation.snapshot');
+        Route::get('valuation/config', [InventoryValuationConfigController::class, 'index'])->name('inventory.valuation.config');
+        Route::put('valuation/categories/{id}', [InventoryValuationConfigController::class, 'updateCategory'])->name('inventory.valuation.categories.update');
+        Route::put('valuation/items/{id}', [InventoryValuationConfigController::class, 'updateItem'])->name('inventory.valuation.items.update');
+        Route::get('valuation/cost-layers', [InventoryCostLayerController::class, 'index'])->name('inventory.valuation.cost-layers.index');
+
+        // 11. Landed Costs (freight, customs, insurance, brokerage)
+        Route::get('landed-costs', [LandedCostDocumentController::class, 'index'])->name('inventory.landed-costs.index');
+        Route::post('landed-costs', [LandedCostDocumentController::class, 'store'])->name('inventory.landed-costs.store');
+        Route::post('landed-costs/preview', [LandedCostDocumentController::class, 'preview'])->name('inventory.landed-costs.preview');
+        Route::get('landed-costs/{id}', [LandedCostDocumentController::class, 'show'])->name('inventory.landed-costs.show');
+        Route::post('landed-costs/{id}/apply', [LandedCostDocumentController::class, 'apply'])->name('inventory.landed-costs.apply');
+        Route::post('landed-costs/{id}/reverse', [LandedCostDocumentController::class, 'reverse'])->name('inventory.landed-costs.reverse');
+
+        // 12. Inventory Book (libro inventari) & audit exports
+        Route::get('book', [InventoryBookController::class, 'show'])->name('inventory.book.show');
+        Route::get('book/exports', [InventoryBookController::class, 'indexExports'])->name('inventory.book.exports.index');
+        Route::post('book/exports', [InventoryBookController::class, 'storeExport'])->name('inventory.book.exports.store');
+        Route::get('book/exports/{id}/download', [InventoryBookController::class, 'downloadExport'])->name('inventory.book.exports.download');
     });

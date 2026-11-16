@@ -8,8 +8,11 @@ use App\Http\Controllers\Controller;
 use Enterprise\OpenApi\Attributes\EnterpriseEndpoint;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Modules\Inventory\Contracts\InventoryCostingServiceInterface;
 use Modules\Inventory\Contracts\StockValuationServiceInterface;
+use Modules\Inventory\Enums\ValuationMethod;
 use Modules\Inventory\Models\StockItem;
+use Modules\Inventory\Support\Decimal;
 use OpenApi\Attributes as OA;
 
 #[OA\Tag(name: 'Inventory Valuation', description: 'FIFO, Moving Average, Standard Costing, and balance sheet valuations')]
@@ -22,7 +25,7 @@ final class StockValuationController extends Controller
         tags: ['Inventory Valuation'],
         parameters: [
             new OA\Parameter(name: 'warehouse_id', in: 'query', required: false, schema: new OA\Schema(type: 'string', format: 'uuid')),
-            new OA\Parameter(name: 'valuation_method', in: 'query', required: false, schema: new OA\Schema(type: 'string', enum: ['FIFO', 'AVCO', 'STANDARD'], default: 'FIFO')),
+            new OA\Parameter(name: 'valuation_method', in: 'query', required: false, description: 'Force a method for all items; omitted = effective method per item. Legacy FIFO|AVCO|STANDARD accepted.', schema: new OA\Schema(type: 'string', enum: ['fifo', 'weighted_average', 'standard_cost', 'FIFO', 'AVCO', 'STANDARD'])),
         ],
         responses: [
             new OA\Response(response: 200, description: 'Valuation summary'),
@@ -30,36 +33,39 @@ final class StockValuationController extends Controller
         ]
     )]
     #[EnterpriseEndpoint(summary: 'Get total inventory valuation summary', tags: ['Inventory'])]
-    public function summary(Request $request, StockValuationServiceInterface $service): JsonResponse
+    public function summary(Request $request, StockValuationServiceInterface $service, InventoryCostingServiceInterface $costing): JsonResponse
     {
-        $warehouseId = $request->query('warehouse_id');
-        $method = $request->query('valuation_method', 'FIFO');
+        $request->validate([
+            'warehouse_id' => ['sometimes', 'nullable', 'uuid'],
+            'valuation_method' => ['sometimes', 'nullable', 'string', 'in:'.implode(',', ValuationMethod::acceptedInputValues())],
+        ]);
 
-        $items = StockItem::where('is_active', true)->get();
-        $totalValuation = 0.0;
+        $warehouseId = $request->query('warehouse_id');
+        $requested = $request->filled('valuation_method') ? (string) $request->query('valuation_method') : null;
+        $requestedMethod = $requested !== null ? ValuationMethod::fromStorage($requested) : null;
+
+        $items = StockItem::with('category')->where('is_active', true)->get();
+        $totalValuation = '0';
         $details = [];
 
         foreach ($items as $item) {
-            $onHand = (float) $item->quants()->sum('quantity_on_hand');
-            $cost = match ($method) {
-                'AVCO' => (float) ($item->current_moving_average_cost * $onHand),
-                'STANDARD' => (float) ($item->standard_cost * $onHand),
-                default => $service->calculateFifoValuation($item, $onHand),
-            };
+            $method = $requestedMethod ?? $costing->resolveEffectiveMethod($item);
+            $value = $service->valueItem($item, $method->value);
 
-            $totalValuation += $cost;
+            $totalValuation = Decimal::add($totalValuation, $value);
             $details[] = [
                 'item_id' => $item->id,
                 'sku' => $item->sku,
                 'name' => $item->name,
-                'valuation' => $cost,
+                'method' => $method->value,
+                'valuation' => (float) $value,
             ];
         }
 
         return response()->json([
-            'valuation_method' => $method,
+            'valuation_method' => $requested ?? 'effective',
             'warehouse_id' => $warehouseId,
-            'total_valuation' => $totalValuation,
+            'total_valuation' => (float) Decimal::money($totalValuation),
             'items_count' => count($details),
             'items' => $details,
         ]);
@@ -77,7 +83,7 @@ final class StockValuationController extends Controller
                 properties: [
                     new OA\Property(property: 'stock_item_id', type: 'string', format: 'uuid'),
                     new OA\Property(property: 'warehouse_id', type: 'string', format: 'uuid'),
-                    new OA\Property(property: 'valuation_method', type: 'string', enum: ['FIFO', 'AVCO', 'STANDARD'], default: 'FIFO'),
+                    new OA\Property(property: 'valuation_method', type: 'string', enum: ['fifo', 'weighted_average', 'standard_cost', 'FIFO', 'AVCO', 'STANDARD'], description: 'Omitted = effective method of the item'),
                 ]
             )
         ),
@@ -92,14 +98,14 @@ final class StockValuationController extends Controller
         $validated = $request->validate([
             'stock_item_id' => ['required', 'uuid'],
             'warehouse_id' => ['required', 'uuid'],
-            'valuation_method' => ['nullable', 'string', 'in:FIFO,AVCO,STANDARD'],
+            'valuation_method' => ['nullable', 'string', 'in:'.implode(',', ValuationMethod::acceptedInputValues())],
         ]);
 
         $item = StockItem::findOrFail($validated['stock_item_id']);
         $snapshot = $service->capturePeriodicSnapshot(
             item: $item,
             warehouseId: (string) $validated['warehouse_id'],
-            method: $validated['valuation_method'] ?? 'FIFO'
+            method: $validated['valuation_method'] ?? null
         );
 
         return response()->json($snapshot, 201);
