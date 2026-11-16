@@ -349,6 +349,7 @@ it('previews without persisting and stores the declaration when applied', functi
 it('snapshots product customs data on invoice lines and keeps it after the product changes', function (): void {
     $ctx = customsProductApi();
     $headers = ['X-Tenant-Id' => $ctx->tenant->id];
+    fiscalCalendar($ctx->tenant, (int) now()->year);
     $contact = Contact::create(['tenant_id' => $ctx->tenant->id, 'company_name' => 'Importer', 'type' => 'customer', 'country' => 'CH']);
     $product = Product::create([
         'tenant_id' => $ctx->tenant->id, 'sku' => 'WATCH-1', 'name' => 'Watch', 'sale_price' => 100, 'tax_rate' => 22,
