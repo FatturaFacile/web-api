@@ -13,6 +13,10 @@ use Modules\HumanResources\Http\Controllers\Recruiting\JobOpeningController;
 use Modules\HumanResources\Http\Controllers\Recruiting\PublicCareersController;
 use Modules\HumanResources\Http\Controllers\Recruiting\RecruitingEmailTemplateController;
 use Modules\HumanResources\Http\Controllers\Recruiting\RecruitingSettingsController;
+use Modules\HumanResources\Http\Controllers\Payroll\PayrollProfileController;
+use Modules\HumanResources\Http\Controllers\Payroll\PayrollReferenceDataController;
+use Modules\HumanResources\Http\Controllers\Payroll\PayrollRunController;
+use Modules\HumanResources\Http\Controllers\Payroll\SalaryDeclarationController;
 use Modules\HumanResources\Http\Controllers\TalentAndTrainingController;
 use Modules\HumanResources\Http\Middleware\ResolveCareersTenant;
 
@@ -63,6 +67,37 @@ Route::prefix('api/v1/hr')
         Route::post('/training-records/{id}/complete', [TalentAndTrainingController::class, 'completeTraining'])->name('api.v1.hr.training-records.complete');
         Route::get('/certifications', [TalentAndTrainingController::class, 'certifications'])->name('api.v1.hr.certifications.index');
         Route::post('/certifications/scan-expiring', [TalentAndTrainingController::class, 'scanExpiringCertifications'])->name('api.v1.hr.certifications.scan-expiring');
+
+        // Swiss Payroll (Swissdec-style) Routes
+        Route::prefix('payroll')->name('api.v1.hr.payroll.')->group(function (): void {
+            Route::get('/wage-types', [PayrollReferenceDataController::class, 'wageTypes'])->name('wage-types.index');
+            Route::post('/wage-types', [PayrollReferenceDataController::class, 'storeWageType'])->name('wage-types.store');
+            Route::put('/wage-types/{id}', [PayrollReferenceDataController::class, 'updateWageType'])->name('wage-types.update');
+
+            Route::get('/rate-sets', [PayrollReferenceDataController::class, 'rateSets'])->name('rate-sets.index');
+            Route::post('/rate-sets', [PayrollReferenceDataController::class, 'storeRateSet'])->name('rate-sets.store');
+
+            Route::get('/withholding-tariffs', [PayrollReferenceDataController::class, 'withholdingTariffs'])->name('withholding-tariffs.index');
+            Route::post('/withholding-tariffs', [PayrollReferenceDataController::class, 'storeWithholdingTariff'])->name('withholding-tariffs.store');
+            Route::post('/withholding-tariffs/import', [PayrollReferenceDataController::class, 'importWithholdingTariffs'])->name('withholding-tariffs.import');
+
+            Route::get('/employees/{id}/profile', [PayrollProfileController::class, 'show'])->name('profiles.show');
+            Route::put('/employees/{id}/profile', [PayrollProfileController::class, 'upsert'])->name('profiles.upsert');
+
+            Route::get('/runs', [PayrollRunController::class, 'index'])->name('runs.index');
+            Route::post('/runs', [PayrollRunController::class, 'store'])->name('runs.store');
+            Route::get('/runs/{id}', [PayrollRunController::class, 'show'])->name('runs.show');
+            Route::put('/runs/{id}', [PayrollRunController::class, 'update'])->name('runs.update');
+            Route::post('/runs/{id}/calculate', [PayrollRunController::class, 'calculate'])->name('runs.calculate');
+            Route::post('/runs/{id}/approve', [PayrollRunController::class, 'approve'])->name('runs.approve');
+            Route::post('/runs/{id}/close', [PayrollRunController::class, 'close'])->name('runs.close');
+            Route::get('/runs/{id}/payslips', [PayrollRunController::class, 'payslips'])->name('runs.payslips');
+            Route::get('/payslips/{id}', [PayrollRunController::class, 'showPayslip'])->name('payslips.show');
+
+            Route::post('/declarations', [SalaryDeclarationController::class, 'store'])->name('declarations.store');
+            Route::get('/declarations/{id}', [SalaryDeclarationController::class, 'show'])->name('declarations.show');
+            Route::get('/declarations/{id}/download', [SalaryDeclarationController::class, 'download'])->name('declarations.download');
+        });
     });
 
 // Recruiting & ATS (Mod 070) - authenticated, tenant scoped

@@ -10,17 +10,21 @@ use Enterprise\EventBus\Services\EventDispatcher;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
-use InvalidArgumentException;
+use Modules\CRM\Contracts\LeadDeduplicationServiceInterface;
+use Modules\CRM\Contracts\LeadScoringServiceInterface;
 use Modules\CRM\Contracts\LeadServiceInterface;
 use Modules\CRM\DTOs\ConvertLeadDTO;
 use Modules\CRM\DTOs\CreateLeadDTO;
+use Modules\CRM\DTOs\DuplicateMatch;
 use Modules\CRM\Events\LeadConvertedEvent;
 use Modules\CRM\Events\LeadCreatedEvent;
 use Modules\CRM\Events\LeadQualifiedEvent;
 use Modules\CRM\Events\LeadRejectedEvent;
+use Modules\CRM\Exceptions\LeadAlreadyConvertedException;
 use Modules\CRM\Models\Account;
 use Modules\CRM\Models\ContactRole;
 use Modules\CRM\Models\Lead;
+use Modules\CRM\Models\LeadSetting;
 use Modules\CRM\Models\LeadSource;
 use Modules\CRM\Models\Opportunity;
 use Modules\CRM\Models\OpportunityStage;
@@ -29,16 +33,19 @@ final readonly class LeadService implements LeadServiceInterface
 {
     public function __construct(
         private EventDispatcher $dispatcher,
-        private AuditLedgerInterface $auditLedger
+        private AuditLedgerInterface $auditLedger,
+        private LeadScoringServiceInterface $scoring,
+        private LeadDeduplicationServiceInterface $deduplication,
     ) {}
 
     public function captureLead(CreateLeadDTO $dto, ?string $actorUserId = null): Lead
     {
         return DB::transaction(function () use ($dto, $actorUserId) {
-            $actorUuid = ! empty($actorUserId) && Str::isUuid($actorUserId) ? $actorUserId : (string) Str::uuid7();
+            $actorIsUser = ! empty($actorUserId) && Str::isUuid($actorUserId);
+            $actorUuid = $actorIsUser ? (string) $actorUserId : (string) Str::uuid7();
 
-            $sourceId = null;
-            if ($dto->leadSourceCode) {
+            $sourceId = $dto->leadSourceId;
+            if ($sourceId === null && $dto->leadSourceCode) {
                 $source = LeadSource::where('tenant_id', $dto->tenantId)
                     ->where('code', $dto->leadSourceCode)
                     ->first();
@@ -52,7 +59,8 @@ final readonly class LeadService implements LeadServiceInterface
                 'tenant_id' => $dto->tenantId,
                 'lead_source_id' => $sourceId,
                 'campaign_id' => $dto->campaignId,
-                'assigned_user_id' => $dto->assignedUserId ?? $actorUuid,
+                // Leads captured without an authenticated actor (webhooks) stay unassigned until routed.
+                'assigned_user_id' => $dto->assignedUserId ?? ($actorIsUser ? $actorUserId : null),
                 'first_name' => $dto->firstName,
                 'last_name' => $dto->lastName,
                 'company_name' => $dto->companyName,
@@ -66,15 +74,24 @@ final readonly class LeadService implements LeadServiceInterface
                 'tags' => $dto->tags,
                 'custom_fields' => $dto->customFields,
                 'duplicate_hash' => $duplicateHash,
+                'vat_number' => $dto->vatNumber,
+                'industry' => $dto->industry,
+                'employee_count' => $dto->employeeCount,
+                'annual_revenue_estimate' => $dto->annualRevenueEstimate,
+                'state_region' => $dto->stateRegion,
+                'product_line' => $dto->productLine,
+                'external_id' => $dto->externalId,
             ]);
 
-            // Calculate and assign initial lead score
-            $score = $this->scoreLead($lead);
-            $rating = $score >= 70 ? 'hot' : ($score >= 40 ? 'warm' : 'cold');
+            // Calculate and assign initial lead score (configured rules, or the legacy heuristic)
+            $result = $this->scoring->evaluate($lead);
+            $score = $result->score;
 
             $lead->update([
                 'score' => $score,
-                'rating' => $rating,
+                'rating' => $result->rating,
+                'score_breakdown' => $result->breakdown,
+                'scored_at' => now(),
             ]);
 
             // Audit Trail
@@ -100,8 +117,8 @@ final readonly class LeadService implements LeadServiceInterface
             $this->dispatcher->publish($event);
             event($event);
 
-            // Auto-qualify high scoring leads (score >= 80)
-            if ($score >= 80) {
+            // Auto-qualify high scoring leads (tenant threshold, 80 by default)
+            if ($score >= LeadSetting::forTenant($dto->tenantId)->auto_qualify_threshold) {
                 $this->qualifyLead($lead, $actorUuid);
             }
 
@@ -111,52 +128,7 @@ final readonly class LeadService implements LeadServiceInterface
 
     public function scoreLead(Lead $lead): int
     {
-        $score = 0;
-
-        // 1. Title / Seniority check (+20)
-        $title = strtolower((string) $lead->title);
-        if (preg_match('/(director|vp|c-level|ceo|cfo|cto|coo|head|chief|president|founder|owner|partner|manager)/', $title)) {
-            $score += 20;
-        }
-
-        // 2. Business Email check (+15)
-        $email = strtolower((string) $lead->email);
-        if (! empty($email)) {
-            $freeProviders = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'libero.it', 'icloud.com'];
-            $domain = substr(strrchr($email, '@') ?: '', 1);
-            if (! in_array($domain, $freeProviders, true) && ! empty($domain)) {
-                $score += 15;
-            } else {
-                $score += 5;
-            }
-        }
-
-        // 3. Phone presence (+10)
-        if (! empty($lead->phone)) {
-            $score += 10;
-        }
-
-        // 4. Company presence (+15)
-        if (! empty($lead->company_name)) {
-            $score += 15;
-        }
-
-        // 5. Budget capability (+20 / +30)
-        $budget = (float) $lead->estimated_budget;
-        if ($budget >= 50000.0) {
-            $score += 30;
-        } elseif ($budget >= 10000.0) {
-            $score += 20;
-        } elseif ($budget > 0.0) {
-            $score += 10;
-        }
-
-        // 6. Website presence (+10)
-        if (! empty($lead->website)) {
-            $score += 10;
-        }
-
-        return min(100, $score);
+        return $this->scoring->evaluate($lead)->score;
     }
 
     public function qualifyLead(Lead $lead, string $actorUserId): Lead
@@ -237,16 +209,33 @@ final readonly class LeadService implements LeadServiceInterface
             $lockedLead = Lead::where('id', $lead->id)->lockForUpdate()->firstOrFail();
 
             if ($lockedLead->status === 'converted') {
-                throw new InvalidArgumentException("Lead [{$lead->id}] has already been converted.");
+                throw LeadAlreadyConvertedException::forLead((string) $lead->id);
+            }
+
+            if ($lockedLead->merged_into_lead_id !== null) {
+                throw LeadAlreadyConvertedException::mergedInto((string) $lockedLead->id, (string) $lockedLead->merged_into_lead_id);
             }
 
             $tenantId = (string) $lockedLead->tenant_id;
             $ownerId = $dto->ownerUserId ?? $lockedLead->assigned_user_id ?? $actorUserId;
 
-            // 1. Resolve or Create Account
+            // 1. Resolve the contact first: explicit choice, else an existing contact with the same VAT/email
+            $contact = null;
+            if (! empty($dto->existingContactId)) {
+                $contact = Contact::where('tenant_id', $tenantId)->findOrFail($dto->existingContactId);
+            } else {
+                $contact = $this->deduplication->findContactForLead($lockedLead);
+            }
+
+            // 2. Resolve or Create Account (an explicit new_account_name always creates a new account)
+            $account = null;
             if (! empty($dto->existingAccountId)) {
                 $account = Account::where('tenant_id', $tenantId)->findOrFail($dto->existingAccountId);
-            } else {
+            } elseif (empty($dto->newAccountName)) {
+                $account = $this->deduplication->findAccountForLead($lockedLead);
+            }
+
+            if ($account === null) {
                 $accountName = $dto->newAccountName ?: ($lockedLead->company_name ?: $lockedLead->full_name);
                 $account = Account::create([
                     'id' => (string) Str::uuid7(),
@@ -255,7 +244,9 @@ final readonly class LeadService implements LeadServiceInterface
                     'account_number' => 'ACC-'.strtoupper(Str::random(6)),
                     'tier' => $dto->accountTier ?? 'standard',
                     'status' => 'active',
-                    'annual_revenue' => $lockedLead->estimated_budget,
+                    'industry' => $lockedLead->industry,
+                    'employee_count' => $lockedLead->employee_count,
+                    'annual_revenue' => $lockedLead->annual_revenue_estimate ?? $lockedLead->estimated_budget,
                     'website' => $lockedLead->website,
                     'owner_user_id' => $ownerId,
                     'customer_health_index' => 100.00,
@@ -264,35 +255,55 @@ final readonly class LeadService implements LeadServiceInterface
                 ]);
             }
 
-            // 2. Create or Link Contact
-            $contact = Contact::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $tenantId,
-                'type' => 'client',
-                'country' => $lockedLead->country ?: 'IT',
-                'company_name' => $account->name,
-                'first_name' => $lockedLead->first_name,
-                'last_name' => $lockedLead->last_name,
-                'email' => $lockedLead->email,
-                'phone' => $lockedLead->phone,
-            ]);
+            // 3. Create the contact when no existing one was matched, otherwise complete its blanks
+            if ($contact === null) {
+                $contact = Contact::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $tenantId,
+                    'type' => 'client',
+                    'country' => $lockedLead->country ?: 'IT',
+                    'company_name' => $account->name,
+                    'first_name' => $lockedLead->first_name,
+                    'last_name' => $lockedLead->last_name,
+                    'email' => $lockedLead->email,
+                    'phone' => $lockedLead->phone,
+                    'vat_number' => $lockedLead->vat_number,
+                ]);
+            } else {
+                $blanks = array_filter([
+                    'vat_number' => empty($contact->vat_number) ? $lockedLead->vat_number : null,
+                    'phone' => empty($contact->phone) ? $lockedLead->phone : null,
+                    'email' => empty($contact->email) ? $lockedLead->email : null,
+                ], static fn (mixed $value): bool => $value !== null && $value !== '');
 
-            // 3. Link Contact to Account
-            ContactRole::create([
-                'id' => (string) Str::uuid7(),
-                'tenant_id' => $tenantId,
-                'account_id' => $account->id,
-                'contact_id' => $contact->id,
-                'role' => $dto->contactRole ?? 'decision_maker',
-                'is_primary' => true,
-            ]);
+                if ($blanks !== []) {
+                    $contact->update($blanks);
+                }
+            }
+
+            // 4. Link Contact to Account (once)
+            $roleExists = ContactRole::where('tenant_id', $tenantId)
+                ->where('account_id', $account->id)
+                ->where('contact_id', $contact->id)
+                ->exists();
+
+            if (! $roleExists) {
+                ContactRole::create([
+                    'id' => (string) Str::uuid7(),
+                    'tenant_id' => $tenantId,
+                    'account_id' => $account->id,
+                    'contact_id' => $contact->id,
+                    'role' => $dto->contactRole ?? 'decision_maker',
+                    'is_primary' => true,
+                ]);
+            }
 
             // Update primary contact on account if null
             if (empty($account->contact_id)) {
                 $account->update(['contact_id' => $contact->id]);
             }
 
-            // 4. Optionally Create Opportunity
+            // 5. Optionally Create Opportunity
             $opportunity = null;
             if ($dto->createOpportunity) {
                 $stage = OpportunityStage::firstOrCreate(
@@ -336,7 +347,7 @@ final readonly class LeadService implements LeadServiceInterface
                 ]);
             }
 
-            // 5. Update Lead Status
+            // 6. Update Lead Status
             $before = $lockedLead->toArray();
             $lockedLead->update([
                 'status' => 'converted',
@@ -346,7 +357,7 @@ final readonly class LeadService implements LeadServiceInterface
                 'converted_opportunity_id' => $opportunity?->id,
             ]);
 
-            // 6. Audit Trail
+            // 7. Audit Trail
             $this->auditLedger->record(
                 action: 'LEAD_CONVERTED',
                 model: $lockedLead,
@@ -360,7 +371,7 @@ final readonly class LeadService implements LeadServiceInterface
                 moduleCode: 'MODULE_02_CRM'
             );
 
-            // 7. Outbox Domain Event
+            // 8. Outbox Domain Event
             $event = new LeadConvertedEvent(
                 leadId: (string) $lockedLead->id,
                 accountId: (string) $account->id,
@@ -383,33 +394,28 @@ final readonly class LeadService implements LeadServiceInterface
 
     public function detectDuplicates(string $tenantId, ?string $email, ?string $phone, ?string $companyName): Collection
     {
-        $query = Lead::where('tenant_id', $tenantId);
-
-        $conditions = false;
-        if (! empty($email)) {
-            $query->where('email', strtolower(trim($email)));
-            $conditions = true;
+        if (empty($email) && empty($phone) && empty($companyName)) {
+            return collect();
         }
 
+        $leadIds = collect($this->deduplication->findMatches($tenantId, [
+            'email' => $email,
+            'phone' => $phone,
+            'company_name' => $companyName,
+        ]))
+            ->filter(fn (DuplicateMatch $match): bool => $match->recordType === 'lead')
+            ->map(fn (DuplicateMatch $match): string => $match->recordId)
+            ->values()
+            ->all();
+
+        $query = Lead::where('tenant_id', $tenantId)->whereIn('id', $leadIds);
+
+        // Raw phone equality keeps matching legacy rows whose number could not be normalized.
         if (! empty($phone)) {
-            if ($conditions) {
-                $query->orWhere('phone', $phone);
-            } else {
-                $query->where('phone', $phone);
-                $conditions = true;
-            }
+            $query->orWhere(fn ($q) => $q->where('tenant_id', $tenantId)->where('phone', $phone));
         }
 
-        if (! empty($companyName)) {
-            if ($conditions) {
-                $query->orWhere('company_name', 'ilike', "%{$companyName}%");
-            } else {
-                $query->where('company_name', 'ilike', "%{$companyName}%");
-                $conditions = true;
-            }
-        }
-
-        return $conditions ? $query->get() : collect();
+        return $query->get();
     }
 
     public function assignLead(Lead $lead, string $assignedUserId, string $actorUserId): Lead

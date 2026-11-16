@@ -24,6 +24,10 @@ class DocumentNumberingService
         'quote' => 'QT-',
         'sales_order' => 'SO-',
         'delivery_note' => 'DDT-',
+        'ddt_transfer' => 'DDT-TR-',
+        'ddt_subcontract' => 'DDT-CL-',
+        'ddt_consignment' => 'DDT-CD-',
+        'stock_transfer' => 'TRF-',
         'work_order' => 'WO-',
         'pos_receipt' => 'REC-',
         'purchase_order' => 'PO-',
@@ -39,9 +43,11 @@ class DocumentNumberingService
      * Atomically reserve the next gapless number for the document type and fiscal year.
      * Prevents race conditions and duplicate key exceptions using atomic upsert and row locking.
      *
+     * `$padding` only applies when the sequence row is first created for the tenant/year.
+     *
      * @return array{number: string, sequential_number: int, fiscal_year: int}
      */
-    public function next(string $documentType, ?int $fiscalYear = null): array
+    public function next(string $documentType, ?int $fiscalYear = null, int $padding = 4): array
     {
         $fiscalYear ??= (int) now()->format('Y');
         $tenantId = $this->tenantContext->getTenantId();
@@ -50,7 +56,7 @@ class DocumentNumberingService
             throw new InvalidArgumentException('Active tenant context is required to generate sequential document numbers.');
         }
 
-        return DB::transaction(function () use ($documentType, $fiscalYear, $tenantId): array {
+        return DB::transaction(function () use ($documentType, $fiscalYear, $tenantId, $padding): array {
             // Atomically ensure the sequence record exists without crashing on concurrent calls
             DocumentSequence::withoutGlobalScopes()->insertOrIgnore([
                 'id' => (string) Str::uuid(),
@@ -59,7 +65,7 @@ class DocumentNumberingService
                 'fiscal_year' => $fiscalYear,
                 'prefix' => self::DEFAULT_PREFIXES[$documentType] ?? strtoupper(substr($documentType, 0, 3)).'-',
                 'last_number' => 0,
-                'padding' => 4,
+                'padding' => $padding,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

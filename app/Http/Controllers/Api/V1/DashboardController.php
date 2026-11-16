@@ -26,7 +26,7 @@ class DashboardController extends Controller
     #[OA\Get(
         path: '/api/v1/dashboard/kpi-summary',
         operationId: 'getKpiSummary',
-        description: 'Get executive KPI summary (total revenue, unpaid receivables, invoice count).',
+        description: 'Get executive KPI summary (total revenue, unpaid receivables, invoice count). Total revenue is the gross of paid invoices plus the amount collected on partially paid ones; total unpaid is the outstanding balance (gross minus paid) of unpaid and partially paid invoices.',
         summary: 'Get KPI summary',
         security: [['bearerAuth' => []]],
         tags: ['Dashboard'],
@@ -40,8 +40,21 @@ class DashboardController extends Controller
         $tenant = $this->tenantContext->getTenant();
         $currency = $tenant?->default_currency ?? 'EUR';
 
-        $totalRevenue = (float) Invoice::where('payment_status', 'paid')->sum('total_gross');
-        $totalUnpaid = (float) Invoice::where('payment_status', 'unpaid')->sum('total_gross');
+        // Single pass: partially paid invoices contribute their residual to receivables and their
+        // collected amount to revenue. Paid invoices keep their gross, since invoices marked paid
+        // outside RecordPayment (treasury matching, seeders) may still have total_paid = 0.
+        $totals = Invoice::query()
+            ->selectRaw(
+                "SUM(CASE WHEN payment_status IN ('unpaid', 'partially_paid') AND total_gross > total_paid "
+                .'THEN total_gross - total_paid ELSE 0 END) AS total_unpaid, '
+                ."SUM(CASE WHEN payment_status = 'paid' THEN total_gross "
+                ."WHEN payment_status = 'partially_paid' THEN total_paid ELSE 0 END) AS total_revenue"
+            )
+            ->toBase()
+            ->first();
+
+        $totalRevenue = round((float) ($totals->total_revenue ?? 0), 2);
+        $totalUnpaid = round((float) ($totals->total_unpaid ?? 0), 2);
         $invoicesCount = Invoice::count();
 
         return $this->successResponse(
