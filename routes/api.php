@@ -78,11 +78,13 @@ use App\Http\Controllers\Api\V1\SupplierCostRuleController;
 use App\Http\Controllers\Api\V1\SupplierInvoiceController;
 use App\Http\Controllers\Api\V1\System\BootstrapSupportUserController;
 use App\Http\Controllers\Api\V1\System\TenantBackupController;
+use App\Http\Controllers\Api\V1\TenantBrandingController;
 use App\Http\Controllers\Api\V1\TenantPreferencesController;
 use App\Http\Controllers\Api\V1\TimeAttendanceController;
 use App\Http\Controllers\Api\V1\TreasuryController;
 use App\Http\Controllers\Api\V1\TwoFactorController;
 use App\Http\Controllers\Api\V1\UnitOfMeasureController;
+use App\Http\Controllers\Api\V1\UserPreferencesController;
 use App\Http\Controllers\Api\V1\WorkOrderController;
 use App\Http\Controllers\Portal\CustomerPortalController;
 use Illuminate\Support\Facades\Route;
@@ -532,6 +534,13 @@ Route::prefix('v1')->group(function (): void {
             Route::get('/backups/{id}/download', [TenantBackupController::class, 'download'])->middleware('throttle:sensitive-system')->name('backups.download');
             Route::delete('/backups/{id}', [TenantBackupController::class, 'destroy'])->name('backups.destroy');
         });
+
+        // Look and feel: the branding of the tenant (every member reads, the system module writes) and the interface
+        // preferences of the user themselves.
+        Route::get('/tenant/branding', [TenantBrandingController::class, 'show'])->name('tenant.branding');
+        Route::patch('/tenant/branding', [TenantBrandingController::class, 'update'])->middleware('module.access:system')->name('tenant.branding.update');
+        Route::get('/user/preferences', [UserPreferencesController::class, 'show'])->name('user.preferences');
+        Route::patch('/user/preferences', [UserPreferencesController::class, 'update'])->name('user.preferences.update');
 
         Route::prefix('settings')->name('settings.')->group(function (): void {
             // Every member reads the company profile, its preferences and branches: the clients need them on every page.
