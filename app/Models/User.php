@@ -101,7 +101,7 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Tenant::class, 'tenant_user')
             ->using(AuditedPivot::class)
-            ->withPivot(['id', 'role', 'permissions'])
+            ->withPivot(['id', 'role', 'permissions', 'custom_role_id'])
             ->wherePivotNull('suspended_at')
             ->withTimestamps();
     }

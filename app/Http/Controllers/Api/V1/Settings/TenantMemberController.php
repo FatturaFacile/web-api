@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api\V1\Settings;
 
+use App\Exceptions\PlanLimitExceededException;
 use App\Exceptions\SodConflictException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Settings\SaveTenantMemberRequest;
@@ -171,6 +172,71 @@ class TenantMemberController extends Controller
         return $this->successResponse(message: 'Member removed from the tenant');
     }
 
+    #[OA\Post(
+        path: '/api/v1/settings/users/{userId}/suspend',
+        operationId: 'suspendTenantUser',
+        description: 'Deactivates the member in the active tenant: access stops at once, role and module levels are kept for a later reactivation.',
+        summary: 'Deactivate a member',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings', 'Users'],
+        parameters: [new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Member deactivated', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 409, description: 'Last owner or own membership', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function suspend(Request $request, string $userId): JsonResponse
+    {
+        return $this->changeSuspension($request, $userId, true);
+    }
+
+    #[OA\Post(
+        path: '/api/v1/settings/users/{userId}/reactivate',
+        operationId: 'reactivateTenantUser',
+        description: 'Reactivates a deactivated member of the active tenant, within the limit of the subscription plan.',
+        summary: 'Reactivate a member',
+        security: [['bearerAuth' => []]],
+        tags: ['Settings', 'Users'],
+        parameters: [new OA\Parameter(name: 'userId', in: 'path', required: true, schema: new OA\Schema(type: 'string', format: 'uuid'))],
+        responses: [
+            new OA\Response(response: 200, description: 'Member reactivated', content: new OA\JsonContent(ref: '#/components/schemas/ApiSuccessResponse')),
+            new OA\Response(response: 409, description: 'Plan limit reached', content: new OA\JsonContent(ref: '#/components/schemas/ApiErrorResponse')),
+        ]
+    )]
+    public function reactivate(Request $request, string $userId): JsonResponse
+    {
+        return $this->changeSuspension($request, $userId, false);
+    }
+
+    private function changeSuspension(Request $request, string $userId, bool $suspended): JsonResponse
+    {
+        $tenant = $this->tenantContext->getTenant();
+        $user = $tenant->users()->where('users.id', $userId)->firstOrFail();
+
+        if ($refusal = $this->refuseSelfOrOwnerChange($request, $user)) {
+            return $refusal;
+        }
+
+        try {
+            $this->memberships->setSuspended($tenant, $user, $suspended);
+        } catch (PlanLimitExceededException $exception) {
+            return $this->planLimitResponse($exception);
+        } catch (DomainException $exception) {
+            return $this->problemDetailsResponse(title: 'Last Owner', detail: $exception->getMessage(), status: Response::HTTP_CONFLICT);
+        }
+
+        return $this->successResponse(data: collect($this->memberships->members($tenant))->firstWhere('id', $user->id), message: $suspended ? 'Member deactivated' : 'Member reactivated');
+    }
+
+    private function planLimitResponse(PlanLimitExceededException $exception): JsonResponse
+    {
+        return $this->problemDetailsResponse(
+            title: __('access.errors.plan_limit_title'),
+            detail: __('access.errors.plan_limit_detail', ['max' => $exception->max, 'limit' => $exception->limit]),
+            status: Response::HTTP_CONFLICT,
+        );
+    }
+
     private function saveMember(SaveTenantMemberRequest $request, User $user, int $status): JsonResponse
     {
         $tenant = $this->tenantContext->getTenant();
@@ -185,7 +251,9 @@ class TenantMemberController extends Controller
         }
 
         try {
-            $this->memberships->save($tenant, $user, $role, $request->modules());
+            $this->memberships->save($tenant, $user, $role, $request->modules(), $request->customRoleId());
+        } catch (PlanLimitExceededException $exception) {
+            return $this->planLimitResponse($exception);
         } catch (SodConflictException $exception) {
             return $this->problemDetailsResponse(
                 title: 'Segregation of Duties Conflict',

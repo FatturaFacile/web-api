@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Settings;
 
+use App\Services\Tenancy\TenantContext;
 use App\Services\Tenancy\TenantMembershipService;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
@@ -30,6 +31,7 @@ class SaveTenantMemberRequest extends FormRequest
         return [
             'email' => [$this->routeIs('settings.users.store') ? 'required' : 'prohibited', 'email:rfc', 'max:255'],
             'role' => ['sometimes', 'string', Rule::in($memberships->roles())],
+            'custom_role_id' => ['sometimes', 'nullable', 'uuid', Rule::exists('tenant_roles', 'id')->where('tenant_id', app(TenantContext::class)->getTenantId())->whereNull('deleted_at')],
             'modules' => ['sometimes', 'array'],
             'modules.*' => ['string', Rule::in($memberships->levels())],
         ];
@@ -46,6 +48,13 @@ class SaveTenantMemberRequest extends FormRequest
                 }
             },
         ];
+    }
+
+    public function customRoleId(): ?string
+    {
+        $id = $this->validated('custom_role_id');
+
+        return is_string($id) ? $id : null;
     }
 
     /**

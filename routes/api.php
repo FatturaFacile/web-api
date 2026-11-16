@@ -8,6 +8,7 @@ use App\Http\Controllers\Api\V1\Accounting\GeneralLedgerController;
 use App\Http\Controllers\Api\V1\Accounting\VendorAgingController;
 use App\Http\Controllers\Api\V1\AccountingController;
 use App\Http\Controllers\Api\V1\Admin\TenantAccessRequestController;
+use App\Http\Controllers\Api\V1\Admin\TenantPlanController;
 use App\Http\Controllers\Api\V1\Admin\UserTenantAccessController;
 use App\Http\Controllers\Api\V1\AlertController;
 use App\Http\Controllers\Api\V1\AppointmentController;
@@ -70,6 +71,8 @@ use App\Http\Controllers\Api\V1\SalesReturnController;
 use App\Http\Controllers\Api\V1\SdiWebhookController;
 use App\Http\Controllers\Api\V1\ServiceReportController;
 use App\Http\Controllers\Api\V1\SessionController;
+use App\Http\Controllers\Api\V1\Settings\AccessManagementController;
+use App\Http\Controllers\Api\V1\Settings\InvitationController;
 use App\Http\Controllers\Api\V1\Settings\TenantMemberController;
 use App\Http\Controllers\Api\V1\SettingsController;
 use App\Http\Controllers\Api\V1\StockController;
@@ -105,6 +108,8 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/resend-reset-password-email', [PasswordResetController::class, 'resend'])->middleware('throttle:password-reset-request')->name('resend-reset-password-email');
         Route::get('/validate-reset-token', [PasswordResetController::class, 'validateToken'])->middleware('throttle:password-reset-attempt')->name('validate-reset-token');
         Route::post('/reset-password', [PasswordResetController::class, 'reset'])->middleware('throttle:password-reset-attempt')->name('reset-password');
+        Route::get('/invitations/{token}', [InvitationController::class, 'preview'])->middleware('throttle:password-reset-attempt')->name('invitations.preview');
+        Route::post('/invitations/{token}/accept', [InvitationController::class, 'accept'])->middleware('throttle:password-reset-attempt')->name('invitations.accept');
     });
 
     // Platform administrators work across tenants, so these routes have no tenant context.
@@ -113,6 +118,7 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/tenant-access-requests/{id}/approve', [TenantAccessRequestController::class, 'approve'])->name('tenant-access-requests.approve');
         Route::post('/tenant-access-requests/{id}/move', [TenantAccessRequestController::class, 'move'])->name('tenant-access-requests.move');
         Route::put('/tenants/{id}/document-quota', [DocumentQuotaController::class, 'update'])->name('tenants.document-quota');
+        Route::put('/tenants/{id}/plan', [TenantPlanController::class, 'update'])->whereUuid('id')->name('tenants.plan');
         Route::post('/tenant-access-requests/{id}/reject', [TenantAccessRequestController::class, 'reject'])->name('tenant-access-requests.reject');
         Route::get('/access-options', [UserTenantAccessController::class, 'options'])->name('access-options');
         Route::get('/users', [UserTenantAccessController::class, 'users'])->name('users.index');
@@ -549,7 +555,35 @@ Route::prefix('v1')->group(function (): void {
                 Route::post('/users', [TenantMemberController::class, 'store'])->middleware('throttle:sensitive-system')->name('users.store');
                 Route::put('/users/{userId}', [TenantMemberController::class, 'update'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.update');
                 Route::delete('/users/{userId}', [TenantMemberController::class, 'destroy'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.destroy');
+                Route::post('/users/import', [InvitationController::class, 'importUsers'])->middleware('throttle:sensitive-system')->name('users.import');
+                Route::post('/users/{userId}/suspend', [TenantMemberController::class, 'suspend'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.suspend');
+                Route::post('/users/{userId}/reactivate', [TenantMemberController::class, 'reactivate'])->whereUuid('userId')->middleware('throttle:sensitive-system')->name('users.reactivate');
                 Route::get('/access-options', [TenantMemberController::class, 'options'])->name('access-options');
+
+                Route::prefix('invitations')->name('invitations.')->group(function (): void {
+                    Route::get('/', [InvitationController::class, 'index'])->name('index');
+                    Route::post('/', [InvitationController::class, 'store'])->middleware('throttle:sensitive-system')->name('store');
+                    Route::post('/{id}/resend', [InvitationController::class, 'resend'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('resend');
+                    Route::delete('/{id}', [InvitationController::class, 'destroy'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('destroy');
+                });
+
+                Route::prefix('access')->name('access.')->group(function (): void {
+                    Route::get('/roles', [AccessManagementController::class, 'roles'])->name('roles.index');
+                    Route::post('/roles', [AccessManagementController::class, 'storeRole'])->middleware('throttle:sensitive-system')->name('roles.store');
+                    Route::put('/roles/{id}', [AccessManagementController::class, 'updateRole'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('roles.update');
+                    Route::delete('/roles/{id}', [AccessManagementController::class, 'destroyRole'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('roles.destroy');
+                    Route::get('/matrix', [AccessManagementController::class, 'matrix'])->name('matrix');
+                    Route::get('/teams', [AccessManagementController::class, 'teams'])->name('teams.index');
+                    Route::post('/teams', [AccessManagementController::class, 'storeTeam'])->middleware('throttle:sensitive-system')->name('teams.store');
+                    Route::put('/teams/{id}', [AccessManagementController::class, 'updateTeam'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('teams.update');
+                    Route::put('/teams/{id}/members', [AccessManagementController::class, 'syncTeamMembers'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('teams.members');
+                    Route::delete('/teams/{id}', [AccessManagementController::class, 'destroyTeam'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('teams.destroy');
+                    Route::get('/delegations', [AccessManagementController::class, 'delegations'])->name('delegations.index');
+                    Route::post('/delegations', [AccessManagementController::class, 'storeDelegation'])->middleware('throttle:sensitive-system')->name('delegations.store');
+                    Route::delete('/delegations/{id}', [AccessManagementController::class, 'revokeDelegation'])->whereUuid('id')->middleware('throttle:sensitive-system')->name('delegations.revoke');
+                    Route::get('/limits', [AccessManagementController::class, 'limits'])->name('limits');
+                    Route::get('/audit', [AccessManagementController::class, 'audit'])->name('audit');
+                });
                 Route::get('/roles', [SettingsController::class, 'roles'])->name('roles');
                 Route::get('/audit-logs', [SettingsController::class, 'auditLogs'])->name('audit-logs');
                 Route::get('/security/two-factor', [TwoFactorController::class, 'policy'])->name('security.two-factor');

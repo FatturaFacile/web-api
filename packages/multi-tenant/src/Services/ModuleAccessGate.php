@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Enterprise\MultiTenant\Services;
 
 use App\Models\User;
+use App\Services\Access\DelegationService;
 use InvalidArgumentException;
 
 /**
@@ -20,6 +21,31 @@ final class ModuleAccessGate
      * @throws InvalidArgumentException when the module is not in the configuration
      */
     public function allows(?User $user, ?string $tenantId, string $module, string $access): bool
+    {
+        return $this->allowsAsMember($user, $tenantId, $module, $access) || $this->allowsByDelegation($user, $tenantId, $module, $access);
+    }
+
+    /**
+     * A temporary delegation lends the role of a colleague for a time window, for all modules or some of them.
+     */
+    private function allowsByDelegation(?User $user, ?string $tenantId, string $module, string $access): bool
+    {
+        $allowedRoles = (array) config("permissions.modules.{$module}.{$access}");
+
+        foreach (app(DelegationService::class)->activeFor($user?->id, $tenantId) as $delegation) {
+            if ($delegation['modules'] !== null && ! in_array($module, $delegation['modules'], true)) {
+                continue;
+            }
+
+            if (in_array('*', $allowedRoles, true) || in_array($delegation['role'], $allowedRoles, true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private function allowsAsMember(?User $user, ?string $tenantId, string $module, string $access): bool
     {
         $allowedRoles = config("permissions.modules.{$module}.{$access}");
 

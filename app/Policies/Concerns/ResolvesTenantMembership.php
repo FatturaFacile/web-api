@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Policies\Concerns;
 
 use App\Models\User;
+use App\Services\Access\DelegationService;
 use App\Services\Tenancy\TenantContext;
 use Illuminate\Database\Eloquent\Model;
 
@@ -32,7 +33,22 @@ trait ResolvesTenantMembership
         }
 
         return in_array($pivot->getAttribute('role'), $roles, true)
-            || array_intersect(['*', ...$permissions], $this->grantedPermissions($pivot->getAttribute('permissions'))) !== [];
+            || array_intersect(['*', ...$permissions], $this->grantedPermissions($pivot->getAttribute('permissions'))) !== []
+            || $this->holdsDelegatedRole($user, $roles);
+    }
+
+    /**
+     * @param  list<string>  $roles
+     */
+    private function holdsDelegatedRole(User $user, array $roles): bool
+    {
+        foreach (app(DelegationService::class)->activeFor($user->id, app(TenantContext::class)->getTenantId()) as $delegation) {
+            if ($delegation['modules'] === null && in_array($delegation['role'], $roles, true)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     protected function isOwnRecord(Model $record): bool
