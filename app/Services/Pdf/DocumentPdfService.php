@@ -78,11 +78,15 @@ class DocumentPdfService
             ->get(['key', 'value']);
 
         foreach ($rows as $row) {
-            $lines[strtolower(substr((string) $row->key, 4))] = (string) $row->value;
+            // Translator::addLines() expects `<group>.<item>` keys: PDF.DELIVERY.SHIP_TO => pdf.delivery.ship_to
+            $lines[strtolower((string) $row->key)] = (string) $row->value;
         }
 
         if ($lines !== []) {
-            app('translator')->addLines($lines, $locale, 'pdf');
+            $translator = app('translator');
+            // Load the lang file group first: addLines() would otherwise mark the group as loaded and skip the file.
+            $translator->load('*', 'pdf', $locale);
+            $translator->addLines($lines, $locale);
         }
     }
 

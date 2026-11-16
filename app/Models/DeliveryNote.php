@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Models\Concerns\BelongsToTenant;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Modules\Invoicing\Models\SalesDeliveryNote;
@@ -17,6 +18,9 @@ use Modules\Invoicing\Models\SalesDeliveryNote;
  */
 class DeliveryNote extends SalesDeliveryNote
 {
+    // Tenant isolation is inherited from the canonical model; the legacy trait is kept so the tenancy architecture rules still see it.
+    use BelongsToTenant;
+
     /**
      * @return BelongsTo<Contact, $this>
      */
