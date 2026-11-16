@@ -392,6 +392,7 @@ test('every logistics UI, error and PDF key is translated in IT, EN, DE and FR b
 
 test('business errors reach the client already translated in the request language', function (): void {
     $this->seed(TranslationSeeder::class);
+    Sanctum::actingAs($this->user);
     $note = lifecycleDraft($this);
     $h = ['X-Tenant-Id' => $this->tenant->id];
 
@@ -402,6 +403,7 @@ test('business errors reach the client already translated in the request languag
 });
 
 test('field validation errors are translated in the request language', function (): void {
+    Sanctum::actingAs($this->user);
     $h = ['X-Tenant-Id' => $this->tenant->id];
     $expect = ['it' => 'obbligatorio', 'en' => 'is required', 'de' => 'erforderlich', 'fr' => 'obligatoire'];
 

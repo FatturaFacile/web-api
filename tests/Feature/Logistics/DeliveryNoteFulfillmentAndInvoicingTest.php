@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Services\Tenancy\TenantContext;
+use Database\Seeders\TranslationSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
 use Modules\Invoicing\Contracts\SalesOrderServiceInterface;
@@ -15,6 +16,9 @@ use Modules\Logistics\Services\DeliveryNoteService;
 uses(RefreshDatabase::class);
 
 beforeEach(function (): void {
+    // business errors are served from the translations table; these tests assert the English texts
+    $this->seed(TranslationSeeder::class);
+    app()->setLocale('en');
     ['tenant' => $this->tenant, 'user' => $this->user] = logisticsTenant('Fulfillment');
     app(TenantContext::class)->setTenant($this->tenant);
     $this->customer = logisticsCustomer($this->tenant->id);
