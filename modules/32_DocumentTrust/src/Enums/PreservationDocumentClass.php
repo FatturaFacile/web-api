@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Modules\DocumentTrust\Enums;
 
+use App\Services\Privacy\StatutoryRetentionCatalogue;
+
 /**
  * Class of documents a preservation package groups. A package holds one class only, so one retention period applies.
  *
@@ -26,7 +28,7 @@ enum PreservationDocumentClass: string
      */
     public function suggestedRetentionYears(): int
     {
-        return 10;
+        return StatutoryRetentionCatalogue::FISCAL_RECORD_YEARS;
     }
 
     /**

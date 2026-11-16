@@ -72,7 +72,7 @@ final readonly class VerticalSubjectErasure
         if ($billing > 0) {
             $holds[] = [
                 'statute' => 'Childcare billing records: Swiss CO art. 958f (10 years), to be confirmed',
-                'retention_years' => 10,
+                'retention_years' => StatutoryRetentionCatalogue::FISCAL_RECORD_YEARS,
                 'reason' => "The child has {$billing} billing record(s): the identity is kept, the health data are erased.",
             ];
         }

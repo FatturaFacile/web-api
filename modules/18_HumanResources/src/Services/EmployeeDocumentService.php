@@ -5,6 +5,9 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Services;
 
 use App\Models\User;
+use App\Services\Privacy\StatutoryRetentionCatalogue;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -95,6 +98,10 @@ final class EmployeeDocumentService
             ->orderBy('id')
             ->lazyById(200)
             ->each(function (EmployeeDocument $document) use (&$erased): void {
+                if (self::holdUntilStatutoryEnd($document)) {
+                    return;
+                }
+
                 DB::transaction(static function () use ($document): void {
                     Storage::disk(self::disk())->delete((string) $document->file_path);
                     $document->forceDelete();
@@ -103,6 +110,40 @@ final class EmployeeDocumentService
             });
 
         return $erased;
+    }
+
+    /**
+     * Last day a payslip or a contract must be kept: the end of its statutory period, counted from the end of the year of
+     * its issue date, or of its creation when it has none. Null for the other types, which follow their retention date.
+     */
+    public static function statutoryRetentionEnd(?string $documentType, ?CarbonInterface $issueDate, ?CarbonInterface $createdAt): ?CarbonImmutable
+    {
+        $retention = StatutoryRetentionCatalogue::retentionForDocumentType($documentType);
+
+        return $retention === null ? null : StatutoryRetentionCatalogue::retentionEndsAt($retention, $issueDate ?? $createdAt);
+    }
+
+    /**
+     * Keep a payslip or a contract whose statutory period is still running, whatever retention date was set on it, and
+     * move that date to the end of the period so the purge does not pick the document up again before then.
+     *
+     * @return bool true when the document is held
+     */
+    private static function holdUntilStatutoryEnd(EmployeeDocument $document): bool
+    {
+        $retention = StatutoryRetentionCatalogue::retentionForDocumentType($document->document_type);
+
+        if ($retention === null || ! StatutoryRetentionCatalogue::isUnderRetention($retention, $document->issue_date ?? $document->created_at)) {
+            return false;
+        }
+
+        $heldUntil = self::statutoryRetentionEnd($document->document_type, $document->issue_date, $document->created_at);
+
+        if ($heldUntil !== null) {
+            $document->update(['retention_until' => $heldUntil->toDateString()]);
+        }
+
+        return true;
     }
 
     private static function disk(): string
