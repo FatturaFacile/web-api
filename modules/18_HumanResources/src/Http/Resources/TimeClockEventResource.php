@@ -23,6 +23,9 @@ final class TimeClockEventResource extends JsonResource
             'deleted_at' => $this->deleted_at?->toIso8601String(),
             'deleted_by' => $this->deleted_by,
             'deletion_reason' => $this->deletion_reason,
+            'source_device' => $this->source_device,
+            'amended_from_id' => $this->amended_from_id,
+            'has_gps' => $this->gps_lat !== null,
         ];
     }
 }

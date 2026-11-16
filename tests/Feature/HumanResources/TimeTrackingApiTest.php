@@ -228,7 +228,7 @@ test('a correction needs a manager and a reason and is written to the history', 
         ->assertJsonPath('data.occurred_at', '2026-11-02T07:30:00+01:00')
         ->assertJsonPath('data.source', 'manual');
 
-    $entry = TimeAuditEntry::withoutGlobalScopes()->where('action', 'Modified')->sole();
+    $entry = TimeAuditEntry::withoutGlobalScopes()->where('action', 'Amended')->sole();
 
     expect($entry->before_values['occurred_at'])->toBe('2026-11-02T08:00:00+01:00')
         ->and($entry->before_values['source'])->toBe('terminal')

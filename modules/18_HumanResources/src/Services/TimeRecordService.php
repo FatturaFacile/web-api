@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Modules\HumanResources\Services;
 
 use App\Models\User;
+use App\Services\Tenancy\TenantContext;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
@@ -12,6 +13,7 @@ use Modules\HumanResources\Models\TimeAuditEntry;
 use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Models\TimeRecordingProfile;
+use Modules\HumanResources\Services\TimeTracking\HashChainIntegrityService;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
 use Modules\HumanResources\Services\TimeTracking\TimePeriodClosingService;
@@ -23,7 +25,11 @@ use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
  */
 final class TimeRecordService
 {
-    public function __construct(private readonly TimePeriodClosingService $closings) {}
+    public function __construct(
+        private readonly TimePeriodClosingService $closings,
+        private readonly HashChainIntegrityService $hashChain,
+        private readonly TenantContext $tenantContext,
+    ) {}
 
     private const STATE_OFF = 'Off';
 
@@ -70,6 +76,9 @@ final class TimeRecordService
     }
 
     /**
+     * Append-only correction: soft-deletes the original event (reason='amended') and creates a replacement
+     * linked via amended_from_id. Complies with CJEU C-55/18 immutability requirements.
+     *
      * @param  array{occurred_at?: CarbonImmutable, event_type?: TimeEventType, source: TimeRecordSource, note?: string|null}  $values
      */
     public function correct(User $actor, TimeClockEvent $event, array $values, string $reason): TimeClockEvent
@@ -88,10 +97,24 @@ final class TimeRecordService
             }
 
             $before = $event->auditValues();
-            $event->fill($values)->save();
-            $this->audit($actor, (string) $event->user_id, 'TimeClockEvent', (string) $event->id, 'Modified', $before, $event->auditValues(), $reason);
 
-            return $event;
+            // Soft-delete original: append-only means the original record stays in the history
+            $event->fill(['deleted_by' => $actor->id, 'deletion_reason' => 'amended'])->save();
+            $event->delete();
+
+            $newEvent = TimeClockEvent::create([
+                'user_id' => $event->user_id,
+                'occurred_at' => $values['occurred_at'] ?? $event->occurred_at,
+                'event_type' => $values['event_type'] ?? $event->event_type,
+                'source' => $values['source'],
+                'note' => array_key_exists('note', $values) ? $values['note'] : $event->note,
+                'created_by' => $actor->id,
+                'amended_from_id' => $event->id,
+            ]);
+
+            $this->audit($actor, (string) $event->user_id, 'TimeClockEvent', (string) $newEvent->id, 'Amended', $before, $newEvent->auditValues(), $reason);
+
+            return $newEvent;
         });
     }
 
@@ -231,11 +254,31 @@ final class TimeRecordService
     }
 
     /**
+     * Writes an immutable audit entry and extends the SHA-256 hash chain (CJEU C-55/18).
+     *
      * @param  array<string, mixed>|null  $before
      * @param  array<string, mixed>|null  $after
      */
     private function audit(User $actor, string $employeeId, string $entityType, string $entityId, string $action, ?array $before, ?array $after, ?string $reason): void
     {
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $occurredAt = CarbonImmutable::now();
+        $prevHash = $this->hashChain->latestHash($tenantId);
+
+        $hashPayload = [
+            'tenant_id' => $tenantId,
+            'user_id' => $employeeId,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'action' => $action,
+            'before_values' => $before,
+            'after_values' => $after,
+            'actor_id' => (string) $actor->id,
+            'occurred_at' => $occurredAt->utc()->format('Y-m-d H:i:s'),
+        ];
+
+        $recordHash = $this->hashChain->computeHash($hashPayload, $prevHash);
+
         TimeAuditEntry::create([
             'user_id' => $employeeId,
             'entity_type' => $entityType,
@@ -246,7 +289,9 @@ final class TimeRecordService
             'reason' => $reason,
             'actor_id' => $actor->id,
             'actor_name' => (string) $actor->name,
-            'occurred_at' => CarbonImmutable::now(),
+            'occurred_at' => $occurredAt,
+            'prev_hash' => $prevHash,
+            'record_hash' => $recordHash,
         ]);
     }
 }

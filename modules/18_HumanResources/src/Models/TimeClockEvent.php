@@ -30,6 +30,11 @@ final class TimeClockEvent extends BaseEnterpriseModel
             'occurred_at' => UtcInstant::class,
             'event_type' => TimeEventType::class,
             'source' => TimeRecordSource::class,
+            'gps_lat' => 'decimal:7',
+            'gps_lng' => 'decimal:7',
+            'geolocation_consent_at' => UtcInstant::class,
+            'amended_from_id' => 'string',
+            'source_device' => 'string',
         ];
     }
 
@@ -58,6 +63,9 @@ final class TimeClockEvent extends BaseEnterpriseModel
             'event_type' => $this->event_type->value,
             'source' => $this->source->value,
             'note' => $this->note,
+            'source_device' => $this->source_device,
+            'amended_from_id' => $this->amended_from_id,
+            'has_gps' => $this->gps_lat !== null,
         ];
     }
 }

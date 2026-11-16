@@ -11,8 +11,11 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Modules\HumanResources\Http\Requests\CorrectTimeEventRequest;
 use Modules\HumanResources\Http\Requests\DeleteTimeEventRequest;
+use Modules\HumanResources\Http\Requests\LegalExportRequest;
 use Modules\HumanResources\Http\Requests\ListTimeRecordsRequest;
 use Modules\HumanResources\Http\Requests\SaveTimeDailyRecordRequest;
 use Modules\HumanResources\Http\Requests\SaveTimeProfileRequest;
@@ -28,8 +31,14 @@ use Modules\HumanResources\Models\TimeClockEvent;
 use Modules\HumanResources\Models\TimeDailyRecord;
 use Modules\HumanResources\Models\TimeRecordingProfile;
 use Modules\HumanResources\Services\TimeRecordService;
+use Modules\HumanResources\Services\TimeTracking\HashChainIntegrityService;
 use Modules\HumanResources\Services\TimeTracking\HolidayEntry;
+use Modules\HumanResources\Services\TimeTracking\ItalyComplianceCalculator;
+use Modules\HumanResources\Services\TimeTracking\ItalyComplianceViolation;
+use Modules\HumanResources\Services\TimeTracking\ItalyLulExportService;
 use Modules\HumanResources\Services\TimeTracking\SwissWorkingTimeRules;
+use Modules\HumanResources\Services\TimeTracking\SwitzerlandComplianceCalculator;
+use Modules\HumanResources\Services\TimeTracking\SwitzerlandSecoExportService;
 use Modules\HumanResources\Services\TimeTracking\TimeEventType;
 use Modules\HumanResources\Services\TimeTracking\TimeRecordSource;
 use Modules\HumanResources\Services\WorkingTimeCalculator;
@@ -44,6 +53,9 @@ final class TimeTrackingController extends Controller
         private readonly TimeRecordService $records,
         private readonly WorkingTimeCalculator $calculator,
         private readonly TenantContext $tenantContext,
+        private readonly ItalyLulExportService $lulExport,
+        private readonly SwitzerlandSecoExportService $secoExport,
+        private readonly HashChainIntegrityService $hashChain,
     ) {}
 
     public function storeEvent(StoreTimeEventRequest $request): JsonResponse
@@ -228,6 +240,150 @@ final class TimeTrackingController extends Controller
         $profile = $this->records->saveProfile($this->actor($request), $userId, $values, $request->validated('reason'));
 
         return response()->json(['data' => new TimeRecordingProfileResource($profile)]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/hr/time/export",
+     *     summary="Download a legal working-time export (IT LUL or CH SECO).",
+     *     tags={"HR — Time Tracking"},
+     *
+     *     @OA\Parameter(name="from", in="query", required=true, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="to", in="query", required=true, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="format", in="query", required=true,
+     *
+     *         @OA\Schema(type="string", enum={"lul-csv","lul-zucchetti","seco-csv"})),
+     *
+     *     @OA\Parameter(name="employee_id", in="query", required=false, @OA\Schema(type="string", format="uuid")),
+     *
+     *     @OA\Response(response=200, description="File download"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
+    public function exportLegal(LegalExportRequest $request): Response
+    {
+        $this->authorize('manage', TimeClockEvent::class);
+
+        $employeeId = $request->validated('employee_id') !== null
+            ? (string) $request->validated('employee_id')
+            : null;
+
+        if ($employeeId !== null) {
+            $this->employee($employeeId);
+        }
+
+        $tenantId = (string) $this->tenantContext->getTenantId();
+        $from = (string) $request->validated('from');
+        $to = (string) $request->validated('to');
+        $format = (string) $request->validated('format');
+
+        [$content, $filename] = match ($format) {
+            'lul_csv' => [
+                $this->lulExport->generate($tenantId, $employeeId, $from, $to),
+                "lul_{$from}_{$to}.csv",
+            ],
+            'seco_csv' => [
+                $this->secoExport->generate($tenantId, $employeeId, $from, $to),
+                "seco_{$from}_{$to}.csv",
+            ],
+        };
+
+        return response($content, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/hr/time/verify-integrity",
+     *     summary="Verify the SHA-256 hash chain of time audit entries.",
+     *     tags={"HR — Time Tracking"},
+     *
+     *     @OA\Parameter(name="employee_id", in="query", required=false, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Parameter(name="from", in="query", required=false, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="to", in="query", required=false, @OA\Schema(type="string", format="date")),
+     *
+     *     @OA\Response(response=200, description="Integrity report"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
+    public function verifyIntegrity(ListTimeRecordsRequest $request): JsonResponse
+    {
+        $this->authorize('viewAudit', [TimeAuditEntry::class, null]);
+
+        $result = $this->hashChain->verify((string) $this->tenantContext->getTenantId());
+
+        return response()->json(['data' => $result->toArray()]);
+    }
+
+    /**
+     * @OA\Get(
+     *     path="/api/v1/hr/time/compliance-alerts",
+     *     summary="Return legal compliance violations for the period (IT D.Lgs. 66/2003 or CH OLL 1).",
+     *     tags={"HR — Time Tracking"},
+     *
+     *     @OA\Parameter(name="employee_id", in="query", required=false, @OA\Schema(type="string", format="uuid")),
+     *     @OA\Parameter(name="from", in="query", required=true, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="to", in="query", required=true, @OA\Schema(type="string", format="date")),
+     *     @OA\Parameter(name="jurisdiction", in="query", required=false,
+     *
+     *         @OA\Schema(type="string", enum={"IT","CH"})),
+     *
+     *     @OA\Response(response=200, description="Compliance alerts"),
+     *     @OA\Response(response=403, description="Forbidden")
+     * )
+     */
+    public function complianceAlerts(TimeReportRequest $request): JsonResponse
+    {
+        $this->authorize('manage', TimeClockEvent::class);
+
+        $employeeId = $this->employeeId($request);
+        $from = (string) $request->validated('from');
+        $to = (string) $request->validated('to');
+
+        $jurisdiction = strtoupper((string) (
+            $request->input('jurisdiction')
+            ?? TimeRecordingProfile::query()->where('user_id', $employeeId)->value('jurisdiction')
+            ?? 'CH'
+        ));
+
+        $tenantId = (string) $this->tenantContext->getTenantId();
+
+        if ($jurisdiction === 'IT') {
+            $events = DB::table('time_clock_events')
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $employeeId)
+                ->whereBetween('occurred_at', [$from.' 00:00:00', $to.' 23:59:59'])
+                ->whereNull('deleted_at')
+                ->orderBy('occurred_at')
+                ->select(['user_id', 'occurred_at', 'event_type'])
+                ->get()->all();
+
+            $daily = DB::table('time_daily_records')
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $employeeId)
+                ->whereBetween('work_date', [$from, $to])
+                ->select(['user_id', 'work_date', 'worked_minutes'])
+                ->get()->all();
+
+            $calculator = new ItalyComplianceCalculator;
+            $alerts = array_merge(
+                array_map(static fn (ItalyComplianceViolation $v) => $v->toArray(), $calculator->checkRestPeriods($events)),
+                array_map(static fn (ItalyComplianceViolation $v) => $v->toArray(), $calculator->checkWeekly48h($daily)),
+            );
+        } else {
+            $daily = DB::table('time_daily_records')
+                ->where('tenant_id', $tenantId)
+                ->where('user_id', $employeeId)
+                ->whereBetween('work_date', [$from, $to])
+                ->select(['user_id', 'work_date', 'worked_minutes', 'break_minutes'])
+                ->get()->all();
+
+            $alerts = (new SwitzerlandComplianceCalculator)->checkDailyBreaks($daily);
+        }
+
+        return response()->json(['data' => $alerts]);
     }
 
     private function actor(Request $request): User

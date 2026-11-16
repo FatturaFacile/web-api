@@ -85,6 +85,9 @@ Route::prefix('api/v1/hr')
             Route::get('/profiles/{userId}', [TimeTrackingController::class, 'profile'])->whereUuid('userId')->name('profiles.show');
             Route::put('/profiles/{userId}', [TimeTrackingController::class, 'saveProfile'])->whereUuid('userId')->name('profiles.save');
             Route::get('/overtime', [WorkingTimeRulesController::class, 'overtime'])->name('overtime');
+            Route::get('/export', [TimeTrackingController::class, 'exportLegal'])->name('export');
+            Route::get('/verify-integrity', [TimeTrackingController::class, 'verifyIntegrity'])->name('verify-integrity');
+            Route::get('/compliance-alerts', [TimeTrackingController::class, 'complianceAlerts'])->name('compliance-alerts');
         });
 
         // Contract history and salary components

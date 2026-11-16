@@ -53,6 +53,8 @@ final class TimeAuditEntry extends Model
             'after_values' => 'array',
             'occurred_at' => UtcInstant::class,
             'created_at' => UtcInstant::class,
+            'record_hash' => 'string',
+            'prev_hash' => 'string',
         ];
     }
 

@@ -24,6 +24,7 @@ final class TimeAuditEntryResource extends JsonResource
             'actor_id' => $this->actor_id,
             'actor_name' => $this->actor_name,
             'occurred_at' => SwissWorkingTimeRules::toLocal($this->occurred_at)->toIso8601String(),
+            'record_hash' => $this->record_hash,
         ];
     }
 }

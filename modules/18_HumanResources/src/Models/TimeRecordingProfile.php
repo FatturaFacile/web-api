@@ -21,6 +21,7 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
         'legal_max_weekly_hours' => 45,
         'weekly_hours' => '42.00',
         'work_days_per_week' => 5,
+        'income_threshold_confirmed' => false,
     ];
 
     protected function casts(): array
@@ -38,6 +39,11 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
             'hire_date' => 'date',
             'termination_date' => 'date',
             'is_regular_night_worker' => 'boolean',
+            'jurisdiction' => 'string',
+            'income_threshold_confirmed' => 'boolean',
+            'waiver_signed_date' => 'date',
+            'reference_period_months' => 'integer',
+            'ordinary_weekly_hours' => 'decimal:2',
         ];
     }
 
@@ -50,6 +56,7 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
     {
         return [
             'mode' => $this->mode->value,
+            'jurisdiction' => $this->jurisdiction,
             'agreement_date' => $this->agreement_date?->format('Y-m-d'),
             'agreement_valid_from' => $this->agreement_valid_from?->format('Y-m-d'),
             'agreement_valid_to' => $this->agreement_valid_to?->format('Y-m-d'),
@@ -57,6 +64,10 @@ final class TimeRecordingProfile extends BaseEnterpriseModel
             'autonomy_percent' => $this->autonomy_percent,
             'collective_agreement_reference' => $this->collective_agreement_reference,
             'salary_threshold_met' => $this->annual_gross_salary !== null,
+            'income_threshold_confirmed' => $this->income_threshold_confirmed,
+            'waiver_signed_date' => $this->waiver_signed_date?->format('Y-m-d'),
+            'reference_period_months' => $this->reference_period_months,
+            'ordinary_weekly_hours' => $this->ordinary_weekly_hours,
             'legal_max_weekly_hours' => $this->legal_max_weekly_hours,
             'weekly_hours' => $this->weekly_hours,
             'work_days_per_week' => $this->work_days_per_week,

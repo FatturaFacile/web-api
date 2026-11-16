@@ -20,7 +20,12 @@ final class TimeRetentionService
 {
     public function purge(Tenant $tenant, CarbonImmutable $today, int $configuredYears): DataRetentionResult
     {
-        $cutoff = DataRetentionPolicy::cutoff($today, $configuredYears);
+        // Italy LUL/INPS requires 10-year minimum; CH OLL 1 Art. 73 requires 5-year minimum
+        $minimumYears = ($tenant->country ?? '') === 'IT'
+            ? DataRetentionPolicy::IT_MINIMUM_YEARS
+            : DataRetentionPolicy::MINIMUM_YEARS;
+
+        $cutoff = DataRetentionPolicy::cutoff($today, max($configuredYears, $minimumYears));
         $cutoffInstant = $cutoff->utc()->format('Y-m-d H:i:s');
 
         return DB::transaction(function () use ($tenant, $cutoff, $cutoffInstant): DataRetentionResult {
